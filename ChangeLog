@@ -1,0 +1,6 @@
+2008-05-14  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-comp-window.c:
+	* src/hd-switcher.c:
+	Sync up with upstream changes in clutter API.
+

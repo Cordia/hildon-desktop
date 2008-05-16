@@ -104,22 +104,18 @@ hd_switcher_class_init (HdSwitcherClass *klass)
 static void
 hd_switcher_init (HdSwitcher *self)
 {
-  GdkPixbuf    *pixbuf;
   GError       *error = NULL;
 
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
                                             HD_TYPE_SWITCHER,
                                             HdSwitcherPrivate);
 
-  pixbuf = gdk_pixbuf_new_from_file (BUTTON_IMAGE,
-                                     &error);
+  self->priv->button = clutter_texture_new_from_file (BUTTON_IMAGE, &error);
 
   if (error)
     {
       g_error (error->message);
     }
-
-  self->priv->button = clutter_texture_new_from_pixbuf (pixbuf);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (self), self->priv->button);
   clutter_actor_set_position (self->priv->button, 0, 0);

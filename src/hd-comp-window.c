@@ -109,10 +109,10 @@ hd_comp_window_init (MBWMObject *obj, va_list vap)
       switch (prop)
         {
           case HdMbWmPropActor:
-              window->priv->actor = va_arg (vap, ClutterActor *);
+	    window->priv->actor = va_arg (vap, ClutterActor *);
               break;
           default:
-              MBWMO_PROP_EAT (vap, prop);
+	    MBWMO_PROP_EAT (vap, prop);
         }
 
       prop = va_arg (vap, MBWMObjectProp);
@@ -151,12 +151,13 @@ hd_comp_window_show (MBWMCompMgrClient *client)
   HdCompWindowPrivate          *priv = HD_COMP_WINDOW (client)->priv;
   MBWindowManagerClient        *wm_client = client->wm_client;
   Display                      *dpy = client->wm_client->wmref->xdpy;
-  Window                        window, root;
+  Window                        window;
   Pixmap                        pixmap;
-  int                           x, y;
-  unsigned                      w, h, bw, depth;
   int                           error;
 
+  /*
+   * Cannot obtain a named pixmap until the window is visible
+   */
   if (priv->shown)
     return;
 
@@ -175,18 +176,9 @@ hd_comp_window_show (MBWMCompMgrClient *client)
       return;
     }
 
-  XGetGeometry (dpy, window, &root, &x, &y, &w, &h, &bw, &depth);
+  clutter_x11_texture_pixmap_set_pixmap (CLUTTER_X11_TEXTURE_PIXMAP (priv->actor),
+					   pixmap);
 
-  g_object_set (priv->actor,
-                "pixmap", pixmap,
-                "width", w,
-                "height", h,
-                "pixmap-width", w,
-                "pixmap-height", h,
-                "depth", depth,
-                NULL);
-
-  clutter_actor_set_size (priv->actor, w, h);
   clutter_actor_show (priv->actor);
 
   priv->damage = XDamageCreate (wm_client->wmref->xdpy,
@@ -237,28 +229,37 @@ hd_comp_window_configure (MBWMCompMgrClient *client)
 {
   HdCompWindowPrivate  *priv    = HD_COMP_WINDOW (client)->priv;
   Display              *dpy     = client->wm_client->wmref->xdpy;
-  Pixmap                pixmap;
+  Pixmap                pixmap = None;
   Window                window;
-  guint                 depth;
-  MBGeometry            r;
+
+  if (!priv->shown)
+    return;
 
   window = client->wm_client->xwin_frame != None ?
            client->wm_client->xwin_frame : client->wm_client->window->xwindow;
 
-  g_object_get (priv->actor, "depth", &depth, "pixmap", &pixmap, NULL);
+  g_object_get (priv->actor, "pixmap", &pixmap, NULL);
 
-  XFreePixmap (dpy, pixmap);
-  pixmap = XCompositeNameWindowPixmap (dpy,
-                                       window);
+  if (pixmap)
+    XFreePixmap (dpy, pixmap);
 
-  mb_wm_client_get_coverage (client->wm_client, &r);
+  pixmap = XCompositeNameWindowPixmap (dpy, window);
 
-  clutter_x11_texture_pixmap_set_pixmap (CLUTTER_X11_TEXTURE_PIXMAP (priv->actor),
-                                         pixmap,
-                                         r.width, r.height,
-                                         depth);
+  clutter_x11_texture_pixmap_set_pixmap (
+				       CLUTTER_X11_TEXTURE_PIXMAP (priv->actor),
+				       pixmap);
 
 }
+
+static void
+hd_comp_window_effect_complete_cb (ClutterActor *actor,
+				   gpointer      data)
+{
+  HdCompWindow *window = data;
+
+  mb_wm_object_unref (MB_WM_OBJECT (window));
+}
+
 
 static void
 hd_comp_window_effect_real (HdCompWindow               *window,
@@ -273,19 +274,21 @@ hd_comp_window_effect_real (HdCompWindow               *window,
     {
       case MBWMCompMgrClientEventMap:
           clutter_actor_set_opacity (priv->actor, 0);
-          clutter_timeline_start (clutter_effect_fade (template,
-                                  priv->actor,
-                                  0xFF,
-                                  NULL,
-                                  NULL));
+	  mb_wm_object_ref (MB_WM_OBJECT (window));
+          clutter_effect_fade (template,
+			       priv->actor,
+			       0xFF,
+			       hd_comp_window_effect_complete_cb,
+			       window);
           break;
       case MBWMCompMgrClientEventUnmap:
           clutter_actor_set_opacity (priv->actor, 0xFF);
-          clutter_timeline_start (clutter_effect_fade (template,
-                                                       priv->actor,
-                                                       0,
-                                                       NULL,
-                                                       NULL));
+	  mb_wm_object_ref (MB_WM_OBJECT (window));
+          clutter_effect_fade (template,
+			       priv->actor,
+			       0,
+			       hd_comp_window_effect_complete_cb,
+			       window);
           break;
       default:
           g_object_unref (template);
