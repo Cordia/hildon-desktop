@@ -27,7 +27,6 @@
 
 #include "hd-wm.h"
 #include "hd-comp-mgr.h"
-#include "hd-mb-wm-props.h"
 
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/core/mb-wm.h>
