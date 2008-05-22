@@ -1,5 +1,11 @@
 2008-05-22  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-comp-mgr.c:
+	(hd_comp_mgr_effect):
+	Implemented TV-out style effect for application windows.
+
+2008-05-22  Tomas Frydrych  <tf@o-hand.com>
+
 	Cleaned up comments and code.
 
 2008-05-22  Tomas Frydrych  <tf@o-hand.com>

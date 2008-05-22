@@ -35,6 +35,8 @@
 #include <clutter/clutter-container.h>
 #include <clutter/x11/clutter-x11.h>
 
+#define HDCM_UNMAP_DURATION 200
+
 static int hd_comp_mgr_init (MBWMObject *obj, va_list vap);
 static void hd_comp_mgr_class_init (MBWMObjectClass *klass);
 static void hd_comp_mgr_destroy (MBWMObject *obj);
@@ -273,12 +275,78 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   hd_switcher_add_window_actor (HD_SWITCHER (priv->switcher_group), actor);
 }
 
+typedef struct _HDEffectData
+{
+  MBWMCompMgrClutterClient * cclient;
+} HDEffectData;
+
+static void
+hd_comp_mgr_effect_completed (ClutterActor * actor, HDEffectData *data)
+{
+  mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient,
+					MBWMCompMgrClutterClientDontUpdate |
+                                        MBWMCompMgrClutterClientEffectRunning);
+
+  mb_wm_object_unref (MB_WM_OBJECT (data->cclient));
+
+  g_object_unref (actor);
+
+  g_free (data);
+};
+
 static void
 hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                     MBWindowManagerClient      *c,
                     MBWMCompMgrClientEvent      event)
 {
-  /* TODO */
+  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
+
+  if (c_type == MBWMClientTypeApp)
+    {
+      switch (event)
+	{
+	case MBWMCompMgrClientEventUnmap:
+	  {
+	    MBWMCompMgrClutterClient * cclient;
+	    ClutterActor             * actor;
+	    ClutterTimeline          * timeline;
+	    ClutterEffectTemplate    * tmpl;
+	    gdouble                    scale_x, scale_y;
+	    HDEffectData             * data;
+
+	    cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+	    actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+
+	    tmpl =
+	      clutter_effect_template_new_for_duration (HDCM_UNMAP_DURATION,
+						   CLUTTER_ALPHA_RAMP_INC);
+
+	    clutter_actor_get_scale (actor, &scale_x, &scale_y);
+
+	    data = g_new0 (HDEffectData, 1);
+	    data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+
+	    clutter_actor_move_anchor_point_from_gravity (actor,
+						     CLUTTER_GRAVITY_CENTER);
+
+	    timeline = clutter_effect_scale (tmpl, actor,
+					     scale_x, 0.1,
+					     (ClutterEffectCompleteFunc)
+					     hd_comp_mgr_effect_completed,
+					     data);
+
+	    mb_wm_comp_mgr_clutter_client_set_flags (cclient,
+					MBWMCompMgrClutterClientDontUpdate |
+                                        MBWMCompMgrClutterClientEffectRunning);
+
+	    clutter_timeline_start (timeline);
+	  }
+	  break;
+
+	default:
+	  break;
+	}
+    }
 }
 
 static void
