@@ -4,6 +4,7 @@
  * Copyright (C) 2008 Nokia Corporation.
  *
  * Author:  Johan Bilien <johan.bilien@nokia.com>
+ *          Tomas Frydrych <tf@o-hand.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -37,7 +38,6 @@
 static int hd_comp_mgr_init (MBWMObject *obj, va_list vap);
 static void hd_comp_mgr_class_init (MBWMObjectClass *klass);
 static void hd_comp_mgr_destroy (MBWMObject *obj);
-static void hd_comp_mgr_register_client (MBWMCompMgr *mgr, MBWindowManagerClient *c);
 static void hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c);
 static void hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c);
 
@@ -68,7 +68,8 @@ hd_comp_mgr_class_type ()
         hd_comp_mgr_class_init
       };
 
-      type = mb_wm_object_register_class (&info, MB_WM_TYPE_COMP_MGR_CLUTTER, 0);
+      type = mb_wm_object_register_class (&info,
+					  MB_WM_TYPE_COMP_MGR_CLUTTER, 0);
     }
 
   return type;
@@ -79,7 +80,6 @@ hd_comp_mgr_class_init (MBWMObjectClass *klass)
 {
   MBWMCompMgrClass *cm_klass = MB_WM_COMP_MGR_CLASS (klass);
 
-  cm_klass->register_client   = hd_comp_mgr_register_client;
   cm_klass->unregister_client = hd_comp_mgr_unregister_client;
   cm_klass->client_event      = hd_comp_mgr_effect;
   cm_klass->turn_on           = hd_comp_mgr_turn_on;
@@ -129,9 +129,9 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry * geom)
   Window             overlay;
   Window             clutter_window;
   XRectangle         rectangle;
-  MBWMCompMgr      * mgr = MB_WM_COMP_MGR (hmgr);
-  MBWindowManager  * wm = mgr->wm;
-  Display          * xdpy = wm->xdpy;
+  MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
+  MBWindowManager   *wm = mgr->wm;
+  Display           *xdpy = wm->xdpy;
 
   overlay = XCompositeGetOverlayWindow (xdpy, wm->root_win->xwindow);
 
@@ -196,22 +196,16 @@ hd_comp_mgr_turn_on (MBWMCompMgr *mgr)
   MBWMCompMgrClass * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
 
+  /*
+   * The parent class turn_on method deals with setting up the input shape on
+   * the overlay window; so we first call it, and then change the shape to
+   * suit our custom needs.
+   */
   if (parent_klass->turn_on)
     parent_klass->turn_on (mgr);
 
   hd_switcher_get_button_geometry (HD_SWITCHER (priv->switcher_group), &geom);
-
   hd_comp_mgr_setup_input_viewport (HD_COMP_MGR (mgr), &geom);
-}
-
-static void
-hd_comp_mgr_register_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
-{
-  MBWMCompMgrClass * parent_klass =
-    MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
-
-  if (parent_klass->register_client)
-    parent_klass->register_client (mgr, c);
 }
 
 static void
@@ -256,8 +250,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
 
   /*
-   * This results in the actual actor being created for the client
-   * by our parent class
+   * Parent class map_notify creates the actor representing the client.
    */
   if (parent_klass->map_notify)
     parent_klass->map_notify (mgr, c);
@@ -285,6 +278,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                     MBWindowManagerClient      *c,
                     MBWMCompMgrClientEvent      event)
 {
+  /* TODO */
 }
 
 static void
@@ -301,14 +295,9 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
    * sync when it closes.
    */
   if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
-    {
-      priv->stack_sync = TRUE;
-    }
-  else
-    {
-      if (parent_klass->restack)
-	parent_klass->restack (mgr);
-    }
+    priv->stack_sync = TRUE;
+  else if (parent_klass->restack)
+    parent_klass->restack (mgr);
 }
 
 void
@@ -316,6 +305,9 @@ hd_comp_mgr_sync_stacking (HdCompMgr * hmgr)
 {
   HdCompMgrPrivate * priv = hmgr->priv;
 
+  /*
+   * If the stack_sync flag is set, force restacking of the CM actors
+   */
   if (priv->stack_sync)
     {
       priv->stack_sync = FALSE;

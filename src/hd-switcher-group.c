@@ -89,6 +89,9 @@ typedef struct
  *
  * The x coordinate is in *halfs* of ITEM_WIDTH, the y coordinate is in
  * *whole* ITEM_HEIGHT.
+ *
+ * TODO -- might need to move the coords about a bit to match the colour tiles
+ *         in the UI spec.
  */
 static const gint positions[11][11][2] =
 /* 1 */ { { {  0,  0 } , { 0,  0}, { 0,  0},
@@ -136,8 +139,6 @@ static const gint positions[11][11][2] =
             {  0,  2 } , { 2,  2}, { 4,  2},
             {  1,  2 } , { 5,  2} } };
 
-
-
 struct _HdSwitcherGroupPrivate
 {
   GList                        *children;
@@ -149,7 +150,7 @@ struct _HdSwitcherGroupPrivate
 
   MBWMCompMgrClutter           *comp_mgr;
 
-  /* Used in the item placement loop only */
+  /* Used in the item placement loop */
   guint                         n_items;
   guint                         i_item;
   gint                          min_x, min_y, max_x, max_y;
@@ -200,8 +201,8 @@ hd_switcher_group_class_init (HdSwitcherGroupClass *klass)
   object_class->set_property = hd_switcher_group_set_property;
   object_class->get_property = hd_switcher_group_get_property;
 
-  actor_class->show_all = hd_switcher_group_show_all;
-  actor_class->hide_all = hd_switcher_group_hide_all;
+  actor_class->show_all      = hd_switcher_group_show_all;
+  actor_class->hide_all      = hd_switcher_group_hide_all;
 
   pspec = g_param_spec_pointer ("comp-mgr",
 				"Composite Manager",
@@ -318,7 +319,6 @@ hd_switcher_group_get_child_data (HdSwitcherGroup *group, ClutterActor *actor)
 
   if (l)
     return l->data;
-
   else
     return NULL;
 }
@@ -412,8 +412,7 @@ hd_switcher_group_show_all (ClutterActor *self)
       ClutterActor * group = data->group;
       ClutterActor * parent = clutter_actor_get_parent (a);
       gint           x, y, anchor_x, anchor_y;
-      guint          width, height;
-      guint          close_width, close_height;
+      guint          width, height, close_width, close_height;
 
       /*
        * Store the original position and parent of the actor, so we
@@ -439,9 +438,7 @@ hd_switcher_group_show_all (ClutterActor *self)
 
       clutter_actor_set_position (close_button, width - close_width, 0);
       clutter_actor_show (close_button);
-
       clutter_actor_raise_top (close_button);
-
       clutter_actor_set_reactive (close_button, TRUE);
 
       g_signal_connect_swapped (close_button, "button-release-event",
@@ -535,7 +532,10 @@ hd_switcher_group_remove_actor (HdSwitcherGroup *group, ClutterActor *actor)
   g_signal_handler_disconnect (actor, data->click_handler);
   priv->children = g_list_remove (priv->children, data);
 
-  /* FIXME -- Might need to reparent the child actor first */
+  /*
+   * TODO -- should we reparent the child actor first ? Probably superfluous
+   *         as the actor is about to be destroyed anyway.
+   */
   clutter_actor_destroy (data->group);
 
   g_free (data);
@@ -546,7 +546,6 @@ hd_switcher_group_remove_actor (HdSwitcherGroup *group, ClutterActor *actor)
   if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (group)))
     {
       hd_switcher_group_place (HD_SWITCHER_GROUP (group));
-      /* FIXME -- need chance the scale without the zoom effect here */
       hd_switcher_group_zoom (HD_SWITCHER_GROUP (group), NULL, FALSE);
     }
 }
@@ -569,6 +568,7 @@ place_child (ChildData *data, HdSwitcherGroup *group)
       y = (priv->i_item / 3) - 3;
     }
 
+  /* x is in halfs of ITEM_WIDTH, y in whole units of ITEM_HEIGHT */
   x_new = x * (ITEM_WIDTH+PADDING) / 2;
   y_new = y * (ITEM_HEIGHT+PADDING);
 
@@ -579,8 +579,10 @@ place_child (ChildData *data, HdSwitcherGroup *group)
       clutter_actor_set_position (data->group, x_new, y_new);
     }
 
+  /*
+   * Make sure close button is visible and above the window actor
+   */
   clutter_actor_show (data->close_button);
-
   clutter_actor_raise_top (data->close_button);
 
   priv->i_item ++;
@@ -641,6 +643,9 @@ hd_switcher_group_zoom (HdSwitcherGroup *group,
        * initially completely off screen touching the top-left corner and is
        * being moved so that it's top-left corner ends up at the top-left
        * corner of the screen.
+       *
+       * TODO -- perhaps we should adjust the group position in the y axis,
+       * rather than scale with a different factor.
        */
       guint width, height;
       gint  group_x, group_y;

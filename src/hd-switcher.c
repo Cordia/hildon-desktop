@@ -38,6 +38,9 @@
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 
+/*
+ * FIXME -- these should be loaded from theme.
+ */
 #define BUTTON_IMAGE_SWITCHER "bg-image-switcher.png"
 #define BUTTON_IMAGE_LAUNCHER "bg-image-launcher.png"
 
@@ -48,15 +51,19 @@ enum
 
 struct _HdSwitcherPrivate
 {
-  ClutterActor         *switcher_group;
-  ClutterActor         *launcher_group;
   ClutterActor         *button_switcher;
   ClutterActor         *button_launcher;
+
+  ClutterActor         *status_area;
+
+  ClutterActor         *switcher_group;
+  ClutterActor         *launcher_group;
+
   MBWMCompMgrClutter   *comp_mgr;
 
   gboolean              showing_switcher : 1;
   gboolean              showing_launcher : 1;
-  gboolean              switcher_mode    : 1;
+  gboolean              switcher_mode    : 1; /* What button is visible */
 };
 
 static void hd_switcher_class_init (HdSwitcherClass *klass);
@@ -85,6 +92,7 @@ static void hd_switcher_setup_buttons (HdSwitcher * switcher,
 				       gboolean switcher_mode);
 
 static void hd_switcher_hide_switcher (HdSwitcher * switcher);
+static void hd_switcher_hide_launcher (HdSwitcher * switcher);
 
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, CLUTTER_TYPE_GROUP);
 
@@ -122,8 +130,8 @@ hd_switcher_constructed (GObject *object)
   guint              button_width, button_height;
 
   priv->switcher_group = g_object_new (HD_TYPE_SWITCHER_GROUP,
-				     "comp-mgr", priv->comp_mgr,
-				     NULL);
+				       "comp-mgr", priv->comp_mgr,
+				       NULL);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (self),
 			       priv->switcher_group);
@@ -175,6 +183,11 @@ hd_switcher_constructed (GObject *object)
 
   clutter_actor_get_size (priv->button_switcher,
 			  &button_width, &button_height);
+
+#if 0
+  priv->status_area = g_object_new ("HD_STATUS_AREA", NULL);
+  clutter_actor_set_position (priv->status_area, button_width, 0);
+#endif
 }
 
 static void
@@ -213,7 +226,6 @@ hd_switcher_set_property (GObject       *object,
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
-
     }
 }
 
@@ -242,12 +254,12 @@ hd_switcher_clicked (HdSwitcher *switcher)
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
   /*
-   * The following scenarios:
+   * We have the following scenarios:
    *
    * 1. Showing Switcher: the active button is the launch button; we
    *    shutdown the switcher and execute the launcher instead.
    *
-   * 2. Showing Switcher: the active button is the switcher button; we shutdown
+   * 2. Showing Launcher: the active button is the switcher button; we shutdown
    *    the the launcher and execute the switcher instead.
    *
    * 3. Neither switcher no launcher visible:
@@ -264,7 +276,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
        */
       hd_switcher_setup_buttons (switcher, TRUE);
 
-      /* TODO: here we activate the loader */
+      /* TODO: here we activate the launcher */
 #if 0
       clutter_actor_show_all (priv->launcher_group);
 #endif
@@ -273,13 +285,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
   else if (priv->showing_launcher ||
 	   (!priv->showing_switcher && priv->switcher_mode))
     {
-      Display *dpy = clutter_x11_get_default_display ();
-
-      priv->showing_launcher = FALSE;
-
-      /* TODO -- hide the launcher */
-
-      XUngrabPointer (dpy, CurrentTime);
+      hd_switcher_hide_launcher (switcher);
 
       priv->showing_switcher = TRUE;
 
@@ -297,12 +303,12 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
 {
   if (!actor)
     {
-      Window clutter_window;
-      Display *dpy = clutter_x11_get_default_display ();
-      int status;
+      ClutterActor *stage = clutter_stage_get_default();
+      Window         clutter_window;
+      Display       *dpy = clutter_x11_get_default_display ();
+      int            status;
 
-      clutter_window =
-	clutter_x11_get_stage_window (CLUTTER_STAGE (clutter_stage_get_default()));
+      clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
 
       status = XGrabPointer (dpy,
 			     clutter_window,
@@ -316,10 +322,12 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
     }
   else
     {
-      MBWindowManagerClient * c;
-      MBWindowManager       * wm;
+      MBWindowManagerClient *c;
+      MBWindowManager       *wm;
 
       c = g_object_get_data (G_OBJECT (actor), "HD-MBWindowManagerClient");
+      g_assert (c);
+
       wm = c->wmref;;
 
       mb_wm_activate_client (wm, c);
@@ -428,4 +436,19 @@ hd_switcher_hide_switcher (HdSwitcher * switcher)
    * the window actors were adopted by the switcher.
    */
   hd_comp_mgr_sync_stacking (HD_COMP_MGR (priv->comp_mgr));
+}
+
+static void
+hd_switcher_hide_launcher (HdSwitcher * switcher)
+{
+#if 0
+  /* FIXME once we have the launcher */
+  HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
+  Display           * dpy = clutter_x11_get_default_display ();
+
+  priv->showing_launcher = FALSE;
+
+  clutter_actor_hide_all (priv->launcher_group);
+  XUngrabPointer (dpy, CurrentTime);
+#endif
 }
