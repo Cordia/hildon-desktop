@@ -22,39 +22,35 @@
  */
 
 #include "hd-comp-mgr.h"
-#include "hd-window-actor.h"
-#include "hd-comp-window.h"
-#include "hd-mb-wm-props.h"
-#include "hd-stage.h"
-#include "hd-window-group.h"
+#include "hd-switcher.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-window-manager.h>
 #include <matchbox/core/mb-wm-client.h>
 
 #include <X11/extensions/Xcomposite.h>
+#include <X11/extensions/shape.h>
 
 #include <clutter/clutter-container.h>
-#include <clutter/clutter-x11.h>
+#include <clutter/x11/clutter-x11.h>
 
 static int hd_comp_mgr_init (MBWMObject *obj, va_list vap);
 static void hd_comp_mgr_class_init (MBWMObjectClass *klass);
 static void hd_comp_mgr_destroy (MBWMObject *obj);
 static void hd_comp_mgr_register_client (MBWMCompMgr *mgr, MBWindowManagerClient *c);
 static void hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c);
+static void hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c);
+
 static void hd_comp_mgr_turn_on (MBWMCompMgr *mgr);
-static void hd_comp_mgr_turn_off (MBWMCompMgr *mgr);
-static void hd_comp_mgr_render (MBWMCompMgr *mgr);
-static Bool hd_comp_mgr_handle_damage (XDamageNotifyEvent * xev, MBWMCompMgr *mgr);
 static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c, MBWMCompMgrClientEvent event);
-static void hd_comp_mgr_restack (MBWMCompMgr    *mgr);
+
+static void hd_comp_mgr_restack (MBWMCompMgr * mgr);
 
 struct HdCompMgrPrivate
 {
-  GHashTable   *windows;
+  ClutterActor *switcher_group;
 
-  ClutterActor *window_group;
-  ClutterActor *top_window_group;
+  gboolean      stack_sync : 1;
 };
 
 int
@@ -72,7 +68,7 @@ hd_comp_mgr_class_type ()
         hd_comp_mgr_class_init
       };
 
-      type = mb_wm_object_register_class (&info, MB_WM_TYPE_COMP_MGR, 0);
+      type = mb_wm_object_register_class (&info, MB_WM_TYPE_COMP_MGR_CLUTTER, 0);
     }
 
   return type;
@@ -85,47 +81,38 @@ hd_comp_mgr_class_init (MBWMObjectClass *klass)
 
   cm_klass->register_client   = hd_comp_mgr_register_client;
   cm_klass->unregister_client = hd_comp_mgr_unregister_client;
-  cm_klass->turn_on           = hd_comp_mgr_turn_on;
-  cm_klass->turn_off          = hd_comp_mgr_turn_off;
-  cm_klass->render            = hd_comp_mgr_render;
-  cm_klass->handle_damage     = hd_comp_mgr_handle_damage;
   cm_klass->client_event      = hd_comp_mgr_effect;
+  cm_klass->turn_on           = hd_comp_mgr_turn_on;
+  cm_klass->map_notify        = hd_comp_mgr_map_notify;
   cm_klass->restack           = hd_comp_mgr_restack;
+
+#if MBWM_WANT_DEBUG
+  klass->klass_name = "HDCompMgr";
+#endif
 }
 
 static int
 hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 {
-  HdCompMgr            *mgr = HD_COMP_MGR (obj);
+  MBWMCompMgr          *cmgr = MB_WM_COMP_MGR (obj);
+  MBWindowManager      *wm = cmgr->wm;
+  HdCompMgr            *hmgr = HD_COMP_MGR (obj);
   HdCompMgrPrivate     *priv;
-  HdMbWmProp            prop;
+  ClutterActor         *stage, *switcher;
 
-  priv = mgr->priv = g_new0 (HdCompMgrPrivate, 1);
+  priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
 
-  priv->windows = g_hash_table_new_full (g_direct_hash,
-                                         g_direct_equal,
-                                         NULL,
-                                         NULL
-                                         /*(GDestroyNotify)mb_wm_object_unref*/);
+  priv->switcher_group = switcher = g_object_new (HD_TYPE_SWITCHER,
+						  "comp-mgr", cmgr,
+						  NULL);
 
-  prop = va_arg (vap, HdMbWmProp);
+  clutter_actor_set_size (switcher, wm->xdpy_width, wm->xdpy_height);
 
-  while (prop)
-    {
-      switch (prop)
-        {
-          case HdMbWmPropWindowGroup:
-              priv->window_group = va_arg (vap, ClutterActor *);
-              break;
-          case HdMbWmPropTopWindowGroup:
-              priv->top_window_group = va_arg (vap, ClutterActor *);
-              break;
-          default:
-              MBWMO_PROP_EAT (vap, prop);
-        }
+  clutter_actor_show (switcher);
 
-      prop = va_arg (vap, MBWMObjectProp);
-    }
+  stage = clutter_stage_get_default ();
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (stage), switcher);
 
   return 1;
 }
@@ -136,114 +123,161 @@ hd_comp_mgr_destroy (MBWMObject *obj)
 }
 
 static void
-hd_comp_mgr_register_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
+hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry * geom)
 {
-  HdCompMgrPrivate     *priv = HD_COMP_MGR (mgr)->priv;
-  static Window         overlay = None;
-  static Window         stage_window = None;
-  MBWMObject           *client;
-  Display              *dpy = c->wmref->xdpy;
-  ClutterActor         *actor;
+  XserverRegion      region;
+  Window             overlay;
+  Window             clutter_window;
+  XRectangle         rectangle;
+  MBWMCompMgr      * mgr = MB_WM_COMP_MGR (hmgr);
+  MBWindowManager  * wm = mgr->wm;
+  Display          * xdpy = wm->xdpy;
 
-  client = g_hash_table_lookup (priv->windows, c);
-  if (client)
-    return;
+  overlay = XCompositeGetOverlayWindow (xdpy, wm->root_win->xwindow);
 
-  if (overlay == None)
-    overlay = XCompositeGetOverlayWindow (dpy,
-                                          RootWindow (dpy, DefaultScreen (dpy)));
+  XSelectInput (xdpy,
+                overlay,
+                FocusChangeMask |
+                ExposureMask |
+                PropertyChangeMask |
+                ButtonPressMask | ButtonReleaseMask |
+                KeyPressMask | KeyReleaseMask);
 
-  if (stage_window == None)
-    stage_window =
-        clutter_x11_get_stage_window (CLUTTER_STAGE (hd_get_default_stage ()));
+  rectangle.x      = geom->x;
+  rectangle.y      = geom->y;
+  rectangle.width  = geom->width;
+  rectangle.height = geom->height;
 
-  if (overlay == c->window->xwindow)
-    return;
+  region = XFixesCreateRegion (wm->xdpy, &rectangle, 1);
 
-  if (stage_window == c->window->xwindow)
-    return;
+  XFixesSetWindowShapeRegion (xdpy,
+                              overlay,
+                              ShapeBounding,
+                              0, 0,
+                              None);
 
-  actor = g_object_new (HD_TYPE_WINDOW_ACTOR,
-                        "opacity", 0,
-                        NULL);
+  XFixesSetWindowShapeRegion (xdpy,
+                              overlay,
+                              ShapeInput,
+                              0, 0,
+                              region);
 
-  if (c->window->net_type ==
-      c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NORMAL] &&
-      !c->window->override_redirect)
-    clutter_container_add_actor (CLUTTER_CONTAINER (priv->window_group), actor);
-  else
-    {
-      MBGeometry r = {0};
+  clutter_window =
+    clutter_x11_get_stage_window (CLUTTER_STAGE (clutter_stage_get_default()));
 
-      mb_wm_client_get_coverage (c, &r);
-      clutter_container_add_actor (CLUTTER_CONTAINER (priv->top_window_group),
-                                   actor);
-      clutter_actor_set_position (actor, r.x, r.y);
-      clutter_actor_set_size (actor, r.width, r.height);
-    }
+  XSelectInput (xdpy,
+                clutter_window,
+                FocusChangeMask |
+                ExposureMask |
+                PropertyChangeMask |
+                ButtonPressMask | ButtonReleaseMask |
+                KeyPressMask | KeyReleaseMask);
 
-  client = mb_wm_object_new (HD_TYPE_COMP_WINDOW,
-                             MBWMObjectPropClient, c,
-                             HdMbWmPropActor, actor,
-                             NULL);
+  XFixesSetWindowShapeRegion (xdpy,
+                              clutter_window,
+                              ShapeBounding,
+                              0, 0,
+                              None);
 
-  g_object_set (actor,
-                "comp-window", client,
-                NULL);
+  XFixesSetWindowShapeRegion (xdpy,
+                              clutter_window,
+                              ShapeInput,
+                              0, 0,
+                              region);
 
-  c->cm_client = MB_WM_COMP_MGR_CLIENT (client);
-
-  g_hash_table_insert (priv->windows, c, client);
-
-}
-
-static void
-hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
-{
-  HdCompMgrPrivate     *priv = HD_COMP_MGR (mgr)->priv;
-  gboolean              removed;
-
-  removed = g_hash_table_remove (priv->windows, c);
-
+  XFixesDestroyRegion (xdpy, region);
 }
 
 static void
 hd_comp_mgr_turn_on (MBWMCompMgr *mgr)
 {
-  MBWindowManager             * wm = mgr->wm;
-  mgr->disabled = False;
+  ClutterGeometry    geom;
+  HdCompMgrPrivate * priv = HD_COMP_MGR (mgr)->priv;
+  MBWMCompMgrClass * parent_klass =
+    MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
 
-  XCompositeRedirectSubwindows (wm->xdpy,
-                                wm->root_win->xwindow,
-                                CompositeRedirectManual);
+  if (parent_klass->turn_on)
+    parent_klass->turn_on (mgr);
+
+  hd_switcher_get_button_geometry (HD_SWITCHER (priv->switcher_group), &geom);
+
+  hd_comp_mgr_setup_input_viewport (HD_COMP_MGR (mgr), &geom);
 }
 
 static void
-hd_comp_mgr_turn_off (MBWMCompMgr *mgr)
+hd_comp_mgr_register_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
-  MBWindowManager             * wm = mgr->wm;
+  MBWMCompMgrClass * parent_klass =
+    MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
 
-  XCompositeUnredirectSubwindows (wm->xdpy,
-                                  wm->root_win->xwindow,
-                                  CompositeRedirectManual);
+  if (parent_klass->register_client)
+    parent_klass->register_client (mgr, c);
 }
 
 static void
-hd_comp_mgr_render (MBWMCompMgr *mgr)
+hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
+  HdCompMgrPrivate         * priv = HD_COMP_MGR (mgr)->priv;
+  MBWMCompMgrClass         * parent_klass =
+    MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
+
+  /*
+   * If the actor is an appliation, remove it also to the switcher
+   *
+   * FIXME: will need to do this for notifications as well.
+   */
+  if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeApp)
+    {
+      MBWMCompMgrClutterClient * cclient;
+      ClutterActor             * actor;
+
+      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+
+      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+
+      hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
+				       actor);
+
+      g_object_set_data (G_OBJECT (actor),
+			 "HD-MBWindowManagerClient", NULL);
+    }
+
+  if (parent_klass->unregister_client)
+    parent_klass->unregister_client (mgr, c);
 }
 
-static Bool
-hd_comp_mgr_handle_damage (XDamageNotifyEvent * xev, MBWMCompMgr *mgr)
+static void
+hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
-  MBWindowManagerClient * c;
+  ClutterActor             * actor;
+  HdCompMgrPrivate         * priv = HD_COMP_MGR (mgr)->priv;
+  MBWMCompMgrClutterClient * cclient;
+  MBWMCompMgrClass         * parent_klass =
+    MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
 
-  c = mb_wm_managed_client_from_frame (mgr->wm, xev->drawable);
+  /*
+   * This results in the actual actor being created for the client
+   * by our parent class
+   */
+  if (parent_klass->map_notify)
+    parent_klass->map_notify (mgr, c);
 
-  if (c && c->cm_client)
-    mb_wm_comp_mgr_client_repair (c->cm_client);
+  /*
+   * If the actor is an appliation, add it also to the switcher
+   *
+   * FIXME: will need to do this for notifications as well.
+   */
+  if (MB_WM_CLIENT_CLIENT_TYPE (c) != MBWMClientTypeApp)
+    return;
 
-  return False;
+  cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+
+  g_object_set_data (G_OBJECT (actor),
+		     "HD-MBWindowManagerClient", c);
+
+  hd_switcher_add_window_actor (HD_SWITCHER (priv->switcher_group), actor);
 }
 
 static void
@@ -251,18 +285,41 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                     MBWindowManagerClient      *c,
                     MBWMCompMgrClientEvent      event)
 {
-  HdCompMgrPrivate     *priv;
-  HdCompWindow         *window;
-
-  priv = HD_COMP_MGR (mgr)->priv;
-  window = g_hash_table_lookup (priv->windows, c);
-
-  if (window)
-    hd_comp_window_effect (window, event);
-
 }
 
 static void
-hd_comp_mgr_restack (MBWMCompMgr    *mgr)
+hd_comp_mgr_restack (MBWMCompMgr * mgr)
 {
+  HdCompMgrPrivate         * priv = HD_COMP_MGR (mgr)->priv;
+  MBWMCompMgrClass         * parent_klass =
+    MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
+
+  /*
+   * We use the parent class restack() method to do the stacking, but as our
+   * switcher shares actors with the CM, we cannot run this when the switcher
+   * is showing; instead we set a flag, and let the switcher request stack
+   * sync when it closes.
+   */
+  if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
+    {
+      priv->stack_sync = TRUE;
+    }
+  else
+    {
+      if (parent_klass->restack)
+	parent_klass->restack (mgr);
+    }
 }
+
+void
+hd_comp_mgr_sync_stacking (HdCompMgr * hmgr)
+{
+  HdCompMgrPrivate * priv = hmgr->priv;
+
+  if (priv->stack_sync)
+    {
+      priv->stack_sync = FALSE;
+      hd_comp_mgr_restack (MB_WM_COMP_MGR (hmgr));
+    }
+}
+

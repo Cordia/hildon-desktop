@@ -1,3 +1,7 @@
+2008-05-22  Tomas Frydrych  <tf@o-hand.com>
+
+	Simplified compositor by subclassing MBWM2's Clutter compositor.
+
 2008-05-14  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-comp-window.c:

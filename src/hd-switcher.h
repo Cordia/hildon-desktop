@@ -56,6 +56,17 @@ struct _HdSwitcher
 
 GType hd_switcher_get_type (void);
 
+void hd_switcher_add_window_actor    (HdSwitcher   * switcher,
+				      ClutterActor * actor);
+
+void hd_switcher_remove_window_actor (HdSwitcher   * switcher,
+				      ClutterActor * actor);
+
+void hd_switcher_get_button_geometry (HdSwitcher      * switcher,
+				      ClutterGeometry * geom);
+
+gboolean hd_switcher_showing_switcher (HdSwitcher * switcher);
+
 G_END_DECLS
 
 #endif

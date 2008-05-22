@@ -26,6 +26,7 @@
 #include <glib/gmacros.h>
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
+#include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 
 G_BEGIN_DECLS
 
@@ -39,17 +40,19 @@ typedef struct HdCompMgrPrivate HdCompMgrPrivate;
 
 struct HdCompMgr
 {
-  MBWMCompMgr           parent;
+  MBWMCompMgrClutter    parent;
 
   HdCompMgrPrivate     *priv;
 };
 
 struct HdCompMgrClass
 {
-    MBWMCompMgrClass parent;
+    MBWMCompMgrClutterClass parent;
 };
 
 int hd_comp_mgr_class_type (void);
+
+void hd_comp_mgr_sync_stacking (HdCompMgr * hmgr);
 
 G_END_DECLS
 
