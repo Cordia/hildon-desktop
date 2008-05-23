@@ -24,6 +24,7 @@
 
 #include "hd-comp-mgr.h"
 #include "hd-switcher.h"
+#include "hd-home.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-window-manager.h>
@@ -42,17 +43,18 @@ static void hd_comp_mgr_class_init (MBWMObjectClass *klass);
 static void hd_comp_mgr_destroy (MBWMObject *obj);
 static void hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c);
 static void hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c);
-
 static void hd_comp_mgr_turn_on (MBWMCompMgr *mgr);
 static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c, MBWMCompMgrClientEvent event);
-
 static void hd_comp_mgr_restack (MBWMCompMgr * mgr);
+static void hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor);
 
 struct HdCompMgrPrivate
 {
   ClutterActor *switcher_group;
+  ClutterActor *home;
 
-  gboolean      stack_sync : 1;
+  gboolean      showing_home : 1;
+  gboolean      stack_sync   : 1;
 };
 
 int
@@ -100,21 +102,37 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   MBWindowManager      *wm = cmgr->wm;
   HdCompMgr            *hmgr = HD_COMP_MGR (obj);
   HdCompMgrPrivate     *priv;
-  ClutterActor         *stage, *switcher;
+  ClutterActor         *stage, *switcher, *home;
 
   priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
+
+  stage = clutter_stage_get_default ();
 
   priv->switcher_group = switcher = g_object_new (HD_TYPE_SWITCHER,
 						  "comp-mgr", cmgr,
 						  NULL);
 
   clutter_actor_set_size (switcher, wm->xdpy_width, wm->xdpy_height);
-
   clutter_actor_show (switcher);
 
-  stage = clutter_stage_get_default ();
-
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), switcher);
+
+  /*
+   * Add the home group to stage and push it to the bottom of the actor
+   * stack.
+   */
+  home = priv->home =
+    g_object_new (HD_TYPE_HOME, "comp-mgr", cmgr, NULL);
+
+  clutter_actor_set_reactive (home, TRUE);
+
+  g_signal_connect_swapped (home, "button-release-event",
+                            G_CALLBACK (hd_comp_mgr_home_clicked),
+                            cmgr);
+
+  clutter_actor_show (home);
+  clutter_container_add_actor (CLUTTER_CONTAINER (stage), home);
+  clutter_actor_lower_bottom (home);
 
   return 1;
 }
@@ -383,3 +401,31 @@ hd_comp_mgr_sync_stacking (HdCompMgr * hmgr)
     }
 }
 
+void
+hd_comp_mgr_raise_home_actor (HdCompMgr *hmgr)
+{
+  HdCompMgrPrivate * priv = hmgr->priv;
+
+  clutter_actor_lower (priv->home, priv->switcher_group);
+}
+
+void
+hd_comp_mgr_lower_home_actor (HdCompMgr *hmgr)
+{
+  HdCompMgrPrivate * priv = hmgr->priv;
+
+  clutter_actor_lower_bottom (priv->home);
+}
+
+static void
+hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor)
+{
+  hd_comp_mgr_top_home (hmgr);
+}
+
+void
+hd_comp_mgr_top_home (HdCompMgr *hmgr)
+{
+  /* TODO */
+  g_print ("topping home\n");
+}

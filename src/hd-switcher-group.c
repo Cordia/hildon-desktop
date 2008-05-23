@@ -246,8 +246,6 @@ hd_switcher_group_init (HdSwitcherGroup *self)
 
   priv->close_button =
     clutter_texture_new_from_file (CLOSE_BUTTON, &error);
-
-  clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
 }
 
 static void

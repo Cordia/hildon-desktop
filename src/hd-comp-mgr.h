@@ -52,7 +52,10 @@ struct HdCompMgrClass
 
 int hd_comp_mgr_class_type (void);
 
-void hd_comp_mgr_sync_stacking (HdCompMgr * hmgr);
+void hd_comp_mgr_sync_stacking       (HdCompMgr * hmgr);
+void hd_comp_mgr_raise_home_actor    (HdCompMgr *hmgr);
+void hd_comp_mgr_lower_home_actor    (HdCompMgr *hmgr);
+void hd_comp_mgr_top_home            (HdCompMgr *hmgr);
 
 G_END_DECLS
 
