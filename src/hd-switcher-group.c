@@ -400,7 +400,6 @@ hd_switcher_group_show_all (ClutterActor *self)
 {
   HdSwitcherGroupPrivate *priv = HD_SWITCHER_GROUP (self)->priv;
   GList                  *l;
-  ClutterActor           *arena;
 
   l = priv->children;
 
@@ -450,16 +449,6 @@ hd_switcher_group_show_all (ClutterActor *self)
       l = l->next;
     }
 
-  /*
-   * We have to hide the CM arena group, so that any clients we did not
-   * reparent to ourselves become invisible.
-   *
-   * TODO -- this is temporary fix; once we know how the Home views are
-   * implemented we just bring the View actor immediately below ourselves.
-   */
-  arena = mb_wm_comp_mgr_clutter_get_arena (priv->comp_mgr);
-  clutter_actor_hide (arena);
-
   hd_switcher_group_place (HD_SWITCHER_GROUP (self));
 
   clutter_actor_set_position (self, 0, 0);
@@ -476,10 +465,6 @@ hd_switcher_group_hide_all (ClutterActor *self)
 {
   HdSwitcherGroupPrivate *priv = HD_SWITCHER_GROUP (self)->priv;
   GList                  *l;
-  MBWMCompMgrClutter     *cmgr;
-  ClutterActor           *arena;
-
-  g_object_get (G_OBJECT (self), "comp-mgr", &cmgr, NULL);
 
   l = priv->children;
 
@@ -506,14 +491,6 @@ hd_switcher_group_hide_all (ClutterActor *self)
 
       l = l->next;
     }
-
-  /*
-   * Make the arena visible again.
-   *
-   * TODO -- temporary fix; see comments in _show_all().
-   */
-  arena = mb_wm_comp_mgr_clutter_get_arena (priv->comp_mgr);
-  clutter_actor_show (arena);
 
   clutter_actor_hide (self);
 }

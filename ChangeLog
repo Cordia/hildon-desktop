@@ -1,4 +1,12 @@
-2008-05-22  Tomas Frydrych  <tf@o-hand.com>
+2008-05-23  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-switcher-group.c:
+	(hd_switcher_group_show_all):
+	(hd_switcher_group_hide_all):
+	Removed temporary workaround not necessary now that HdHome is
+	present.
+
+2008-05-23  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/Makefile.am:
 	* src/hd-home.h:
