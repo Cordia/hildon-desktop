@@ -11,6 +11,8 @@ hildon_desktop_SOURCES = \
 	hd-switcher-group.h \
 	hd-switcher.c \
 	hd-switcher.h \
+	hd-home.c \
+	hd-home.h \
 	main.c
 
 hildon_desktop_LDADD = $(HD_LIBS)

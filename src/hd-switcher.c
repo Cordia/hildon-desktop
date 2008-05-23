@@ -29,6 +29,7 @@
 #include "hd-switcher.h"
 #include "hd-switcher-group.h"
 #include "hd-comp-mgr.h"
+#include "hd-home.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -55,6 +56,7 @@ struct _HdSwitcherPrivate
   ClutterActor         *button_launcher;
 
   ClutterActor         *status_area;
+  ClutterActor         *home;
 
   ClutterActor         *switcher_group;
   ClutterActor         *launcher_group;
@@ -126,6 +128,8 @@ hd_switcher_constructed (GObject *object)
 {
   GError            *error = NULL;
   ClutterActor      *self = CLUTTER_ACTOR (object);
+  ClutterActor      *stage = clutter_stage_get_default();
+  ClutterActor      *home;
   HdSwitcherPrivate *priv = HD_SWITCHER (object)->priv;
   guint              button_width, button_height;
 
@@ -188,6 +192,17 @@ hd_switcher_constructed (GObject *object)
   priv->status_area = g_object_new ("HD_STATUS_AREA", NULL);
   clutter_actor_set_position (priv->status_area, button_width, 0);
 #endif
+
+  /*
+   * Add the home group to stage and push it to the bottom of the actor
+   * stack.
+   */
+  home = priv->home =
+    g_object_new (HD_TYPE_HOME, "comp-mgr", priv->comp_mgr, NULL);
+
+  clutter_actor_show (home);
+  clutter_container_add_actor (CLUTTER_CONTAINER (stage), home);
+  clutter_actor_lower_bottom (home);
 }
 
 static void
@@ -289,6 +304,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
 
       priv->showing_switcher = TRUE;
 
+      clutter_actor_lower (priv->home, CLUTTER_ACTOR (switcher));
       clutter_actor_show_all (priv->switcher_group);
 
       /*
@@ -430,6 +446,8 @@ hd_switcher_hide_switcher (HdSwitcher * switcher)
 
   clutter_actor_hide_all (priv->switcher_group);
   XUngrabPointer (dpy, CurrentTime);
+
+  clutter_actor_lower_bottom (priv->home);
 
   /*
    * Now request stack sync from the CM, in case there were some changes while
