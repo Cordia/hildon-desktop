@@ -2,6 +2,13 @@
 
 	* src/hd-comp-mgr.c:
 	* src/hd-comp-mgr.h:
+	* src/hd-switcher-group.c:
+	Start of implementation of hibernation infrastructure.
+	
+2008-05-23  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-comp-mgr.c:
+	* src/hd-comp-mgr.h:
 	* src/hd-switcher.c:
 	Moved HdHome object from HdSwitcher into the CM; handle events on
 	the Home actor.

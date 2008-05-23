@@ -48,10 +48,18 @@ static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c, MBWM
 static void hd_comp_mgr_restack (MBWMCompMgr * mgr);
 static void hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor);
 
+/* Keep in sync with the last flag in mb_wm_comp_mgr_clutter.h */
+typedef enum
+{
+  HdCompMgrFlagHibernating = ((gulong)MBWMCompMgrClutterClientEffectRunning<<1),
+} HdCompMgrFlags;
+
 struct HdCompMgrPrivate
 {
   ClutterActor *switcher_group;
   ClutterActor *home;
+
+  GList        *hibernating_apps;
 
   gboolean      showing_home : 1;
   gboolean      stack_sync   : 1;
@@ -140,6 +148,17 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 static void
 hd_comp_mgr_destroy (MBWMObject *obj)
 {
+  GList            * l;
+  HdCompMgrPrivate * priv = HD_COMP_MGR (obj)->priv;
+
+  l = priv->hibernating_apps;
+  while (l)
+    {
+      mb_wm_object_unref (MB_WM_OBJECT (l->data));
+      l = l->next;
+    }
+
+  g_list_free (priv->hibernating_apps);
 }
 
 static void
@@ -231,21 +250,33 @@ hd_comp_mgr_turn_on (MBWMCompMgr *mgr)
 static void
 hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
-  HdCompMgrPrivate         * priv = HD_COMP_MGR (mgr)->priv;
-  MBWMCompMgrClass         * parent_klass =
+  MBWMCompMgrClutterClientFlags   flags;
+  HdCompMgrPrivate              * priv = HD_COMP_MGR (mgr)->priv;
+  MBWMCompMgrClass              * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
+  MBWMCompMgrClutterClient      * cclient =
+    MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
 
+  flags = mb_wm_comp_mgr_clutter_client_get_flags (cclient);
+
+  if (flags & HdCompMgrFlagHibernating)
+    {
+      /*
+       * We want to hold onto the CM client object, so we can continue using
+       * the actor.
+       */
+      mb_wm_object_ref (MB_WM_OBJECT (cclient));
+
+      priv->hibernating_apps = g_list_prepend (priv->hibernating_apps, cclient);
+    }
   /*
-   * If the actor is an appliation, remove it also to the switcher
+   * If the actor is an application, remove it also to the switcher
    *
    * FIXME: will need to do this for notifications as well.
    */
-  if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeApp)
+  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeApp)
     {
-      MBWMCompMgrClutterClient * cclient;
       ClutterActor             * actor;
-
-      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
 
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
@@ -288,7 +319,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
   g_object_set_data (G_OBJECT (actor),
-		     "HD-MBWindowManagerClient", c);
+		     "HD-MBWMCompMgrClutterClient", cclient);
 
   hd_switcher_add_window_actor (HD_SWITCHER (priv->switcher_group), actor);
 }
@@ -429,3 +460,42 @@ hd_comp_mgr_top_home (HdCompMgr *hmgr)
   /* TODO */
   g_print ("topping home\n");
 }
+
+/*
+ * Shuts down a client, handling hibernated applications correctly.
+ */
+void
+hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
+{
+  MBWMCompMgrClutterClientFlags   flags;
+  HdCompMgrPrivate              * priv = hmgr->priv;
+
+  flags = mb_wm_comp_mgr_clutter_client_get_flags (cc);
+
+  if (flags & HdCompMgrFlagHibernating)
+    {
+      ClutterActor * actor;
+
+      actor = mb_wm_comp_mgr_clutter_client_get_actor (cc);
+
+      hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
+				       actor);
+
+      mb_wm_object_unref (MB_WM_OBJECT (cc));
+    }
+  else
+    {
+      MBWindowManagerClient * c = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
+      mb_wm_client_deliver_delete (c);
+    }
+}
+
+void
+hd_comp_mgr_hibernate_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
+{
+  MBWMCompMgrClient * c = MB_WM_COMP_MGR_CLIENT (cc);
+
+  mb_wm_comp_mgr_clutter_client_set_flags (cc, HdCompMgrFlagHibernating);
+  mb_wm_client_deliver_delete (c->wm_client);
+}
+

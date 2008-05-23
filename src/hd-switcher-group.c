@@ -27,6 +27,7 @@
 #endif
 
 #include "hd-switcher-group.h"
+#include "hd-comp-mgr.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-wm-object.h>
@@ -384,11 +385,11 @@ hd_switcher_group_close_button_clicked (ClutterActor     *client_actor,
 					ClutterEvent     *event,
 					ClutterActor     *clicked_actor)
 {
-  MBWindowManagerClient * c;
+  MBWMCompMgrClutterClient * cc =
+    g_object_get_data (G_OBJECT (client_actor), "HD-MBWMCompMgrClutterClient");
+  MBWMCompMgr * mgr = MB_WM_COMP_MGR_CLIENT (cc)->wm->comp_mgr;
 
-  c = g_object_get_data (G_OBJECT (client_actor), "HD-MBWindowManagerClient");
-
-  mb_wm_client_deliver_delete (c);
+  hd_comp_mgr_close_client (HD_COMP_MGR (mgr), cc);
 
   return FALSE;
 }
