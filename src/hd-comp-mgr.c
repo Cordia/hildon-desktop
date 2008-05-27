@@ -25,6 +25,9 @@
 #include "hd-comp-mgr.h"
 #include "hd-switcher.h"
 #include "hd-home.h"
+#include "hd-dbus.h"
+#include "hd-atoms.h"
+#include "hd-util.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-window-manager.h>
@@ -38,7 +41,142 @@
 
 #define HDCM_UNMAP_DURATION 200
 
-static int hd_comp_mgr_init (MBWMObject *obj, va_list vap);
+struct HdCompMgrPrivate
+{
+  ClutterActor *switcher_group;
+  ClutterActor *home;
+
+  GList        *hibernating_apps;
+
+  Atom          atoms[_HD_ATOM_LAST];
+
+  gboolean      showing_home : 1;
+  gboolean      stack_sync   : 1;
+};
+
+/*
+ * A helper object to store manager's per-client data
+ */
+
+typedef enum
+{
+  HdCompMgrClientFlagHibernating  = (1 << 0),
+  HdCompMgrClientFlagCanHibernate = (1 << 1),
+} HdCompMgrClientFlags;
+
+struct HdCompMgrClientPrivate
+{
+  HdCompMgrClientFlags flags;
+};
+
+static MBWMCompMgrClient *
+hd_comp_mgr_client_new (MBWindowManagerClient * client)
+{
+  MBWMObject *c;
+
+  c = mb_wm_object_new (HD_TYPE_COMP_MGR_CLIENT,
+			MBWMObjectPropClient, client,
+			NULL);
+
+  return MB_WM_COMP_MGR_CLIENT (c);
+}
+
+static void
+hd_comp_mgr_client_class_init (MBWMObjectClass *klass)
+{
+#if MBWM_WANT_DEBUG
+  klass->klass_name = "HdCompMgrClient";
+#endif
+}
+
+static void
+hd_comp_mgr_client_process_hibernation_prop (HdCompMgrClient * hc)
+{
+  HdCompMgrClientPrivate * priv = hc->priv;
+  MBWindowManagerClient  * wm_client = MB_WM_COMP_MGR_CLIENT (hc)->wm_client;
+  HdCompMgr              * hmgr = HD_COMP_MGR (wm_client->wmref->comp_mgr);
+  Atom                   * hibernable = NULL;
+
+  /* NOTE:
+   *       the prop has no 'value'; if set the app is killable (hibernatable),
+   *       deletes to unset.
+   */
+  hibernable = hd_util_get_win_prop_data_and_validate
+                     (wm_client->wmref->xdpy,
+		      wm_client->window->xwindow,
+                      hmgr->priv->atoms[HD_ATOM_HILDON_APP_KILLABLE],
+                      XA_STRING,
+                      8,
+                      0,
+                      NULL);
+
+  if (!hibernable)
+    {
+      /*try the alias*/
+      hibernable = hd_util_get_win_prop_data_and_validate
+	            (wm_client->wmref->xdpy,
+		     wm_client->window->xwindow,
+                     hmgr->priv->atoms[HD_ATOM_HILDON_ABLE_TO_HIBERNATE],
+                     XA_STRING,
+                     8,
+                     0,
+                     NULL);
+    }
+
+  if (hibernable)
+    priv->flags |= HdCompMgrClientFlagCanHibernate;
+  else
+    priv->flags &= ~HdCompMgrClientFlagCanHibernate;
+
+  if (hibernable)
+    XFree (hibernable);
+}
+
+static int
+hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
+{
+  HdCompMgrClient *client = HD_COMP_MGR_CLIENT (obj);
+
+  client->priv =
+    mb_wm_util_malloc0 (sizeof (HdCompMgrClientPrivate));
+
+  hd_comp_mgr_client_process_hibernation_prop (client);
+
+  return 1;
+}
+
+static void
+hd_comp_mgr_client_destroy (MBWMObject* obj)
+{
+  HdCompMgrClient *client = HD_COMP_MGR_CLIENT (obj);
+
+  free (client->priv);
+}
+
+int
+hd_comp_mgr_client_class_type ()
+{
+  static int type = 0;
+
+  if (UNLIKELY(type == 0))
+    {
+      static MBWMObjectClassInfo info = {
+	sizeof (HdCompMgrClientClass),
+	sizeof (HdCompMgrClient),
+	hd_comp_mgr_client_init,
+	hd_comp_mgr_client_destroy,
+	hd_comp_mgr_client_class_init
+      };
+
+      type =
+	mb_wm_object_register_class (&info,
+				     MB_WM_TYPE_COMP_MGR_CLUTTER_CLIENT, 0);
+    }
+
+  return type;
+}
+
+static int  hd_comp_mgr_init (MBWMObject *obj, va_list vap);
 static void hd_comp_mgr_class_init (MBWMObjectClass *klass);
 static void hd_comp_mgr_destroy (MBWMObject *obj);
 static void hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c);
@@ -47,23 +185,6 @@ static void hd_comp_mgr_turn_on (MBWMCompMgr *mgr);
 static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c, MBWMCompMgrClientEvent event);
 static void hd_comp_mgr_restack (MBWMCompMgr * mgr);
 static void hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor);
-
-/* Keep in sync with the last flag in mb_wm_comp_mgr_clutter.h */
-typedef enum
-{
-  HdCompMgrFlagHibernating = ((gulong)MBWMCompMgrClutterClientEffectRunning<<1),
-} HdCompMgrFlags;
-
-struct HdCompMgrPrivate
-{
-  ClutterActor *switcher_group;
-  ClutterActor *home;
-
-  GList        *hibernating_apps;
-
-  gboolean      showing_home : 1;
-  gboolean      stack_sync   : 1;
-};
 
 int
 hd_comp_mgr_class_type ()
@@ -91,12 +212,16 @@ static void
 hd_comp_mgr_class_init (MBWMObjectClass *klass)
 {
   MBWMCompMgrClass *cm_klass = MB_WM_COMP_MGR_CLASS (klass);
+  MBWMCompMgrClutterClass * clutter_klass =
+    MB_WM_COMP_MGR_CLUTTER_CLASS (klass);
 
   cm_klass->unregister_client = hd_comp_mgr_unregister_client;
   cm_klass->client_event      = hd_comp_mgr_effect;
   cm_klass->turn_on           = hd_comp_mgr_turn_on;
   cm_klass->map_notify        = hd_comp_mgr_map_notify;
   cm_klass->restack           = hd_comp_mgr_restack;
+
+  clutter_klass->client_new   = hd_comp_mgr_client_new;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HDCompMgr";
@@ -113,6 +238,10 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   ClutterActor         *stage, *switcher, *home;
 
   priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
+
+  hd_atoms_init (wm->xdpy, priv->atoms);
+
+  hd_dbus_init (hmgr);
 
   stage = clutter_stage_get_default ();
 
@@ -250,16 +379,17 @@ hd_comp_mgr_turn_on (MBWMCompMgr *mgr)
 static void
 hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
-  MBWMCompMgrClutterClientFlags   flags;
+  HdCompMgrClientFlags            h_flags;
   HdCompMgrPrivate              * priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClass              * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
   MBWMCompMgrClutterClient      * cclient =
     MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+  HdCompMgrClient               * hclient = HD_COMP_MGR_CLIENT (c->cm_client);
 
-  flags = mb_wm_comp_mgr_clutter_client_get_flags (cclient);
+  h_flags = hclient->priv->flags;
 
-  if (flags & HdCompMgrFlagHibernating)
+  if (h_flags & HdCompMgrClientFlagHibernating)
     {
       /*
        * We want to hold onto the CM client object, so we can continue using
@@ -467,12 +597,12 @@ hd_comp_mgr_top_home (HdCompMgr *hmgr)
 void
 hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
 {
-  MBWMCompMgrClutterClientFlags   flags;
-  HdCompMgrPrivate              * priv = hmgr->priv;
+  HdCompMgrPrivate      * priv = hmgr->priv;
+  HdCompMgrClient       * h_client = HD_COMP_MGR_CLIENT (cc);
+  HdCompMgrClientFlags    h_flags = h_client->priv->flags;
 
-  flags = mb_wm_comp_mgr_clutter_client_get_flags (cc);
 
-  if (flags & HdCompMgrFlagHibernating)
+  if (h_flags & HdCompMgrClientFlagHibernating)
     {
       ClutterActor * actor;
 
@@ -493,9 +623,33 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
 void
 hd_comp_mgr_hibernate_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
 {
-  MBWMCompMgrClient * c = MB_WM_COMP_MGR_CLIENT (cc);
+  MBWMCompMgrClient * c  = MB_WM_COMP_MGR_CLIENT (cc);
+  HdCompMgrClient   * hc = HD_COMP_MGR_CLIENT (cc);
 
-  mb_wm_comp_mgr_clutter_client_set_flags (cc, HdCompMgrFlagHibernating);
+  mb_wm_comp_mgr_clutter_client_set_flags (cc,
+					   MBWMCompMgrClutterClientDontUpdate);
+
+  hc->priv->flags |= HdCompMgrClientFlagHibernating;
+
   mb_wm_client_deliver_delete (c->wm_client);
 }
 
+void
+hd_comp_mgr_hibernate_all (HdCompMgr *hmgr)
+{
+  MBWMCompMgr     * mgr = MB_WM_COMP_MGR (hmgr);
+  MBWindowManager * wm = mgr->wm;
+
+  if (!mb_wm_stack_empty (wm))
+    {
+      MBWindowManagerClient * c;
+
+      mb_wm_stack_enumerate (wm, c)
+	{
+	  MBWMCompMgrClutterClient * cc =
+	    MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+
+	  hd_comp_mgr_hibernate_client (hmgr, cc);
+	}
+    }
+}

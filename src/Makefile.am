@@ -13,6 +13,12 @@ hildon_desktop_SOURCES = \
 	hd-switcher.h \
 	hd-home.c \
 	hd-home.h \
+	hd-dbus.c \
+	hd-dbus.h \
+	hd-atoms.c \
+	hd-atoms.h \
+	hd-util.c \
+	hd-util.h \
 	main.c
 
 hildon_desktop_LDADD = $(HD_LIBS)

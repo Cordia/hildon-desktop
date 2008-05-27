@@ -31,6 +31,7 @@ AC_SUBST(CFLAGS)
 
 PKG_CHECK_MODULES(HD, clutter-0.7 \
                       glib-2.0 >= 2.12 \
+		      dbus-1 \
 		      x11 \
 		      xcomposite \
 		      xfixes \

@@ -22,6 +22,7 @@
  */
 
 #ifndef __HD_COMP_MGR_H__
+#define __HD_COMP_MGR_H__
 
 #include <glib/gmacros.h>
 #include <matchbox/core/mb-wm-object.h>
@@ -29,6 +30,29 @@
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 
 G_BEGIN_DECLS
+
+
+typedef struct HdCompMgrClientClass   HdCompMgrClientClass;
+typedef struct HdCompMgrClient        HdCompMgrClient;
+typedef struct HdCompMgrClientPrivate HdCompMgrClientPrivate;
+
+#define HD_COMP_MGR_CLIENT(c)       ((HdCompMgrClient*)(c))
+#define HD_COMP_MGR_CLIENT_CLASS(c) ((HdCompMgrClientClass*)(c))
+#define HD_TYPE_COMP_MGR_CLIENT     (hd_comp_mgr_client_class_type ())
+
+struct HdCompMgrClient
+{
+  MBWMCompMgrClutterClient    parent;
+
+  HdCompMgrClientPrivate     *priv;
+};
+
+struct HdCompMgrClientClass
+{
+    MBWMCompMgrClutterClientClass parent;
+};
+
+int hd_comp_mgr_client_class_type (void);
 
 typedef struct HdCompMgrClass   HdCompMgrClass;
 typedef struct HdCompMgr        HdCompMgr;
@@ -52,7 +76,7 @@ struct HdCompMgrClass
 
 int hd_comp_mgr_class_type (void);
 
-void hd_comp_mgr_sync_stacking       (HdCompMgr * hmgr);
+void hd_comp_mgr_sync_stacking       (HdCompMgr *hmgr);
 void hd_comp_mgr_raise_home_actor    (HdCompMgr *hmgr);
 void hd_comp_mgr_lower_home_actor    (HdCompMgr *hmgr);
 void hd_comp_mgr_top_home            (HdCompMgr *hmgr);
@@ -60,6 +84,8 @@ void hd_comp_mgr_close_client        (HdCompMgr *hmgr,
 				      MBWMCompMgrClutterClient *c);
 void hd_comp_mgr_hibernate_client    (HdCompMgr *hmgr,
 				      MBWMCompMgrClutterClient *c);
+
+void hd_comp_mgr_hibernate_all       (HdCompMgr *hmgr);
 
 G_END_DECLS
 
