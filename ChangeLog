@@ -1,5 +1,12 @@
 2008-05-28  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-comp-mgr.c:
+	* src/hd-comp-mgr.h:
+	* src/hd-switcher.c:
+	Waking up of hibernated applications via switcher.
+
+2008-05-28  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-dbus.c:
 	* src/hd-dbus.h:
 	(hd_dbus_launch_service):

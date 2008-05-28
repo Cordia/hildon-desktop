@@ -50,6 +50,8 @@
 #define OSSO_BUS_ROOT_PATH     "/com/nokia"
 #define OSSO_BUS_TOP           "top_application"
 
+static gchar * hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid);
+
 struct HdCompMgrPrivate
 {
   ClutterActor   *switcher_group;
@@ -78,9 +80,9 @@ typedef enum
 
 struct HdCompMgrClientPrivate
 {
-  guint hibernation_key;
-
-  HdCompMgrClientFlags flags;
+  guint                 hibernation_key;
+  gchar                *service;
+  HdCompMgrClientFlags  flags;
 };
 
 static MBWMCompMgrClient *
@@ -175,13 +177,17 @@ hd_comp_mgr_client_get_window_class (HdCompMgrClient * hc)
 static int
 hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
 {
-  HdCompMgrClient *client = HD_COMP_MGR_CLIENT (obj);
-  char            *role;
-  gchar           *klass;
-  gchar           *key = NULL;
+  HdCompMgrClient        *client = HD_COMP_MGR_CLIENT (obj);
+  HdCompMgrClientPrivate *priv;
+  HdCompMgr              *hmgr;
+  char                   *role;
+  gchar                  *klass;
+  gchar                  *key = NULL;
+  MBWindowManagerClient  *wm_client = MB_WM_COMP_MGR_CLIENT (obj)->wm_client;
 
-  client->priv =
-    mb_wm_util_malloc0 (sizeof (HdCompMgrClientPrivate));
+  hmgr = HD_COMP_MGR (wm_client->wmref->comp_mgr);
+
+  priv = client->priv = g_new0 (HdCompMgrClientPrivate, 1);
 
   /*
    * TODO -- if we need to query any more props, we should do that
@@ -201,7 +207,7 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
 
   if (key)
     {
-      client->priv->hibernation_key = g_str_hash (key);
+      priv->hibernation_key = g_str_hash (key);
       g_free (key);
     }
 
@@ -210,15 +216,20 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
   if (role)
     XFree (role);
 
+  priv->service =
+    hd_comp_mgr_service_from_xwindow (hmgr, wm_client->window->xwindow);
+
   return 1;
 }
 
 static void
 hd_comp_mgr_client_destroy (MBWMObject* obj)
 {
-  HdCompMgrClient *client = HD_COMP_MGR_CLIENT (obj);
+  HdCompMgrClientPrivate *priv = HD_COMP_MGR_CLIENT (obj)->priv;
 
-  free (client->priv);
+  g_free (priv->service);
+
+  g_free (priv);
 }
 
 int
@@ -242,6 +253,14 @@ hd_comp_mgr_client_class_type ()
     }
 
   return type;
+}
+
+gboolean
+hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient)
+{
+  HdCompMgrClientPrivate * priv = hclient->priv;
+
+  return ((priv->flags & HdCompMgrClientFlagHibernating) != FALSE);
 }
 
 static int  hd_comp_mgr_init (MBWMObject *obj, va_list vap);
@@ -766,6 +785,12 @@ hd_comp_mgr_hibernate_client (HdCompMgr *hmgr,
 }
 
 void
+hd_comp_mgr_wakeup_client (HdCompMgr *hmgr, HdCompMgrClient *hclient)
+{
+  hd_comp_mgr_launch_application (hmgr, hclient->priv->service, "RESTORE");
+}
+
+void
 hd_comp_mgr_hibernate_all (HdCompMgr *hmgr, gboolean force)
 {
   MBWMCompMgr     * mgr = MB_WM_COMP_MGR (hmgr);
@@ -835,4 +860,48 @@ hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
   g_free (service);
   g_free (path);
   g_free (tmp);
+}
+
+static gchar *
+hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid)
+{
+  MBWindowManager  *wm;
+/*   HdCompMgrPrivate *priv = hmgr->priv; */
+  gchar            *service;
+  XClassHint        class_hint;
+  Status            status = 0;
+
+  wm = MB_WM_COMP_MGR (hmgr)->wm;
+
+  memset(&class_hint, 0, sizeof(XClassHint));
+
+  mb_wm_util_trap_x_errors ();
+
+  status = XGetClassHint(wm->xdpy, xid, &class_hint);
+
+  if (mb_wm_util_untrap_x_errors () || !status || !class_hint.res_name)
+    goto out;
+
+  /*
+   * FIXME -- need to implement this bit once we have
+   * the desktop data store in place.
+   */
+#if 0
+  service = g_hash_table_lookup (apps,
+				(gconstpointer)class_hint.res_name);
+#else
+  service = NULL;
+#endif
+
+ out:
+  if (class_hint.res_class)
+    XFree(class_hint.res_class);
+
+  if (class_hint.res_name)
+    XFree(class_hint.res_name);
+
+  if (service)
+    return g_strdup (service);
+
+  return NULL;
 }

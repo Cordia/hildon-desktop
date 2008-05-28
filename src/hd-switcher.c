@@ -302,6 +302,8 @@ hd_switcher_clicked (HdSwitcher *switcher)
 static void
 hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
 {
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
   if (!actor)
     {
       ClutterActor *stage = clutter_stage_get_default();
@@ -325,13 +327,22 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
     {
       MBWindowManagerClient *c;
       MBWindowManager       *wm;
+      HdCompMgrClient       *hclient;
 
       c = g_object_get_data (G_OBJECT (actor), "HD-MBWindowManagerClient");
       g_assert (c);
 
-      wm = c->wmref;;
+      wm = c->wmref;
+      hclient = HD_COMP_MGR_CLIENT (c->cm_client);
 
-      mb_wm_activate_client (wm, c);
+      if (!hd_comp_mgr_client_is_hibernating (hclient))
+	{
+	  mb_wm_activate_client (wm, c);
+	}
+      else
+	{
+	  hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
+	}
 
       hd_switcher_hide_switcher (switcher);
       hd_switcher_setup_buttons (switcher, TRUE);

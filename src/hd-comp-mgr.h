@@ -54,6 +54,8 @@ struct HdCompMgrClientClass
 
 int hd_comp_mgr_client_class_type (void);
 
+gboolean hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient);
+
 typedef struct HdCompMgrClass   HdCompMgrClass;
 typedef struct HdCompMgr        HdCompMgr;
 typedef struct HdCompMgrPrivate HdCompMgrPrivate;
@@ -87,6 +89,9 @@ void hd_comp_mgr_hibernate_client    (HdCompMgr                *hmgr,
 				      gboolean                  force);
 
 void hd_comp_mgr_hibernate_all       (HdCompMgr *hmgr, gboolean force);
+
+void hd_comp_mgr_wakeup_client       (HdCompMgr       *hmgr,
+				      HdCompMgrClient *hclient);
 
 void hd_comp_mgr_set_low_memory_state (HdCompMgr * hmgr, gboolean on);
 
