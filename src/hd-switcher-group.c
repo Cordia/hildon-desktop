@@ -434,6 +434,10 @@ hd_switcher_group_show_all (ClutterActor *self)
       g_object_set_data (G_OBJECT (a), "HD-original-anchor-y",
 			 GINT_TO_POINTER (anchor_y));
 
+      /*
+       * FIXME -- need to set a viewport on the actor to mask out
+       * the decoration per the spec.
+       */
       clutter_actor_reparent (a, group);
       clutter_actor_set_reactive (a, TRUE);
       clutter_actor_show_all (a);
@@ -557,7 +561,7 @@ hd_switcher_group_replace_actor (HdSwitcherGroup *group,
 
   if (data->hibernation_icon)
     clutter_actor_hide (data->hibernation_icon);
-  
+
   /*
    * If the group is visible, we have reparent the new actor.
    */
