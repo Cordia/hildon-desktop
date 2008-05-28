@@ -1,3 +1,14 @@
+2008-05-28  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-atoms.c:
+	* src/hd-atoms.h:
+	* src/hd-comp-mgr.c:
+	* src/hd-switcher-group.c:
+	* src/hd-switcher-group.h:
+	* src/hd-switcher.c:
+	* src/hd-switcher.h:
+	Handle weaking up of hibernated applications.
+
 2008-05-27  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/Makefile.am:

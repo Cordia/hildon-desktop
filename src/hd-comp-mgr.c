@@ -51,7 +51,7 @@ struct HdCompMgrPrivate
   ClutterActor *switcher_group;
   ClutterActor *home;
 
-  GList        *hibernating_apps;
+  GHashTable   *hibernating_apps;
 
   Atom          atoms[_HD_ATOM_LAST];
 
@@ -71,6 +71,8 @@ typedef enum
 
 struct HdCompMgrClientPrivate
 {
+  guint hibernation_key;
+
   HdCompMgrClientFlags flags;
 };
 
@@ -137,15 +139,69 @@ hd_comp_mgr_client_process_hibernation_prop (HdCompMgrClient * hc)
     XFree (hibernable);
 }
 
+static char *
+hd_comp_mgr_client_get_window_role (HdCompMgrClient * hc)
+{
+  MBWindowManagerClient  * wm_client = MB_WM_COMP_MGR_CLIENT (hc)->wm_client;
+  HdCompMgr              * hmgr = HD_COMP_MGR (wm_client->wmref->comp_mgr);
+  char                   * role = NULL;
+
+  role = hd_util_get_win_prop_data_and_validate
+                     (wm_client->wmref->xdpy,
+		      wm_client->window->xwindow,
+                      hmgr->priv->atoms[HD_ATOM_WM_WINDOW_ROLE],
+                      XA_STRING,
+                      8,
+                      0,
+                      NULL);
+
+  return role;
+}
+
+static gchar *
+hd_comp_mgr_client_get_window_class (HdCompMgrClient * hc)
+{
+  gchar * klass = NULL;
+  return klass;
+}
+
 static int
 hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
 {
   HdCompMgrClient *client = HD_COMP_MGR_CLIENT (obj);
+  char            *role;
+  gchar           *klass;
+  gchar           *key = NULL;
 
   client->priv =
     mb_wm_util_malloc0 (sizeof (HdCompMgrClientPrivate));
 
+  /*
+   * TODO -- if we need to query any more props, we should do that
+   * asynchronously.
+   */
   hd_comp_mgr_client_process_hibernation_prop (client);
+
+  klass = hd_comp_mgr_client_get_window_class (client);
+  role  = hd_comp_mgr_client_get_window_role (client);
+
+  if (role && klass)
+    key = g_strconcat (klass, "/", role, NULL);
+  else if (klass)
+    key = g_strdup (klass);
+  else if (role)
+    key = g_strdup (role);
+
+  if (key)
+    {
+      client->priv->hibernation_key = g_str_hash (key);
+      g_free (key);
+    }
+
+  g_free (klass);
+
+  if (role)
+    XFree (role);
 
   return 1;
 }
@@ -276,23 +332,25 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), home);
   clutter_actor_lower_bottom (home);
 
+  /*
+   * Create a hash table for hibernating windows.
+   */
+  priv->hibernating_apps =
+    g_hash_table_new_full (g_int_hash,
+			   g_int_equal,
+			   NULL,
+			   (GDestroyNotify)mb_wm_object_unref);
+
   return 1;
 }
 
 static void
 hd_comp_mgr_destroy (MBWMObject *obj)
 {
-  GList            * l;
   HdCompMgrPrivate * priv = HD_COMP_MGR (obj)->priv;
 
-  l = priv->hibernating_apps;
-  while (l)
-    {
-      mb_wm_object_unref (MB_WM_OBJECT (l->data));
-      l = l->next;
-    }
-
-  g_list_free (priv->hibernating_apps);
+  if (priv->hibernating_apps)
+    g_hash_table_destroy (priv->hibernating_apps);
 }
 
 static void
@@ -384,6 +442,7 @@ hd_comp_mgr_turn_on (MBWMCompMgr *mgr)
 static void
 hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
+  ClutterActor                  * actor;
   HdCompMgrClientFlags            h_flags;
   HdCompMgrPrivate              * priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClass              * parent_klass =
@@ -394,6 +453,8 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   h_flags = hclient->priv->flags;
 
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+
   if (h_flags & HdCompMgrClientFlagHibernating)
     {
       /*
@@ -402,7 +463,12 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        */
       mb_wm_object_ref (MB_WM_OBJECT (cclient));
 
-      priv->hibernating_apps = g_list_prepend (priv->hibernating_apps, cclient);
+      g_hash_table_insert (priv->hibernating_apps,
+			   & hclient->priv->hibernation_key,
+			   hclient);
+
+      hd_switcher_hibernate_window_actor (HD_SWITCHER (priv->switcher_group),
+					  actor);
     }
   /*
    * If the actor is an application, remove it also to the switcher
@@ -411,10 +477,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    */
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeApp)
     {
-      ClutterActor             * actor;
-
-      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-
       hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
 				       actor);
 
@@ -434,6 +496,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   MBWMCompMgrClutterClient * cclient;
   MBWMCompMgrClass         * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
+  HdCompMgrClient          * hclient;
+  HdCompMgrClient          * hclient_h;
+  guint                      hkey;
 
   /*
    * Parent class map_notify creates the actor representing the client.
@@ -450,13 +515,32 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     return;
 
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
-
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
   g_object_set_data (G_OBJECT (actor),
 		     "HD-MBWMCompMgrClutterClient", cclient);
 
-  hd_switcher_add_window_actor (HD_SWITCHER (priv->switcher_group), actor);
+  hclient = HD_COMP_MGR_CLIENT (cclient);
+  hkey = hclient->priv->hibernation_key;
+
+  hclient_h = g_hash_table_lookup (priv->hibernating_apps, &hkey);
+
+  if (hclient_h)
+    {
+      ClutterActor             * actor_h;
+      MBWMCompMgrClutterClient * cclient_h;
+
+      cclient_h = MB_WM_COMP_MGR_CLUTTER_CLIENT (hclient_h);
+
+      actor_h = mb_wm_comp_mgr_clutter_client_get_actor (cclient_h);
+
+      hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group),
+					actor_h, actor);
+
+      g_hash_table_remove (priv->hibernating_apps, &hkey);
+    }
+  else
+    hd_switcher_add_window_actor (HD_SWITCHER (priv->switcher_group), actor);
 }
 
 typedef struct _HDEffectData

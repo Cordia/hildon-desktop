@@ -13,6 +13,8 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
   char *atom_names[] = {
     "_HILDON_APP_KILLABLE",	/* Hildon only props */
     "_HILDON_ABLE_TO_HIBERNATE",/* alias for the above */
+
+    "WM_WINDOW_ROLE",
   };
 
   XInternAtoms (xdpy,

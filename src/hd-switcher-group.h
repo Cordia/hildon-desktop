@@ -63,7 +63,14 @@ void hd_switcher_group_add_actor         (HdSwitcherGroup       *group,
 void hd_switcher_group_remove_actor      (HdSwitcherGroup       *group,
 					  ClutterActor          *actor);
 
+void hd_switcher_group_replace_actor      (HdSwitcherGroup      *group,
+					   ClutterActor         *old,
+					   ClutterActor         *new);
+
 gboolean hd_switcher_group_have_children (HdSwitcherGroup       *group);
+
+void hd_switcher_group_hibernate_actor (HdSwitcherGroup *group,
+					ClutterActor    *actor);
 
 G_END_DECLS
 

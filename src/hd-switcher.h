@@ -62,6 +62,14 @@ void hd_switcher_add_window_actor    (HdSwitcher   * switcher,
 void hd_switcher_remove_window_actor (HdSwitcher   * switcher,
 				      ClutterActor * actor);
 
+void hd_switcher_replace_window_actor (HdSwitcher   * switcher,
+				       ClutterActor * old,
+				       ClutterActor * new);
+
+void
+hd_switcher_hibernate_window_actor (HdSwitcher   * switcher,
+				    ClutterActor * actor);
+
 void hd_switcher_get_button_geometry (HdSwitcher      * switcher,
 				      ClutterGeometry * geom);
 

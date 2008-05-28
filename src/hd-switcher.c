@@ -378,6 +378,25 @@ hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor)
 }
 
 void
+hd_switcher_replace_window_actor (HdSwitcher   * switcher,
+				  ClutterActor * old,
+				  ClutterActor * new)
+{
+  HdSwitcherGroup *group = HD_SWITCHER_GROUP (switcher->priv->switcher_group);
+
+  hd_switcher_group_replace_actor (group, old, new);
+}
+
+void
+hd_switcher_hibernate_window_actor (HdSwitcher   * switcher,
+				    ClutterActor * actor)
+{
+  HdSwitcherGroup *group = HD_SWITCHER_GROUP (switcher->priv->switcher_group);
+
+  hd_switcher_group_hibernate_actor (group, actor);
+}
+
+void
 hd_switcher_get_button_geometry (HdSwitcher * switcher, ClutterGeometry * geom)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;

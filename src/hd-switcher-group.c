@@ -37,6 +37,7 @@
 #include <clutter/clutter.h>
 
 #define CLOSE_BUTTON "close-button.png"
+#define HIBERNATION_ICON "hibernating-icon.png"
 
 /* FIXME */
 #define ITEM_WIDTH      800
@@ -79,6 +80,8 @@ typedef struct
 {
   ClutterActor *actor;
   ClutterActor *close_button;
+  ClutterActor *hibernation_icon;
+
   ClutterActor *group;
 
   guint         click_handler;
@@ -148,6 +151,7 @@ struct _HdSwitcherGroupPrivate
   ClutterEffectTemplate        *zoom_template;
 
   ClutterActor                 *close_button;
+  ClutterActor                 *hibernation_icon;
 
   MBWMCompMgrClutter           *comp_mgr;
 
@@ -247,6 +251,9 @@ hd_switcher_group_init (HdSwitcherGroup *self)
 
   priv->close_button =
     clutter_texture_new_from_file (CLOSE_BUTTON, &error);
+
+  priv->hibernation_icon =
+    clutter_texture_new_from_file (HIBERNATION_ICON, &error);
 }
 
 static void
@@ -335,9 +342,9 @@ hd_switcher_group_child_button_release (HdSwitcherGroup    *group,
 void
 hd_switcher_group_add_actor (HdSwitcherGroup *group, ClutterActor *actor)
 {
-  HdSwitcherGroupPrivate *priv = HD_SWITCHER_GROUP (group)->priv;
-  ChildData              *data;
-  CoglHandle              handle;
+  HdSwitcherGroupPrivate   *priv = HD_SWITCHER_GROUP (group)->priv;
+  ChildData                *data;
+  CoglHandle                handle;
 
   data = hd_switcher_group_get_child_data (HD_SWITCHER_GROUP (group), actor);
 
@@ -356,6 +363,8 @@ hd_switcher_group_add_actor (HdSwitcherGroup *group, ClutterActor *actor)
 
   priv->children = g_list_append (priv->children, data);
 
+  data->group = clutter_group_new ();
+
   handle =
     clutter_texture_get_cogl_texture (CLUTTER_TEXTURE (priv->close_button));
 
@@ -365,8 +374,6 @@ hd_switcher_group_add_actor (HdSwitcherGroup *group, ClutterActor *actor)
 				    handle);
 
   clutter_actor_show (data->close_button);
-
-  data->group = clutter_group_new ();
 
   clutter_container_add_actor (CLUTTER_CONTAINER (data->group),
 			       data->close_button);
@@ -523,6 +530,48 @@ hd_switcher_group_remove_actor (HdSwitcherGroup *group, ClutterActor *actor)
     {
       hd_switcher_group_place (HD_SWITCHER_GROUP (group));
       hd_switcher_group_zoom (HD_SWITCHER_GROUP (group), NULL, FALSE);
+    }
+}
+
+void
+hd_switcher_group_replace_actor (HdSwitcherGroup *group,
+				 ClutterActor    *old,
+				 ClutterActor    *new)
+{
+  ChildData *data;
+
+  data = hd_switcher_group_get_child_data (HD_SWITCHER_GROUP (group), old);
+
+  if (!data)
+    return;
+
+  g_signal_handler_disconnect (old, data->click_handler);
+  data->actor = new;
+
+  clutter_actor_set_reactive (new, TRUE);
+
+  data->click_handler =
+      g_signal_connect_swapped (new, "button-release-event",
+                          G_CALLBACK (hd_switcher_group_child_button_release),
+			  group);
+
+  if (data->hibernation_icon)
+    clutter_actor_hide (data->hibernation_icon);
+  
+  /*
+   * If the group is visible, we have reparent the new actor.
+   */
+  if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (group)))
+    {
+      gint x, y;
+
+      clutter_actor_get_position (old, &x, &y);
+      clutter_actor_set_position (new, x, y);
+
+      clutter_container_remove_actor (CLUTTER_CONTAINER (data->group), old);
+      clutter_actor_reparent (new, data->group);
+      clutter_actor_lower_bottom (new);
+      clutter_actor_show (new);
     }
 }
 
@@ -683,3 +732,36 @@ hd_switcher_group_have_children (HdSwitcherGroup * group)
   return FALSE;
 }
 
+void
+hd_switcher_group_hibernate_actor (HdSwitcherGroup *group,
+				   ClutterActor    *actor)
+{
+  ChildData              *data;
+  CoglHandle              handle;
+  HdSwitcherGroupPrivate *priv = group->priv;
+
+  data = hd_switcher_group_get_child_data (HD_SWITCHER_GROUP (group), actor);
+
+  if (!data)
+    return;
+
+  if (data->hibernation_icon)
+    {
+      clutter_actor_show (data->hibernation_icon);
+      clutter_actor_raise_top (data->hibernation_icon);
+      return;
+    }
+
+  handle =
+    clutter_texture_get_cogl_texture (CLUTTER_TEXTURE(priv->hibernation_icon));
+
+  data->hibernation_icon = clutter_texture_new ();
+
+  clutter_texture_set_cogl_texture (CLUTTER_TEXTURE (data->hibernation_icon),
+				    handle);
+
+  clutter_actor_show (data->hibernation_icon);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (data->group),
+			       data->hibernation_icon);
+}
