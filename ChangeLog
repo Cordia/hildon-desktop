@@ -1,5 +1,19 @@
 2008-05-28  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-switcher-group.c:
+	(hd_switcher_group_show_all):
+	(hd_switcher_group_hide_all):
+	Setup vieport to mask out client decorations as requied by the UI
+	spec.
+
+	* src/hd-switcher.c:
+	(hd_switcher_item_selected):
+	* src/hd-comp-mgr.c:
+	(hd_comp_mgr_unregister_client):
+	Fixed incorrect GObject data key.
+
+2008-05-28  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hibernation-icon.png:
 	stub for an hibernation icon.
 

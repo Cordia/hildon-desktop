@@ -325,12 +325,17 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
     }
   else
     {
+      MBWMCompMgrClient     *cclient;
       MBWindowManagerClient *c;
       MBWindowManager       *wm;
       HdCompMgrClient       *hclient;
 
-      c = g_object_get_data (G_OBJECT (actor), "HD-MBWindowManagerClient");
-      g_assert (c);
+      cclient =
+	g_object_get_data (G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
+
+      g_assert (cclient);
+
+      c = cclient->wm_client;
 
       wm = c->wmref;
       hclient = HD_COMP_MGR_CLIENT (c->cm_client);

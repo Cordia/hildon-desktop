@@ -84,6 +84,11 @@ typedef struct
 
   ClutterActor *group;
 
+  gint          clip_x;
+  gint          clip_y;
+  gint          clip_width;
+  gint          clip_height;
+
   guint         click_handler;
 } ChildData;
 
@@ -418,6 +423,7 @@ hd_switcher_group_show_all (ClutterActor *self)
       ClutterActor * parent = clutter_actor_get_parent (a);
       gint           x, y, anchor_x, anchor_y;
       guint          width, height, close_width, close_height;
+      MBWMCompMgrClutterClient * cc;
 
       /*
        * Store the original position and parent of the actor, so we
@@ -434,10 +440,27 @@ hd_switcher_group_show_all (ClutterActor *self)
       g_object_set_data (G_OBJECT (a), "HD-original-anchor-y",
 			 GINT_TO_POINTER (anchor_y));
 
+      cc = g_object_get_data (G_OBJECT (a), "HD-MBWMCompMgrClutterClient");
+
       /*
-       * FIXME -- need to set a viewport on the actor to mask out
-       * the decoration per the spec.
+       * Set clip to match the application window (to remove decorations,
+       * per UI spec.
        */
+      if (cc)
+	{
+	  MBWindowManagerClient * client =
+	    MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
+	  MBGeometry            * geom = &client->window->geometry;
+
+	  data->clip_x      = geom->x;
+	  data->clip_y      = geom->y;
+	  data->clip_width  = geom->width;
+	  data->clip_height = geom->height;
+
+	  clutter_actor_set_clip (a,
+				  geom->x, geom->y, geom->width, geom->height);
+	}
+
       clutter_actor_reparent (a, group);
       clutter_actor_set_reactive (a, TRUE);
       clutter_actor_show_all (a);
@@ -445,7 +468,10 @@ hd_switcher_group_show_all (ClutterActor *self)
       clutter_actor_get_size (a, &width, &height);
       clutter_actor_get_size (close_button, &close_width, &close_height);
 
-      clutter_actor_set_position (close_button, width - close_width, 0);
+      clutter_actor_set_position (close_button,
+				data->clip_x + data->clip_width - close_width,
+				data->clip_y);
+
       clutter_actor_show (close_button);
       clutter_actor_raise_top (close_button);
       clutter_actor_set_reactive (close_button, TRUE);
@@ -494,10 +520,14 @@ hd_switcher_group_hide_all (ClutterActor *self)
       gint anchor_y =
 	GPOINTER_TO_INT (g_object_get_data (G_OBJECT (a),
 					    "HD-original-anchor-y"));
+      guint width;
+      guint height;
 
+      clutter_actor_get_size (a, &width, &height);
       clutter_actor_reparent (a, orig_parent);
       clutter_actor_set_anchor_point (a, anchor_x, anchor_y);
       clutter_actor_set_position (a, x, y);
+      clutter_actor_set_clip (a, 0, 0, (gint)width, (gint)height);
 
       l = l->next;
     }

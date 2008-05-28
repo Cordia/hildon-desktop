@@ -507,7 +507,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 				       actor);
 
       g_object_set_data (G_OBJECT (actor),
-			 "HD-MBWindowManagerClient", NULL);
+			 "HD-MBWMCompMgrClutterClient", NULL);
     }
 
   if (parent_klass->unregister_client)
