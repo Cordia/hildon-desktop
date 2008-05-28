@@ -39,7 +39,12 @@
 #include <clutter/clutter-container.h>
 #include <clutter/x11/clutter-x11.h>
 
+#include <sys/types.h>
+#include <signal.h>
+
 #define HDCM_UNMAP_DURATION 200
+
+#define HIBERNATION_TIMEMOUT 3000 /* as suggested by 31410#10 */
 
 struct HdCompMgrPrivate
 {
@@ -591,6 +596,27 @@ hd_comp_mgr_top_home (HdCompMgr *hmgr)
   g_print ("topping home\n");
 }
 
+static gboolean
+hd_comp_mgr_client_shutdown_timeout_cb (gpointer data)
+{
+  pid_t pid = GPOINTER_TO_INT (data);
+
+  if (pid && !kill (pid, 0))
+    {
+      /* app did not exit in response to delete protocol, kill it */
+
+      if (kill (pid, SIGKILL))
+        {
+	  /* Something went wrong, perhaps we do not have sufficient
+	   * permissions to kill this process
+	   */
+	  g_warning ("SIGKILL failed on pid %d.", pid);
+        }
+    }
+
+  return FALSE;
+}
+
 /*
  * Shuts down a client, handling hibernated applications correctly.
  */
@@ -616,26 +642,40 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
   else
     {
       MBWindowManagerClient * c = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
+
+      g_timeout_add (HIBERNATION_TIMEMOUT,
+                     (GSourceFunc) hd_comp_mgr_client_shutdown_timeout_cb,
+                     GINT_TO_POINTER (c->window->pid));
+
       mb_wm_client_deliver_delete (c);
     }
 }
 
 void
-hd_comp_mgr_hibernate_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
+hd_comp_mgr_hibernate_client (HdCompMgr *hmgr,
+			      MBWMCompMgrClutterClient *cc,
+			      gboolean force)
 {
   MBWMCompMgrClient * c  = MB_WM_COMP_MGR_CLIENT (cc);
   HdCompMgrClient   * hc = HD_COMP_MGR_CLIENT (cc);
+
+  if (!force && !(hc->priv->flags & HdCompMgrClientFlagCanHibernate))
+    return;
 
   mb_wm_comp_mgr_clutter_client_set_flags (cc,
 					   MBWMCompMgrClutterClientDontUpdate);
 
   hc->priv->flags |= HdCompMgrClientFlagHibernating;
 
+  g_timeout_add (HIBERNATION_TIMEMOUT,
+		 (GSourceFunc) hd_comp_mgr_client_shutdown_timeout_cb,
+		 GINT_TO_POINTER (c->wm_client->window->pid));
+
   mb_wm_client_deliver_delete (c->wm_client);
 }
 
 void
-hd_comp_mgr_hibernate_all (HdCompMgr *hmgr)
+hd_comp_mgr_hibernate_all (HdCompMgr *hmgr, gboolean force)
 {
   MBWMCompMgr     * mgr = MB_WM_COMP_MGR (hmgr);
   MBWindowManager * wm = mgr->wm;
@@ -649,7 +689,7 @@ hd_comp_mgr_hibernate_all (HdCompMgr *hmgr)
 	  MBWMCompMgrClutterClient * cc =
 	    MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
 
-	  hd_comp_mgr_hibernate_client (hmgr, cc);
+	  hd_comp_mgr_hibernate_client (hmgr, cc, force);
 	}
     }
 }

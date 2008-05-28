@@ -1,4 +1,4 @@
-INCLUDES = $(HD_CFLAGS)
+INCLUDES = $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
 bin_PROGRAMS = hildon-desktop
 

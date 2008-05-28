@@ -82,10 +82,11 @@ void hd_comp_mgr_lower_home_actor    (HdCompMgr *hmgr);
 void hd_comp_mgr_top_home            (HdCompMgr *hmgr);
 void hd_comp_mgr_close_client        (HdCompMgr *hmgr,
 				      MBWMCompMgrClutterClient *c);
-void hd_comp_mgr_hibernate_client    (HdCompMgr *hmgr,
-				      MBWMCompMgrClutterClient *c);
+void hd_comp_mgr_hibernate_client    (HdCompMgr                *hmgr,
+				      MBWMCompMgrClutterClient *c,
+				      gboolean                  force);
 
-void hd_comp_mgr_hibernate_all       (HdCompMgr *hmgr);
+void hd_comp_mgr_hibernate_all       (HdCompMgr *hmgr, gboolean force);
 
 G_END_DECLS
 

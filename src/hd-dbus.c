@@ -16,12 +16,12 @@ static DBusHandlerResult
 hd_dbus_signal_handler (DBusConnection *conn, DBusMessage *msg, void *data)
 {
   HdCompMgr  * hmgr = data;
-  
+
   if (dbus_message_is_signal(msg, APPKILLER_SIGNAL_INTERFACE,
 				  APPKILLER_SIGNAL_NAME))
   {
-    hd_comp_mgr_hibernate_all (hmgr);
-    
+    hd_comp_mgr_hibernate_all (hmgr, FALSE);
+
     return DBUS_HANDLER_RESULT_HANDLED;
   }
 

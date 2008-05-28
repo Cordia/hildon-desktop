@@ -1,5 +1,23 @@
 2008-05-27  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/Makefile.am:
+	Added -D_XOPEN_SOURCE (need to access kill()).
+
+	* src/hd-comp-mgr.c:
+	* src/hd-comp-mgr.h:
+	* src/hd-dbus.c:
+	(hd_comp_mgr_close_client):
+	(hd_comp_mgr_hibernate_client):
+	Made more robust by adding a timed check followed by a kill() for
+	applications that refuse to die.
+
+	(hd_comp_mgr_hibernate_client):
+	(hd_comp_mgr_hibernate_all):
+	Differentiate between applications that know how to hibernate and
+	those that do not; added force parameter to override.
+
+2008-05-27  Tomas Frydrych  <tf@o-hand.com>
+
 	* configure.ac:
 	Added dbus to required packages.
 
