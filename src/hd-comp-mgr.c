@@ -50,7 +50,14 @@
 #define OSSO_BUS_ROOT_PATH     "/com/nokia"
 #define OSSO_BUS_TOP           "top_application"
 
+#define LOWMEM_PROC_ALLOWED    "/proc/sys/vm/lowmem_allowed_pages"
+#define LOWMEM_PROC_USED       "/proc/sys/vm/lowmem_used_pages"
+#define LOWMEM_LAUNCH_THRESHOLD_DISTANCE 2500
+
 static gchar * hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid);
+
+static gboolean hd_comp_mgr_memory_limits (guint *pages_used,
+					   guint *pages_available);
 
 struct HdCompMgrPrivate
 {
@@ -832,6 +839,28 @@ hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
 				const gchar *launch_param)
 {
   gchar *service, *path, *tmp = NULL;
+  guint  pages_used = 0, pages_available = 0;
+
+  if (hd_comp_mgr_memory_limits (&pages_used, &pages_available))
+    {
+      g_debug ("Memory: pages used %d, available %d.",
+	       pages_used, pages_available);
+
+      /* 0 means the memory usage is unknown */
+      if (pages_available > 0 &&
+	  pages_available < LOWMEM_LAUNCH_THRESHOLD_DISTANCE)
+	{
+	  /*
+	   * TODO -- we probably should pop a dialog here asking the user to
+	   * kill some apps as the old TN used to do; check the current spec.
+	   */
+	  g_debug ("Not enough memory to start application [%s].",
+		   app_service);
+	  return;
+	}
+    }
+  else
+    g_warning ("Failed to read memory limits; using scratchbox ???");
 
   /*
    * NB -- interface is identical to service
@@ -904,4 +933,42 @@ hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid)
     return g_strdup (service);
 
   return NULL;
+}
+
+static gboolean
+hd_comp_mgr_memory_limits (guint *pages_used, guint *pages_available)
+{
+  guint    lowmem_allowed;
+  gboolean result;
+  FILE    *lowmem_allowed_f, *pages_used_f;
+
+  result = FALSE;
+
+  lowmem_allowed_f = fopen (LOWMEM_PROC_ALLOWED, "r");
+  pages_used_f     = fopen (LOWMEM_PROC_USED, "r");
+
+  if (lowmem_allowed_f && pages_used_f)
+    {
+      fscanf (lowmem_allowed_f, "%u", &lowmem_allowed);
+      fscanf (pages_used_f, "%u", pages_used);
+
+      if (*pages_used < lowmem_allowed)
+	*pages_available = lowmem_allowed - *pages_used;
+      else
+	*pages_available = 0;
+
+      result = TRUE;
+    }
+  else
+    {
+      g_warning ("Could not read lowmem page stats.");
+    }
+
+  if (lowmem_allowed_f)
+    fclose(lowmem_allowed_f);
+
+  if (pages_used_f)
+    fclose(pages_used_f);
+
+  return result;
 }

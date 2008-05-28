@@ -1,5 +1,11 @@
 2008-05-28  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-comp-mgr.c:
+	(hd_comp_mgr_launch_application):
+	Added available memory check; UI needed.
+
+2008-05-28  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-switcher-group.c:
 	(hd_switcher_group_show_all):
 	(hd_switcher_group_hide_all):
