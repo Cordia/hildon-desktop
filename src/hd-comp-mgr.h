@@ -88,6 +88,14 @@ void hd_comp_mgr_hibernate_client    (HdCompMgr                *hmgr,
 
 void hd_comp_mgr_hibernate_all       (HdCompMgr *hmgr, gboolean force);
 
+void hd_comp_mgr_set_low_memory_state (HdCompMgr * hmgr, gboolean on);
+
+gboolean hd_comp_mgr_get_low_memory_state (HdCompMgr * hmgr);
+
+void hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
+				     const gchar *app_service,
+				     const gchar *launch_param);
+
 G_END_DECLS
 
 #endif /* __HD_COMP_MGR_H__ */

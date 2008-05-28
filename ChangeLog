@@ -1,5 +1,17 @@
 2008-05-28  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-dbus.c:
+	* src/hd-dbus.h:
+	(hd_dbus_launch_service):
+	Helper method for the below.
+
+	* src/hd-comp-mgr.c:
+	* src/hd-comp-mgr.h:
+	(hd_comp_mgr_launch_application):
+	Method to launch applications over dbus.
+
+2008-05-28  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-switcher-group.c:
 	(hd_switcher_group_show_all):
 	Added TODO comment.

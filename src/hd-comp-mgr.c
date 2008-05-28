@@ -46,17 +46,24 @@
 
 #define HIBERNATION_TIMEMOUT 3000 /* as suggested by 31410#10 */
 
+#define OSSO_BUS_ROOT          "com.nokia"
+#define OSSO_BUS_ROOT_PATH     "/com/nokia"
+#define OSSO_BUS_TOP           "top_application"
+
 struct HdCompMgrPrivate
 {
-  ClutterActor *switcher_group;
-  ClutterActor *home;
+  ClutterActor   *switcher_group;
+  ClutterActor   *home;
 
-  GHashTable   *hibernating_apps;
+  GHashTable     *hibernating_apps;
 
-  Atom          atoms[_HD_ATOM_LAST];
+  Atom            atoms[_HD_ATOM_LAST];
 
-  gboolean      showing_home : 1;
-  gboolean      stack_sync   : 1;
+  DBusConnection *dbus_connection;
+
+  gboolean        showing_home : 1;
+  gboolean        stack_sync   : 1;
+  gboolean        low_mem      : 1;
 };
 
 /*
@@ -302,7 +309,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   hd_atoms_init (wm->xdpy, priv->atoms);
 
-  hd_dbus_init (hmgr);
+  priv->dbus_connection = hd_dbus_init (hmgr);
 
   stage = clutter_stage_get_default ();
 
@@ -776,4 +783,56 @@ hd_comp_mgr_hibernate_all (HdCompMgr *hmgr, gboolean force)
 	  hd_comp_mgr_hibernate_client (hmgr, cc, force);
 	}
     }
+}
+
+void
+hd_comp_mgr_set_low_memory_state (HdCompMgr * hmgr, gboolean on)
+{
+  HdCompMgrPrivate * priv = hmgr->priv;
+
+  priv->low_mem = on;
+}
+
+gboolean
+hd_comp_mgr_get_low_memory_state (HdCompMgr * hmgr)
+{
+  HdCompMgrPrivate * priv = hmgr->priv;
+
+  return priv->low_mem;
+}
+
+void
+hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
+				const gchar *app_service,
+				const gchar *launch_param)
+{
+  gchar *service, *path, *tmp = NULL;
+
+  /*
+   * NB -- interface is identical to service
+   */
+
+  /* If we have full service name we will use it*/
+  if (g_strrstr(app_service,"."))
+    {
+      service = g_strdup (app_service);
+      tmp = g_strdup (app_service);
+      path = g_strconcat ("/", g_strdelimit(tmp,".",'/'), NULL);
+    }
+  else /* use com.nokia prefix*/
+    {
+      service = g_strconcat (OSSO_BUS_ROOT, ".", app_service, NULL);
+      path = g_strconcat (OSSO_BUS_ROOT_PATH, "/", app_service, NULL);
+    }
+
+  hd_dbus_launch_service (hmgr->priv->dbus_connection,
+			  service,
+			  path,
+			  service,
+			  OSSO_BUS_TOP,
+			  launch_param);
+
+  g_free (service);
+  g_free (path);
+  g_free (tmp);
 }
