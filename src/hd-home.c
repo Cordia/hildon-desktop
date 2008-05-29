@@ -203,8 +203,6 @@ hd_home_constructed (GObject *object)
   g_signal_connect (priv->back_button, "button-release-event",
 		    G_CALLBACK (hd_home_back_button_clicked),
 		    object);
-
-  hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_LAYOUT);
 }
 
 static void

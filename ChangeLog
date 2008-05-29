@@ -1,5 +1,11 @@
 2008-05-29  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-home.c:
+	(hd_home_constructed):
+	Removed misplaced hd_home_set_mode() call left over from testing.
+	
+2008-05-29  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/back-button.png:
 	Placeholder of back button icon.
 
