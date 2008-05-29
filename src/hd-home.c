@@ -50,10 +50,14 @@ struct _HdHomePrivate
 
   ClutterEffectTemplate *move_template;
 
+  ClutterActor          *main_group; /* Where the views + their buttons live */
+  ClutterActor          *edit_group; /* An overlay group for edit mode */
   ClutterActor          *close_button;
   ClutterActor          *back_button;
 
   guint                  close_button_handler;
+
+  ClutterActor          *grey_filter;
 
   GList                 *views;
   guint                  n_views;
@@ -125,18 +129,26 @@ hd_home_constructed (GObject *object)
 {
   HdHomePrivate   *priv = HD_HOME (object)->priv;
   ClutterActor    *view;
+  ClutterActor    *main_group;
+  ClutterActor    *edit_group;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   gint             i;
   GError          *error = NULL;
   guint            button_width, button_height;
+  ClutterColor     clr;
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
 
+  main_group = priv->main_group = clutter_group_new ();
+  clutter_container_add_actor (CLUTTER_CONTAINER (object), main_group);
+
+  edit_group = priv->edit_group = clutter_group_new ();
+  clutter_container_add_actor (CLUTTER_CONTAINER (object), edit_group);
+  clutter_actor_hide (edit_group);
+
   for (i = 0; i < 3; ++i)
     {
-      ClutterColor clr;
-
       clr.alpha = 0xff;
 
       view = g_object_new (HD_TYPE_HOME_VIEW,
@@ -146,7 +158,7 @@ hd_home_constructed (GObject *object)
       priv->views = g_list_append (priv->views, view);
 
       clutter_actor_set_position (view, priv->xwidth * i, 0);
-      clutter_container_add_actor (CLUTTER_CONTAINER (object), view);
+      clutter_container_add_actor (CLUTTER_CONTAINER (main_group), view);
 
       if (i == 0)
 	{
@@ -185,14 +197,16 @@ hd_home_constructed (GObject *object)
   priv->close_button =
     clutter_texture_new_from_file (CLOSE_BUTTON, &error);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->close_button);
+  clutter_container_add_actor (CLUTTER_CONTAINER (main_group),
+			       priv->close_button);
   clutter_actor_hide (priv->close_button);
   clutter_actor_set_reactive (priv->close_button, TRUE);
 
   priv->back_button =
     clutter_texture_new_from_file (BACK_BUTTON, &error);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->back_button);
+  clutter_container_add_actor (CLUTTER_CONTAINER (main_group),
+			       priv->back_button);
   clutter_actor_hide (priv->back_button);
   clutter_actor_set_reactive (priv->back_button, TRUE);
 
@@ -203,6 +217,23 @@ hd_home_constructed (GObject *object)
   g_signal_connect (priv->back_button, "button-release-event",
 		    G_CALLBACK (hd_home_back_button_clicked),
 		    object);
+
+  /*
+   *
+   * Construct the grey rectangle for dimming of desktop in edit mode
+   * This one is added directly to the home, so it is always on the top
+   * all the other stuff in the main_group.
+   */
+  clr.alpha = 0x77;
+  clr.red   = 0x77;
+  clr.green = 0x77;
+  clr.blue  = 0x77;
+
+  priv->grey_filter = clutter_rectangle_new_with_color (&clr);
+
+  clutter_actor_set_size (priv->grey_filter, priv->xwidth, priv->xheight);
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
+			       priv->grey_filter);
 }
 
 static void
@@ -340,6 +371,7 @@ hd_home_do_normal_layout (HdHomePrivate *priv)
 
   clutter_actor_hide (priv->close_button);
   clutter_actor_hide (priv->back_button);
+  clutter_actor_hide (priv->edit_group);
 
   if (priv->close_button_handler)
     {
@@ -362,6 +394,28 @@ hd_home_do_normal_layout (HdHomePrivate *priv)
     }
 
   hd_home_ungrab_pointer (priv);
+}
+
+static void
+hd_home_do_edit_layout (HdHomePrivate *priv)
+{
+  gint x;
+
+  if (priv->mode == HD_HOME_MODE_EDIT)
+    return;
+
+  if (priv->mode != HD_HOME_MODE_NORMAL)
+    hd_home_do_normal_layout (priv);
+
+  /*
+   * Show the overlay edit_group and move it over the current view.
+   */
+  x = priv->xwidth * priv->current_view;
+
+  clutter_actor_set_position (priv->edit_group, x, 0);
+  clutter_actor_show (priv->edit_group);
+
+  priv->mode = HD_HOME_MODE_EDIT;
 }
 
 static gboolean
@@ -462,6 +516,8 @@ hd_home_do_layout_layout (HdHome * home)
 			  home);
     }
 
+  clutter_actor_hide (priv->grey_filter);
+
   hd_home_grab_pointer (priv);
 }
 
@@ -469,8 +525,6 @@ void
 hd_home_set_mode (HdHome* home, HdHomeMode mode)
 {
   HdHomePrivate   *priv = home->priv;
-
-  priv->mode = mode;
 
   switch (mode)
     {
@@ -484,8 +538,11 @@ hd_home_set_mode (HdHome* home, HdHomeMode mode)
       break;
 
     case HD_HOME_MODE_EDIT:
+      hd_home_do_edit_layout (priv);
       break;
     }
+
+  priv->mode = mode;
 }
 
 static void
