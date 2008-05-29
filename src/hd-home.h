@@ -38,6 +38,13 @@ G_BEGIN_DECLS
 #define HD_IS_HOME_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), HD_TYPE_HOME))
 #define HD_HOME_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), HD_TYPE_HOME, HdHomeClass))
 
+typedef enum _HdHomeMode
+{
+  HD_HOME_MODE_NORMAL = 0,
+  HD_HOME_MODE_LAYOUT,
+  HD_HOME_MODE_EDIT,
+} HdHomeMode;
+
 typedef struct _HdHome        HdHome;
 typedef struct _HdHomeClass   HdHomeClass;
 typedef struct _HdHomePrivate HdHomePrivate;
@@ -57,6 +64,8 @@ struct _HdHome
 GType hd_home_get_type (void);
 
 void hd_home_show_view (HdHome * home, guint view_index);
+
+void hd_home_set_mode (HdHome* home, HdHomeMode mode);
 
 G_END_DECLS
 

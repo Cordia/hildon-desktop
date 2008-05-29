@@ -52,6 +52,8 @@ struct _HdHomePrivate
 
   gint                   xwidth;
   gint                   xheight;
+
+  HdHomeMode             mode;
 };
 
 static void hd_home_class_init (HdHomeClass *klass);
@@ -151,6 +153,8 @@ hd_home_constructed (GObject *object)
     }
 
   priv->n_views = i;
+
+  hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_LAYOUT);
 }
 
 static void
@@ -237,4 +241,104 @@ hd_home_show_view (HdHome * home, guint view_index)
   priv->current_view = view_index;
 
   clutter_timeline_start (timeline);
+}
+
+static void
+hd_home_do_normal_layout (HdHomePrivate *priv)
+{
+  GList *l = priv->views;
+  gint   xwidth = priv->xwidth;
+  gint   i = 0;
+
+  while (l)
+    {
+      ClutterActor * view = l->data;
+
+      clutter_actor_set_position (view, i * xwidth, 0);
+      clutter_actor_set_scale (view, 1.0, 1.0);
+      clutter_actor_set_depth (view, 0);
+
+      ++i;
+      l = l->next;
+    }
+}
+
+static void
+hd_home_do_layout_layout (HdHomePrivate *priv)
+{
+  GList           *l = priv->views;
+  gint             xwidth = priv->xwidth;
+  gint             xheight = priv->xheight;
+  gint             i = 0, n = 0;
+  ClutterActor    *top = NULL;
+  gint             x_top, y_top, w_top, h_top;
+  gdouble          scale = 0.5;
+
+  w_top = (gint)((gdouble)xwidth * scale);
+  h_top = (gint)((gdouble)xheight * scale);
+  x_top = (xwidth - w_top)/ 2;
+  y_top = (xheight - h_top)/ 2;
+
+  while (l)
+    {
+      ClutterActor * view = l->data;
+
+      if (i == priv->current_view)
+	{
+	  top = view;
+
+	  clutter_actor_set_position (view, x_top, y_top);
+	  clutter_actor_set_depth (view, 0);
+	}
+      else
+	{
+	  if (!n)
+	    {
+	      clutter_actor_set_position (view, x_top - w_top, y_top);
+	      clutter_actor_set_depth (view, -xwidth/2);
+	    }
+	  else
+	    {
+	      clutter_actor_set_position (view, x_top + w_top + (n-1)*w_top,
+					  y_top);
+	      clutter_actor_set_depth (view, - (n) * xwidth/2);
+	    }
+
+	  ++n;
+	}
+
+      clutter_actor_set_scale (view, scale, scale);
+
+      ++i;
+      l = l->next;
+    }
+
+  if (top)
+    {
+      clutter_actor_raise_top (top);
+      clutter_actor_set_depth (top, 0);
+    }
+}
+
+void
+hd_home_set_mode (HdHome* home, HdHomeMode mode)
+{
+  HdHomePrivate   *priv = home->priv;
+
+  priv->mode = mode;
+
+  switch (mode)
+    {
+    case HD_HOME_MODE_NORMAL:
+    default:
+      hd_home_do_normal_layout (priv);
+      break;
+
+    case HD_HOME_MODE_LAYOUT:
+      hd_home_do_layout_layout (priv);
+      break;
+
+    case HD_HOME_MODE_EDIT:
+      break;
+    }
 }

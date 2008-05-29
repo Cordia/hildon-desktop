@@ -1,12 +1,19 @@
 2008-05-29  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-home.c:
+	* src/hd-home.h:
+	Infrastructure for normal/edit/layout mode; fundamentals of normal
+	and layout layouts.
+
+2008-05-29  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/Makefile.am:
 	* src/hd-home.c:
 	* src/hd-home.h:
 	* src/hd-home-view.c:
 	* src/hd-home-view.h:
 	Added HdHomeView object to represent a single home view.
-	
+
 2008-05-28  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-comp-mgr.c:
