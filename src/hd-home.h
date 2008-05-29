@@ -56,6 +56,8 @@ struct _HdHome
 
 GType hd_home_get_type (void);
 
+void hd_home_show_view (HdHome * home, guint view_index);
+
 G_END_DECLS
 
 #endif

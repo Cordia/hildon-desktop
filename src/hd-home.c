@@ -26,11 +26,14 @@
 #endif
 
 #include "hd-home.h"
+#include "hd-home-view.h"
 #include "hd-comp-mgr.h"
 
 #include <clutter/clutter.h>
 
 #include <matchbox/core/mb-wm.h>
+
+#define HDH_MOVE_DURATION 300
 
 enum
 {
@@ -39,7 +42,16 @@ enum
 
 struct _HdHomePrivate
 {
-  MBWMCompMgrClutter   *comp_mgr;
+  MBWMCompMgrClutter    *comp_mgr;
+
+  ClutterEffectTemplate *move_template;
+
+  GList                 *views;
+  guint                  n_views;
+  guint                  current_view;
+
+  gint                   xwidth;
+  gint                   xheight;
 };
 
 static void hd_home_class_init (HdHomeClass *klass);
@@ -87,27 +99,71 @@ hd_home_class_init (HdHomeClass *klass)
 static void
 hd_home_constructed (GObject *object)
 {
-  ClutterActor    *rect;
-  ClutterColor     clr = {0, 0, 0xff, 0xff};
   HdHomePrivate   *priv = HD_HOME (object)->priv;
+  ClutterActor    *view;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  gint             i;
 
-  /*
-   * TODO -- for now, just add a blue rectangle, so we can see
-   * where the home is.
-   */
+  priv->xwidth  = wm->xdpy_width;
+  priv->xheight = wm->xdpy_height;
 
-  rect = clutter_rectangle_new_with_color (&clr);
+  for (i = 0; i < 3; ++i)
+    {
+      ClutterColor clr;
 
-  clutter_actor_set_size (rect, wm->xdpy_width, wm->xdpy_height);
-  clutter_actor_show (rect);
-  clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
+      clr.alpha = 0xff;
+
+      view = g_object_new (HD_TYPE_HOME_VIEW,
+			   "comp-mgr", priv->comp_mgr,
+			   NULL);
+
+      priv->views = g_list_append (priv->views, view);
+
+      clutter_actor_set_position (view, priv->xwidth * i, 0);
+      clutter_container_add_actor (CLUTTER_CONTAINER (object), view);
+
+      if (i == 0)
+	{
+	  clr.red   = 0xff;
+	  clr.blue  = 0;
+	  clr.green = 0;
+	}
+      else if (i == 1)
+	{
+	  clr.red   = 0;
+	  clr.blue  = 0xff;
+	  clr.green = 0;
+	}
+      else if (i == 2)
+	{
+	  clr.red   = 0;
+	  clr.blue  = 0;
+	  clr.green = 0xff;
+	}
+      else
+	{
+	  clr.red   = 0xff;
+	  clr.blue  = 0xff;
+	  clr.green = 0;
+	}
+
+      hd_home_view_set_background_color (HD_HOME_VIEW (view), &clr);
+    }
+
+  priv->n_views = i;
 }
 
 static void
 hd_home_init (HdHome *self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME, HdHomePrivate);
+  HdHomePrivate * priv;
+
+  priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+						   HD_TYPE_HOME, HdHomePrivate);
+
+  priv->move_template =
+    clutter_effect_template_new_for_duration (HDH_MOVE_DURATION,
+					      CLUTTER_ALPHA_RAMP_INC);
 }
 
 static void
@@ -158,4 +214,27 @@ hd_home_get_property (GObject      *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
     }
+}
+
+void
+hd_home_show_view (HdHome * home, guint view_index)
+{
+  HdHomePrivate   *priv = home->priv;
+  ClutterTimeline *timeline;
+
+  if (view_index >= priv->n_views)
+    {
+      g_warning ("View %d requested, but desktop has only %d views.",
+		 view_index, priv->n_views);
+      return;
+    }
+
+  timeline = clutter_effect_move (priv->move_template,
+				  CLUTTER_ACTOR (home),
+				  - view_index * priv->xwidth, 0,
+				  NULL, NULL);
+
+  priv->current_view = view_index;
+
+  clutter_timeline_start (timeline);
 }

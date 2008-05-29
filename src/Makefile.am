@@ -13,6 +13,8 @@ hildon_desktop_SOURCES = \
 	hd-switcher.h \
 	hd-home.c \
 	hd-home.h \
+	hd-home-view.c \
+	hd-home-view.h \
 	hd-dbus.c \
 	hd-dbus.h \
 	hd-atoms.c \
