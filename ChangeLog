@@ -1,5 +1,13 @@
 2008-05-29  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/back-button.png:
+	Placeholder of back button icon.
+
+	* src/hd-home.c:
+	Added close and back butttons.
+
+2008-05-29  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-home.c:
 	* src/hd-home.h:
 	Infrastructure for normal/edit/layout mode; fundamentals of normal

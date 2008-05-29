@@ -30,10 +30,14 @@
 #include "hd-comp-mgr.h"
 
 #include <clutter/clutter.h>
+#include <clutter/x11/clutter-x11.h>
 
 #include <matchbox/core/mb-wm.h>
 
 #define HDH_MOVE_DURATION 300
+
+#define CLOSE_BUTTON "close-button.png"
+#define BACK_BUTTON  "back-button.png"
 
 enum
 {
@@ -46,6 +50,11 @@ struct _HdHomePrivate
 
   ClutterEffectTemplate *move_template;
 
+  ClutterActor          *close_button;
+  ClutterActor          *back_button;
+
+  guint                  close_button_handler;
+
   GList                 *views;
   guint                  n_views;
   guint                  current_view;
@@ -54,6 +63,8 @@ struct _HdHomePrivate
   gint                   xheight;
 
   HdHomeMode             mode;
+
+  gboolean               pointer_grabbed : 1;
 };
 
 static void hd_home_class_init (HdHomeClass *klass);
@@ -73,6 +84,7 @@ static void hd_home_get_property (GObject      *object,
 
 static void hd_home_constructed (GObject *object);
 
+static void hd_home_remove_view (HdHome * home, guint view_index);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -98,6 +110,16 @@ hd_home_class_init (HdHomeClass *klass)
   g_object_class_install_property (object_class, PROP_COMP_MGR, pspec);
 }
 
+static gboolean
+hd_home_back_button_clicked (ClutterActor *button,
+			     ClutterEvent *event,
+			     HdHome       *home)
+{
+  g_debug ("back button pressed.");
+
+  return FALSE;
+}
+
 static void
 hd_home_constructed (GObject *object)
 {
@@ -105,6 +127,8 @@ hd_home_constructed (GObject *object)
   ClutterActor    *view;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   gint             i;
+  GError          *error = NULL;
+  guint            button_width, button_height;
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
@@ -153,6 +177,32 @@ hd_home_constructed (GObject *object)
     }
 
   priv->n_views = i;
+
+  /*
+   * NB: we position the button in the hd_home_do_layout_layout() function; this
+   * allows us to mess about with the layout in that one place only.
+   */
+  priv->close_button =
+    clutter_texture_new_from_file (CLOSE_BUTTON, &error);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->close_button);
+  clutter_actor_hide (priv->close_button);
+  clutter_actor_set_reactive (priv->close_button, TRUE);
+
+  priv->back_button =
+    clutter_texture_new_from_file (BACK_BUTTON, &error);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->back_button);
+  clutter_actor_hide (priv->back_button);
+  clutter_actor_set_reactive (priv->back_button, TRUE);
+
+  clutter_actor_get_size (priv->back_button, &button_width, &button_height);
+  clutter_actor_set_position (priv->back_button,
+			      priv->xwidth - button_width - 5, 5);
+
+  g_signal_connect (priv->back_button, "button-release-event",
+		    G_CALLBACK (hd_home_back_button_clicked),
+		    object);
 
   hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_LAYOUT);
 }
@@ -244,11 +294,62 @@ hd_home_show_view (HdHome * home, guint view_index)
 }
 
 static void
+hd_home_grab_pointer (HdHomePrivate * priv)
+{
+  if (!priv->pointer_grabbed)
+    {
+      ClutterActor  *stage = clutter_stage_get_default();
+      Window         clutter_window;
+      Display       *dpy = clutter_x11_get_default_display ();
+      int            status;
+
+      clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
+
+      status = XGrabPointer (dpy,
+			     clutter_window,
+			     False,
+			     ButtonPressMask | ButtonReleaseMask,
+			     GrabModeAsync,
+			     GrabModeAsync,
+			     None,
+			     None,
+			     CurrentTime);
+
+      if (!status)
+	priv->pointer_grabbed = TRUE;
+    }
+}
+
+static void
+hd_home_ungrab_pointer (HdHomePrivate * priv)
+{
+  if (priv->pointer_grabbed)
+    {
+      Display * dpy = clutter_x11_get_default_display ();
+
+      XUngrabPointer (dpy, CurrentTime);
+
+      priv->pointer_grabbed = FALSE;
+    }
+}
+
+static void
 hd_home_do_normal_layout (HdHomePrivate *priv)
 {
   GList *l = priv->views;
   gint   xwidth = priv->xwidth;
   gint   i = 0;
+
+  clutter_actor_hide (priv->close_button);
+  clutter_actor_hide (priv->back_button);
+
+  if (priv->close_button_handler)
+    {
+      g_signal_handler_disconnect (priv->close_button,
+				   priv->close_button_handler);
+
+      priv->close_button_handler = 0;
+    }
 
   while (l)
     {
@@ -261,11 +362,26 @@ hd_home_do_normal_layout (HdHomePrivate *priv)
       ++i;
       l = l->next;
     }
+
+  hd_home_ungrab_pointer (priv);
+}
+
+static gboolean
+hd_home_close_button_clicked (ClutterActor *button,
+			      ClutterEvent *event,
+			      HdHome       *home)
+{
+  HdHomePrivate * priv = home->priv;
+
+  hd_home_remove_view (home, priv->current_view);
+
+  return FALSE;
 }
 
 static void
-hd_home_do_layout_layout (HdHomePrivate *priv)
+hd_home_do_layout_layout (HdHome * home)
 {
+  HdHomePrivate   *priv = home->priv;
   GList           *l = priv->views;
   gint             xwidth = priv->xwidth;
   gint             xheight = priv->xheight;
@@ -275,9 +391,9 @@ hd_home_do_layout_layout (HdHomePrivate *priv)
   gdouble          scale = 0.5;
 
   w_top = (gint)((gdouble)xwidth * scale);
-  h_top = (gint)((gdouble)xheight * scale);
+  h_top = (gint)((gdouble)xheight * scale) - xheight/16;
   x_top = (xwidth - w_top)/ 2;
-  y_top = (xheight - h_top)/ 2;
+  y_top = (xheight - h_top)/ 2 - xheight / 8;
 
   while (l)
     {
@@ -313,11 +429,42 @@ hd_home_do_layout_layout (HdHomePrivate *priv)
       l = l->next;
     }
 
+  if (priv->n_views > 1)
+    {
+      guint button_width, button_height;
+
+      clutter_actor_get_size (priv->close_button,
+			      &button_width, &button_height);
+
+      clutter_actor_set_position (priv->close_button,
+				  x_top + w_top - button_width / 4 -
+				  button_width / 2,
+				  y_top - button_height / 4);
+
+      clutter_actor_show (priv->close_button);
+    }
+  else
+    clutter_actor_hide (priv->close_button);
+
+  clutter_actor_show (priv->back_button);
+  clutter_actor_raise_top (priv->back_button);
+
   if (top)
     {
       clutter_actor_raise_top (top);
+      clutter_actor_raise (priv->close_button, top);
+
       clutter_actor_set_depth (top, 0);
+      clutter_actor_set_depth (priv->close_button, 0);
+      clutter_actor_set_depth (priv->back_button, 0);
+
+      priv->close_button_handler =
+	g_signal_connect (priv->close_button, "button-release-event",
+                          G_CALLBACK (hd_home_close_button_clicked),
+			  home);
     }
+
+  hd_home_grab_pointer (priv);
 }
 
 void
@@ -335,10 +482,43 @@ hd_home_set_mode (HdHome* home, HdHomeMode mode)
       break;
 
     case HD_HOME_MODE_LAYOUT:
-      hd_home_do_layout_layout (priv);
+      hd_home_do_layout_layout (home);
       break;
 
     case HD_HOME_MODE_EDIT:
       break;
     }
+}
+
+static void
+hd_home_remove_view (HdHome * home, guint view_index)
+{
+  HdHomePrivate * priv = home->priv;
+  ClutterActor  * view;
+
+  if (priv->n_views < 2)
+    return;
+
+  view = g_list_nth_data (priv->views, view_index);
+
+  priv->views = g_list_remove (priv->views, view);
+  --priv->n_views;
+
+  if (view_index == priv->current_view)
+    {
+      if (view_index > 0)
+	--priv->current_view;
+      else
+	priv->current_view = 0;
+    }
+
+  /* This automatically destroys the actor, since we do not hold any
+   * extra references to it.
+   */
+  clutter_container_remove_actor (CLUTTER_CONTAINER (home), view);
+
+  /*
+   * Redo layout in the current mode
+   */
+  hd_home_set_mode (home, priv->mode);
 }
