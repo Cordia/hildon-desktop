@@ -1,6 +1,16 @@
 2008-05-30  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-home.c:
+	Added new view button; fixed return values in button click
+	handlers.
+
+	* src/hd-switcher-group.c:
+	* src/hd-switcher.c:
+	Fixed return values in button click handlers.
+
+2008-05-30  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-home.c:
 	(hd_home_do_layout_layout):
 	Added zoom out effect when switching to layout mode.
 

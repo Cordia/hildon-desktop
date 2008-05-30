@@ -341,7 +341,7 @@ hd_switcher_group_child_button_release (HdSwitcherGroup    *group,
 {
   hd_switcher_group_zoom (group, actor, TRUE);
 
-  return FALSE;
+  return TRUE;
 }
 
 void
@@ -403,7 +403,7 @@ hd_switcher_group_close_button_clicked (ClutterActor     *client_actor,
 
   hd_comp_mgr_close_client (HD_COMP_MGR (mgr), cc);
 
-  return FALSE;
+  return TRUE;
 }
 
 static void

@@ -41,6 +41,7 @@
 
 #define CLOSE_BUTTON "close-button.png"
 #define BACK_BUTTON  "back-button.png"
+#define NEW_BUTTON   "new-view-button.png"
 
 enum
 {
@@ -58,6 +59,7 @@ struct _HdHomePrivate
   ClutterActor          *edit_group; /* An overlay group for edit mode */
   ClutterActor          *close_button;
   ClutterActor          *back_button;
+  ClutterActor          *new_button;
 
   guint                  close_button_handler;
 
@@ -94,6 +96,8 @@ static void hd_home_constructed (GObject *object);
 
 static void hd_home_remove_view (HdHome * home, guint view_index);
 
+static void hd_home_new_view (HdHome * home);
+
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
 static void
@@ -125,7 +129,16 @@ hd_home_back_button_clicked (ClutterActor *button,
 {
   g_debug ("back button pressed.");
 
-  return FALSE;
+  return TRUE;
+}
+
+static gboolean
+hd_home_new_button_clicked (ClutterActor *button,
+			    ClutterEvent *event,
+			    HdHome       *home)
+{
+  hd_home_new_view (home);
+  return TRUE;
 }
 
 static void
@@ -164,19 +177,19 @@ hd_home_constructed (GObject *object)
       clutter_actor_set_position (view, priv->xwidth * i, 0);
       clutter_container_add_actor (CLUTTER_CONTAINER (main_group), view);
 
-      if (i == 0)
+      if (i % 4 == 0)
 	{
 	  clr.red   = 0xff;
 	  clr.blue  = 0;
 	  clr.green = 0;
 	}
-      else if (i == 1)
+      else if (i % 4 == 1)
 	{
 	  clr.red   = 0;
 	  clr.blue  = 0xff;
 	  clr.green = 0;
 	}
-      else if (i == 2)
+      else if (i % 4 == 2)
 	{
 	  clr.red   = 0;
 	  clr.blue  = 0;
@@ -222,6 +235,18 @@ hd_home_constructed (GObject *object)
 		    G_CALLBACK (hd_home_back_button_clicked),
 		    object);
 
+  priv->new_button =
+    clutter_texture_new_from_file (NEW_BUTTON, &error);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (main_group),
+			       priv->new_button);
+  clutter_actor_hide (priv->new_button);
+  clutter_actor_set_reactive (priv->new_button, TRUE);
+
+  g_signal_connect (priv->new_button, "button-release-event",
+		    G_CALLBACK (hd_home_new_button_clicked),
+		    object);
+
   /*
    * Construct the grey rectangle for dimming of desktop in edit mode
    * This one is added directly to the home, so it is always on the top
@@ -237,6 +262,8 @@ hd_home_constructed (GObject *object)
   clutter_actor_set_size (priv->grey_filter, priv->xwidth, priv->xheight);
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->grey_filter);
+
+  hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_LAYOUT);
 }
 
 static void
@@ -378,6 +405,7 @@ hd_home_do_normal_layout (HdHomePrivate *priv)
 
   clutter_actor_hide (priv->close_button);
   clutter_actor_hide (priv->back_button);
+  clutter_actor_hide (priv->new_button);
   clutter_actor_hide (priv->edit_group);
 
   if (priv->close_button_handler)
@@ -434,7 +462,7 @@ hd_home_close_button_clicked (ClutterActor *button,
 
   hd_home_remove_view (home, priv->current_view);
 
-  return FALSE;
+  return TRUE;
 }
 
 static void
@@ -448,9 +476,12 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
   ClutterActor    *top;
   gint             x_top, y_top, w_top, h_top;
   gdouble          scale = HDH_LAYOUT_TOP_SCALE;
+  guint            button_width, button_height;
 
-  g_assert (top_view);
-  top = CLUTTER_ACTOR (top_view);
+  if (top_view)
+    top = CLUTTER_ACTOR (top_view);
+  else
+    top = g_list_nth_data (priv->views, priv->current_view);
 
   w_top = (gint)((gdouble)xwidth * scale);
   h_top = (gint)((gdouble)xheight * scale) - xheight/16;
@@ -493,8 +524,6 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
 
   if (priv->n_views > 1)
     {
-      guint button_width, button_height;
-
       clutter_actor_get_size (priv->close_button,
 			      &button_width, &button_height);
 
@@ -508,8 +537,17 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
   else
     clutter_actor_hide (priv->close_button);
 
+  clutter_actor_get_size (priv->new_button, &button_width, &button_height);
+  clutter_actor_set_position (priv->new_button,
+			      x_top + w_top / 2 - button_width / 2,
+			      y_top + h_top + 2*HDH_LAYOUT_Y_OFFSET -
+			      button_height);
+
   clutter_actor_show (priv->back_button);
   clutter_actor_raise_top (priv->back_button);
+
+  clutter_actor_show (priv->new_button);
+  clutter_actor_raise_top (priv->new_button);
 
   clutter_actor_raise_top (top);
   clutter_actor_raise (priv->close_button, top);
@@ -577,6 +615,58 @@ hd_home_set_mode (HdHome* home, HdHomeMode mode)
   priv->mode = mode;
 }
 
+static void hd_home_new_view (HdHome * home)
+{
+  HdHomePrivate *priv = home->priv;
+  ClutterActor  *view;
+  ClutterColor   clr;
+  gint           i = priv->n_views;
+
+  clr.alpha = 0xff;
+
+  if (i % 4 == 0)
+    {
+      clr.red   = 0xff;
+      clr.blue  = 0;
+      clr.green = 0;
+    }
+  else if (i % 4 == 1)
+    {
+      clr.red   = 0;
+      clr.blue  = 0xff;
+      clr.green = 0;
+    }
+  else if (i % 4 == 2)
+    {
+      clr.red   = 0;
+      clr.blue  = 0;
+      clr.green = 0xff;
+    }
+  else
+    {
+      clr.red   = 0xff;
+      clr.blue  = 0xff;
+      clr.green = 0;
+    }
+
+  view = g_object_new (HD_TYPE_HOME_VIEW,
+		       "comp-mgr", priv->comp_mgr,
+		       NULL);
+
+  hd_home_view_set_background_color (HD_HOME_VIEW (view), &clr);
+
+  priv->views = g_list_append (priv->views, view);
+
+  clutter_actor_set_position (view, priv->xwidth * priv->n_views, 0);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->main_group), view);
+
+  priv->current_view = priv->n_views;
+
+  ++priv->n_views;
+
+  hd_home_do_layout_contents (NULL, home);
+}
+
 static void
 hd_home_remove_view (HdHome * home, guint view_index)
 {
@@ -593,19 +683,29 @@ hd_home_remove_view (HdHome * home, guint view_index)
 
   if (view_index == priv->current_view)
     {
-      if (view_index > 0)
-	--priv->current_view;
+      if (view_index < priv->n_views-1)
+	++priv->current_view;
       else
 	priv->current_view = 0;
     }
 
-  /* This automatically destroys the actor, since we do not hold any
-   * extra references to it.
-   */
-  clutter_container_remove_actor (CLUTTER_CONTAINER (home), view);
-
   /*
    * Redo layout in the current mode
+   *
+   * We should really be LAYOUT mode, in which case, we only want to reorganize
+   * the contents, not the scale effect.
    */
-  hd_home_set_mode (home, priv->mode);
+  if (priv->mode == HD_HOME_MODE_LAYOUT)
+    hd_home_do_layout_contents (NULL, home);
+  else
+    hd_home_set_mode (home, priv->mode);
+
+  /*
+   * Only now remove the old actor; this way the new actor is in place before
+   * the old one disappears and we avoid a temporary black void.
+   *
+   * This automatically destroys the actor, since we do not hold any
+   * extra references to it.
+   */
+  clutter_container_remove_actor (CLUTTER_CONTAINER (priv->main_group), view);
 }

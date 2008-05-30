@@ -83,7 +83,7 @@ static void hd_switcher_get_property (GObject      *object,
 
 static void hd_switcher_constructed (GObject *object);
 
-static void hd_switcher_clicked (HdSwitcher *switcher);
+static gboolean hd_switcher_clicked (HdSwitcher *switcher);
 
 static void hd_switcher_item_selected (HdSwitcher *switcher,
 				       ClutterActor *actor);
@@ -248,7 +248,7 @@ hd_switcher_get_property (GObject      *object,
     }
 }
 
-static void
+static gboolean
 hd_switcher_clicked (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
@@ -297,6 +297,8 @@ hd_switcher_clicked (HdSwitcher *switcher)
        */
       hd_switcher_setup_buttons (switcher, FALSE);
     }
+
+  return TRUE;
 }
 
 static void
