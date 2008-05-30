@@ -74,6 +74,8 @@ struct _HdHomePrivate
 
   HdHomeMode             mode;
 
+  GList                 *pan_queue;
+
   gboolean               pointer_grabbed : 1;
 };
 
@@ -97,6 +99,10 @@ static void hd_home_constructed (GObject *object);
 static void hd_home_remove_view (HdHome * home, guint view_index);
 
 static void hd_home_new_view (HdHome * home);
+
+static void hd_home_start_pan (HdHome *home);
+
+static void hd_home_grab_pointer (HdHomePrivate * priv);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -151,6 +157,12 @@ hd_home_view_thumbnail_clicked (HdHomeView *view, HdHome *home)
 }
 
 static void
+hd_home_view_background_clicked (HdHomeView *view, HdHome *home)
+{
+  g_debug ("God background-clicked signal from view %p", view);
+}
+
+static void
 hd_home_constructed (GObject *object)
 {
   HdHomePrivate   *priv = HD_HOME (object)->priv;
@@ -183,6 +195,10 @@ hd_home_constructed (GObject *object)
 
       g_signal_connect (view, "thumbnail-clicked",
 		    G_CALLBACK (hd_home_view_thumbnail_clicked),
+		    object);
+
+      g_signal_connect (view, "background-clicked",
+		    G_CALLBACK (hd_home_view_background_clicked),
 		    object);
 
       priv->views = g_list_append (priv->views, view);
@@ -275,8 +291,6 @@ hd_home_constructed (GObject *object)
   clutter_actor_set_size (priv->grey_filter, priv->xwidth, priv->xheight);
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->grey_filter);
-
-  hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_LAYOUT);
 }
 
 static void
@@ -740,4 +754,64 @@ hd_home_remove_view (HdHome * home, guint view_index)
    * extra references to it.
    */
   clutter_container_remove_actor (CLUTTER_CONTAINER (priv->main_group), view);
+}
+
+static void
+hd_home_pan_stage_completed (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+
+  if (priv->pan_queue)
+    hd_home_start_pan (home);
+}
+
+static void
+hd_home_start_pan (HdHome *home)
+{
+  HdHomePrivate   *priv = home->priv;
+  GList           *l = priv->pan_queue;
+  gint             move_by;
+  ClutterTimeline *timeline;
+
+  move_by = clutter_actor_get_x (CLUTTER_ACTOR (home));
+
+  while (l)
+    {
+      move_by += GPOINTER_TO_INT (l->data);
+      l = l->next;
+    }
+
+  g_list_free (priv->pan_queue);
+  priv->pan_queue = NULL;
+
+  /*
+   * TODO -- deal with view-rollover when we reach end of desktop
+   */
+  timeline = clutter_effect_move (priv->move_template,
+				  CLUTTER_ACTOR (home),
+				  move_by, 0,
+				  (ClutterEffectCompleteFunc)
+				  hd_home_pan_stage_completed, NULL);
+
+  clutter_timeline_start (timeline);
+}
+
+void
+hd_home_pan_by (HdHome *home, gint move_by)
+{
+  HdHomePrivate   *priv = home->priv;
+  gboolean         in_progress = FALSE;
+
+  if (priv->mode != HD_HOME_MODE_NORMAL || !move_by)
+    return;
+
+  if (priv->pan_queue)
+    in_progress = TRUE;
+
+  priv->pan_queue = g_list_append (priv->pan_queue, GINT_TO_POINTER (move_by));
+
+  if (!in_progress)
+    {
+      hd_home_start_pan (home);
+    }
 }

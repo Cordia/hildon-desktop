@@ -46,7 +46,8 @@ struct _HdHomeViewClass
 {
   ClutterGroupClass parent_class;
 
-  void (*thumbnail_clicked) (HdHomeView * view);
+  void (*thumbnail_clicked)  (HdHomeView * view);
+  void (*background_clicked) (HdHomeView * view);
 };
 
 struct _HdHomeView

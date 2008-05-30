@@ -67,6 +67,8 @@ void hd_home_show_view (HdHome * home, guint view_index);
 
 void hd_home_set_mode (HdHome* home, HdHomeMode mode);
 
+void hd_home_pan_by (HdHome *home, gint move_by);
+
 G_END_DECLS
 
 #endif

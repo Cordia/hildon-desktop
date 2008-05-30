@@ -35,6 +35,7 @@
 enum
 {
   SIGNAL_THUMBNAIL_CLICKED,
+  SIGNAL_BACKGROUND_CLICKED,
   N_SIGNALS
 };
 
@@ -110,6 +111,26 @@ hd_home_view_class_init (HdHomeViewClass *klass)
                     G_TYPE_NONE,
                     0);
 
+  signals[SIGNAL_BACKGROUND_CLICKED] =
+      g_signal_new ("background-clicked",
+                    G_OBJECT_CLASS_TYPE (object_class),
+                    G_SIGNAL_RUN_FIRST,
+                    G_STRUCT_OFFSET (HdHomeViewClass, thumbnail_clicked),
+                    NULL,
+                    NULL,
+                    g_cclosure_marshal_VOID__VOID,
+                    G_TYPE_NONE,
+                    0);
+
+}
+
+static gboolean
+hd_home_view_background_clicked (ClutterActor *background,
+				 ClutterEvent *event,
+				 HdHomeView   *view)
+{
+  g_signal_emit (view, signals[SIGNAL_BACKGROUND_CLICKED], 0);
+  return TRUE;
 }
 
 static gboolean
@@ -142,7 +163,12 @@ hd_home_view_constructed (GObject *object)
 
   clutter_actor_set_size (rect, priv->xwidth, priv->xheight);
   clutter_actor_show (rect);
+  clutter_actor_set_reactive (rect, TRUE);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
+
+  g_signal_connect (rect, "button-release-event",
+		    G_CALLBACK (hd_home_view_background_clicked),
+		    object);
 
   priv->background = rect;
 
