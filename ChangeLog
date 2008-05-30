@@ -1,5 +1,12 @@
 2008-05-30  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-home-view.c:
+	* src/hd-home-view.h:
+	* src/hd-home.c:
+	Added thumbnail mode and thumbnail-clicked for home layout view.
+
+2008-05-30  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-home.c:
 	Added new view button; fixed return values in button click
 	handlers.

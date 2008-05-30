@@ -45,6 +45,8 @@ typedef struct _HdHomeViewPrivate HdHomeViewPrivate;
 struct _HdHomeViewClass
 {
   ClutterGroupClass parent_class;
+
+  void (*thumbnail_clicked) (HdHomeView * view);
 };
 
 struct _HdHomeView
@@ -59,6 +61,8 @@ GType hd_home_view_get_type (void);
 void hd_home_view_set_background_color (HdHomeView *view, ClutterColor *color);
 
 void hd_home_view_set_background_image (HdHomeView *view, const gchar * path);
+
+void hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on);
 
 G_END_DECLS
 

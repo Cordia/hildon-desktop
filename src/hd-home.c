@@ -142,6 +142,17 @@ hd_home_new_button_clicked (ClutterActor *button,
 }
 
 static void
+hd_home_view_thumbnail_clicked (HdHomeView *view, HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  gint           index = g_list_index (priv->views, view);
+
+  g_debug ("got thumbnail signal for index %d", index);
+
+  hd_home_show_view (home, index);
+}
+
+static void
 hd_home_constructed (GObject *object)
 {
   HdHomePrivate   *priv = HD_HOME (object)->priv;
@@ -171,6 +182,10 @@ hd_home_constructed (GObject *object)
       view = g_object_new (HD_TYPE_HOME_VIEW,
 			   "comp-mgr", priv->comp_mgr,
 			   NULL);
+
+      g_signal_connect (view, "thumbnail-clicked",
+		    G_CALLBACK (hd_home_view_thumbnail_clicked),
+		    object);
 
       priv->views = g_list_append (priv->views, view);
 
@@ -346,14 +361,21 @@ hd_home_show_view (HdHome * home, guint view_index)
       return;
     }
 
-  timeline = clutter_effect_move (priv->move_template,
-				  CLUTTER_ACTOR (home),
-				  - view_index * priv->xwidth, 0,
-				  NULL, NULL);
-
   priv->current_view = view_index;
 
-  clutter_timeline_start (timeline);
+  if (priv->mode == HD_HOME_MODE_NORMAL)
+    {
+      timeline = clutter_effect_move (priv->move_template,
+				      CLUTTER_ACTOR (home),
+				      - view_index * priv->xwidth, 0,
+				      NULL, NULL);
+
+      clutter_timeline_start (timeline);
+    }
+  else
+    {
+      hd_home_set_mode (home, HD_HOME_MODE_NORMAL);
+    }
 }
 
 static void
@@ -423,6 +445,7 @@ hd_home_do_normal_layout (HdHomePrivate *priv)
       clutter_actor_set_position (view, i * xwidth, 0);
       clutter_actor_set_scale (view, 1.0, 1.0);
       clutter_actor_set_depth (view, 0);
+      hd_home_view_set_thumbnail_mode (HD_HOME_VIEW (view), FALSE);
 
       ++i;
       l = l->next;
@@ -494,6 +517,7 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
   clutter_actor_set_position (top, x_top, y_top);
   clutter_actor_set_depth (top, 0);
   clutter_actor_set_scale (top, scale, scale);
+  hd_home_view_set_thumbnail_mode (HD_HOME_VIEW (top), TRUE);
 
   while (l)
     {
@@ -516,6 +540,7 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
 	  ++n;
 
 	  clutter_actor_set_scale (view, scale, scale);
+	  hd_home_view_set_thumbnail_mode (HD_HOME_VIEW (view), TRUE);
 	}
 
       ++i;
@@ -592,7 +617,7 @@ hd_home_do_layout_layout (HdHome * home)
 }
 
 void
-hd_home_set_mode (HdHome* home, HdHomeMode mode)
+hd_home_set_mode (HdHome *home, HdHomeMode mode)
 {
   HdHomePrivate   *priv = home->priv;
 
@@ -654,6 +679,10 @@ static void hd_home_new_view (HdHome * home)
 		       NULL);
 
   hd_home_view_set_background_color (HD_HOME_VIEW (view), &clr);
+
+  g_signal_connect (view, "thumbnail-clicked",
+		    G_CALLBACK (hd_home_view_thumbnail_clicked),
+		    home);
 
   priv->views = g_list_append (priv->views, view);
 

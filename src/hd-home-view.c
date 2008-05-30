@@ -34,6 +34,14 @@
 
 enum
 {
+  SIGNAL_THUMBNAIL_CLICKED,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS];
+
+enum
+{
   PROP_COMP_MGR = 1,
 };
 
@@ -42,9 +50,12 @@ struct _HdHomeViewPrivate
   MBWMCompMgrClutter   *comp_mgr;
 
   ClutterActor         *background;
+  ClutterActor         *mouse_trap;
 
   gint                  xwidth;
   gint                  xheight;
+
+  gboolean              thumbnail_mode : 1;
 };
 
 static void hd_home_view_class_init (HdHomeViewClass *klass);
@@ -87,6 +98,27 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 				G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
 
   g_object_class_install_property (object_class, PROP_COMP_MGR, pspec);
+
+  signals[SIGNAL_THUMBNAIL_CLICKED] =
+      g_signal_new ("thumbnail-clicked",
+                    G_OBJECT_CLASS_TYPE (object_class),
+                    G_SIGNAL_RUN_FIRST,
+                    G_STRUCT_OFFSET (HdHomeViewClass, thumbnail_clicked),
+                    NULL,
+                    NULL,
+                    g_cclosure_marshal_VOID__VOID,
+                    G_TYPE_NONE,
+                    0);
+
+}
+
+static gboolean
+hd_home_view_mouse_trap_clicked (ClutterActor *trap,
+				 ClutterEvent *event,
+				 HdHomeView   *view)
+{
+  g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0);
+  return TRUE;
 }
 
 static void
@@ -113,6 +145,21 @@ hd_home_view_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
   priv->background = rect;
+
+  clr.alpha = 0;
+  rect = clutter_rectangle_new_with_color (&clr);
+
+  clutter_actor_set_size (rect, priv->xwidth, priv->xheight);
+  clutter_actor_hide (rect);
+  clutter_actor_set_reactive (rect, TRUE);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
+
+  g_signal_connect (rect, "button-release-event",
+		    G_CALLBACK (hd_home_view_mouse_trap_clicked),
+		    object);
+
+  priv->mouse_trap = rect;
 }
 
 static void
@@ -191,7 +238,7 @@ hd_home_view_set_background_color (HdHomeView *view, ClutterColor *color)
 
       if (priv->background)
 	clutter_actor_destroy (priv->background);
-      
+
       priv->background = background;
     }
 }
@@ -221,4 +268,24 @@ hd_home_view_set_background_image (HdHomeView *view, const gchar * path)
     clutter_actor_destroy (priv->background);
 
   priv->background = background;
+}
+
+void
+hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  if (priv->thumbnail_mode && !on)
+    {
+      priv->thumbnail_mode = FALSE;
+
+      clutter_actor_hide (priv->mouse_trap);
+    }
+  else if (!priv->thumbnail_mode && on)
+    {
+      priv->thumbnail_mode = TRUE;
+
+      clutter_actor_show (priv->mouse_trap);
+      clutter_actor_raise_top (priv->mouse_trap);
+    }
 }
