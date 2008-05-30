@@ -1,5 +1,11 @@
 2008-05-30  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-home.c:
+	(hd_home_show_view):
+	Fixed handling of mode and home position.
+
+2008-05-30  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-home-view.c:
 	* src/hd-home-view.h:
 	* src/hd-home.c:

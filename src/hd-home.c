@@ -147,8 +147,6 @@ hd_home_view_thumbnail_clicked (HdHomeView *view, HdHome *home)
   HdHomePrivate *priv = home->priv;
   gint           index = g_list_index (priv->views, view);
 
-  g_debug ("got thumbnail signal for index %d", index);
-
   hd_home_show_view (home, index);
 }
 
@@ -419,11 +417,12 @@ hd_home_ungrab_pointer (HdHomePrivate * priv)
 }
 
 static void
-hd_home_do_normal_layout (HdHomePrivate *priv)
+hd_home_do_normal_layout (HdHome *home)
 {
-  GList *l = priv->views;
-  gint   xwidth = priv->xwidth;
-  gint   i = 0;
+  HdHomePrivate *priv = home->priv;
+  GList         *l = priv->views;
+  gint           xwidth = priv->xwidth;
+  gint           i = 0;
 
   clutter_actor_hide (priv->close_button);
   clutter_actor_hide (priv->back_button);
@@ -451,19 +450,23 @@ hd_home_do_normal_layout (HdHomePrivate *priv)
       l = l->next;
     }
 
+  clutter_actor_set_position (CLUTTER_ACTOR (home),
+			      -priv->current_view * xwidth, 0);
+
   hd_home_ungrab_pointer (priv);
 }
 
 static void
-hd_home_do_edit_layout (HdHomePrivate *priv)
+hd_home_do_edit_layout (HdHome *home)
 {
+  HdHomePrivate *priv = home->priv;
   gint x;
 
   if (priv->mode == HD_HOME_MODE_EDIT)
     return;
 
   if (priv->mode != HD_HOME_MODE_NORMAL)
-    hd_home_do_normal_layout (priv);
+    hd_home_do_normal_layout (home);
 
   /*
    * Show the overlay edit_group and move it over the current view.
@@ -625,7 +628,7 @@ hd_home_set_mode (HdHome *home, HdHomeMode mode)
     {
     case HD_HOME_MODE_NORMAL:
     default:
-      hd_home_do_normal_layout (priv);
+      hd_home_do_normal_layout (home);
       break;
 
     case HD_HOME_MODE_LAYOUT:
@@ -633,7 +636,7 @@ hd_home_set_mode (HdHome *home, HdHomeMode mode)
       break;
 
     case HD_HOME_MODE_EDIT:
-      hd_home_do_edit_layout (priv);
+      hd_home_do_edit_layout (home);
       break;
     }
 
