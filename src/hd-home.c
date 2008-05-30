@@ -35,6 +35,9 @@
 #include <matchbox/core/mb-wm.h>
 
 #define HDH_MOVE_DURATION 300
+#define HDH_ZOOM_DURATION 3000
+#define HDH_LAYOUT_TOP_SCALE 0.5
+#define HDH_LAYOUT_Y_OFFSET 60
 
 #define CLOSE_BUTTON "close-button.png"
 #define BACK_BUTTON  "back-button.png"
@@ -49,6 +52,7 @@ struct _HdHomePrivate
   MBWMCompMgrClutter    *comp_mgr;
 
   ClutterEffectTemplate *move_template;
+  ClutterEffectTemplate *zoom_template;
 
   ClutterActor          *main_group; /* Where the views + their buttons live */
   ClutterActor          *edit_group; /* An overlay group for edit mode */
@@ -191,8 +195,8 @@ hd_home_constructed (GObject *object)
   priv->n_views = i;
 
   /*
-   * NB: we position the button in the hd_home_do_layout_layout() function; this
-   * allows us to mess about with the layout in that one place only.
+   * NB: we position the button in the hd_home_do_layout_layout() function;
+   * this allows us to mess about with the layout in that one place only.
    */
   priv->close_button =
     clutter_texture_new_from_file (CLOSE_BUTTON, &error);
@@ -219,7 +223,6 @@ hd_home_constructed (GObject *object)
 		    object);
 
   /*
-   *
    * Construct the grey rectangle for dimming of desktop in edit mode
    * This one is added directly to the home, so it is always on the top
    * all the other stuff in the main_group.
@@ -246,6 +249,10 @@ hd_home_init (HdHome *self)
 
   priv->move_template =
     clutter_effect_template_new_for_duration (HDH_MOVE_DURATION,
+					      CLUTTER_ALPHA_RAMP_INC);
+
+  priv->zoom_template =
+    clutter_effect_template_new_for_duration (HDH_ZOOM_DURATION,
 					      CLUTTER_ALPHA_RAMP_INC);
 }
 
@@ -431,34 +438,37 @@ hd_home_close_button_clicked (ClutterActor *button,
 }
 
 static void
-hd_home_do_layout_layout (HdHome * home)
+hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
 {
   HdHomePrivate   *priv = home->priv;
   GList           *l = priv->views;
   gint             xwidth = priv->xwidth;
   gint             xheight = priv->xheight;
   gint             i = 0, n = 0;
-  ClutterActor    *top = NULL;
+  ClutterActor    *top;
   gint             x_top, y_top, w_top, h_top;
-  gdouble          scale = 0.5;
+  gdouble          scale = HDH_LAYOUT_TOP_SCALE;
+
+  g_assert (top_view);
+  top = CLUTTER_ACTOR (top_view);
 
   w_top = (gint)((gdouble)xwidth * scale);
   h_top = (gint)((gdouble)xheight * scale) - xheight/16;
   x_top = (xwidth - w_top)/ 2;
-  y_top = (xheight - h_top)/ 2 - xheight / 8;
+  y_top = (xheight - h_top)/ 2 - HDH_LAYOUT_Y_OFFSET;
+
+  clutter_actor_move_anchor_point_from_gravity (top,
+						CLUTTER_GRAVITY_NORTH_WEST);
+
+  clutter_actor_set_position (top, x_top, y_top);
+  clutter_actor_set_depth (top, 0);
+  clutter_actor_set_scale (top, scale, scale);
 
   while (l)
     {
       ClutterActor * view = l->data;
 
-      if (i == priv->current_view)
-	{
-	  top = view;
-
-	  clutter_actor_set_position (view, x_top, y_top);
-	  clutter_actor_set_depth (view, 0);
-	}
-      else
+      if (i != priv->current_view)
 	{
 	  if (!n)
 	    {
@@ -473,9 +483,9 @@ hd_home_do_layout_layout (HdHome * home)
 	    }
 
 	  ++n;
-	}
 
-      clutter_actor_set_scale (view, scale, scale);
+	  clutter_actor_set_scale (view, scale, scale);
+	}
 
       ++i;
       l = l->next;
@@ -501,24 +511,46 @@ hd_home_do_layout_layout (HdHome * home)
   clutter_actor_show (priv->back_button);
   clutter_actor_raise_top (priv->back_button);
 
-  if (top)
-    {
-      clutter_actor_raise_top (top);
-      clutter_actor_raise (priv->close_button, top);
+  clutter_actor_raise_top (top);
+  clutter_actor_raise (priv->close_button, top);
 
-      clutter_actor_set_depth (top, 0);
-      clutter_actor_set_depth (priv->close_button, 0);
-      clutter_actor_set_depth (priv->back_button, 0);
+  clutter_actor_set_depth (top, 0);
+  clutter_actor_set_depth (priv->close_button, 0);
+  clutter_actor_set_depth (priv->back_button, 0);
 
-      priv->close_button_handler =
-	g_signal_connect (priv->close_button, "button-release-event",
-                          G_CALLBACK (hd_home_close_button_clicked),
-			  home);
-    }
+  priv->close_button_handler =
+    g_signal_connect (priv->close_button, "button-release-event",
+		      G_CALLBACK (hd_home_close_button_clicked),
+		      home);
 
   clutter_actor_hide (priv->grey_filter);
 
   hd_home_grab_pointer (priv);
+}
+
+static void
+hd_home_do_layout_layout (HdHome * home)
+{
+  HdHomePrivate   *priv = home->priv;
+  ClutterTimeline *timeline;
+  ClutterActor    *top;
+
+  top = g_list_nth_data (priv->views, priv->current_view);
+
+  g_assert (top);
+
+  clutter_actor_move_anchor_point (top,
+				   priv->xwidth / 2,
+				   priv->xheight / 2 - HDH_LAYOUT_Y_OFFSET);
+
+  timeline = clutter_effect_scale (priv->move_template,
+				   top,
+				   HDH_LAYOUT_TOP_SCALE, HDH_LAYOUT_TOP_SCALE,
+				   (ClutterEffectCompleteFunc)
+				   hd_home_do_layout_contents,
+				   home);
+
+  clutter_timeline_start (timeline);
 }
 
 void
