@@ -29,6 +29,7 @@
 #include "hd-switcher.h"
 #include "hd-switcher-group.h"
 #include "hd-comp-mgr.h"
+#include "hd-util.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -308,22 +309,7 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
 
   if (!actor)
     {
-      ClutterActor *stage = clutter_stage_get_default();
-      Window         clutter_window;
-      Display       *dpy = clutter_x11_get_default_display ();
-      int            status;
-
-      clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
-
-      status = XGrabPointer (dpy,
-			     clutter_window,
-			     False,
-			     ButtonPressMask | ButtonReleaseMask,
-			     GrabModeAsync,
-			     GrabModeAsync,
-			     None,
-			     None,
-			     CurrentTime);
+      hd_util_grab_pointer ();
     }
   else
     {
@@ -462,12 +448,12 @@ static void
 hd_switcher_hide_switcher (HdSwitcher * switcher)
 {
   HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
-  Display           * dpy = clutter_x11_get_default_display ();
 
   priv->showing_switcher = FALSE;
 
   clutter_actor_hide_all (priv->switcher_group);
-  XUngrabPointer (dpy, CurrentTime);
+
+  hd_util_ungrab_pointer ();
 
   hd_comp_mgr_lower_home_actor (HD_COMP_MGR (priv->comp_mgr));
 
@@ -484,11 +470,10 @@ hd_switcher_hide_launcher (HdSwitcher * switcher)
 #if 0
   /* FIXME once we have the launcher */
   HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
-  Display           * dpy = clutter_x11_get_default_display ();
 
   priv->showing_launcher = FALSE;
 
   clutter_actor_hide_all (priv->launcher_group);
-  XUngrabPointer (dpy, CurrentTime);
+  hd_util_ungrab_pointer ();
 #endif
 }

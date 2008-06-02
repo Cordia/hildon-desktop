@@ -28,6 +28,7 @@
 #include "hd-home.h"
 #include "hd-home-view.h"
 #include "hd-comp-mgr.h"
+#include "hd-util.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -104,6 +105,8 @@ static void hd_home_start_pan (HdHome *home);
 
 static void hd_home_grab_pointer (HdHomePrivate * priv);
 
+static void hd_home_ungrab_pointer (HdHomePrivate * priv);
+
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
 static void
@@ -148,7 +151,9 @@ hd_home_new_button_clicked (ClutterActor *button,
 }
 
 static void
-hd_home_view_thumbnail_clicked (HdHomeView *view, HdHome *home)
+hd_home_view_thumbnail_clicked (HdHomeView         *view,
+				ClutterButtonEvent *ev,
+				HdHome             *home)
 {
   HdHomePrivate *priv = home->priv;
   gint           index = g_list_index (priv->views, view);
@@ -157,9 +162,23 @@ hd_home_view_thumbnail_clicked (HdHomeView *view, HdHome *home)
 }
 
 static void
-hd_home_view_background_clicked (HdHomeView *view, HdHome *home)
+hd_home_view_background_clicked (HdHomeView         *view,
+				 ClutterButtonEvent *ev,
+				 HdHome             *home)
 {
-  g_debug ("God background-clicked signal from view %p", view);
+  HdHomePrivate *priv = home->priv;
+  Display       *dpy = clutter_x11_get_default_display ();
+
+  g_debug ("God background-clicked signal from view %p, grab %d",
+	   view, priv->pointer_grabbed);
+
+  if (priv->pointer_grabbed)
+    hd_home_ungrab_pointer (priv);
+
+  hd_util_fake_button_event (dpy, ev->button, FALSE, ev->x, ev->y);
+
+  if (priv->pointer_grabbed)
+    hd_home_grab_pointer (priv);
 }
 
 static void
@@ -291,6 +310,8 @@ hd_home_constructed (GObject *object)
   clutter_actor_set_size (priv->grey_filter, priv->xwidth, priv->xheight);
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->grey_filter);
+
+  hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_NORMAL);
 }
 
 static void
@@ -395,24 +416,7 @@ hd_home_grab_pointer (HdHomePrivate * priv)
 {
   if (!priv->pointer_grabbed)
     {
-      ClutterActor  *stage = clutter_stage_get_default();
-      Window         clutter_window;
-      Display       *dpy = clutter_x11_get_default_display ();
-      int            status;
-
-      clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
-
-      status = XGrabPointer (dpy,
-			     clutter_window,
-			     False,
-			     ButtonPressMask | ButtonReleaseMask,
-			     GrabModeAsync,
-			     GrabModeAsync,
-			     None,
-			     None,
-			     CurrentTime);
-
-      if (!status)
+      if (!hd_util_grab_pointer ())
 	priv->pointer_grabbed = TRUE;
     }
 }
@@ -422,10 +426,7 @@ hd_home_ungrab_pointer (HdHomePrivate * priv)
 {
   if (priv->pointer_grabbed)
     {
-      Display * dpy = clutter_x11_get_default_display ();
-
-      XUngrabPointer (dpy, CurrentTime);
-
+      hd_util_ungrab_pointer ();
       priv->pointer_grabbed = FALSE;
     }
 }

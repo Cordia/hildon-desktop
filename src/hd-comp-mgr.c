@@ -396,6 +396,7 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry * geom)
   MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
   MBWindowManager   *wm = mgr->wm;
   Display           *xdpy = wm->xdpy;
+  ClutterActor      *stage;
 
   overlay = XCompositeGetOverlayWindow (xdpy, wm->root_win->xwindow);
 
@@ -426,8 +427,9 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry * geom)
                               0, 0,
                               region);
 
-  clutter_window =
-    clutter_x11_get_stage_window (CLUTTER_STAGE (clutter_stage_get_default()));
+  stage = clutter_stage_get_default();
+
+  clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
 
   XSelectInput (xdpy,
                 clutter_window,
@@ -703,6 +705,7 @@ hd_comp_mgr_lower_home_actor (HdCompMgr *hmgr)
 static void
 hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor)
 {
+  g_debug ("Mgr: home clicked.");
   hd_comp_mgr_top_home (hmgr);
 }
 

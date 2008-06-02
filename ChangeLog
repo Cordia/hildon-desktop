@@ -1,3 +1,23 @@
+2008-06-02  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-comp-mgr.c
+
+	* src/hd-home-view.c:
+	* src/hd-home-view.h:
+	Added ClutterButtonEvent parameter to thumbnail-clicked and
+	background-clicked signals.
+
+	* src/hd-home.c:
+	* src/hd-switcher.c:
+	* src/hd-util.c:
+	* src/hd-util.h:
+	(hd_util_grab_pointer):
+	(hd_util_ungrab_pointer):
+	Extracted pointer grabbing from home/mgr.
+
+	(hd_util_fake_button_event):
+	Function to dispatch fake button events.
+
 2008-05-30  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-home-view.c:

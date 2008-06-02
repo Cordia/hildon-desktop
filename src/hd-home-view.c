@@ -107,9 +107,10 @@ hd_home_view_class_init (HdHomeViewClass *klass)
                     G_STRUCT_OFFSET (HdHomeViewClass, thumbnail_clicked),
                     NULL,
                     NULL,
-                    g_cclosure_marshal_VOID__VOID,
+                    g_cclosure_marshal_VOID__BOXED,
                     G_TYPE_NONE,
-                    0);
+                    1,
+		    CLUTTER_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
 
   signals[SIGNAL_BACKGROUND_CLICKED] =
       g_signal_new ("background-clicked",
@@ -118,9 +119,10 @@ hd_home_view_class_init (HdHomeViewClass *klass)
                     G_STRUCT_OFFSET (HdHomeViewClass, thumbnail_clicked),
                     NULL,
                     NULL,
-                    g_cclosure_marshal_VOID__VOID,
+                    g_cclosure_marshal_VOID__BOXED,
                     G_TYPE_NONE,
-                    0);
+                    1,
+		    CLUTTER_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
 
 }
 
@@ -129,7 +131,8 @@ hd_home_view_background_clicked (ClutterActor *background,
 				 ClutterEvent *event,
 				 HdHomeView   *view)
 {
-  g_signal_emit (view, signals[SIGNAL_BACKGROUND_CLICKED], 0);
+  g_debug ("View background clicked");
+  g_signal_emit (view, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
   return TRUE;
 }
 
@@ -138,7 +141,8 @@ hd_home_view_mouse_trap_clicked (ClutterActor *trap,
 				 ClutterEvent *event,
 				 HdHomeView   *view)
 {
-  g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0);
+  g_debug ("Mousetrap clicked clicked");
+  g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0, event);
   return TRUE;
 }
 
