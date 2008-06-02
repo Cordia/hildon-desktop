@@ -180,7 +180,9 @@ hd_util_grab_pointer ()
   status = XGrabPointer (dpy,
 			 clutter_window,
 			 False,
-			 ButtonPressMask | ButtonReleaseMask,
+			 ButtonPressMask   |
+			 ButtonReleaseMask |
+			 PointerMotionMask,
 			 GrabModeAsync,
 			 GrabModeAsync,
 			 None,

@@ -44,6 +44,7 @@
 #define BACK_BUTTON  "back-button.png"
 #define NEW_BUTTON   "new-view-button.png"
 
+#define PAN_THRESHOLD 20
 enum
 {
   PROP_COMP_MGR = 1,
@@ -84,6 +85,12 @@ struct _HdHomePrivate
   HdHomeMode             mode;
 
   GList                 *pan_queue;
+
+  guint                  view_motion_handler;
+  ClutterActor          *moving_actor;
+
+  gint                   last_x;
+  gint                   cumulative_x;
 
   gboolean               pointer_grabbed : 1;
   gboolean               active_input    : 1;
@@ -244,6 +251,7 @@ hd_home_constructed (GObject *object)
 
       view = g_object_new (HD_TYPE_HOME_VIEW,
 			   "comp-mgr", priv->comp_mgr,
+			   "home",     object,
 			   NULL);
 
       g_signal_connect (view, "thumbnail-clicked",
@@ -728,6 +736,7 @@ static void hd_home_new_view (HdHome * home)
 
   view = g_object_new (HD_TYPE_HOME_VIEW,
 		       "comp-mgr", priv->comp_mgr,
+		       "home",     home,
 		       NULL);
 
   hd_home_view_set_background_color (HD_HOME_VIEW (view), &clr);
@@ -822,6 +831,7 @@ hd_home_start_pan (HdHome *home)
   /*
    * TODO -- deal with view-rollover when we reach end of desktop
    */
+
   timeline = clutter_effect_move (priv->move_template,
 				  CLUTTER_ACTOR (home),
 				  move_by, 0,
@@ -831,7 +841,7 @@ hd_home_start_pan (HdHome *home)
   clutter_timeline_start (timeline);
 }
 
-void
+static void
 hd_home_pan_by (HdHome *home, gint move_by)
 {
   HdHomePrivate   *priv = home->priv;
@@ -849,6 +859,18 @@ hd_home_pan_by (HdHome *home, gint move_by)
     {
       hd_home_start_pan (home);
     }
+}
+
+static void
+hd_home_pan_full (HdHome *home, gboolean left)
+{
+  HdHomePrivate * priv = home->priv;
+  gint            by = priv->xwidth;
+
+  if (left)
+    by *= -1;
+
+  hd_home_pan_by (home, by);
 }
 
 /*
@@ -888,3 +910,81 @@ hd_home_set_input_mode (HdHome *home, gboolean active)
 	hd_home_ungrab_pointer (priv);
     }
 }
+
+static gboolean
+hd_home_view_motion (ClutterActor       *actor,
+		     ClutterMotionEvent *event,
+		     HdHome             *home)
+{
+  HdHomePrivate * priv = home->priv;
+  gint by_x;
+
+  by_x = event->x - priv->last_x;
+
+  g_debug ("View motion event by %d.", by_x);
+
+  priv->cumulative_x += by_x;
+
+  /*
+   * When the motion gets over the pan threshold, we do a full pan
+   * and disconnect the motion handler (next motion needs to be started
+   * with another gesture).
+   */
+  if (priv->cumulative_x > 0 && priv->cumulative_x > PAN_THRESHOLD)
+    {
+      g_signal_handler_disconnect (priv->moving_actor,
+				   priv->view_motion_handler);
+      priv->view_motion_handler = 0;
+      priv->moving_actor = NULL;
+      priv->cumulative_x = 0;
+
+      hd_home_pan_full (home, FALSE);
+    }
+  else if (priv->cumulative_x < 0 && priv->cumulative_x < -PAN_THRESHOLD)
+    {
+      g_signal_handler_disconnect (priv->moving_actor,
+				   priv->view_motion_handler);
+      priv->view_motion_handler = 0;
+      priv->moving_actor = NULL;
+      priv->cumulative_x = 0;
+      hd_home_pan_full (home, TRUE);
+    }
+
+  priv->last_x = event->x;
+
+  return TRUE;
+}
+
+void
+hd_home_connect_pan_handler (HdHome        *home,
+			     ClutterActor  *actor,
+			     gint           initial_x,
+			     gint           initial_y)
+{
+  HdHomePrivate * priv = home->priv;
+
+  priv->moving_actor = actor;
+
+  priv->last_x = initial_x;
+  priv->cumulative_x = 0;
+
+  priv->view_motion_handler = g_signal_connect (actor, "motion-event",
+					G_CALLBACK (hd_home_view_motion),
+					home);
+}
+
+void
+hd_home_disconnect_pan_handler (HdHome *home)
+{
+  HdHomePrivate * priv = home->priv;
+
+  if (priv->view_motion_handler)
+    {
+      g_signal_handler_disconnect (priv->moving_actor,
+				   priv->view_motion_handler);
+      priv->view_motion_handler = 0;
+      priv->moving_actor = NULL;
+      priv->cumulative_x = 0;
+    }
+}
+

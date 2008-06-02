@@ -69,9 +69,12 @@ void hd_home_show_view (HdHome * home, guint view_index);
 
 void hd_home_set_mode (HdHome* home, HdHomeMode mode);
 
-void hd_home_pan_by (HdHome *home, gint move_by);
-
 void hd_home_set_input_mode (HdHome *home, gboolean active);
+
+void hd_home_connect_pan_handler (HdHome *home, ClutterActor *actor,
+				  gint initial_x, gint initial_y);
+
+void hd_home_disconnect_pan_handler (HdHome *home);
 
 G_END_DECLS
 

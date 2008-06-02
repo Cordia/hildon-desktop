@@ -27,6 +27,7 @@
 
 #include "hd-home-view.h"
 #include "hd-comp-mgr.h"
+#include "hd-home.h"
 
 #include <clutter/clutter.h>
 
@@ -44,11 +45,13 @@ static guint signals[N_SIGNALS];
 enum
 {
   PROP_COMP_MGR = 1,
+  PROP_HOME,
 };
 
 struct _HdHomeViewPrivate
 {
   MBWMCompMgrClutter   *comp_mgr;
+  HdHome               *home;
 
   ClutterActor         *background;
   ClutterActor         *mouse_trap;
@@ -101,6 +104,13 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 
   g_object_class_install_property (object_class, PROP_COMP_MGR, pspec);
 
+  pspec = g_param_spec_pointer ("home",
+				"HdHome",
+				"Parent HdHome object",
+				G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
+
+  g_object_class_install_property (object_class, PROP_HOME, pspec);
+
   signals[SIGNAL_THUMBNAIL_CLICKED] =
       g_signal_new ("thumbnail-clicked",
                     G_OBJECT_CLASS_TYPE (object_class),
@@ -138,24 +148,45 @@ hd_home_view_background_clicked (ClutterActor *background,
 }
 
 static gboolean
-hd_home_view_mouse_trap_clicked (ClutterActor *trap,
-				 ClutterEvent *event,
-				 HdHomeView   *view)
+hd_home_view_mouse_trap_press (ClutterActor       *trap,
+			       ClutterButtonEvent *event,
+			       HdHomeView         *view)
 {
   HdHomeViewPrivate * priv = view->priv;
 
-  g_debug ("Mousetrap clicked, input mode %d", priv->active_input);
+  g_debug ("Mousetrap pressed, input mode %d", priv->active_input);
 
   /*
-   * If the active input is set, we resend this event, otherwise emit the
-   * thumbnail-clicked signal.
+   * If in active input mode, start tracking motion events
    */
   if (priv->active_input)
     {
       g_debug ("In active input mode.");
 
+      hd_home_connect_pan_handler (priv->home, trap, event->x, event->y);
+
+      return TRUE;
     }
-  else
+
+  return FALSE;
+}
+
+static gboolean
+hd_home_view_mouse_trap_release (ClutterActor       *trap,
+				 ClutterButtonEvent *event,
+				 HdHomeView         *view)
+{
+  HdHomeViewPrivate * priv = view->priv;
+
+  g_debug ("Mousetrap released, input mode %d", priv->active_input);
+
+  /*
+   * If the active input is set, we resend this event, otherwise emit the
+   * thumbnail-clicked signal.
+   */
+  hd_home_disconnect_pan_handler (priv->home);
+
+  if (!priv->active_input)
     g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0, event);
 
   return TRUE;
@@ -201,7 +232,11 @@ hd_home_view_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
   g_signal_connect (rect, "button-release-event",
-		    G_CALLBACK (hd_home_view_mouse_trap_clicked),
+		    G_CALLBACK (hd_home_view_mouse_trap_release),
+		    object);
+
+  g_signal_connect (rect, "button-press-event",
+		    G_CALLBACK (hd_home_view_mouse_trap_press),
 		    object);
 
   priv->mouse_trap = rect;
@@ -239,6 +274,9 @@ hd_home_view_set_property (GObject       *object,
     case PROP_COMP_MGR:
       priv->comp_mgr = g_value_get_pointer (value);
       break;
+    case PROP_HOME:
+      priv->home = g_value_get_pointer (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -257,6 +295,9 @@ hd_home_view_get_property (GObject      *object,
     {
     case PROP_COMP_MGR:
       g_value_set_pointer (value, priv->comp_mgr);
+      break;
+    case PROP_HOME:
+      g_value_set_pointer (value, priv->home);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

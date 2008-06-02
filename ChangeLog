@@ -1,5 +1,19 @@
 2008-06-02  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-home-view.c:
+	Added construction time "home" property.
+	Refactored motion handling.
+
+	* src/hd-home.c:
+	* src/hd-home.h:
+	Translate view motion events to panning.
+
+	* src/hd-util.c:
+	(hd_util_grab_pointer):
+	Added motion event mask.
+
+2008-06-02  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-comp-mgr.c:
 	(hd_comp_mgr_restack):
 	Put Home into active input mode when no application windows are
