@@ -1,5 +1,22 @@
 2008-06-02  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-comp-mgr.c:
+	(hd_comp_mgr_restack):
+	Put Home into active input mode when no application windows are
+	present.
+
+	src/hd-home-view.c:
+	src/hd-home-view.h:
+	src/hd-home.c:
+	src/hd-home.h:
+	Added active input mode for the Home actor when Home is
+	on the top (all button events are getting trapped within Home
+	views and only forwarded to children when appropriate).
+
+	Added HdHome::background-clicked signal.
+
+2008-06-02  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-comp-mgr.c
 
 	* src/hd-home-view.c:

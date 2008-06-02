@@ -65,6 +65,8 @@ void hd_home_view_set_background_image (HdHomeView *view, const gchar * path);
 
 void hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on);
 
+void hd_home_view_set_input_mode (HdHomeView *view, gboolean active);
+
 G_END_DECLS
 
 #endif

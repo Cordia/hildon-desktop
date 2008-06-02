@@ -57,6 +57,7 @@ struct _HdHomeViewPrivate
   gint                  xheight;
 
   gboolean              thumbnail_mode : 1;
+  gboolean              active_input   : 1;
 };
 
 static void hd_home_view_class_init (HdHomeViewClass *klass);
@@ -116,7 +117,7 @@ hd_home_view_class_init (HdHomeViewClass *klass)
       g_signal_new ("background-clicked",
                     G_OBJECT_CLASS_TYPE (object_class),
                     G_SIGNAL_RUN_FIRST,
-                    G_STRUCT_OFFSET (HdHomeViewClass, thumbnail_clicked),
+                    G_STRUCT_OFFSET (HdHomeViewClass, background_clicked),
                     NULL,
                     NULL,
                     g_cclosure_marshal_VOID__BOXED,
@@ -141,8 +142,22 @@ hd_home_view_mouse_trap_clicked (ClutterActor *trap,
 				 ClutterEvent *event,
 				 HdHomeView   *view)
 {
-  g_debug ("Mousetrap clicked clicked");
-  g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0, event);
+  HdHomeViewPrivate * priv = view->priv;
+
+  g_debug ("Mousetrap clicked, input mode %d", priv->active_input);
+
+  /*
+   * If the active input is set, we resend this event, otherwise emit the
+   * thumbnail-clicked signal.
+   */
+  if (priv->active_input)
+    {
+      g_debug ("In active input mode.");
+
+    }
+  else
+    g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0, event);
+
   return TRUE;
 }
 
@@ -300,6 +315,10 @@ hd_home_view_set_background_image (HdHomeView *view, const gchar * path)
   priv->background = background;
 }
 
+/*
+ * The thumbnail mode is one in which the view acts as a single actor in
+ * which button events are intercepted globally.
+ */
 void
 hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on)
 {
@@ -318,4 +337,18 @@ hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on)
       clutter_actor_show (priv->mouse_trap);
       clutter_actor_raise_top (priv->mouse_trap);
     }
+}
+
+/*
+ * Active input mode is similar to the thumbnail mode (i.e., all events are
+ * intercepted globally, but in addition, events get forwarded to
+ * children if appropriate.
+ */
+void
+hd_home_view_set_input_mode (HdHomeView * view, gboolean active)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  priv->active_input = active;
+  hd_home_view_set_thumbnail_mode (view, active);
 }

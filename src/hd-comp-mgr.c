@@ -70,9 +70,9 @@ struct HdCompMgrPrivate
 
   DBusConnection *dbus_connection;
 
-  gboolean        showing_home : 1;
-  gboolean        stack_sync   : 1;
-  gboolean        low_mem      : 1;
+  gboolean        showing_home    : 1;
+  gboolean        stack_sync      : 1;
+  gboolean        low_mem         : 1;
 };
 
 /*
@@ -357,7 +357,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   clutter_actor_set_reactive (home, TRUE);
 
-  g_signal_connect_swapped (home, "button-release-event",
+  g_signal_connect_swapped (home, "background-clicked",
                             G_CALLBACK (hd_comp_mgr_home_clicked),
                             cmgr);
 
@@ -667,8 +667,30 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
    */
   if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
     priv->stack_sync = TRUE;
-  else if (parent_klass->restack)
-    parent_klass->restack (mgr);
+  else
+    {
+      /*
+       * Check if home is to be the top level application (i.e., there are no
+       * application clients); if home is top level, put it into active input
+       * mode so we can do panning, etc.
+       */
+      MBWindowManager       *wm = mgr->wm;
+      MBWindowManagerClient *c  = mb_wm_get_visible_main_client (wm);
+
+      if (c)
+	{
+	  priv->showing_home = FALSE;
+	  hd_home_set_input_mode (HD_HOME (priv->home), FALSE);
+	}
+      else
+	{
+	  priv->showing_home = TRUE;
+	  hd_home_set_input_mode (HD_HOME (priv->home), TRUE);
+	}
+
+      if (parent_klass->restack)
+	parent_klass->restack (mgr);
+    }
 }
 
 void

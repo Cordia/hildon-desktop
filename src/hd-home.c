@@ -49,6 +49,14 @@ enum
   PROP_COMP_MGR = 1,
 };
 
+enum
+{
+  SIGNAL_BACKGROUND_CLICKED,
+  N_SIGNALS
+};
+
+static guint signals[N_SIGNALS];
+
 struct _HdHomePrivate
 {
   MBWMCompMgrClutter    *comp_mgr;
@@ -78,6 +86,7 @@ struct _HdHomePrivate
   GList                 *pan_queue;
 
   gboolean               pointer_grabbed : 1;
+  gboolean               active_input    : 1;
 };
 
 static void hd_home_class_init (HdHomeClass *klass);
@@ -129,6 +138,18 @@ hd_home_class_init (HdHomeClass *klass)
 				G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
 
   g_object_class_install_property (object_class, PROP_COMP_MGR, pspec);
+
+  signals[SIGNAL_BACKGROUND_CLICKED] =
+      g_signal_new ("background-clicked",
+                    G_OBJECT_CLASS_TYPE (object_class),
+                    G_SIGNAL_RUN_FIRST,
+                    G_STRUCT_OFFSET (HdHomeClass, background_clicked),
+                    NULL,
+                    NULL,
+                    g_cclosure_marshal_VOID__BOXED,
+                    G_TYPE_NONE,
+                    1,
+		    CLUTTER_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
 }
 
 static gboolean
@@ -163,22 +184,35 @@ hd_home_view_thumbnail_clicked (HdHomeView         *view,
 
 static void
 hd_home_view_background_clicked (HdHomeView         *view,
-				 ClutterButtonEvent *ev,
+				 ClutterButtonEvent *event,
 				 HdHome             *home)
 {
   HdHomePrivate *priv = home->priv;
-  Display       *dpy = clutter_x11_get_default_display ();
 
-  g_debug ("God background-clicked signal from view %p, grab %d",
-	   view, priv->pointer_grabbed);
+  g_debug ("Got background-clicked signal from view %p, active input %d",
+	   view, priv->active_input);
 
-  if (priv->pointer_grabbed)
-    hd_home_ungrab_pointer (priv);
+  if (priv->active_input)
+    {
+      /* TODO -- handle pan, event forwarding, etc. */
+      g_debug ("View background in active input mode.");
+#if 0
+      Display *dpy = clutter_x11_get_default_display ();
 
-  hd_util_fake_button_event (dpy, ev->button, FALSE, ev->x, ev->y);
+      if (priv->pointer_grabbed)
+	   hd_home_ungrab_pointer (priv);
 
-  if (priv->pointer_grabbed)
-    hd_home_grab_pointer (priv);
+      hd_util_fake_button_event (dpy, ev->button, FALSE, ev->x, ev->y);
+
+      if (priv->pointer_grabbed)
+	   hd_home_grab_pointer (priv);
+#endif
+    }
+  else
+    {
+      g_debug ("View background in passive input mode.");
+      g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
+    }
 }
 
 static void
@@ -814,5 +848,43 @@ hd_home_pan_by (HdHome *home, gint move_by)
   if (!in_progress)
     {
       hd_home_start_pan (home);
+    }
+}
+
+/*
+ * We have two input modes for home: passive and active. In active mode, the
+ * home actor installs a pointer grab and the views trap all button events
+ * centrally, forwarning them to children as appropriate (this allows us to do
+ * thing like panning). In passive input mode, the event processing depends on
+ * the currently selected layout mode (in normal mode, the events pass through
+ * to any X windows below).
+ */
+void
+hd_home_set_input_mode (HdHome *home, gboolean active)
+{
+  HdHomePrivate   *priv = home->priv;
+
+  if ((active && !priv->active_input) || (!active && priv->active_input))
+    {
+      GList * l = priv->views;
+
+      while (l)
+	{
+	  HdHomeView * view = l->data;
+
+	  hd_home_view_set_input_mode (view, active);
+
+	  l = l->next;
+	}
+
+      priv->active_input = active;
+
+      /*
+       * Setup pointer grab in active mode
+       */
+      if (active && !priv->pointer_grabbed)
+	hd_home_grab_pointer (priv);
+      else
+	hd_home_ungrab_pointer (priv);
     }
 }

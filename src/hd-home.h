@@ -52,6 +52,8 @@ typedef struct _HdHomePrivate HdHomePrivate;
 struct _HdHomeClass
 {
   ClutterGroupClass parent_class;
+
+  void (*background_clicked) (HdHome * home, ClutterButtonEvent * ev);
 };
 
 struct _HdHome
@@ -68,6 +70,8 @@ void hd_home_show_view (HdHome * home, guint view_index);
 void hd_home_set_mode (HdHome* home, HdHomeMode mode);
 
 void hd_home_pan_by (HdHome *home, gint move_by);
+
+void hd_home_set_input_mode (HdHome *home, gboolean active);
 
 G_END_DECLS
 
