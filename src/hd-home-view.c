@@ -46,6 +46,7 @@ enum
 {
   PROP_COMP_MGR = 1,
   PROP_HOME,
+  PROP_ID,
 };
 
 struct _HdHomeViewPrivate
@@ -61,6 +62,8 @@ struct _HdHomeViewPrivate
 
   gboolean              thumbnail_mode : 1;
   gboolean              active_input   : 1;
+
+  guint                 id;
 };
 
 static void hd_home_view_class_init (HdHomeViewClass *klass);
@@ -110,6 +113,15 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 				G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
 
   g_object_class_install_property (object_class, PROP_HOME, pspec);
+
+  pspec = g_param_spec_int ("id",
+			    "id",
+			    "Numerical id for this view",
+			    0, G_MAXINT,
+			    0,
+			    G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
+
+  g_object_class_install_property (object_class, PROP_ID, pspec);
 
   signals[SIGNAL_THUMBNAIL_CLICKED] =
       g_signal_new ("thumbnail-clicked",
@@ -277,6 +289,9 @@ hd_home_view_set_property (GObject       *object,
     case PROP_HOME:
       priv->home = g_value_get_pointer (value);
       break;
+    case PROP_ID:
+      priv->id = g_value_get_int (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -298,6 +313,9 @@ hd_home_view_get_property (GObject      *object,
       break;
     case PROP_HOME:
       g_value_set_pointer (value, priv->home);
+      break;
+    case PROP_ID:
+      g_value_set_int (value, priv->id);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

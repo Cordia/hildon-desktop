@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2008 Nokia Corporation.
  *
- * Author:  Johan Bilien <johan.bilien@nokia.com>
+ * Author:  Tomas Frydrych <tf@o-hand.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -21,41 +21,36 @@
  *
  */
 
-#ifndef __HD_WM_H__
+#ifndef _HAVE_HD_HOME_APPLET_H
+#define _HAVE_HD_HOME_APPLET_H
 
-#include <glib/gmacros.h>
 #include <matchbox/core/mb-wm.h>
 
-G_BEGIN_DECLS
+typedef struct HdHomeApplet      HdHomeApplet;
+typedef struct HdHomeAppletClass HdHomeAppletClass;
 
-typedef enum _HdWmClientType
+#define HD_HOME_APPLET(c) ((HdHomeApplet*)(c))
+#define HD_HOME_APPLET_CLASS(c) ((HdHomeAppletClass*)(c))
+#define HD_TYPE_HOME_APPLET (hd_home_applet_class_type ())
+#define HD_IS_HOME_APPLET(c) (MB_WM_OBJECT_TYPE(c)==HD_TYPE_HOME_APPLET)
+
+struct HdHomeApplet
 {
-  HdWmClientTypeHomeApplet = MBWMClientTypeLast + 1,
+  MBWMClientBase    parent;
 
-} HdWmClientType;
-
-typedef struct HdWmClass   HdWmClass;
-typedef struct HdWm        HdWm;
-typedef struct HdWmPrivate HdWmPrivate;
-
-#define HD_WM(c)       ((HdWm*)(c))
-#define HD_WM_CLASS(c) ((HdWmClass*)(c))
-#define HD_TYPE_WM     (hd_wm_class_type ())
-
-struct HdWm
-{
-    MBWindowManager             parent;
-
-    HdWmPrivate                *priv;
+  MBWMDecorButton  *button_close;
+  unsigned int      view_id;
 };
 
-struct HdWmClass
+struct HdHomeAppletClass
 {
-    MBWindowManagerClass parent;
+  MBWMClientBaseClass parent;
 };
 
-int hd_wm_class_type (void);
+MBWindowManagerClient*
+hd_home_applet_new (MBWindowManager *wm, MBWMClientWindow *win);
 
-G_END_DECLS
+int
+hd_home_applet_class_type (void);
 
-#endif /* __HD_WM_H__ */
+#endif

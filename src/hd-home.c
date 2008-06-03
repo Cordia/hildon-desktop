@@ -252,6 +252,7 @@ hd_home_constructed (GObject *object)
       view = g_object_new (HD_TYPE_HOME_VIEW,
 			   "comp-mgr", priv->comp_mgr,
 			   "home",     object,
+			   "id",       i,
 			   NULL);
 
       g_signal_connect (view, "thumbnail-clicked",
@@ -737,6 +738,7 @@ static void hd_home_new_view (HdHome * home)
   view = g_object_new (HD_TYPE_HOME_VIEW,
 		       "comp-mgr", priv->comp_mgr,
 		       "home",     home,
+		       "id",       i,
 		       NULL);
 
   hd_home_view_set_background_color (HD_HOME_VIEW (view), &clr);

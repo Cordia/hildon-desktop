@@ -34,9 +34,13 @@
 #include <clutter/clutter-main.h>
 #include <clutter/x11/clutter-x11.h>
 
+#include "hd-home-applet.h"
+
 static int  hd_wm_init       (MBWMObject *object, va_list vap);
 static void hd_wm_destroy    (MBWMObject *object);
 static void hd_wm_class_init (MBWMObjectClass *klass);
+static MBWindowManagerClient* hd_wm_client_new (MBWindowManager *,
+						MBWMClientWindow *);
 
 static MBWMCompMgr * hd_wm_comp_mgr_new (MBWindowManager *wm);
 
@@ -77,6 +81,11 @@ hd_wm_class_init (MBWMObjectClass *klass)
   MBWindowManagerClass *wm_class = MB_WINDOW_MANAGER_CLASS (klass);
 
   wm_class->comp_mgr_new = hd_wm_comp_mgr_new;
+  wm_class->client_new   = hd_wm_client_new;
+
+#if MBWM_WANT_DEBUG
+  klass->klass_name = "HdWm";
+#endif
 }
 
 static void
@@ -96,3 +105,21 @@ hd_wm_comp_mgr_new (MBWindowManager *wm)
   return mgr;
 }
 
+static MBWindowManagerClient*
+hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
+{
+  HdCompMgr            *hmgr = HD_COMP_MGR (wm->comp_mgr);
+  MBWindowManagerClass *wm_class =
+    MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
+
+  if (win->net_type ==
+      hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_HOME_APPLET))
+    {
+      printf("### is home applet ###\n");
+      return hd_home_applet_new (wm, win);
+    }
+  else if (wm_class)
+    return wm_class->client_new (wm, win);
+
+  return NULL;
+}

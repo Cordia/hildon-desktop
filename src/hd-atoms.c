@@ -14,6 +14,10 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     "_HILDON_APP_KILLABLE",	/* Hildon only props */
     "_HILDON_ABLE_TO_HIBERNATE",/* alias for the above */
 
+    "_HILDON_HOME_VIEW",
+
+    "_HILDON_WM_WINDOW_TYPE_HOME_APPLET",
+
     "WM_WINDOW_ROLE",
   };
 

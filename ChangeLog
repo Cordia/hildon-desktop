@@ -1,5 +1,32 @@
 2008-06-03  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-atoms.c:
+	* src/hd-atoms.h:
+	New atoms for home applet type.
+
+	* src/hd-comp-mgr.c:
+	* src/hd-comp-mgr.h:
+	(hd_comp_mgr_get_atom):
+	Public accessor for the custom atom cache.
+
+	* src/hd-home-view.c:
+	* src/hd-home.c:
+	Added HdHomeView::id construction property to persistently
+	identify given view.
+
+	* src/hd-wm.h:
+	HdWmClientType enum for client types.
+
+	* src/hd-wm.c
+	Subclassed MBWindowManager::client_new().
+
+	* src/Makefile.am:
+	* src/hd-home-applet.h:
+	* src/hd-home-applet.c:
+	Start of custom client type for home applets.
+
+2008-06-03  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-home.c:
 	(hd_home_pan_full):
 	Deal with view rollover.

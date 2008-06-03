@@ -29,6 +29,8 @@
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 
+#include "hd-atoms.h"
+
 G_BEGIN_DECLS
 
 
@@ -100,6 +102,8 @@ gboolean hd_comp_mgr_get_low_memory_state (HdCompMgr * hmgr);
 void hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
 				     const gchar *app_service,
 				     const gchar *launch_param);
+
+Atom hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id);
 
 G_END_DECLS
 

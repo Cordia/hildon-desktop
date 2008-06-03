@@ -997,3 +997,14 @@ hd_comp_mgr_memory_limits (guint *pages_used, guint *pages_available)
 
   return result;
 }
+
+Atom
+hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id)
+{
+  HdCompMgrPrivate *priv = hmgr->priv;
+
+  if (id >= _HD_ATOM_LAST)
+    return (Atom) 0;
+
+  return priv->atoms[id];
+}
