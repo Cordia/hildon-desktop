@@ -864,11 +864,76 @@ hd_home_pan_by (HdHome *home, gint move_by)
 static void
 hd_home_pan_full (HdHome *home, gboolean left)
 {
-  HdHomePrivate * priv = home->priv;
-  gint            by = priv->xwidth;
+  HdHomePrivate  *priv = home->priv;
+  gint            by;
+  gint            xwidth;
 
+  by = xwidth = priv->xwidth;
+
+  /*
+   * Deal with view rollover.
+   */
   if (left)
-    by *= -1;
+    {
+      by *= -1;
+
+      if (priv->current_view == priv->n_views - 1)
+	{
+	  gint          i = 0;
+	  GList        *l = priv->views;
+	  ClutterActor *view = g_list_first (l)->data;
+
+	  g_debug ("AT LAST VIEW.");
+
+	  l = g_list_remove (l, view);
+	  l = g_list_append (l, view);
+
+	  priv->views = l;
+
+	  while (l)
+	    {
+	      view = l->data;
+	      clutter_actor_set_position (view, i * xwidth, 0);
+	      ++i;
+	      l = l->next;
+	    }
+
+	  clutter_actor_set_position (CLUTTER_ACTOR (home),
+				      -(priv->n_views-2)*xwidth, 0);
+	}
+      else
+	{
+	  ++priv->current_view;
+	}
+    }
+  else
+    {
+      if (priv->current_view == 0)
+	{
+	  gint          i = 0;
+	  GList        *l = priv->views;
+	  ClutterActor *view = g_list_last (l)->data;
+
+	  l = g_list_remove (l, view);
+	  l = g_list_prepend (l, view);
+
+	  priv->views = l;
+
+	  while (l)
+	    {
+	      view = l->data;
+	      clutter_actor_set_position (view, i * xwidth, 0);
+	      ++i;
+	      l = l->next;
+	    }
+
+	  clutter_actor_set_position (CLUTTER_ACTOR (home), -xwidth, 0);
+	}
+      else
+	{
+	  --priv->current_view;
+	}
+    }
 
   hd_home_pan_by (home, by);
 }

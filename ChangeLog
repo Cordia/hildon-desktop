@@ -1,3 +1,9 @@
+2008-06-03  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-home.c:
+	(hd_home_pan_full):
+	Deal with view rollover.
+
 2008-06-02  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-home-view.c:
