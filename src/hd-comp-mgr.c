@@ -28,6 +28,7 @@
 #include "hd-dbus.h"
 #include "hd-atoms.h"
 #include "hd-util.h"
+#include "hd-wm.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-window-manager.h>
@@ -677,7 +678,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
       MBWindowManager       *wm = mgr->wm;
       MBWindowManagerClient *c  = mb_wm_get_visible_main_client (wm);
 
-      if (c)
+      if (c && MB_WM_CLIENT_CLIENT_TYPE (c) != HdWmClientTypeHomeApplet)
 	{
 	  priv->showing_home = FALSE;
 	  hd_home_set_input_mode (HD_HOME (priv->home), FALSE);

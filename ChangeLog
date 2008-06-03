@@ -1,5 +1,11 @@
 2008-06-03  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-comp-mgr.c:
+	(hd_comp_mgr_restack):
+	If only home applets are present, put home into active input mode.
+
+2008-06-03  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-atoms.c:
 	* src/hd-atoms.h:
 	New atoms for home applet type.
