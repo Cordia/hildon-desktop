@@ -78,6 +78,8 @@ gboolean hd_home_disconnect_pan_handler (HdHome *home);
 
 void hd_home_add_applet (HdHome *home, ClutterActor *applet);
 
+void hd_home_remove_applet (HdHome *home, ClutterActor *applet);
+
 void hd_home_grab_pointer (HdHome *home);
 
 void hd_home_ungrab_pointer (HdHome *home);

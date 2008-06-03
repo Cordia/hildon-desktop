@@ -521,6 +521,14 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       g_object_set_data (G_OBJECT (actor),
 			 "HD-MBWMCompMgrClutterClient", NULL);
     }
+  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeHomeApplet)
+    {
+      ClutterActor * applet;
+
+      applet = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+
+      hd_home_remove_applet (HD_HOME (priv->home), applet);
+    }
 
   if (parent_klass->unregister_client)
     parent_klass->unregister_client (mgr, c);

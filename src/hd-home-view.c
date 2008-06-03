@@ -516,3 +516,14 @@ hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
   priv->applets = g_list_prepend (priv->applets, cc);
 }
 
+void
+hd_home_view_remove_applet (HdHomeView *view, ClutterActor *applet)
+{
+  HdHomeViewPrivate        *priv = view->priv;
+  MBWMCompMgrClutterClient *cc;
+
+  cc = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
+
+  priv->applets = g_list_remove (priv->applets, cc);
+}
+

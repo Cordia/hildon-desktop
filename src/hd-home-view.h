@@ -71,6 +71,8 @@ guint hd_home_view_get_view_id (HdHomeView *view);
 
 void hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet);
 
+void hd_home_view_remove_applet (HdHomeView *view, ClutterActor *applet);
+
 G_END_DECLS
 
 #endif

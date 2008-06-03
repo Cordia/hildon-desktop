@@ -3,6 +3,14 @@
 	* src/hd-home.c:
 	* src/hd-home.h:
 	* src/hd-home-view.c:
+	* src/hd-home-view.h:
+	Handle applet removal.
+
+2008-06-03  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-home.c:
+	* src/hd-home.h:
+	* src/hd-home-view.c:
 	Forwarding of events to applets.
 
 	* src/hd-util.c:
