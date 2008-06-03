@@ -28,6 +28,7 @@
 #include "hd-home-view.h"
 #include "hd-comp-mgr.h"
 #include "hd-home.h"
+#include "hd-util.h"
 
 #include <clutter/clutter.h>
 
@@ -62,8 +63,9 @@ struct _HdHomeViewPrivate
 
   GList                *applets; /* MBWMCompMgrClutterClient list */
 
-  gboolean              thumbnail_mode : 1;
-  gboolean              active_input   : 1;
+  gboolean              thumbnail_mode   : 1;
+  gboolean              active_input     : 1;
+  gboolean              forwarding_event : 1;
 
   guint                 id;
 };
@@ -156,7 +158,6 @@ hd_home_view_background_clicked (ClutterActor *background,
 				 ClutterEvent *event,
 				 HdHomeView   *view)
 {
-  g_debug ("View background clicked");
   g_signal_emit (view, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
   return TRUE;
 }
@@ -171,12 +172,15 @@ hd_home_view_mouse_trap_press (ClutterActor       *trap,
   g_debug ("Mousetrap pressed, input mode %d", priv->active_input);
 
   /*
+   * Make sure we clear the forwarding_event flag if set
+   */
+  priv->forwarding_event = FALSE;
+
+  /*
    * If in active input mode, start tracking motion events
    */
   if (priv->active_input)
     {
-      g_debug ("In active input mode.");
-
       hd_home_connect_pan_handler (priv->home, trap, event->x, event->y);
 
       return TRUE;
@@ -192,13 +196,69 @@ hd_home_view_mouse_trap_release (ClutterActor       *trap,
 {
   HdHomeViewPrivate * priv = view->priv;
 
+  /*
+   * We use a flag to avoid responding to a release event that we sometimes
+   * get when we fake events.
+   */
+  if (priv->forwarding_event)
+    {
+      g_debug ("FWD release.");
+      priv->forwarding_event = FALSE;
+
+      /*
+       * Must return false here to allow processing to proceed, otherwise
+       * things get screwed up.
+       */
+      return FALSE;
+    }
+
   g_debug ("Mousetrap released, input mode %d", priv->active_input);
 
   /*
    * If the active input is set, we resend this event, otherwise emit the
    * thumbnail-clicked signal.
    */
-  hd_home_disconnect_pan_handler (priv->home);
+  if (!hd_home_disconnect_pan_handler (priv->home))
+    {
+      GList * l = priv->applets;
+
+      while (l)
+	{
+	  MBWMCompMgrClutterClient *cc = l->data;
+	  ClutterActor             *applet;
+	  ClutterGeometry           geom;
+
+	  applet = mb_wm_comp_mgr_clutter_client_get_actor (cc);
+
+	  clutter_actor_get_geometry (applet, &geom);
+
+	  if ((event->x >= geom.x) && (event->x <= geom.x + geom.width) &&
+	      (event->y >= geom.y) && (event->y <= geom.y + geom.height))
+	    {
+	      MBWindowManagerClient *c  = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
+	      Display               *xdpy = c->wmref->xdpy;
+
+	      priv->forwarding_event = TRUE;
+
+	      hd_home_ungrab_pointer (priv->home);
+	      XSync (xdpy, False);
+
+	      g_debug ("Faking button press & release.");
+	      hd_util_fake_button_event (xdpy, event->button, True,
+					 event->x, event->y);
+	      hd_util_fake_button_event (xdpy, event->button, False,
+					 event->x, event->y);
+	      XSync (xdpy, False);
+
+	      hd_home_grab_pointer (priv->home);
+	      break;
+	    }
+
+	  l = l->next;
+	}
+
+      return TRUE;
+    }
 
   if (!priv->active_input)
     g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0, event);

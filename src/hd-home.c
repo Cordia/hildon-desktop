@@ -94,6 +94,7 @@ struct _HdHomePrivate
 
   gboolean               pointer_grabbed : 1;
   gboolean               active_input    : 1;
+  gboolean               pan_handled     : 1;
 };
 
 static void hd_home_class_init (HdHomeClass *klass);
@@ -118,10 +119,6 @@ static void hd_home_remove_view (HdHome * home, guint view_index);
 static void hd_home_new_view (HdHome * home);
 
 static void hd_home_start_pan (HdHome *home);
-
-static void hd_home_grab_pointer (HdHomePrivate * priv);
-
-static void hd_home_ungrab_pointer (HdHomePrivate * priv);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -196,28 +193,9 @@ hd_home_view_background_clicked (HdHomeView         *view,
 {
   HdHomePrivate *priv = home->priv;
 
-  g_debug ("Got background-clicked signal from view %p, active input %d",
-	   view, priv->active_input);
-
-  if (priv->active_input)
+  if (!priv->active_input)
     {
-      /* TODO -- handle pan, event forwarding, etc. */
-      g_debug ("View background in active input mode.");
-#if 0
-      Display *dpy = clutter_x11_get_default_display ();
-
-      if (priv->pointer_grabbed)
-	   hd_home_ungrab_pointer (priv);
-
-      hd_util_fake_button_event (dpy, ev->button, FALSE, ev->x, ev->y);
-
-      if (priv->pointer_grabbed)
-	   hd_home_grab_pointer (priv);
-#endif
-    }
-  else
-    {
-      g_debug ("View background in passive input mode.");
+      g_debug ("View background clicked in passive input mode.");
       g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
     }
 }
@@ -454,9 +432,11 @@ hd_home_show_view (HdHome * home, guint view_index)
     }
 }
 
-static void
-hd_home_grab_pointer (HdHomePrivate * priv)
+void
+hd_home_grab_pointer (HdHome *home)
 {
+  HdHomePrivate *priv = home->priv;
+
   if (!priv->pointer_grabbed)
     {
       if (!hd_util_grab_pointer ())
@@ -464,9 +444,11 @@ hd_home_grab_pointer (HdHomePrivate * priv)
     }
 }
 
-static void
-hd_home_ungrab_pointer (HdHomePrivate * priv)
+void
+hd_home_ungrab_pointer (HdHome *home)
 {
+  HdHomePrivate *priv = home->priv;
+
   if (priv->pointer_grabbed)
     {
       hd_util_ungrab_pointer ();
@@ -511,7 +493,7 @@ hd_home_do_normal_layout (HdHome *home)
   clutter_actor_set_position (CLUTTER_ACTOR (home),
 			      -priv->current_view * xwidth, 0);
 
-  hd_home_ungrab_pointer (priv);
+  hd_home_ungrab_pointer (home);
 }
 
 static void
@@ -649,7 +631,7 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
 
   clutter_actor_hide (priv->grey_filter);
 
-  hd_home_grab_pointer (priv);
+  hd_home_grab_pointer (home);
 }
 
 static void
@@ -885,8 +867,6 @@ hd_home_pan_full (HdHome *home, gboolean left)
 	  GList        *l = priv->views;
 	  ClutterActor *view = g_list_first (l)->data;
 
-	  g_debug ("AT LAST VIEW.");
-
 	  l = g_list_remove (l, view);
 	  l = g_list_append (l, view);
 
@@ -972,9 +952,9 @@ hd_home_set_input_mode (HdHome *home, gboolean active)
        * Setup pointer grab in active mode
        */
       if (active && !priv->pointer_grabbed)
-	hd_home_grab_pointer (priv);
+	hd_home_grab_pointer (home);
       else
-	hd_home_ungrab_pointer (priv);
+	hd_home_ungrab_pointer (home);
     }
 }
 
@@ -987,8 +967,6 @@ hd_home_view_motion (ClutterActor       *actor,
   gint by_x;
 
   by_x = event->x - priv->last_x;
-
-  g_debug ("View motion event by %d.", by_x);
 
   priv->cumulative_x += by_x;
 
@@ -1004,6 +982,7 @@ hd_home_view_motion (ClutterActor       *actor,
       priv->view_motion_handler = 0;
       priv->moving_actor = NULL;
       priv->cumulative_x = 0;
+      priv->pan_handled = TRUE;
 
       hd_home_pan_full (home, FALSE);
     }
@@ -1014,6 +993,8 @@ hd_home_view_motion (ClutterActor       *actor,
       priv->view_motion_handler = 0;
       priv->moving_actor = NULL;
       priv->cumulative_x = 0;
+      priv->pan_handled = TRUE;
+
       hd_home_pan_full (home, TRUE);
     }
 
@@ -1030,17 +1011,27 @@ hd_home_connect_pan_handler (HdHome        *home,
 {
   HdHomePrivate * priv = home->priv;
 
+  if (priv->view_motion_handler)
+    {
+      g_signal_handler_disconnect (priv->moving_actor,
+				   priv->view_motion_handler);
+    }
+
   priv->moving_actor = actor;
 
   priv->last_x = initial_x;
   priv->cumulative_x = 0;
+  priv->pan_handled = FALSE;
 
   priv->view_motion_handler = g_signal_connect (actor, "motion-event",
 					G_CALLBACK (hd_home_view_motion),
 					home);
 }
 
-void
+/*
+ * Returns TRUE if pan event was handled, FALSE otherwise.
+ */
+gboolean
 hd_home_disconnect_pan_handler (HdHome *home)
 {
   HdHomePrivate * priv = home->priv;
@@ -1053,6 +1044,8 @@ hd_home_disconnect_pan_handler (HdHome *home)
       priv->moving_actor = NULL;
       priv->cumulative_x = 0;
     }
+
+  return priv->pan_handled;
 }
 
 void

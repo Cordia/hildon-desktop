@@ -194,12 +194,16 @@ hd_util_grab_pointer ()
   return status;
 }
 
-void
+gint
 hd_util_ungrab_pointer ()
 {
   Display * dpy = clutter_x11_get_default_display ();
+  gint      status;
 
-  g_debug ("Doing pointer ungrab !!!");
 
-  XUngrabPointer (dpy, CurrentTime);
+  status = XUngrabPointer (dpy, CurrentTime);
+
+  g_debug ("Doing pointer ungrab (status %d)!!!", status);
+
+  return status;
 }

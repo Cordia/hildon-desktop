@@ -74,9 +74,13 @@ void hd_home_set_input_mode (HdHome *home, gboolean active);
 void hd_home_connect_pan_handler (HdHome *home, ClutterActor *actor,
 				  gint initial_x, gint initial_y);
 
-void hd_home_disconnect_pan_handler (HdHome *home);
+gboolean hd_home_disconnect_pan_handler (HdHome *home);
 
 void hd_home_add_applet (HdHome *home, ClutterActor *applet);
+
+void hd_home_grab_pointer (HdHome *home);
+
+void hd_home_ungrab_pointer (HdHome *home);
 
 G_END_DECLS
 

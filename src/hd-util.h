@@ -22,6 +22,6 @@ void hd_util_fake_button_event (Display *dpy,
 
 gint hd_util_grab_pointer (void);
 
-void hd_util_ungrab_pointer (void);
+gint hd_util_ungrab_pointer (void);
 
 #endif
