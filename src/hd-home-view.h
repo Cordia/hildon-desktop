@@ -67,6 +67,10 @@ void hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on);
 
 void hd_home_view_set_input_mode (HdHomeView *view, gboolean active);
 
+guint hd_home_view_get_view_id (HdHomeView *view);
+
+void hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet);
+
 G_END_DECLS
 
 #endif

@@ -1055,3 +1055,29 @@ hd_home_disconnect_pan_handler (HdHome *home)
     }
 }
 
+void
+hd_home_add_applet (HdHome *home, ClutterActor *applet)
+{
+  HdHomePrivate *priv = home->priv;
+  guint          view_id;
+  GList         *l;
+
+  view_id =
+    GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet), "HD-view-id"));
+
+  l = priv->views;
+
+  while (l)
+    {
+      HdHomeView * view = l->data;
+      guint        id = hd_home_view_get_view_id (view);
+
+      if (id == view_id)
+	{
+	  hd_home_view_add_applet (view, applet);
+	  break;
+	}
+
+      l = l->next;
+    }
+}

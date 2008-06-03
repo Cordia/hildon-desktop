@@ -29,6 +29,8 @@
 #include "hd-atoms.h"
 #include "hd-util.h"
 #include "hd-wm.h"
+#include "hd-home-applet.h"
+#include "hd-home.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-window-manager.h>
@@ -535,6 +537,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   HdCompMgrClient          * hclient;
   HdCompMgrClient          * hclient_h;
   guint                      hkey;
+  MBWMClientType             ctype;
 
   /*
    * Parent class map_notify creates the actor representing the client.
@@ -546,15 +549,30 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * If the actor is an appliation, add it also to the switcher
    *
    * FIXME: will need to do this for notifications as well.
+   *
+   * If it is Home applet, add it to the home
    */
-  if (MB_WM_CLIENT_CLIENT_TYPE (c) != MBWMClientTypeApp)
-    return;
+  ctype = MB_WM_CLIENT_CLIENT_TYPE (c);
 
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
   g_object_set_data (G_OBJECT (actor),
 		     "HD-MBWMCompMgrClutterClient", cclient);
+
+  if (ctype == HdWmClientTypeHomeApplet)
+    {
+      HdHomeApplet * applet  = HD_HOME_APPLET (c);
+      unsigned int   view_id = applet->view_id;
+
+      g_object_set_data (G_OBJECT (actor),
+			 "HD-view-id", GINT_TO_POINTER (view_id));
+
+      hd_home_add_applet (HD_HOME (priv->home), actor);
+      return;
+    }
+  else if (ctype != MBWMClientTypeApp)
+    return;
 
   hclient = HD_COMP_MGR_CLIENT (cclient);
   hkey = hclient->priv->hibernation_key;

@@ -60,6 +60,8 @@ struct _HdHomeViewPrivate
   gint                  xwidth;
   gint                  xheight;
 
+  GList                *applets; /* MBWMCompMgrClutterClient list */
+
   gboolean              thumbnail_mode : 1;
   gboolean              active_input   : 1;
 
@@ -264,6 +266,23 @@ hd_home_view_init (HdHomeView *self)
 static void
 hd_home_view_dispose (GObject *object)
 {
+  HdHomeViewPrivate  *priv = HD_HOME_VIEW (object)->priv;
+  GList              *l    = priv->applets;
+
+  /* Shutdown any applets associated with this view */
+  while (l)
+  {
+    MBWMCompMgrClutterClient *cc = l->data;
+
+    hd_comp_mgr_close_client (HD_COMP_MGR (priv->comp_mgr), cc);
+
+    l = l->next;
+  }
+
+  g_list_free (priv->applets);
+
+  priv->applets = NULL;
+
   G_OBJECT_CLASS (hd_home_view_parent_class)->dispose (object);
 }
 
@@ -411,3 +430,29 @@ hd_home_view_set_input_mode (HdHomeView * view, gboolean active)
   priv->active_input = active;
   hd_home_view_set_thumbnail_mode (view, active);
 }
+
+guint
+hd_home_view_get_view_id (HdHomeView *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  return priv->id;
+}
+
+void
+hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
+{
+  HdHomeViewPrivate        *priv = view->priv;
+  MBWMCompMgrClutterClient *cc;
+
+  /*
+   * Reparent the applet to ourselves; note that this automatically
+   * gets us the correct position within the view.
+   */
+  clutter_actor_reparent (applet, CLUTTER_ACTOR (view));
+
+  cc = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
+
+  priv->applets = g_list_prepend (priv->applets, cc);
+}
+

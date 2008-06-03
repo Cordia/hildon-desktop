@@ -76,6 +76,8 @@ void hd_home_connect_pan_handler (HdHome *home, ClutterActor *actor,
 
 void hd_home_disconnect_pan_handler (HdHome *home);
 
+void hd_home_add_applet (HdHome *home, ClutterActor *applet);
+
 G_END_DECLS
 
 #endif

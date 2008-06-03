@@ -1,6 +1,15 @@
 2008-06-03  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-comp-mgr.c:
+	* src/hd-home-view.c:
+	* src/hd-home-view.h:
+	* src/hd-home.c:
+	* src/hd-home.h:
+	Attach applets to a home view.
+
+2008-06-03  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-comp-mgr.c:
 	(hd_comp_mgr_restack):
 	If only home applets are present, put home into active input mode.
 
