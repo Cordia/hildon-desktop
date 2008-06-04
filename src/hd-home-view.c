@@ -31,6 +31,7 @@
 #include "hd-util.h"
 
 #include <clutter/clutter.h>
+#include <clutter/x11/clutter-x11.h>
 
 #include <matchbox/core/mb-wm.h>
 
@@ -63,9 +64,7 @@ struct _HdHomeViewPrivate
 
   GList                *applets; /* MBWMCompMgrClutterClient list */
 
-  gboolean              thumbnail_mode   : 1;
-  gboolean              active_input     : 1;
-  gboolean              forwarding_event : 1;
+  gboolean              thumbnail_mode     : 1;
 
   guint                 id;
 };
@@ -154,10 +153,12 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 }
 
 static gboolean
-hd_home_view_background_clicked (ClutterActor *background,
-				 ClutterEvent *event,
-				 HdHomeView   *view)
+hd_home_view_background_release (ClutterActor *background,
+			       ClutterEvent *event,
+			       HdHomeView   *view)
 {
+  g_debug ("Background release");
+
   g_signal_emit (view, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
   return TRUE;
 }
@@ -167,24 +168,7 @@ hd_home_view_mouse_trap_press (ClutterActor       *trap,
 			       ClutterButtonEvent *event,
 			       HdHomeView         *view)
 {
-  HdHomeViewPrivate * priv = view->priv;
-
-  g_debug ("Mousetrap pressed, input mode %d", priv->active_input);
-
-  /*
-   * Make sure we clear the forwarding_event flag if set
-   */
-  priv->forwarding_event = FALSE;
-
-  /*
-   * If in active input mode, start tracking motion events
-   */
-  if (priv->active_input)
-    {
-      hd_home_connect_pan_handler (priv->home, trap, event->x, event->y);
-
-      return TRUE;
-    }
+  g_debug ("Mousetrap pressed, %d,%d", event->x, event->y);
 
   return FALSE;
 }
@@ -194,74 +178,9 @@ hd_home_view_mouse_trap_release (ClutterActor       *trap,
 				 ClutterButtonEvent *event,
 				 HdHomeView         *view)
 {
-  HdHomeViewPrivate * priv = view->priv;
+  g_debug ("Mousetrap released, %d,%d @%d", event->x, event->y, event->time);
 
-  /*
-   * We use a flag to avoid responding to a release event that we sometimes
-   * get when we fake events.
-   */
-  if (priv->forwarding_event)
-    {
-      g_debug ("FWD release.");
-      priv->forwarding_event = FALSE;
-
-      /*
-       * Must return false here to allow processing to proceed, otherwise
-       * things get screwed up.
-       */
-      return FALSE;
-    }
-
-  g_debug ("Mousetrap released, input mode %d", priv->active_input);
-
-  /*
-   * If the active input is set, we resend this event, otherwise emit the
-   * thumbnail-clicked signal.
-   */
-  if (!hd_home_disconnect_pan_handler (priv->home))
-    {
-      GList * l = priv->applets;
-
-      while (l)
-	{
-	  MBWMCompMgrClutterClient *cc = l->data;
-	  ClutterActor             *applet;
-	  ClutterGeometry           geom;
-
-	  applet = mb_wm_comp_mgr_clutter_client_get_actor (cc);
-
-	  clutter_actor_get_geometry (applet, &geom);
-
-	  if ((event->x >= geom.x) && (event->x <= geom.x + geom.width) &&
-	      (event->y >= geom.y) && (event->y <= geom.y + geom.height))
-	    {
-	      MBWindowManagerClient *c  = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
-	      Display               *xdpy = c->wmref->xdpy;
-
-	      priv->forwarding_event = TRUE;
-
-	      hd_home_ungrab_pointer (priv->home);
-	      XSync (xdpy, False);
-
-	      g_debug ("Faking button press & release.");
-	      hd_util_fake_button_event (xdpy, event->button, True,
-					 event->x, event->y);
-	      hd_util_fake_button_event (xdpy, event->button, False,
-					 event->x, event->y);
-	      XSync (xdpy, False);
-
-	      hd_home_grab_pointer (priv->home);
-	      break;
-	    }
-
-	  l = l->next;
-	}
-
-      return TRUE;
-    }
-
-  if (!priv->active_input)
-    g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0, event);
+  g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0, event);
 
   return TRUE;
 }
@@ -291,7 +210,7 @@ hd_home_view_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
   g_signal_connect (rect, "button-release-event",
-		    G_CALLBACK (hd_home_view_background_clicked),
+		    G_CALLBACK (hd_home_view_background_release),
 		    object);
 
   priv->background = rect;
@@ -477,20 +396,6 @@ hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on)
     }
 }
 
-/*
- * Active input mode is similar to the thumbnail mode (i.e., all events are
- * intercepted globally, but in addition, events get forwarded to
- * children if appropriate.
- */
-void
-hd_home_view_set_input_mode (HdHomeView * view, gboolean active)
-{
-  HdHomeViewPrivate *priv = view->priv;
-
-  priv->active_input = active;
-  hd_home_view_set_thumbnail_mode (view, active);
-}
-
 guint
 hd_home_view_get_view_id (HdHomeView *view)
 {
@@ -514,6 +419,7 @@ hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
   cc = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
 
   priv->applets = g_list_prepend (priv->applets, cc);
+
 }
 
 void

@@ -86,15 +86,18 @@ struct _HdHomePrivate
 
   GList                 *pan_queue;
 
-  guint                  view_motion_handler;
-  ClutterActor          *moving_actor;
+  gulong                 desktop_motion_cb;
 
+  /* Pan variables */
   gint                   last_x;
+  gint                   initial_x;
+  gint                   initial_y;
   gint                   cumulative_x;
 
   gboolean               pointer_grabbed : 1;
-  gboolean               active_input    : 1;
   gboolean               pan_handled     : 1;
+
+  Window                 desktop;
 };
 
 static void hd_home_class_init (HdHomeClass *klass);
@@ -119,6 +122,8 @@ static void hd_home_remove_view (HdHome * home, guint view_index);
 static void hd_home_new_view (HdHome * home);
 
 static void hd_home_start_pan (HdHome *home);
+
+static void hd_home_pan_full (HdHome *home, gboolean left);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -191,13 +196,116 @@ hd_home_view_background_clicked (HdHomeView         *view,
 				 ClutterButtonEvent *event,
 				 HdHome             *home)
 {
-  HdHomePrivate *priv = home->priv;
+  g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
+}
 
-  if (!priv->active_input)
+static Bool
+hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
+{
+  HdHome          *home = userdata;
+  HdHomePrivate   *priv = home->priv;
+  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  gint by_x;
+
+  by_x = xev->x - priv->last_x;
+
+  priv->cumulative_x += by_x;
+
+  g_debug ("Got desktop motion, by %d, cumulative %d.",
+	   by_x, priv->cumulative_x);
+
+  /*
+   * When the motion gets over the pan threshold, we do a full pan
+   * and disconnect the motion handler (next motion needs to be started
+   * with another gesture).
+   */
+  if (priv->cumulative_x > 0 && priv->cumulative_x > PAN_THRESHOLD)
     {
-      g_debug ("View background clicked in passive input mode.");
-      g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
+      if (priv->desktop_motion_cb)
+	mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
+						   MotionNotify,
+						   priv->desktop_motion_cb);
+
+      priv->desktop_motion_cb = 0;
+      priv->cumulative_x = 0;
+      priv->pan_handled = TRUE;
+
+      hd_home_pan_full (home, FALSE);
     }
+  else if (priv->cumulative_x < 0 && priv->cumulative_x < -PAN_THRESHOLD)
+    {
+      if (priv->desktop_motion_cb)
+	mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
+						   MotionNotify,
+						   priv->desktop_motion_cb);
+
+      priv->desktop_motion_cb = 0;
+      priv->cumulative_x = 0;
+      priv->pan_handled = TRUE;
+
+      hd_home_pan_full (home, TRUE);
+    }
+
+  priv->last_x = xev->x;
+
+  return True;
+}
+
+static Bool
+hd_home_desktop_release (XButtonEvent *xev, void *userdata)
+{
+  HdHome *home = userdata;
+  HdHomePrivate *priv = home->priv;
+  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+
+  g_debug ("Got desktop release (cb %d).", (int)priv->desktop_motion_cb);
+
+  if (priv->desktop_motion_cb)
+    mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
+					       MotionNotify,
+					       priv->desktop_motion_cb);
+
+  priv->desktop_motion_cb = 0;
+  priv->cumulative_x = 0;
+
+  return True;
+}
+
+static Bool
+hd_home_desktop_press (XButtonEvent *xev, void *userdata)
+{
+  HdHome *home = userdata;
+  HdHomePrivate *priv = home->priv;
+  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+
+  g_debug ("Got desktop press.");
+
+  if (priv->desktop_motion_cb)
+    {
+      mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
+						 MotionNotify,
+						 priv->desktop_motion_cb);
+
+      priv->desktop_motion_cb = 0;
+    }
+
+  priv->initial_x = priv->last_x = xev->x;
+  priv->initial_y = xev->y;
+
+  priv->cumulative_x = 0;
+  priv->pan_handled = FALSE;
+
+  priv->desktop_motion_cb =
+    mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+					    priv->desktop,
+					    MotionNotify,
+					    (MBWMXEventFunc)
+					    hd_home_desktop_motion,
+					    userdata);
+
+  g_debug ("registered cb %d", (int)priv->desktop_motion_cb);
+
+  return True;
 }
 
 static void
@@ -212,6 +320,7 @@ hd_home_constructed (GObject *object)
   GError          *error = NULL;
   guint            button_width, button_height;
   ClutterColor     clr;
+  XSetWindowAttributes attr;
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
@@ -332,7 +441,53 @@ hd_home_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->grey_filter);
 
-  hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_NORMAL);
+  hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_LAYOUT);
+
+  /*
+   * Create an InputOnly desktop window; we have a custom desktop client that
+   * that will automatically wrap it, ensuring it is located in the correct
+   * place.
+   */
+  attr.override_redirect = True;
+  attr.event_mask        = MBWMChildMask |
+    ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask;
+
+  priv->desktop = XCreateWindow (wm->xdpy,
+				 wm->root_win->xwindow,
+				 0, 0,
+				 wm->xdpy_width,
+				 wm->xdpy_height,
+				 0,
+				 CopyFromParent,
+				 InputOnly,
+				 CopyFromParent,
+				 CWOverrideRedirect|CWEventMask,
+				 &attr);
+
+  XChangeProperty (wm->xdpy, priv->desktop,
+		   wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE],
+		   XA_ATOM, 32, PropModeReplace,
+		   (unsigned char *)
+		   &wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DESKTOP],
+		   1);
+
+  XMapWindow (wm->xdpy, priv->desktop);
+
+  g_debug ("Created desktop window %x", (unsigned int) priv->desktop);
+
+  mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+					  priv->desktop,
+					  ButtonPress,
+					  (MBWMXEventFunc)
+					  hd_home_desktop_press,
+					  object);
+
+  mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+					  priv->desktop,
+					  ButtonRelease,
+					  (MBWMXEventFunc)
+					  hd_home_desktop_release,
+					  object);
 }
 
 static void
@@ -918,134 +1073,6 @@ hd_home_pan_full (HdHome *home, gboolean left)
     }
 
   hd_home_pan_by (home, by);
-}
-
-/*
- * We have two input modes for home: passive and active. In active mode, the
- * home actor installs a pointer grab and the views trap all button events
- * centrally, forwarning them to children as appropriate (this allows us to do
- * thing like panning). In passive input mode, the event processing depends on
- * the currently selected layout mode (in normal mode, the events pass through
- * to any X windows below).
- */
-void
-hd_home_set_input_mode (HdHome *home, gboolean active)
-{
-  HdHomePrivate   *priv = home->priv;
-
-  if ((active && !priv->active_input) || (!active && priv->active_input))
-    {
-      GList * l = priv->views;
-
-      while (l)
-	{
-	  HdHomeView * view = l->data;
-
-	  hd_home_view_set_input_mode (view, active);
-
-	  l = l->next;
-	}
-
-      priv->active_input = active;
-
-      /*
-       * Setup pointer grab in active mode
-       */
-      if (active && !priv->pointer_grabbed)
-	hd_home_grab_pointer (home);
-      else
-	hd_home_ungrab_pointer (home);
-    }
-}
-
-static gboolean
-hd_home_view_motion (ClutterActor       *actor,
-		     ClutterMotionEvent *event,
-		     HdHome             *home)
-{
-  HdHomePrivate * priv = home->priv;
-  gint by_x;
-
-  by_x = event->x - priv->last_x;
-
-  priv->cumulative_x += by_x;
-
-  /*
-   * When the motion gets over the pan threshold, we do a full pan
-   * and disconnect the motion handler (next motion needs to be started
-   * with another gesture).
-   */
-  if (priv->cumulative_x > 0 && priv->cumulative_x > PAN_THRESHOLD)
-    {
-      g_signal_handler_disconnect (priv->moving_actor,
-				   priv->view_motion_handler);
-      priv->view_motion_handler = 0;
-      priv->moving_actor = NULL;
-      priv->cumulative_x = 0;
-      priv->pan_handled = TRUE;
-
-      hd_home_pan_full (home, FALSE);
-    }
-  else if (priv->cumulative_x < 0 && priv->cumulative_x < -PAN_THRESHOLD)
-    {
-      g_signal_handler_disconnect (priv->moving_actor,
-				   priv->view_motion_handler);
-      priv->view_motion_handler = 0;
-      priv->moving_actor = NULL;
-      priv->cumulative_x = 0;
-      priv->pan_handled = TRUE;
-
-      hd_home_pan_full (home, TRUE);
-    }
-
-  priv->last_x = event->x;
-
-  return TRUE;
-}
-
-void
-hd_home_connect_pan_handler (HdHome        *home,
-			     ClutterActor  *actor,
-			     gint           initial_x,
-			     gint           initial_y)
-{
-  HdHomePrivate * priv = home->priv;
-
-  if (priv->view_motion_handler)
-    {
-      g_signal_handler_disconnect (priv->moving_actor,
-				   priv->view_motion_handler);
-    }
-
-  priv->moving_actor = actor;
-
-  priv->last_x = initial_x;
-  priv->cumulative_x = 0;
-  priv->pan_handled = FALSE;
-
-  priv->view_motion_handler = g_signal_connect (actor, "motion-event",
-					G_CALLBACK (hd_home_view_motion),
-					home);
-}
-
-/*
- * Returns TRUE if pan event was handled, FALSE otherwise.
- */
-gboolean
-hd_home_disconnect_pan_handler (HdHome *home)
-{
-  HdHomePrivate * priv = home->priv;
-
-  if (priv->view_motion_handler)
-    {
-      g_signal_handler_disconnect (priv->moving_actor,
-				   priv->view_motion_handler);
-      priv->view_motion_handler = 0;
-      priv->moving_actor = NULL;
-      priv->cumulative_x = 0;
-    }
-
-  return priv->pan_handled;
 }
 
 void

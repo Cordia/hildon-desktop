@@ -127,7 +127,7 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
       mb_wm_theme_create_decor (wm->theme, client, MBWMDecorTypeEast);
     }
 
-  client->stacking_layer = MBWMStackLayerBottom;
+  client->stacking_layer = MBWMStackLayerBottomMid;
 
 
   mb_wm_client_geometry_mark_dirty (client);

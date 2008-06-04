@@ -276,6 +276,8 @@ hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient)
 static int  hd_comp_mgr_init (MBWMObject *obj, va_list vap);
 static void hd_comp_mgr_class_init (MBWMObjectClass *klass);
 static void hd_comp_mgr_destroy (MBWMObject *obj);
+static void hd_comp_mgr_register_client (MBWMCompMgr *mgr,
+					 MBWindowManagerClient *c);
 static void hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c);
 static void hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c);
 static void hd_comp_mgr_turn_on (MBWMCompMgr *mgr);
@@ -313,6 +315,7 @@ hd_comp_mgr_class_init (MBWMObjectClass *klass)
     MB_WM_COMP_MGR_CLUTTER_CLASS (klass);
 
   cm_klass->unregister_client = hd_comp_mgr_unregister_client;
+  cm_klass->unregister_client = hd_comp_mgr_register_client;
   cm_klass->client_event      = hd_comp_mgr_effect;
   cm_klass->turn_on           = hd_comp_mgr_turn_on;
   cm_klass->map_notify        = hd_comp_mgr_map_notify;
@@ -478,6 +481,20 @@ hd_comp_mgr_turn_on (MBWMCompMgr *mgr)
 }
 
 static void
+hd_comp_mgr_register_client (MBWMCompMgr           * mgr,
+			     MBWindowManagerClient * c)
+{
+  MBWMCompMgrClass              * parent_klass =
+    MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
+
+  if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
+    return;
+
+  if (parent_klass->register_client)
+    parent_klass->register_client (mgr, c);
+}
+
+static void
 hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
   ClutterActor                  * actor;
@@ -550,6 +567,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   /*
    * Parent class map_notify creates the actor representing the client.
    */
+  if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
+    return;
+
   if (parent_klass->map_notify)
     parent_klass->map_notify (mgr, c);
 
@@ -696,25 +716,6 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
     priv->stack_sync = TRUE;
   else
     {
-      /*
-       * Check if home is to be the top level application (i.e., there are no
-       * application clients); if home is top level, put it into active input
-       * mode so we can do panning, etc.
-       */
-      MBWindowManager       *wm = mgr->wm;
-      MBWindowManagerClient *c  = mb_wm_get_visible_main_client (wm);
-
-      if (c && MB_WM_CLIENT_CLIENT_TYPE (c) != HdWmClientTypeHomeApplet)
-	{
-	  priv->showing_home = FALSE;
-	  hd_home_set_input_mode (HD_HOME (priv->home), FALSE);
-	}
-      else
-	{
-	  priv->showing_home = TRUE;
-	  hd_home_set_input_mode (HD_HOME (priv->home), TRUE);
-	}
-
       if (parent_klass->restack)
 	parent_klass->restack (mgr);
     }

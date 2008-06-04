@@ -1,3 +1,24 @@
+2008-06-04  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-home-view.c
+	* src/hd-home-view.h
+	* src/hd-home.c
+	* src/hd-home.h
+	Refactored panning code to avoid need to do pointer grab.
+
+	* src/hd-util.c:
+	* src/hd-util.h:
+	Remove unnecessary functions.
+
+	* src/Makefile.am
+	* src/hd-comp-mgr.c
+	* src/hd-wm.c:
+	* src/hd-desktop.h:
+	* src/hd-desktop.c:
+	* src/hd-home-applet.c
+	Custom MBWindowManagerClient subclass for our input-only desktop
+	window.
+
 2008-06-03  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-home.c:

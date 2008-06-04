@@ -23,6 +23,8 @@ hildon_desktop_SOURCES = \
 	hd-util.h \
 	hd-home-applet.c \
 	hd-home-applet.h \
+	hd-desktop.h \
+	hd-desktop.c \
 	main.c
 
 hildon_desktop_LDADD = $(HD_LIBS)

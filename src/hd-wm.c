@@ -4,6 +4,7 @@
  * Copyright (C) 2008 Nokia Corporation.
  *
  * Author:  Johan Bilien <johan.bilien@nokia.com>
+ *          Tomas Frydrych <tf@o-hand.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -27,9 +28,11 @@
 
 #include "hd-wm.h"
 #include "hd-comp-mgr.h"
+#include "hd-desktop.h"
 
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/core/mb-wm.h>
+#include <matchbox/client-types/mb-wm-client-desktop.h>
 
 #include <clutter/clutter-main.h>
 #include <clutter/x11/clutter-x11.h>
@@ -115,8 +118,17 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
   if (win->net_type ==
       hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_HOME_APPLET))
     {
-      printf("### is home applet ###\n");
+      printf ("### is home applet ###\n");
       return hd_home_applet_new (wm, win);
+    }
+  else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DESKTOP])
+    {
+      printf ("### is desktop ###\n");
+      /* Only one desktop allowed */
+      if (wm->desktop)
+	return NULL;
+
+      return hd_desktop_new (wm, win);
     }
   else if (wm_class)
     return wm_class->client_new (wm, win);

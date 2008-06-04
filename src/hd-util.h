@@ -14,12 +14,6 @@ void * hd_util_get_win_prop_data_and_validate (Display   *xpdy,
 					       gint       expected_n_items,
 					       gint      *n_items_ret);
 
-void hd_util_fake_button_event (Display *dpy,
-				guint    button,
-				gboolean is_press,
-				gint16   x,
-				gint16   y);
-
 gint hd_util_grab_pointer (void);
 
 gint hd_util_ungrab_pointer (void);
