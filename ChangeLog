@@ -1,5 +1,12 @@
 2008-06-05  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-home-view.c:
+	* src/hd-home-view.h:
+	* src/hd-home.c:
+	Start of Home edit mode.
+
+2008-06-05  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-atoms.c:
 	* src/hd-atoms.h:
 	* src/hd-home.c:

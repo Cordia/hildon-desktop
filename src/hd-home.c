@@ -37,12 +37,16 @@
 
 #define HDH_MOVE_DURATION 300
 #define HDH_ZOOM_DURATION 3000
+#define HDH_EDIT_BUTTON_DURATION 200
+#define HDH_EDIT_BUTTON_TIMEOUT 3000
+
 #define HDH_LAYOUT_TOP_SCALE 0.5
 #define HDH_LAYOUT_Y_OFFSET 60
 
 #define CLOSE_BUTTON "close-button.png"
 #define BACK_BUTTON  "back-button.png"
 #define NEW_BUTTON   "new-view-button.png"
+#define EDIT_BUTTON  "edit-button.png"
 
 #define PAN_THRESHOLD 20
 enum
@@ -64,12 +68,14 @@ struct _HdHomePrivate
 
   ClutterEffectTemplate *move_template;
   ClutterEffectTemplate *zoom_template;
+  ClutterEffectTemplate *edit_button_template;
 
   ClutterActor          *main_group; /* Where the views + their buttons live */
   ClutterActor          *edit_group; /* An overlay group for edit mode */
   ClutterActor          *close_button;
   ClutterActor          *back_button;
   ClutterActor          *new_button;
+  ClutterActor          *edit_button;
 
   guint                  close_button_handler;
 
@@ -88,14 +94,17 @@ struct _HdHomePrivate
 
   gulong                 desktop_motion_cb;
 
+  guint                  edit_button_cb;
+
   /* Pan variables */
   gint                   last_x;
   gint                   initial_x;
   gint                   initial_y;
   gint                   cumulative_x;
 
-  gboolean               pointer_grabbed : 1;
-  gboolean               pan_handled     : 1;
+  gboolean               pointer_grabbed     : 1;
+  gboolean               pan_handled         : 1;
+  gboolean               showing_edit_button : 1;
 
   Window                 desktop;
 };
@@ -124,6 +133,11 @@ static void hd_home_new_view (HdHome * home);
 static void hd_home_start_pan (HdHome *home);
 
 static void hd_home_pan_full (HdHome *home, gboolean left);
+
+static void hd_home_show_edit_button (HdHome *home);
+
+static void hd_home_hide_edit_button (HdHome *home);
+
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -162,11 +176,25 @@ hd_home_class_init (HdHomeClass *klass)
 }
 
 static gboolean
+hd_home_edit_button_clicked (ClutterActor *button,
+			     ClutterEvent *event,
+			     HdHome       *home)
+{
+  hd_home_hide_edit_button (home);
+  hd_home_set_mode (home, HD_HOME_MODE_EDIT);
+
+  return TRUE;
+}
+
+static gboolean
 hd_home_back_button_clicked (ClutterActor *button,
 			     ClutterEvent *event,
 			     HdHome       *home)
 {
-  g_debug ("back button pressed.");
+  HdHomePrivate *priv = home->priv;
+
+  if (priv->mode == HD_HOME_MODE_EDIT || priv->mode == HD_HOME_MODE_LAYOUT)
+    hd_home_set_mode (home, HD_HOME_MODE_NORMAL);
 
   return TRUE;
 }
@@ -196,7 +224,10 @@ hd_home_view_background_clicked (HdHomeView         *view,
 				 ClutterButtonEvent *event,
 				 HdHome             *home)
 {
-  g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
+  HdHomePrivate *priv = home->priv;
+
+  if (priv->mode != HD_HOME_MODE_EDIT)
+    g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
 }
 
 static Bool
@@ -210,9 +241,6 @@ hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
   by_x = xev->x - priv->last_x;
 
   priv->cumulative_x += by_x;
-
-  g_debug ("Got desktop motion, by %d, cumulative %d.",
-	   by_x, priv->cumulative_x);
 
   /*
    * When the motion gets over the pan threshold, we do a full pan
@@ -268,6 +296,11 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
   priv->desktop_motion_cb = 0;
   priv->cumulative_x = 0;
 
+  if (!priv->pan_handled && priv->mode == HD_HOME_MODE_NORMAL)
+      hd_home_show_edit_button (home);
+  else
+    priv->pan_handled = FALSE;
+
   return True;
 }
 
@@ -302,8 +335,6 @@ hd_home_desktop_press (XButtonEvent *xev, void *userdata)
 					    (MBWMXEventFunc)
 					    hd_home_desktop_motion,
 					    userdata);
-
-  g_debug ("registered cb %d", (int)priv->desktop_motion_cb);
 
   return True;
 }
@@ -452,6 +483,18 @@ hd_home_constructed (GObject *object)
 		    G_CALLBACK (hd_home_new_button_clicked),
 		    object);
 
+  priv->edit_button =
+    clutter_texture_new_from_file (EDIT_BUTTON, &error);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (main_group),
+			       priv->edit_button);
+  clutter_actor_hide (priv->edit_button);
+  clutter_actor_set_reactive (priv->edit_button, TRUE);
+
+  g_signal_connect (priv->edit_button, "button-release-event",
+		    G_CALLBACK (hd_home_edit_button_clicked),
+		    object);
+
   /*
    * Construct the grey rectangle for dimming of desktop in edit mode
    * This one is added directly to the home, so it is always on the top
@@ -500,8 +543,6 @@ hd_home_constructed (GObject *object)
 
   XMapWindow (wm->xdpy, priv->desktop);
 
-  g_debug ("Created desktop window %x", (unsigned int) priv->desktop);
-
   mb_wm_main_context_x_event_handler_add (wm->main_ctx,
 					  priv->desktop,
 					  ButtonPress,
@@ -538,6 +579,10 @@ hd_home_init (HdHome *self)
 
   priv->zoom_template =
     clutter_effect_template_new_for_duration (HDH_ZOOM_DURATION,
+					      CLUTTER_ALPHA_RAMP_INC);
+
+  priv->edit_button_template =
+    clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
 					      CLUTTER_ALPHA_RAMP_INC);
 }
 
@@ -705,7 +750,14 @@ hd_home_do_edit_layout (HdHome *home)
   clutter_actor_set_position (priv->edit_group, x, 0);
   clutter_actor_show (priv->edit_group);
 
+  if (clutter_actor_get_parent (priv->back_button) == priv->main_group)
+    clutter_actor_reparent (priv->back_button, priv->edit_group);
+  clutter_actor_show (priv->back_button);
+  clutter_actor_raise_top (priv->back_button);
+
   priv->mode = HD_HOME_MODE_EDIT;
+
+  hd_home_grab_pointer (home);
 }
 
 static gboolean
@@ -799,6 +851,9 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
 			      x_top + w_top / 2 - button_width / 2,
 			      y_top + h_top + 2*HDH_LAYOUT_Y_OFFSET -
 			      button_height);
+
+  if (clutter_actor_get_parent (priv->back_button) == priv->main_group)
+      clutter_actor_reparent (priv->back_button, priv->main_group);
 
   clutter_actor_show (priv->back_button);
   clutter_actor_raise_top (priv->back_button);
@@ -1158,4 +1213,73 @@ hd_home_remove_applet (HdHome *home, ClutterActor *applet)
 
       l = l->next;
     }
+}
+
+static void
+hd_home_edit_button_move_completed (HdHome *home)
+{
+}
+
+static gboolean
+hd_home_edit_button_timeout (gpointer data)
+{
+  HdHome *home = data;
+
+  hd_home_hide_edit_button (home);
+
+  return FALSE;
+}
+
+static void
+hd_home_show_edit_button (HdHome *home)
+{
+  HdHomePrivate   *priv = home->priv;
+  guint            button_width, button_height;
+  ClutterTimeline *timeline;
+  gint             x;
+
+  if (priv->showing_edit_button)
+    return;
+
+  clutter_actor_get_size (priv->edit_button, &button_width, &button_height);
+
+  x = priv->xwidth / 4 + priv->xwidth / 2;
+
+  clutter_actor_set_position (priv->edit_button,
+			      x,
+			      -button_height);
+
+  clutter_actor_show (priv->edit_button);
+
+  timeline = clutter_effect_move (priv->edit_button_template,
+				  CLUTTER_ACTOR (priv->edit_button),
+				  x, 0,
+				  (ClutterEffectCompleteFunc)
+				  hd_home_edit_button_move_completed, home);
+
+  priv->showing_edit_button = TRUE;
+
+  hd_home_grab_pointer (home);
+
+  priv->edit_button_cb =
+    g_timeout_add (HDH_EDIT_BUTTON_TIMEOUT, hd_home_edit_button_timeout, home);
+
+  clutter_timeline_start (timeline);
+}
+
+void
+hd_home_hide_edit_button (HdHome *home)
+{
+  HdHomePrivate   *priv = home->priv;
+
+  clutter_actor_hide (priv->edit_button);
+  priv->showing_edit_button = FALSE;
+
+  if (priv->edit_button_cb)
+    {
+      g_source_remove (priv->edit_button_cb);
+      priv->edit_button_cb = 0;
+    }
+
+  hd_home_ungrab_pointer (home);
 }

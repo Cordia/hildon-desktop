@@ -48,6 +48,7 @@ struct _HdHomeViewClass
 
   void (*thumbnail_clicked)  (HdHomeView * view, ClutterButtonEvent * ev);
   void (*background_clicked) (HdHomeView * view, ClutterButtonEvent * ev);
+  void (*applet_clicked)     (HdHomeView * view, ClutterActor *applet);
 };
 
 struct _HdHomeView

@@ -39,6 +39,7 @@ enum
 {
   SIGNAL_THUMBNAIL_CLICKED,
   SIGNAL_BACKGROUND_CLICKED,
+  SIGNAL_APPLET_CLICKED,
   N_SIGNALS
 };
 
@@ -150,14 +151,55 @@ hd_home_view_class_init (HdHomeViewClass *klass)
                     1,
 		    CLUTTER_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
 
+  signals[SIGNAL_APPLET_CLICKED] =
+      g_signal_new ("applet-clicked",
+                    G_OBJECT_CLASS_TYPE (object_class),
+                    G_SIGNAL_RUN_FIRST,
+                    G_STRUCT_OFFSET (HdHomeViewClass, applet_clicked),
+                    NULL,
+                    NULL,
+                    g_cclosure_marshal_VOID__OBJECT,
+                    G_TYPE_NONE,
+                    1,
+		    CLUTTER_TYPE_ACTOR | G_SIGNAL_TYPE_STATIC_SCOPE);
+
 }
 
 static gboolean
 hd_home_view_background_release (ClutterActor *background,
-			       ClutterEvent *event,
-			       HdHomeView   *view)
+				 ClutterEvent *event,
+				 HdHomeView   *view)
 {
+  HdHomeViewPrivate *priv = view->priv;
+  GList         *l;
+
   g_debug ("Background release");
+
+
+  /*
+   * If the click started on an applet, we might have a motion callback
+   * installed -- remove it.
+   */
+  l = priv->applets;
+  while (l)
+    {
+      guint id;
+      MBWMCompMgrClutterClient *cc = l->data;
+      ClutterActor * applet = mb_wm_comp_mgr_clutter_client_get_actor (cc);
+
+      id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
+					       "HD-VIEW-motion-cb"));
+
+      if (id)
+	{
+	  g_signal_handler_disconnect (applet, id);
+	  g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb", NULL);
+	}
+
+      g_object_unref (applet);
+
+      l = l->next;
+    }
 
   g_signal_emit (view, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
   return TRUE;
@@ -404,17 +446,84 @@ hd_home_view_get_view_id (HdHomeView *view)
   return priv->id;
 }
 
+static gboolean
+hd_home_view_applet_motion (ClutterActor       *applet,
+			    ClutterMotionEvent *event,
+			    HdHomeView         *view)
+{
+  g_debug ("Applet motion, %d,%d", event->x, event->y);
+
+  return FALSE;
+}
+
+static gboolean
+hd_home_view_applet_press (ClutterActor       *applet,
+			   ClutterButtonEvent *event,
+			   HdHomeView         *view)
+{
+  guint id;
+
+  g_debug ("Applet pressed, %d,%d", event->x, event->y);
+
+  id = g_signal_connect (applet, "motion-event",
+			 G_CALLBACK (hd_home_view_applet_motion),
+			 view);
+
+  g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb",
+		     GINT_TO_POINTER (id));
+
+  return FALSE;
+}
+
+static gboolean
+hd_home_view_applet_release (ClutterActor       *applet,
+			     ClutterButtonEvent *event,
+			     HdHomeView         *view)
+{
+  guint id;
+
+  g_debug ("Applet released, %d,%d", event->x, event->y);
+
+  id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
+					   "HD-VIEW-motion-cb"));
+
+  if (id)
+    {
+      g_signal_handler_disconnect (applet, id);
+      g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb", NULL);
+    }
+
+  g_signal_emit (view, signals[SIGNAL_APPLET_CLICKED], 0, applet);
+  return TRUE;
+}
+
 void
 hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
 {
   HdHomeViewPrivate        *priv = view->priv;
   MBWMCompMgrClutterClient *cc;
+  guint                     id;
 
   /*
    * Reparent the applet to ourselves; note that this automatically
    * gets us the correct position within the view.
    */
   clutter_actor_reparent (applet, CLUTTER_ACTOR (view));
+  clutter_actor_set_reactive (applet, TRUE);
+
+  id = g_signal_connect (applet, "button-release-event",
+			 G_CALLBACK (hd_home_view_applet_release),
+			 view);
+
+  g_object_set_data (G_OBJECT (applet), "HD-VIEW-release-cb",
+		     GINT_TO_POINTER (id));
+
+  id = g_signal_connect (applet, "button-press-event",
+			 G_CALLBACK (hd_home_view_applet_press),
+			 view);
+
+  g_object_set_data (G_OBJECT (applet), "HD-VIEW-press-cb",
+		     GINT_TO_POINTER (id));
 
   cc = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
 
@@ -427,9 +536,19 @@ hd_home_view_remove_applet (HdHomeView *view, ClutterActor *applet)
 {
   HdHomeViewPrivate        *priv = view->priv;
   MBWMCompMgrClutterClient *cc;
+  guint                     id;
+
 
   cc = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
 
   priv->applets = g_list_remove (priv->applets, cc);
+
+  id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
+					   "HD-VIEW-release-cb"));
+  g_signal_handler_disconnect (applet, id);
+
+  id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
+					   "HD-VIEW-press-cb"));
+  g_signal_handler_disconnect (applet, id);
 }
 
