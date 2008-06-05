@@ -1,3 +1,23 @@
+2008-06-05  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-comp-mgr.c:
+	(hd_comp_mgr_top_home):
+	(hd_comp_mgr_home_clicked):
+	Implemented topping of home.
+
+	* src/hd-home-applet.c:
+	(hd_home_applet_init):
+	Make transient for HdDesktop client.
+
+	* src/hd-home.c
+	(hd_home_constructed):
+	Revert default mode to NORMAL.
+
+	* src/hd-switcher.c:
+	* src/hd-switcher.h:
+	(hd_switcher_deactivate):
+	API to deactivate switcher and restore normal stack order.
+
 2008-06-04  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-home-view.c

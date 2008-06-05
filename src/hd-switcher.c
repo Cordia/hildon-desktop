@@ -477,3 +477,10 @@ hd_switcher_hide_launcher (HdSwitcher * switcher)
   hd_util_ungrab_pointer ();
 #endif
 }
+
+void
+hd_switcher_deactivate (HdSwitcher * switcher)
+{
+      hd_switcher_hide_switcher (switcher);
+      hd_switcher_setup_buttons (switcher, TRUE);
+}

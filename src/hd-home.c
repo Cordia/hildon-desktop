@@ -441,7 +441,7 @@ hd_home_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->grey_filter);
 
-  hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_LAYOUT);
+  hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_NORMAL);
 
   /*
    * Create an InputOnly desktop window; we have a custom desktop client that
@@ -966,10 +966,6 @@ hd_home_start_pan (HdHome *home)
 
   g_list_free (priv->pan_queue);
   priv->pan_queue = NULL;
-
-  /*
-   * TODO -- deal with view-rollover when we reach end of desktop
-   */
 
   timeline = clutter_effect_move (priv->move_template,
 				  CLUTTER_ACTOR (home),

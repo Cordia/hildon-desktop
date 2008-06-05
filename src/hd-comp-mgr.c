@@ -755,15 +755,20 @@ hd_comp_mgr_lower_home_actor (HdCompMgr *hmgr)
 static void
 hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor)
 {
-  g_debug ("Mgr: home clicked.");
+  HdCompMgrPrivate *priv = hmgr->priv;
+
+  hd_switcher_deactivate (HD_SWITCHER (priv->switcher_group));
   hd_comp_mgr_top_home (hmgr);
 }
 
 void
 hd_comp_mgr_top_home (HdCompMgr *hmgr)
 {
-  /* TODO */
-  g_print ("topping home\n");
+  MBWMCompMgr      *cmgr = MB_WM_COMP_MGR (hmgr);
+  MBWindowManager  *wm = cmgr->wm;
+
+  mb_wm_handle_show_desktop (wm, TRUE);
+  hd_comp_mgr_raise_home_actor (hmgr);
 }
 
 static gboolean
