@@ -308,6 +308,33 @@ hd_home_desktop_press (XButtonEvent *xev, void *userdata)
   return True;
 }
 
+static Bool
+hd_home_desktop_client_message (XClientMessageEvent *xev, void *userdata)
+{
+  HdHome          *home = userdata;
+  HdHomePrivate   *priv = home->priv;
+  HdCompMgr       *hmgr = HD_COMP_MGR (priv->comp_mgr);
+  Atom             pan_atom;
+
+  pan_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_CLIENT_MESSAGE_PAN);
+
+  if (xev->message_type == pan_atom)
+    {
+      gboolean left = (gboolean) xev->data.l[0];
+
+      g_debug ("ClientMessage initiated pan.");
+
+      hd_home_pan_full (home, left);
+
+      /*
+       * Return false, this is our private protocol and no-one else's business.
+       */
+      return False;
+    }
+
+  return True;
+}
+
 static void
 hd_home_constructed (GObject *object)
 {
@@ -487,6 +514,13 @@ hd_home_constructed (GObject *object)
 					  ButtonRelease,
 					  (MBWMXEventFunc)
 					  hd_home_desktop_release,
+					  object);
+
+  mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+					  None,
+					  ClientMessage,
+					  (MBWMXEventFunc)
+					  hd_home_desktop_client_message,
 					  object);
 }
 

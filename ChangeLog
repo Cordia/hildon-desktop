@@ -1,5 +1,16 @@
 2008-06-05  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-atoms.c:
+	* src/hd-atoms.h:
+	* src/hd-home.c:
+	Added simple ClientMessage-based mechanism for applet-initiated
+	home panning.
+
+	* src/hd-applet-test.c:
+	Simple Home applet.
+
+2008-06-05  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-comp-mgr.c:
 	(hd_comp_mgr_top_home):
 	(hd_comp_mgr_home_clicked):

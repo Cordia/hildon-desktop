@@ -18,6 +18,8 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
 
     "_HILDON_WM_WINDOW_TYPE_HOME_APPLET",
 
+    "_HILDON_CLIENT_MESSAGE_PAN",
+
     "WM_WINDOW_ROLE",
   };
 
