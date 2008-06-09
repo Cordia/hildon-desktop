@@ -1453,3 +1453,16 @@ hd_home_hide_applet_buttons (HdHome *home)
 
   priv->active_applet = NULL;
 }
+
+void
+hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by)
+{
+  HdHomePrivate   *priv = home->priv;
+
+  if (!priv->active_applet)
+    return;
+
+  clutter_actor_move_by (priv->applet_close_button, x_by, y_by);
+  clutter_actor_move_by (priv->applet_settings_button, x_by, y_by);
+  clutter_actor_move_by (priv->applet_resize_button, x_by, y_by);
+}

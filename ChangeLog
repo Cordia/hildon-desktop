@@ -1,5 +1,12 @@
 2008-06-09  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-home-view.c:
+	* src/hd-home.c:
+	* src/hd-home.h:
+	Applet dragging.
+
+2008-06-09  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-comp-mgr.c:
 	(hd_comp_mgr_class_init):
 	Fixed typo.

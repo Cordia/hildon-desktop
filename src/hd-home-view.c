@@ -67,6 +67,8 @@ struct _HdHomeViewPrivate
 
   gint                  applet_motion_start_x;
   gint                  applet_motion_start_y;
+  gint                  applet_motion_last_x;
+  gint                  applet_motion_last_y;
 
   gboolean              thumbnail_mode        : 1;
   gboolean              applet_motion_handled : 1;
@@ -456,6 +458,7 @@ hd_home_view_applet_motion (ClutterActor       *applet,
 			    HdHomeView         *view)
 {
   HdHomeViewPrivate *priv = view->priv;
+  gint x, y;
 
   g_debug ("Applet motion, %d,%d", event->x, event->y);
 
@@ -470,6 +473,19 @@ hd_home_view_applet_motion (ClutterActor       *applet,
     {
       priv->applet_motion_handled = TRUE;
     }
+
+  x = event->x - priv->applet_motion_last_x;
+  y = event->y - priv->applet_motion_last_y;
+
+  priv->applet_motion_last_x = event->x;
+  priv->applet_motion_last_y = event->y;
+
+  /*
+   * We only move the actor, not the applet per se, and only commit the motion
+   * on button release.
+   */
+  clutter_actor_move_by (applet, x, y);
+  hd_home_move_applet_buttons (priv->home, x, y);
 
   return FALSE;
 }
@@ -493,6 +509,8 @@ hd_home_view_applet_press (ClutterActor       *applet,
   priv->applet_motion_handled = FALSE;
   priv->applet_motion_start_x = event->x;
   priv->applet_motion_start_y = event->y;
+  priv->applet_motion_last_x = event->x;
+  priv->applet_motion_last_y = event->y;
 
   return FALSE;
 }
@@ -520,6 +538,31 @@ hd_home_view_applet_release (ClutterActor       *applet,
    */
   if (!priv->applet_motion_handled)
     g_signal_emit (view, signals[SIGNAL_APPLET_CLICKED], 0, applet);
+  else
+    {
+      /* Move the underlying window to match the actor's position */
+      gint x, y;
+      guint w, h;
+      MBWindowManagerClient *client;
+      MBWMCompMgrClient *cclient;
+      MBGeometry geom;
+
+      cclient =
+	g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
+
+      client = cclient->wm_client;
+
+      clutter_actor_get_position (applet, &x, &y);
+      clutter_actor_get_size (applet, &w, &h);
+
+      geom.x = x;
+      geom.y = y;
+      geom.width = w;
+      geom.height = h;
+
+      mb_wm_client_request_geometry (client, &geom,
+				     MBWMClientReqGeomIsViaUserAction);
+    }
 
   return TRUE;
 }

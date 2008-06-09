@@ -83,6 +83,8 @@ void hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet);
 
 void hd_home_hide_applet_buttons (HdHome *home);
 
+void hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by);
+
 G_END_DECLS
 
 #endif
