@@ -156,6 +156,10 @@ static void hd_home_hide_edit_button (HdHome *home);
 
 static void hd_home_send_settings_message (HdHome *home, Window xwin);
 
+static gboolean hd_home_applet_resize_button_release (ClutterActor *button,
+						   ClutterButtonEvent *event,
+						   HdHome *home);
+
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
 static void
@@ -245,6 +249,20 @@ hd_home_view_background_clicked (HdHomeView         *view,
 
   if (priv->mode != HD_HOME_MODE_EDIT)
     g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
+  else
+    {
+      /*
+       * When tracking resize motion, the pointer can get outside the
+       * resize button, so if we get a button click on the background in edit
+       * mode, and have the motion cb installed, we need to terminating the
+       * resize.
+       */
+      if (priv->applet_resize_motion_cb)
+	{
+	  hd_home_applet_resize_button_release (priv->applet_resize_button,
+						event, home);
+	}
+    }
 }
 
 static void
@@ -255,7 +273,21 @@ hd_home_view_applet_clicked (HdHomeView         *view,
   HdHomePrivate *priv = home->priv;
 
   if (priv->mode == HD_HOME_MODE_EDIT)
-    hd_home_show_applet_buttons (home, applet);
+    {
+      /*
+       * When tracking resize motion, the pointer can get outside the
+       * resize button, so if we get a button click on an applet in edit
+       * mode, and have the motion cb installed, we need to terminate the
+       * resize.
+       */
+      if (priv->applet_resize_motion_cb)
+	{
+	  hd_home_applet_resize_button_release (priv->applet_resize_button,
+						NULL, home);
+	}
+      else
+	hd_home_show_applet_buttons (home, applet);
+    }
 }
 
 static Bool

@@ -1,5 +1,11 @@
 2008-06-09  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-home.c:
+	Correctly terminate applet resizing when release lands outside of
+	the resize button.
+
+2008-06-09  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-atoms.c:
 	* src/hd-atoms.h:
 	* src/hd-home.c:
