@@ -1,10 +1,19 @@
 2008-06-09  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-comp-mgr.c:
+	(hd_comp_mgr_class_init):
+	Fixed typo.
+
+	* src/hd-home.c:
+	Hooked up applet close button.
+
+2008-06-09  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-home-view.c:
 	* src/hd-home.c:
 	* src/hd-home.h:
 	Added edit mode applet decors and signal handlers.
-	
+
 2008-06-05  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-home-view.c:

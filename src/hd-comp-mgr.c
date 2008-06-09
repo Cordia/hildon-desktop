@@ -315,7 +315,7 @@ hd_comp_mgr_class_init (MBWMObjectClass *klass)
     MB_WM_COMP_MGR_CLUTTER_CLASS (klass);
 
   cm_klass->unregister_client = hd_comp_mgr_unregister_client;
-  cm_klass->unregister_client = hd_comp_mgr_register_client;
+  cm_klass->register_client   = hd_comp_mgr_register_client;
   cm_klass->client_event      = hd_comp_mgr_effect;
   cm_klass->turn_on           = hd_comp_mgr_turn_on;
   cm_klass->map_notify        = hd_comp_mgr_map_notify;

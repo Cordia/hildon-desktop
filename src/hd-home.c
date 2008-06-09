@@ -82,6 +82,8 @@ struct _HdHomePrivate
   ClutterActor          *applet_settings_button;
   ClutterActor          *applet_resize_button;
 
+  const ClutterActor    *active_applet;
+
   guint                  close_button_handler;
 
   ClutterActor          *grey_filter;
@@ -387,7 +389,23 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
 				     ClutterButtonEvent *event,
 				     HdHome             *home)
 {
+  HdHomePrivate *priv = home->priv;
+  HdCompMgr     *hmgr = HD_COMP_MGR (priv->comp_mgr);
+  MBWMCompMgrClutterClient *cc;
+
+  if (!priv->active_applet)
+    {
+      g_warning ("No active applet to close !!!");
+      return FALSE;
+    }
+
+  cc = g_object_get_data (G_OBJECT (priv->active_applet),
+			  "HD-MBWMCompMgrClutterClient");
+
   g_debug ("Applet close button clicked.");
+
+  hd_comp_mgr_close_client (hmgr, cc);
+
   return TRUE;
 }
 
@@ -1294,6 +1312,8 @@ hd_home_remove_applet (HdHome *home, ClutterActor *applet)
   guint          view_id;
   GList         *l;
 
+  g_debug ("Removing applet %p", applet);
+
   view_id =
     GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet), "HD-view-id"));
 
@@ -1312,6 +1332,9 @@ hd_home_remove_applet (HdHome *home, ClutterActor *applet)
 
       l = l->next;
     }
+
+  if (applet == priv->active_applet)
+    hd_home_hide_applet_buttons (home);
 }
 
 static void
@@ -1415,6 +1438,8 @@ hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet)
 			      x_a + w_a - w_b/2,
 			      y_a + h_a - h_b/2);
   clutter_actor_show (priv->applet_resize_button);
+
+  priv->active_applet = applet;
 }
 
 void
@@ -1425,4 +1450,6 @@ hd_home_hide_applet_buttons (HdHome *home)
   clutter_actor_hide (priv->applet_close_button);
   clutter_actor_hide (priv->applet_settings_button);
   clutter_actor_hide (priv->applet_resize_button);
+
+  priv->active_applet = NULL;
 }
