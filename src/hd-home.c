@@ -154,6 +154,7 @@ static void hd_home_show_edit_button (HdHome *home);
 
 static void hd_home_hide_edit_button (HdHome *home);
 
+static void hd_home_send_settings_message (HdHome *home, Window xwin);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -417,7 +418,30 @@ hd_home_applet_settings_button_clicked (ClutterActor       *button,
 					ClutterButtonEvent *event,
 					HdHome             *home)
 {
+  HdHomePrivate         *priv = home->priv;
+  MBWindowManagerClient *client;
+  MBWMCompMgrClient     *cclient;
+  ClutterActor          *applet;
+
   g_debug ("Applet settings button clicked.");
+
+  if (!priv->active_applet)
+    return FALSE;
+
+  applet = priv->active_applet;
+
+  cclient =
+    g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
+
+  client = cclient->wm_client;
+
+  /*
+   * Dispatch ClientMessage to the applet to pop up settings dialog, and
+   * return to Normal mode
+   */
+  hd_home_send_settings_message (home, client->window->xwindow);
+  hd_home_set_mode (home, HD_HOME_MODE_NORMAL);
+
   return TRUE;
 }
 
@@ -1580,4 +1604,29 @@ hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by)
   clutter_actor_move_by (priv->applet_close_button, x_by, y_by);
   clutter_actor_move_by (priv->applet_settings_button, x_by, y_by);
   clutter_actor_move_by (priv->applet_resize_button, x_by, y_by);
+}
+
+static void
+hd_home_send_settings_message (HdHome *home, Window xwin)
+{
+  HdHomePrivate   *priv = home->priv;
+  HdCompMgr       *hmgr = HD_COMP_MGR (priv->comp_mgr);
+  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+
+  XEvent ev;
+  Atom msg_atom;
+
+  msg_atom =
+    hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_CLIENT_MESSAGE_SHOW_SETTINGS);
+
+  memset(&ev, 0, sizeof(ev));
+
+  ev.xclient.type = ClientMessage;
+  ev.xclient.window = xwin;
+  ev.xclient.message_type = msg_atom;
+  ev.xclient.format = 32;
+
+  XSendEvent (wm->xdpy, xwin, False, StructureNotifyMask, &ev);
+
+  XSync (wm->xdpy, False);
 }

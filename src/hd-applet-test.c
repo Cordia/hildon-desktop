@@ -84,6 +84,26 @@ on_button_event (GtkWidget *widget, GdkEventButton *event)
   return FALSE;
 }
 
+static GdkFilterReturn
+x_event_filter_func (GdkXEvent *xevent, GdkEvent *event, gpointer data)
+{
+  XEvent * xev = (XEvent*)xevent;
+
+  if (xev->type == ClientMessage)
+    {
+      char *type = NULL;
+      XClientMessageEvent *xmsg = (XClientMessageEvent *)xev;
+
+      type = XGetAtomName (GDK_DISPLAY (), xmsg->message_type);
+
+      g_debug ("Got ClientMessage of type %s", type);
+
+      XFree (type);
+    }
+
+  return GDK_FILTER_CONTINUE;
+}
+
 int main (int argc, char *argv[])
 {
   Atom wm_type, applet_type;
@@ -96,8 +116,7 @@ int main (int argc, char *argv[])
 			    "_HILDON_WM_WINDOW_TYPE_HOME_APPLET", False);
 
   pan_atom = XInternAtom (GDK_DISPLAY (), "_HILDON_CLIENT_MESSAGE_PAN", False);
-
-  window  = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+window  = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 
   g_signal_connect (G_OBJECT (window), "button-release-event",
 		    G_CALLBACK (on_button_event), NULL);
@@ -118,6 +137,8 @@ int main (int argc, char *argv[])
   XChangeProperty (GDK_DISPLAY (), GDK_WINDOW_XID (window->window),
 		   wm_type, XA_ATOM, 32, PropModeReplace,
 		   (unsigned char *)&applet_type, 1);
+
+  gdk_window_add_filter (window->window, x_event_filter_func, NULL);
 
   gtk_widget_show_all (window);
 
