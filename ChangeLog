@@ -1,5 +1,11 @@
 2008-06-09  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-switcher-group.c:
+	(hd_switcher_group_zoom):
+	Fixed group position before zoom effect.
+
+2008-06-09  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-home.c:
 	Correctly terminate applet resizing when release lands outside of
 	the resize button.

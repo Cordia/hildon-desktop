@@ -335,7 +335,7 @@ hd_switcher_group_get_child_data (HdSwitcherGroup *group, ClutterActor *actor)
 }
 
 static gboolean
-hd_switcher_group_child_button_release (HdSwitcherGroup    *group,
+hd_switcher_group_child_button_release (HdSwitcherGroup  *group,
 					ClutterEvent     *event,
 					ClutterActor     *actor)
 {
@@ -689,7 +689,15 @@ hd_switcher_group_zoom (HdSwitcherGroup *group,
        *
        * Scale the group back to 1:1 scale.
        */
-      clutter_actor_get_position (actor, &x, &y);
+      ChildData * data;
+
+      data = hd_switcher_group_get_child_data (group, actor);
+
+      if (!data)
+	return;
+
+      clutter_actor_get_position (data->group, &x, &y);
+
       x = -x;
       y = -y;
 
