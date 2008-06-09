@@ -1,5 +1,10 @@
 2008-06-09  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-home.c:
+	Applet resizing.
+
+2008-06-09  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-home-view.c:
 	* src/hd-home.c:
 	* src/hd-home.h:
