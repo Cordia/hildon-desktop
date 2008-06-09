@@ -47,6 +47,8 @@
 #define BACK_BUTTON  "back-button.png"
 #define NEW_BUTTON   "new-view-button.png"
 #define EDIT_BUTTON  "edit-button.png"
+#define APPLET_SETTINGS_BUTTON "applet-settings-button.png"
+#define APPLET_RESIZE_BUTTON   "applet-resize-button.png"
 
 #define PAN_THRESHOLD 20
 enum
@@ -76,6 +78,9 @@ struct _HdHomePrivate
   ClutterActor          *back_button;
   ClutterActor          *new_button;
   ClutterActor          *edit_button;
+  ClutterActor          *applet_close_button;
+  ClutterActor          *applet_settings_button;
+  ClutterActor          *applet_resize_button;
 
   guint                  close_button_handler;
 
@@ -230,6 +235,17 @@ hd_home_view_background_clicked (HdHomeView         *view,
     g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
 }
 
+static void
+hd_home_view_applet_clicked (HdHomeView         *view,
+			     ClutterActor       *applet,
+			     HdHome             *home)
+{
+  HdHomePrivate *priv = home->priv;
+
+  if (priv->mode == HD_HOME_MODE_EDIT)
+    hd_home_show_applet_buttons (home, applet);
+}
+
 static Bool
 hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
 {
@@ -366,6 +382,33 @@ hd_home_desktop_client_message (XClientMessageEvent *xev, void *userdata)
   return True;
 }
 
+static gboolean
+hd_home_applet_close_button_clicked (ClutterActor       *button,
+				     ClutterButtonEvent *event,
+				     HdHome             *home)
+{
+  g_debug ("Applet close button clicked.");
+  return TRUE;
+}
+
+static gboolean
+hd_home_applet_settings_button_clicked (ClutterActor       *button,
+					ClutterButtonEvent *event,
+					HdHome             *home)
+{
+  g_debug ("Applet settings button clicked.");
+  return TRUE;
+}
+
+static gboolean
+hd_home_applet_resize_button_clicked (ClutterActor       *button,
+				      ClutterButtonEvent *event,
+				      HdHome             *home)
+{
+  g_debug ("Applet resize button clicked.");
+  return TRUE;
+}
+
 static void
 hd_home_constructed (GObject *object)
 {
@@ -379,6 +422,7 @@ hd_home_constructed (GObject *object)
   guint            button_width, button_height;
   ClutterColor     clr;
   XSetWindowAttributes attr;
+  CoglHandle       handle;
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
@@ -401,12 +445,16 @@ hd_home_constructed (GObject *object)
 			   NULL);
 
       g_signal_connect (view, "thumbnail-clicked",
-		    G_CALLBACK (hd_home_view_thumbnail_clicked),
-		    object);
+			G_CALLBACK (hd_home_view_thumbnail_clicked),
+			object);
 
       g_signal_connect (view, "background-clicked",
-		    G_CALLBACK (hd_home_view_background_clicked),
-		    object);
+			G_CALLBACK (hd_home_view_background_clicked),
+			object);
+
+      g_signal_connect (view, "applet-clicked",
+			G_CALLBACK (hd_home_view_applet_clicked),
+			object);
 
       priv->views = g_list_append (priv->views, view);
 
@@ -446,13 +494,15 @@ hd_home_constructed (GObject *object)
   /*
    * NB: we position the button in the hd_home_do_layout_layout() function;
    * this allows us to mess about with the layout in that one place only.
+   *
+   * The close_button can only be hidden once we clone it for the
+   * applet_close_button below.
    */
   priv->close_button =
     clutter_texture_new_from_file (CLOSE_BUTTON, &error);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (main_group),
 			       priv->close_button);
-  clutter_actor_hide (priv->close_button);
   clutter_actor_set_reactive (priv->close_button, TRUE);
 
   priv->back_button =
@@ -510,6 +560,51 @@ hd_home_constructed (GObject *object)
   clutter_actor_set_size (priv->grey_filter, priv->xwidth, priv->xheight);
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->grey_filter);
+
+  /* Applet edit mode buttons */
+  handle =
+    clutter_texture_get_cogl_texture (CLUTTER_TEXTURE (priv->close_button));
+
+  priv->applet_close_button = clutter_texture_new ();
+
+  clutter_texture_set_cogl_texture (CLUTTER_TEXTURE(priv->applet_close_button),
+				    handle);
+  /* Now hide the original close button */
+  clutter_actor_hide (priv->close_button);
+
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
+			       priv->applet_close_button);
+  clutter_actor_hide (priv->applet_close_button);
+  clutter_actor_set_reactive (priv->applet_close_button, TRUE);
+
+  g_signal_connect (priv->applet_close_button, "button-release-event",
+		    G_CALLBACK (hd_home_applet_close_button_clicked),
+		    object);
+
+  priv->applet_settings_button =
+    clutter_texture_new_from_file (APPLET_SETTINGS_BUTTON, &error);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
+			       priv->applet_settings_button);
+  clutter_actor_hide (priv->applet_settings_button);
+  clutter_actor_set_reactive (priv->applet_settings_button, TRUE);
+
+  g_signal_connect (priv->applet_settings_button, "button-release-event",
+		    G_CALLBACK (hd_home_applet_settings_button_clicked),
+		    object);
+
+  priv->applet_resize_button =
+    clutter_texture_new_from_file (APPLET_RESIZE_BUTTON, &error);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
+			       priv->applet_resize_button);
+  clutter_actor_hide (priv->applet_resize_button);
+  clutter_actor_set_reactive (priv->applet_resize_button, TRUE);
+
+  g_signal_connect (priv->applet_resize_button, "button-release-event",
+		    G_CALLBACK (hd_home_applet_resize_button_clicked),
+		    object);
 
   hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_NORMAL);
 
@@ -703,6 +798,8 @@ hd_home_do_normal_layout (HdHome *home)
   clutter_actor_hide (priv->new_button);
   clutter_actor_hide (priv->edit_group);
 
+  hd_home_hide_applet_buttons (home);
+
   if (priv->close_button_handler)
     {
       g_signal_handler_disconnect (priv->close_button,
@@ -789,6 +886,8 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
     top = CLUTTER_ACTOR (top_view);
   else
     top = g_list_nth_data (priv->views, priv->current_view);
+
+  hd_home_hide_applet_buttons (home);
 
   w_top = (gint)((gdouble)xwidth * scale);
   h_top = (gint)((gdouble)xheight * scale) - xheight/16;
@@ -1282,4 +1381,48 @@ hd_home_hide_edit_button (HdHome *home)
     }
 
   hd_home_ungrab_pointer (home);
+}
+
+void
+hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet)
+{
+  HdHomePrivate   *priv = home->priv;
+  gint             x_a, y_a;
+  guint            w_a, h_a, w_b, h_b;
+
+  /* The applet buttons are placed within the edit_group. This group has the
+   * same size as a single view and is automatically positioned over the active
+   * view. This means that when placing the buttons, we do not need to consider
+   * the position of the view they belong to.
+   */
+  clutter_actor_get_position (applet, &x_a, &y_a);
+  clutter_actor_get_size (applet, &w_a, &h_a);
+
+  clutter_actor_get_size (priv->applet_close_button, &w_b, &h_b);
+  clutter_actor_set_position (priv->applet_close_button,
+			      x_a + w_a - w_b/2,
+			      y_a - h_b/2);
+  clutter_actor_show (priv->applet_close_button);
+
+  clutter_actor_get_size (priv->applet_settings_button, &w_b, &h_b);
+  clutter_actor_set_position (priv->applet_settings_button,
+			      x_a - w_b/2,
+			      y_a + h_a - h_b/2);
+  clutter_actor_show (priv->applet_settings_button);
+
+  clutter_actor_get_size (priv->applet_resize_button, &w_b, &h_b);
+  clutter_actor_set_position (priv->applet_resize_button,
+			      x_a + w_a - w_b/2,
+			      y_a + h_a - h_b/2);
+  clutter_actor_show (priv->applet_resize_button);
+}
+
+void
+hd_home_hide_applet_buttons (HdHome *home)
+{
+  HdHomePrivate   *priv = home->priv;
+
+  clutter_actor_hide (priv->applet_close_button);
+  clutter_actor_hide (priv->applet_settings_button);
+  clutter_actor_hide (priv->applet_resize_button);
 }

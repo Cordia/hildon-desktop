@@ -65,7 +65,11 @@ struct _HdHomeViewPrivate
 
   GList                *applets; /* MBWMCompMgrClutterClient list */
 
-  gboolean              thumbnail_mode     : 1;
+  gint                  applet_motion_start_x;
+  gint                  applet_motion_start_y;
+
+  gboolean              thumbnail_mode        : 1;
+  gboolean              applet_motion_handled : 1;
 
   guint                 id;
 };
@@ -451,7 +455,21 @@ hd_home_view_applet_motion (ClutterActor       *applet,
 			    ClutterMotionEvent *event,
 			    HdHomeView         *view)
 {
+  HdHomeViewPrivate *priv = view->priv;
+
   g_debug ("Applet motion, %d,%d", event->x, event->y);
+
+  /*
+   * There is always a motion event just before a button release, so
+   * we set a flag to indicated if the pointer actually moved.
+   * NB: cannot just use the coords directly, as the final coords could
+   * be the same as the start coords, with some values between.
+   */
+  if (priv->applet_motion_start_x != event->x ||
+      priv->applet_motion_start_y != event->y)
+    {
+      priv->applet_motion_handled = TRUE;
+    }
 
   return FALSE;
 }
@@ -461,9 +479,9 @@ hd_home_view_applet_press (ClutterActor       *applet,
 			   ClutterButtonEvent *event,
 			   HdHomeView         *view)
 {
-  guint id;
+  HdHomeViewPrivate *priv = view->priv;
 
-  g_debug ("Applet pressed, %d,%d", event->x, event->y);
+  guint id;
 
   id = g_signal_connect (applet, "motion-event",
 			 G_CALLBACK (hd_home_view_applet_motion),
@@ -471,6 +489,10 @@ hd_home_view_applet_press (ClutterActor       *applet,
 
   g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb",
 		     GINT_TO_POINTER (id));
+
+  priv->applet_motion_handled = FALSE;
+  priv->applet_motion_start_x = event->x;
+  priv->applet_motion_start_y = event->y;
 
   return FALSE;
 }
@@ -480,9 +502,8 @@ hd_home_view_applet_release (ClutterActor       *applet,
 			     ClutterButtonEvent *event,
 			     HdHomeView         *view)
 {
+  HdHomeViewPrivate *priv = view->priv;
   guint id;
-
-  g_debug ("Applet released, %d,%d", event->x, event->y);
 
   id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
 					   "HD-VIEW-motion-cb"));
@@ -493,7 +514,13 @@ hd_home_view_applet_release (ClutterActor       *applet,
       g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb", NULL);
     }
 
-  g_signal_emit (view, signals[SIGNAL_APPLET_CLICKED], 0, applet);
+  /*
+   * If this was a simple press/release, with no intervening pointer motion,
+   * emit the applet-clicked signal.
+   */
+  if (!priv->applet_motion_handled)
+    g_signal_emit (view, signals[SIGNAL_APPLET_CLICKED], 0, applet);
+
   return TRUE;
 }
 
