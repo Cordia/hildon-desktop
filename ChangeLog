@@ -1,3 +1,11 @@
+2008-06-10  Tomas Frydrych  <tf@o-hand.com>
+
+	Restructured source tree to improve clarity:
+
+	* src/mb:   Matchbox subclasses,
+	* src/home: Home (clutter subclasses),
+	* src/util: Auxiliary stuff.
+
 2008-06-09  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-switcher-group.c:

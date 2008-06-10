@@ -38,12 +38,19 @@ PKG_CHECK_MODULES(HD, clutter-0.7 \
 		      libmatchbox2-0.1 \
 		      gtk+-2.0 \
 		      xft)
+
+HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util'
+
 AC_SUBST(HD_LIBS)
 AC_SUBST(HD_CFLAGS)
+AC_SUBST(HD_INCS)
 
 AC_CONFIG_FILES([
 Makefile
 src/Makefile
+src/mb/Makefile
+src/home/Makefile
+src/util/Makefile
 ])
 
 AC_OUTPUT
