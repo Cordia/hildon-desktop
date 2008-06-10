@@ -1,5 +1,13 @@
 2008-06-10  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/main.c:
+	* src/mb/Makefile.am:
+	* src/mb/hd-theme.h:
+	* src/mb/hd-theme.c:
+	Start start of a customized MBWMTheme subclass.
+
+2008-06-10  Tomas Frydrych  <tf@o-hand.com>
+
 	Restructured source tree to improve clarity:
 
 	* src/mb:   Matchbox subclasses,

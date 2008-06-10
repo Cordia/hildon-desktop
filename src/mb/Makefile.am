@@ -4,13 +4,15 @@ mb_h =		hd-atoms.h		\
 		hd-comp-mgr.h		\
 		hd-wm.h			\
 		hd-desktop.h		\
-		hd-home-applet.h
+		hd-home-applet.h	\
+		hd-theme.h
 
 mb_c = 		hd-atoms.c		\
 		hd-comp-mgr.c		\
 		hd-wm.c			\
 		hd-desktop.c		\
-		hd-home-applet.c
+		hd-home-applet.c	\
+		hd-theme.c
 
 noinst_LIBRARIES = libmb.a
 

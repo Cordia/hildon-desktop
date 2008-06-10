@@ -33,6 +33,7 @@
 #include <clutter/clutter-container.h>
 
 #include "hd-wm.h"
+#include "hd-theme.h"
 
 enum {
   KEY_ACTION_PAGE_NEXT,
@@ -40,6 +41,34 @@ enum {
   KEY_ACTION_TOGGLE_FULLSCREEN,
   KEY_ACTION_TOGGLE_DESKTOP,
 };
+
+static unsigned int
+theme_type_func (const char *theme_name, void *data)
+{
+  if (theme_name && !strcmp (theme_name, "hildon"))
+    return HD_TYPE_THEME;
+
+  return MB_WM_TYPE_THEME;
+}
+
+static unsigned int
+theme_client_type_func (const char *type_name, void *user_data)
+{
+  if (type_name && !strcmp (type_name, "home-applet"))
+    return HdWmClientTypeHomeApplet;
+
+  return 0;
+}
+
+static unsigned int
+theme_button_type_func (const char *type_name,
+			void       *user_data)
+{
+  if (type_name && !strcmp (type_name, "back"))
+    return HdHomeThemeButtonBack;
+
+  return 0;
+}
 
 static void
 key_binding_func (MBWindowManager   *wm,
@@ -80,6 +109,11 @@ main (int argc, char **argv)
 			  G_LOG_LEVEL_WARNING);
 
   mb_wm_object_init();
+
+  mb_wm_theme_set_custom_theme_type_func (theme_type_func, NULL);
+  mb_wm_theme_set_custom_theme_alloc_func (hd_theme_alloc_func);
+  mb_wm_theme_set_custom_client_type_func (theme_client_type_func, NULL);
+  mb_wm_theme_set_custom_button_type_func (theme_button_type_func, NULL);
 
 #if USE_GTK
   printf ("initializing gtk\n");
