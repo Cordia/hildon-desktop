@@ -3,8 +3,7 @@
  *
  * Copyright (C) 2008 Nokia Corporation.
  *
- * Author:  Johan Bilien <johan.bilien@nokia.com>
- *          Tomas Frydrych <tf@o-hand.com>
+ * Author: Tomas Frydrych <tf@o-hand.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -91,15 +90,18 @@ button_release_handler (MBWindowManager   *wm,
 
 
 static void
-construct_buttons (MBWMThemePng * theme, MBWMDecor * decor, MBWMXmlDecor *d)
+construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 {
   MBWindowManagerClient *client = decor->parent_client;
   MBWindowManager       *wm     = client->wmref;
   MBWMDecorButton       *button = NULL;
   Bool                   is_leader = False;
 
-  if (client->window->xwin_group == client->window->xwindow)
-    is_leader = True;
+  if (client->window->xwin_group == None ||
+      client->window->xwin_group == client->window->xwindow)
+    {
+      is_leader = True;
+    }
 
   if (d)
     {
@@ -140,6 +142,30 @@ construct_buttons (MBWMThemePng * theme, MBWMDecor * decor, MBWMXmlDecor *d)
 	  l = l->next;
 	}
     }
+  else
+    {
+      if (is_leader)
+	{
+	  button = mb_wm_decor_button_stock_new (wm,
+						 MBWMDecorButtonClose,
+						 MBWMDecorButtonPackEnd,
+						 decor,
+						 0);
+	}
+      else
+	{
+	  button = mb_wm_decor_button_new (wm,
+					   HdHomeThemeButtonBack,
+					   MBWMDecorButtonPackEnd,
+					   decor,
+					   button_press_handler,
+					   button_release_handler,
+					   0);
+	}
+
+      mb_wm_decor_button_show (button);
+      mb_wm_object_unref (MB_WM_OBJECT (button));
+    }
 }
 
 static MBWMDecor *
@@ -163,11 +189,87 @@ hd_theme_create_decor (MBWMTheme             *theme,
 	  decor = mb_wm_decor_new (wm, type);
 	  decor->absolute_packing = True;
 	  mb_wm_decor_attach (decor, client);
-	  construct_buttons (MB_WM_THEME_PNG (theme), decor, d);
+	  construct_buttons (theme, decor, d);
+	}
+    }
+
+  if (!decor)
+    {
+      switch (c_type)
+	{
+	case MBWMClientTypeApp:
+	  switch (type)
+	    {
+	    case MBWMDecorTypeNorth:
+	      decor = mb_wm_decor_new (wm, type);
+	      mb_wm_decor_attach (decor, client);
+	      construct_buttons (theme, decor, NULL);
+	      break;
+	    default:
+	      decor = mb_wm_decor_new (wm, type);
+	      mb_wm_decor_attach (decor, client);
+	    }
+	  break;
+
+	case MBWMClientTypeDialog:
+	  decor = mb_wm_decor_new (wm, type);
+	  mb_wm_decor_attach (decor, client);
+	  break;
+
+	case MBWMClientTypePanel:
+	case MBWMClientTypeDesktop:
+	case MBWMClientTypeInput:
+	default:
+	  decor = mb_wm_decor_new (wm, type);
+	  mb_wm_decor_attach (decor, client);
 	}
     }
 
   return decor;
+}
+
+static void
+hd_theme_simple_class_init (MBWMObjectClass *klass)
+{
+  MBWMThemeClass *t_class = MB_WM_THEME_CLASS (klass);
+
+  t_class->create_decor = hd_theme_create_decor;
+
+#if MBWM_WANT_DEBUG
+  klass->klass_name = "HdThemeSimple";
+#endif
+}
+
+static void
+hd_theme_simple_destroy (MBWMObject *obj)
+{
+}
+
+static int
+hd_theme_simple_init (MBWMObject *obj, va_list vap)
+{
+  return 1;
+}
+
+int
+hd_theme_simple_class_type ()
+{
+  static int type = 0;
+
+  if (UNLIKELY(type == 0))
+    {
+      static MBWMObjectClassInfo info = {
+	sizeof (HdThemeSimpleClass),
+	sizeof (HdThemeSimple),
+	hd_theme_simple_init,
+	hd_theme_simple_destroy,
+	hd_theme_simple_class_init
+      };
+
+      type = mb_wm_object_register_class (&info, MB_WM_TYPE_THEME, 0);
+    }
+
+  return type;
 }
 
 MBWMTheme *
@@ -187,9 +289,6 @@ hd_theme_alloc_func (int theme_type, ...)
   MBWMCompMgrShadowType shadow_type = MBWM_COMP_MGR_SHADOW_NONE;
 
   va_start (vap, theme_type);
-
-  if (theme_type != HD_TYPE_THEME)
-    return NULL;
 
   prop = va_arg(vap, MBWMObjectProp);
   while (prop)
@@ -233,17 +332,37 @@ hd_theme_alloc_func (int theme_type, ...)
 
   va_end(vap);
 
-  theme = MB_WM_THEME (mb_wm_object_new (HD_TYPE_THEME,
-			MBWMObjectPropWm,                  wm,
-			MBWMObjectPropThemePath,           path,
-			MBWMObjectPropThemeImg,            img,
-			MBWMObjectPropThemeXmlClients,     xml_clients,
-			MBWMObjectPropThemeColorLowlight,  clr_lowlight,
-			MBWMObjectPropThemeColorShadow,    clr_shadow,
-			MBWMObjectPropThemeShadowType,     shadow_type,
-			MBWMObjectPropThemeCompositing,    compositing,
-			MBWMObjectPropThemeShaped,         shaped,
-			NULL));
+  /* If some other theme than our own was requested,
+   * fallback on the simple one
+   */
+  if (theme_type != HD_TYPE_THEME)
+    {
+      theme = MB_WM_THEME (mb_wm_object_new (HD_TYPE_THEME_SIMPLE,
+			   MBWMObjectPropWm,                  wm,
+			   MBWMObjectPropThemePath,           path,
+			   MBWMObjectPropThemeImg,            img,
+			   MBWMObjectPropThemeXmlClients,     xml_clients,
+			   MBWMObjectPropThemeColorLowlight,  clr_lowlight,
+			   MBWMObjectPropThemeColorShadow,    clr_shadow,
+			   MBWMObjectPropThemeShadowType,     shadow_type,
+			   MBWMObjectPropThemeCompositing,    compositing,
+			   MBWMObjectPropThemeShaped,         shaped,
+			   NULL));
+    }
+  else
+    {
+      theme = MB_WM_THEME (mb_wm_object_new (HD_TYPE_THEME,
+			   MBWMObjectPropWm,                  wm,
+			   MBWMObjectPropThemePath,           path,
+			   MBWMObjectPropThemeImg,            img,
+			   MBWMObjectPropThemeXmlClients,     xml_clients,
+			   MBWMObjectPropThemeColorLowlight,  clr_lowlight,
+			   MBWMObjectPropThemeColorShadow,    clr_shadow,
+			   MBWMObjectPropThemeShadowType,     shadow_type,
+			   MBWMObjectPropThemeCompositing,    compositing,
+			   MBWMObjectPropThemeShaped,         shaped,
+			   NULL));
+    }
 
   g_debug ("Theme %p", theme);
 

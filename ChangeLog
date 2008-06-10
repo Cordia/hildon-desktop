@@ -1,5 +1,12 @@
 2008-06-10  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/mb/hd-theme.c:
+	* src/mb/hd-theme.h:
+	Added HdThemeSimple, subclass of MBWMTheme, to simplify testing
+	in the absence of real, png-based theme.
+
+2008-06-10  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/main.c:
 	* src/mb/Makefile.am:
 	* src/mb/hd-theme.h:

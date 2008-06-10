@@ -56,4 +56,29 @@ int hd_theme_class_type (void);
 
 MBWMTheme * hd_theme_alloc_func (int theme_type, ...);
 
+/* This is a simple test theme that implements the features of
+ * of the real theme engine, but is based on the simple, rather than
+ * png them.
+ */
+typedef struct HdThemeSimpleClass   HdThemeSimpleClass;
+typedef struct HdThemeSimple        HdThemeSimple;
+typedef struct HdThemeSimplePrivate HdThemeSimplePrivate;
+
+#define HD_THEME_SIMPLE(c)       ((HdThemeSimple*)(c))
+#define HD_THEME_SIMPLE_CLASS(c) ((HdThemeSimpleClass*)(c))
+#define HD_TYPE_THEME_SIMPLE     (hd_theme_simple_class_type ())
+
+struct HdThemeSimpleClass
+{
+  MBWMThemeClass    parent;
+
+};
+
+struct HdThemeSimple
+{
+  MBWMTheme     parent;
+};
+
+int hd_theme_simple_class_type (void);
+
 #endif
