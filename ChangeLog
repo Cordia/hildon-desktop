@@ -1,5 +1,17 @@
 2008-06-11  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/mb/hd-app.c:
+	* src/mb/hd-app.h:
+	* src/mb/hd-theme.c:
+	Fixed handling of hildon stackable windows so that legacy
+	applications continue to work as they used to.
+
+	* src/mb/hd-atoms.c:
+	* src/mb/hd-atoms.h:
+	Added _HILDON_STACKABLE_WINDOW atom.
+
+2008-06-11  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/mb/Makefile.am
 	* src/mb/hd-app.h:
 	* src/mb/hd-app.c:

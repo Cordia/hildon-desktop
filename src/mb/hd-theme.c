@@ -98,13 +98,13 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
   MBWindowManagerClient *client = decor->parent_client;
   MBWindowManager       *wm     = client->wmref;
   MBWMDecorButton       *button = NULL;
-  gboolean               is_leader = FALSE;
+  gboolean               is_leader = TRUE;
 
   if (MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeApp)
     {
       HdApp *app = HD_APP (client);
 
-      is_leader = app->primary_window;
+      is_leader = !app->secondary_window;
     }
 
   if (d)

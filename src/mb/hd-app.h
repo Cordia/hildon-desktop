@@ -39,7 +39,7 @@ struct HdApp
 {
   MBWMClientApp    parent;
 
-  gboolean         primary_window;
+  gboolean         secondary_window;
 };
 
 struct HdAppClass

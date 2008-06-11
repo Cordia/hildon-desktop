@@ -15,6 +15,7 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     "_HILDON_ABLE_TO_HIBERNATE",/* alias for the above */
 
     "_HILDON_HOME_VIEW",
+    "_HILDON_STACKABLE_WINDOW",
 
     "_HILDON_WM_WINDOW_TYPE_HOME_APPLET",
 
