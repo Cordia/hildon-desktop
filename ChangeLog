@@ -1,5 +1,11 @@
 2008-06-11  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/mb/hd-theme.c:
+	Skeleton for handling presses on Hildon stackable window back
+	button.
+
+2008-06-11  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/mb/hd-app.c:
 	* src/mb/hd-app.h:
 	* src/mb/hd-theme.c:

@@ -27,6 +27,8 @@
 
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 
+#define BACK_BUTTON_TIMEOUT 2000
+
 static MBWMDecor * hd_theme_create_decor (MBWMTheme             *theme,
 					  MBWindowManagerClient *client,
 					  MBWMDecorType          type);
@@ -75,20 +77,60 @@ hd_theme_class_type ()
   return type;
 }
 
-static void
-button_press_handler (MBWindowManager   *wm,
-		      MBWMDecorButton   *button,
-		      void              *userdata)
+typedef struct _BackButtonData
 {
-  g_debug ("Back group button press.");
+  guint timeout_id;
+
+} BackButtonData;
+
+static void
+back_button_data_free (BackButtonData *bd)
+{
+  g_free (bd);
 }
 
 static void
-button_release_handler (MBWindowManager   *wm,
-			MBWMDecorButton   *button,
-			void              *userdata)
+back_button_data_destroy (MBWMDecorButton *button, void *bd)
 {
-  g_debug ("Back group button.");
+  back_button_data_free (bd);
+}
+
+static gboolean
+back_button_timeout (gpointer data)
+{
+  g_debug ("Back button timeout.");
+
+  /* TODO -- kill all windows in this group other than the primary */
+
+  return FALSE;
+}
+
+static void
+back_button_press_handler (MBWindowManager   *wm,
+			   MBWMDecorButton   *button,
+			   void              *userdata)
+{
+  BackButtonData *bd = userdata;
+
+  bd->timeout_id =
+    g_timeout_add_full (G_PRIORITY_HIGH_IDLE,
+			BACK_BUTTON_TIMEOUT, back_button_timeout, bd, NULL);
+
+  g_debug ("Back group button press: timeout id %d.", bd->timeout_id);
+}
+
+static void
+back_button_release_handler (MBWindowManager   *wm,
+			     MBWMDecorButton   *button,
+			     void              *userdata)
+{
+  BackButtonData *bd = userdata;
+
+  g_source_remove (bd->timeout_id);
+  bd->timeout_id = 0;
+
+  /* TODO -- switch to previous window in group */
+  g_debug ("Back group button release.");
 }
 
 
@@ -115,15 +157,25 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 	  MBWMXmlButton * b = l->data;
 
 	  /* Back button only for group followers */
+#if 1
+	  if (1)
+#else
 	  if (b->type == HdHomeThemeButtonBack && !is_leader)
+#endif
 	    {
+	      BackButtonData *bd;
+
 	      button = mb_wm_decor_button_new (wm,
 					       b->type,
 					       b->packing,
 					       decor,
-					       button_press_handler,
-					       button_release_handler,
+					       back_button_press_handler,
+					       back_button_release_handler,
 					       0);
+
+	      bd = g_new0 (BackButtonData, 1);
+	      mb_wm_decor_button_set_user_data (button, bd,
+						back_button_data_destroy);
 	    }
 	  /* No close button for group followers */
 	  else if (b->type != MBWMDecorButtonClose || is_leader)
@@ -158,13 +210,19 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 	}
       else
 	{
+	  BackButtonData *bd;
+
 	  button = mb_wm_decor_button_new (wm,
 					   HdHomeThemeButtonBack,
 					   MBWMDecorButtonPackEnd,
 					   decor,
-					   button_press_handler,
-					   button_release_handler,
+					   back_button_press_handler,
+					   back_button_release_handler,
 					   0);
+
+	  bd = g_new0 (BackButtonData, 1);
+	  mb_wm_decor_button_set_user_data (button, bd,
+					    back_button_data_destroy);
 	}
 
       mb_wm_decor_button_show (button);
