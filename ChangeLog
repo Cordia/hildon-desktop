@@ -1,5 +1,11 @@
 2008-06-11  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/mb/hd-comp-mgr.h:
+	Replace binary flags in HdCompMgrClientPrivate with boolean fields
+	to improve clarity.
+
+2008-06-11  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-home-view.c:
 	Connect/disconnect captured-event handler selectively for
 	thumbnail mode only.

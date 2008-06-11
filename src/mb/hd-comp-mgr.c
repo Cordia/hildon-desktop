@@ -82,17 +82,13 @@ struct HdCompMgrPrivate
  * A helper object to store manager's per-client data
  */
 
-typedef enum
-{
-  HdCompMgrClientFlagHibernating  = (1 << 0),
-  HdCompMgrClientFlagCanHibernate = (1 << 1),
-} HdCompMgrClientFlags;
-
 struct HdCompMgrClientPrivate
 {
   guint                 hibernation_key;
   gchar                *service;
-  HdCompMgrClientFlags  flags;
+
+  gboolean              hibernating   : 1;
+  gboolean              can_hibernate : 1;
 };
 
 static MBWMCompMgrClient *
@@ -150,9 +146,9 @@ hd_comp_mgr_client_process_hibernation_prop (HdCompMgrClient * hc)
     }
 
   if (hibernable)
-    priv->flags |= HdCompMgrClientFlagCanHibernate;
+    priv->can_hibernate = TRUE;
   else
-    priv->flags &= ~HdCompMgrClientFlagCanHibernate;
+    priv->can_hibernate = FALSE;
 
   if (hibernable)
     XFree (hibernable);
@@ -270,7 +266,7 @@ hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient)
 {
   HdCompMgrClientPrivate * priv = hclient->priv;
 
-  return ((priv->flags & HdCompMgrClientFlagHibernating) != FALSE);
+  return priv->hibernating;
 }
 
 static int  hd_comp_mgr_init (MBWMObject *obj, va_list vap);
@@ -498,7 +494,6 @@ static void
 hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
   ClutterActor                  * actor;
-  HdCompMgrClientFlags            h_flags;
   HdCompMgrPrivate              * priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClass              * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
@@ -506,11 +501,9 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
   HdCompMgrClient               * hclient = HD_COMP_MGR_CLIENT (c->cm_client);
 
-  h_flags = hclient->priv->flags;
-
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
-  if (h_flags & HdCompMgrClientFlagHibernating)
+  if (hclient->priv->hibernating)
     {
       /*
        * We want to hold onto the CM client object, so we can continue using
@@ -800,10 +793,9 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
 {
   HdCompMgrPrivate      * priv = hmgr->priv;
   HdCompMgrClient       * h_client = HD_COMP_MGR_CLIENT (cc);
-  HdCompMgrClientFlags    h_flags = h_client->priv->flags;
 
 
-  if (h_flags & HdCompMgrClientFlagHibernating)
+  if (h_client->priv->hibernating)
     {
       ClutterActor * actor;
 
@@ -834,13 +826,13 @@ hd_comp_mgr_hibernate_client (HdCompMgr *hmgr,
   MBWMCompMgrClient * c  = MB_WM_COMP_MGR_CLIENT (cc);
   HdCompMgrClient   * hc = HD_COMP_MGR_CLIENT (cc);
 
-  if (!force && !(hc->priv->flags & HdCompMgrClientFlagCanHibernate))
+  if (!force && !(hc->priv->can_hibernate))
     return;
 
   mb_wm_comp_mgr_clutter_client_set_flags (cc,
 					   MBWMCompMgrClutterClientDontUpdate);
 
-  hc->priv->flags |= HdCompMgrClientFlagHibernating;
+  hc->priv->hibernating = TRUE;
 
   g_timeout_add (HIBERNATION_TIMEMOUT,
 		 (GSourceFunc) hd_comp_mgr_client_shutdown_timeout_cb,
