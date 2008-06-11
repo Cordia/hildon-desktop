@@ -22,6 +22,9 @@
  */
 
 #include "hd-theme.h"
+#include "hd-comp-mgr.h"
+#include "hd-app.h"
+
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 
 static MBWMDecor * hd_theme_create_decor (MBWMTheme             *theme,
@@ -95,12 +98,13 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
   MBWindowManagerClient *client = decor->parent_client;
   MBWindowManager       *wm     = client->wmref;
   MBWMDecorButton       *button = NULL;
-  Bool                   is_leader = False;
+  gboolean               is_leader = FALSE;
 
-  if (client->window->xwin_group == None ||
-      client->window->xwin_group == client->window->xwindow)
+  if (MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeApp)
     {
-      is_leader = True;
+      HdApp *app = HD_APP (client);
+
+      is_leader = app->primary_window;
     }
 
   if (d)
@@ -122,7 +126,7 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 					       0);
 	    }
 	  /* No close button for group followers */
-	  else if (!(b->type == MBWMDecorButtonClose && !is_leader))
+	  else if (b->type != MBWMDecorButtonClose || is_leader)
 	    {
 	      button = mb_wm_decor_button_stock_new (wm,
 						     b->type,
@@ -187,7 +191,10 @@ hd_theme_create_decor (MBWMTheme             *theme,
       if (d)
 	{
 	  decor = mb_wm_decor_new (wm, type);
-	  decor->absolute_packing = True;
+
+	  decor->absolute_packing =
+	    MB_WM_OBJECT_TYPE (theme) == HD_TYPE_THEME_SIMPLE ? False : True;
+
 	  mb_wm_decor_attach (decor, client);
 	  construct_buttons (theme, decor, d);
 	}
@@ -363,8 +370,6 @@ hd_theme_alloc_func (int theme_type, ...)
 			   MBWMObjectPropThemeShaped,         shaped,
 			   NULL));
     }
-
-  g_debug ("Theme %p", theme);
 
   return theme;
 }

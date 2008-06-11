@@ -29,6 +29,7 @@
 #include "hd-wm.h"
 #include "hd-comp-mgr.h"
 #include "hd-desktop.h"
+#include "hd-app.h"
 
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/core/mb-wm.h>
@@ -129,6 +130,12 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
 	return NULL;
 
       return hd_desktop_new (wm, win);
+    }
+  else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NORMAL])
+    {
+      printf ("### is application ###\n");
+
+      return hd_app_new (wm, win);
     }
   else if (wm_class)
     return wm_class->client_new (wm, win);

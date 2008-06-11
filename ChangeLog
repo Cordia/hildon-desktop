@@ -1,5 +1,14 @@
 2008-06-11  Tomas Frydrych  <tf@o-hand.com>
 
+	* src/mb/Makefile.am
+	* src/mb/hd-app.h:
+	* src/mb/hd-app.c:
+	* src/mb/hd-theme.c
+	* src/mb/hd-wm.c
+	Custom MBWMClientApp subclass to allow handling of hildon views.
+
+2008-06-11  Tomas Frydrych  <tf@o-hand.com>
+
 	* src/mb/hd-comp-mgr.h:
 	Replace binary flags in HdCompMgrClientPrivate with boolean fields
 	to improve clarity.
