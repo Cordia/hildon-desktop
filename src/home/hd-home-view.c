@@ -58,7 +58,6 @@ struct _HdHomeViewPrivate
   HdHome               *home;
 
   ClutterActor         *background;
-  ClutterActor         *mouse_trap;
 
   gint                  xwidth;
   gint                  xheight;
@@ -212,24 +211,23 @@ hd_home_view_background_release (ClutterActor *background,
 }
 
 static gboolean
-hd_home_view_mouse_trap_press (ClutterActor       *trap,
-			       ClutterButtonEvent *event,
-			       HdHomeView         *view)
+hd_home_view_captured_event (ClutterActor       *self,
+			     ClutterEvent       *event,
+			     HdHomeView         *view)
 {
-  g_debug ("Mousetrap pressed, %d,%d", event->x, event->y);
+  HdHomeViewPrivate *priv = view->priv;
 
-  return FALSE;
-}
+  if (!priv->thumbnail_mode ||
+      (event->type != CLUTTER_BUTTON_PRESS &&
+       event->type != CLUTTER_BUTTON_RELEASE))
+    {
+      return FALSE;
+    }
 
-static gboolean
-hd_home_view_mouse_trap_release (ClutterActor       *trap,
-				 ClutterButtonEvent *event,
-				 HdHomeView         *view)
-{
-  g_debug ("Mousetrap released, %d,%d @%d", event->x, event->y, event->time);
+  if (event->type == CLUTTER_BUTTON_RELEASE)
+    g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0, event);
 
-  g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0, event);
-
+  /* Swallow it */
   return TRUE;
 }
 
@@ -263,24 +261,11 @@ hd_home_view_constructed (GObject *object)
 
   priv->background = rect;
 
-  clr.alpha = 0;
-  rect = clutter_rectangle_new_with_color (&clr);
+  clutter_actor_set_reactive (CLUTTER_ACTOR (object), TRUE);
 
-  clutter_actor_set_size (rect, priv->xwidth, priv->xheight);
-  clutter_actor_hide (rect);
-  clutter_actor_set_reactive (rect, TRUE);
-
-  clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
-
-  g_signal_connect (rect, "button-release-event",
-		    G_CALLBACK (hd_home_view_mouse_trap_release),
+  g_signal_connect (object, "captured-event",
+		    G_CALLBACK (hd_home_view_captured_event),
 		    object);
-
-  g_signal_connect (rect, "button-press-event",
-		    G_CALLBACK (hd_home_view_mouse_trap_press),
-		    object);
-
-  priv->mouse_trap = rect;
 }
 
 static void
@@ -430,18 +415,9 @@ hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on)
   HdHomeViewPrivate *priv = view->priv;
 
   if (priv->thumbnail_mode && !on)
-    {
-      priv->thumbnail_mode = FALSE;
-
-      clutter_actor_hide (priv->mouse_trap);
-    }
+    priv->thumbnail_mode = FALSE;
   else if (!priv->thumbnail_mode && on)
-    {
-      priv->thumbnail_mode = TRUE;
-
-      clutter_actor_show (priv->mouse_trap);
-      clutter_actor_raise_top (priv->mouse_trap);
-    }
+    priv->thumbnail_mode = TRUE;
 }
 
 guint
