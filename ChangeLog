@@ -1,9 +1,15 @@
 2008-06-11  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/hd-home-view.c:
+	Connect/disconnect captured-event handler selectively for
+	thumbnail mode only.
+
+2008-06-11  Tomas Frydrych  <tf@o-hand.com>
+
+	* src/hd-home-view.c:
 	Handle thumbnail mode via capture-event signal instead of using a
 	mouse trap actor.
-	
+
 2008-06-10  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/mb/hd-theme.c:

@@ -73,6 +73,8 @@ struct _HdHomeViewPrivate
   gboolean              applet_motion_handled : 1;
 
   guint                 id;
+
+  guint                 capture_cb;
 };
 
 static void hd_home_view_class_init (HdHomeViewClass *klass);
@@ -262,10 +264,6 @@ hd_home_view_constructed (GObject *object)
   priv->background = rect;
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (object), TRUE);
-
-  g_signal_connect (object, "captured-event",
-		    G_CALLBACK (hd_home_view_captured_event),
-		    object);
 }
 
 static void
@@ -415,9 +413,32 @@ hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on)
   HdHomeViewPrivate *priv = view->priv;
 
   if (priv->thumbnail_mode && !on)
-    priv->thumbnail_mode = FALSE;
+    {
+      priv->thumbnail_mode = FALSE;
+
+      if (priv->capture_cb)
+	{
+	  g_signal_handler_disconnect (view, priv->capture_cb);
+	  priv->capture_cb = 0;
+	}
+    }
   else if (!priv->thumbnail_mode && on)
-    priv->thumbnail_mode = TRUE;
+    {
+      priv->thumbnail_mode = TRUE;
+
+      if (priv->capture_cb)
+	{
+	  g_warning ("Capture handler already connected.");
+
+	  g_signal_handler_disconnect (view, priv->capture_cb);
+	  priv->capture_cb = 0;
+	}
+
+      priv->capture_cb =
+	g_signal_connect (view, "captured-event",
+			  G_CALLBACK (hd_home_view_captured_event),
+			  view);
+    }
 }
 
 guint
