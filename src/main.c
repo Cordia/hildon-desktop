@@ -54,7 +54,12 @@ theme_type_func (const char *theme_name, void *data)
 static unsigned int
 theme_client_type_func (const char *type_name, void *user_data)
 {
-  if (type_name && !strcmp (type_name, "home-applet"))
+  if (!type_name)
+    return 0;
+
+  if (!strcmp (type_name, "application-menu"))
+    return HdWmClientTypeAppMenu;
+  else if (!strcmp (type_name, "home-applet"))
     return HdWmClientTypeHomeApplet;
 
   return 0;

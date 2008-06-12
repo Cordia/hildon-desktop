@@ -40,6 +40,7 @@
 
 #include "hd-home-applet.h"
 #include "hd-note.h"
+#include "hd-app-menu.h"
 
 static int  hd_wm_init       (MBWMObject *object, va_list vap);
 static void hd_wm_destroy    (MBWMObject *object);
@@ -122,6 +123,12 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
     {
       printf ("### is home applet ###\n");
       return hd_home_applet_new (wm, win);
+    }
+  else if (win->net_type ==
+      hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_APP_MENU))
+    {
+      printf ("### is application menu ###\n");
+      return hd_app_menu_new (wm, win);
     }
   else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DESKTOP])
     {

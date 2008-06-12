@@ -1,5 +1,16 @@
 2008-06-12 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/main.c:
+	* src/mb/Makefile.am:
+	* src/mb/hd-atoms.c:
+	* src/mb/hd-atoms.h:
+	* src/mb/hd-wm.c:
+	* src/mb/hd-wm.h:
+	Custom HdAppMenu subclass of MBWMClientDialog to handle Hildon
+	application menu windows.
+
+2008-06-12 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/mb/Makefile.am:
 	* src/mb/hd-atoms.c:
 	* src/mb/hd-atoms.h:

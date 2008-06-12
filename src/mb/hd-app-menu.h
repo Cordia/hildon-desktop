@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2008 Nokia Corporation.
  *
- * Author:  Johan Bilien <johan.bilien@nokia.com>
+ * Author:  Tomas Frydrych <tf@o-hand.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -21,41 +21,33 @@
  *
  */
 
-#ifndef __HD_WM_H__
+#ifndef _HAVE_HD_APP_MENU_H
+#define _HAVE_HD_APP_MENU_H
 
-#include <glib/gmacros.h>
 #include <matchbox/core/mb-wm.h>
+#include <matchbox/client-types/mb-wm-client-dialog.h>
 
-G_BEGIN_DECLS
+typedef struct HdAppMenu      HdAppMenu;
+typedef struct HdAppMenuClass HdAppMenuClass;
 
-typedef enum _HdWmClientType
+#define HD_APP_MENU(c) ((HdAppMenu*)(c))
+#define HD_APP_MENU_CLASS(c) ((HdAppMenuClass*)(c))
+#define HD_TYPE_APP_MENU (hd_app_menu_class_type ())
+#define HD_IS_APP_MENU(c) (MB_WM_OBJECT_TYPE(c)==HD_TYPE_APP_MENU)
+
+struct HdAppMenu
 {
-  HdWmClientTypeHomeApplet = MBWMClientTypeLast + 1,
-  HdWmClientTypeAppMenu,
-} HdWmClientType;
-
-typedef struct HdWmClass   HdWmClass;
-typedef struct HdWm        HdWm;
-typedef struct HdWmPrivate HdWmPrivate;
-
-#define HD_WM(c)       ((HdWm*)(c))
-#define HD_WM_CLASS(c) ((HdWmClass*)(c))
-#define HD_TYPE_WM     (hd_wm_class_type ())
-
-struct HdWm
-{
-    MBWindowManager             parent;
-
-    HdWmPrivate                *priv;
+  MBWMClientDialog  parent;
 };
 
-struct HdWmClass
+struct HdAppMenuClass
 {
-    MBWindowManagerClass parent;
+  MBWMClientDialogClass parent;
 };
 
-int hd_wm_class_type (void);
+MBWindowManagerClient* hd_app_menu_new (MBWindowManager *wm,
+					MBWMClientWindow *win);
 
-G_END_DECLS
+int hd_app_menu_class_type (void);
 
-#endif /* __HD_WM_H__ */
+#endif
