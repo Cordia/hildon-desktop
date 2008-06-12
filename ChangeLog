@@ -1,8 +1,19 @@
 2008-06-12 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/mb/Makefile.am:
+	* src/mb/hd-atoms.c:
+	* src/mb/hd-atoms.h:
+	* src/mb/hd-wm.c:
+	* src/mb/hd-note.h:
+	* src/mb/hd-note.c:
+	Custom HdNote subclass of MBWMClientNote to handle Hildon
+	notifications (banners, infos and confirmations).
+
+2008-06-12 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/hd-applet-test.c:
 	Added couple of sliders to the sample applet.
-	
+
 2008-06-12 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/mb/hd-app.c:

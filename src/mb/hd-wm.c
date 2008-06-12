@@ -39,6 +39,7 @@
 #include <clutter/x11/clutter-x11.h>
 
 #include "hd-home-applet.h"
+#include "hd-note.h"
 
 static int  hd_wm_init       (MBWMObject *object, va_list vap);
 static void hd_wm_destroy    (MBWMObject *object);
@@ -136,6 +137,11 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
       printf ("### is application ###\n");
 
       return hd_app_new (wm, win);
+    }
+  else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NOTIFICATION])
+    {
+      MBWM_DBG ("### is notification ###\n");
+      return hd_note_new (wm, win);
     }
   else if (wm_class)
     return wm_class->client_new (wm, win);
