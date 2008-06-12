@@ -251,8 +251,8 @@ hd_app_close_followers (HdApp *app)
     {
       MBWindowManagerClient *f = l->data;
 
-      /* TODO -- close the windows */
       g_debug ("Closing App client %p", f);
+      mb_wm_client_deliver_delete (f);
       l = l->next;
     }
 

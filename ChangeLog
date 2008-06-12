@@ -1,5 +1,11 @@
 2008-06-12 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/mb/hd-app.c:
+	(hd_app_close_followers):
+	Hooked into  mb_wm_client_deliver_delete() mechanism.
+
+2008-06-12 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/main.c:
 	* src/mb/Makefile.am:
 	* src/mb/hd-atoms.c:
