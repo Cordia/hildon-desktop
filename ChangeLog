@@ -1,5 +1,10 @@
 2008-06-12 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-applet-test.c:
+	Added couple of sliders to the sample applet.
+	
+2008-06-12 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/mb/hd-app.c:
 	* src/mb/hd-app.h:
 	* src/mb/hd-theme.c:

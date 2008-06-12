@@ -107,6 +107,7 @@ x_event_filter_func (GdkXEvent *xevent, GdkEvent *event, gpointer data)
 int main (int argc, char *argv[])
 {
   Atom wm_type, applet_type;
+  GtkWidget *w, *b;
 
   gtk_init (&argc, &argv);
 
@@ -124,12 +125,25 @@ window  = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   g_signal_connect (G_OBJECT (window), "button-press-event",
 		    G_CALLBACK (on_button_event), NULL);
 
-  gtk_window_resize (GTK_WINDOW (window), 100, 100);
+  gtk_window_resize (GTK_WINDOW (window), 300, 150);
   gtk_window_move (GTK_WINDOW (window), 200, 200);
+
+  b = gtk_hbox_new (FALSE, 5);
+  gtk_widget_show (b);
+  gtk_container_add (GTK_CONTAINER (window), b);
+
+  w = gtk_hscale_new_with_range (0.0, 100.0, 1.0);
+  gtk_widget_show (w);
+  gtk_box_pack_start (GTK_BOX (b), w, TRUE, TRUE, 0);
+
+  w = gtk_vscale_new_with_range (0.0, 100.0, 1.0);
+  gtk_widget_show (w);
+  gtk_box_pack_start (GTK_BOX (b), w, TRUE, TRUE, 0);
 
   gtk_widget_realize (window);
 
   gdk_window_set_events (window->window,
+			 gdk_window_get_events (window->window)|
 			 GDK_BUTTON_PRESS_MASK   |
 			 GDK_BUTTON_RELEASE_MASK |
 			 GDK_POINTER_MOTION_MASK);
