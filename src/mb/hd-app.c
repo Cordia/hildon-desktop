@@ -35,6 +35,28 @@ hd_app_class_init (MBWMObjectClass *klass)
 static void
 hd_app_destroy (MBWMObject *this)
 {
+  HdApp *app = HD_APP (this);
+
+  if (app->secondary_window && app->leader)
+    {
+      HdApp *leader = app->leader;
+
+      leader->followers = g_list_remove (leader->followers, app);
+    }
+  else
+    {
+      GList *l = app->followers;
+
+      while (l)
+	{
+	  HdApp *a = HD_APP (l->data);
+	  a->leader = NULL;
+
+	  l = l->next;
+	}
+
+      g_list_free (app->followers);
+    }
 }
 
 static int
@@ -77,7 +99,10 @@ hd_app_init (MBWMObject *this, va_list vap)
 	      (MB_WM_CLIENT_CLIENT_TYPE (c_tmp) == MBWMClientTypeApp) &&
 	      c_tmp->window->xwin_group == win_group)
 	    {
+	      HdApp *h_tmp = HD_APP (c_tmp);
+
 	      app->secondary_window = TRUE;
+	      app->leader = h_tmp->leader;
 
 	      /*
 	       * This forces the decors to be redone, taking into account the
@@ -89,6 +114,20 @@ hd_app_init (MBWMObject *this, va_list vap)
 	}
 
       XFree (prop);
+    }
+
+  if (app->secondary_window)
+    {
+      HdApp *leader = app->leader;
+
+      leader->followers = g_list_append (leader->followers, this);
+    }
+  else
+    {
+      /*
+       * We set the leader field to ourselves.
+       */
+      app->leader = app;
     }
 
   return 1;
@@ -127,5 +166,96 @@ hd_app_new (MBWindowManager *wm, MBWMClientWindow *win)
 				     NULL));
 
   return client;
+}
+
+MBWindowManagerClient*
+hd_app_get_next_group_member (HdApp *app)
+{
+  HdApp *next = NULL;
+
+  if (app->secondary_window)
+    {
+      HdApp *leader = app->leader;
+      GList *l      = leader->followers;
+
+      while (l)
+	{
+	  HdApp *a = l->data;
+
+	  if (a == app && l->next)
+	    {
+	      next = l->next->data;
+	      break;
+	    }
+
+	  l = l->next;
+	}
+
+      if (!next)
+	next = leader;
+    }
+  else
+    {
+      next = app->followers->data;
+    }
+
+  return MB_WM_CLIENT (next);
+}
+
+MBWindowManagerClient*
+hd_app_get_prev_group_member (HdApp *app)
+{
+  HdApp *prev = NULL;
+
+  if (app->secondary_window)
+    {
+      HdApp *leader = app->leader;
+      GList *l      = leader->followers;
+
+      while (l)
+	{
+	  HdApp *a = l->data;
+
+	  if (a == app && l->prev)
+	    {
+	      prev = l->prev->data;
+	      break;
+	    }
+
+	  l = l->next;
+	}
+
+      if (!prev)
+	prev = leader;
+    }
+  else
+    {
+      GList *last = g_list_last (app->followers);
+
+      if (last)
+	prev = last->data;
+      else
+	prev = app;
+    }
+
+  return MB_WM_CLIENT (prev);
+}
+
+MBWindowManagerClient*
+hd_app_close_followers (HdApp *app)
+{
+  HdApp *leader = app->leader;
+  GList *l = leader->followers;
+
+  while (l)
+    {
+      MBWindowManagerClient *f = l->data;
+
+      /* TODO -- close the windows */
+      g_debug ("Closing App client %p", f);
+      l = l->next;
+    }
+
+  return MB_WM_CLIENT (leader);
 }
 

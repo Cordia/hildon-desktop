@@ -1,3 +1,10 @@
+2008-06-12 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/mb/hd-app.c:
+	* src/mb/hd-app.h:
+	* src/mb/hd-theme.c:
+	More of Hildon stackable window back button code.
+
 2008-06-11  Tomas Frydrych  <tf@o-hand.com>
 
 	* src/mb/hd-theme.c:

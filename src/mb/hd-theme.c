@@ -33,6 +33,16 @@ static MBWMDecor * hd_theme_create_decor (MBWMTheme             *theme,
 					  MBWindowManagerClient *client,
 					  MBWMDecorType          type);
 
+static void hd_theme_simple_paint_button (MBWMTheme *theme,
+					  MBWMDecorButton *button);
+
+static void
+hd_theme_simple_get_button_size (MBWMTheme             *theme,
+				 MBWMDecor             *decor,
+				 MBWMDecorButtonType    type,
+				 int                   *width,
+				 int                   *height);
+
 static void
 hd_theme_class_init (MBWMObjectClass *klass)
 {
@@ -79,8 +89,10 @@ hd_theme_class_type ()
 
 typedef struct _BackButtonData
 {
-  guint timeout_id;
+  MBWMDecorButton *button;
 
+  guint            timeout_id;
+  gboolean         timeout_handled : 1;
 } BackButtonData;
 
 static void
@@ -98,9 +110,29 @@ back_button_data_destroy (MBWMDecorButton *button, void *bd)
 static gboolean
 back_button_timeout (gpointer data)
 {
-  g_debug ("Back button timeout.");
+  BackButtonData        *bd = data;
+  MBWindowManagerClient *c;
+  MBWindowManagerClient *leader;
+  MBWindowManager       *wm;
+  HdApp                 *app;
+
+  c = bd->button->decor->parent_client;
+  wm = c->wmref;
+
+  bd->timeout_handled = TRUE;
+  bd->timeout_id = 0;
 
   /* TODO -- kill all windows in this group other than the primary */
+  if (!HD_IS_APP (c))
+    {
+      g_warning ("Custom button on a something other than App.");
+      return FALSE;
+    }
+
+  app = HD_APP (c);
+
+  leader = hd_app_close_followers (app);
+  mb_wm_activate_client (wm, leader);
 
   return FALSE;
 }
@@ -116,7 +148,7 @@ back_button_press_handler (MBWindowManager   *wm,
     g_timeout_add_full (G_PRIORITY_HIGH_IDLE,
 			BACK_BUTTON_TIMEOUT, back_button_timeout, bd, NULL);
 
-  g_debug ("Back group button press: timeout id %d.", bd->timeout_id);
+  bd->timeout_handled = FALSE;
 }
 
 static void
@@ -124,13 +156,30 @@ back_button_release_handler (MBWindowManager   *wm,
 			     MBWMDecorButton   *button,
 			     void              *userdata)
 {
-  BackButtonData *bd = userdata;
+  BackButtonData        *bd = userdata;
+  MBWindowManagerClient *c;
+  MBWindowManagerClient *prev;
+  HdApp                 *app;
+
+  if (bd->timeout_handled)
+    return;
 
   g_source_remove (bd->timeout_id);
   bd->timeout_id = 0;
 
   /* TODO -- switch to previous window in group */
-  g_debug ("Back group button release.");
+  c = button->decor->parent_client;
+
+  if (!HD_IS_APP (c))
+    {
+      g_warning ("Custom button on a something other than App.");
+      return;
+    }
+
+  app = HD_APP (c);
+
+  prev = hd_app_get_prev_group_member (app);
+  mb_wm_activate_client (wm, prev);
 }
 
 
@@ -166,7 +215,11 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 	      BackButtonData *bd;
 
 	      button = mb_wm_decor_button_new (wm,
+#if 1
+					       HdHomeThemeButtonBack,
+#else
 					       b->type,
+#endif
 					       b->packing,
 					       decor,
 					       back_button_press_handler,
@@ -174,6 +227,8 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 					       0);
 
 	      bd = g_new0 (BackButtonData, 1);
+	      bd->button = button;
+
 	      mb_wm_decor_button_set_user_data (button, bd,
 						back_button_data_destroy);
 	    }
@@ -299,6 +354,8 @@ hd_theme_simple_class_init (MBWMObjectClass *klass)
   MBWMThemeClass *t_class = MB_WM_THEME_CLASS (klass);
 
   t_class->create_decor = hd_theme_create_decor;
+  t_class->paint_button = hd_theme_simple_paint_button;
+  t_class->button_size  = hd_theme_simple_get_button_size;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdThemeSimple";
@@ -430,4 +487,193 @@ hd_theme_alloc_func (int theme_type, ...)
     }
 
   return theme;
+}
+
+/*
+ * Copied from mb-wm-theme.c; must be kept in sync (this is for debuggin
+ * only anyway).
+ */
+#include <X11/Xft/Xft.h>
+struct DecorData
+{
+  Pixmap            xpix;
+  XftDraw          *xftdraw;
+  XftColor          clr;
+  XftFont          *font;
+};
+
+static unsigned long
+pixel_from_clr (Display * dpy, int screen, MBWMColor * clr)
+{
+  XColor xcol;
+
+  xcol.red   = (int)(clr->r * (double)0xffff);
+  xcol.green = (int)(clr->g * (double)0xffff);
+  xcol.blue  = (int)(clr->b * (double)0xffff);
+  xcol.flags = DoRed|DoGreen|DoBlue;
+
+  XAllocColor (dpy, DefaultColormap (dpy, screen), &xcol);
+
+  return xcol.pixel;
+}
+
+static void
+hd_theme_simple_paint_back_button (MBWMTheme *theme, MBWMDecorButton *button)
+{
+  MBWMDecor             *decor;
+  MBWindowManagerClient *client;
+  Window                 xwin;
+  MBWindowManager       *wm = theme->wm;
+  int                    x, y, w, h;
+  MBWMColor              clr_bg;
+  MBWMColor              clr_fg;
+  MBWMClientType         c_type;
+  MBWMXmlClient         *c = NULL;
+  MBWMXmlDecor          *d = NULL;
+  MBWMXmlButton         *b = NULL;
+  struct DecorData * dd;
+  GC                     gc;
+  Display               *xdpy = wm->xdpy;
+  int                    xscreen = wm->xscreen;
+
+  clr_fg.r = 1.0;
+  clr_fg.g = 1.0;
+  clr_fg.b = 1.0;
+
+  clr_bg.r = 0.0;
+  clr_bg.g = 0.0;
+  clr_bg.b = 0.0;
+
+  decor = button->decor;
+  client = mb_wm_decor_get_parent (decor);
+  xwin = decor->xwin;
+  dd = mb_wm_decor_get_theme_data (decor);
+
+  if (client == NULL || xwin == None || dd->xpix == None)
+    return;
+
+  c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
+
+  if ((c = mb_wm_xml_client_find_by_type (theme->xml_clients, c_type)) &&
+      (d = mb_wm_xml_decor_find_by_type (c->decors, decor->type)) &&
+      (b = mb_wm_xml_button_find_by_type (d->buttons, MBWMDecorButtonClose)))
+    {
+      clr_fg.r = b->clr_fg.r;
+      clr_fg.g = b->clr_fg.g;
+      clr_fg.b = b->clr_fg.b;
+
+      clr_bg.r = b->clr_bg.r;
+      clr_bg.g = b->clr_bg.g;
+      clr_bg.b = b->clr_bg.b;
+    }
+
+  w = button->geom.width;
+  h = button->geom.height;
+  x = button->geom.x;
+  y = button->geom.y;
+
+  gc = XCreateGC (xdpy, dd->xpix, 0, NULL);
+
+  XSetLineAttributes (xdpy, gc, 1, LineSolid, CapRound, JoinRound);
+
+
+
+  if (button->state == MBWMDecorButtonStateInactive)
+    {
+      XSetForeground (xdpy, gc, pixel_from_clr (xdpy, xscreen, &clr_bg));
+    }
+  else
+    {
+      /* FIXME -- think of a better way of doing this */
+      MBWMColor clr;
+      clr.r = clr_bg.r + 0.2;
+      clr.g = clr_bg.g + 0.2;
+      clr.b = clr_bg.b + 0.2;
+
+      XSetForeground (xdpy, gc, pixel_from_clr (xdpy, xscreen, &clr));
+    }
+
+  XFillRectangle (xdpy, dd->xpix, gc, x, y, w+1, h+1);
+
+  XSetLineAttributes (xdpy, gc, 3, LineSolid, CapRound, JoinRound);
+  XSetForeground (xdpy, gc, pixel_from_clr (xdpy, xscreen, &clr_fg));
+
+  if (button->type == HdHomeThemeButtonBack)
+    {
+      XSetLineAttributes (xdpy, gc, 3, LineSolid, CapRound, JoinMiter);
+      XDrawLine (xdpy, dd->xpix, gc, x + w - 3, y + 3, x + 3, y + h/2);
+      XDrawLine (xdpy, dd->xpix, gc, x + w - 3, y + h - 3, x + 3, y + h/2);
+    }
+
+  XFreeGC (xdpy, gc);
+
+  XClearWindow (wm->xdpy, xwin);
+}
+
+static void
+hd_theme_simple_paint_button (MBWMTheme *theme, MBWMDecorButton *button)
+{
+  MBWMThemeClass *parent_klass;
+
+  if (!theme)
+    return;
+
+  if (button->type >= HdHomeThemeButtonBack)
+    {
+      hd_theme_simple_paint_back_button (theme, button);
+      return;
+    }
+
+  parent_klass = MB_WM_THEME_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS (theme));
+
+  if (parent_klass->paint_button)
+    parent_klass->paint_button (theme, button);
+}
+
+static void
+hd_theme_simple_get_button_size (MBWMTheme             *theme,
+				 MBWMDecor             *decor,
+				 MBWMDecorButtonType    type,
+				 int                   *width,
+				 int                   *height)
+{
+  MBWindowManagerClient * client = decor->parent_client;
+  MBWMClientType  c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
+  MBWMXmlClient * c;
+  MBWMXmlDecor  * d;
+
+  if (!theme)
+    return;
+
+  if (type >= HdHomeThemeButtonBack)
+    {
+      if ((c = mb_wm_xml_client_find_by_type (theme->xml_clients, c_type)) &&
+	  (d = mb_wm_xml_decor_find_by_type (c->decors, decor->type)))
+	{
+	  MBWMXmlButton * b = mb_wm_xml_button_find_by_type (d->buttons, type);
+
+	  if (!b)
+	    b = mb_wm_xml_button_find_by_type (d->buttons,
+					       MBWMDecorButtonClose);
+	  if (b)
+	    {
+	      if (width)
+		*width = b->width;
+
+	      if (height)
+		*height = b->height;
+
+	      return;
+	    }
+	}
+    }
+  else
+    {
+      MBWMThemeClass *parent_klass;
+
+      parent_klass = MB_WM_THEME_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS (theme));
+
+      if (parent_klass->button_size)
+	parent_klass->button_size (theme, decor, type, width, height);
+    }
 }

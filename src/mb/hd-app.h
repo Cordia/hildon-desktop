@@ -39,7 +39,9 @@ struct HdApp
 {
   MBWMClientApp    parent;
 
-  gboolean         secondary_window;
+  gboolean     secondary_window;
+  GList       *followers;
+  HdApp       *leader;
 };
 
 struct HdAppClass
@@ -50,7 +52,10 @@ struct HdAppClass
 MBWindowManagerClient*
 hd_app_new (MBWindowManager *wm, MBWMClientWindow *win);
 
-int
-hd_app_class_type (void);
+int hd_app_class_type (void);
+
+MBWindowManagerClient* hd_app_get_next_group_member (HdApp *app);
+MBWindowManagerClient* hd_app_get_prev_group_member (HdApp *app);
+MBWindowManagerClient* hd_app_close_followers (HdApp *app);
 
 #endif
