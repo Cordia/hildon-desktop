@@ -1327,9 +1327,7 @@ hd_home_remove_view (HdHome * home, guint view_index)
 
   if (view_index == priv->current_view)
     {
-      if (view_index < priv->n_views-1)
-	++priv->current_view;
-      else
+      if (view_index == priv->n_views-1)
 	priv->current_view = 0;
     }
 
@@ -1347,11 +1345,8 @@ hd_home_remove_view (HdHome * home, guint view_index)
   /*
    * Only now remove the old actor; this way the new actor is in place before
    * the old one disappears and we avoid a temporary black void.
-   *
-   * This automatically destroys the actor, since we do not hold any
-   * extra references to it.
    */
-  clutter_container_remove_actor (CLUTTER_CONTAINER (priv->main_group), view);
+  clutter_actor_destroy (view);
 }
 
 static void

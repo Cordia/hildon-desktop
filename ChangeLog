@@ -1,5 +1,10 @@
 2008-06-13 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/home/hd-home.c:
+	Fixed layout view when a view is removed.
+
+2008-06-13 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/mb/Makefile.am:
 	* src/mb/hd-dialog.c:
 	* src/mb/hd-dialog.h:
