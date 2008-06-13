@@ -30,6 +30,8 @@
 #include "hd-switcher-group.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
+#include "hd-edit-menu.h"
+#include "hd-home.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -44,6 +46,7 @@
  */
 #define BUTTON_IMAGE_SWITCHER "bg-image-switcher.png"
 #define BUTTON_IMAGE_LAUNCHER "bg-image-launcher.png"
+#define BUTTON_IMAGE_MENU     "menu-button.png"
 
 enum
 {
@@ -54,11 +57,13 @@ struct _HdSwitcherPrivate
 {
   ClutterActor         *button_switcher;
   ClutterActor         *button_launcher;
+  ClutterActor         *button_menu;
 
   ClutterActor         *status_area;
 
   ClutterActor         *switcher_group;
   ClutterActor         *launcher_group;
+  ClutterActor         *menu_group;
 
   MBWMCompMgrClutter   *comp_mgr;
 
@@ -86,6 +91,8 @@ static void hd_switcher_constructed (GObject *object);
 
 static gboolean hd_switcher_clicked (HdSwitcher *switcher);
 
+static gboolean hd_switcher_menu_clicked (HdSwitcher *switcher);
+
 static void hd_switcher_item_selected (HdSwitcher *switcher,
 				       ClutterActor *actor);
 
@@ -94,6 +101,10 @@ static void hd_switcher_setup_buttons (HdSwitcher * switcher,
 
 static void hd_switcher_hide_switcher (HdSwitcher * switcher);
 static void hd_switcher_hide_launcher (HdSwitcher * switcher);
+
+static void hd_switcher_home_mode_changed (HdHome         *home,
+					   HdHomeMode      mode,
+					   HdSwitcher     *switcher);
 
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, CLUTTER_TYPE_GROUP);
 
@@ -143,6 +154,17 @@ hd_switcher_constructed (GObject *object)
 			    G_CALLBACK (hd_switcher_item_selected),
 			    self);
 
+  priv->menu_group =
+    g_object_new (HD_TYPE_EDIT_MENU,
+		  "comp-mgr", priv->comp_mgr,
+		  "home", hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)),
+		  NULL);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (self),
+			       priv->menu_group);
+
+  clutter_actor_hide (priv->menu_group);
+
   priv->button_switcher =
     clutter_texture_new_from_file (BUTTON_IMAGE_SWITCHER, &error);
 
@@ -189,6 +211,29 @@ hd_switcher_constructed (GObject *object)
   priv->status_area = g_object_new ("HD_STATUS_AREA", NULL);
   clutter_actor_set_position (priv->status_area, button_width, 0);
 #endif
+
+  priv->button_menu =
+    clutter_texture_new_from_file (BUTTON_IMAGE_MENU, &error);
+
+  if (error)
+    {
+      g_error (error->message);
+    }
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (self),
+			       priv->button_menu);
+
+  clutter_actor_set_position (priv->button_menu, 0, 0);
+  clutter_actor_set_reactive (priv->button_menu, TRUE);
+  clutter_actor_hide (priv->button_menu);
+
+  g_signal_connect_swapped (priv->button_menu, "button-release-event",
+                            G_CALLBACK (hd_switcher_menu_clicked),
+                            self);
+
+  g_signal_connect (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)),
+		    "mode-changed",
+		    G_CALLBACK (hd_switcher_home_mode_changed), self);
 }
 
 static void
@@ -247,6 +292,17 @@ hd_switcher_get_property (GObject      *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
     }
+}
+
+static gboolean
+hd_switcher_menu_clicked (HdSwitcher *switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  clutter_actor_show_all (priv->menu_group);
+  clutter_actor_raise_top (priv->menu_group);
+
+  return TRUE;
 }
 
 static gboolean
@@ -481,6 +537,39 @@ hd_switcher_hide_launcher (HdSwitcher * switcher)
 void
 hd_switcher_deactivate (HdSwitcher * switcher)
 {
-      hd_switcher_hide_switcher (switcher);
-      hd_switcher_setup_buttons (switcher, TRUE);
+  hd_switcher_hide_switcher (switcher);
+  hd_switcher_setup_buttons (switcher, TRUE);
+}
+
+static void
+hd_switcher_show_menu_button (HdSwitcher * switcher)
+{
+  HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
+
+  clutter_actor_hide (priv->button_switcher);
+  clutter_actor_hide (priv->button_launcher);
+  priv->switcher_mode = !priv->switcher_mode;
+
+  clutter_actor_show_all (priv->button_menu);
+  clutter_actor_raise_top (priv->button_menu);
+}
+
+static void
+hd_switcher_hide_menu_button (HdSwitcher * switcher)
+{
+  HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
+
+  clutter_actor_hide (priv->button_menu);
+  hd_switcher_setup_buttons (switcher, TRUE);
+}
+
+static void
+hd_switcher_home_mode_changed (HdHome         *home,
+			       HdHomeMode      mode,
+			       HdSwitcher     *switcher)
+{
+  if (mode == HD_HOME_MODE_EDIT)
+    hd_switcher_show_menu_button (switcher);
+  else
+    hd_switcher_hide_menu_button (switcher);
 }

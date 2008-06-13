@@ -1,5 +1,17 @@
 2008-06-12 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/home/Makefile.am:
+	* src/home/hd-home.c:
+	* src/home/hd-home.h:
+	* src/home/hd-switcher.c:
+	* src/home/hd-edit-menu.h:
+	* src/home/hd-edit-menu.c:
+	* src/mb/hd-comp-mgr.c:
+	* src/mb/hd-comp-mgr.h:
+	Home edit menu.
+
+2008-06-12 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/mb/hd-app.c:
 	(hd_app_close_followers):
 	Hooked into  mb_wm_client_deliver_delete() mechanism.

@@ -2,11 +2,13 @@ INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
 home_h = 	hd-home.h		\
 		hd-home-view.h		\
+		hd-edit-menu.c		\
 		hd-switcher.h		\
 		hd-switcher-group.h
 
 home_c = 	hd-home.c		\
 		hd-home-view.c		\
+		hd-edit-menu.c		\
 		hd-switcher.c		\
 		hd-switcher-group.c
 

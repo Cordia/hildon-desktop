@@ -105,6 +105,8 @@ void hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
 
 Atom hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id);
 
+ClutterActor * hd_comp_mgr_get_home (HdCompMgr *hmgr);
+
 G_END_DECLS
 
 #endif /* __HD_COMP_MGR_H__ */

@@ -55,7 +55,8 @@ struct _HdHomeClass
 {
   ClutterGroupClass parent_class;
 
-  void (*background_clicked) (HdHome * home, ClutterButtonEvent * ev);
+  void (*background_clicked) (HdHome *home, ClutterButtonEvent *ev);
+  void (*mode_changed)       (HdHome *home, HdHomeMode mode);
 };
 
 struct _HdHome

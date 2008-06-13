@@ -341,18 +341,9 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   stage = clutter_stage_get_default ();
 
-  priv->switcher_group = switcher = g_object_new (HD_TYPE_SWITCHER,
-						  "comp-mgr", cmgr,
-						  NULL);
-
-  clutter_actor_set_size (switcher, wm->xdpy_width, wm->xdpy_height);
-  clutter_actor_show (switcher);
-
-  clutter_container_add_actor (CLUTTER_CONTAINER (stage), switcher);
-
   /*
-   * Add the home group to stage and push it to the bottom of the actor
-   * stack.
+   * Create the home group before the switcher, so the switcher can
+   * connect it's signals to it.
    */
   home = priv->home =
     g_object_new (HD_TYPE_HOME, "comp-mgr", cmgr, NULL);
@@ -365,6 +356,17 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   clutter_actor_show (home);
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), home);
+
+  priv->switcher_group = switcher = g_object_new (HD_TYPE_SWITCHER,
+						  "comp-mgr", cmgr,
+						  NULL);
+
+  clutter_actor_set_size (switcher, wm->xdpy_width, wm->xdpy_height);
+  clutter_actor_show (switcher);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (stage), switcher);
+
+  /* Lowever home below the switcher */
   clutter_actor_lower_bottom (home);
 
   /*
@@ -893,9 +895,6 @@ hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
 
   if (hd_comp_mgr_memory_limits (&pages_used, &pages_available))
     {
-      g_debug ("Memory: pages used %d, available %d.",
-	       pages_used, pages_available);
-
       /* 0 means the memory usage is unknown */
       if (pages_available > 0 &&
 	  pages_available < LOWMEM_LAUNCH_THRESHOLD_DISTANCE)
@@ -1033,3 +1032,12 @@ hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id)
 
   return priv->atoms[id];
 }
+
+ClutterActor *
+hd_comp_mgr_get_home (HdCompMgr *hmgr)
+{
+  HdCompMgrPrivate *priv = hmgr->priv;
+
+  return priv->home;
+}
+

@@ -59,6 +59,7 @@ enum
 enum
 {
   SIGNAL_BACKGROUND_CLICKED,
+  SIGNAL_MODE_CHANGED,
   N_SIGNALS
 };
 
@@ -194,6 +195,18 @@ hd_home_class_init (HdHomeClass *klass)
                     G_TYPE_NONE,
                     1,
 		    CLUTTER_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
+
+  signals[SIGNAL_MODE_CHANGED] =
+      g_signal_new ("mode-changed",
+                    G_OBJECT_CLASS_TYPE (object_class),
+                    G_SIGNAL_RUN_FIRST,
+                    G_STRUCT_OFFSET (HdHomeClass, mode_changed),
+                    NULL,
+                    NULL,
+                    g_cclosure_marshal_VOID__INT,
+                    G_TYPE_NONE,
+                    1,
+		    G_TYPE_INT | G_SIGNAL_TYPE_STATIC_SCOPE);
 }
 
 static gboolean
@@ -1045,6 +1058,7 @@ hd_home_do_edit_layout (HdHome *home)
 
   priv->mode = HD_HOME_MODE_EDIT;
 
+  clutter_actor_show (priv->grey_filter);
   hd_home_grab_pointer (home);
 }
 
@@ -1069,20 +1083,29 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
   gint             xheight = priv->xheight;
   gint             i = 0, n = 0;
   ClutterActor    *top;
+  gint             top_indx;
   gint             x_top, y_top, w_top, h_top;
   gdouble          scale = HDH_LAYOUT_TOP_SCALE;
   guint            button_width, button_height;
 
   if (top_view)
-    top = CLUTTER_ACTOR (top_view);
+    {
+      top = CLUTTER_ACTOR (top_view);
+      top_indx = g_list_index (priv->views, top_view);
+    }
   else
-    top = g_list_nth_data (priv->views, priv->current_view);
+    {
+      top = g_list_nth_data (priv->views, priv->current_view);
+      top_indx = priv->current_view;
+    }
 
   hd_home_hide_applet_buttons (home);
 
+  clutter_actor_set_position (priv->main_group, 0, 0);
+
   w_top = (gint)((gdouble)xwidth * scale);
   h_top = (gint)((gdouble)xheight * scale) - xheight/16;
-  x_top = (xwidth - w_top)/ 2;
+  x_top = (xwidth - w_top)/ 2 + top_indx * xwidth;
   y_top = (xheight - h_top)/ 2 - HDH_LAYOUT_Y_OFFSET;
 
   clutter_actor_move_anchor_point_from_gravity (top,
@@ -1114,6 +1137,7 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
 	  ++n;
 
 	  clutter_actor_set_scale (view, scale, scale);
+	  clutter_actor_show (view);
 	  hd_home_view_set_thumbnail_mode (HD_HOME_VIEW (view), TRUE);
 	}
 
@@ -1142,8 +1166,15 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
 			      y_top + h_top + 2*HDH_LAYOUT_Y_OFFSET -
 			      button_height);
 
-  if (clutter_actor_get_parent (priv->back_button) == priv->main_group)
+  if (clutter_actor_get_parent (priv->back_button) != priv->main_group)
       clutter_actor_reparent (priv->back_button, priv->main_group);
+
+  clutter_actor_get_size (priv->back_button,
+			  &button_width, &button_height);
+  clutter_actor_set_position (priv->back_button,
+			      top_indx * xwidth + priv->xwidth -
+			      button_width - 5,
+			      5);
 
   clutter_actor_show (priv->back_button);
   clutter_actor_raise_top (priv->back_button);
@@ -1163,8 +1194,6 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
 		      G_CALLBACK (hd_home_close_button_clicked),
 		      home);
 
-  clutter_actor_hide (priv->grey_filter);
-
   hd_home_grab_pointer (home);
 }
 
@@ -1178,6 +1207,8 @@ hd_home_do_layout_layout (HdHome * home)
   top = g_list_nth_data (priv->views, priv->current_view);
 
   g_assert (top);
+
+  clutter_actor_hide (priv->grey_filter);
 
   clutter_actor_move_anchor_point (top,
 				   priv->xwidth / 2,
@@ -1197,7 +1228,7 @@ void
 hd_home_set_mode (HdHome *home, HdHomeMode mode)
 {
   HdHomePrivate   *priv = home->priv;
-
+  gboolean         change = FALSE;
   switch (mode)
     {
     case HD_HOME_MODE_NORMAL:
@@ -1214,7 +1245,12 @@ hd_home_set_mode (HdHome *home, HdHomeMode mode)
       break;
     }
 
+  if  (priv->mode == mode)
+    change = TRUE;
+
   priv->mode = mode;
+
+  g_signal_emit (home, signals[SIGNAL_MODE_CHANGED], 0, mode);
 }
 
 static void hd_home_new_view (HdHome * home)
@@ -1536,13 +1572,14 @@ hd_home_show_edit_button (HdHome *home)
 
   clutter_actor_get_size (priv->edit_button, &button_width, &button_height);
 
-  x = priv->xwidth / 4 + priv->xwidth / 2;
+  x = priv->current_view * priv->xwidth + priv->xwidth / 4 + priv->xwidth / 2;
 
   clutter_actor_set_position (priv->edit_button,
 			      x,
 			      -button_height);
 
   clutter_actor_show (priv->edit_button);
+  clutter_actor_raise_top (priv->edit_button);
 
   timeline = clutter_effect_move (priv->edit_button_template,
 				  CLUTTER_ACTOR (priv->edit_button),
