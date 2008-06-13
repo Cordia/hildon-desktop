@@ -1,3 +1,11 @@
+2008-06-13 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/mb/Makefile.am:
+	* src/mb/hd-dialog.c:
+	* src/mb/hd-dialog.h:
+	* src/mb/hd-wm.c:
+	Custom MBWMClientDialog subclass to handle hildon peculiarities.
+
 2008-06-12 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/Makefile.am:

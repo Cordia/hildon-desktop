@@ -41,6 +41,7 @@
 #include "hd-home-applet.h"
 #include "hd-note.h"
 #include "hd-app-menu.h"
+#include "hd-dialog.h"
 
 static int  hd_wm_init       (MBWMObject *object, va_list vap);
 static void hd_wm_destroy    (MBWMObject *object);
@@ -144,6 +145,12 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
       printf ("### is application ###\n");
 
       return hd_app_new (wm, win);
+    }
+  else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DIALOG])
+    {
+      printf ("### is dialog ###\n");
+
+      return hd_dialog_new (wm, win);
     }
   else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NOTIFICATION])
     {
