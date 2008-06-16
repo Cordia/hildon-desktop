@@ -1,5 +1,12 @@
 2008-06-16 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/home/hd-switcher-group.c:
+	(hd_switcher_group_hide_all):
+	Added explicit call to clutter_actor_show() when reparenting
+	client actors back to original parent.
+
+2008-06-16 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/home/home.c:
 	(hd_home_remove_view):
 	(hd_home_do_layout_contents):

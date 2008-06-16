@@ -528,6 +528,7 @@ hd_switcher_group_hide_all (ClutterActor *self)
       clutter_actor_set_anchor_point (a, anchor_x, anchor_y);
       clutter_actor_set_position (a, x, y);
       clutter_actor_set_clip (a, 0, 0, (gint)width, (gint)height);
+      clutter_actor_show (a);
 
       l = l->next;
     }
