@@ -206,20 +206,12 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 	  MBWMXmlButton * b = l->data;
 
 	  /* Back button only for group followers */
-#if 1
-	  if (1)
-#else
 	  if (b->type == HdHomeThemeButtonBack && !is_leader)
-#endif
 	    {
 	      BackButtonData *bd;
 
 	      button = mb_wm_decor_button_new (wm,
-#if 1
-					       HdHomeThemeButtonBack,
-#else
 					       b->type,
-#endif
 					       b->packing,
 					       decor,
 					       back_button_press_handler,

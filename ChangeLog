@@ -1,5 +1,11 @@
 2008-06-16 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/mb/hd-theme.c:
+	(construct_buttons):
+	Removed some testing code.
+
+2008-06-16 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/home/hd-switcher-group.c:
 	(hd_switcher_group_hide_all):
 	Added explicit call to clutter_actor_show() when reparenting
