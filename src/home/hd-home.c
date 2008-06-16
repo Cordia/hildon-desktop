@@ -1101,7 +1101,13 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
 
   hd_home_hide_applet_buttons (home);
 
-  clutter_actor_set_position (priv->main_group, 0, 0);
+  /*
+   * Make sure we are positioned correctly relative to the top view (this is
+   * necessary when the layout is triggered by removal of a view at the end of
+   * the view list; in other cases, the current positon is generally already
+   * set).
+   */
+  clutter_actor_set_position (CLUTTER_ACTOR (home), -top_indx * xwidth, 0);
 
   w_top = (gint)((gdouble)xwidth * scale);
   h_top = (gint)((gdouble)xheight * scale) - xheight/16;
@@ -1220,7 +1226,6 @@ hd_home_do_layout_layout (HdHome * home)
 				   (ClutterEffectCompleteFunc)
 				   hd_home_do_layout_contents,
 				   home);
-
   clutter_timeline_start (timeline);
 }
 
@@ -1327,7 +1332,7 @@ hd_home_remove_view (HdHome * home, guint view_index)
 
   if (view_index == priv->current_view)
     {
-      if (view_index == priv->n_views-1)
+      if (view_index == priv->n_views)
 	priv->current_view = 0;
     }
 

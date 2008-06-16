@@ -1,3 +1,11 @@
+2008-06-16 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/home/home.c:
+	(hd_home_remove_view):
+	(hd_home_do_layout_contents):
+	Ensure correct position of Home in layout mode when last view in
+	the list is removed.
+
 2008-06-13 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/hd-home.c:
