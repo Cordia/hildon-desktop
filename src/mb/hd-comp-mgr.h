@@ -107,6 +107,10 @@ Atom hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id);
 
 ClutterActor * hd_comp_mgr_get_home (HdCompMgr *hmgr);
 
+gint hd_comp_mgr_get_current_home_view_id (HdCompMgr *hmgr);
+
+MBWindowManagerClient * hd_comp_mgr_get_desktop_client (HdCompMgr *hmgr);
+
 G_END_DECLS
 
 #endif /* __HD_COMP_MGR_H__ */

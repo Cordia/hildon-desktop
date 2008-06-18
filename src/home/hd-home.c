@@ -939,6 +939,8 @@ void
 hd_home_show_view (HdHome * home, guint view_index)
 {
   HdHomePrivate   *priv = home->priv;
+  HdCompMgr       *hmgr = HD_COMP_MGR (priv->comp_mgr);
+  MBWindowManagerClient *desktop;
   ClutterTimeline *timeline;
 
   if (view_index >= priv->n_views)
@@ -963,6 +965,11 @@ hd_home_show_view (HdHome * home, guint view_index)
     {
       hd_home_set_mode (home, HD_HOME_MODE_NORMAL);
     }
+
+  desktop = hd_comp_mgr_get_desktop_client (hmgr);
+
+  if (desktop)
+    mb_wm_client_stacking_mark_dirty (desktop);
 }
 
 void
@@ -1361,6 +1368,16 @@ hd_home_pan_stage_completed (HdHome *home)
 
   if (priv->pan_queue)
     hd_home_start_pan (home);
+  else
+    {
+      HdCompMgr *hmgr = HD_COMP_MGR (priv->comp_mgr);
+      MBWindowManagerClient *desktop;
+
+      desktop = hd_comp_mgr_get_desktop_client (hmgr);
+
+      if (desktop)
+	mb_wm_client_stacking_mark_dirty (desktop);
+    }
 }
 
 static void
@@ -1699,3 +1716,15 @@ hd_home_send_settings_message (HdHome *home, Window xwin)
 
   XSync (wm->xdpy, False);
 }
+
+gint
+hd_home_get_current_view_id (HdHome *home)
+{
+  HdHomePrivate   *priv = home->priv;
+  HdHomeView      *top;
+
+  top = g_list_nth_data (priv->views, priv->current_view);
+
+  return hd_home_view_get_view_id (top);
+}
+

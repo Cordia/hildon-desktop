@@ -22,6 +22,8 @@
  */
 
 #include "hd-desktop.h"
+#include "hd-comp-mgr.h"
+#include "hd-home-applet.h"
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
 static void
@@ -39,6 +41,9 @@ static void
 hd_desktop_theme_change (MBWindowManagerClient *client);
 
 static void
+hd_desktop_stack (MBWindowManagerClient *client, int flags);
+
+static void
 hd_desktop_class_init (MBWMObjectClass *klass)
 {
   MBWindowManagerClientClass *client;
@@ -50,6 +55,7 @@ hd_desktop_class_init (MBWMObjectClass *klass)
   client->client_type    = MBWMClientTypeDesktop;
   client->geometry       = hd_desktop_request_geometry;
   client->stacking_layer = hd_desktop_stacking_layer;
+  client->stack          = hd_desktop_stack;
   client->theme_change   = hd_desktop_theme_change;
   client->realize        = hd_desktop_realize;
 
@@ -160,6 +166,36 @@ hd_desktop_realize (MBWindowManagerClient *client)
 		  client->wmref->root_win->xwindow, 0, 0);
 
   return;
+}
+
+static void
+hd_desktop_stack (MBWindowManagerClient *client,
+		  int                    flags)
+{
+  /* Stack to highest/lowest possible possition in stack */
+  MBWMList * l = mb_wm_client_get_transients (client);
+  HdCompMgr *hmgr = HD_COMP_MGR (client->wmref->comp_mgr);
+  gint       current_view = hd_comp_mgr_get_current_home_view_id (hmgr);
+
+  mb_wm_stack_move_top(client);
+
+  while (l)
+    {
+      MBWindowManagerClient *c = l->data;
+      if (HD_IS_HOME_APPLET (c))
+	{
+	  HdHomeApplet *applet = HD_HOME_APPLET (c);
+
+	  if (applet->view_id < 0 || applet->view_id == current_view)
+	    mb_wm_client_stack (c, flags);
+	}
+      else
+	mb_wm_client_stack (c, flags);
+
+      l = l->next;
+    }
+
+  mb_wm_util_list_free (l);
 }
 
 MBWindowManagerClient*

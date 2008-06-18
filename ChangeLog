@@ -1,3 +1,13 @@
+2008-06-18 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/home/hd-home.c:
+	* src/home/hd-home.h:
+	* src/mb/hd-comp-mgr.c:
+	* src/mb/hd-comp-mgr.h:
+	* src/mb/hd-desktop.c:
+	Implemented specialized HdDesktop::stack() method to handle applet
+	visibility.
+
 2008-06-16 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/mb/hd-theme.c:

@@ -64,18 +64,20 @@ static gboolean hd_comp_mgr_memory_limits (guint *pages_used,
 
 struct HdCompMgrPrivate
 {
-  ClutterActor   *switcher_group;
-  ClutterActor   *home;
+  MBWindowManagerClient *desktop;
 
-  GHashTable     *hibernating_apps;
+  ClutterActor          *switcher_group;
+  ClutterActor          *home;
 
-  Atom            atoms[_HD_ATOM_LAST];
+  GHashTable            *hibernating_apps;
 
-  DBusConnection *dbus_connection;
+  Atom                   atoms[_HD_ATOM_LAST];
 
-  gboolean        showing_home    : 1;
-  gboolean        stack_sync      : 1;
-  gboolean        low_mem         : 1;
+  DBusConnection        *dbus_connection;
+
+  gboolean               showing_home    : 1;
+  gboolean               stack_sync      : 1;
+  gboolean               low_mem         : 1;
 };
 
 /*
@@ -482,11 +484,15 @@ static void
 hd_comp_mgr_register_client (MBWMCompMgr           * mgr,
 			     MBWindowManagerClient * c)
 {
+  HdCompMgrPrivate              * priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClass              * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
 
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
-    return;
+    {
+      priv->desktop = c;
+      return;
+    }
 
   if (parent_klass->register_client)
     parent_klass->register_client (mgr, c);
@@ -1041,3 +1047,18 @@ hd_comp_mgr_get_home (HdCompMgr *hmgr)
   return priv->home;
 }
 
+gint
+hd_comp_mgr_get_current_home_view_id (HdCompMgr *hmgr)
+{
+  HdCompMgrPrivate *priv = hmgr->priv;
+
+  return hd_home_get_current_view_id (HD_HOME (priv->home));
+}
+
+MBWindowManagerClient *
+hd_comp_mgr_get_desktop_client (HdCompMgr *hmgr)
+{
+  HdCompMgrPrivate *priv = hmgr->priv;
+
+  return priv->desktop;
+}
