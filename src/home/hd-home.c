@@ -73,6 +73,7 @@ struct _HdHomePrivate
   ClutterEffectTemplate *zoom_template;
   ClutterEffectTemplate *edit_button_template;
 
+  ClutterActor          *background;
   ClutterActor          *main_group; /* Where the views + their buttons live */
   ClutterActor          *edit_group; /* An overlay group for edit mode */
   ClutterActor          *close_button;
@@ -620,12 +621,15 @@ hd_home_constructed (GObject *object)
   gint             i;
   GError          *error = NULL;
   guint            button_width, button_height;
-  ClutterColor     clr;
+  ClutterColor     clr = {0,0,0,0xff};
   XSetWindowAttributes attr;
   CoglHandle       handle;
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
+
+  priv->background = clutter_rectangle_new_with_color (&clr);
+  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->background);
 
   main_group = priv->main_group = clutter_group_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (object), main_group);
@@ -690,6 +694,8 @@ hd_home_constructed (GObject *object)
     }
 
   priv->n_views = i;
+
+  clutter_actor_set_size (priv->background, priv->xwidth * i, priv->xheight);
 
   /*
    * NB: we position the button in the hd_home_do_layout_layout() function;
@@ -1320,6 +1326,9 @@ static void hd_home_new_view (HdHome * home)
 
   ++priv->n_views;
 
+  clutter_actor_set_size (priv->background, priv->xwidth * priv->n_views,
+			  priv->xheight);
+
   hd_home_do_layout_contents (NULL, home);
 }
 
@@ -1336,6 +1345,9 @@ hd_home_remove_view (HdHome * home, guint view_index)
 
   priv->views = g_list_remove (priv->views, view);
   --priv->n_views;
+
+  clutter_actor_set_size (priv->background, priv->xwidth * priv->n_views,
+			  priv->xheight);
 
   if (view_index == priv->current_view)
     {
