@@ -17,6 +17,7 @@ static guint      motion_handler_id = 0;
 static GtkWidget *window = NULL;
 static gint       start_x;
 static Atom       pan_atom = None;
+static gint       view_id = 0;
 
 static void
 do_home_pan (gboolean left)
@@ -61,9 +62,9 @@ on_motion_event (GtkWidget *widget, GdkEventMotion *event)
 static gint
 on_button_event (GtkWidget *widget, GdkEventButton *event)
 {
-  g_message ("Got applet button %s event [%f,%f].",
+  g_message ("Got applet button %s event [%f,%f] on view %d.",
 	     event->type == GDK_BUTTON_RELEASE ? "RELEASE" : "PRESS",
-	     event->x, event->y);
+	     event->x, event->y, view_id);
 
   if (event->type == GDK_BUTTON_RELEASE)
     {
@@ -106,8 +107,19 @@ x_event_filter_func (GdkXEvent *xevent, GdkEvent *event, gpointer data)
 
 int main (int argc, char *argv[])
 {
-  Atom wm_type, applet_type;
+  Atom wm_type, applet_type, view_id_atom;
   GtkWidget *w, *b;
+  int i;
+
+  for (i = 1; i < argc; ++i)
+    {
+      if (!strncmp (argv[i], "--view-id", 9))
+	{
+	  g_message ("got view id %s", argv[i]+10);
+
+	  view_id = atoi (argv[i]+10);
+	}
+    }
 
   gtk_init (&argc, &argv);
 
@@ -117,7 +129,9 @@ int main (int argc, char *argv[])
 			    "_HILDON_WM_WINDOW_TYPE_HOME_APPLET", False);
 
   pan_atom = XInternAtom (GDK_DISPLAY (), "_HILDON_CLIENT_MESSAGE_PAN", False);
-window  = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+
+  view_id_atom = XInternAtom (GDK_DISPLAY (), "_HILDON_HOME_VIEW", False);
+  window  = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 
   g_signal_connect (G_OBJECT (window), "button-release-event",
 		    G_CALLBACK (on_button_event), NULL);
@@ -151,6 +165,10 @@ window  = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   XChangeProperty (GDK_DISPLAY (), GDK_WINDOW_XID (window->window),
 		   wm_type, XA_ATOM, 32, PropModeReplace,
 		   (unsigned char *)&applet_type, 1);
+
+  XChangeProperty (GDK_DISPLAY (), GDK_WINDOW_XID (window->window),
+		   view_id_atom, XA_CARDINAL, 32, PropModeReplace,
+		   (unsigned char *)&view_id, 1);
 
   gdk_window_add_filter (window->window, x_event_filter_func, NULL);
 

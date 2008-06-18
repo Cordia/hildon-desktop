@@ -1,5 +1,10 @@
 2008-06-18 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/hd-applet-test.c:
+	Added --view-id parameter.
+
+2008-06-18 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/home/hd-home.c:
 	* src/home/hd-home.h:
 	* src/mb/hd-comp-mgr.c:
