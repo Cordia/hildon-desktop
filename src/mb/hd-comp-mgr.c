@@ -45,7 +45,7 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#define HDCM_UNMAP_DURATION 3000
+#define HDCM_UNMAP_DURATION 200
 
 #define HIBERNATION_TIMEMOUT 3000 /* as suggested by 31410#10 */
 
