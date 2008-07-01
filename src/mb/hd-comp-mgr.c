@@ -45,7 +45,7 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#define HDCM_UNMAP_DURATION 200
+#define HDCM_UNMAP_DURATION 3000
 
 #define HIBERNATION_TIMEMOUT 3000 /* as suggested by 31410#10 */
 
@@ -78,6 +78,8 @@ struct HdCompMgrPrivate
   gboolean               showing_home    : 1;
   gboolean               stack_sync      : 1;
   gboolean               low_mem         : 1;
+
+  gint                   unmap_effect_running;
 };
 
 /*
@@ -628,19 +630,53 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
 typedef struct _HDEffectData
 {
-  MBWMCompMgrClutterClient * cclient;
+  MBWMCompMgrClutterClient *cclient;
+  HdCompMgr                *hmgr;
 } HDEffectData;
+
+#if 0
+static void
+dump_clutter_tree (ClutterContainer *c, int offset)
+{
+  GList *l = clutter_container_get_children (c);
+
+  while (l)
+    {
+      ClutterActor *a = l->data;
+      int i;
+
+      for (i = 0; i < offset; ++i)
+	printf (" ");
+
+      printf ("Actor %p (%s)\n", a, G_OBJECT_TYPE_NAME (a));
+
+      if (CLUTTER_IS_CONTAINER (a))
+	dump_clutter_tree (CLUTTER_CONTAINER (a), offset+1);
+
+      l = l->next;
+    }
+}
+#endif
 
 static void
 hd_comp_mgr_effect_completed (ClutterActor * actor, HDEffectData *data)
 {
+  HdCompMgr *hmgr = HD_COMP_MGR (data->hmgr);
+  HdCompMgrPrivate *priv = hmgr->priv;
+
   mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient,
 					MBWMCompMgrClutterClientDontUpdate |
                                         MBWMCompMgrClutterClientEffectRunning);
 
+/*   dump_clutter_tree (CLUTTER_CONTAINER (clutter_stage_get_default()), 0); */
+
   mb_wm_object_unref (MB_WM_OBJECT (data->cclient));
 
   g_object_unref (actor);
+
+  priv->unmap_effect_running--;
+
+  hd_comp_mgr_sync_stacking (hmgr);
 
   g_free (data);
 };
@@ -651,6 +687,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                     MBWMCompMgrClientEvent      event)
 {
   MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
+  HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
 
   if (c_type == MBWMClientTypeApp)
     {
@@ -674,8 +711,13 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 
 	    clutter_actor_get_scale (actor, &scale_x, &scale_y);
 
+	    /* Need to store also pointer to the manager, as by the time
+	     * the effect finishes, the back pointer in the cm_client to
+	     * MBWindowManagerClient is not longer valid/set.
+	     */
 	    data = g_new0 (HDEffectData, 1);
 	    data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+	    data->hmgr = HD_COMP_MGR (mgr);
 
 	    clutter_actor_move_anchor_point_from_gravity (actor,
 						     CLUTTER_GRAVITY_CENTER);
@@ -689,6 +731,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 	    mb_wm_comp_mgr_clutter_client_set_flags (cclient,
 					MBWMCompMgrClutterClientDontUpdate |
                                         MBWMCompMgrClutterClientEffectRunning);
+
+	    priv->unmap_effect_running++;
 
 	    clutter_timeline_start (timeline);
 	  }
@@ -710,11 +754,15 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   /*
    * We use the parent class restack() method to do the stacking, but as our
    * switcher shares actors with the CM, we cannot run this when the switcher
-   * is showing; instead we set a flag, and let the switcher request stack
-   * sync when it closes.
+   * is showing, or an unmap effect is in progress; instead we set a flag, and
+   * let the switcher request stack sync when it closes.
    */
-  if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
-    priv->stack_sync = TRUE;
+
+  if (priv->unmap_effect_running ||
+      hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
+    {
+      priv->stack_sync = TRUE;
+    }
   else
     {
       if (parent_klass->restack)
@@ -730,7 +778,7 @@ hd_comp_mgr_sync_stacking (HdCompMgr * hmgr)
   /*
    * If the stack_sync flag is set, force restacking of the CM actors
    */
-  if (priv->stack_sync)
+  if (priv->stack_sync && !priv->unmap_effect_running)
     {
       priv->stack_sync = FALSE;
       hd_comp_mgr_restack (MB_WM_COMP_MGR (hmgr));

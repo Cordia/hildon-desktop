@@ -1,3 +1,13 @@
+2008-06-30 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/home/hd-switcher-group.c:
+	(hd_switcher_group_remove_actor):
+	Reparent the actor if appropriate.
+
+	* src/mb/hd-comp-mgr.c:
+	Added a counter for running unmap effects to control stacking order
+	while unmap effects are running.
+
 2008-06-18 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/hd-home.c:

@@ -61,6 +61,9 @@
  * 2. We implement the ClutterActor::show_all() and ::hide_all() virtuals;
  *    these methods take care of reparenting the children to our group on
  *    show_all and back to the original parent on hide_all.
+ *
+ *    FIXME -- we should be able to clone the actors using FBOs, which
+ *    would greatly simplify things here.
  */
 
 enum
@@ -541,6 +544,8 @@ hd_switcher_group_remove_actor (HdSwitcherGroup *group, ClutterActor *actor)
 {
   HdSwitcherGroupPrivate *priv = HD_SWITCHER_GROUP (group)->priv;
   ChildData              *data;
+  ClutterActor           *orig_parent = g_object_get_data (G_OBJECT (actor),
+							 "HD-original-parent");
 
   data = hd_switcher_group_get_child_data (HD_SWITCHER_GROUP (group), actor);
 
@@ -550,10 +555,9 @@ hd_switcher_group_remove_actor (HdSwitcherGroup *group, ClutterActor *actor)
   g_signal_handler_disconnect (actor, data->click_handler);
   priv->children = g_list_remove (priv->children, data);
 
-  /*
-   * TODO -- should we reparent the child actor first ? Probably superfluous
-   *         as the actor is about to be destroyed anyway.
-   */
+  if (orig_parent)
+    clutter_actor_reparent (actor, orig_parent);
+
   clutter_actor_destroy (data->group);
 
   g_free (data);
