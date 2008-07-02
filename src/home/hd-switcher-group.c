@@ -44,7 +44,7 @@
 #define ITEM_HEIGHT     480
 #define PADDING         20
 #define ZOOM_PADDING    50
-#define HDWG_SCALE_DURATION 1000
+#define HDWG_SCALE_DURATION 300
 
 /*
  * HDSwitcherGroup is a special ClutterGroup subclass, that implements the
@@ -188,14 +188,22 @@ static void hd_switcher_group_place (HdSwitcherGroup *group);
 static void hd_switcher_group_show_all (ClutterActor *actor);
 static void hd_switcher_group_hide_all (ClutterActor *self);
 
-static void hd_switcher_group_zoom (HdSwitcherGroup *group,
-				    ClutterActor    *actor,
-				    gboolean         with_effect);
+static void hd_switcher_group_zoom_in (HdSwitcherGroup *group,
+				       ClutterActor    *actor);
+
+static void hd_switcher_group_zoom_out (HdSwitcherGroup *group,
+					ClutterActor    *actor);
 
 static gint
 find_by_actor (ChildData *data, ClutterActor *actor)
 {
   return (data->actor != actor);
+}
+
+static gint
+find_by_group (ChildData *data, ClutterActor *group)
+{
+  return (data->group != group);
 }
 
 G_DEFINE_TYPE (HdSwitcherGroup, hd_switcher_group, CLUTTER_TYPE_GROUP);
@@ -337,12 +345,28 @@ hd_switcher_group_get_child_data (HdSwitcherGroup *group, ClutterActor *actor)
     return NULL;
 }
 
+static ChildData *
+hd_switcher_group_get_child_data_by_group (HdSwitcherGroup *group,
+					     ClutterActor    *actor)
+{
+  GList *l;
+
+  l = g_list_find_custom (group->priv->children,
+                          actor,
+                          (GCompareFunc)find_by_group);
+
+  if (l)
+    return l->data;
+  else
+    return NULL;
+}
+
 static gboolean
 hd_switcher_group_child_button_release (HdSwitcherGroup  *group,
 					ClutterEvent     *event,
 					ClutterActor     *actor)
 {
-  hd_switcher_group_zoom (group, actor, TRUE);
+  hd_switcher_group_zoom_in (group, actor);
 
   return TRUE;
 }
@@ -391,7 +415,7 @@ hd_switcher_group_add_actor (HdSwitcherGroup *group, ClutterActor *actor)
   if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (group)))
     {
       hd_switcher_group_place (HD_SWITCHER_GROUP (group));
-      hd_switcher_group_zoom (HD_SWITCHER_GROUP (group), NULL, FALSE);
+      hd_switcher_group_zoom_out (HD_SWITCHER_GROUP (group), NULL);
     }
 }
 
@@ -414,6 +438,12 @@ hd_switcher_group_show_all (ClutterActor *self)
 {
   HdSwitcherGroupPrivate *priv = HD_SWITCHER_GROUP (self)->priv;
   GList                  *l;
+  MBWindowManager        *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  ClutterActor           *top_actor = NULL;
+  MBWindowManagerClient  *top_client = NULL;
+
+
+  top_client = mb_wm_get_visible_main_client (wm);
 
   l = priv->children;
 
@@ -462,6 +492,9 @@ hd_switcher_group_show_all (ClutterActor *self)
 
 	  clutter_actor_set_clip (a,
 				  geom->x, geom->y, geom->width, geom->height);
+
+	  if (client == top_client)
+	    top_actor = a;
 	}
 
       clutter_actor_reparent (a, group);
@@ -496,7 +529,7 @@ hd_switcher_group_show_all (ClutterActor *self)
 
   clutter_actor_set_scale (self, 1.0, 1.0);
 
-  hd_switcher_group_zoom (HD_SWITCHER_GROUP (self), NULL, TRUE);
+  hd_switcher_group_zoom_out (HD_SWITCHER_GROUP (self), top_actor);
 }
 
 static void
@@ -568,7 +601,7 @@ hd_switcher_group_remove_actor (HdSwitcherGroup *group, ClutterActor *actor)
   if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (group)))
     {
       hd_switcher_group_place (HD_SWITCHER_GROUP (group));
-      hd_switcher_group_zoom (HD_SWITCHER_GROUP (group), NULL, FALSE);
+      hd_switcher_group_zoom_out (HD_SWITCHER_GROUP (group), NULL);
     }
 }
 
@@ -670,102 +703,154 @@ hd_switcher_group_place (HdSwitcherGroup *group)
   g_list_foreach (priv->children, (GFunc)place_child, group);
 }
 
+/*
+ * Zoom in is happening on the group as a whole.
+ */
 static void
-hd_switcher_group_zoom_completed (HdSwitcherGroup *group, ClutterActor *actor)
+hd_switcher_group_zoom_in_completed (HdSwitcherGroup *group,
+				     ClutterActor *actor)
 {
   g_signal_emit (group, signals[SIGNAL_ITEM_SELECTED], 0, actor);
 }
 
+/*
+ * Zoom out is happening on the active actor.
+ */
 static void
-hd_switcher_group_zoom (HdSwitcherGroup *group,
-			ClutterActor    *actor,
-			gboolean         with_effect)
+hd_switcher_group_zoom_out_completed (ClutterActor *actor,
+				      HdSwitcherGroup *group)
+{
+  ChildData *data;
+
+  data = hd_switcher_group_get_child_data_by_group (group, actor);
+  clutter_actor_show (data->close_button);
+
+  g_signal_emit (group, signals[SIGNAL_ITEM_SELECTED], 0, NULL);
+}
+
+static void
+hd_switcher_group_zoom_in (HdSwitcherGroup *group, ClutterActor    *actor)
 {
   HdSwitcherGroupPrivate *priv = group->priv;
   ClutterTimeline        *timeline;
   gdouble                 scale_x, scale_y;
   gint                    x, y;
+  ChildData              *data;
+
+  /*
+   * Move the entire group so that when the effect finishes, the
+   * position of the child will match that of the underlying window.
+   *
+   * Scale the group back to 1:1 scale.
+   */
+
+  data = hd_switcher_group_get_child_data (group, actor);
+
+  if (!data)
+    return;
+
+  clutter_actor_get_position (data->group, &x, &y);
+
+  x = -x;
+  y = -y;
+
+  scale_x = scale_y = 1.0;
+
+  timeline = clutter_effect_scale (priv->zoom_template,
+				   CLUTTER_ACTOR (group),
+				   scale_x, scale_y,
+				   (ClutterEffectCompleteFunc)
+				   hd_switcher_group_zoom_in_completed,
+				   actor);
+
+  clutter_timeline_start (timeline);
+
+
+  timeline = clutter_effect_move (priv->move_template,
+				  CLUTTER_ACTOR (group),
+				  x, y,
+				  NULL, NULL);
+
+  clutter_timeline_start (timeline);
+}
+
+static void
+hd_switcher_group_zoom_out (HdSwitcherGroup *group,
+			    ClutterActor    *actor)
+{
+  HdSwitcherGroupPrivate *priv = group->priv;
+  ClutterTimeline        *timeline;
+  gdouble                 scale_x, scale_y;
+  gint                    x, y;
+  guint                   width, height;
+
+  /*
+   * We are zooming out so that we can see all the children; the group is
+   * initially completely off screen touching the top-left corner and is
+   * being moved so that it's top-left corner ends up at the top-left
+   * corner of the screen.
+   *
+   * TODO -- perhaps we should adjust the group position in the y axis,
+   * rather than scale with a different factor.
+   */
+
+  width = ZOOM_PADDING +
+    (priv->max_x - priv->min_x + 2) * (ITEM_WIDTH + PADDING) / 2;
+
+  scale_x = (gdouble) ITEM_WIDTH  / width;
+
+  x = (gint) ((double)(ZOOM_PADDING + PADDING) * scale_x) / 2;
+
+  height = ZOOM_PADDING +
+    (priv->max_y - priv->min_y + 1) * (ITEM_HEIGHT + PADDING);
+
+  scale_y = (gdouble) ITEM_HEIGHT  / height;
+
+  y = (gint) ((double)ZOOM_PADDING * scale_y) / 2;
+
+  clutter_actor_set_scale (CLUTTER_ACTOR (group), scale_x, scale_y);
+  clutter_actor_set_position (CLUTTER_ACTOR (group), x, y);
 
   if (actor)
     {
-      /*
-       * Move the entire group so that when the effect finishes, the
-       * position of the child will match that of the underlying window.
-       *
-       * Scale the group back to 1:1 scale.
-       */
-      ChildData * data;
+      ChildData *data;
+      gint actor_x, actor_y;
 
       data = hd_switcher_group_get_child_data (group, actor);
 
-      if (!data)
-	return;
+      if (data)
+	{
+	  ClutterActor *a = data->group;
 
-      clutter_actor_get_position (data->group, &x, &y);
+	  clutter_actor_get_position (a, &actor_x, &actor_y);
+	  clutter_actor_set_position (a, -x, -y);
+	  clutter_actor_set_scale (a, 1.0/scale_x, 1.0/scale_y);
+	  clutter_actor_hide (data->close_button);
 
-      x = -x;
-      y = -y;
+	  timeline = clutter_effect_scale (priv->zoom_template,
+					 a,
+					 1.0, 1.0,
+					 (ClutterEffectCompleteFunc)
+					 hd_switcher_group_zoom_out_completed,
+					 group);
 
-      scale_x = scale_y = 1.0;
-    }
-  else
-    {
-      /*
-       * We are zooming out so that we can see all the children; the group is
-       * initially completely off screen touching the top-left corner and is
-       * being moved so that it's top-left corner ends up at the top-left
-       * corner of the screen.
-       *
-       * TODO -- perhaps we should adjust the group position in the y axis,
-       * rather than scale with a different factor.
-       */
-      guint width, height;
-      gint  group_x, group_y;
+	  clutter_timeline_start (timeline);
 
-      clutter_actor_get_size (CLUTTER_ACTOR (group),
-			      (guint *) &group_x, (guint *) &group_y);
+	  timeline = clutter_effect_move (priv->move_template,
+					  a,
+					  actor_x, actor_y,
+					  NULL, NULL);
 
-      clutter_actor_set_position (CLUTTER_ACTOR (group), -group_x, -group_y);
-
-      width = ZOOM_PADDING +
-	(priv->max_x - priv->min_x + 2) * (ITEM_WIDTH + PADDING) / 2;
-
-      scale_x = (gdouble) ITEM_WIDTH  / width;
-
-      x = (gint) ((double)(ZOOM_PADDING + PADDING) * scale_x) / 2;
-
-      height = ZOOM_PADDING +
-	(priv->max_y - priv->min_y + 1) * (ITEM_HEIGHT + PADDING);
-
-      scale_y = (gdouble) ITEM_HEIGHT  / height;
-
-      y = (gint) ((double)ZOOM_PADDING * scale_y) / 2;
+	  clutter_timeline_start (timeline);
+	  return;
+	}
+      else
+	{
+	  g_warning ("Failed to find data for current actor.");
+	}
     }
 
-  if (with_effect)
-    {
-      timeline = clutter_effect_scale (priv->zoom_template,
-				       CLUTTER_ACTOR (group),
-				       scale_x, scale_y,
-				       (ClutterEffectCompleteFunc)
-				       hd_switcher_group_zoom_completed,
-				       actor);
-
-      clutter_timeline_start (timeline);
-
-
-      timeline = clutter_effect_move (priv->move_template,
-				      CLUTTER_ACTOR (group),
-				      x, y,
-				      NULL, NULL);
-
-      clutter_timeline_start (timeline);
-    }
-  else
-    {
-      clutter_actor_set_scale (CLUTTER_ACTOR (group), scale_x, scale_y);
-      clutter_actor_set_position (CLUTTER_ACTOR (group), x, y);
-    }
+  g_signal_emit (group, signals[SIGNAL_ITEM_SELECTED], 0, NULL);
 }
 
 gboolean
