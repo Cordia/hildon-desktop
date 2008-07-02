@@ -826,6 +826,7 @@ hd_switcher_group_zoom_out (HdSwitcherGroup *group,
 	  clutter_actor_set_position (a, -x, -y);
 	  clutter_actor_set_scale (a, 1.0/scale_x, 1.0/scale_y);
 	  clutter_actor_hide (data->close_button);
+	  clutter_actor_raise_top (a);
 
 	  timeline = clutter_effect_scale (priv->zoom_template,
 					 a,

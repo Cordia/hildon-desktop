@@ -1,6 +1,12 @@
 2008-07-02 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/hd-switcher-group.c:
+	( hd_switcher_group_zoom_out):
+	Ensure that the actor we are zooming is topmost.
+
+2008-07-02 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/home/hd-switcher-group.c:
 	Refactored zoom-out effect to match the current spec.
 
 2008-07-01 Tomas Frydrych  <tf@o-hand.com>
