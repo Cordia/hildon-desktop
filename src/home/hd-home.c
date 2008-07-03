@@ -1825,6 +1825,4 @@ hd_home_fixup_operator_position (HdHome *home)
   clutter_actor_set_position (priv->operator,
 			      control_width + HDH_OPERATOR_PADDING,
 			      (control_height - op_height)/2);
-
-  clutter_actor_get_position (priv->operator, &control_width, &control_height);
 }

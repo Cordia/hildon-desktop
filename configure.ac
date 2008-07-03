@@ -21,7 +21,7 @@ AC_HEADER_STDBOOL
 # Misc build flags
 #++++++++++++++++++
 
-CFLAGS="$CFLAGS -Wall -ansi -Wmissing-prototypes -Wmissing-declarations -std=c99 -rdynamic"
+CFLAGS="$CFLAGS -Wall -ansi -Wmissing-prototypes -Wmissing-declarations -Werror -std=c99 -rdynamic"
 
 AC_SUBST(CFLAGS)
 

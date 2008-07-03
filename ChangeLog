@@ -1,5 +1,14 @@
 2008-07-03 Tomas Frydrych  <tf@o-hand.com>
 
+	* configure.ac:
+	Put back -Werror following fix in clutter headers.
+
+	* src/home/hd-home.c:
+	(hd_home_fixup_operator_position):
+	Removed spurious line of code.
+
+2008-07-03 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/home/hd-home.c:
 	* src/home/hd-home.h:
 	* src/home/hd-switcher.c:
