@@ -31,6 +31,9 @@
 
 #include "hd-home-view.h"
 
+/* FIXME -- match spec */
+#define HDH_SWITCH_WIDTH 20
+
 G_BEGIN_DECLS
 
 #define HD_TYPE_HOME            (hd_home_get_type ())
@@ -93,6 +96,16 @@ void hd_home_set_operator_label (HdHome *home, const char *text);
 void hd_home_set_operator_icon (HdHome *home, const char *file);
 
 void hd_home_fixup_operator_position (HdHome *home);
+
+void hd_home_show_switches (HdHome *home);
+
+void hd_home_hide_switches (HdHome *home);
+
+void hd_home_highlight_switch (HdHome *home, gboolean left);
+
+void hd_home_unhighlight_switches (HdHome *home);
+
+void hd_home_pan_full (HdHome *home, gboolean left);
 
 G_END_DECLS
 

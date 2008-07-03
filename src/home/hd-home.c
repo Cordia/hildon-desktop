@@ -80,6 +80,7 @@ struct _HdHomePrivate
   ClutterActor          *background;
   ClutterActor          *main_group; /* Where the views + their buttons live */
   ClutterActor          *edit_group; /* An overlay group for edit mode */
+  ClutterActor          *control_group;
   ClutterActor          *close_button;
   ClutterActor          *back_button;
   ClutterActor          *new_button;
@@ -97,6 +98,9 @@ struct _HdHomePrivate
   ClutterActor          *operator;
   ClutterActor          *operator_icon;
   ClutterActor          *operator_label;
+
+  ClutterActor          *left_switch;
+  ClutterActor          *right_switch;
 
   GList                 *views;
   guint                  n_views;
@@ -157,8 +161,6 @@ static void hd_home_remove_view (HdHome * home, guint view_index);
 static void hd_home_new_view (HdHome * home);
 
 static void hd_home_start_pan (HdHome *home);
-
-static void hd_home_pan_full (HdHome *home, gboolean left);
 
 static void hd_home_show_edit_button (HdHome *home);
 
@@ -647,6 +649,15 @@ hd_home_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (object), edit_group);
   clutter_actor_hide (edit_group);
 
+  /* TODO -- see if the control group could be added directly to our parent,
+   * so we would not have to move it about (it would mean to maintain it
+   * in the correct order on the actor stack, which might be more difficult
+   * than moving it).
+   */
+  priv->control_group = clutter_group_new ();
+  clutter_container_add_actor (CLUTTER_CONTAINER (object),
+			       priv->control_group);
+
   for (i = 0; i < 3; ++i)
     {
       clr.alpha = 0xff;
@@ -723,7 +734,7 @@ hd_home_constructed (GObject *object)
   priv->back_button =
     clutter_texture_new_from_file (BACK_BUTTON, &error);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (main_group),
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
 			       priv->back_button);
   clutter_actor_hide (priv->back_button);
   clutter_actor_set_reactive (priv->back_button, TRUE);
@@ -751,7 +762,7 @@ hd_home_constructed (GObject *object)
   priv->edit_button =
     clutter_texture_new_from_file (EDIT_BUTTON, &error);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (main_group),
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
 			       priv->edit_button);
   clutter_actor_hide (priv->edit_button);
   clutter_actor_set_reactive (priv->edit_button, TRUE);
@@ -765,7 +776,8 @@ hd_home_constructed (GObject *object)
    */
   priv->operator = clutter_group_new ();
   clutter_actor_show (priv->operator);
-  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->operator);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
+			       priv->operator);
 
   priv->operator_label = clutter_label_new_full ("Sans 12", "Operator",
 						 &op_color);
@@ -773,6 +785,31 @@ hd_home_constructed (GObject *object)
   clutter_actor_show (priv->operator_label);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->operator),
 			       priv->operator_label);
+
+  priv->left_switch = clutter_rectangle_new ();
+
+  /* FIXME -- should the color come from theme ? */
+  clr.red = 0;
+  clr.green = 0xff;
+  clr.blue  = 0xff;
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->left_switch), &clr);
+
+  clutter_actor_set_size (priv->left_switch, HDH_SWITCH_WIDTH, priv->xheight);
+  clutter_actor_set_position (priv->left_switch, 0, 0);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
+			       priv->left_switch);
+  clutter_actor_hide (priv->left_switch);
+
+  priv->right_switch = clutter_rectangle_new ();
+
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->right_switch), &clr);
+
+  clutter_actor_set_size (priv->right_switch, HDH_SWITCH_WIDTH, priv->xheight);
+  clutter_actor_set_position (priv->right_switch,
+			      priv->xwidth - HDH_SWITCH_WIDTH, 0);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
+			       priv->right_switch);
+  clutter_actor_hide (priv->right_switch);
 
   /*
    * Construct the grey rectangle for dimming of desktop in edit mode
@@ -970,7 +1007,7 @@ hd_home_show_view (HdHome * home, guint view_index)
   HdHomePrivate   *priv = home->priv;
   HdCompMgr       *hmgr = HD_COMP_MGR (priv->comp_mgr);
   MBWindowManagerClient *desktop;
-  ClutterTimeline *timeline;
+  ClutterTimeline *timeline1, *timeline2;
 
   if (view_index >= priv->n_views)
     {
@@ -983,12 +1020,17 @@ hd_home_show_view (HdHome * home, guint view_index)
 
   if (priv->mode == HD_HOME_MODE_NORMAL)
     {
-      timeline = clutter_effect_move (priv->move_template,
-				      CLUTTER_ACTOR (home),
-				      - view_index * priv->xwidth, 0,
-				      NULL, NULL);
+      timeline1 = clutter_effect_move (priv->move_template,
+				       CLUTTER_ACTOR (home),
+				       - view_index * priv->xwidth, 0,
+				       NULL, NULL);
+      timeline2 = clutter_effect_move (priv->move_template,
+				       priv->control_group,
+				       view_index * priv->xwidth, 0,
+				       NULL, NULL);
 
-      clutter_timeline_start (timeline);
+      clutter_timeline_start (timeline1);
+      clutter_timeline_start (timeline2);
     }
   else
     {
@@ -1064,6 +1106,8 @@ hd_home_do_normal_layout (HdHome *home)
   clutter_actor_set_position (CLUTTER_ACTOR (home),
 			      -priv->current_view * xwidth, 0);
 
+  hd_home_hide_switches (home);
+
   hd_home_ungrab_pointer (home);
 }
 
@@ -1085,16 +1129,16 @@ hd_home_do_edit_layout (HdHome *home)
   x = priv->xwidth * priv->current_view;
 
   clutter_actor_set_position (priv->edit_group, x, 0);
+  clutter_actor_set_position (priv->control_group, x, 0);
   clutter_actor_show (priv->edit_group);
 
-  if (clutter_actor_get_parent (priv->back_button) == priv->main_group)
-    clutter_actor_reparent (priv->back_button, priv->edit_group);
   clutter_actor_show (priv->back_button);
   clutter_actor_raise_top (priv->back_button);
 
   priv->mode = HD_HOME_MODE_EDIT;
 
   clutter_actor_show (priv->grey_filter);
+  hd_home_show_switches (home);
   hd_home_grab_pointer (home);
 }
 
@@ -1208,15 +1252,7 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
 			      y_top + h_top + 2*HDH_LAYOUT_Y_OFFSET -
 			      button_height);
 
-  if (clutter_actor_get_parent (priv->back_button) != priv->main_group)
-      clutter_actor_reparent (priv->back_button, priv->main_group);
-
-  clutter_actor_get_size (priv->back_button,
-			  &button_width, &button_height);
-  clutter_actor_set_position (priv->back_button,
-			      top_indx * xwidth + priv->xwidth -
-			      button_width - 5,
-			      5);
+  clutter_actor_set_position (priv->control_group, top_indx * xwidth, 0);
 
   clutter_actor_show (priv->back_button);
   clutter_actor_raise_top (priv->back_button);
@@ -1235,6 +1271,8 @@ hd_home_do_layout_contents (HdHomeView * top_view, HdHome * home)
     g_signal_connect (priv->close_button, "button-release-event",
 		      G_CALLBACK (hd_home_close_button_clicked),
 		      home);
+
+  hd_home_hide_switches (home);
 
   hd_home_grab_pointer (home);
 }
@@ -1421,7 +1459,7 @@ hd_home_start_pan (HdHome *home)
   HdHomePrivate   *priv = home->priv;
   GList           *l = priv->pan_queue;
   gint             move_by;
-  ClutterTimeline *timeline;
+  ClutterTimeline *timeline1, *timeline2;
 
   move_by = clutter_actor_get_x (CLUTTER_ACTOR (home));
 
@@ -1434,13 +1472,17 @@ hd_home_start_pan (HdHome *home)
   g_list_free (priv->pan_queue);
   priv->pan_queue = NULL;
 
-  timeline = clutter_effect_move (priv->move_template,
-				  CLUTTER_ACTOR (home),
-				  move_by, 0,
-				  (ClutterEffectCompleteFunc)
-				  hd_home_pan_stage_completed, NULL);
+  timeline1 = clutter_effect_move (priv->move_template,
+				   CLUTTER_ACTOR (home),
+				   move_by, 0,
+				   (ClutterEffectCompleteFunc)
+				   hd_home_pan_stage_completed, NULL);
+  timeline2 = clutter_effect_move (priv->move_template,
+				   priv->control_group,
+				   -move_by, 0, NULL, NULL);
 
-  clutter_timeline_start (timeline);
+  clutter_timeline_start (timeline1);
+  clutter_timeline_start (timeline2);
 }
 
 static void
@@ -1449,7 +1491,7 @@ hd_home_pan_by (HdHome *home, gint move_by)
   HdHomePrivate   *priv = home->priv;
   gboolean         in_progress = FALSE;
 
-  if (priv->mode != HD_HOME_MODE_NORMAL || !move_by)
+  if (priv->mode == HD_HOME_MODE_LAYOUT || !move_by)
     return;
 
   if (priv->pan_queue)
@@ -1463,7 +1505,7 @@ hd_home_pan_by (HdHome *home, gint move_by)
     }
 }
 
-static void
+void
 hd_home_pan_full (HdHome *home, gboolean left)
 {
   HdHomePrivate  *priv = home->priv;
@@ -1624,7 +1666,7 @@ hd_home_show_edit_button (HdHome *home)
 
   clutter_actor_get_size (priv->edit_button, &button_width, &button_height);
 
-  x = priv->current_view * priv->xwidth + priv->xwidth / 4 + priv->xwidth / 2;
+  x = priv->xwidth / 4 + priv->xwidth / 2;
 
   clutter_actor_set_position (priv->edit_button,
 			      x,
@@ -1825,4 +1867,50 @@ hd_home_fixup_operator_position (HdHome *home)
   clutter_actor_set_position (priv->operator,
 			      control_width + HDH_OPERATOR_PADDING,
 			      (control_height - op_height)/2);
+}
+
+void
+hd_home_show_switches (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+
+  clutter_actor_set_opacity (priv->left_switch, 0x7f);
+  clutter_actor_set_opacity (priv->right_switch, 0x7f);
+  clutter_actor_show (priv->left_switch);
+  clutter_actor_show (priv->right_switch);
+}
+
+void
+hd_home_hide_switches (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+
+  clutter_actor_hide (priv->left_switch);
+  clutter_actor_hide (priv->right_switch);
+}
+
+void
+hd_home_highlight_switch (HdHome *home, gboolean left)
+{
+  HdHomePrivate *priv = home->priv;
+
+  if (left)
+    {
+      clutter_actor_set_opacity (priv->left_switch, 0xff);
+      clutter_actor_set_opacity (priv->right_switch, 0x7f);
+    }
+  else
+    {
+      clutter_actor_set_opacity (priv->left_switch, 0x7f);
+      clutter_actor_set_opacity (priv->right_switch, 0xff);
+    }
+}
+
+void
+hd_home_unhighlight_switches (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+
+  clutter_actor_set_opacity (priv->left_switch, 0x7f);
+  clutter_actor_set_opacity (priv->right_switch, 0x7f);
 }

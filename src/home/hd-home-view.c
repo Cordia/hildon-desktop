@@ -456,6 +456,7 @@ hd_home_view_applet_motion (ClutterActor       *applet,
 {
   HdHomeViewPrivate *priv = view->priv;
   gint x, y;
+  guint w, h;
 
   g_debug ("Applet motion, %d,%d", event->x, event->y);
 
@@ -483,6 +484,29 @@ hd_home_view_applet_motion (ClutterActor       *applet,
    */
   clutter_actor_move_by (applet, x, y);
   hd_home_move_applet_buttons (priv->home, x, y);
+
+  clutter_actor_get_position (applet, &x, &y);
+  clutter_actor_get_size (applet, &w, &h);
+
+  /*
+   * If the applet entered the left/right switcher area, highlight
+   * the switcher.
+   */
+  if (x < HDH_SWITCH_WIDTH)
+    hd_home_highlight_switch (priv->home, TRUE);
+  else if (x + w > priv->xwidth - HDH_SWITCH_WIDTH)
+    hd_home_highlight_switch (priv->home, FALSE);
+  else
+    hd_home_unhighlight_switches (priv->home);
+
+
+  /*
+   * If the pointer entered the left/right switcher area, initiate pan.
+   */
+  if (event->x < HDH_SWITCH_WIDTH)
+    hd_home_pan_full (priv->home, TRUE);
+  else if (event->x > priv->xwidth - HDH_SWITCH_WIDTH)
+    hd_home_pan_full (priv->home, FALSE);
 
   return FALSE;
 }
