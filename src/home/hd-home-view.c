@@ -94,7 +94,6 @@ static void hd_home_view_get_property (GObject      *object,
 
 static void hd_home_view_constructed (GObject *object);
 
-
 G_DEFINE_TYPE (HdHomeView, hd_home_view, CLUTTER_TYPE_GROUP);
 
 static void
@@ -504,9 +503,9 @@ hd_home_view_applet_motion (ClutterActor       *applet,
    * If the pointer entered the left/right switcher area, initiate pan.
    */
   if (event->x < HDH_SWITCH_WIDTH)
-    hd_home_pan_full (priv->home, TRUE);
+    hd_home_pan_and_move_applet (priv->home, TRUE, applet);
   else if (event->x > priv->xwidth - HDH_SWITCH_WIDTH)
-    hd_home_pan_full (priv->home, FALSE);
+    hd_home_pan_and_move_applet (priv->home, FALSE, applet);
 
   return FALSE;
 }
@@ -636,10 +635,72 @@ hd_home_view_remove_applet (HdHomeView *view, ClutterActor *applet)
 
   id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
 					   "HD-VIEW-release-cb"));
+  g_object_set_data (G_OBJECT (applet), "HD-VIEW-release-cb", NULL);
   g_signal_handler_disconnect (applet, id);
 
   id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
 					   "HD-VIEW-press-cb"));
+  g_object_set_data (G_OBJECT (applet), "HD-VIEW-press-cb", NULL);
   g_signal_handler_disconnect (applet, id);
+
+  id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
+					   "HD-VIEW-motion-cb"));
+  if (id)
+    {
+      g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb", NULL);
+      g_signal_handler_disconnect (applet, id);
+    }
 }
 
+void
+hd_home_view_move_applet (HdHomeView   *old_view,
+			  HdHomeView   *new_view,
+			  ClutterActor *applet)
+{
+  HdHomeViewPrivate *priv = new_view->priv;
+  gint x, y;
+/*   guint id; */
+
+  hd_home_view_remove_applet (old_view, applet);
+
+  /*
+   * Position the applet on the new view, so that it would look like it was
+   * dragged across the view boundary
+   */
+  clutter_actor_get_position (applet, &x, &y);
+
+  if (x < 0)
+    {
+      /* Applet moved across left edge */
+      x = priv->xwidth + x;
+    }
+  else
+    {
+      x = - (priv->xwidth - x);
+    }
+
+  clutter_actor_set_position (applet, x, y);
+
+  /*
+   * Add applet to the new view
+   */
+  hd_home_view_add_applet (new_view, applet);
+
+#if 0
+  /*
+   * Now connect motion callback
+   */
+  id = g_signal_connect (applet, "motion-event",
+			 G_CALLBACK (hd_home_view_applet_motion),
+			 new_view);
+
+  g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb",
+		     GINT_TO_POINTER (id));
+
+  priv->applet_motion_handled = TRUE;
+  priv->applet_motion_start_x = 0;
+  priv->applet_motion_start_y = 0;
+  priv->applet_motion_last_x = 0;
+  priv->applet_motion_last_y = 0;
+#endif
+}

@@ -105,7 +105,7 @@ void hd_home_highlight_switch (HdHome *home, gboolean left);
 
 void hd_home_unhighlight_switches (HdHome *home);
 
-void hd_home_pan_full (HdHome *home, gboolean left);
+void hd_home_pan_and_move_applet (HdHome *home, gboolean left, ClutterActor *applet);
 
 G_END_DECLS
 

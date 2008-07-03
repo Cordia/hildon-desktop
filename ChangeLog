@@ -1,6 +1,14 @@
 2008-07-03 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/hd-home-view.c:
+	* src/home/hd-home-view.h:
+	* src/home/hd-home.c:
+	* src/home/hd-home.h:
+	Implemented moving of applets across view boundary.
+
+2008-07-03 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/home/hd-home-view.c:
 	* src/home/hd-home.c:
 	* src/home/hd-home.h:
 	Controls for switching home view while dragging an applet.

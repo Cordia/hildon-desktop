@@ -162,6 +162,8 @@ static void hd_home_new_view (HdHome * home);
 
 static void hd_home_start_pan (HdHome *home);
 
+static void hd_home_pan_full (HdHome *home, gboolean left);
+
 static void hd_home_show_edit_button (HdHome *home);
 
 static void hd_home_hide_edit_button (HdHome *home);
@@ -1505,7 +1507,7 @@ hd_home_pan_by (HdHome *home, gint move_by)
     }
 }
 
-void
+static void
 hd_home_pan_full (HdHome *home, gboolean left)
 {
   HdHomePrivate  *priv = home->priv;
@@ -1578,6 +1580,24 @@ hd_home_pan_full (HdHome *home, gboolean left)
     }
 
   hd_home_pan_by (home, by);
+}
+
+void
+hd_home_pan_and_move_applet (HdHome       *home,
+			     gboolean      left,
+			     ClutterActor *applet)
+{
+  HdHomePrivate *priv = home->priv;
+  HdHomeView    *old_view;
+  HdHomeView    *new_view;
+
+  old_view = g_list_nth_data (priv->views, priv->current_view);
+
+  hd_home_pan_full (home, left);
+
+  new_view = g_list_nth_data (priv->views, priv->current_view);
+
+  hd_home_view_move_applet (old_view, new_view, applet);
 }
 
 void
