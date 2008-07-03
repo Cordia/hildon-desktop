@@ -361,6 +361,9 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   clutter_actor_show (home);
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), home);
 
+  /* NB -- home must be constructed before constructing the switcher;
+   * TODO -- see if we can refactor this, to make switcher home-agnostic
+   */
   priv->switcher_group = switcher = g_object_new (HD_TYPE_SWITCHER,
 						  "comp-mgr", cmgr,
 						  NULL);
@@ -369,6 +372,8 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   clutter_actor_show (switcher);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), switcher);
+
+  hd_home_fixup_operator_position (HD_HOME (home));
 
   /* Lowever home below the switcher */
   clutter_actor_lower_bottom (home);
@@ -1093,6 +1098,14 @@ hd_comp_mgr_get_home (HdCompMgr *hmgr)
   HdCompMgrPrivate *priv = hmgr->priv;
 
   return priv->home;
+}
+
+ClutterActor *
+hd_comp_mgr_get_switcher (HdCompMgr *hmgr)
+{
+  HdCompMgrPrivate *priv = hmgr->priv;
+
+  return priv->switcher_group;
 }
 
 gint

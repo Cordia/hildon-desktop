@@ -573,3 +573,27 @@ hd_switcher_home_mode_changed (HdHome         *home,
   else
     hd_switcher_hide_menu_button (switcher);
 }
+
+void
+hd_switcher_get_control_area_size (HdSwitcher *switcher,
+				   guint *control_width,
+				   guint *control_height)
+{
+  HdSwitcherPrivate *priv = switcher->priv;
+  guint              button_width, button_height;
+  guint              status_width = 0, status_height = 0;
+
+  clutter_actor_get_size (priv->button_launcher,
+			  &button_width, &button_height);
+
+  if (priv->status_area)
+    clutter_actor_get_size (priv->status_area,
+			    &status_width, &status_height);
+
+  if (control_width)
+    *control_width = button_width + status_width;
+
+  if (control_height)
+    *control_height = button_height;
+}
+

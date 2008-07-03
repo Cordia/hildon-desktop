@@ -26,6 +26,7 @@
 #endif
 
 #include "hd-home.h"
+#include "hd-switcher.h"
 #include "hd-home-view.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
@@ -42,6 +43,9 @@
 
 #define HDH_LAYOUT_TOP_SCALE 0.5
 #define HDH_LAYOUT_Y_OFFSET 60
+
+/* FIXME -- match spec */
+#define HDH_OPERATOR_PADDING 10
 
 #define CLOSE_BUTTON "close-button.png"
 #define BACK_BUTTON  "back-button.png"
@@ -89,6 +93,10 @@ struct _HdHomePrivate
   guint                  close_button_handler;
 
   ClutterActor          *grey_filter;
+
+  ClutterActor          *operator;
+  ClutterActor          *operator_icon;
+  ClutterActor          *operator_label;
 
   GList                 *views;
   guint                  n_views;
@@ -624,6 +632,7 @@ hd_home_constructed (GObject *object)
   ClutterColor     clr = {0,0,0,0xff};
   XSetWindowAttributes attr;
   CoglHandle       handle;
+  ClutterColor     op_color = {0xff, 0xff, 0xff, 0xff};
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
@@ -750,6 +759,20 @@ hd_home_constructed (GObject *object)
   g_signal_connect (priv->edit_button, "button-release-event",
 		    G_CALLBACK (hd_home_edit_button_clicked),
 		    object);
+
+  /*
+   * FIXME -- operator color and font (?) will need to come from theme.
+   */
+  priv->operator = clutter_group_new ();
+  clutter_actor_show (priv->operator);
+  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->operator);
+
+  priv->operator_label = clutter_label_new_full ("Sans 12", "Operator",
+						 &op_color);
+
+  clutter_actor_show (priv->operator_label);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->operator),
+			       priv->operator_label);
 
   /*
    * Construct the grey rectangle for dimming of desktop in edit mode
@@ -1740,3 +1763,68 @@ hd_home_get_current_view_id (HdHome *home)
   return hd_home_view_get_view_id (top);
 }
 
+void
+hd_home_set_operator_label (HdHome *home, const char *text)
+{
+  HdHomePrivate *priv = home->priv;
+
+  clutter_label_set_text (CLUTTER_LABEL (priv->operator_label), text);
+  hd_home_fixup_operator_position (home);
+}
+
+void
+hd_home_set_operator_icon (HdHome *home, const char *file)
+{
+  HdHomePrivate *priv = home->priv;
+  ClutterActor  *icon = NULL;
+
+  if (priv->operator_icon)
+    clutter_actor_destroy (priv->operator_icon);
+
+  if (file)
+    icon = clutter_texture_new_from_file (file, NULL);
+
+  priv->operator_icon = icon;
+
+  if (icon)
+    {
+      clutter_actor_show (icon);
+      clutter_container_add_actor (CLUTTER_CONTAINER (priv->operator), icon);
+    }
+
+  hd_home_fixup_operator_position (home);
+}
+
+
+void
+hd_home_fixup_operator_position (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  guint          control_width, control_height;
+  guint          icon_width = 0, icon_height = 0;
+  guint          op_width, op_height = 0;
+  guint          label_width, label_height;
+  ClutterActor  *switcher;
+
+  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
+
+  hd_switcher_get_control_area_size (HD_SWITCHER (switcher),
+				     &control_width, &control_height);
+
+  if (priv->operator_icon)
+    clutter_actor_get_size (priv->operator_icon, &icon_width, &icon_height);
+
+  clutter_actor_get_size (priv->operator_label, &label_width, &label_height);
+
+  clutter_actor_get_size (priv->operator, &op_width, &op_height);
+
+  clutter_actor_set_position (priv->operator_label,
+			      icon_width + HDH_OPERATOR_PADDING,
+			      (op_height - label_height)/2);
+
+  clutter_actor_set_position (priv->operator,
+			      control_width + HDH_OPERATOR_PADDING,
+			      (control_height - op_height)/2);
+
+  clutter_actor_get_position (priv->operator, &control_width, &control_height);
+}

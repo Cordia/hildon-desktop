@@ -1,3 +1,13 @@
+2008-07-03 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/home/hd-home.c:
+	* src/home/hd-home.h:
+	* src/home/hd-switcher.c:
+	* src/home/hd-switcher.h:
+	* src/mb/hd-comp-mgr.c:
+	* src/mb/hd-comp-mgr.h:
+	Added operator label and basic API for setting text and icon.
+
 2008-07-02 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/hd-switcher-group.c:

@@ -106,6 +106,7 @@ void hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
 Atom hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id);
 
 ClutterActor * hd_comp_mgr_get_home (HdCompMgr *hmgr);
+ClutterActor * hd_comp_mgr_get_switcher (HdCompMgr *hmgr);
 
 gint hd_comp_mgr_get_current_home_view_id (HdCompMgr *hmgr);
 
