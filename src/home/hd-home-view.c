@@ -49,6 +49,7 @@ enum
 {
   PROP_COMP_MGR = 1,
   PROP_HOME,
+  PROP_BACKGROUND_IMAGE,
   PROP_ID,
 };
 
@@ -58,6 +59,8 @@ struct _HdHomeViewPrivate
   HdHome               *home;
 
   ClutterActor         *background;
+  ClutterActor         *background_image;
+  gchar                *background_image_file;
 
   gint                  xwidth;
   gint                  xheight;
@@ -132,6 +135,14 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 			    G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
 
   g_object_class_install_property (object_class, PROP_ID, pspec);
+
+  pspec = g_param_spec_string ("background-image",
+			       "Background Image",
+			       "Background Image",
+			       NULL,
+			       G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
+
+  g_object_class_install_property (object_class, PROP_BACKGROUND_IMAGE, pspec);
 
   signals[SIGNAL_THUMBNAIL_CLICKED] =
       g_signal_new ("thumbnail-clicked",
@@ -252,7 +263,6 @@ hd_home_view_constructed (GObject *object)
   rect = clutter_rectangle_new_with_color (&clr);
 
   clutter_actor_set_size (rect, priv->xwidth, priv->xheight);
-  clutter_actor_show (rect);
   clutter_actor_set_reactive (rect, TRUE);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
@@ -263,6 +273,9 @@ hd_home_view_constructed (GObject *object)
   priv->background = rect;
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (object), TRUE);
+
+  if (priv->background_image)
+    clutter_actor_lower (priv->background_image, priv->background);
 }
 
 static void
@@ -289,8 +302,10 @@ hd_home_view_dispose (GObject *object)
   }
 
   g_list_free (priv->applets);
-
   priv->applets = NULL;
+
+  g_free (priv->background_image_file);
+  priv->background_image_file = NULL;
 
   G_OBJECT_CLASS (hd_home_view_parent_class)->dispose (object);
 }
@@ -320,6 +335,23 @@ hd_home_view_set_property (GObject       *object,
     case PROP_ID:
       priv->id = g_value_get_int (value);
       break;
+    case PROP_BACKGROUND_IMAGE:
+      priv->background_image_file = g_value_dup_string (value);
+      if (priv->background_image_file)
+	{
+	  if (priv->background_image)
+	    clutter_actor_destroy (priv->background_image);
+
+	  priv->background_image =
+	    clutter_texture_new_from_file (priv->background_image_file, NULL);
+
+	  clutter_container_add_actor (CLUTTER_CONTAINER (object),
+				       priv->background_image);
+	  if (priv->background)
+	    clutter_actor_lower (priv->background_image, priv->background);
+	}
+
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -345,6 +377,9 @@ hd_home_view_get_property (GObject      *object,
     case PROP_ID:
       g_value_set_int (value, priv->id);
       break;
+    case PROP_BACKGROUND_IMAGE:
+      g_value_set_string (value, priv->background_image_file);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -356,50 +391,13 @@ hd_home_view_set_background_color (HdHomeView *view, ClutterColor *color)
 {
   HdHomeViewPrivate *priv = view->priv;
 
-  if (priv->background && CLUTTER_IS_RECTANGLE (priv->background))
-    {
-      clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->background), color);
-    }
-  else
-    {
-      ClutterActor * background;
-
-      background = clutter_rectangle_new_with_color (color);
-      clutter_actor_set_size (background, priv->xwidth, priv->xheight);
-      clutter_container_add_actor (CLUTTER_CONTAINER (view), background);
-
-      if (priv->background)
-	clutter_actor_destroy (priv->background);
-
-      priv->background = background;
-    }
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->background), color);
 }
 
 void
 hd_home_view_set_background_image (HdHomeView *view, const gchar * path)
 {
-  HdHomeViewPrivate *priv = view->priv;
-  ClutterActor      *background;
-  GError            *error = NULL;
-
-  background = clutter_texture_new_from_file (path, &error);
-
-  if (error)
-    {
-      g_warning ("Could not load image %s: %s.",
-		 path, error->message);
-
-      g_error_free (error);
-      return;
-    }
-
-  clutter_actor_set_size (background, priv->xwidth, priv->xheight);
-  clutter_container_add_actor (CLUTTER_CONTAINER (view), background);
-
-  if (priv->background)
-    clutter_actor_destroy (priv->background);
-
-  priv->background = background;
+  g_object_set (G_OBJECT (view), "background-image", path, NULL);
 }
 
 /*
@@ -709,6 +707,9 @@ ClutterActor *
 hd_home_view_get_background (HdHomeView *view)
 {
   HdHomeViewPrivate *priv = view->priv;
+
+  if (priv->background_image)
+    return priv->background_image;
 
   return priv->background;
 }
