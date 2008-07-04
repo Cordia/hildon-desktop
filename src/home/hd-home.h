@@ -107,6 +107,12 @@ void hd_home_unhighlight_switches (HdHome *home);
 
 void hd_home_pan_and_move_applet (HdHome *home, gboolean left, ClutterActor *applet);
 
+GList* hd_home_get_all_views (HdHome *home);
+
+GList* hd_home_get_active_views (HdHome *home);
+
+void hd_home_set_view_status (HdHome * home, guint id, gboolean active);
+
 G_END_DECLS
 
 #endif

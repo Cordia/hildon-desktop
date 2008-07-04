@@ -1,5 +1,15 @@
 2008-07-04 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/home/hd-home-view.c:
+	* src/home/hd-home-view.h:
+	* src/home/hd-home.c:
+	* src/home/hd-home.h:
+	* src/home/hd-layout-dialog.c:
+	Layout managing mode: added thumbnails to dialog, connected event
+	handlers.
+
+2008-07-04 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/home/Makefile.am:
 	* src/home/hd-home.c:
 	* src/home/hd-layout-dialog.h:

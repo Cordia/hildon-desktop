@@ -704,3 +704,11 @@ hd_home_view_move_applet (HdHomeView   *old_view,
   priv->applet_motion_last_y = 0;
 #endif
 }
+
+ClutterActor *
+hd_home_view_get_background (HdHomeView *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  return priv->background;
+}

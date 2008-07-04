@@ -42,6 +42,8 @@
 #define HDLD_PADDING 10
 #define HDLD_OK_WIDTH 100
 #define HDLD_OK_HEIGHT 40
+#define HDLD_THUMB_WIDTH 135
+#define HDLD_THUMB_HEIGHT 90
 
 enum
 {
@@ -63,6 +65,8 @@ struct _HdLayoutDialogPrivate
   HdHome               *home;
 
   ClutterActor         *background;
+
+  GList                *highlighters;
 };
 
 static void hd_layout_dialog_class_init (HdLayoutDialogClass *klass);
@@ -130,22 +134,83 @@ hd_layout_dialog_ok_clicked (ClutterActor       *button,
 			     ClutterButtonEvent *event,
 			     HdLayoutDialog     *layout)
 {
+  HdLayoutDialogPrivate *priv = layout->priv;
+  GList                 *l = priv->highlighters;
+  gint                   i = 0;
+
+  while (l)
+    {
+      ClutterActor *a = l->data;
+
+      hd_home_set_view_status (priv->home, i, CLUTTER_ACTOR_IS_VISIBLE (a));
+
+      ++i;
+      l = l->next;
+    }
+
   g_signal_emit (layout, signals[SIGNAL_OK_CLICKED], 0);
   return TRUE;
+}
+
+static gboolean
+hd_layout_dialog_thumb_clicked (ClutterActor       *thumb,
+				ClutterButtonEvent *event,
+				ClutterActor       *highlighter)
+
+{
+  if (CLUTTER_ACTOR_IS_VISIBLE (highlighter))
+    clutter_actor_hide (highlighter);
+  else
+    clutter_actor_show (highlighter);
+
+  return TRUE;
+}
+
+static void
+hd_layout_dialog_fixup_highlighters (HdLayoutDialog *dialog)
+{
+  HdLayoutDialogPrivate *priv = dialog->priv;
+  GList                 *l;
+
+  l = priv->highlighters;
+  while (l)
+    {
+      ClutterActor *a = l->data;
+      clutter_actor_hide (a);
+      l = l->next;
+    }
+
+  l = hd_home_get_active_views (priv->home);
+  while (l)
+    {
+      HdHomeView   *view = l->data;
+      ClutterActor *h;
+
+      guint id = hd_home_view_get_view_id (view);
+
+      h = g_list_nth_data (priv->highlighters, id);
+      clutter_actor_show (h);
+
+      l = l->next;
+    }
 }
 
 static void
 hd_layout_dialog_constructed (GObject *object)
 {
-  ClutterActor        *rect, *label;
+  HdLayoutDialogPrivate *priv = HD_LAYOUT_DIALOG (object)->priv;
+  ClutterActor          *rect, *label;
   /* FIXME -- these should come from theme */
-  ClutterColor         clr_b0 = {0, 0, 0, 0xff};
-  ClutterColor         clr_b1 = {0x44, 0x44, 0x44, 0xff};
-  ClutterColor         clr_b2 = {0x77, 0x77, 0x77, 0xff};
-  ClutterColor         clr_f  = {0xfa, 0xfa, 0xfa, 0xff};
-  HdLayoutDialogPrivate   *priv = HD_LAYOUT_DIALOG (object)->priv;
-  MBWindowManager     *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-  guint                xwidth, xheight, w, h;
+  ClutterColor           clr_b0 = {0, 0, 0, 0xff};
+  ClutterColor           clr_b1 = {0x44, 0x44, 0x44, 0xff};
+  ClutterColor           clr_b2 = {0x77, 0x77, 0x77, 0xff};
+  ClutterColor           clr_f  = {0xfa, 0xfa, 0xfa, 0xff};
+  MBWindowManager       *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  guint                  xwidth, xheight, w, h;
+  GList                 *l;
+  gboolean               have_fbos;
+  gint                   i;
+  guint                  label2_height;
 
   xwidth = wm->xdpy_width;
   xheight = wm->xdpy_height;
@@ -153,6 +218,7 @@ hd_layout_dialog_constructed (GObject *object)
   rect = clutter_rectangle_new_with_color (&clr_b0);
   clutter_actor_set_size (rect, xwidth, HDLD_HEIGHT);
   clutter_actor_set_position (rect, 0, xheight - HDLD_HEIGHT);
+  clutter_actor_set_reactive (rect, TRUE);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
   rect = clutter_rectangle_new_with_color (&clr_b1);
@@ -182,6 +248,7 @@ hd_layout_dialog_constructed (GObject *object)
 				  "Activate desired Home views:", &clr_f);
   clutter_actor_show (label);
   clutter_actor_get_size (label, &w, &h);
+  label2_height = h;
   clutter_actor_set_position (label, HDLD_PADDING,
 			      xheight-(HDLD_HEIGHT-HDLD_TITLEBAR)+HDLD_PADDING);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), label);
@@ -208,6 +275,88 @@ hd_layout_dialog_constructed (GObject *object)
 			      xwidth - HDLD_ACTION_WIDTH + (HDLD_ACTION_WIDTH - HDLD_OK_WIDTH)/2 + (HDLD_OK_WIDTH - w)/2,
 			      xheight - (HDLD_HEIGHT - HDLD_TITLEBAR) + (HDLD_HEIGHT - HDLD_TITLEBAR - HDLD_OK_HEIGHT)/2 + (HDLD_OK_HEIGHT - h)/2);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), label);
+
+  /*
+   * Now construct the thumbnails.
+   */
+  l = hd_home_get_all_views (priv->home);
+  have_fbos = clutter_feature_available (CLUTTER_FEATURE_OFFSCREEN);
+  i = 0;
+
+  while (l)
+    {
+      HdHomeView   *view = l->data;
+      ClutterActor *thumb = clutter_group_new ();
+      ClutterActor *thumb_background;
+      ClutterActor *thumb_content;
+      ClutterColor clr_b = {0xff, 0xff, 0, 0xff};
+
+      thumb_background = clutter_rectangle_new_with_color (&clr_b);
+      clutter_actor_set_size (thumb_background,
+			      HDLD_THUMB_WIDTH, HDLD_THUMB_HEIGHT);
+      clutter_actor_hide (thumb_background);
+      clutter_container_add_actor (CLUTTER_CONTAINER (thumb),
+				   thumb_background);
+
+      priv->highlighters =
+	g_list_append (priv->highlighters, thumb_background);
+
+      if (have_fbos)
+	{
+	  thumb_content =
+	    clutter_texture_new_from_actor (CLUTTER_ACTOR (view));
+	}
+      else
+	{
+	  ClutterActor *background;
+	  background = hd_home_view_get_background (view);
+
+	  if (CLUTTER_IS_TEXTURE (background))
+	    {
+	      CoglHandle handle;
+
+	      handle =
+		clutter_texture_get_cogl_texture (CLUTTER_TEXTURE(background));
+
+	      thumb_content = clutter_texture_new ();
+	      clutter_texture_set_cogl_texture (CLUTTER_TEXTURE (thumb),
+						handle);
+	    }
+	  else
+	    {
+	      /*
+	       * No fbos and no texture, so we just create a rectangle.
+	       */
+	      ClutterColor clr = {0xA0, 0xA0, 0xA0, 0xff};
+
+	      thumb_content = clutter_rectangle_new_with_color (&clr);
+	    }
+	}
+
+      clutter_actor_set_size (thumb_content,
+			      HDLD_THUMB_WIDTH - HDLD_PADDING,
+			      HDLD_THUMB_HEIGHT - HDLD_PADDING);
+      clutter_actor_set_position (thumb_content,
+				  HDLD_PADDING/2, HDLD_PADDING/2);
+      clutter_actor_set_reactive (thumb_content, TRUE);
+
+      g_signal_connect (thumb_content, "button-release-event",
+			G_CALLBACK (hd_layout_dialog_thumb_clicked),
+			thumb_background);
+
+      clutter_container_add_actor (CLUTTER_CONTAINER (thumb),
+				   thumb_content);
+
+      clutter_actor_set_size (thumb, HDLD_THUMB_WIDTH, HDLD_THUMB_HEIGHT);
+      clutter_actor_set_position (thumb, HDLD_PADDING + i * (HDLD_THUMB_WIDTH + HDLD_PADDING), xheight - HDLD_HEIGHT + HDLD_TITLEBAR + (HDLD_HEIGHT - HDLD_TITLEBAR - HDLD_THUMB_HEIGHT - label2_height) / 2 + label2_height);
+
+      clutter_container_add_actor (CLUTTER_CONTAINER (object), thumb);
+
+      l = l->next;
+      ++i;
+    }
+
+  hd_layout_dialog_fixup_highlighters (HD_LAYOUT_DIALOG (object));
 }
 
 static void

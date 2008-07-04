@@ -76,6 +76,8 @@ void hd_home_view_move_applet (HdHomeView   *old_view, HdHomeView   *new_view,
 			       ClutterActor *applet);
 
 
+ClutterActor * hd_home_view_get_background (HdHomeView *view);
+
 G_END_DECLS
 
 #endif

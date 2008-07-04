@@ -103,9 +103,9 @@ struct _HdHomePrivate
   ClutterActor          *right_switch;
 
   GList                 *views;
+  GList                 *all_views;
   guint                  n_views;
   guint                  current_view;
-  ClutterActor          *view[4];
   gint                   xwidth;
   gint                   xheight;
 
@@ -654,7 +654,7 @@ hd_home_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (object),
 			       priv->control_group);
 
-  for (i = 0; i < G_N_ELEMENTS (priv->view); ++i)
+  for (i = 0; i < 4; ++i)
     {
       clr.alpha = 0xff;
 
@@ -664,7 +664,7 @@ hd_home_constructed (GObject *object)
 			   "id",       i,
 			   NULL);
 
-      priv->view[i] = view;
+      priv->all_views = g_list_append (priv->all_views, view);
 
       g_signal_connect (view, "thumbnail-clicked",
 			G_CALLBACK (hd_home_view_thumbnail_clicked),
@@ -1227,6 +1227,9 @@ hd_home_pan_full (HdHome *home, gboolean left)
   gint            by;
   gint            xwidth;
 
+  if (priv->n_views < 2)
+    return;
+
   by = xwidth = priv->xwidth;
 
   /*
@@ -1651,3 +1654,100 @@ hd_home_unhighlight_switches (HdHome *home)
   clutter_actor_set_opacity (priv->left_switch, 0x7f);
   clutter_actor_set_opacity (priv->right_switch, 0x7f);
 }
+
+GList *
+hd_home_get_all_views (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+
+  return priv->all_views;
+}
+
+GList *
+hd_home_get_active_views (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+
+  return priv->views;
+}
+
+static void
+hd_home_activate_view (HdHome * home, guint id)
+{
+  HdHomePrivate *priv = home->priv;
+  ClutterActor  *view;
+  GList         *l;
+  gboolean       done = FALSE;
+
+  view = g_list_nth_data (priv->all_views, id);
+
+  l = g_list_find (priv->views, view);
+
+  if (l)
+    return;
+
+  l = priv->views;
+  while (l)
+    {
+      HdHomeView *v = l->data;
+      guint       i = hd_home_view_get_view_id (v);
+
+      if (i > id)
+	{
+	  priv->views = g_list_insert_before (priv->views, l, view);
+	  done = TRUE;
+	  break;
+	}
+
+      l = l->next;
+    }
+
+  if (!done)
+    priv->views = g_list_append (priv->views, view);
+
+  ++priv->n_views;
+
+  clutter_actor_show (view);
+
+  clutter_actor_set_size (priv->background, priv->xwidth * priv->n_views,
+			  priv->xheight);
+}
+
+static void
+hd_home_deactivate_view (HdHome * home, guint id)
+{
+  HdHomePrivate *priv = home->priv;
+  ClutterActor  *view;
+  GList         *l;
+
+  if (priv->n_views < 2)
+    return;
+
+  view = g_list_nth_data (priv->all_views, id);
+
+  l = g_list_find (priv->views, view);
+
+  if (!l)
+    return;
+
+  priv->views = g_list_remove (priv->views, view);
+  --priv->n_views;
+
+  clutter_actor_hide (view);
+
+  clutter_actor_set_size (priv->background, priv->xwidth * priv->n_views,
+			  priv->xheight);
+
+  if (priv->current_view == priv->n_views)
+    priv->current_view = 0;
+}
+
+void
+hd_home_set_view_status (HdHome * home, guint id, gboolean active)
+{
+  if (active)
+    hd_home_activate_view (home, id);
+  else
+    hd_home_deactivate_view (home, id);
+}
+
