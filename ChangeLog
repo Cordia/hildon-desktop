@@ -1,3 +1,12 @@
+2008-07-04 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/home/Makefile.am:
+	* src/home/hd-home.c:
+	* src/home/hd-layout-dialog.h:
+	* src/home/hd-layout-dialog.c:
+	Initial refactoring of layout managing mode to matched the updated
+	spec.
+
 2008-07-03 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/hd-home-view.c:
