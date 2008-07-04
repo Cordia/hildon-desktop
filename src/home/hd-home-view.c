@@ -50,34 +50,36 @@ enum
   PROP_COMP_MGR = 1,
   PROP_HOME,
   PROP_BACKGROUND_IMAGE,
+  PROP_BACKGROUND_MODE,
   PROP_ID,
 };
 
 struct _HdHomeViewPrivate
 {
-  MBWMCompMgrClutter   *comp_mgr;
-  HdHome               *home;
+  MBWMCompMgrClutter       *comp_mgr;
+  HdHome                   *home;
 
-  ClutterActor         *background;
-  ClutterActor         *background_image;
-  gchar                *background_image_file;
+  ClutterActor             *background;
+  ClutterActor             *background_image;
+  gchar                    *background_image_file;
+  HdHomeViewBackgroundMode  background_mode;
 
-  gint                  xwidth;
-  gint                  xheight;
+  gint                      xwidth;
+  gint                      xheight;
 
-  GList                *applets; /* MBWMCompMgrClutterClient list */
+  GList                    *applets; /* MBWMCompMgrClutterClient list */
 
-  gint                  applet_motion_start_x;
-  gint                  applet_motion_start_y;
-  gint                  applet_motion_last_x;
-  gint                  applet_motion_last_y;
+  gint                      applet_motion_start_x;
+  gint                      applet_motion_start_y;
+  gint                      applet_motion_last_x;
+  gint                      applet_motion_last_y;
 
-  gboolean              thumbnail_mode        : 1;
-  gboolean              applet_motion_handled : 1;
+  gboolean                  thumbnail_mode        : 1;
+  gboolean                  applet_motion_handled : 1;
 
-  guint                 id;
+  guint                     id;
 
-  guint                 capture_cb;
+  guint                     capture_cb;
 };
 
 static void hd_home_view_class_init (HdHomeViewClass *klass);
@@ -96,6 +98,9 @@ static void hd_home_view_get_property (GObject      *object,
 				       GParamSpec   *pspec);
 
 static void hd_home_view_constructed (GObject *object);
+
+static void hd_home_view_change_background_mode (HdHomeView *view,
+						 HdHomeViewBackgroundMode mode);
 
 G_DEFINE_TYPE (HdHomeView, hd_home_view, CLUTTER_TYPE_GROUP);
 
@@ -143,6 +148,15 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 			       G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
 
   g_object_class_install_property (object_class, PROP_BACKGROUND_IMAGE, pspec);
+
+  pspec = g_param_spec_enum ("background-mode",
+			     "Background mode",
+			     "Background mode",
+			     hd_home_view_background_mode_get_type (),
+			     0,
+			     G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
+
+  g_object_class_install_property (object_class, PROP_BACKGROUND_MODE, pspec);
 
   signals[SIGNAL_THUMBNAIL_CLICKED] =
       g_signal_new ("thumbnail-clicked",
@@ -246,10 +260,11 @@ hd_home_view_captured_event (ClutterActor       *self,
 static void
 hd_home_view_constructed (GObject *object)
 {
-  ClutterActor        *rect;
-  ClutterColor         clr = {0xff, 0, 0, 0xff};
-  HdHomeViewPrivate   *priv = HD_HOME_VIEW (object)->priv;
-  MBWindowManager     *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  ClutterActor             *rect;
+  ClutterColor              clr = {0xff, 0, 0, 0xff};
+  HdHomeViewPrivate        *priv = HD_HOME_VIEW (object)->priv;
+  MBWindowManager          *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  HdHomeViewBackgroundMode  mode;
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
@@ -275,7 +290,15 @@ hd_home_view_constructed (GObject *object)
   clutter_actor_set_reactive (CLUTTER_ACTOR (object), TRUE);
 
   if (priv->background_image)
-    clutter_actor_lower (priv->background_image, priv->background);
+    clutter_actor_raise (priv->background_image, priv->background);
+
+  /*
+   * Force processing of background mode
+   */
+  mode = priv->background_mode;
+  priv->background_mode = ~priv->background_mode;
+
+  hd_home_view_change_background_mode (HD_HOME_VIEW (object), mode);
 }
 
 static void
@@ -348,9 +371,18 @@ hd_home_view_set_property (GObject       *object,
 	  clutter_container_add_actor (CLUTTER_CONTAINER (object),
 				       priv->background_image);
 	  if (priv->background)
-	    clutter_actor_lower (priv->background_image, priv->background);
+	    clutter_actor_raise (priv->background_image, priv->background);
 	}
+      break;
+    case PROP_BACKGROUND_MODE:
+      {
+	HdHomeViewBackgroundMode mode;
 
+	mode = g_value_get_enum (value);
+
+	if (mode != priv->background_mode)
+	  hd_home_view_change_background_mode (HD_HOME_VIEW (object), mode);
+      }
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -380,6 +412,9 @@ hd_home_view_get_property (GObject      *object,
     case PROP_BACKGROUND_IMAGE:
       g_value_set_string (value, priv->background_image_file);
       break;
+    case PROP_BACKGROUND_MODE:
+      g_value_set_enum (value, priv->background_mode);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -398,6 +433,13 @@ void
 hd_home_view_set_background_image (HdHomeView *view, const gchar * path)
 {
   g_object_set (G_OBJECT (view), "background-image", path, NULL);
+}
+
+void
+hd_home_view_set_background_mode (HdHomeView               *view,
+				  HdHomeViewBackgroundMode  mode)
+{
+  g_object_set (G_OBJECT (view), "background-mode", mode, NULL);
 }
 
 /*
@@ -712,4 +754,111 @@ hd_home_view_get_background (HdHomeView *view)
     return priv->background_image;
 
   return priv->background;
+}
+
+static void
+hd_home_view_change_background_mode (HdHomeView               *view,
+				     HdHomeViewBackgroundMode  mode)
+{
+  HdHomeViewPrivate *priv = view->priv;
+  ClutterActor      *image = priv->background_image;
+  gint               xwidth = priv->xwidth;
+  gint               xheight = priv->xheight;
+
+  priv->background_mode = mode;
+
+  if (!image)
+    return;
+
+  switch (mode)
+    {
+    default:
+    case HDHV_BACKGROUND_STRETCHED:
+      g_object_set (G_OBJECT (image),
+		    "repeat-x", FALSE, "repeat-y", FALSE, NULL);
+      clutter_actor_set_size (image, xwidth, xheight);
+      clutter_actor_set_position (image, 0, 0);
+      break;
+    case HDHV_BACKGROUND_CENTERED:
+      {
+	gint w, h;
+	g_object_set (G_OBJECT (image),
+		      "repeat-x", FALSE, "repeat-y", FALSE, NULL);
+	clutter_texture_get_base_size (CLUTTER_TEXTURE (image), &w, &h);
+	clutter_actor_set_size (image, w, h);
+	clutter_actor_set_position (image, (xwidth - w)/2, (xheight - h)/2);
+      }
+      break;
+
+    case HDHV_BACKGROUND_SCALED:
+      {
+	gdouble scale_x, scale_y, scale;
+	gint w, h;
+	g_object_set (G_OBJECT (image),
+		      "repeat-x", FALSE, "repeat-y", FALSE, NULL);
+	clutter_texture_get_base_size (CLUTTER_TEXTURE (image), &w, &h);
+
+	scale_x = (gdouble)xwidth / (gdouble)w;
+	scale_y = (gdouble)xheight / (gdouble)h;
+
+	if (scale_x < scale_y)
+	  scale = scale_x;
+	else
+	  scale = scale_y;
+
+	w = (gint)((gdouble)w * scale);
+	h = (gint)((gdouble)h * scale);
+
+	clutter_actor_set_size (image, w, h);
+	clutter_actor_set_position (image, (xwidth - w)/2, (xheight - h)/2);
+      }
+      break;
+
+    case HDHV_BACKGROUND_TILED:
+      g_object_set (G_OBJECT(image), "repeat-x", TRUE, "repeat-y", TRUE, NULL);
+      break;
+
+    case HDHV_BACKGROUND_CROPPED:
+      {
+	gdouble scale_x, scale_y, scale;
+	gint w, h;
+	g_object_set (G_OBJECT (image),
+		      "repeat-x", FALSE, "repeat-y", FALSE, NULL);
+	clutter_texture_get_base_size (CLUTTER_TEXTURE (image), &w, &h);
+
+	scale_x = (gdouble)xwidth / (gdouble)w;
+	scale_y = (gdouble)xheight / (gdouble)h;
+
+	if (scale_x > scale_y)
+	  scale = scale_x;
+	else
+	  scale = scale_y;
+
+	w = (gint)((gdouble)w * scale);
+	h = (gint)((gdouble)h * scale);
+
+	clutter_actor_set_size (image, w, h);
+	clutter_actor_set_position (image, (xwidth - w)/2, (xheight - h)/2);
+      }
+      break;
+    }
+}
+
+GType
+hd_home_view_background_mode_get_type (void)
+{
+  static GType etype = 0;
+  if (G_UNLIKELY (!etype))
+    {
+      static const GEnumValue values[] = {
+	{HDHV_BACKGROUND_STRETCHED, "HDHV_BACKGROUND_STRETCHED", "stretched"},
+	{HDHV_BACKGROUND_CENTERED, "HDHV_BACKGROUND_CENTERED", "centered"},
+	{HDHV_BACKGROUND_SCALED, "HDHV_BACKGROUND_SCALED", "scaled"},
+	{HDHV_BACKGROUND_TILED, "HDHV_BACKGROUND_TILED", "tiled"},
+	{HDHV_BACKGROUND_CROPPED, "HDHV_BACKGROUND_CROPPED", "cropped"},
+	{0, NULL, NULL}
+      };
+      etype = g_enum_register_static (g_intern_static_string ("HdHomeViewBackgroundMode"), values);
+    }
+  return etype;
 }

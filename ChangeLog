@@ -1,5 +1,15 @@
 2008-07-04 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/home/hd-layout-dialog.c:
+	(hd_layout_dialog_constructed):
+	Fixed bad cast.
+
+	* src/home/hd-home-view.c:
+	* src/home/hd-home-view.h:
+	Support for background modes.
+
+2008-07-04 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/home/hd-home-view.c:
 	Split background into solid color and image.
 

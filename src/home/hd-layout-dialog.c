@@ -319,8 +319,8 @@ hd_layout_dialog_constructed (GObject *object)
 		clutter_texture_get_cogl_texture (CLUTTER_TEXTURE(background));
 
 	      thumb_content = clutter_texture_new ();
-	      clutter_texture_set_cogl_texture (CLUTTER_TEXTURE (thumb),
-						handle);
+	      clutter_texture_set_cogl_texture(CLUTTER_TEXTURE (thumb_content),
+					       handle);
 	    }
 	  else
 	    {
