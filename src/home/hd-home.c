@@ -56,6 +56,9 @@
 #define APPLET_RESIZE_BUTTON   "applet-resize-button.png"
 
 #define PAN_THRESHOLD 20
+
+#undef WITH_SETTINGS_BUTTON
+
 enum
 {
   PROP_COMP_MGR = 1,
@@ -86,7 +89,9 @@ struct _HdHomePrivate
   ClutterActor          *edit_button;
 
   ClutterActor          *applet_close_button;
+#ifdef WITH_SETTINGS_BUTTON
   ClutterActor          *applet_settings_button;
+#endif
   ClutterActor          *applet_resize_button;
 
   ClutterActor          *layout_dialog;
@@ -164,7 +169,9 @@ static void hd_home_show_edit_button (HdHome *home);
 
 static void hd_home_hide_edit_button (HdHome *home);
 
+#ifdef WITH_SETTINGS_BUTTON
 static void hd_home_send_settings_message (HdHome *home, Window xwin);
+#endif
 
 static gboolean hd_home_applet_resize_button_release (ClutterActor *button,
 						   ClutterButtonEvent *event,
@@ -460,6 +467,7 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
   return TRUE;
 }
 
+#ifdef WITH_SETTINGS_BUTTON
 static gboolean
 hd_home_applet_settings_button_clicked (ClutterActor       *button,
 					ClutterButtonEvent *event,
@@ -491,6 +499,7 @@ hd_home_applet_settings_button_clicked (ClutterActor       *button,
 
   return TRUE;
 }
+#endif
 
 static gboolean
 hd_home_applet_resize_button_motion (ClutterActor       *button,
@@ -530,8 +539,9 @@ hd_home_applet_resize_button_motion (ClutterActor       *button,
 
   clutter_actor_move_by (priv->applet_resize_button, x, y);
   clutter_actor_move_by (priv->applet_close_button, x, 0);
+#ifdef WITH_SETTINGS_BUTTON
   clutter_actor_move_by (priv->applet_settings_button, 0, y);
-
+#endif
   return FALSE;
 }
 
@@ -822,7 +832,7 @@ hd_home_constructed (GObject *object)
   g_signal_connect (priv->applet_close_button, "button-release-event",
 		    G_CALLBACK (hd_home_applet_close_button_clicked),
 		    object);
-
+#ifdef WITH_SETTINGS_BUTTON
   priv->applet_settings_button =
     clutter_texture_new_from_file (APPLET_SETTINGS_BUTTON, &error);
 
@@ -834,6 +844,7 @@ hd_home_constructed (GObject *object)
   g_signal_connect (priv->applet_settings_button, "button-release-event",
 		    G_CALLBACK (hd_home_applet_settings_button_clicked),
 		    object);
+#endif
 
   priv->applet_resize_button =
     clutter_texture_new_from_file (APPLET_RESIZE_BUTTON, &error);
@@ -1504,11 +1515,13 @@ hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet)
 			      y_a - h_b/2);
   clutter_actor_show (priv->applet_close_button);
 
+#ifdef WITH_SETTINGS_BUTTON
   clutter_actor_get_size (priv->applet_settings_button, &w_b, &h_b);
   clutter_actor_set_position (priv->applet_settings_button,
 			      x_a - w_b/2,
 			      y_a + h_a - h_b/2);
   clutter_actor_show (priv->applet_settings_button);
+#endif
 
   clutter_actor_get_size (priv->applet_resize_button, &w_b, &h_b);
   clutter_actor_set_position (priv->applet_resize_button,
@@ -1525,7 +1538,9 @@ hd_home_hide_applet_buttons (HdHome *home)
   HdHomePrivate   *priv = home->priv;
 
   clutter_actor_hide (priv->applet_close_button);
+#ifdef WITH_SETTINGS_BUTTON
   clutter_actor_hide (priv->applet_settings_button);
+#endif
   clutter_actor_hide (priv->applet_resize_button);
 
   priv->active_applet = NULL;
@@ -1540,10 +1555,13 @@ hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by)
     return;
 
   clutter_actor_move_by (priv->applet_close_button, x_by, y_by);
+#ifdef WITH_SETTINGS_BUTTON
   clutter_actor_move_by (priv->applet_settings_button, x_by, y_by);
+#endif
   clutter_actor_move_by (priv->applet_resize_button, x_by, y_by);
 }
 
+#ifdef WITH_SETTINGS_BUTTON
 static void
 hd_home_send_settings_message (HdHome *home, Window xwin)
 {
@@ -1568,6 +1586,7 @@ hd_home_send_settings_message (HdHome *home, Window xwin)
 
   XSync (wm->xdpy, False);
 }
+#endif
 
 gint
 hd_home_get_current_view_id (HdHome *home)

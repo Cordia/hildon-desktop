@@ -1,6 +1,13 @@
 2008-07-15 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/hd-home.c:
+	Disabled applet sittings button (it has been removed from the
+	spec, but there is some uncertanity whether it will not come back,
+	hence the #ifdefs).
+
+2008-07-15 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/home/hd-home.c:
 	(hd_home_add_applet):
 	(hd_home_remove_applet):
 	Support for sticky applets.
