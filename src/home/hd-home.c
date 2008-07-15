@@ -1316,27 +1316,62 @@ hd_home_pan_and_move_applet (HdHome       *home,
   hd_home_view_move_applet (old_view, new_view, applet);
 }
 
+static void
+hd_home_applet_destroyed (ClutterActor *original, ClutterActor *clone)
+{
+  clutter_actor_destroy (clone);
+}
+
 void
 hd_home_add_applet (HdHome *home, ClutterActor *applet)
 {
   HdHomePrivate *priv = home->priv;
-  guint          view_id;
+  gint           view_id;
   GList         *l;
+  gpointer       client;
 
   view_id =
     GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet), "HD-view-id"));
 
+  client =
   l = priv->views;
 
   while (l)
     {
       HdHomeView * view = l->data;
-      guint        id = hd_home_view_get_view_id (view);
+      gint         id = hd_home_view_get_view_id (view);
 
-      if (id == view_id)
+      if (id == view_id || (view_id < 0 && id == 0))
 	{
 	  hd_home_view_add_applet (view, applet);
 	  break;
+	}
+      else if (view_id < 0)
+	{
+	  if (clutter_feature_available (CLUTTER_FEATURE_OFFSCREEN))
+	    {
+	      gpointer      client;
+	      ClutterActor *clone = clutter_texture_new_from_actor (applet);
+
+	      client = g_object_get_data (G_OBJECT (applet),
+					  "HD-MBWMCompMgrClutterClient");
+
+	      g_object_set_data (G_OBJECT (clone),
+				 "HD-MBWMCompMgrClutterClient", client);
+
+	      /*
+	       * Connect to the destroy signal, so we can destroy the clone
+	       * when the original is destroyed.
+	       */
+	      g_signal_connect (applet, "destroy",
+				G_CALLBACK (hd_home_applet_destroyed), clone);
+
+	      hd_home_view_add_applet (view, clone);
+	    }
+	  else
+	    {
+	      g_debug ("Sticky applets require FBO support in GL drivers.");
+	    }
 	}
 
       l = l->next;
@@ -1348,7 +1383,7 @@ void
 hd_home_remove_applet (HdHome *home, ClutterActor *applet)
 {
   HdHomePrivate *priv = home->priv;
-  guint          view_id;
+  gint           view_id;
   GList         *l;
 
   view_id =
@@ -1359,9 +1394,9 @@ hd_home_remove_applet (HdHome *home, ClutterActor *applet)
   while (l)
     {
       HdHomeView * view = l->data;
-      guint        id = hd_home_view_get_view_id (view);
+      gint         id = hd_home_view_get_view_id (view);
 
-      if (id == view_id)
+      if (id == view_id || view_id < 0)
 	{
 	  hd_home_view_remove_applet (view, applet);
 	  break;

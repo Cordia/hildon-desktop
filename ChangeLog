@@ -1,3 +1,10 @@
+2008-07-15 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/home/hd-home.c:
+	(hd_home_add_applet):
+	(hd_home_remove_applet):
+	Support for sticky applets.
+
 2008-07-04 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/hd-layout-dialog.c:
