@@ -106,6 +106,9 @@ static void hd_switcher_home_mode_changed (HdHome         *home,
 					   HdHomeMode      mode,
 					   HdSwitcher     *switcher);
 
+static void hd_switcher_group_background_clicked (HdSwitcher   *switcher,
+						  ClutterActor *actor);
+
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, CLUTTER_TYPE_GROUP);
 
 static void
@@ -153,6 +156,9 @@ hd_switcher_constructed (GObject *object)
   g_signal_connect_swapped (priv->switcher_group, "item-selected",
 			    G_CALLBACK (hd_switcher_item_selected),
 			    self);
+  g_signal_connect_swapped (priv->switcher_group, "background-clicked",
+                            G_CALLBACK (hd_switcher_group_background_clicked),
+                            self);
 
   priv->menu_group =
     g_object_new (HD_TYPE_EDIT_MENU,
@@ -597,3 +603,12 @@ hd_switcher_get_control_area_size (HdSwitcher *switcher,
     *control_height = button_height;
 }
 
+static void
+hd_switcher_group_background_clicked (HdSwitcher   *switcher,
+				      ClutterActor *actor)
+{
+  HdSwitcherPrivate *priv = switcher->priv;
+
+  hd_switcher_deactivate (HD_SWITCHER (switcher));
+  hd_comp_mgr_top_home (HD_COMP_MGR (priv->comp_mgr));
+}

@@ -47,6 +47,8 @@ struct _HdSwitcherGroupClass
 
   void                  (*item_selected) (HdSwitcherGroup *group,
                                           ClutterActor    *actor);
+  void                  (*background_clicked) (HdSwitcherGroup *group,
+					       ClutterButtonEvent *ev);
 };
 
 struct _HdSwitcherGroup

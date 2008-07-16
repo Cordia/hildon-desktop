@@ -197,7 +197,7 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 }
 
 static gboolean
-hd_home_view_background_release (ClutterActor *background,
+hd_home_view_background_release (ClutterActor *self,
 				 ClutterEvent *event,
 				 HdHomeView   *view)
 {
@@ -243,6 +243,10 @@ hd_home_view_captured_event (ClutterActor       *self,
 {
   HdHomeViewPrivate *priv = view->priv;
 
+  /*
+   * In thumbnail mode, we swallow all button presses and releases, and
+   * emit thumbnail-clicked on release.
+   */
   if (!priv->thumbnail_mode ||
       (event->type != CLUTTER_BUTTON_PRESS &&
        event->type != CLUTTER_BUTTON_RELEASE))
@@ -278,12 +282,7 @@ hd_home_view_constructed (GObject *object)
   rect = clutter_rectangle_new_with_color (&clr);
 
   clutter_actor_set_size (rect, priv->xwidth, priv->xheight);
-  clutter_actor_set_reactive (rect, TRUE);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
-
-  g_signal_connect (rect, "button-release-event",
-		    G_CALLBACK (hd_home_view_background_release),
-		    object);
 
   priv->background = rect;
 
@@ -299,6 +298,14 @@ hd_home_view_constructed (GObject *object)
   priv->background_mode = ~priv->background_mode;
 
   hd_home_view_change_background_mode (HD_HOME_VIEW (object), mode);
+
+  g_signal_connect (object, "captured-event",
+		    G_CALLBACK (hd_home_view_captured_event),
+		    object);
+
+  g_signal_connect (object, "button-release-event",
+		    G_CALLBACK (hd_home_view_background_release),
+		    object);
 }
 
 static void

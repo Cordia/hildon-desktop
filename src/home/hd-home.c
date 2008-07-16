@@ -47,6 +47,7 @@
 
 /* FIXME -- match spec */
 #define HDH_OPERATOR_PADDING 10
+#define HDH_PAN_THRESHOLD 20
 
 #define CLOSE_BUTTON "close-button.png"
 #define BACK_BUTTON  "back-button.png"
@@ -54,8 +55,6 @@
 #define EDIT_BUTTON  "edit-button.png"
 #define APPLET_SETTINGS_BUTTON "applet-settings-button.png"
 #define APPLET_RESIZE_BUTTON   "applet-resize-button.png"
-
-#define PAN_THRESHOLD 20
 
 #undef WITH_SETTINGS_BUTTON
 
@@ -329,7 +328,7 @@ hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
    * and disconnect the motion handler (next motion needs to be started
    * with another gesture).
    */
-  if (priv->cumulative_x > 0 && priv->cumulative_x > PAN_THRESHOLD)
+  if (priv->cumulative_x > 0 && priv->cumulative_x > HDH_PAN_THRESHOLD)
     {
       if (priv->desktop_motion_cb)
 	mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
@@ -342,7 +341,7 @@ hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
 
       hd_home_pan_full (home, FALSE);
     }
-  else if (priv->cumulative_x < 0 && priv->cumulative_x < -PAN_THRESHOLD)
+  else if (priv->cumulative_x < 0 && priv->cumulative_x < -HDH_PAN_THRESHOLD)
     {
       if (priv->desktop_motion_cb)
 	mb_wm_main_context_x_event_handler_remove (wm->main_ctx,

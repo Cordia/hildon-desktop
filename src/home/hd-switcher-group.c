@@ -28,6 +28,7 @@
 
 #include "hd-switcher-group.h"
 #include "hd-comp-mgr.h"
+#include "hd-switcher.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-wm-object.h>
@@ -45,6 +46,8 @@
 #define PADDING         20
 #define ZOOM_PADDING    50
 #define HDWG_SCALE_DURATION 300
+#define HDSW_PAN_THRESHOLD 20
+
 
 /*
  * HDSwitcherGroup is a special ClutterGroup subclass, that implements the
@@ -69,6 +72,7 @@
 enum
 {
   SIGNAL_ITEM_SELECTED,
+  SIGNAL_BACKGROUND_CLICKED,
   N_SIGNALS
 };
 
@@ -158,6 +162,7 @@ struct _HdSwitcherGroupPrivate
   ClutterEffectTemplate        *move_template;
   ClutterEffectTemplate        *zoom_template;
 
+  ClutterActor                 *main_group;
   ClutterActor                 *close_button;
   ClutterActor                 *hibernation_icon;
 
@@ -167,6 +172,13 @@ struct _HdSwitcherGroupPrivate
   guint                         n_items;
   guint                         i_item;
   gint                          min_x, min_y, max_x, max_y;
+
+
+  gint                          pan_start_y;
+  gint                          pan_last_y;
+
+  gboolean                      in_pan    : 1;
+  gboolean                      maybe_pan : 1;
 };
 
 static void hd_switcher_group_class_init (HdSwitcherGroupClass *klass);
@@ -193,6 +205,14 @@ static void hd_switcher_group_zoom_in (HdSwitcherGroup *group,
 
 static void hd_switcher_group_zoom_out (HdSwitcherGroup *group,
 					ClutterActor    *actor);
+
+static gboolean hd_switcher_group_captured_event (ClutterActor    *self,
+						  ClutterEvent    *event,
+						  HdSwitcherGroup *switcher);
+
+static gboolean hd_switcher_group_background_release (ClutterActor    *self,
+						      ClutterEvent    *event,
+						      HdSwitcherGroup *view);
 
 static gint
 find_by_actor (ChildData *data, ClutterActor *actor)
@@ -245,6 +265,19 @@ hd_switcher_group_class_init (HdSwitcherGroupClass *klass)
                     G_TYPE_NONE,
                     1,
                     CLUTTER_TYPE_ACTOR);
+
+  signals[SIGNAL_BACKGROUND_CLICKED] =
+      g_signal_new ("background-clicked",
+                    G_OBJECT_CLASS_TYPE (object_class),
+                    G_SIGNAL_RUN_FIRST,
+                    G_STRUCT_OFFSET (HdSwitcherGroupClass, background_clicked),
+                    NULL,
+                    NULL,
+                    g_cclosure_marshal_VOID__BOXED,
+                    G_TYPE_NONE,
+                    1,
+		    CLUTTER_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
+
 }
 
 static void
@@ -256,6 +289,9 @@ hd_switcher_group_init (HdSwitcherGroup *self)
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
 						   HD_TYPE_SWITCHER_GROUP,
 						   HdSwitcherGroupPrivate);
+
+  priv->main_group = clutter_group_new ();
+  clutter_container_add_actor (CLUTTER_CONTAINER (self), priv->main_group);
 
   priv->move_template =
     clutter_effect_template_new_for_duration (HDWG_SCALE_DURATION,
@@ -270,6 +306,15 @@ hd_switcher_group_init (HdSwitcherGroup *self)
 
   priv->hibernation_icon =
     clutter_texture_new_from_file (HIBERNATION_ICON, &error);
+
+  clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
+
+  g_signal_connect (self, "captured-event",
+		    G_CALLBACK (hd_switcher_group_captured_event),
+		    self);
+  g_signal_connect (self, "button-release-event",
+		    G_CALLBACK (hd_switcher_group_background_release),
+		    self);
 }
 
 static void
@@ -294,9 +339,9 @@ hd_switcher_group_finalize (GObject *object)
 
 static void
 hd_switcher_group_set_property (GObject      *object,
-			      guint         prop_id,
-			      const GValue *value,
-			      GParamSpec   *pspec)
+				guint         prop_id,
+				const GValue *value,
+				GParamSpec   *pspec)
 {
   HdSwitcherGroupPrivate *priv = HD_SWITCHER_GROUP (object)->priv;
 
@@ -313,9 +358,9 @@ hd_switcher_group_set_property (GObject      *object,
 
 static void
 hd_switcher_group_get_property (GObject      *object,
-			      guint         prop_id,
-			      GValue       *value,
-			      GParamSpec   *pspec)
+				guint         prop_id,
+				GValue       *value,
+				GParamSpec   *pspec)
 {
   HdSwitcherGroupPrivate *priv = HD_SWITCHER_GROUP (object)->priv;
 
@@ -347,7 +392,7 @@ hd_switcher_group_get_child_data (HdSwitcherGroup *group, ClutterActor *actor)
 
 static ChildData *
 hd_switcher_group_get_child_data_by_group (HdSwitcherGroup *group,
-					     ClutterActor    *actor)
+					   ClutterActor    *actor)
 {
   GList *l;
 
@@ -410,7 +455,8 @@ hd_switcher_group_add_actor (HdSwitcherGroup *group, ClutterActor *actor)
   clutter_container_add_actor (CLUTTER_CONTAINER (data->group),
 			       data->close_button);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (group), data->group);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->main_group),
+			       data->group);
 
   if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (group)))
     {
@@ -527,7 +573,7 @@ hd_switcher_group_show_all (ClutterActor *self)
 
   CLUTTER_ACTOR_CLASS (hd_switcher_group_parent_class)->show_all (self);
 
-  clutter_actor_set_scale (self, 1.0, 1.0);
+  clutter_actor_set_scale (priv->main_group, 1.0, 1.0);
 
   hd_switcher_group_zoom_out (HD_SWITCHER_GROUP (self), top_actor);
 }
@@ -707,17 +753,18 @@ hd_switcher_group_place (HdSwitcherGroup *group)
  * Zoom in is happening on the group as a whole.
  */
 static void
-hd_switcher_group_zoom_in_completed (HdSwitcherGroup *group,
-				     ClutterActor *actor)
+hd_switcher_group_zoom_in_completed (ClutterActor    *main_group,
+				     ClutterActor    *actor)
 {
-  g_signal_emit (group, signals[SIGNAL_ITEM_SELECTED], 0, actor);
+  g_signal_emit (clutter_actor_get_parent (main_group),
+		 signals[SIGNAL_ITEM_SELECTED], 0, actor);
 }
 
 /*
  * Zoom out is happening on the active actor.
  */
 static void
-hd_switcher_group_zoom_out_completed (ClutterActor *actor,
+hd_switcher_group_zoom_out_completed (ClutterActor    *actor,
 				      HdSwitcherGroup *group)
 {
   ChildData *data;
@@ -757,7 +804,7 @@ hd_switcher_group_zoom_in (HdSwitcherGroup *group, ClutterActor    *actor)
   scale_x = scale_y = 1.0;
 
   timeline = clutter_effect_scale (priv->zoom_template,
-				   CLUTTER_ACTOR (group),
+				   CLUTTER_ACTOR (priv->main_group),
 				   scale_x, scale_y,
 				   (ClutterEffectCompleteFunc)
 				   hd_switcher_group_zoom_in_completed,
@@ -767,7 +814,7 @@ hd_switcher_group_zoom_in (HdSwitcherGroup *group, ClutterActor    *actor)
 
 
   timeline = clutter_effect_move (priv->move_template,
-				  CLUTTER_ACTOR (group),
+				  CLUTTER_ACTOR (priv->main_group),
 				  x, y,
 				  NULL, NULL);
 
@@ -785,10 +832,13 @@ hd_switcher_group_zoom_out (HdSwitcherGroup *group,
   guint                   width, height;
 
   /*
-   * We are zooming out so that we can see all the children; the group is
+   * We are zooming out so that we can see all the children; the main_group is
    * initially completely off screen touching the top-left corner and is
    * being moved so that it's top-left corner ends up at the top-left
-   * corner of the screen.
+   * corner of the screen (NB: we use the main_group, so that we can intercept
+   * events that fall onto the HdSwitcherGroup background (we take advantage
+   * of the fact that the size of a group does not change if it's contents are
+   * scaled).
    *
    * TODO -- perhaps we should adjust the group position in the y axis,
    * rather than scale with a different factor.
@@ -808,8 +858,8 @@ hd_switcher_group_zoom_out (HdSwitcherGroup *group,
 
   y = (gint) ((double)ZOOM_PADDING * scale_y) / 2;
 
-  clutter_actor_set_scale (CLUTTER_ACTOR (group), scale_x, scale_y);
-  clutter_actor_set_position (CLUTTER_ACTOR (group), x, y);
+  clutter_actor_set_scale (CLUTTER_ACTOR (priv->main_group), scale_x, scale_y);
+  clutter_actor_set_position (CLUTTER_ACTOR (priv->main_group), x, y);
 
   if (actor)
     {
@@ -897,4 +947,76 @@ hd_switcher_group_hibernate_actor (HdSwitcherGroup *group,
 
   clutter_container_add_actor (CLUTTER_CONTAINER (data->group),
 			       data->hibernation_icon);
+}
+
+static gboolean
+hd_switcher_group_captured_event (ClutterActor       *self,
+				  ClutterEvent       *event,
+				  HdSwitcherGroup    *switcher)
+{
+  HdSwitcherGroupPrivate *priv = switcher->priv;
+
+  if (event->type == CLUTTER_BUTTON_PRESS)
+    {
+      guint height = clutter_actor_get_height (self);
+
+      if (height > ITEM_HEIGHT)
+	{
+	  priv->maybe_pan = TRUE;
+	  priv->pan_start_y = event->button.y;
+	  priv->pan_last_y  = event->button.y;
+	}
+    }
+
+  if (event->type == CLUTTER_BUTTON_RELEASE)
+    {
+      gboolean in_pan = priv->in_pan;
+
+      priv->in_pan    = FALSE;
+      priv->maybe_pan = FALSE;
+
+      if (in_pan)
+	{
+	  /*
+	   * We swallow the release, to prevent activation of the
+	   * item.
+	   */
+	  return TRUE;
+	}
+    }
+
+  if (event->type == CLUTTER_MOTION)
+    {
+      if (priv->maybe_pan)
+	{
+	  gint y = event->motion.y;
+
+	  if (abs (y - priv->pan_start_y) > HDSW_PAN_THRESHOLD)
+	    {
+	      priv->in_pan = TRUE;
+	    }
+
+	  if (priv->in_pan)
+	    {
+	      gint diff = y - priv->pan_last_y;
+
+	      clutter_actor_move_by (priv->main_group, 0, diff);
+	      priv->pan_last_y = y;
+
+	      return TRUE;
+	    }
+	}
+    }
+
+  return FALSE;
+}
+
+static gboolean
+hd_switcher_group_background_release (ClutterActor    *self,
+				      ClutterEvent    *event,
+				      HdSwitcherGroup *group)
+{
+  g_signal_emit (group, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
+
+  return TRUE;
 }
