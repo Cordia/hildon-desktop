@@ -1,3 +1,15 @@
+2008-07-17 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/mb/Makefile.am:
+	* src/mb/hd-comp-mgr.c:
+	* src/mb/hd-comp-mgr.h:
+	* src/mb/hd-desktop.c:
+	* src/mb/hd-home-applet.c:
+	* src/mb/hd-home-applet.h:
+	* src/mb/hd-applet-layout-manager.c:
+	* src/mb/hd-applet-layout-manager.h:
+	Implemented automatic applet layout per specification.
+
 2008-07-16 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/hd-home-view.c:

@@ -21,37 +21,22 @@
  *
  */
 
-#ifndef _HAVE_HD_HOME_APPLET_H
-#define _HAVE_HD_HOME_APPLET_H
+#ifndef _HD_APPLET_LAYOUT_MANAGER_H_
+#define _HD_APPLET_LAYOUT_MANAGER_H_
 
 #include <matchbox/core/mb-wm.h>
 
-typedef struct HdHomeApplet      HdHomeApplet;
-typedef struct HdHomeAppletClass HdHomeAppletClass;
+typedef struct _HdAppletLayoutManager HdAppletLayoutManager;
 
-#define HD_HOME_APPLET(c) ((HdHomeApplet*)(c))
-#define HD_HOME_APPLET_CLASS(c) ((HdHomeAppletClass*)(c))
-#define HD_TYPE_HOME_APPLET (hd_home_applet_class_type ())
-#define HD_IS_HOME_APPLET(c) (MB_WM_OBJECT_TYPE(c)==HD_TYPE_HOME_APPLET)
+HdAppletLayoutManager * hd_applet_layout_manager_new (void);
 
-struct HdHomeApplet
-{
-  MBWMClientBase    parent;
+gint hd_applet_layout_manager_request_geometry (HdAppletLayoutManager *mgr,
+						MBGeometry            *geom);
 
-  MBWMDecorButton  *button_close;
-  unsigned int      view_id;
-  unsigned int      applet_layer;
-};
+void hd_applet_layout_manager_reclaim_geometry (HdAppletLayoutManager *mgr,
+					        gint                  layer_id,
+						MBGeometry            *geom);
 
-struct HdHomeAppletClass
-{
-  MBWMClientBaseClass parent;
-};
-
-MBWindowManagerClient*
-hd_home_applet_new (MBWindowManager *wm, MBWMClientWindow *win);
-
-int
-hd_home_applet_class_type (void);
+gint hd_applet_layout_manager_get_layer_count (HdAppletLayoutManager *mgr);
 
 #endif

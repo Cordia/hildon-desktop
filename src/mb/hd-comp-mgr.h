@@ -112,6 +112,12 @@ gint hd_comp_mgr_get_current_home_view_id (HdCompMgr *hmgr);
 
 MBWindowManagerClient * hd_comp_mgr_get_desktop_client (HdCompMgr *hmgr);
 
+gint hd_comp_mgr_request_home_applet_geometry (HdCompMgr  *hmgr,
+					       gint        view_id,
+					       MBGeometry *geom);
+
+gint hd_comp_mgr_get_home_applet_layer_count (HdCompMgr *hmgr, gint view_id);
+
 G_END_DECLS
 
 #endif /* __HD_COMP_MGR_H__ */

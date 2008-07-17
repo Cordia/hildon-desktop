@@ -31,6 +31,7 @@
 #include "hd-wm.h"
 #include "hd-home-applet.h"
 #include "hd-home.h"
+#include "hd-applet-layout-manager.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-window-manager.h>
@@ -74,6 +75,8 @@ struct HdCompMgrPrivate
   Atom                   atoms[_HD_ATOM_LAST];
 
   DBusConnection        *dbus_connection;
+
+  HdAppletLayoutManager *applet_manager[4];
 
   gboolean               showing_home    : 1;
   gboolean               stack_sync      : 1;
@@ -336,6 +339,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   HdCompMgr            *hmgr = HD_COMP_MGR (obj);
   HdCompMgrPrivate     *priv;
   ClutterActor         *stage, *switcher, *home;
+  gint                  i;
 
   priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
 
@@ -386,6 +390,9 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 			   g_int_equal,
 			   NULL,
 			   (GDestroyNotify)mb_wm_object_unref);
+
+  for (i = 0; i < 4; ++i)
+    priv->applet_manager[i] = hd_applet_layout_manager_new ();
 
   return 1;
 }
@@ -548,7 +555,21 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeHomeApplet)
     {
-      ClutterActor * applet;
+      ClutterActor  *applet;
+      MBGeometry     geom;
+      HdHomeApplet  *happlet = HD_HOME_APPLET (c);
+      gint           view_id = happlet->view_id;
+      gint           layer   = happlet->applet_layer;
+
+      if (view_id < 0)
+	{
+	  /* FIXME -- handle sticky applets */
+	  view_id = 0;
+	}
+
+      mb_wm_client_get_coverage (c, &geom);
+      hd_applet_layout_manager_reclaim_geometry (priv->applet_manager[view_id],
+						 layer, &geom);
 
       applet = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
@@ -1122,4 +1143,57 @@ hd_comp_mgr_get_desktop_client (HdCompMgr *hmgr)
   HdCompMgrPrivate *priv = hmgr->priv;
 
   return priv->desktop;
+}
+
+gint
+hd_comp_mgr_request_home_applet_geometry (HdCompMgr  *hmgr,
+					  gint        view_id,
+					  MBGeometry *geom)
+{
+  HdCompMgrPrivate *priv = hmgr->priv;
+  gint              layer;
+
+  if (view_id < 0)
+    {
+      /*
+       * FIXME -- what is to happen to sticky applets ?
+       */
+      view_id = 0;
+    }
+
+  /*
+   * We support 4 views only
+   */
+  g_assert (view_id < 4);
+
+  layer =
+    hd_applet_layout_manager_request_geometry (priv->applet_manager[view_id],
+					       geom);
+
+  return layer;
+}
+
+gint
+hd_comp_mgr_get_home_applet_layer_count (HdCompMgr *hmgr, gint view_id)
+{
+  HdCompMgrPrivate *priv = hmgr->priv;
+  gint              count;
+
+  if (view_id < 0)
+    {
+      /*
+       * FIXME -- what is to happen to sticky applets ?
+       */
+      view_id = 0;
+    }
+
+  /*
+   * We support 4 views only
+   */
+  g_assert (view_id < 4);
+
+  count =
+    hd_applet_layout_manager_get_layer_count (priv->applet_manager[view_id]);
+
+  return count;
 }

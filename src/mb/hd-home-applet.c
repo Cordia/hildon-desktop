@@ -162,6 +162,15 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
   geom.width  = client->window->geometry.width + w + e;
   geom.height = client->window->geometry.height + n + s;
 
+  /*
+   * Auto-allocate geometry for the applet.
+   *
+   * FIXME -- need some mechanism for storing geometry between sessions, and
+   * only auto-allocate the new ones.
+   */
+  applet->applet_layer =
+    hd_comp_mgr_request_home_applet_geometry (hmgr, applet->view_id, &geom);
+
   hd_home_applet_request_geometry (client, &geom, MBWMClientReqGeomForced);
 
   return 1;
