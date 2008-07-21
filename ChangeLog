@@ -1,3 +1,81 @@
+
+2008-07-21 Robert Bragg  <bob@o-hand.com>
+
+	* src/main.c
+	* src/home/hd-gtk-style.c:
+	Adds code for using GtkStyle info from a number of singleton gtk
+	widgets.
+
+	* src/home/hd-gtk-utils.c
+	* src/home/hd-gtk-utils.h:
+	Created some utility code for loading icons into a ClutterTexture and
+	having a fallback (currently just a blank ClutterRectangle) when the
+	icon can't be loaded.
+
+	* src/home/hd-layout-dialog.c
+	* src/home/hd-switcher-group.c
+	* src/home/hd-home.c
+	* src/home/hd-switcher.c
+	* src/home/hd-gtk-style.h
+	* src/home/Makefile.am
+	* src/mb/hd-comp-mgr.c:
+	Updated various harded coded colors, fonts or clutter texture icon
+	initialisations to use the above code so the values can come from
+	gtk style themes and gtk icon themes.
+
+	* configure.ac
+	* Makefile.am
+	* data
+	* data/themes
+	* data/themes/FremantleDev
+	* data/themes/FremantleDev/gtk-2.0
+	* data/themes/FremantleDev/gtk-2.0/gtkrc
+	* data/themes/FremantleDev/mbwm2
+	* data/themes/FremantleDev/mbwm2/theme.xml
+	* data/themes/FremantleDev/mbwm2/template.png:
+	Adds a simple initial "hildon" mbwm2 theme and simple gtk theme
+	for testing with.
+
+	NB:
+	- To pick up the development gtk theme you currently need to export
+	GTK2_RC_FILES=/path/to/src/data/themes/FremantleDev/gtk-2.0/gtkrc
+	- To pick up the development mbwm2 theme you need to pass
+	-theme /path/to/src/data/themes/FremantleDev/mbwm2/theme.xml
+	on the hildon-desktop command line.
+
+	* data/Makefile.am
+	* data/icons
+	* data/icons/48x48
+	* data/icons/48x48/applet-settings-button.png
+	* data/icons/48x48/applet-resize-button.png
+	* data/icons/48x48/qgn_tswitcher_right.png
+	* data/icons/48x48/bg-image-switcher.png
+	* data/icons/48x48/qgn_tswitcher_back.png
+	* data/icons/48x48/qgn_home_close.png
+	* data/icons/48x48/qgn_tswitcher_application.png
+	* data/icons/48x48/qgn_tswitcher_close.png
+	* data/icons/48x48/Makefile.am
+	* data/icons/48x48/bg-image-launcher.png
+	* data/icons/48x48/hibernation-icon.png
+	* data/icons/48x48/back-button.png
+	* data/icons/48x48/qgn_tswitcher_left.png
+	* data/icons/Makefile.am:
+	Re-organises the .png icons to be installed under $prefix/share/icons
+	to be picked up by the gtk_icon theme/cache code.
+
+	Renames some of the .png files to their logical names.
+	
+	NB:
+	You currently need to export
+	XDG_DATA_DIRS="/path/to/prefix/share:/usr/local/share/:/usr/share/")
+	for the icons to be found.
+
+	* data/menu-button.png
+	* data/edit-button.png:
+	Installs other misc images under $prefix/share/hildon-desktop for now.
+	It's no longer neccisary to run hildon-desktop in the same dir as
+	the .png files
+
 2008-07-17 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/mb/Makefile.am:

@@ -31,6 +31,7 @@
 #include "hd-wm.h"
 #include "hd-home-applet.h"
 #include "hd-home.h"
+#include "hd-gtk-style.h"
 #include "hd-applet-layout-manager.h"
 
 #include <matchbox/core/mb-wm.h>
@@ -346,6 +347,8 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   hd_atoms_init (wm->xdpy, priv->atoms);
 
   priv->dbus_connection = hd_dbus_init (hmgr);
+
+  hd_gtk_style_init ();
 
   stage = clutter_stage_get_default ();
 

@@ -32,6 +32,7 @@
 #include "hd-util.h"
 #include "hd-edit-menu.h"
 #include "hd-home.h"
+#include "hd-gtk-utils.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -44,8 +45,8 @@
 /*
  * FIXME -- these should be loaded from theme.
  */
-#define BUTTON_IMAGE_SWITCHER "bg-image-switcher.png"
-#define BUTTON_IMAGE_LAUNCHER "bg-image-launcher.png"
+#define BUTTON_IMAGE_SWITCHER "bg-image-switcher"
+#define BUTTON_IMAGE_LAUNCHER "bg-image-launcher"
 #define BUTTON_IMAGE_MENU     "menu-button.png"
 
 enum
@@ -143,6 +144,9 @@ hd_switcher_constructed (GObject *object)
   ClutterActor      *self = CLUTTER_ACTOR (object);
   HdSwitcherPrivate *priv = HD_SWITCHER (object)->priv;
   guint              button_width, button_height;
+  GtkIconTheme	    *icon_theme;
+
+  icon_theme = gtk_icon_theme_get_default ();
 
   priv->switcher_group = g_object_new (HD_TYPE_SWITCHER_GROUP,
 				       "comp-mgr", priv->comp_mgr,
@@ -172,12 +176,7 @@ hd_switcher_constructed (GObject *object)
   clutter_actor_hide (priv->menu_group);
 
   priv->button_switcher =
-    clutter_texture_new_from_file (BUTTON_IMAGE_SWITCHER, &error);
-
-  if (error)
-    {
-      g_error (error->message);
-    }
+    hd_gtk_icon_theme_load_icon (icon_theme, BUTTON_IMAGE_SWITCHER, 48, 0);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (self),
 			       priv->button_switcher);
@@ -192,12 +191,7 @@ hd_switcher_constructed (GObject *object)
                             self);
 
   priv->button_launcher =
-    clutter_texture_new_from_file (BUTTON_IMAGE_LAUNCHER, &error);
-
-  if (error)
-    {
-      g_error (error->message);
-    }
+    hd_gtk_icon_theme_load_icon (icon_theme, BUTTON_IMAGE_LAUNCHER, 48, 0);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (self),
 			       priv->button_launcher);
@@ -219,11 +213,14 @@ hd_switcher_constructed (GObject *object)
 #endif
 
   priv->button_menu =
-    clutter_texture_new_from_file (BUTTON_IMAGE_MENU, &error);
-
+    clutter_texture_new_from_file (
+	g_build_filename (HD_DATADIR, BUTTON_IMAGE_MENU, NULL),
+	&error);
   if (error)
     {
       g_error (error->message);
+      priv->button_menu = clutter_rectangle_new ();
+      clutter_actor_set_size (priv->button_menu, 200, 60);
     }
 
   clutter_container_add_actor (CLUTTER_CONTAINER (self),

@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<theme name="Default" author="Robert Bragg, bob@o-hand.com"
+       desc="" version="1.0" engine-version="2" engine-type="hildon">
+<img src="template.png" />
+<client type="app">
+  <decor type="north" color-fg="#ffffff"
+        template-x="0" template-y="0"
+        template-width="320" template-height="56"
+        template-pad-offset="140" template-pad-width="10"
+        font-family="Sans" font-size="24">
+  <button type="close"
+          template-x="302" template-y="2"
+          width="112" height="56"/>
+ </decor>
+</client>
+
+<client type="dialog">
+ <decor type="north"
+        template-x="83" template-y="73"
+        template-width="146" template-height="3"/>
+ <decor type="south"
+        template-x="83" template-y="190"
+        template-width="146" template-height="3"/>
+ <decor type="west"
+        template-x="83" template-y="76"
+        template-width="3" template-height="114"/>
+ <decor type="east"
+        template-x="263" template-y="76"
+        template-width="3" template-height="114"/>
+</client>
+
+</theme>

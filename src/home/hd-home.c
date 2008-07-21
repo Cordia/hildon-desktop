@@ -31,6 +31,8 @@
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
 #include "hd-layout-dialog.h"
+#include "hd-gtk-style.h"
+#include "hd-gtk-utils.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -49,12 +51,13 @@
 #define HDH_OPERATOR_PADDING 10
 #define HDH_PAN_THRESHOLD 20
 
-#define CLOSE_BUTTON "close-button.png"
-#define BACK_BUTTON  "back-button.png"
-#define NEW_BUTTON   "new-view-button.png"
+#define CLOSE_BUTTON "qgn_home_close"
+#define BACK_BUTTON  "back-button"
+#define NEW_BUTTON   "new-view-button"
+#define APPLET_SETTINGS_BUTTON "applet-settings-button"
+#define APPLET_RESIZE_BUTTON   "applet-resize-button"
+
 #define EDIT_BUTTON  "edit-button.png"
-#define APPLET_SETTINGS_BUTTON "applet-settings-button.png"
-#define APPLET_RESIZE_BUTTON   "applet-resize-button.png"
 
 #undef WITH_SETTINGS_BUTTON
 
@@ -640,6 +643,10 @@ hd_home_constructed (GObject *object)
   ClutterColor     clr = {0,0,0,0xff};
   XSetWindowAttributes attr;
   ClutterColor     op_color = {0xff, 0xff, 0xff, 0xff};
+  char		  *font_string;
+  GtkIconTheme	  *icon_theme;
+
+  icon_theme = gtk_icon_theme_get_default ();
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
@@ -725,7 +732,7 @@ hd_home_constructed (GObject *object)
   clutter_actor_set_size (priv->background, priv->xwidth * i, priv->xheight);
 
   priv->back_button =
-    clutter_texture_new_from_file (BACK_BUTTON, &error);
+    hd_gtk_icon_theme_load_icon (icon_theme, BACK_BUTTON, 48, 0);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
 			       priv->back_button);
@@ -741,7 +748,9 @@ hd_home_constructed (GObject *object)
 		    object);
 
   priv->edit_button =
-    clutter_texture_new_from_file (EDIT_BUTTON, &error);
+    clutter_texture_new_from_file (
+	g_build_filename (HD_DATADIR, EDIT_BUTTON, NULL),
+	&error);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
 			       priv->edit_button);
@@ -752,16 +761,18 @@ hd_home_constructed (GObject *object)
 		    G_CALLBACK (hd_home_edit_button_clicked),
 		    object);
 
-  /*
-   * FIXME -- operator color and font (?) will need to come from theme.
-   */
   priv->operator = clutter_group_new ();
   clutter_actor_show (priv->operator);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
 			       priv->operator);
 
-  priv->operator_label = clutter_label_new_full ("Sans 12", "Operator",
+  hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
+			       GTK_STATE_NORMAL,
+			       &op_color);
+  font_string = hd_gtk_style_get_font_string (HD_GTK_BUTTON_SINGLETON);
+  priv->operator_label = clutter_label_new_full (font_string, "Operator",
 						 &op_color);
+  g_free (font_string);
 
   clutter_actor_show (priv->operator_label);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->operator),
@@ -821,7 +832,7 @@ hd_home_constructed (GObject *object)
 			       priv->grey_filter);
 
   priv->applet_close_button =
-    clutter_texture_new_from_file (CLOSE_BUTTON, &error);
+    hd_gtk_icon_theme_load_icon (icon_theme, CLOSE_BUTTON, 48, 0);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->applet_close_button);
@@ -833,7 +844,7 @@ hd_home_constructed (GObject *object)
 		    object);
 #ifdef WITH_SETTINGS_BUTTON
   priv->applet_settings_button =
-    clutter_texture_new_from_file (APPLET_SETTINGS_BUTTON, &error);
+    hd_gtk_icon_theme_load_icon (icon_theme, APPLET_SETTINGS_BUTTON, 48, 0);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->applet_settings_button);
@@ -846,7 +857,7 @@ hd_home_constructed (GObject *object)
 #endif
 
   priv->applet_resize_button =
-    clutter_texture_new_from_file (APPLET_RESIZE_BUTTON, &error);
+    hd_gtk_icon_theme_load_icon (icon_theme, APPLET_RESIZE_BUTTON, 48, 0);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->applet_resize_button);

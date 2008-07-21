@@ -29,6 +29,7 @@
 #include "hd-comp-mgr.h"
 #include "hd-home.h"
 #include "hd-util.h"
+#include "hd-gtk-style.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -200,34 +201,42 @@ hd_layout_dialog_constructed (GObject *object)
 {
   HdLayoutDialogPrivate *priv = HD_LAYOUT_DIALOG (object)->priv;
   ClutterActor          *rect, *label;
-  /* FIXME -- these should come from theme */
-  ClutterColor           clr_b0 = {0, 0, 0, 0xff};
-  ClutterColor           clr_b1 = {0x44, 0x44, 0x44, 0xff};
-  ClutterColor           clr_b2 = {0x77, 0x77, 0x77, 0xff};
-  ClutterColor           clr_f  = {0xfa, 0xfa, 0xfa, 0xff};
+  ClutterColor           clr_dark;
+  ClutterColor           clr_mid;
+  ClutterColor           clr_light;
+  ClutterColor           clr_font;
   MBWindowManager       *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   guint                  xwidth, xheight, w, h;
   GList                 *l;
   gboolean               have_fbos;
   gint                   i;
   guint                  label2_height;
+  gchar *		 font_string;
 
   xwidth = wm->xdpy_width;
   xheight = wm->xdpy_height;
 
-  rect = clutter_rectangle_new_with_color (&clr_b0);
+  hd_gtk_style_get_dark_color (HD_GTK_BUTTON_SINGLETON,
+			       GTK_STATE_NORMAL, &clr_dark);
+  hd_gtk_style_get_mid_color (HD_GTK_BUTTON_SINGLETON,
+			      GTK_STATE_NORMAL, &clr_mid);
+  hd_gtk_style_get_light_color (HD_GTK_BUTTON_SINGLETON,
+				GTK_STATE_NORMAL, &clr_light);
+  font_string = hd_gtk_style_get_font_string (HD_GTK_BUTTON_SINGLETON);
+
+  rect = clutter_rectangle_new_with_color (&clr_dark);
   clutter_actor_set_size (rect, xwidth, HDLD_HEIGHT);
   clutter_actor_set_position (rect, 0, xheight - HDLD_HEIGHT);
   clutter_actor_set_reactive (rect, TRUE);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
-  rect = clutter_rectangle_new_with_color (&clr_b1);
+  rect = clutter_rectangle_new_with_color (&clr_mid);
   clutter_actor_set_size (rect, xwidth, HDLD_HEIGHT - HDLD_TITLEBAR);
   clutter_actor_set_position (rect, 0,
 			      xheight - (HDLD_HEIGHT - HDLD_TITLEBAR));
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
-  rect = clutter_rectangle_new_with_color (&clr_b2);
+  rect = clutter_rectangle_new_with_color (&clr_light);
   clutter_actor_set_size (rect, HDLD_ACTION_WIDTH,
 			  HDLD_HEIGHT - HDLD_TITLEBAR);
   clutter_actor_set_position (rect,
@@ -236,16 +245,19 @@ hd_layout_dialog_constructed (GObject *object)
 
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
-  /* FIXME -- color and font (?) from theme, gettextize labels */
-  label = clutter_label_new_full ("Sans 12", "Manage views", &clr_f);
+  /* FIXME -- gettextize labels */
+  hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
+			       GTK_STATE_NORMAL,
+			       &clr_font);
+  label = clutter_label_new_full (font_string, "Manage views", &clr_font);
   clutter_actor_show (label);
   clutter_actor_get_size (label, &w, &h);
   clutter_actor_set_position (label, (xwidth - w) / 2,
 			      xheight - HDLD_HEIGHT + (HDLD_TITLEBAR - h) / 2);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), label);
 
-  label = clutter_label_new_full ("Sans 12",
-				  "Activate desired Home views:", &clr_f);
+  label = clutter_label_new_full (font_string,
+				  "Activate desired Home views:", &clr_font);
   clutter_actor_show (label);
   clutter_actor_get_size (label, &w, &h);
   label2_height = h;
@@ -253,7 +265,7 @@ hd_layout_dialog_constructed (GObject *object)
 			      xheight-(HDLD_HEIGHT-HDLD_TITLEBAR)+HDLD_PADDING);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), label);
 
-  rect = clutter_rectangle_new_with_color (&clr_b1);
+  rect = clutter_rectangle_new_with_color (&clr_mid);
   clutter_actor_set_size (rect, HDLD_OK_WIDTH, HDLD_OK_HEIGHT);
   clutter_actor_set_position (rect,
 			      xwidth - HDLD_ACTION_WIDTH + (HDLD_ACTION_WIDTH - HDLD_OK_WIDTH)/2,
@@ -267,14 +279,16 @@ hd_layout_dialog_constructed (GObject *object)
 		    G_CALLBACK (hd_layout_dialog_ok_clicked),
 		    object);
 
-  label = clutter_label_new_full ("Sans 12",
-				  "OK", &clr_f);
+  label = clutter_label_new_full (font_string,
+				  "OK", &clr_font);
   clutter_actor_show (label);
   clutter_actor_get_size (label, &w, &h);
   clutter_actor_set_position (label,
 			      xwidth - HDLD_ACTION_WIDTH + (HDLD_ACTION_WIDTH - HDLD_OK_WIDTH)/2 + (HDLD_OK_WIDTH - w)/2,
 			      xheight - (HDLD_HEIGHT - HDLD_TITLEBAR) + (HDLD_HEIGHT - HDLD_TITLEBAR - HDLD_OK_HEIGHT)/2 + (HDLD_OK_HEIGHT - h)/2);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), label);
+
+  g_free (font_string);
 
   /*
    * Now construct the thumbnails.

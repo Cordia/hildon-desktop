@@ -27,6 +27,8 @@
 
 #include <matchbox/core/mb-wm-object.h>
 
+#include <gtk/gtk.h>
+#include <gdk/gdkx.h>
 #include <clutter/clutter-main.h>
 #include <clutter/clutter-stage.h>
 #include <clutter/x11/clutter-x11.h>
@@ -120,12 +122,10 @@ main (int argc, char **argv)
   mb_wm_theme_set_custom_client_type_func (theme_client_type_func, NULL);
   mb_wm_theme_set_custom_button_type_func (theme_button_type_func, NULL);
 
-#if USE_GTK
   printf ("initializing gtk\n");
 
   gtk_init (&argc, &argv);
   dpy = GDK_DISPLAY();
-#endif
 
 #if ENABLE_CLUTTER_COMPOSITE_MANAGER
   /*
@@ -177,6 +177,12 @@ main (int argc, char **argv)
 				    key_binding_func,
 				    NULL,
 				    (void*)KEY_ACTION_PAGE_PREV);
+
+  /* We need to dispose the gdk display so that the GSource for the
+   * X11 connection is removed which otherwise nicks all of the
+   * events we want sent to clutter.
+   */
+  g_object_run_dispose (G_OBJECT (gdk_x11_lookup_xdisplay (GDK_DISPLAY ())));
 
   mb_wm_main_loop(wm);
 

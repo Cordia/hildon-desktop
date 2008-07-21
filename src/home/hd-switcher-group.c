@@ -29,6 +29,7 @@
 #include "hd-switcher-group.h"
 #include "hd-comp-mgr.h"
 #include "hd-switcher.h"
+#include "hd-gtk-utils.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-wm-object.h>
@@ -37,8 +38,8 @@
 
 #include <clutter/clutter.h>
 
-#define CLOSE_BUTTON "close-button.png"
-#define HIBERNATION_ICON "hibernating-icon.png"
+#define CLOSE_BUTTON "qgn_tswitcher_close"
+#define HIBERNATION_ICON "hibernation-icon"
 
 /* FIXME */
 #define ITEM_WIDTH      800
@@ -284,7 +285,9 @@ static void
 hd_switcher_group_init (HdSwitcherGroup *self)
 {
   HdSwitcherGroupPrivate *priv;
-  GError                 *error = NULL;
+  GtkIconTheme		 *icon_theme;
+
+  icon_theme = gtk_icon_theme_get_default ();
 
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
 						   HD_TYPE_SWITCHER_GROUP,
@@ -302,10 +305,10 @@ hd_switcher_group_init (HdSwitcherGroup *self)
 					      CLUTTER_ALPHA_RAMP_INC);
 
   priv->close_button =
-    clutter_texture_new_from_file (CLOSE_BUTTON, &error);
+    hd_gtk_icon_theme_load_icon (icon_theme, CLOSE_BUTTON, 48, 0);
 
   priv->hibernation_icon =
-    clutter_texture_new_from_file (HIBERNATION_ICON, &error);
+    hd_gtk_icon_theme_load_icon (icon_theme, HIBERNATION_ICON, 48, 0);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
 
