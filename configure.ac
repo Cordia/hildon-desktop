@@ -29,7 +29,7 @@ AC_SUBST(CFLAGS)
 # Dependencies checks
 #+++++++++++++++++++++
 
-PKG_CHECK_MODULES(HD, clutter-0.7 \
+PKG_CHECK_MODULES(HD, clutter-0.8 \
                       glib-2.0 >= 2.12 \
 		      dbus-1 \
 		      x11 \

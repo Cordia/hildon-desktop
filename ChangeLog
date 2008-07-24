@@ -1,3 +1,8 @@
+2008-07-24 Robert Bragg  <bob@o-hand.com>
+	
+	* configure.ac:
+
+	make sure we link against clutter-0.8 not clutter-0.7
 
 2008-07-21 Robert Bragg  <bob@o-hand.com>
 
