@@ -33,7 +33,6 @@ source_h = \
 	$(top_srcdir)/src/launcher/tidy/tidy-style.h 		\
 	$(top_srcdir)/src/launcher/tidy/tidy-types.h 		\
 	$(top_srcdir)/src/launcher/tidy/tidy-util.h 		\
-	$(top_srcdir)/src/launcher/tidy/tidy-viewport.h 	\
 	$(NULL)
 
 source_h_private = \
@@ -50,7 +49,6 @@ source_c = \
 	tidy-stylable.c \
 	tidy-style.c \
 	tidy-util.c \
-	tidy-viewport.c \
 	$(NULL)
 
 tidy-marshal.h: stamp-tidy-marshal.h
