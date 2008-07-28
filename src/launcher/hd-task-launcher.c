@@ -271,6 +271,98 @@ tidy_scrollable_iface_init (TidyScrollableInterface *iface)
 }
 
 static void
+hd_task_launcher_get_preferred_height (ClutterActor *actor,
+                                       ClutterUnit   for_width,
+                                       ClutterUnit  *min_height_p,
+                                       ClutterUnit  *natural_height_p)
+{
+  HdTaskLauncherPrivate *priv = HD_TASK_LAUNCHER (actor)->priv;
+  ClutterUnit max_item_width, max_item_height;
+  ClutterUnit max_row_width, max_row_height;
+  ClutterUnit cur_width, cur_height;
+  gint n_visible_launchers;
+  GList *l;
+
+  cur_width  = priv->padding.left;
+  cur_height = priv->padding.top;
+
+  /* the amount of available space on a row depends on the
+   * number of visible launchers; in this first pass we check
+   * how many visible launchers there are and what is the
+   * maximum amount of width a launcher can get.
+   */
+  n_visible_launchers = 0;
+  max_item_width = max_item_height = 0;
+  for (l = priv->launchers; l != NULL; l = l->next)
+    {
+      ClutterActor *child = l->data;
+
+      if (CLUTTER_ACTOR_IS_VISIBLE (child))
+        {
+          ClutterUnit natural_width, natural_height;
+
+          n_visible_launchers += 1;
+
+          natural_width = natural_height = 0;
+          clutter_actor_get_preferred_size (child,
+                                            NULL, NULL,
+                                            &natural_width,
+                                            &natural_height);
+
+          max_item_width  = MAX (max_item_width, natural_width);
+          max_item_height = MAX (max_item_height, natural_height);
+        }
+    }
+
+  max_row_width = for_width
+                - priv->padding.left
+                - priv->padding.right;
+
+  max_row_height = 0;
+
+  /* in this second pass we allocate the launchers */
+  for (l = priv->launchers; l != NULL; l = l->next)
+    {
+      ClutterActor *child = l->data;
+      ClutterUnit natural_height;
+
+      if (!CLUTTER_ACTOR_IS_VISIBLE (child))
+        continue;
+
+      /* we need to query the new height for the items smaller than
+       * the maximum width, in order to get an updated value
+       */
+      natural_height = 0;
+      clutter_actor_get_preferred_height (child, max_item_width,
+                                          NULL,
+                                          &natural_height);
+
+      /* if it fits in the current row, keep it there; otherwise,
+       * reflow into another row
+       */
+      if ((cur_width + max_item_width + priv->h_spacing) > max_row_width)
+        {
+          cur_height     += max_row_height + priv->v_spacing;
+          cur_width       = priv->padding.left;
+          max_row_height  = 0;
+        }
+      else
+        {
+          if (l != priv->launchers)
+            cur_width += max_item_width + priv->h_spacing;
+        }
+
+      max_row_height = MAX (max_row_height, natural_height);
+    }
+
+  if (min_height_p)
+    *min_height_p = 0;
+
+  if (natural_height_p)
+    *natural_height_p = cur_height + max_row_height;
+}
+
+static void
 hd_task_launcher_allocate (ClutterActor          *actor,
                            const ClutterActorBox *box,
                            gboolean               origin_changed)
@@ -529,6 +621,7 @@ hd_task_launcher_class_init (HdTaskLauncherClass *klass)
   gobject_class->get_property = hd_task_launcher_get_property;
   gobject_class->dispose = hd_task_launcher_dispose;
 
+  actor_class->get_preferred_height = hd_task_launcher_get_preferred_height;
   actor_class->allocate = hd_task_launcher_allocate;
   actor_class->realize = hd_task_launcher_realize;
   actor_class->unrealize = hd_task_launcher_unrealize;

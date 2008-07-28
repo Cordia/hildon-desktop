@@ -1,5 +1,12 @@
 2008-07-28  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/hd-task-launcher.c:
+	(hd_task_launcher_get_preferred_height),
+	(hd_task_launcher_class_init): Compute the preferred height for the
+	task launcher.
+
+2008-07-28  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	Integrate the launcher in SVN. This is an initial implementation
 	that's useful to check the effects and the integration: the actual
 	loading and saving of the launcher contents is being reworked to
