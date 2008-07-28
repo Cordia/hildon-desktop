@@ -10,14 +10,12 @@ INCLUDES = \
 launcher_h =	hd-app-launcher.h		\
 		hd-dummy-launcher.h		\
 		hd-launcher-item.h		\
-		hd-section-launcher.h		\
 		hd-task-launcher.h		\
 		hd-task-launcher-private.h
 
 launcher_c =	hd-app-launcher.c		\
 		hd-dummy-launcher.c		\
 		hd-launcher-item.c		\
-		hd-section-launcher.c		\
 		hd-task-launcher.c
 
 noinst_LIBRARIES = liblauncher.a
