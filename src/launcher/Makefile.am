@@ -26,7 +26,7 @@ liblauncher_a_SOURCES = $(launcher_h) $(launcher_c)
 liblauncher_a_CFLAGS =  $(HD_CFLAGS)
 liblauncher_a_LIBS = $(HD_LIBS) $(top_builddir)/src/launcher/tidy/libtidy.la
 
-test_launcher_SOURCES = main.c
+test_launcher_SOURCES = test-launcher.c
 test_launcher_CFLAGS = $(HD_CFLAGS)
 test_launcher_LDADD = \
 	$(HD_LIBS) \

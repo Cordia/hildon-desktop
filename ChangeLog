@@ -1,3 +1,10 @@
+2008-07-28  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* src/launcher/Makefile.am:
+	* src/launcher/main.c:
+	* src/launcher/test-launcher.c: Rename the test-launcher source
+	file.
+
 2008-07-28 Robert Bragg  <bob@o-hand.com>
 	
 	* src/launcher/tidy/Makefile.am:
