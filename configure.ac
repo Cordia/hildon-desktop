@@ -8,7 +8,6 @@ AC_CANONICAL_HOST
 
 AC_PROG_CC
 AC_PROG_INSTALL
-AC_PROG_RANLIB
 AC_PROG_LIBTOOL
 
 AC_C_CONST
@@ -16,6 +15,7 @@ AC_HEADER_STDC
 
 AC_HEADER_STDBOOL
 
+AM_PROG_CC_C_O
 
 #++++++++++++++++++
 # Misc build flags
@@ -50,6 +50,8 @@ Makefile
 src/Makefile
 src/mb/Makefile
 src/home/Makefile
+src/launcher/Makefile
+src/launcher/tidy/Makefile
 src/util/Makefile
 data/Makefile
 data/icons/Makefile

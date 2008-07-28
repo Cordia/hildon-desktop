@@ -1,3 +1,37 @@
+2008-07-28  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	Integrate the launcher in SVN. This is an initial implementation
+	that's useful to check the effects and the integration: the actual
+	loading and saving of the launcher contents is being reworked to
+	allow the user to change the layout.
+
+	* configure.ac:
+	* src/Makefile.am:
+	* src/launcher/Makefile.am: Add the launcher section.
+
+	* src/launcher/hd-launcher-item.c:
+	* src/launcher/hd-launcher-item.h: Base class for the launcher items;
+	actors implementing this class must provide an icon and a label for
+	the TaskLauncher to lay out inside its grid.
+
+	* src/launcher/hd-app-launcher.c:
+	* src/launcher/hd-app-launcher.h: Abstraction of the KeyFile provided
+	by an application.
+
+	* src/launcher/hd-dummy-launcher.c:
+	* src/launcher/hd-dummy-launcher.h: "Dummy" launcher item.
+
+	* src/launcher/hd-task-launcher-private.h: Private declarations.
+
+	* src/launcher/hd-task-launcher.c:
+	* src/launcher/hd-task-launcher.h: Main container actor.
+
+	* src/launcher/main.c: Test environment, to avoid breaking the desktop
+	until we have the Launcher ready.
+
+	* src/launcher/tidy: Internal copy of actors and objects from Tidy.
+	We need them for the finger pannable launcher.
+
 2008-07-24 Robert Bragg  <bob@o-hand.com>
 	
 	* configure.ac:

@@ -1,4 +1,4 @@
-SUBDIRS = mb home util
+SUBDIRS = mb home launcher util
 
 INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
