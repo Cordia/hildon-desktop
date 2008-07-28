@@ -1,3 +1,8 @@
+2008-07-28 Robert Bragg  <bob@o-hand.com>
+	
+	* src/launcher/tidy/Makefile.am:
+	support out of tree builds
+
 2008-07-28  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* src/launcher/hd-task-launcher.c:
