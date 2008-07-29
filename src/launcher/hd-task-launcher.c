@@ -83,8 +83,8 @@ launch_item (ClutterActor *actor,
   HdTaskLauncherPrivate *priv = closure->launcher->priv;
   TidyAnimation *animation;
   ClutterActor *stage, *copy;
-  gint x, y;
-  guint width, height;
+  gint item_x, item_y, launcher_x, launcher_y;
+  guint item_width, item_height, launcher_width, launcher_height;
   ClutterColor color = {
     .red   = 0xee,
     .green = 0xee,
@@ -94,15 +94,22 @@ launch_item (ClutterActor *actor,
 
   stage = clutter_stage_get_default ();
 
-  clutter_actor_get_position (CLUTTER_ACTOR (closure->item), &x, &y);
-  clutter_actor_get_size (CLUTTER_ACTOR (closure->item), &width, &height);
+  clutter_actor_get_position (CLUTTER_ACTOR (closure->item),
+                              &item_x, &item_y);
+  clutter_actor_get_size (CLUTTER_ACTOR (closure->item),
+                          &item_width, &item_height);
+
+  launcher_x = 0;
+  launcher_y = 64;
+  launcher_width = 800;
+  launcher_height = (480 - 64);
 
   /* compensate for the scrolling */
   if (priv->v_adjustment)
     {
       gdouble value = tidy_adjustment_get_value (priv->v_adjustment);
 
-      y -= value;
+      item_y -= value;
     }
 
   /* rotate the launcher icon back */
@@ -116,24 +123,26 @@ launch_item (ClutterActor *actor,
   /* copy the launcher icon, then scale it to fit */
   copy = clutter_rectangle_new ();
   clutter_rectangle_set_color (CLUTTER_RECTANGLE (copy), &color);
-  clutter_actor_set_position (copy, x, y);
-  clutter_actor_set_size (copy, width, height);
+  clutter_actor_set_position (copy, item_x, item_y);
+  clutter_actor_set_size (copy, item_width, item_height);
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), copy);
   g_signal_connect (copy,
                     "button-press-event",
                     G_CALLBACK (clutter_actor_destroy),
                     NULL);
 
-  g_print ("expand from (%d, %d) - (%d, %d)\n",
-           x, y,
-           width, height);
+  g_print ("expand from (%d, %d), (%d, %d)\tto (%d, %d), (%d, %d)\n",
+           item_x, item_y,
+           item_width, item_height,
+           launcher_x, launcher_y,
+           launcher_width, launcher_height);
 
   animation =
     tidy_actor_animate (copy, TIDY_LINEAR, 200,
-                        "x", tidy_interval_new (G_TYPE_INT, x, 0),
-                        "y", tidy_interval_new (G_TYPE_INT, y, 0),
-                        "width", tidy_interval_new (G_TYPE_INT, width, 760),
-                        "height", tidy_interval_new (G_TYPE_INT, height, 400),
+                        "x", tidy_interval_new (G_TYPE_INT, item_x, launcher_x),
+                        "y", tidy_interval_new (G_TYPE_INT, item_y, launcher_y),
+                        "width", tidy_interval_new (G_TYPE_INT, item_width, launcher_width),
+                        "height", tidy_interval_new (G_TYPE_INT, item_height, launcher_height),
                         NULL);
   g_signal_connect_swapped (animation,
                             "completed", G_CALLBACK (launch_animation_complete),

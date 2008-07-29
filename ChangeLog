@@ -1,5 +1,10 @@
 2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/hd-task-launcher.c (launch_item): Hardcode
+	the size and position of the launcher pre-load icon.
+
+2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/hd-dummy-launcher.c: Add an animation when
 	showing the launchers, as per UI spec.
 
