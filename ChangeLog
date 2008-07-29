@@ -1,5 +1,11 @@
 2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/home/hd-switcher.c:
+	(hd_switcher_constructed): If you don't add actors to a group
+	it'll be slightly difficult for Clutter to draw them.
+
+2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/Makefile.am:
 	* src/home/Makefile.am:
 	* src/home/hd-switcher.c: First, raw pass at integrating the

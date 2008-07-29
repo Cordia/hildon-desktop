@@ -154,10 +154,13 @@ hd_switcher_constructed (GObject *object)
 				       "comp-mgr", priv->comp_mgr,
 				       NULL);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (self),
-			       priv->switcher_group);
+  clutter_container_add (CLUTTER_CONTAINER (self),
+                         priv->switcher_group,
+                         priv->launcher_group,
+                         NULL);
 
   clutter_actor_hide (priv->switcher_group);
+  clutter_actor_hide (priv->launcher_group);
 
   g_signal_connect_swapped (priv->switcher_group, "item-selected",
 			    G_CALLBACK (hd_switcher_item_selected),
