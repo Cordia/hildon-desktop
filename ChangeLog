@@ -1,5 +1,12 @@
 2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/Makefile.am:
+	* src/home/Makefile.am:
+	* src/home/hd-switcher.c: First, raw pass at integrating the
+	launcher into the desktop. WARNING: might break everything.
+
+2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/Makefile.am:
 	* src/launcher/hd-launcher-utils.[ch]:
 	* src/launcher/test-launcher.c: Prepare integration of the task

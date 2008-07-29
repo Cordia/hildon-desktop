@@ -28,6 +28,7 @@
 
 #include "hd-switcher.h"
 #include "hd-switcher-group.h"
+#include "hd-launcher-utils.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
 #include "hd-edit-menu.h"
@@ -148,6 +149,7 @@ hd_switcher_constructed (GObject *object)
 
   icon_theme = gtk_icon_theme_get_default ();
 
+  priv->launcher_group = hd_get_application_launcher ();
   priv->switcher_group = g_object_new (HD_TYPE_SWITCHER_GROUP,
 				       "comp-mgr", priv->comp_mgr,
 				       NULL);
@@ -336,10 +338,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
        */
       hd_switcher_setup_buttons (switcher, TRUE);
 
-      /* TODO: here we activate the launcher */
-#if 0
       clutter_actor_show_all (priv->launcher_group);
-#endif
       priv->showing_launcher = TRUE;
     }
   else if (priv->showing_launcher ||
@@ -526,7 +525,6 @@ hd_switcher_hide_switcher (HdSwitcher * switcher)
 static void
 hd_switcher_hide_launcher (HdSwitcher * switcher)
 {
-#if 0
   /* FIXME once we have the launcher */
   HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
 
@@ -534,7 +532,6 @@ hd_switcher_hide_launcher (HdSwitcher * switcher)
 
   clutter_actor_hide_all (priv->launcher_group);
   hd_util_ungrab_pointer ();
-#endif
 }
 
 void

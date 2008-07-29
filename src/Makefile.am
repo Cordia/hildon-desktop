@@ -1,9 +1,10 @@
-SUBDIRS = mb home launcher util
+SUBDIRS = mb launcher home util
 
 INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
-MY_LIBS =	$(top_builddir)/src/mb/libmb.a		\
-		$(top_builddir)/src/home/libhome.a	\
+MY_LIBS =	$(top_builddir)/src/mb/libmb.a			\
+		$(top_builddir)/src/launcher/liblauncher.la 	\
+		$(top_builddir)/src/home/libhome.la		\
 		$(top_builddir)/src/util/libutil.a
 
 bin_PROGRAMS = hildon-desktop

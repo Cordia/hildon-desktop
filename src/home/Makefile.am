@@ -1,4 +1,5 @@
-INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
+INCLUDES = -I $(top_srcdir)/src/launcher \
+	@HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
 home_h = 	hd-home.h		\
 		hd-home-view.h		\
@@ -18,10 +19,10 @@ home_c = 	hd-home.c		\
 		hd-gtk-style.c		\
 		hd-gtk-utils.c
 
-noinst_LIBRARIES = libhome.a
+noinst_LTLIBRARIES = libhome.la
 
-libhome_a_SOURCES = $(home_h) $(home_c)
-libhome_a_CFLAGS =  @HD_CFLAGS@ -DHD_DATADIR=\"$(datadir)/hildon-desktop\"
-libhome_a_LIBS = @HD_LIBS@
+libhome_la_SOURCES = $(home_h) $(home_c)
+libhome_la_CFLAGS =  @HD_CFLAGS@ -DHD_DATADIR=\"$(datadir)/hildon-desktop\"
+libhome_la_LIBADD = @HD_LIBS@ $(top_builddir)/src/launcher/liblauncher.la
 
 CLEANFILES = *~
