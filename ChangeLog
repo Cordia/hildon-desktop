@@ -1,3 +1,8 @@
+2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* src/launcher/hd-dummy-launcher.c: Add an animation when
+	showing the launchers, as per UI spec.
+
 2008-07-29 Robert Bragg  <bob@o-hand.com>
 
 	* src/applet-settings-button.png

@@ -48,24 +48,18 @@ hd_dummy_launcher_get_label (HdLauncherItem *item)
 static void
 hd_dummy_launcher_released (HdLauncherItem *item)
 {
-  HdDummyLauncher *dummy = HD_DUMMY_LAUNCHER (item);
-  HdLauncherItemType item_type;
+}
 
-  item_type = hd_launcher_item_get_item_type (item);
-  if (item_type == HD_APPLICATION_LAUNCHER)
-    {
-      ClutterActor *icon = hd_launcher_item_get_icon (item);
+static void
+hd_dummy_launcher_show (ClutterActor *actor)
+{
+  HdDummyLauncher *launcher = HD_DUMMY_LAUNCHER (actor);
 
-      g_print ("Rotating icon\n");
+  CLUTTER_ACTOR_CLASS (hd_dummy_launcher_parent_class)->show (actor);
 
-      clutter_effect_rotate (dummy->tmpl, icon,
-                             CLUTTER_Y_AXIS, 180.0,
-                             clutter_actor_get_width (icon) / 2,
-                             0,
-                             0,
-                             CLUTTER_ROTATE_CW,
-                             NULL, NULL);
-    }
+  clutter_effect_scale (launcher->tmpl, actor,
+                        1.2, 1.2,
+                        NULL, NULL);
 }
 
 static void
@@ -82,9 +76,12 @@ static void
 hd_dummy_launcher_class_init (HdDummyLauncherClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
   HdLauncherItemClass *launcher_class = HD_LAUNCHER_ITEM_CLASS (klass);
 
   gobject_class->finalize = hd_dummy_launcher_finalize;
+
+  actor_class->show = hd_dummy_launcher_show;
 
   launcher_class->get_icon = hd_dummy_launcher_get_icon;
   launcher_class->get_label = hd_dummy_launcher_get_label;
@@ -95,7 +92,8 @@ hd_dummy_launcher_class_init (HdDummyLauncherClass *klass)
 static void
 hd_dummy_launcher_init (HdDummyLauncher *launcher)
 {
-  launcher->tmpl = clutter_effect_template_new_for_duration (250, CLUTTER_ALPHA_RAMP_INC);
+  launcher->tmpl =
+    clutter_effect_template_new_for_duration (150, CLUTTER_ALPHA_RAMP);
 }
 
 HdLauncherItem *
