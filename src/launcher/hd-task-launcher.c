@@ -1,3 +1,5 @@
+#include "hd-task-launcher.h"
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -5,13 +7,11 @@
 #include <cogl/cogl.h>
 #include <clutter/clutter.h>
 
-#include "tidy/tidy-adjustment.h"
-#include "tidy/tidy-scrollable.h"
+#include <tidy/tidy-adjustment.h>
+#include <tidy/tidy-scrollable.h>
 
 #include "hd-launcher-item.h"
-#include "hd-task-launcher.h"
-
-#define I_(str) (g_intern_static_string ((str)))
+#include "hd-task-launcher-private.h"
 
 #define HD_TASK_LAUNCHER_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_TASK_LAUNCHER, HdTaskLauncherPrivate))
 
@@ -19,7 +19,6 @@ struct _HdTaskLauncherPrivate
 {
   /* list of actors */
   GList *launchers;
-  GList *top_level;
 
   HdLauncherPadding padding;
 
@@ -110,10 +109,6 @@ hd_task_launcher_refresh_v_adjustment (HdTaskLauncher *launcher)
   else
     page_height = MIN (CLUTTER_UNITS_TO_FIXED (height),
                        CLUTTER_UNITS_TO_FIXED (clip_height - clip_y));
-
-  g_print ("height: %dpx, page_height: %dpx\n",
-           CLUTTER_UNITS_TO_DEVICE (height),
-           CLUTTER_FIXED_TO_INT (page_height));
 
   tidy_adjustment_set_valuesx (priv->v_adjustment,
                                tidy_adjustment_get_valuex (priv->v_adjustment),

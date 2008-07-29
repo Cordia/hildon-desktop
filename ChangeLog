@@ -1,5 +1,10 @@
 2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/hd-task-launcher-private.h:
+	* src/launcher/hd-task-launcher.c: Small clean ups.
+
+2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/tidy/tidy-scroll-view.c:
 	(tidy_stylable_iface_init): Make the scroll bars slighly less
 	big.
