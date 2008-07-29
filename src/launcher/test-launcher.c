@@ -141,15 +141,7 @@ on_top_item_clicked (HdTaskLauncher *launcher,
     }
   else
     {
-      ClutterActor *icon = hd_launcher_item_get_icon (item);
-
-      clutter_effect_rotate (tmpl, icon,
-                             CLUTTER_Y_AXIS, 360.0,
-                             clutter_actor_get_width (icon) / 2,
-                             0,
-                             0,
-                             CLUTTER_ROTATE_CW,
-                             NULL, NULL); 
+      /* no-op */
     }
 }
 

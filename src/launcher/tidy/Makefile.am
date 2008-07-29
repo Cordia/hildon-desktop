@@ -25,7 +25,9 @@ noinst_LTLIBRARIES = libtidy.la
 source_h = \
 	$(top_srcdir)/src/launcher/tidy/tidy-actor.h 		\
 	$(top_srcdir)/src/launcher/tidy/tidy-adjustment.h	\
+	$(top_srcdir)/src/launcher/tidy/tidy-animation.h 	\
 	$(top_srcdir)/src/launcher/tidy/tidy-finger-scroll.h	\
+	$(top_srcdir)/src/launcher/tidy/tidy-interval.h		\
 	$(top_srcdir)/src/launcher/tidy/tidy-scroll-bar.h	\
 	$(top_srcdir)/src/launcher/tidy/tidy-scrollable.h	\
 	$(top_srcdir)/src/launcher/tidy/tidy-scroll-view.h	\
@@ -42,7 +44,9 @@ source_h_private = \
 source_c = \
 	tidy-actor.c \
 	tidy-adjustment.c \
+	tidy-animation.c \
 	tidy-finger-scroll.c \
+	tidy-interval.c \
 	tidy-scroll-bar.c \
 	tidy-scrollable.c \
 	tidy-scroll-view.c \

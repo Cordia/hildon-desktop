@@ -8,6 +8,8 @@
 #include <clutter/clutter.h>
 
 #include <tidy/tidy-adjustment.h>
+#include <tidy/tidy-animation.h>
+#include <tidy/tidy-interval.h>
 #include <tidy/tidy-scrollable.h>
 
 #include "hd-launcher-item.h"
@@ -19,6 +21,8 @@ struct _HdTaskLauncherPrivate
 {
   /* list of actors */
   GList *launchers;
+
+  ClutterEffectTemplate *launcher_tmpl;
 
   HdLauncherPadding padding;
 
@@ -56,6 +60,113 @@ G_DEFINE_TYPE_WITH_CODE (HdTaskLauncher,
                                                 clutter_container_iface_init)
                          G_IMPLEMENT_INTERFACE (TIDY_TYPE_SCROLLABLE,
                                                 tidy_scrollable_iface_init));
+
+
+
+static void
+launch_animation_complete (ClutterActor  *actor,
+                           TidyAnimation *animation)
+{
+  clutter_actor_set_reactive (actor, TRUE);
+  g_print ("Launch complete, click to close\n");
+}
+
+static void
+reset_actor (ClutterActor *actor,
+             gpointer      data)
+{
+  HdTaskLauncher *launcher = data;
+  HdTaskLauncherPrivate *priv = launcher->priv;
+  TidyAnimation *animation;
+  ClutterActor *stage, *copy;
+  gint x, y;
+  guint width, height;
+  ClutterColor color = {
+    .red   = 0xee,
+    .green = 0xee,
+    .blue  = 0xee,
+    .alpha = 0xff
+  };
+
+  stage = clutter_stage_get_default ();
+
+  clutter_actor_get_position (actor, &x, &y);
+  clutter_actor_get_size (actor, &width, &height);
+
+  /* rotate the launcher icon back */
+  clutter_effect_rotate (priv->launcher_tmpl, actor,
+                         CLUTTER_Y_AXIS,
+                         180.0,
+                         width / 2, 0, 0,
+                         CLUTTER_ROTATE_CCW,
+                         NULL, NULL);
+
+  /* copy the launcher icon, then scale it to fit */
+  copy = clutter_rectangle_new ();
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (copy), &color);
+  clutter_actor_set_position (copy, x, y);
+  clutter_actor_set_size (copy, width, height);
+  clutter_container_add_actor (CLUTTER_CONTAINER (stage), copy);
+  g_signal_connect (copy,
+                    "button-press-event",
+                    G_CALLBACK (clutter_actor_destroy),
+                    NULL);
+
+  g_print ("expand from (%d, %d) - (%d, %d)\n",
+           x, y,
+           width, height);
+
+  animation =
+    tidy_actor_animate (copy, TIDY_LINEAR, 200,
+                        "x", tidy_interval_new (G_TYPE_INT, x, 0),
+                        "y", tidy_interval_new (G_TYPE_INT, y, 0),
+                        "width", tidy_interval_new (G_TYPE_INT, width, 760),
+                        "height", tidy_interval_new (G_TYPE_INT, height, 400),
+                        NULL);
+  g_signal_connect_swapped (animation,
+                            "completed", G_CALLBACK (launch_animation_complete),
+                            copy);
+}
+
+static void
+hd_task_launcher_real_item_clicked (HdTaskLauncher *launcher,
+                                    HdLauncherItem *item)
+{
+  HdTaskLauncherPrivate *priv = launcher->priv;
+  HdLauncherItemType type;
+
+  if (G_UNLIKELY (!priv->launcher_tmpl))
+    {
+      priv->launcher_tmpl =
+        clutter_effect_template_new_for_duration (200, clutter_ramp_inc_func);
+    }
+
+  type = hd_launcher_item_get_item_type (item);
+  switch (type)
+    {
+    case HD_SECTION_LAUNCHER:
+      break;
+
+    case HD_APPLICATION_LAUNCHER:
+      {
+        ClutterActor *icon;
+        gint icon_width;
+
+        icon = hd_launcher_item_get_icon (item);
+        g_assert (icon != NULL);
+
+        icon_width = clutter_actor_get_width (icon);
+
+        clutter_effect_rotate (priv->launcher_tmpl, icon,
+                               CLUTTER_Y_AXIS,
+                               180.0,
+                               icon_width / 2, 0, 0,
+                               CLUTTER_ROTATE_CW,
+                               reset_actor, launcher);
+      }
+      break;
+    }
+}
 
 static inline void
 hd_task_launcher_refresh_h_adjustment (HdTaskLauncher *launcher)
@@ -566,6 +677,12 @@ hd_task_launcher_dispose (GObject *gobject)
 {
   HdTaskLauncherPrivate *priv = HD_TASK_LAUNCHER (gobject)->priv;
 
+  if (priv->launcher_tmpl)
+    {
+      g_object_unref (priv->launcher_tmpl);
+      priv->launcher_tmpl = NULL;
+    }
+
   g_list_foreach (priv->launchers,
                   (GFunc) clutter_actor_destroy,
                   NULL);
@@ -645,6 +762,8 @@ hd_task_launcher_class_init (HdTaskLauncherClass *klass)
   ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (HdTaskLauncherPrivate));
+
+  klass->item_clicked = hd_task_launcher_real_item_clicked;
 
   gobject_class->set_property = hd_task_launcher_set_property;
   gobject_class->get_property = hd_task_launcher_get_property;

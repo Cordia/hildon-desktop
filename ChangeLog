@@ -1,5 +1,21 @@
 2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/Makefile.am:
+
+	* src/launcher/hd-launcher-item.c: Remove unused effect template.
+
+	* src/launcher/test-launcher.c: Move the application launcher
+	animation from here...
+
+	* src/launcher/hd-task-launcher.c: ... to here, where it belongs.
+
+	* src/launcher/tidy/Makefile.am:
+	* src/launcher/tidy/tidy-animation.[ch]:
+	* src/launcher/tidy/tidy-interval.[ch]: Add tweening API for
+	Tidy.
+
+2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/hd-task-launcher-private.h:
 	* src/launcher/hd-task-launcher.c: Small clean ups.
 

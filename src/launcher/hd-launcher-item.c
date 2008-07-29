@@ -58,8 +58,6 @@ struct _HdLauncherItemPrivate
 {
   HdLauncherItemType item_type;
 
-  ClutterEffectTemplate *tmpl;
-
   ClutterActor *label;
   ClutterActor *icon;
 
@@ -310,8 +308,6 @@ hd_launcher_item_finalize (GObject *gobject)
 {
   HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM_GET_PRIVATE (gobject);
 
-  g_object_unref (priv->tmpl);
-
   clutter_actor_destroy (priv->label);
   clutter_actor_destroy (priv->icon);
 
@@ -410,8 +406,6 @@ hd_launcher_item_init (HdLauncherItem *item)
   priv->padding.right = priv->padding.left = 0;
 
   priv->spacing = CLUTTER_UNITS_FROM_DEVICE (2);
-
-  priv->tmpl = clutter_effect_template_new_for_duration (250, CLUTTER_ALPHA_RAMP);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (item), TRUE);
 }
