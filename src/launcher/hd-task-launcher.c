@@ -316,11 +316,6 @@ hd_task_launcher_get_preferred_height (ClutterActor *actor,
   cur_width  = priv->padding.left;
   cur_height = priv->padding.top;
 
-  /* the amount of available space on a row depends on the
-   * number of visible launchers; in this first pass we check
-   * how many visible launchers there are and what is the
-   * maximum amount of width a launcher can get.
-   */
   n_visible_launchers = 0;
   max_item_width = max_item_height = 0;
   for (l = priv->launchers; l != NULL; l = l->next)
@@ -498,6 +493,7 @@ hd_task_launcher_paint (ClutterActor *actor)
 
   cogl_push_matrix ();
 
+  /* offset by the adjustment value */
   if (priv->v_adjustment)
     {
       ClutterFixed v_offset = tidy_adjustment_get_valuex (priv->v_adjustment);
@@ -527,6 +523,7 @@ hd_task_launcher_pick (ClutterActor       *actor,
 
   cogl_push_matrix ();
 
+  /* offset by the adjustment value */
   if (priv->v_adjustment)
     {
       ClutterFixed v_offset = tidy_adjustment_get_valuex (priv->v_adjustment);

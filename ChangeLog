@@ -1,5 +1,11 @@
 2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/tidy/tidy-scroll-view.c:
+	(tidy_stylable_iface_init): Make the scroll bars slighly less
+	big.
+
+2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/hd-task-launcher.c: Update the adjustment range
 	each time a launcher has been added to the HdTaskLauncher.
 
