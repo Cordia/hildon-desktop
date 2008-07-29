@@ -6,11 +6,12 @@
   <decor type="north" color-fg="#ffffff"
         template-x="0" template-y="0"
         template-width="320" template-height="56"
-        template-pad-offset="140" template-pad-width="10"
-        font-family="Sans" font-size="24">
+        template-pad-offset="180" template-pad-length="10"
+        font-family="Sans" font-size="24"
+	show-title="yes">
   <button type="close"
-          template-x="302" template-y="2"
-          width="112" height="56"/>
+          template-x="205" template-y="0"
+          width="115" height="56"/>
  </decor>
 </client>
 

@@ -43,12 +43,13 @@
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 
-/*
- * FIXME -- these should be loaded from theme.
- */
-#define BUTTON_IMAGE_SWITCHER "bg-image-switcher"
-#define BUTTON_IMAGE_LAUNCHER "bg-image-launcher"
+#define ICON_IMAGE_SWITCHER "qgn_tswitcher_application"
+#define ICON_IMAGE_LAUNCHER "qgn_tswitcher_application"
 #define BUTTON_IMAGE_MENU     "menu-button.png"
+
+#define TOP_LEFT_BUTTON_HIGHLIGHT_TEXTURE "launcher-button-highlight.png"
+#define TOP_LEFT_BUTTON_WIDTH	112
+#define TOP_LEFT_BUTTON_HEIGHT	56
 
 enum
 {
@@ -92,6 +93,8 @@ static void hd_switcher_get_property (GObject      *object,
 static void hd_switcher_constructed (GObject *object);
 
 static gboolean hd_switcher_clicked (HdSwitcher *switcher);
+
+static ClutterActor * hd_switcher_top_left_button_new (const char *icon_name);
 
 static gboolean hd_switcher_menu_clicked (HdSwitcher *switcher);
 
@@ -145,9 +148,6 @@ hd_switcher_constructed (GObject *object)
   ClutterActor      *self = CLUTTER_ACTOR (object);
   HdSwitcherPrivate *priv = HD_SWITCHER (object)->priv;
   guint              button_width, button_height;
-  GtkIconTheme	    *icon_theme;
-
-  icon_theme = gtk_icon_theme_get_default ();
 
   priv->launcher_group = hd_get_application_launcher ();
   priv->switcher_group = g_object_new (HD_TYPE_SWITCHER_GROUP,
@@ -181,7 +181,7 @@ hd_switcher_constructed (GObject *object)
   clutter_actor_hide (priv->menu_group);
 
   priv->button_switcher =
-    hd_gtk_icon_theme_load_icon (icon_theme, BUTTON_IMAGE_SWITCHER, 48, 0);
+    hd_switcher_top_left_button_new (ICON_IMAGE_SWITCHER);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (self),
 			       priv->button_switcher);
@@ -196,7 +196,7 @@ hd_switcher_constructed (GObject *object)
                             self);
 
   priv->button_launcher =
-    hd_gtk_icon_theme_load_icon (icon_theme, BUTTON_IMAGE_LAUNCHER, 48, 0);
+    hd_switcher_top_left_button_new (ICON_IMAGE_LAUNCHER);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (self),
 			       priv->button_launcher);
@@ -300,6 +300,67 @@ hd_switcher_get_property (GObject      *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
     }
+}
+
+/* I wonder if this utility function should go somewhere else. I think
+ * conceptually the top left button isn't owned by the switcher, so
+ * I think it would make sense. */
+static ClutterActor *
+hd_switcher_top_left_button_new (const char *icon_name)
+{
+  ClutterActor	  *top_left_button;
+  ClutterActor    *top_left_button_bg;
+  ClutterActor    *top_left_button_icon;
+  ClutterActor    *top_left_button_highlight;
+  ClutterColor     clr = {0x0, 0x0, 0x0, 0xff};
+  ClutterGeometry  geom;
+  GtkIconTheme	  *icon_theme;
+  GError	  *error = NULL;
+
+  icon_theme = gtk_icon_theme_get_default ();
+
+  top_left_button = clutter_group_new ();
+
+  top_left_button_bg = clutter_rectangle_new_with_color (&clr);
+
+  /* FIXME - This is a bit yukky, but to allow the button to appear
+   * rounded, the background is smaller than the size of the button
+   * so that the corner does not poke out of the rounded highlight
+   * texture. It assumes that the hightlight texture has full opacity
+   * along the bottom and right edges. */
+  clutter_actor_set_size (top_left_button_bg,
+			  TOP_LEFT_BUTTON_WIDTH - 1,
+			  TOP_LEFT_BUTTON_HEIGHT - 1);
+  clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
+			       top_left_button_bg);
+
+  top_left_button_icon =
+    hd_gtk_icon_theme_load_icon (icon_theme, icon_name, 48, 0);
+  clutter_actor_get_geometry (top_left_button_icon, &geom);
+  clutter_actor_set_position (top_left_button_icon,
+			      (TOP_LEFT_BUTTON_WIDTH/2)-(geom.width/2),
+			      (TOP_LEFT_BUTTON_HEIGHT/2)-(geom.height/2));
+  clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
+			       top_left_button_icon);
+
+  top_left_button_highlight =
+    clutter_texture_new_from_file (
+      g_build_filename (HD_DATADIR, TOP_LEFT_BUTTON_HIGHLIGHT_TEXTURE, NULL),
+      &error);
+  if (error)
+    {
+      g_debug (error->message);
+      g_error_free (error);
+    }
+  else
+    {
+      clutter_actor_set_size (top_left_button_highlight,
+			      TOP_LEFT_BUTTON_WIDTH, TOP_LEFT_BUTTON_HEIGHT);
+      clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
+				   top_left_button_highlight);
+    }
+
+  return top_left_button;
 }
 
 static gboolean

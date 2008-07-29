@@ -1,3 +1,37 @@
+2008-07-29 Robert Bragg  <bob@o-hand.com>
+
+	* src/applet-settings-button.png
+	* src/applet-resize-button.png
+	* src/bg-image-switcher.png
+	* src/edit-button.png
+	* src/bg-image-launcher.png
+	* src/back-button.png
+	* src/menu-button.png
+	* src/close-button.png
+	* src/hibernation-icon.png:
+	Removes the pngs that should have gone with my previous
+	theme changes. (The equivalent images now live under
+	data/ and data/icons/)
+
+	* data/themes/FremantleDev/mbwm2/theme.xml:
+	typo, change template-pad-width -> template-pad-length
+	adds show-title="yes"
+	Note: Currently the theme engine doesn't understand about
+	the icons at the top left of the screen and tries to
+	print the title aligned to the left of the screen.
+
+	* data/themes/FremantleDev/mbwm2/template.png:
+	adds a close button to the template. Note though there
+	was a bug with calculating the button position in the
+	png theme engine. You will need to pull the latest
+	mbwm2 for the close button to work)
+	
+	* data/launcher-button-highlight.png:
+	* src/home/hd-switcher.c:
+	Improved compositing of the swither/launcher icons. They
+	are now composed of a solid colour background, a 48x48
+	icon and a light higlight texture.
+
 2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* src/home/hd-switcher.c:
