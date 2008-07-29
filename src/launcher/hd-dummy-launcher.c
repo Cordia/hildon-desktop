@@ -8,7 +8,7 @@
 
 #include "hd-dummy-launcher.h"
 
-#define HD_LAUNCHER_ICON_SIZE   48
+#define HD_LAUNCHER_ICON_SIZE   96
 
 static const ClutterColor icon_color = { 255, 255, 255, 224 };
 static const ClutterColor text_color = { 255, 255, 255, 224 };
