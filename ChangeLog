@@ -1,5 +1,13 @@
 2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/Makefile.am:
+	* src/launcher/hd-launcher-utils.[ch]:
+	* src/launcher/test-launcher.c: Prepare integration of the task
+	launcher into the desktop by moving the whole build sequence of
+	the launchers, animations and callbacks into a single function.
+
+2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/hd-task-launcher.c:
 	(launch_item),
 	(hd_task_launcher_real_item_clicked): Update the animation of
