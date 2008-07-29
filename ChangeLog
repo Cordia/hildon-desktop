@@ -1,5 +1,13 @@
 2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/hd-task-launcher.c:
+	(launch_item),
+	(hd_task_launcher_real_item_clicked): Update the animation of
+	the application launcher; now it will use the right actor as
+	the starting point of the "growing" animation.
+
+2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/Makefile.am:
 
 	* src/launcher/hd-launcher-item.c: Remove unused effect template.

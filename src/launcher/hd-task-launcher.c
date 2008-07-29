@@ -61,7 +61,11 @@ G_DEFINE_TYPE_WITH_CODE (HdTaskLauncher,
                          G_IMPLEMENT_INTERFACE (TIDY_TYPE_SCROLLABLE,
                                                 tidy_scrollable_iface_init));
 
-
+typedef struct {
+  HdTaskLauncher *launcher;
+  HdLauncherItem *item;
+  ClutterActor *icon;
+} LaunchItemClosure;
 
 static void
 launch_animation_complete (ClutterActor  *actor,
@@ -72,11 +76,11 @@ launch_animation_complete (ClutterActor  *actor,
 }
 
 static void
-reset_actor (ClutterActor *actor,
+launch_item (ClutterActor *actor,
              gpointer      data)
 {
-  HdTaskLauncher *launcher = data;
-  HdTaskLauncherPrivate *priv = launcher->priv;
+  LaunchItemClosure *closure = data;
+  HdTaskLauncherPrivate *priv = closure->launcher->priv;
   TidyAnimation *animation;
   ClutterActor *stage, *copy;
   gint x, y;
@@ -90,14 +94,22 @@ reset_actor (ClutterActor *actor,
 
   stage = clutter_stage_get_default ();
 
-  clutter_actor_get_position (actor, &x, &y);
-  clutter_actor_get_size (actor, &width, &height);
+  clutter_actor_get_position (CLUTTER_ACTOR (closure->item), &x, &y);
+  clutter_actor_get_size (CLUTTER_ACTOR (closure->item), &width, &height);
+
+  /* compensate for the scrolling */
+  if (priv->v_adjustment)
+    {
+      gdouble value = tidy_adjustment_get_value (priv->v_adjustment);
+
+      y -= value;
+    }
 
   /* rotate the launcher icon back */
-  clutter_effect_rotate (priv->launcher_tmpl, actor,
+  clutter_effect_rotate (priv->launcher_tmpl, closure->icon,
                          CLUTTER_Y_AXIS,
                          180.0,
-                         width / 2, 0, 0,
+                         clutter_actor_get_width (closure->icon) / 2, 0, 0,
                          CLUTTER_ROTATE_CCW,
                          NULL, NULL);
 
@@ -126,6 +138,8 @@ reset_actor (ClutterActor *actor,
   g_signal_connect_swapped (animation,
                             "completed", G_CALLBACK (launch_animation_complete),
                             copy);
+
+  g_free (closure);
 }
 
 static void
@@ -150,10 +164,16 @@ hd_task_launcher_real_item_clicked (HdTaskLauncher *launcher,
     case HD_APPLICATION_LAUNCHER:
       {
         ClutterActor *icon;
+        LaunchItemClosure *clos;
         gint icon_width;
 
         icon = hd_launcher_item_get_icon (item);
         g_assert (icon != NULL);
+
+        clos = g_new0 (LaunchItemClosure, 1);
+        clos->launcher = launcher;
+        clos->item = item;
+        clos->icon = icon;
 
         icon_width = clutter_actor_get_width (icon);
 
@@ -162,7 +182,7 @@ hd_task_launcher_real_item_clicked (HdTaskLauncher *launcher,
                                180.0,
                                icon_width / 2, 0, 0,
                                CLUTTER_ROTATE_CW,
-                               reset_actor, launcher);
+                               launch_item, clos);
       }
       break;
     }
