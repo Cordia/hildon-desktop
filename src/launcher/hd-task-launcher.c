@@ -58,77 +58,21 @@ G_DEFINE_TYPE_WITH_CODE (HdTaskLauncher,
                          G_IMPLEMENT_INTERFACE (TIDY_TYPE_SCROLLABLE,
                                                 tidy_scrollable_iface_init));
 
-static void
-hd_task_launcher_add (ClutterContainer *container,
-                      ClutterActor     *actor)
-{
-  HdTaskLauncherPrivate *priv = HD_TASK_LAUNCHER (container)->priv;
-
-  g_object_ref (actor);
-
-  priv->launchers = g_list_append (priv->launchers, actor);
-  clutter_actor_set_parent (actor, CLUTTER_ACTOR (container));
-
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
-
-  g_signal_emit_by_name (container, "actor-added", actor);
-
-  g_object_unref (actor);
-}
-
-static void
-hd_task_launcher_remove (ClutterContainer *container,
-                         ClutterActor     *actor)
-{
-  HdTaskLauncherPrivate *priv = HD_TASK_LAUNCHER (container)->priv;
-
-  g_object_ref (actor);
-
-  priv->launchers = g_list_remove (priv->launchers, actor);
-  clutter_actor_unparent (actor);
-
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
-
-  g_signal_emit_by_name (container, "actor-removed", actor);
-
-  g_object_unref (actor);
-}
-
-static void
-hd_task_launcher_foreach (ClutterContainer *container,
-                          ClutterCallback   callback,
-                          gpointer          callback_data)
-{
-  HdTaskLauncherPrivate *priv = HD_TASK_LAUNCHER (container)->priv;
-  GList *l;
-
-  for (l = priv->launchers; l != NULL; l = l->next)
-    {
-      ClutterActor *child = l->data;
-
-      callback (child, callback_data);
-    }
-}
-
-static void
-clutter_container_iface_init (ClutterContainerIface *iface)
-{
-  iface->add = hd_task_launcher_add;
-  iface->remove = hd_task_launcher_remove;
-  iface->foreach = hd_task_launcher_foreach;
-}
-
-static void
-hd_task_launcher_refresh_adjustment (HdTaskLauncher *launcher)
+static inline void
+hd_task_launcher_refresh_h_adjustment (HdTaskLauncher *launcher)
 {
   HdTaskLauncherPrivate *priv = launcher->priv;
-  ClutterFixed width, height, page_width, page_height;
-  ClutterUnit clip_x, clip_y, clip_width, clip_height;
+  ClutterFixed width;
+  ClutterUnit clip_x, clip_width;
+  ClutterUnit page_width;
 
-  clutter_actor_get_sizeu (CLUTTER_ACTOR (launcher), &width, &height);
+  if (!priv->h_adjustment)
+    return;
+
+  clutter_actor_get_sizeu (CLUTTER_ACTOR (launcher), &width, NULL);
   clutter_actor_get_clipu (CLUTTER_ACTOR (launcher),
-                           &clip_x, &clip_y,
-                           &clip_width, &clip_height);
+                           &clip_x, NULL,
+                           &clip_width, NULL);
 
   if (clip_width == 0)
     page_width = CLUTTER_UNITS_TO_FIXED (width);
@@ -136,29 +80,48 @@ hd_task_launcher_refresh_adjustment (HdTaskLauncher *launcher)
     page_width = MIN (CLUTTER_UNITS_TO_FIXED (width),
                       CLUTTER_UNITS_TO_FIXED (clip_width - clip_x));
 
+  tidy_adjustment_set_valuesx (priv->h_adjustment,
+                               tidy_adjustment_get_valuex (priv->h_adjustment),
+                               0,
+                               width,
+                               CFX_ONE,
+                               CFX_ONE * 20,
+                               page_width);
+}
+
+static inline void
+hd_task_launcher_refresh_v_adjustment (HdTaskLauncher *launcher)
+{
+  HdTaskLauncherPrivate *priv = launcher->priv;
+  ClutterFixed height;
+  ClutterUnit clip_y, clip_height;
+  ClutterUnit page_height;
+
+  if (!priv->v_adjustment)
+    return;
+
+  clutter_actor_get_sizeu (CLUTTER_ACTOR (launcher), NULL, &height);
+  clutter_actor_get_clipu (CLUTTER_ACTOR (launcher),
+                           NULL, &clip_y,
+                           NULL, &clip_height);
+
   if (clip_height == 0)
     page_height = CLUTTER_UNITS_TO_FIXED (height);
   else
     page_height = MIN (CLUTTER_UNITS_TO_FIXED (height),
                        CLUTTER_UNITS_TO_FIXED (clip_height - clip_y));
 
-  if (priv->h_adjustment)
-    tidy_adjustment_set_valuesx (priv->h_adjustment,
-                                 tidy_adjustment_get_valuex (priv->h_adjustment),
-                                 0,
-                                 width,
-                                 CFX_ONE,
-                                 CFX_ONE * 20,
-                                 page_width);
+  g_print ("height: %dpx, page_height: %dpx\n",
+           CLUTTER_UNITS_TO_DEVICE (height),
+           CLUTTER_FIXED_TO_INT (page_height));
 
-  if (priv->v_adjustment)
-    tidy_adjustment_set_valuesx (priv->v_adjustment,
-                                 tidy_adjustment_get_valuex (priv->v_adjustment),
-                                 0,
-                                 height,
-                                 CFX_ONE,
-                                 CFX_ONE * 20,
-                                 page_height);
+  tidy_adjustment_set_valuesx (priv->v_adjustment,
+                               tidy_adjustment_get_valuex (priv->v_adjustment),
+                               0,
+                               height,
+                               CFX_ONE,
+                               CFX_ONE * 20,
+                               page_height);
 }
 
 static void
@@ -168,7 +131,8 @@ adjustment_value_notify (GObject    *gobject,
 {
   ClutterActor *launcher = user_data;
 
-  clutter_actor_queue_redraw (launcher);
+  if (CLUTTER_ACTOR_IS_VISIBLE (launcher))
+    clutter_actor_queue_redraw (launcher);
 }
 
 static void
@@ -238,7 +202,7 @@ hd_task_launcher_get_adjustments (TidyScrollable  *scrollable,
           hd_task_launcher_set_adjustments (scrollable,
                                             adjustment,
                                             priv->v_adjustment);
-          hd_task_launcher_refresh_adjustment (HD_TASK_LAUNCHER (scrollable));
+          hd_task_launcher_refresh_h_adjustment (HD_TASK_LAUNCHER (scrollable));
 
           *h_adj = adjustment;
         }
@@ -256,7 +220,7 @@ hd_task_launcher_get_adjustments (TidyScrollable  *scrollable,
           hd_task_launcher_set_adjustments (scrollable,
                                             priv->h_adjustment,
                                             adjustment);
-          hd_task_launcher_refresh_adjustment (HD_TASK_LAUNCHER (scrollable));
+          hd_task_launcher_refresh_v_adjustment (HD_TASK_LAUNCHER (scrollable));
 
           *v_adj = adjustment;
         }
@@ -268,6 +232,72 @@ tidy_scrollable_iface_init (TidyScrollableInterface *iface)
 {
   iface->set_adjustments = hd_task_launcher_set_adjustments;
   iface->get_adjustments = hd_task_launcher_get_adjustments;
+}
+
+static void
+hd_task_launcher_add (ClutterContainer *container,
+                      ClutterActor     *actor)
+{
+  HdTaskLauncherPrivate *priv = HD_TASK_LAUNCHER (container)->priv;
+
+  g_object_ref (actor);
+
+  priv->launchers = g_list_append (priv->launchers, actor);
+  clutter_actor_set_parent (actor, CLUTTER_ACTOR (container));
+
+  clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
+
+  if (priv->h_adjustment)
+    hd_task_launcher_refresh_h_adjustment (HD_TASK_LAUNCHER (container));
+
+  if (priv->v_adjustment)
+    hd_task_launcher_refresh_v_adjustment (HD_TASK_LAUNCHER (container));
+
+  g_signal_emit_by_name (container, "actor-added", actor);
+
+  g_object_unref (actor);
+}
+
+static void
+hd_task_launcher_remove (ClutterContainer *container,
+                         ClutterActor     *actor)
+{
+  HdTaskLauncherPrivate *priv = HD_TASK_LAUNCHER (container)->priv;
+
+  g_object_ref (actor);
+
+  priv->launchers = g_list_remove (priv->launchers, actor);
+  clutter_actor_unparent (actor);
+
+  clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
+
+  g_signal_emit_by_name (container, "actor-removed", actor);
+
+  g_object_unref (actor);
+}
+
+static void
+hd_task_launcher_foreach (ClutterContainer *container,
+                          ClutterCallback   callback,
+                          gpointer          callback_data)
+{
+  HdTaskLauncherPrivate *priv = HD_TASK_LAUNCHER (container)->priv;
+  GList *l;
+
+  for (l = priv->launchers; l != NULL; l = l->next)
+    {
+      ClutterActor *child = l->data;
+
+      callback (child, callback_data);
+    }
+}
+
+static void
+clutter_container_iface_init (ClutterContainerIface *iface)
+{
+  iface->add = hd_task_launcher_add;
+  iface->remove = hd_task_launcher_remove;
+  iface->foreach = hd_task_launcher_foreach;
 }
 
 static void
@@ -496,6 +526,13 @@ hd_task_launcher_pick (ClutterActor       *actor,
   CLUTTER_ACTOR_CLASS (hd_task_launcher_parent_class)->pick (actor, pick_color);
 
   cogl_push_matrix ();
+
+  if (priv->v_adjustment)
+    {
+      ClutterFixed v_offset = tidy_adjustment_get_valuex (priv->v_adjustment);
+
+      cogl_translatex (0, v_offset * -1, 0);
+    }
 
   for (l = priv->launchers; l != NULL; l = l->next)
     {

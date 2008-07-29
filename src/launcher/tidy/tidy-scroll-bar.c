@@ -602,9 +602,9 @@ tidy_scroll_bar_set_adjustment (TidyScrollBar *bar,
       g_signal_connect_swapped (priv->adjustment, "notify::value",
                                 G_CALLBACK (adjustment_changed_cb),
                                 bar);
-      g_signal_connect (priv->adjustment, "changed",
-                        G_CALLBACK (clutter_actor_queue_relayout),
-                        bar);
+      g_signal_connect_swapped (priv->adjustment, "changed",
+				G_CALLBACK (clutter_actor_queue_relayout),
+				bar);
 
       clutter_actor_queue_relayout (CLUTTER_ACTOR (bar));
     }

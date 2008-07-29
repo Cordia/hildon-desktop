@@ -1,3 +1,11 @@
+2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* src/launcher/hd-task-launcher.c: Update the adjustment range
+	each time a launcher has been added to the HdTaskLauncher.
+
+	* src/launcher/tidy/tidy-scroll-bar.c: Resync from tidy trunk
+	to fix a segmentation fault.
+
 2008-07-28  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* src/launcher/Makefile.am:
