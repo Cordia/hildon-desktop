@@ -212,7 +212,9 @@ typedef struct
   ClutterBehaviour *zoom_behaviour;
   
   ClutterActor *group;
-  ClutterActor *scroll;
+
+  ClutterActor *top_scroll;
+  ClutterActor *sub_scroll;
 
   ClutterActor *top_level;
   ClutterActor *sub_level;
@@ -338,10 +340,12 @@ top_level_item_clicked (HdTaskLauncher *launcher,
       clutter_timeline_rewind (data->timeline);
       clutter_timeline_start (data->timeline);
 
-      clutter_actor_show (data->sub_level);
+      clutter_actor_set_reactive (data->sub_scroll, TRUE);
+      clutter_actor_show (data->sub_scroll);
 
-      clutter_effect_fade (data->tmpl, data->top_level, 0, NULL, NULL);
-      clutter_effect_depth (data->tmpl, data->top_level, -100, NULL, NULL);
+      clutter_actor_set_reactive (data->top_scroll, FALSE);
+      clutter_effect_fade (data->tmpl, data->top_scroll, 0, NULL, NULL);
+      clutter_effect_depth (data->tmpl, data->top_scroll, -100, NULL, NULL);
     }
   else
     {
@@ -360,10 +364,12 @@ sub_level_item_clicked (HdTaskLauncher *launcher,
   clutter_timeline_rewind (data->timeline);
   clutter_timeline_start (data->timeline);
 
-  clutter_actor_hide (data->sub_level);
+  clutter_actor_set_reactive (data->sub_scroll, FALSE);
+  clutter_actor_hide (data->sub_scroll);
 
-  clutter_effect_fade (data->tmpl, data->top_level, 255, NULL, NULL);
-  clutter_effect_depth (data->tmpl, data->top_level, 0, NULL, NULL);
+  clutter_actor_set_reactive (data->top_scroll, TRUE);
+  clutter_effect_fade (data->tmpl, data->top_scroll, 255, NULL, NULL);
+  clutter_effect_depth (data->tmpl, data->top_scroll, 0, NULL, NULL);
 }
 
 ClutterActor *
@@ -389,15 +395,22 @@ hd_get_application_launcher (void)
                                      200, 0);
 
       hd_launcher->group = clutter_group_new ();
-      hd_launcher->scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
+
+      hd_launcher->top_scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
+      clutter_actor_set_size (hd_launcher->top_scroll, 760, 400);
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
-                                   hd_launcher->scroll);
-      clutter_actor_set_size (hd_launcher->scroll, 760, 400);
+                                   hd_launcher->top_scroll);
+
+      hd_launcher->sub_scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
+      clutter_actor_set_size (hd_launcher->sub_scroll, 760, 400);
+      clutter_actor_hide (hd_launcher->sub_scroll);
+      clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
+                                   hd_launcher->sub_scroll);
 
       /* top level launcher */
       hd_launcher->top_level = hd_task_launcher_new ();
       clutter_actor_set_width (hd_launcher->top_level, 760);
-      clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->scroll),
+      clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->top_scroll),
                                    hd_launcher->top_level);
       g_signal_connect (hd_launcher->top_level,
                         "item-clicked", G_CALLBACK (top_level_item_clicked),
@@ -406,8 +419,7 @@ hd_get_application_launcher (void)
       /* secondary level launcher */
       hd_launcher->sub_level = hd_task_launcher_new ();
       clutter_actor_set_width (hd_launcher->sub_level, 760);
-      clutter_actor_hide (hd_launcher->sub_level);
-      clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
+      clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->sub_scroll),
                                    hd_launcher->sub_level);
       g_signal_connect (hd_launcher->sub_level,
                         "item-clicked", G_CALLBACK (sub_level_item_clicked),

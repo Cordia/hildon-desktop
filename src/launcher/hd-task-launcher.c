@@ -148,6 +148,9 @@ launch_item (ClutterActor *actor,
                             "completed", G_CALLBACK (launch_animation_complete),
                             copy);
 
+  g_object_unref (closure->launcher);
+  g_object_unref (closure->item);
+  g_object_unref (closure->icon);
   g_free (closure);
 }
 
@@ -180,9 +183,9 @@ hd_task_launcher_real_item_clicked (HdTaskLauncher *launcher,
         g_assert (icon != NULL);
 
         clos = g_new0 (LaunchItemClosure, 1);
-        clos->launcher = launcher;
-        clos->item = item;
-        clos->icon = icon;
+        clos->launcher = g_object_ref (launcher);
+        clos->item = g_object_ref (item);
+        clos->icon = g_object_ref (icon);
 
         icon_width = clutter_actor_get_width (icon);
 

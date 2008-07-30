@@ -1,5 +1,17 @@
 2008-07-30  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/hd-launcher-utils.c: Put the sub-level task
+	launcher into its own FingerScroll, and animate the FingerScroll
+	actor instead of directly the TaskLaunchers, when switching
+	between top-level and sub-level.
+
+	* src/launcher/hd-task-launcher.c: Take a reference on the
+	members of the launcher closure, so that they won't disappear
+	before the effect is complete; this fixes launching items
+	from the sub-level task launcher.
+
+2008-07-30  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/hd-dummy-launcher.c: Use a random color for
 	the dummy launcher icon; shorten the "bounce" effect duration.
 
