@@ -242,12 +242,6 @@ populate_top_launcher (gpointer data)
 
   hd_task_launcher_add_item (closure->launcher, item);
 
-  g_print ("item [%d] is %s\n",
-           closure->current_pos + 1,
-           hd_launcher_item_get_item_type (item) == HD_APPLICATION_LAUNCHER
-             ? "application"
-             : "section");
-
   closure->current_pos += 1;
 
   if (closure->current_pos == closure->n_items)
