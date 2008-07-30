@@ -849,27 +849,6 @@ hd_comp_mgr_top_home (HdCompMgr *hmgr)
   hd_comp_mgr_raise_home_actor (hmgr);
 }
 
-static gboolean
-hd_comp_mgr_client_shutdown_timeout_cb (gpointer data)
-{
-  pid_t pid = GPOINTER_TO_INT (data);
-
-  if (pid && !kill (pid, 0))
-    {
-      /* app did not exit in response to delete protocol, kill it */
-
-      if (kill (pid, SIGKILL))
-        {
-	  /* Something went wrong, perhaps we do not have sufficient
-	   * permissions to kill this process
-	   */
-	  g_warning ("SIGKILL failed on pid %d.", pid);
-        }
-    }
-
-  return FALSE;
-}
-
 /*
  * Shuts down a client, handling hibernated applications correctly.
  */
@@ -895,10 +874,6 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
     {
       MBWindowManagerClient * c = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
 
-      g_timeout_add (HIBERNATION_TIMEMOUT,
-                     (GSourceFunc) hd_comp_mgr_client_shutdown_timeout_cb,
-                     GINT_TO_POINTER (c->window->pid));
-
       mb_wm_client_deliver_delete (c);
     }
 }
@@ -918,10 +893,6 @@ hd_comp_mgr_hibernate_client (HdCompMgr *hmgr,
 					   MBWMCompMgrClutterClientDontUpdate);
 
   hc->priv->hibernating = TRUE;
-
-  g_timeout_add (HIBERNATION_TIMEMOUT,
-		 (GSourceFunc) hd_comp_mgr_client_shutdown_timeout_cb,
-		 GINT_TO_POINTER (c->wm_client->window->pid));
 
   mb_wm_client_deliver_delete (c->wm_client);
 }

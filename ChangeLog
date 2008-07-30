@@ -1,5 +1,20 @@
 2008-07-30 Robert Bragg  <bob@o-hand.com>
 	
+	* src/mb/hd-comp-mgr.c:
+	removes hd_comp_mgr_client_shutdown_timeout_cb and no longer sets up
+	a timeout before calls to mb_wm_client_deliver_delete.
+	
+	I think there is no reliable metric for determining if a client has
+	responded to a WM_DELETE (since the client can show the user a
+	confirmation dialog and cancel any response) Instead we leave it up to
+	the NET_WM_PING protocol for detecting unresponsive clients.
+
+	Specifically: Testing if the client process was still running after
+	a timeout and killing (-9) if so was particularly bad in the case that
+	the client process was actually the WM process :-)
+
+2008-07-30 Robert Bragg  <bob@o-hand.com>
+	
 	* src/main.c:
 	Initialises gtk+, clutter and mbwm2 so that they behave nicely
 	together. Of a few approaches tried, this has worked best. Noteably
