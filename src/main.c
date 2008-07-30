@@ -105,6 +105,19 @@ key_binding_func (MBWindowManager   *wm,
     }
 }
 
+static ClutterX11FilterReturn
+clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
+{
+  MBWindowManager * wm = data;
+
+  mb_wm_main_context_handle_x_event (xev, wm->main_ctx);
+
+  if (wm->sync_type)
+    mb_wm_sync (wm);
+
+  return CLUTTER_X11_FILTER_CONTINUE;
+}
+
 int
 main (int argc, char **argv)
 {
@@ -122,32 +135,19 @@ main (int argc, char **argv)
   mb_wm_theme_set_custom_client_type_func (theme_client_type_func, NULL);
   mb_wm_theme_set_custom_button_type_func (theme_button_type_func, NULL);
 
-  printf ("initializing gtk\n");
-
   gtk_init (&argc, &argv);
-  dpy = GDK_DISPLAY();
 
-#if ENABLE_CLUTTER_COMPOSITE_MANAGER
-  /*
-   * If using clutter, we share the display connection, and hook
-   * our xevent handler into the clutter main loop.
+  /* NB: We _dont_ pass the X display from gtk into clutter because
+   * it makes life far too complicated to have gtkish things like
+   * creating dialogs going on using the same X display as the window
+   * manager because it breaks all kinds of assumptions about
+   * the relationship with client windows and the window manager.
    *
-   * If we are also doing gtk integration, we need to make clutter to
-   * use the gtk display connection.
-   */
-  if (dpy)
-    clutter_x11_set_display (dpy);
-
-#if USE_GTK
-  clutter_x11_disable_event_retrieval ();
-#endif
-
+   * For example it breaks the SubStructureRedirect mechanism, and
+   * assumptions about the number of benign UnmapNotifies the window
+   * manager will see when reparenting "client" windows. */
   clutter_init (&argc, &argv);
-
-  if (!dpy)
-    dpy = clutter_x11_get_default_display ();
-
-#endif
+  dpy = clutter_x11_get_default_display ();
 
   wm = MB_WINDOW_MANAGER (mb_wm_object_new (HD_TYPE_WM,
 					    MBWMObjectPropArgc, argc,
@@ -178,13 +178,14 @@ main (int argc, char **argv)
 				    NULL,
 				    (void*)KEY_ACTION_PAGE_PREV);
 
-  /* We need to dispose the gdk display so that the GSource for the
-   * X11 connection is removed which otherwise nicks all of the
-   * events we want sent to clutter.
-   */
-  g_object_run_dispose (G_OBJECT (gdk_x11_lookup_xdisplay (GDK_DISPLAY ())));
+  clutter_x11_add_filter (clutter_x11_event_filter, wm);
 
-  mb_wm_main_loop(wm);
+  /* NB: we call gtk_main as opposed to clutter_main or mb_wm_main_loop
+   * because it does the most extra magic, such as supporting quit functions
+   * that the others don't. Except for adding the clutter_x11_add_filter
+   * (manually done above) it appears be a super set of the other two
+   * so everything *should* be covered this way. */
+  gtk_main ();
 
   mb_wm_object_unref (MB_WM_OBJECT (wm));
 

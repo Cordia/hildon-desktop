@@ -1,5 +1,19 @@
 2008-07-30 Robert Bragg  <bob@o-hand.com>
 	
+	* src/main.c:
+	Initialises gtk+, clutter and mbwm2 so that they behave nicely
+	together. Of a few approaches tried, this has worked best. Noteably
+	it gives gtk+ a seperate X connection from clutter and mbwm2 so
+	that dialogs etc, appear to the window manager as a separate client.
+
+	more rationale is in the comments, but basically trying to do client
+	like things in-process with the WM turnes out to be a a Bad Idea (tm)
+	not least because it breaks the SubStructureRedirect mechanism.
+
+	NB: You must build your libmatchbox2 without passing --with-gtk !
+
+2008-07-30 Robert Bragg  <bob@o-hand.com>
+	
 	* src/mb/hd-wm.c:
 	Make sure we never interpret the window type for override redirect
 	windows. (E.g. we were handling an 1px x 1px offscreen window - used
