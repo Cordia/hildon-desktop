@@ -1,5 +1,13 @@
 2008-07-30  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/hd-launcher-utils.c:
+	(hd_get_application_launcher): Add padding.
+
+	* src/launcher/test-launcher.c: Remove the positioning code,
+	since the padding is done by the launcher group already.
+
+2008-07-30  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/hd-launcher-utils.c: Put the sub-level task
 	launcher into its own FingerScroll, and animate the FingerScroll
 	actor instead of directly the TaskLaunchers, when switching

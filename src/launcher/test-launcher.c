@@ -45,7 +45,6 @@ main (int   argc,
 
   launcher = hd_get_application_launcher ();
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), launcher);
-  clutter_actor_set_position (launcher, 0, 64);
 
   clutter_actor_show (stage);
 

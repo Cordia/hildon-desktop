@@ -397,11 +397,13 @@ hd_get_application_launcher (void)
       hd_launcher->group = clutter_group_new ();
 
       hd_launcher->top_scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
+      clutter_actor_set_position (hd_launcher->top_scroll, 0, 64);
       clutter_actor_set_size (hd_launcher->top_scroll, 760, 400);
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
                                    hd_launcher->top_scroll);
 
       hd_launcher->sub_scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
+      clutter_actor_set_position (hd_launcher->sub_scroll, 0, 64);
       clutter_actor_set_size (hd_launcher->sub_scroll, 760, 400);
       clutter_actor_hide (hd_launcher->sub_scroll);
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
