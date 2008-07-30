@@ -1,3 +1,15 @@
+2008-07-30 Robert Bragg  <bob@o-hand.com>
+	
+	* src/mb/hd-wm.c:
+	Make sure we never interpret the window type for override redirect
+	windows. (E.g. we were handling an 1px x 1px offscreen window - used
+	by the gtk color selector for grabbing input - as an application
+	window and creating a full screen frame and title bar etc)
+
+	* src/home/hd-home.c:
+	Don't mark the input only desktop window as override redirect; it
+	is enough that it is marked as NET_WM_WINDOW_TYPE_DESKTOP.
+
 2008-07-30  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* src/launcher/hd-launcher-utils.c:

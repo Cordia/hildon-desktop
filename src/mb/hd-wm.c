@@ -119,7 +119,9 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
   MBWindowManagerClass *wm_class =
     MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
 
-  if (win->net_type ==
+  if (win->override_redirect && wm_class)
+    return wm_class->client_new (wm, win);
+  else if (win->net_type ==
       hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_HOME_APPLET))
     {
       printf ("### is home applet ###\n");

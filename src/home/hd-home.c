@@ -879,7 +879,6 @@ hd_home_constructed (GObject *object)
    * that will automatically wrap it, ensuring it is located in the correct
    * place.
    */
-  attr.override_redirect = True;
   attr.event_mask        = MBWMChildMask |
     ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask;
 
@@ -892,7 +891,7 @@ hd_home_constructed (GObject *object)
 				 CopyFromParent,
 				 InputOnly,
 				 CopyFromParent,
-				 CWOverrideRedirect|CWEventMask,
+				 CWEventMask,
 				 &attr);
 
   XChangeProperty (wm->xdpy, priv->desktop,
