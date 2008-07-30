@@ -1,3 +1,8 @@
+2008-07-30  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* src/launcher/hd-dummy-launcher.c: Use a random color for
+	the dummy launcher icon; shorten the "bounce" effect duration.
+
 2008-07-29  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* src/launcher/hd-task-launcher.c (launch_item): Hardcode

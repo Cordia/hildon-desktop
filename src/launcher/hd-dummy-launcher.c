@@ -10,7 +10,6 @@
 
 #define HD_LAUNCHER_ICON_SIZE   96
 
-static const ClutterColor icon_color = { 255, 255, 255, 224 };
 static const ClutterColor text_color = { 255, 255, 255, 224 };
 
 static guint dummy_counter = 1;
@@ -21,10 +20,16 @@ static ClutterActor *
 hd_dummy_launcher_get_icon (HdLauncherItem *item)
 {
   ClutterActor *retval;
+  ClutterColor color = { 0, };
   guint size = HD_LAUNCHER_ICON_SIZE;
 
+  color.red   = g_random_int_range (0, 255);
+  color.green = g_random_int_range (0, 255);
+  color.blue  = g_random_int_range (0, 255);
+  color.alpha = 255;
+
   retval = clutter_rectangle_new ();
-  clutter_rectangle_set_color (CLUTTER_RECTANGLE (retval), &icon_color);
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (retval), &color);
   clutter_actor_set_size (retval, size, size);
 
   return retval;
@@ -93,7 +98,7 @@ static void
 hd_dummy_launcher_init (HdDummyLauncher *launcher)
 {
   launcher->tmpl =
-    clutter_effect_template_new_for_duration (150, CLUTTER_ALPHA_RAMP);
+    clutter_effect_template_new_for_duration (100, CLUTTER_ALPHA_RAMP);
 }
 
 HdLauncherItem *
