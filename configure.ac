@@ -56,6 +56,7 @@ src/util/Makefile
 data/Makefile
 data/icons/Makefile
 data/icons/48x48/Makefile
+tests/Makefile
 ])
 
 AC_OUTPUT

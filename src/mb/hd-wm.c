@@ -38,6 +38,8 @@
 #include <clutter/clutter-main.h>
 #include <clutter/x11/clutter-x11.h>
 
+#include <gtk/gtk.h>
+
 #include "hd-home-applet.h"
 #include "hd-note.h"
 #include "hd-app-menu.h"
@@ -48,8 +50,16 @@ static void hd_wm_destroy    (MBWMObject *object);
 static void hd_wm_class_init (MBWMObjectClass *klass);
 static MBWindowManagerClient* hd_wm_client_new (MBWindowManager *,
 						MBWMClientWindow *);
-
 static MBWMCompMgr * hd_wm_comp_mgr_new (MBWindowManager *wm);
+static Bool hd_wm_client_responding (MBWindowManager *wm,
+				     MBWindowManagerClient *c);
+static Bool hd_wm_client_hang (MBWindowManager *wm,
+			       MBWindowManagerClient *c);
+
+struct HdWmPrivate
+{
+  GtkWidget *hung_client_dialog;
+};
 
 int
 hd_wm_class_type ()
@@ -76,8 +86,11 @@ static int
 hd_wm_init (MBWMObject *object, va_list vap)
 {
   MBWindowManager      *wm = MB_WINDOW_MANAGER (object);
+  HdWm		       *hdwm = HD_WM (wm);
 
   wm->modality_type = MBWMModalitySystem;
+
+  hdwm->priv = mb_wm_util_malloc0 (sizeof (struct HdWmPrivate));
 
   return 1;
 }
@@ -90,6 +103,9 @@ hd_wm_class_init (MBWMObjectClass *klass)
   wm_class->comp_mgr_new = hd_wm_comp_mgr_new;
   wm_class->client_new   = hd_wm_client_new;
 
+  wm_class->client_responding = hd_wm_client_responding;
+  wm_class->client_hang	      = hd_wm_client_hang;
+
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdWm";
 #endif
@@ -98,6 +114,10 @@ hd_wm_class_init (MBWMObjectClass *klass)
 static void
 hd_wm_destroy (MBWMObject *object)
 {
+  MBWindowManager   *wm = MB_WINDOW_MANAGER (object);
+  HdWm		    *hdwm = HD_WM (wm);
+
+  free (hdwm->priv);
 }
 
 static MBWMCompMgr *
@@ -164,3 +184,72 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
 
   return NULL;
 }
+
+static Bool
+hd_wm_client_responding (MBWindowManager *wm,
+			 MBWindowManagerClient *c)
+{
+  HdWm *hdwm = HD_WM (wm);
+
+  /* If we are currently telling the user that the client is not responding
+   * then we force a cancelation of that dialog.
+   *
+   * TODO perhaps we should put up another dialog letting the user know that
+   * actually the client is now responsive?
+   */
+  if (hdwm->priv->hung_client_dialog)
+    {
+      gtk_dialog_response (GTK_DIALOG (hdwm->priv->hung_client_dialog),
+			   GTK_RESPONSE_REJECT);
+    }
+
+  /* FIXME Not sure that this function should return anything. Internally a.t.m
+   * mbwm2 doesn't interpret the return value, and I'm not sure what it could
+   * mean later? */
+  return True;
+}
+
+static Bool hd_wm_client_hang (MBWindowManager *wm,
+			       MBWindowManagerClient *c)
+{
+  HdWm	    *hdwm = HD_WM (wm);
+  GtkWidget *dialog;
+  gint	     response;
+
+  /* TODO - gettextize strings in this function*/
+
+  dialog =
+    gtk_message_dialog_new (NULL, /* parent */
+			    GTK_DIALOG_MODAL,
+			    GTK_MESSAGE_WARNING,
+			    GTK_BUTTONS_NONE,
+			    "\"%s\" is not responding.",
+			    mb_wm_client_get_name (c));
+
+  gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+					    "You may choose to wait a short "
+					    "while for it to continue or "
+					    "force the application to quit "
+					    "entirely.");
+  gtk_dialog_add_buttons (GTK_DIALOG (dialog),
+                          "_Wait",
+                          GTK_RESPONSE_REJECT,
+                          "_Force Quit",
+                          GTK_RESPONSE_ACCEPT,
+                          NULL);
+  gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_REJECT);
+
+  /* NB: Setting hdwm->priv->hung_client_dialog is an indication to
+   * hd_wm_client_responding that the user has been presented the dialog
+   * so it may be canceled if the client starts responding again.
+   */
+  hdwm->priv->hung_client_dialog = dialog;
+  response = gtk_dialog_run (GTK_DIALOG (dialog));
+  gtk_widget_destroy (dialog);
+  hdwm->priv->hung_client_dialog = NULL;
+  if (response == GTK_RESPONSE_ACCEPT)
+    return False;
+  else
+    return True;
+}
+

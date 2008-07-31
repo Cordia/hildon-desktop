@@ -1,3 +1,16 @@
+2008-07-31 Robert Bragg  <bob@o-hand.com>
+	
+	* src/mb/hd-wm.c:
+	Hooks up a handler for unresponsive clients that shows a gtk message
+	dialog allowing the user to either wait longer or force the client
+	to quit.
+
+	* configure.ac
+	* tests/Makefile.am
+	* tests/test-hung-process.c:
+	Adds a simple unit test to verify the dialog for handling unresponsive
+	clients.
+
 2008-07-30 Robert Bragg  <bob@o-hand.com>
 	
 	* src/mb/hd-comp-mgr.c:
