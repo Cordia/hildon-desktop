@@ -5,13 +5,15 @@ icon_DATA = \
 	qgn_tswitcher_right.png \
 	qgn_tswitcher_back.png \
 	qgn_tswitcher_left.png \
+	qgn_general_add.png \
+	qgn_home_edit_mode.png \
+	qgn_home_resizer.png \
+	qgn_home_settings.png \
+	qgn_home_close.png \
 	applet-resize-button.png \
-	bg-image-launcher.png \
 	hibernation-icon.png \
 	applet-settings-button.png \
-	bg-image-switcher.png \
-	back-button.png \
-	qgn_home_close.png
+	back-button.png
 
 EXTRA_DIST = $(icon_DATA)
 

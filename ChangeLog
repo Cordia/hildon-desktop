@@ -1,5 +1,19 @@
 2008-08-01 Robert Bragg  <bob@o-hand.com>
 
+	* data/icons/48x48/Makefile.am
+	* data/icons/48x48/qgn_home_resizer.png
+	* data/icons/48x48/qgn_home_edit_mode.png
+	* data/icons/48x48/qgn_home_settings.png
+	* data/icons/48x48/qgn_home_close.png
+	* data/icons/48x48/qgn_general_add.png:
+	Adds more icons using the logical names we know of
+
+	* data/menu-button.png:
+	Resizes to 56px height to match the height of the title area as
+	defined in the master layout document.
+
+2008-08-01 Robert Bragg  <bob@o-hand.com>
+
 	* tests/test-applet.c
 	* tests/Makefile.am
 	* src/hd-applet-test.c
