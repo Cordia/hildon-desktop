@@ -1,4 +1,13 @@
 2008-08-01 Robert Bragg  <bob@o-hand.com>
+
+	* tests/test-applet.c
+	* tests/Makefile.am
+	* src/hd-applet-test.c
+	* Makefile.am:
+	Moves hd-applet-test.c into tests/tests-applet.c and hooks into the
+	build scripts.
+
+2008-08-01 Robert Bragg  <bob@o-hand.com>
 	
 	* data/icons/48x48/bg-image-switcher.png
 	* data/icons/48x48/bg-image-launcher.png:
