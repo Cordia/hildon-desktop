@@ -1,3 +1,9 @@
+2008-08-01 Robert Bragg  <bob@o-hand.com>
+	
+	* data/icons/48x48/bg-image-switcher.png
+	* data/icons/48x48/bg-image-launcher.png:
+	Removes a couple of unsed icons
+
 2008-07-31 Robert Bragg  <bob@o-hand.com>
 	
 	* src/mb/hd-wm.c:
