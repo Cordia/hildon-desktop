@@ -412,7 +412,6 @@ hd_switcher_clicked (HdSwitcher *switcher)
 
       priv->showing_switcher = TRUE;
 
-      hd_comp_mgr_raise_home_actor (HD_COMP_MGR (priv->comp_mgr));
       clutter_actor_show_all (priv->switcher_group);
 
       /*
@@ -576,8 +575,6 @@ hd_switcher_hide_switcher (HdSwitcher * switcher)
   clutter_actor_hide_all (priv->switcher_group);
 
   hd_util_ungrab_pointer ();
-
-  hd_comp_mgr_lower_home_actor (HD_COMP_MGR (priv->comp_mgr));
 
   /*
    * Now request stack sync from the CM, in case there were some changes while

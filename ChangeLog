@@ -1,4 +1,11 @@
 2008-08-01 Robert Bragg  <bob@o-hand.com>
+	
+	* src/home/hd-switcher.c:
+	Removes some fidling with the stacking of the switcher group that
+	seems to fix stacking bug whereby dialogs can end up hiden below the
+	home views.
+
+2008-08-01 Robert Bragg  <bob@o-hand.com>
 
 	* data/icons/48x48/Makefile.am
 	* data/icons/48x48/qgn_home_resizer.png
