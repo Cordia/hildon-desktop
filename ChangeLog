@@ -1,3 +1,40 @@
+2008-08-04  Chris Lord  <chris@openedhand.com>
+
+	* configure.ac:
+	Add gconf-2.0 to dependencies
+
+	* src/home/hd-background-dialog.[ch]:
+	* src/home/Makefile.am:
+	Add hd-background-dialog.[ch]
+
+	* src/home/hd-edit-menu.c (hd_edit_menu_item_release):
+	Create and show the background dialog when choosing the
+	change-background menu option
+
+	* src/home/hd-home-view.c (hd_home_view_class_init),
+	(hd_home_view_get_gconf_path), (hd_home_view_gconf_bgcolor_notify),
+	(hd_home_view_gconf_bgimage_notify),
+	(hd_home_view_gconf_bgstyle_notify), (hd_home_view_constructed),
+	(hd_home_view_init), (hd_home_view_dispose),
+	(get_bg_image_processed_name), (bg_image_set_idle_cb),
+	(process_bg_image_thread), (hd_home_view_refresh_bg),
+	(hd_home_view_set_property), (hd_home_view_get_property),
+	(hd_home_view_set_background_color):
+	* src/home/hd-home-view.h:
+	Use gconf to store background paths, display styles and colours.
+	Add threaded background-image processing (resizing, cropping, etc.)
+
+	* src/home/hd-home.c (hd_home_constructed), (hd_home_init):
+	Add a gconf directory listener for the hildon-home path, remove
+	setting of the background colour for workspaces (this is done by the
+	workspace itself now).
+
+	* src/home/hd-home.h:
+	Define the hildon gconf root
+
+	* src/main.c (main):
+	Initialise GLib threads
+
 2008-08-04 Robert Bragg  <bob@o-hand.com>
 
 	* tests/Makefile.am

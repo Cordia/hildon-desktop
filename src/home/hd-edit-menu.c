@@ -29,6 +29,9 @@
 #include "hd-comp-mgr.h"
 #include "hd-home.h"
 #include "hd-util.h"
+#include "hd-background-dialog.h"
+
+#include <gtk/gtk.h>
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -136,7 +139,7 @@ hd_edit_menu_constructed (GObject *object)
   g_signal_connect (rect, "button-release-event",
 		    G_CALLBACK (hd_edit_menu_item_release),
 		    object);
-  
+
   rect = clutter_rectangle_new_with_color (&clr_b);
 
   clutter_actor_set_size (rect,
@@ -278,6 +281,7 @@ hd_edit_menu_item_release (ClutterActor       *item,
 {
   HdEditMenuPrivate *priv = menu->priv;
   guint              action;
+  GtkWidget         *dialog;
 
   action = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (item),
 					   "HD-EDIT-MENU-action"));
@@ -288,12 +292,27 @@ hd_edit_menu_item_release (ClutterActor       *item,
 
   switch (action)
     {
+    case 0:
+      {
+      GtkWidget *widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+      hd_home_set_mode (priv->home, HD_HOME_MODE_NORMAL);
+      gtk_widget_show (widget);
+      }
+      break;
+
+    case 3:
+      dialog = hd_background_dialog_new (priv->home,
+					 hd_home_get_current_view (priv->home));
+      hd_home_set_mode (priv->home, HD_HOME_MODE_NORMAL);
+      gtk_widget_show (dialog);
+      break;
+
     case 5:
       hd_home_set_mode (priv->home, HD_HOME_MODE_LAYOUT);
       break;
     default:;
     }
-  
+
   return TRUE;
 }
 

@@ -4,6 +4,7 @@ INCLUDES = -I $(top_srcdir)/src/launcher \
 home_h = 	hd-home.h		\
 		hd-home-view.h		\
 		hd-edit-menu.h		\
+		hd-background-dialog.h	\
 		hd-layout-dialog.h	\
 		hd-switcher.h		\
 		hd-switcher-group.h	\
@@ -12,6 +13,7 @@ home_h = 	hd-home.h		\
 
 home_c = 	hd-home.c		\
 		hd-home-view.c		\
+		hd-background-dialog.c	\
 		hd-layout-dialog.c	\
 		hd-edit-menu.c		\
 		hd-switcher.c		\

@@ -128,6 +128,8 @@ main (int argc, char **argv)
 			  G_LOG_LEVEL_CRITICAL |
 			  G_LOG_LEVEL_WARNING);
 
+  g_thread_init (NULL);
+
   mb_wm_object_init();
 
   mb_wm_theme_set_custom_theme_type_func (theme_type_func, NULL);

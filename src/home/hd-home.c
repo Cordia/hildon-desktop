@@ -39,6 +39,8 @@
 
 #include <matchbox/core/mb-wm.h>
 
+#include <gconf/gconf-client.h>
+
 #define HDH_MOVE_DURATION 300
 #define HDH_ZOOM_DURATION 3000
 #define HDH_EDIT_BUTTON_DURATION 200
@@ -672,8 +674,6 @@ hd_home_constructed (GObject *object)
 
   for (i = 0; i < 4; ++i)
     {
-      clr.alpha = 0xff;
-
       view = g_object_new (HD_TYPE_HOME_VIEW,
 			   "comp-mgr", priv->comp_mgr,
 			   "home",     object,
@@ -698,33 +698,6 @@ hd_home_constructed (GObject *object)
 
       clutter_actor_set_position (view, priv->xwidth * i, 0);
       clutter_container_add_actor (CLUTTER_CONTAINER (main_group), view);
-
-      if (i % 4 == 0)
-	{
-	  clr.red   = 0xff;
-	  clr.blue  = 0;
-	  clr.green = 0;
-	}
-      else if (i % 4 == 1)
-	{
-	  clr.red   = 0;
-	  clr.blue  = 0xff;
-	  clr.green = 0;
-	}
-      else if (i % 4 == 2)
-	{
-	  clr.red   = 0;
-	  clr.blue  = 0;
-	  clr.green = 0xff;
-	}
-      else
-	{
-	  clr.red   = 0xff;
-	  clr.blue  = 0xff;
-	  clr.green = 0;
-	}
-
-      hd_home_view_set_background_color (HD_HOME_VIEW (view), &clr);
     }
 
   priv->n_views = i;
@@ -944,6 +917,12 @@ hd_home_init (HdHome *self)
   priv->edit_button_template =
     clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
 					      CLUTTER_ALPHA_RAMP_INC);
+
+  /* Listen to gconf notifications */
+  gconf_client_add_dir (gconf_client_get_default (),
+			HDH_GCONF_PREFIX,
+			GCONF_CLIENT_PRELOAD_NONE,
+			NULL);
 }
 
 static void

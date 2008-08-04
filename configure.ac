@@ -37,6 +37,7 @@ PKG_CHECK_MODULES(HD, clutter-0.8 \
 		      xfixes \
 		      libmatchbox2-0.1 \
 		      gtk+-2.0 \
+		      gconf-2.0 \
 		      xft)
 
 HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util'
