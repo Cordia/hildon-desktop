@@ -1,3 +1,11 @@
+2008-08-04 Robert Bragg  <bob@o-hand.com>
+	
+	* home/hd-switcher.c:
+	Don't use clutter_actor_{show,hide}_all to show/hide the launcher
+	use clutter_actor_{show,hide}. (There is an unresloved issue where
+	by using the *_all calls breaks input event handling in the
+	launcher.)
+
 2008-08-01 Robert Bragg  <bob@o-hand.com>
 	
 	* src/home/hd-switcher.c:

@@ -402,7 +402,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
        */
       hd_switcher_setup_buttons (switcher, TRUE);
 
-      clutter_actor_show_all (priv->launcher_group);
+      clutter_actor_show (priv->launcher_group);
       priv->showing_launcher = TRUE;
     }
   else if (priv->showing_launcher ||
@@ -591,7 +591,7 @@ hd_switcher_hide_launcher (HdSwitcher * switcher)
 
   priv->showing_launcher = FALSE;
 
-  clutter_actor_hide_all (priv->launcher_group);
+  clutter_actor_hide (priv->launcher_group);
   hd_util_ungrab_pointer ();
 }
 
