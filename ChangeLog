@@ -1,4 +1,17 @@
 2008-08-04 Robert Bragg  <bob@o-hand.com>
+
+	* src/home/hd-switcher.c
+	* src/home/hd-home.c
+	* src/home/hd-home.h
+	* src/util/hd-util.c
+	* src/util/hd-util.h:
+	Some re-working of the pointer grabbing. We now have just one set of
+	hd_home_grub/ungrab_pointer functions (removes the util versions for
+	now) It adds more debugging to identify unbalanced ungrab calls.
+
+	Adds a grab when the launcher is run.
+
+2008-08-04 Robert Bragg  <bob@o-hand.com>
 	
 	* home/hd-switcher.c:
 	Don't use clutter_actor_{show,hide}_all to show/hide the launcher

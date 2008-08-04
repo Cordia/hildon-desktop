@@ -139,7 +139,7 @@ struct _HdHomePrivate
   gint                   initial_y;
   gint                   cumulative_x;
 
-  gboolean               pointer_grabbed     : 1;
+  gint			 grab_count;
   gboolean               pan_handled         : 1;
   gboolean               showing_edit_button : 1;
 
@@ -1042,24 +1042,61 @@ void
 hd_home_grab_pointer (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
+  ClutterActor  *stage = clutter_stage_get_default();
+  Window         clutter_window;
+  Display       *dpy = clutter_x11_get_default_display ();
+  gint           status;
 
-  if (!priv->pointer_grabbed)
-    {
-      if (!hd_util_grab_pointer ())
-	priv->pointer_grabbed = TRUE;
-    }
+  clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
+
+  status = XGrabPointer (dpy,
+			 clutter_window,
+			 False,
+			 ButtonPressMask   |
+			 ButtonReleaseMask |
+			 PointerMotionMask,
+			 GrabModeAsync,
+			 GrabModeAsync,
+			 None,
+			 None,
+			 CurrentTime);
+
+  if (priv->grab_count != 0)
+    g_warning ("We are issuing a grab when a grab is already in place. This\n"
+	       "will override the previous and that's possibly a mistake.\n");
+
+  g_debug ("Doing pointer grab on 0x%x (status %d and grab_count = %d)!!!",
+	   (unsigned int) clutter_window, status, priv->grab_count++);
 }
 
 void
 hd_home_ungrab_pointer (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
+  Display	*dpy = clutter_x11_get_default_display ();
 
-  if (priv->pointer_grabbed)
+  /* NB: X grabs can not be nested, but for our needs it is much easier
+   * to manage things with nesting semantics */
+
+  if (--priv->grab_count > 0)
     {
-      hd_util_ungrab_pointer ();
-      priv->pointer_grabbed = FALSE;
+      g_debug ("Skipping ungrab (grab_count = %d) !!!", priv->grab_count);
+      return;
     }
+  if (priv->grab_count < 0)
+    {
+      g_debug ("Unbalanced ungrab!! (grub_count = %d) !!!", priv->grab_count);
+      g_debug ("(Will now be reset to zero)\n");
+    }
+
+  XUngrabPointer (dpy, CurrentTime);
+
+  /* NB: any return status is meaningless for an XUngrabPointer, it should
+   * always == 1 (i.e. XUngrabPointer doesn't wait for a server response
+   * before returning) */
+  g_debug ("Doing pointer ungrab !!!");
+
+  priv->grab_count = 0;
 }
 
 static void
@@ -1606,6 +1643,14 @@ hd_home_get_current_view_id (HdHome *home)
   top = g_list_nth_data (priv->views, priv->current_view);
 
   return hd_home_view_get_view_id (top);
+}
+
+HdHomeView *
+hd_home_get_current_view (HdHome *home)
+{
+  HdHomePrivate   *priv = home->priv;
+
+  return (HdHomeView *)g_list_nth_data (priv->views, priv->current_view);
 }
 
 void

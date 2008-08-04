@@ -378,6 +378,8 @@ static gboolean
 hd_switcher_clicked (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdHome	    *home =
+    HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
 
   /*
    * We have the following scenarios:
@@ -404,11 +406,13 @@ hd_switcher_clicked (HdSwitcher *switcher)
 
       clutter_actor_show (priv->launcher_group);
       priv->showing_launcher = TRUE;
+      hd_home_grab_pointer (home);
     }
   else if (priv->showing_launcher ||
 	   (!priv->showing_switcher && priv->switcher_mode))
     {
       hd_switcher_hide_launcher (switcher);
+      hd_home_ungrab_pointer (home);
 
       priv->showing_switcher = TRUE;
 
@@ -428,11 +432,7 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
-  if (!actor)
-    {
-      hd_util_grab_pointer ();
-    }
-  else
+  if (actor)
     {
       MBWMCompMgrClient     *cclient;
       MBWindowManagerClient *c;
@@ -574,8 +574,6 @@ hd_switcher_hide_switcher (HdSwitcher * switcher)
 
   clutter_actor_hide_all (priv->switcher_group);
 
-  hd_util_ungrab_pointer ();
-
   /*
    * Now request stack sync from the CM, in case there were some changes while
    * the window actors were adopted by the switcher.
@@ -592,7 +590,6 @@ hd_switcher_hide_launcher (HdSwitcher * switcher)
   priv->showing_launcher = FALSE;
 
   clutter_actor_hide (priv->launcher_group);
-  hd_util_ungrab_pointer ();
 }
 
 void

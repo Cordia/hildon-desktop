@@ -91,6 +91,8 @@ void hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by);
 
 gint hd_home_get_current_view_id (HdHome *home);
 
+HdHomeView * hd_home_get_current_view (HdHome *home);
+
 void hd_home_set_operator_label (HdHome *home, const char *text);
 
 void hd_home_set_operator_icon (HdHome *home, const char *file);

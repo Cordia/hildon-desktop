@@ -6,6 +6,7 @@
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
 
+
 void *
 hd_util_get_win_prop_data_and_validate (Display   *xdpy,
 					Window     xwin,
@@ -61,44 +62,3 @@ hd_util_get_win_prop_data_and_validate (Display   *xdpy,
   return NULL;
 }
 
-gint
-hd_util_grab_pointer ()
-{
-  ClutterActor  *stage = clutter_stage_get_default();
-  Window         clutter_window;
-  Display       *dpy = clutter_x11_get_default_display ();
-  gint           status;
-
-  clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
-
-  status = XGrabPointer (dpy,
-			 clutter_window,
-			 False,
-			 ButtonPressMask   |
-			 ButtonReleaseMask |
-			 PointerMotionMask,
-			 GrabModeAsync,
-			 GrabModeAsync,
-			 None,
-			 None,
-			 CurrentTime);
-
-  g_debug ("Doing pointer grab on 0x%x (status %d)!!!",
-	   (unsigned int) clutter_window, status);
-
-  return status;
-}
-
-gint
-hd_util_ungrab_pointer ()
-{
-  Display * dpy = clutter_x11_get_default_display ();
-  gint      status;
-
-
-  status = XUngrabPointer (dpy, CurrentTime);
-
-  g_debug ("Doing pointer ungrab (status %d)!!!", status);
-
-  return status;
-}
