@@ -23,17 +23,8 @@ launcher_c = \
 
 noinst_LTLIBRARIES = liblauncher.la
 
-noinst_PROGRAMS = test-launcher
-
 liblauncher_la_SOURCES = $(launcher_h) $(launcher_c)
 liblauncher_la_CFLAGS =  $(HD_CFLAGS)
 liblauncher_la_LIBADD = $(HD_LIBS) $(top_builddir)/src/launcher/tidy/libtidy.la
-
-test_launcher_SOURCES = test-launcher.c
-test_launcher_CFLAGS = $(HD_CFLAGS)
-test_launcher_LDADD = \
-	$(HD_LIBS) \
-	$(top_builddir)/src/launcher/tidy/libtidy.la \
-	liblauncher.la
 
 CLEANFILES = *~
