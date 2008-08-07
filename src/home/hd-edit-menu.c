@@ -32,6 +32,7 @@
 #include "hd-background-dialog.h"
 
 #include <gtk/gtk.h>
+#include <glib/gi18n.h>
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -210,12 +211,12 @@ hd_edit_menu_init (HdEditMenu *self)
     G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_EDIT_MENU, HdEditMenuPrivate);
 
   /* FIXME -- these should be loaded from somewhere and localized */
-  priv->labels[0] = "Add applet";
-  priv->labels[1] = "Add shortcut";
-  priv->labels[2] = "Add bookmark";
-  priv->labels[3] = "Set wallpaper";
-  priv->labels[4] = "Add contact";
-  priv->labels[5] = "Manage views";
+  priv->labels[0] = _("home_me_select_applets");
+  priv->labels[1] = _("home_me_select_shortcuts");
+  priv->labels[2] = _("home_me_select_bookmarks");
+  priv->labels[3] = _("home_me_set_background");
+  priv->labels[4] = _("home_me_select_contacts");
+  priv->labels[5] = _("home_me_select_bookmarks");
 }
 
 static void
