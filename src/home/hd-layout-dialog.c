@@ -36,6 +36,8 @@
 
 #include <matchbox/core/mb-wm.h>
 
+#include <glib/gi18n.h>
+
 /* FIXME -- match to spec */
 #define HDLD_HEIGHT 200
 #define HDLD_ACTION_WIDTH 200
@@ -245,19 +247,19 @@ hd_layout_dialog_constructed (GObject *object)
 
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
-  /* FIXME -- gettextize labels */
   hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
 			       GTK_STATE_NORMAL,
 			       &clr_font);
-  label = clutter_label_new_full (font_string, "Manage views", &clr_font);
+  label = clutter_label_new_full (font_string, _("home_ti_manage_views"),
+				  &clr_font);
   clutter_actor_show (label);
   clutter_actor_get_size (label, &w, &h);
   clutter_actor_set_position (label, (xwidth - w) / 2,
 			      xheight - HDLD_HEIGHT + (HDLD_TITLEBAR - h) / 2);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), label);
 
-  label = clutter_label_new_full (font_string,
-				  "Activate desired Home views:", &clr_font);
+  label = clutter_label_new_full (font_string, _("home_fi_manage_views_title"),
+				  &clr_font);
   clutter_actor_show (label);
   clutter_actor_get_size (label, &w, &h);
   label2_height = h;
@@ -280,7 +282,7 @@ hd_layout_dialog_constructed (GObject *object)
 		    object);
 
   label = clutter_label_new_full (font_string,
-				  "OK", &clr_font);
+				  _("home_fi_manage_views_ok"), &clr_font);
   clutter_actor_show (label);
   clutter_actor_get_size (label, &w, &h);
   clutter_actor_set_position (label,

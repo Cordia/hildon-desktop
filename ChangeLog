@@ -1,5 +1,14 @@
 2008-08-07 Tomas Frydrych  <tf@o-hand.com>
 
+	src/mb/hd-wm.c:
+	Removed stale comment.
+
+	src/home/hd-layout-dialog.c:
+	(hd_layout_dialog_constructed):
+	Gettextized labels.
+
+2008-08-07 Tomas Frydrych  <tf@o-hand.com>
+
 	* configure.ac:
 	Added -Wno-format-extra-args (necessary for us to work with the
 	hildon logical strings).

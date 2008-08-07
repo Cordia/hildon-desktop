@@ -218,8 +218,6 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
   GtkWidget *dialog;
   gint	     response;
 
-  /* TODO - gettextize strings in this function*/
-
   dialog =
     gtk_message_dialog_new (NULL, /* parent */
 			    GTK_DIALOG_MODAL,
