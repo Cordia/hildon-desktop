@@ -23,6 +23,7 @@
 
 #include <clutter/x11/clutter-x11.h>
 #include <gdk/gdkx.h>
+#include <glib/gi18n.h>
 
 #include "hd-background-dialog.h"
 
@@ -50,15 +51,15 @@ background_mode_to_string (HdHomeViewBackgroundMode mode)
   switch (mode)
     {
     case HDHV_BACKGROUND_STRETCHED:
-      return "Stretched";
+      return _("home_va_set_backgr_stretched");
     case HDHV_BACKGROUND_CENTERED:
-      return "Centered";
+      return _("home_va_set_backgr_centered");
     case HDHV_BACKGROUND_SCALED:
-      return "Scaled";
+      return _("home_va_set_backgr_scaled");
     case HDHV_BACKGROUND_TILED:
-      return "Tiled";
+      return _("home_va_set_backgr_tiled");
     case HDHV_BACKGROUND_CROPPED:
-      return "Cropped";
+      return _("home_va_set_backgr_cropped");
     default :
       return "Unknown";
     }
@@ -120,19 +121,19 @@ static void
 hd_background_dialog_dispose (GObject *object)
 {
   HdBackgroundDialogPrivate *priv = HD_BACKGROUND_DIALOG (object)->priv;
-  
+
   if (priv->view)
     {
       g_object_unref (priv->view);
       priv->view = NULL;
     }
-  
+
   if (priv->home)
     {
       g_object_unref (priv->home);
       priv->home = NULL;
     }
-  
+
   G_OBJECT_CLASS (hd_background_dialog_parent_class)->dispose (object);
 }
 
@@ -149,12 +150,12 @@ button_set_detail (GtkWidget *button, const gchar *detail)
   GList     *children;
   gchar     *string;
   GtkWidget *label;
-  
+
   children = gtk_container_get_children (
     GTK_CONTAINER (gtk_bin_get_child (GTK_BIN (button))));
   label = GTK_WIDGET (g_list_last (children)->data);
   g_list_free (children);
-  
+
   string = g_strconcat ("<small>", detail, "</small>", NULL);
   gtk_label_set_markup (GTK_LABEL (label), string);
   g_free (string);
@@ -168,25 +169,25 @@ button_new_with_labels (const gchar *title, const gchar *detail)
 {
   gchar     *string;
   GtkWidget *button, *vbox, *label;
-  
+
   vbox = gtk_vbox_new (FALSE, 6);
-  
+
   label = gtk_label_new (title);
   gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
   gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, TRUE, 0);
-  
+
   string = g_strconcat ("<small>", detail, "</small>", NULL);
   label = gtk_label_new (string);
   g_free (string);
   gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
   gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
   gtk_box_pack_end (GTK_BOX (vbox), label, FALSE, TRUE, 0);
-  
+
   gtk_widget_show_all (vbox);
-  
+
   button = gtk_button_new ();
   gtk_container_add (GTK_CONTAINER (button), vbox);
-  
+
   return button;
 }
 
@@ -197,9 +198,9 @@ color_expose_cb (GtkWidget      *widget,
 {
   cairo_t		    *cr;
   HdBackgroundDialogPrivate *priv = HD_BACKGROUND_DIALOG (data)->priv;
-  
+
   /* Fill the drawing area with the background colour. */
-  
+
   cr = gdk_cairo_create (widget->window);
   cairo_set_source_rgb (cr,
 			priv->color->red/255.0,
@@ -207,7 +208,7 @@ color_expose_cb (GtkWidget      *widget,
 			priv->color->blue/255.0);
   cairo_paint (cr);
   cairo_destroy (cr);
-  
+
   return TRUE;
 }
 
@@ -216,7 +217,7 @@ color_size_request_cb (GtkWidget      *widget,
 		       GtkRequisition *requisition,
 		       GtkWidget      *label)
 {
-  /* Make the colour preview square have the same height as the text and 
+  /* Make the colour preview square have the same height as the text and
    * a 16:9 aspect ratio (widescreen)
    */
   gtk_widget_size_request (label, requisition);
@@ -229,13 +230,13 @@ color_dialog_response_cb (GtkWidget	     *dialog,
 			  HdBackgroundDialog *parent)
 {
   HdBackgroundDialogPrivate *priv = parent->priv;
-  
+
   /* If the user chose 'OK', set the background colour of the current view
    * to whatever colour is currently chosen in the colour selection dialog.
-   * Also update our cache of the view's background colour and tell the 
+   * Also update our cache of the view's background colour and tell the
    * parent dialog to redraw so the colour-preview square is updated.
    */
-  
+
   if (response == GTK_RESPONSE_OK)
     {
       GdkColor		 gdk_color;
@@ -243,19 +244,19 @@ color_dialog_response_cb (GtkWidget	     *dialog,
 
       GtkColorSelection *color_sel =
 	GTK_COLOR_SELECTION (GTK_COLOR_SELECTION_DIALOG (dialog)->colorsel);
-      
+
       gtk_color_selection_get_current_color (color_sel, &gdk_color);
       color.red   = gdk_color.red >> 8;
       color.green = gdk_color.green >> 8;
       color.blue  = gdk_color.blue >> 8;
       color.alpha = 0xff;
-      
+
       hd_home_view_set_background_color (priv->view, &color);
       clutter_color_free (priv->color);
       g_object_get (priv->view, "background-color", &priv->color, NULL);
       gtk_widget_queue_draw (GTK_WIDGET (parent));
     }
-  
+
   gtk_widget_destroy (dialog);
 }
 
@@ -267,33 +268,33 @@ color_button_clicked_cb (GtkWidget	    *button,
   GtkWidget	    *dialog;
   GdkColor	     gdk_color;
   GtkColorSelection *color_sel;
-  
+
   HdBackgroundDialogPrivate *priv = parent->priv;
 
   /* Create the colour selection dialog and set its colour to the current
    * view's background colour.
    */
-  
+
   title = gtk_label_get_text (
     GTK_LABEL (g_object_get_data (G_OBJECT (button), "label")));
-  
+
   dialog = gtk_color_selection_dialog_new (title);
   gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
   gtk_window_set_transient_for (GTK_WINDOW (dialog), GTK_WINDOW (parent));
-  
+
   gdk_color.red = priv->color->red << 8;
   gdk_color.green = priv->color->green << 8;
   gdk_color.blue = priv->color->blue << 8;
-  
+
   color_sel =
     GTK_COLOR_SELECTION (GTK_COLOR_SELECTION_DIALOG (dialog)->colorsel);
   gtk_color_selection_set_current_color (color_sel, &gdk_color);
-  
+
   g_signal_connect (dialog,
 		    "response",
 		    G_CALLBACK (color_dialog_response_cb),
 		    parent);
-  
+
   gtk_widget_show (dialog);
 }
 
@@ -304,9 +305,9 @@ static GtkWidget *
 color_label_button_new (HdBackgroundDialog *parent, const gchar *title)
 {
   GtkWidget *align, *color, *label, *hbox, *button;
-  
+
   hbox = gtk_hbox_new (FALSE, 6);
-  
+
   label = gtk_label_new (title);
   gtk_box_pack_end (GTK_BOX (hbox), label, TRUE, TRUE, 0);
 
@@ -319,26 +320,26 @@ color_label_button_new (HdBackgroundDialog *parent, const gchar *title)
 		    "size-request",
 		    G_CALLBACK (color_size_request_cb),
 		    label);
-  
+
   align = gtk_alignment_new (0.5, 0.5, 0.0, 0.0);
   gtk_container_add (GTK_CONTAINER (align), color);
   gtk_box_pack_start (GTK_BOX (hbox), align, FALSE, FALSE, 0);
-  
+
   gtk_widget_show_all (hbox);
-  
+
   button = gtk_button_new ();
   g_object_set_data (G_OBJECT (button), "label", label);
   gtk_container_add (GTK_CONTAINER (button), hbox);
-  
+
   g_signal_connect (button,
 		    "clicked",
 		    G_CALLBACK (color_button_clicked_cb),
 		    parent);
-  
+
   return button;
 }
 
-/* Takes a file name, '/a/long/path/filename.blah' and strips off the path 
+/* Takes a file name, '/a/long/path/filename.blah' and strips off the path
  * and extension, giving 'filename'.
  */
 static gchar *
@@ -349,14 +350,14 @@ pretty_filename (const gchar *filename)
     {
       gchar *last_dot;
       pretty = g_filename_display_basename (filename);
-      
+
       /* Remove extension */
       last_dot = g_utf8_strrchr (pretty, -1, '.');
       last_dot[0] = '\0';
     }
   else
-    pretty = g_strdup ("None");
-  
+    pretty = g_strdup (_("home_va_set_backgr_none"));
+
   return pretty;
 }
 
@@ -366,13 +367,13 @@ update_image_button (HdBackgroundDialog *parent)
 {
   HdBackgroundDialogPrivate *priv;
   gchar                     *image, *basename;
-  
+
   priv = parent->priv;
 
   g_object_get (priv->view,
 		"background-image", &image,
 		NULL);
-  
+
   basename = pretty_filename (image);
   button_set_detail (priv->image_button, basename);
   g_free (image);
@@ -387,18 +388,18 @@ background_chooser_file_dialog_response_cb (GtkWidget          *dialog,
   HdBackgroundDialogPrivate *priv;
 
   priv = parent->priv;
-  
+
   /* If OK was clicked, set the background to the currently selected file */
   if (response == GTK_RESPONSE_OK)
     {
       gchar          *file;
       GtkFileChooser *chooser = GTK_FILE_CHOOSER (dialog);
-      
+
       file = gtk_file_chooser_get_filename (chooser);
       hd_home_view_set_background_image (priv->view, file);
       g_free (file);
     }
-  
+
   gtk_widget_destroy (dialog);
 }
 
@@ -408,13 +409,13 @@ background_chooser_file_button_clicked_cb (GtkWidget	      *button,
 {
   GtkWidget     *dialog;
   GtkFileFilter *filter;
-  
+
   /* Create a file-chooser dialog, add the formats supported by
    * GdkPixbuf and add a handler for when it gets closed to set the
    * background image.
    */
-  
-  dialog = gtk_file_chooser_dialog_new ("Select an image",
+
+  dialog = gtk_file_chooser_dialog_new (_("home_ti_set_backgr"),
 					GTK_WINDOW (
 					  gtk_widget_get_toplevel (button)),
 					GTK_FILE_CHOOSER_ACTION_OPEN,
@@ -424,16 +425,16 @@ background_chooser_file_button_clicked_cb (GtkWidget	      *button,
 					GTK_RESPONSE_CANCEL,
 					NULL);
   gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
-  
+
   filter = gtk_file_filter_new ();
   gtk_file_filter_add_pixbuf_formats (filter);
   gtk_file_chooser_set_filter (GTK_FILE_CHOOSER (dialog), filter);
-  
+
   g_signal_connect (dialog,
 		    "response",
 		    G_CALLBACK (background_chooser_file_dialog_response_cb),
 		    parent);
-  
+
   gtk_widget_show (dialog);
 }
 
@@ -443,13 +444,13 @@ current_button_clicked_cb (GtkWidget	      *button,
 {
   const gchar		    *image;
   HdBackgroundDialogPrivate *priv = parent->priv;
-  
+
   /* Set the background image to the former background image */
   image = g_object_get_data (G_OBJECT (button), "image");
   hd_home_view_set_background_image (priv->view, image);
 }
 
-/* Creates a new background image chooser dialog that selects the background 
+/* Creates a new background image chooser dialog that selects the background
  * for the view held in the private structure of HdBackgroundDialog.
  */
 static GtkWidget *
@@ -458,16 +459,16 @@ background_chooser_new (HdBackgroundDialog *parent)
   HdBackgroundDialogPrivate *priv;
   GtkWidget		    *window, *button_box, *button;
   gchar			    *image;
-  
+
   priv = parent->priv;
-  
+
   /* TODO: How is this dialog meant to be closed? */
-  
+
   /* Create button box */
   button_box = gtk_vbutton_box_new ();
-  
+
   /* TODO: Add pre-set wallpaper items */
-  
+
   /* Add current wallpaper (TODO: Check if it's in the pre-set list) */
   g_object_get (priv->view,
 		"background-image", &image,
@@ -485,9 +486,9 @@ background_chooser_new (HdBackgroundDialog *parent)
       gtk_container_add (GTK_CONTAINER (button_box), button);
       g_free (basename);
     }
-  
+
   /* Add file-chooser button */
-  button = gtk_button_new_with_label ("Browse...");
+  button = gtk_button_new_with_label (_("home_bd_set_backgr_image"));
   g_signal_connect (button,
 		    "clicked",
 		    G_CALLBACK (background_chooser_file_button_clicked_cb),
@@ -502,7 +503,7 @@ background_chooser_new (HdBackgroundDialog *parent)
   gtk_window_set_transient_for (GTK_WINDOW (window), GTK_WINDOW (parent));
   gtk_widget_show_all (button_box);
   gtk_container_add (GTK_CONTAINER (window), button_box);
-  
+
   return window;
 }
 
@@ -512,9 +513,9 @@ image_button_clicked_cb (GtkWidget	    *button,
 {
   HdBackgroundDialogPrivate *priv;
   GtkWidget		    *window;
-  
+
   priv = parent->priv;
-  
+
   window = background_chooser_new (parent);
   gtk_widget_show (window);
 }
@@ -525,13 +526,13 @@ update_style_button (HdBackgroundDialog *parent)
 {
   HdBackgroundDialogPrivate *priv;
   HdHomeViewBackgroundMode   mode;
-  
+
   priv = parent->priv;
 
   g_object_get (priv->view,
 		"background-mode", &mode,
 		NULL);
-  
+
   button_set_detail (priv->style_button, background_mode_to_string (mode));
 }
 
@@ -541,16 +542,16 @@ mode_button_clicked_cb (GtkWidget	   *button,
 {
   HdHomeViewBackgroundMode   mode;
   HdBackgroundDialogPrivate *priv = parent->priv;
-  
+
   /* Set the background display mode using the stored mode of this button */
   mode = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (button), "mode"));
-  
+
   hd_home_view_set_background_mode (priv->view, mode);
-  
+
   update_style_button (parent);
 }
 
-/* Creates a new background display style chooser dialog that selects the style 
+/* Creates a new background display style chooser dialog that selects the style
  * for the background display in the view held in the private structure of
  * HdBackgroundDialog.
  */
@@ -560,21 +561,21 @@ style_chooser_new (HdBackgroundDialog *parent)
   HdBackgroundDialogPrivate *priv;
   GtkWidget		    *window, *button_box, *button;
   HdHomeViewBackgroundMode   mode;
-  
+
   priv = parent->priv;
-  
+
   /* TODO: How is this dialog meant to be closed? */
-  
+
   /* Create button box */
   button_box = gtk_vbutton_box_new ();
-  
+
   /* FIXME: Would be better to use FIRST/LAST defines here */
   for (mode = HDHV_BACKGROUND_STRETCHED;
        mode <= HDHV_BACKGROUND_CROPPED; mode++)
     {
       button = gtk_button_new_with_label (background_mode_to_string (mode));
-      
-      /* Store the mode as object data on the button so we can reuse the 
+
+      /* Store the mode as object data on the button so we can reuse the
        * callback.
        */
       g_object_set_data (G_OBJECT (button), "mode", GINT_TO_POINTER (mode));
@@ -593,7 +594,7 @@ style_chooser_new (HdBackgroundDialog *parent)
   gtk_window_set_transient_for (GTK_WINDOW (window), GTK_WINDOW (parent));
   gtk_widget_show_all (button_box);
   gtk_container_add (GTK_CONTAINER (window), button_box);
-  
+
   return window;
 }
 
@@ -603,9 +604,9 @@ style_button_clicked_cb (GtkWidget	    *button,
 {
   HdBackgroundDialogPrivate *priv;
   GtkWidget		    *window;
-  
+
   priv = parent->priv;
-  
+
   window = style_chooser_new (parent);
   gtk_widget_show (window);
 }
@@ -630,24 +631,26 @@ hd_background_dialog_constructor (GType                  type,
   g_object_get (priv->view,
 		"background-color", &priv->color,
 		NULL);
-  
+
   /* Destroy the dialog when the user presses OK (should this be 'Close'?) */
   gtk_dialog_add_button (GTK_DIALOG (self), GTK_STOCK_OK, GTK_RESPONSE_OK);
   g_signal_connect (self, "response", G_CALLBACK (gtk_widget_destroy), NULL);
-  
+
   vbox = gtk_vbox_new (TRUE, 6);
 
   /* Add background image chooser button */
-  priv->image_button = button_new_with_labels ("Image", "");
+  priv->image_button = button_new_with_labels (_("home_fi_set_backgr_image"),
+					       "");
   update_image_button (self);
   g_signal_connect (priv->image_button,
 		    "clicked",
 		    G_CALLBACK (image_button_clicked_cb),
 		    self);
   gtk_box_pack_start (GTK_BOX (vbox), priv->image_button, TRUE, TRUE, 0);
-  
+
   /* Add background image display style chooser button */
-  priv->style_button = button_new_with_labels ("Display style", "");
+  priv->style_button = button_new_with_labels (_("home_fi_set_backgr_mode"),
+					       "");
   update_style_button (self);
   g_signal_connect (priv->style_button,
 		    "clicked",
@@ -656,17 +659,17 @@ hd_background_dialog_constructor (GType                  type,
   gtk_box_pack_start (GTK_BOX (vbox), priv->style_button, TRUE, TRUE, 0);
 
   /* Add background colour chooser button */
-  button = color_label_button_new (self, "Canvas colour");
+  button = color_label_button_new (self, _("home_fi_set_backgr_color"));
   gtk_box_pack_start (GTK_BOX (vbox), button, TRUE, TRUE, 0);
-  
+
   gtk_widget_show_all (vbox);
-  
+
   /* Pack into dialog */
   gtk_box_pack_start (GTK_BOX (GTK_DIALOG (self)->vbox), vbox, TRUE, TRUE, 0);
-  
+
   /* Shouldn't be necessary, but will work nicer when the theme isn't set */
   gtk_window_set_position (GTK_WINDOW (self), GTK_WIN_POS_CENTER_ALWAYS);
-  
+
   /* Set dialog modal */
   gtk_window_set_modal (GTK_WINDOW (self), TRUE);
 

@@ -8,6 +8,11 @@
 
 2008-08-07 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/home/hd-background-dialog.c:
+	Gettextized.
+
+2008-08-07 Tomas Frydrych  <tf@o-hand.com>
+
 	src/mb/hd-wm.c:
 	Removed stale comment.
 
