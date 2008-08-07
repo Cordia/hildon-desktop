@@ -1,3 +1,11 @@
+2008-08-07  Chris Lord  <chris@openedhand.com>
+
+	* src/home/hd-home-view.c (hd_home_view_allocate),
+	(hd_home_view_class_init), (get_bg_image_processed_name),
+	(bg_image_set_idle_cb), (process_bg_image_thread),
+	(hd_home_view_refresh_bg):
+	Refresh the background image when the HomeView changes size
+
 2008-08-07 Tomas Frydrych  <tf@o-hand.com>
 
 	src/mb/hd-wm.c:

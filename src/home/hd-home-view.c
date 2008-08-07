@@ -67,6 +67,7 @@ struct _HdHomeViewPrivate
   ClutterActor             *background;
   ClutterActor             *background_image;
   gchar                    *background_image_file;
+  gchar                    *processed_bg_image_file;
   HdHomeViewBackgroundMode  background_mode;
 
   gint                      xwidth;
@@ -121,13 +122,35 @@ static void hd_home_view_refresh_bg (HdHomeView		      *self,
 G_DEFINE_TYPE (HdHomeView, hd_home_view, CLUTTER_TYPE_GROUP);
 
 static void
+hd_home_view_allocate (ClutterActor          *actor,
+                       const ClutterActorBox *box,
+                       gboolean               absolute_origin_changed)
+{
+  HdHomeView        *view = HD_HOME_VIEW (actor);
+  HdHomeViewPrivate *priv = view->priv;
+  
+  /* We've resized, refresh the background image to fit the new size */
+  if ((CLUTTER_UNITS_TO_INT (box->x2 - box->x1) != priv->bg_image_dest_width) ||
+      (CLUTTER_UNITS_TO_INT (box->y2 - box->y1) != priv->bg_image_dest_height))
+    hd_home_view_refresh_bg (view,
+                             priv->background_image_file,
+                             priv->background_mode);
+  
+  CLUTTER_ACTOR_CLASS (hd_home_view_parent_class)->
+    allocate (actor, box, absolute_origin_changed);
+}
+
+static void
 hd_home_view_class_init (HdHomeViewClass *klass)
 {
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec   *pspec;
+  ClutterActorClass *actor_class  = CLUTTER_ACTOR_CLASS (klass);
+  GObjectClass      *object_class = G_OBJECT_CLASS (klass);
+  GParamSpec        *pspec;
 
   g_type_class_add_private (klass, sizeof (HdHomeViewPrivate));
 
+  actor_class->allocate      = hd_home_view_allocate;
+  
   object_class->dispose      = hd_home_view_dispose;
   object_class->finalize     = hd_home_view_finalize;
   object_class->set_property = hd_home_view_set_property;
@@ -522,12 +545,15 @@ static gchar *
 get_bg_image_processed_name (HdHomeView *view, const gchar *filename)
 {
   gchar		    *basename, *tmpname;
-  HdHomeViewPrivate *priv = view->priv;
+  ClutterActor      *actor = CLUTTER_ACTOR (view);
+  HdHomeViewPrivate *priv  = view->priv;
   
   basename = g_path_get_basename (filename);
-  tmpname = g_strdup_printf ("%s/%d-%s.png",
+  tmpname = g_strdup_printf ("%s/%d-%dx%d-%s.png",
 			     g_get_tmp_dir (),
 			     priv->background_mode,
+                             clutter_actor_get_width (actor),
+                             clutter_actor_get_height (actor),
 			     basename);
   g_free (basename);
   
@@ -538,16 +564,14 @@ static gboolean
 bg_image_set_idle_cb (gpointer data)
 {
   ClutterActor      *new_bg;
-  gchar             *real_file;
   
   HdHomeView	    *self  = HD_HOME_VIEW (data);
   HdHomeViewPrivate *priv  = self->priv;
   ClutterActor      *actor = CLUTTER_ACTOR (self);
   GError            *error = NULL;
   
-  real_file = get_bg_image_processed_name (self, priv->background_image_file);
-  new_bg = clutter_texture_new_from_file (real_file, &error);
-  g_free (real_file);
+  new_bg = clutter_texture_new_from_file (priv->processed_bg_image_file,
+                                          &error);
   
   if (!new_bg)
     {
@@ -729,16 +753,12 @@ process_bg_image_thread (gpointer data)
   
   if (pixbuf)
     {
-      gchar  *real_name =
-	get_bg_image_processed_name (self, priv->background_image_file);
-      
-      if (!gdk_pixbuf_save (pixbuf, real_name, "png", &error, NULL))
+      if (!gdk_pixbuf_save (pixbuf, priv->processed_bg_image_file, "png",
+                            &error, NULL))
 	{
 	  g_warning ("Error saving background: %s", error->message);
 	  g_error_free (error);
 	}
-      
-      g_free (real_name);
       g_object_unref (pixbuf);
     }
   
@@ -770,12 +790,15 @@ hd_home_view_refresh_bg (HdHomeView		  *self,
     }
   
   /* Delete the cached, processed background */
+  if (priv->processed_bg_image_file)
+    {
+      g_remove (priv->processed_bg_image_file);
+      g_free (priv->processed_bg_image_file);
+      priv->processed_bg_image_file = NULL;
+    }
+
   if (priv->background_image_file)
     {
-      gchar *real_name =
-	get_bg_image_processed_name (self, priv->background_image_file);
-      g_remove (real_name);
-      g_free (real_name);
       if (image != priv->background_image_file)
 	g_free (priv->background_image_file);
     }
@@ -785,10 +808,10 @@ hd_home_view_refresh_bg (HdHomeView		  *self,
   
   if (priv->background_image_file)
     {
-      gchar *real_name =
+      priv->processed_bg_image_file =
 	get_bg_image_processed_name (self, priv->background_image_file);
       
-      if (!g_file_test (real_name, G_FILE_TEST_EXISTS))
+      if (!g_file_test (priv->processed_bg_image_file, G_FILE_TEST_EXISTS))
 	{
 	  GError *error = NULL;
 	  
@@ -815,8 +838,6 @@ hd_home_view_refresh_bg (HdHomeView		  *self,
 	  /* Image already processed, load */
 	  bg_image_set_idle_cb (self);
 	}
-      
-      g_free (real_name);
     }
 }
 
