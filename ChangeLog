@@ -1,5 +1,10 @@
+2008-08-07 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/mb/hd-dialog.c:
+	Implement dialog sizing and positioning logic.
+
 2008-08-05 Robert Bragg  <bob@o-hand.com>
-	
+
 	* tests/test-portrait.c
 	* tests/Makefile.am:
 	Adds a simple portrait mode unit tests. It basically just lets you
@@ -65,7 +70,7 @@
 	Adds a grab when the launcher is run.
 
 2008-08-04 Robert Bragg  <bob@o-hand.com>
-	
+
 	* home/hd-switcher.c:
 	Don't use clutter_actor_{show,hide}_all to show/hide the launcher
 	use clutter_actor_{show,hide}. (There is an unresloved issue where
@@ -73,7 +78,7 @@
 	launcher.)
 
 2008-08-01 Robert Bragg  <bob@o-hand.com>
-	
+
 	* src/home/hd-switcher.c:
 	Removes some fidling with the stacking of the switcher group that
 	seems to fix stacking bug whereby dialogs can end up hiden below the
@@ -103,13 +108,13 @@
 	build scripts.
 
 2008-08-01 Robert Bragg  <bob@o-hand.com>
-	
+
 	* data/icons/48x48/bg-image-switcher.png
 	* data/icons/48x48/bg-image-launcher.png:
 	Removes a couple of unsed icons
 
 2008-07-31 Robert Bragg  <bob@o-hand.com>
-	
+
 	* src/mb/hd-wm.c:
 	Hooks up a handler for unresponsive clients that shows a gtk message
 	dialog allowing the user to either wait longer or force the client
@@ -122,11 +127,11 @@
 	clients.
 
 2008-07-30 Robert Bragg  <bob@o-hand.com>
-	
+
 	* src/mb/hd-comp-mgr.c:
 	removes hd_comp_mgr_client_shutdown_timeout_cb and no longer sets up
 	a timeout before calls to mb_wm_client_deliver_delete.
-	
+
 	I think there is no reliable metric for determining if a client has
 	responded to a WM_DELETE (since the client can show the user a
 	confirmation dialog and cancel any response) Instead we leave it up to
@@ -137,7 +142,7 @@
 	the client process was actually the WM process :-)
 
 2008-07-30 Robert Bragg  <bob@o-hand.com>
-	
+
 	* src/main.c:
 	Initialises gtk+, clutter and mbwm2 so that they behave nicely
 	together. Of a few approaches tried, this has worked best. Noteably
@@ -151,7 +156,7 @@
 	NB: You must build your libmatchbox2 without passing --with-gtk !
 
 2008-07-30 Robert Bragg  <bob@o-hand.com>
-	
+
 	* src/mb/hd-wm.c:
 	Make sure we never interpret the window type for override redirect
 	windows. (E.g. we were handling an 1px x 1px offscreen window - used
@@ -224,7 +229,7 @@
 	was a bug with calculating the button position in the
 	png theme engine. You will need to pull the latest
 	mbwm2 for the close button to work)
-	
+
 	* data/launcher-button-highlight.png:
 	* src/home/hd-switcher.c:
 	Improved compositing of the swither/launcher icons. They
@@ -303,7 +308,7 @@
 	file.
 
 2008-07-28 Robert Bragg  <bob@o-hand.com>
-	
+
 	* src/launcher/tidy/Makefile.am:
 	support out of tree builds
 
@@ -349,7 +354,7 @@
 	We need them for the finger pannable launcher.
 
 2008-07-24 Robert Bragg  <bob@o-hand.com>
-	
+
 	* configure.ac:
 
 	make sure we link against clutter-0.8 not clutter-0.7
@@ -419,7 +424,7 @@
 	to be picked up by the gtk_icon theme/cache code.
 
 	Renames some of the .png files to their logical names.
-	
+
 	NB:
 	You currently need to export
 	XDG_DATA_DIRS="/path/to/prefix/share:/usr/local/share/:/usr/share/")

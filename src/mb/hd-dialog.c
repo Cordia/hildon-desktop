@@ -22,6 +22,12 @@
  */
 
 #include "hd-dialog.h"
+#include <matchbox/theme-engines/mb-wm-theme.h>
+
+static Bool
+hd_dialog_request_geometry (MBWindowManagerClient *client,
+			    MBGeometry            *new_geometry,
+			    MBWMClientReqGeomType  flags);
 
 static void
 hd_dialog_realize (MBWindowManagerClient *client);
@@ -35,7 +41,8 @@ hd_dialog_class_init (MBWMObjectClass *klass)
 
   client = (MBWindowManagerClientClass *)klass;
 
-  client->realize = hd_dialog_realize;
+  client->realize  = hd_dialog_realize;
+  client->geometry = hd_dialog_request_geometry;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdDialog";
@@ -56,6 +63,41 @@ hd_dialog_destroy (MBWMObject *this)
 static int
 hd_dialog_init (MBWMObject *this, va_list vap)
 {
+  MBWindowManagerClient *client = MB_WM_CLIENT (this);
+  MBGeometry             geom;
+  int                    n, s, w, e;
+  MBWindowManager       *wm = client->wmref;
+
+  /*
+   * Fix up the hints; hildon dialogs are not movable.
+   */
+  mb_wm_client_set_layout_hints (client,
+				 LayoutPrefPositionFree |
+				 LayoutPrefVisible);
+
+  if (!wm->theme)
+    return 1;
+
+  /*
+   * Since dialogs are free-sized, they do not necessarily get a request for
+   * geometry from the layout manager -- we have to set the initial geometry
+   * here.
+   */
+  mb_wm_theme_get_decor_dimensions (wm->theme, client, &n, &s, &w, &e);
+
+  geom.x      = 0;
+  geom.width  = wm->xdpy_width;
+  geom.height = client->window->geometry.height + n + s;
+  geom.y      = wm->xdpy_height - geom.height;
+
+  /*
+   * Our request geometry function only makes actual change if the height
+   * of the client has changed -- force change by reseting the frame height.
+   */
+  client->frame_geometry.height = 0;
+
+  hd_dialog_request_geometry (client, &geom, MBWMClientReqGeomForced);
+
   return 1;
 }
 
@@ -130,6 +172,96 @@ hd_dialog_realize (MBWindowManagerClient *client)
 				ButtonRelease,
 			        (MBWMXEventFunc)hd_dialog_release_handler,
 			        client);
+}
+
+static Bool
+hd_dialog_request_geometry (MBWindowManagerClient *client,
+			    MBGeometry            *new_geometry,
+			    MBWMClientReqGeomType  flags)
+{
+  const MBGeometry *geom;
+  Bool              change_size;
+
+  /*
+   * When we get an internal geometry request, like from the layout manager,
+   * the new geometry applies to the frame; however, if the request is
+   * external from ConfigureRequest, it is new geometry of the client window,
+   * so we need to take care to handle this right.
+   *
+   * We only allow change of size in the Y axis; the X axis is always full
+   * screen. We do not allow change of position, dialogs are always aligned
+   * with the bottom of the screen.
+   */
+  geom = (flags & MBWMClientReqGeomIsViaConfigureReq) ?
+    &client->window->geometry : &client->frame_geometry;
+
+  change_size = (geom->height != new_geometry->height);
+
+  if (change_size)
+    {
+      int north = 0, south = 0, west = 0, east = 0;
+      MBWindowManager *wm = client->wmref;
+
+      if (client->decor)
+	mb_wm_theme_get_decor_dimensions (wm->theme, client,
+					  &north, &south, &west, &east);
+
+      if (flags & MBWMClientReqGeomIsViaConfigureReq)
+	{
+	  /*
+	   * Calculate the frame size from the window size
+	   */
+	  MBWM_DBG ("ConfigureRequest [%d,%d;%dx%d] -> [%d,%d;%dx%d]\n",
+		    client->window->geometry.x,
+		    client->window->geometry.y,
+		    client->window->geometry.width,
+		    client->window->geometry.height,
+		    new_geometry->x,
+		    new_geometry->y,
+		    new_geometry->width,
+		    new_geometry->height);
+
+	  client->window->geometry.height = new_geometry->height;
+	  client->frame_geometry.height
+	    = client->window->geometry.height + (south + north);
+
+	  client->frame_geometry.y = wm->xdpy_height -
+	    (client->frame_geometry.height);
+	  client->window->geometry.y = client->frame_geometry.y + north;
+
+	  client->frame_geometry.width = wm->xdpy_width;
+	  client->window->geometry.width = wm->xdpy_width - (west + east);
+
+	  client->frame_geometry.x = 0;
+	  client->window->geometry.x = west;
+	}
+      else
+	{
+	  /*
+	   * Internal request, e.g., from layout manager; work out client
+	   * window size from the provided frame size.
+	   */
+	  client->frame_geometry.x      = 0;
+	  client->frame_geometry.width  = wm->xdpy_width;
+	  client->frame_geometry.height = new_geometry->height;
+	  client->frame_geometry.y      = wm->xdpy_height-new_geometry->height;
+
+	  client->window->geometry.x
+	    = client->frame_geometry.x + west;
+	  client->window->geometry.y
+	    = client->frame_geometry.y + north;
+	  client->window->geometry.width
+	    = client->frame_geometry.width - (west + east);
+	  client->window->geometry.height
+	    = client->frame_geometry.height - (south + north);
+	}
+
+      mb_wm_client_geometry_mark_dirty (client);
+
+      return True; /* Geometry accepted */
+    }
+
+  return True; /* Geometry accepted */
 }
 
 MBWindowManagerClient*
