@@ -40,6 +40,8 @@
 
 #include <gtk/gtk.h>
 
+#include <glib/gi18n.h>
+
 #include "hd-home-applet.h"
 #include "hd-note.h"
 #include "hd-app-menu.h"
@@ -221,21 +223,16 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
   dialog =
     gtk_message_dialog_new (NULL, /* parent */
 			    GTK_DIALOG_MODAL,
-			    GTK_MESSAGE_WARNING,
+			    GTK_MESSAGE_QUESTION,
 			    GTK_BUTTONS_NONE,
-			    "\"%s\" is not responding.",
+			    _("qgn_nc_apkil_notresponding"),
 			    mb_wm_client_get_name (c));
 
-  gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
-					    "You may choose to wait a short "
-					    "while for it to continue or "
-					    "force the application to quit "
-					    "entirely.");
   gtk_dialog_add_buttons (GTK_DIALOG (dialog),
-                          "_Wait",
-                          GTK_RESPONSE_REJECT,
-                          "_Force Quit",
+                          _("qgn_bd_apkil_ok"),
                           GTK_RESPONSE_ACCEPT,
+                          _("qgn_bd_apkil_cancel"),
+                          GTK_RESPONSE_REJECT,
                           NULL);
   gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_REJECT);
 

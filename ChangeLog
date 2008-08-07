@@ -1,5 +1,15 @@
 2008-08-07 Tomas Frydrych  <tf@o-hand.com>
 
+	* configure.ac:
+	Added -Wno-format-extra-args (necessary for us to work with the
+	hildon logical strings).
+
+	src/mb/hd-wm.c:
+	(hd_wm_client_hang):
+	Gettextized hand dialog; changed to conform to spec.
+
+2008-08-07 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/mb/hd-dialog.c:
 	Implement dialog sizing and positioning logic.
 
