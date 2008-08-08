@@ -74,6 +74,9 @@ hd_app_launcher_get_label (HdLauncherItem *item)
   retval = clutter_label_new ();
   clutter_label_set_color (CLUTTER_LABEL (retval), &text_color);
   clutter_label_set_text (CLUTTER_LABEL (retval), priv->name);
+  clutter_label_set_line_wrap (CLUTTER_LABEL (retval), TRUE);
+  clutter_label_set_alignment (CLUTTER_LABEL (retval),
+                               PANGO_ALIGN_CENTER);
 
   return retval;
 }

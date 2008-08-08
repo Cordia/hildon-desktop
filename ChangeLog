@@ -1,5 +1,16 @@
 2008-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/hd-app-launcher.c: Wrap the item label and
+	center the text.
+
+	* src/launcher/hd-launcher-item.c: The preferred width is
+	the width of the icon + padding.
+
+	* src/launcher/hd-task-launcher.c: Increase the spacing and
+	the left/right padding.
+
+2008-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/hd-app-launcher.c:
 	* src/launcher/hd-launcher-item.c:
 	* src/launcher/hd-launcher-tree.c:

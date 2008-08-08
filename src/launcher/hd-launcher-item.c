@@ -112,11 +112,10 @@ hd_launcher_item_get_preferred_width (ClutterActor *actor,
                                       ClutterUnit  *natural_width_p)
 {
   HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM (actor)->priv;
-  ClutterActor *icon, *label;
+  ClutterActor *icon;
   ClutterUnit item_width = 0;
 
   icon = hd_launcher_item_get_icon (HD_LAUNCHER_ITEM (actor));
-  label = hd_launcher_item_get_label (HD_LAUNCHER_ITEM (actor));
 
   if (!icon)
     {
@@ -129,12 +128,7 @@ hd_launcher_item_get_preferred_width (ClutterActor *actor,
       return;
     };
 
-  /* our size depends on the label size */
-  if (label)
-    clutter_actor_get_preferred_width (label, for_height,
-                                       NULL,
-                                       &item_width);
-  else
+  if (icon)
     clutter_actor_get_preferred_width (icon, for_height,
                                        NULL,
                                        &item_width);
