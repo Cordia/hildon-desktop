@@ -1,5 +1,19 @@
 2008-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/hd-launcher-utils.c:
+	(lazily_populate_top_launcher),
+	(lazily_populate_sub_launcher): Use a higher priority for
+	populating the launchers.
+
+	(hd_get_application_launcher): Increase the width of the launchers
+	and scroll areas to 780px.
+
+	* src/launcher/hd-task-launcher.c:
+	(hd_task_launcher_init): Tweak the spacing between items and
+	the padding around the launcher.
+
+2008-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/hd-app-launcher.[ch]: Add prestart key support
 	to the AppLauncher class; read and parse the Categories key
 	from the desktop entry and allow checking for a category.

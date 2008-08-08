@@ -286,7 +286,7 @@ lazily_populate_top_launcher (HdTaskLauncher *launcher,
   closure->n_items     = g_list_length (items);
   closure->current_pos = 0;
 
-  clutter_threads_add_idle_full (G_PRIORITY_DEFAULT_IDLE + 50,
+  clutter_threads_add_idle_full (CLUTTER_PRIORITY_REDRAW + 20,
                                  populate_top_launcher,
                                  closure,
                                  populate_launcher_cleanup);
@@ -305,7 +305,7 @@ lazily_populate_sub_launcher (HdTaskLauncher *launcher,
     : g_random_int_range (1, (n_items * -1));
   closure->current_pos = 0;
 
-  clutter_threads_add_idle_full (G_PRIORITY_DEFAULT_IDLE + 50,
+  clutter_threads_add_idle_full (CLUTTER_PRIORITY_REDRAW + 20,
                                  populate_sub_launcher,
                                  closure,
                                  populate_launcher_cleanup);
@@ -410,20 +410,20 @@ hd_get_application_launcher (void)
 
       hd_launcher->top_scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
       clutter_actor_set_position (hd_launcher->top_scroll, 0, 64);
-      clutter_actor_set_size (hd_launcher->top_scroll, 760, 400);
+      clutter_actor_set_size (hd_launcher->top_scroll, 780, 400);
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
                                    hd_launcher->top_scroll);
 
       hd_launcher->sub_scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
       clutter_actor_set_position (hd_launcher->sub_scroll, 0, 64);
-      clutter_actor_set_size (hd_launcher->sub_scroll, 760, 400);
+      clutter_actor_set_size (hd_launcher->sub_scroll, 780, 400);
       clutter_actor_hide (hd_launcher->sub_scroll);
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
                                    hd_launcher->sub_scroll);
 
       /* top level launcher */
       hd_launcher->top_level = hd_task_launcher_new ();
-      clutter_actor_set_width (hd_launcher->top_level, 760);
+      clutter_actor_set_width (hd_launcher->top_level, 780);
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->top_scroll),
                                    hd_launcher->top_level);
       g_signal_connect (hd_launcher->top_level,
@@ -432,7 +432,7 @@ hd_get_application_launcher (void)
 
       /* secondary level launcher */
       hd_launcher->sub_level = hd_task_launcher_new ();
-      clutter_actor_set_width (hd_launcher->sub_level, 760);
+      clutter_actor_set_width (hd_launcher->sub_level, 780);
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->sub_scroll),
                                    hd_launcher->sub_level);
       g_signal_connect (hd_launcher->sub_level,
