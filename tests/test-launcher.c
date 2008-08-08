@@ -61,6 +61,9 @@ main (int   argc,
   ClutterActor *launcher;
   ClutterColor stage_color = { 0, 0, 0, 255 };
 
+  g_thread_init (NULL);
+
+  clutter_threads_init ();
   clutter_init (&argc, &argv);
 
   stage = clutter_stage_get_default ();

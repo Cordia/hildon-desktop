@@ -16,6 +16,7 @@
 #include "hd-task-launcher.h"
 #include "hd-dummy-launcher.h"
 #include "hd-launcher-utils.h"
+#include "hd-launcher-tree.h"
 
 #define DEFAULT_APPS_DIR        "/usr/share/applications/"
 
@@ -190,16 +191,14 @@ build_node (const gchar *filename,
 
 #endif
 
-GNode *
+static HdLauncherTree *
 hd_build_launcher_items (void)
 {
-  return NULL;
-}
+  HdLauncherTree *retval;
 
-GList *
-hd_get_top_level_items (GNode *root)
-{
-  return NULL;
+  retval = hd_launcher_tree_new (NULL); /* default */
+
+  return retval;
 }
 
 typedef struct
@@ -218,9 +217,19 @@ typedef struct
 
   ClutterActor *top_level;
   ClutterActor *sub_level;
+
+  HdLauncherTree *tree;
 } HdLauncher;
 
 static HdLauncher *hd_launcher = NULL;
+
+static gboolean
+populate_tree (gpointer data)
+{
+  hd_launcher_tree_populate (hd_launcher->tree);
+
+  return FALSE;
+}
 
 typedef struct
 {
@@ -288,6 +297,10 @@ lazily_populate_top_launcher (HdTaskLauncher *launcher,
     ? n_items
     : g_random_int_range (1, (n_items * -1));
   closure->current_pos = 0;
+
+  clutter_threads_add_idle_full (G_PRIORITY_DEFAULT_IDLE + 50,
+                                 populate_tree,
+                                 NULL, NULL);
 
   clutter_threads_add_idle_full (G_PRIORITY_DEFAULT_IDLE + 50,
                                  populate_top_launcher,
@@ -372,6 +385,8 @@ hd_get_application_launcher (void)
   if (G_UNLIKELY (hd_launcher == NULL))
     {
       hd_launcher = g_new0 (HdLauncher, 1);
+
+      hd_launcher->tree = hd_build_launcher_items ();
 
       hd_launcher->timeline = clutter_timeline_new_for_duration (250);
       hd_launcher->tmpl =

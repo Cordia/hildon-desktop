@@ -42,16 +42,38 @@ struct _HdAppLauncherPrivate
 
 G_DEFINE_TYPE (HdAppLauncher, hd_app_launcher, HD_TYPE_LAUNCHER_ITEM);
 
+static const ClutterColor text_color = { 255, 255, 255, 224 };
+
 static ClutterActor *
 hd_app_launcher_get_icon (HdLauncherItem *item)
 {
-  return NULL;
+  ClutterActor *retval;
+  ClutterColor color = { 0, };
+  guint size = 96;
+
+  color.red   = g_random_int_range (0, 255);
+  color.green = g_random_int_range (0, 255);
+  color.blue  = g_random_int_range (0, 255);
+  color.alpha = 255;
+
+  retval = clutter_rectangle_new ();
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (retval), &color);
+  clutter_actor_set_size (retval, size, size);
+
+  return retval;
 }
 
 static ClutterActor *
 hd_app_launcher_get_label (HdLauncherItem *item)
 {
-  return NULL;
+  HdAppLauncherPrivate *priv = HD_APP_LAUNCHER (item)->priv;
+  ClutterActor *retval;
+
+  retval = clutter_label_new ();
+  clutter_label_set_color (CLUTTER_LABEL (retval), &text_color);
+  clutter_label_set_text (CLUTTER_LABEL (retval), priv->name);
+
+  return retval;
 }
 
 static void
@@ -78,6 +100,8 @@ hd_app_launcher_class_init (HdAppLauncherClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   HdLauncherItemClass *launcher_class = HD_LAUNCHER_ITEM_CLASS (klass);
+
+  g_type_class_add_private (klass, sizeof (HdAppLauncherPrivate));
 
   gobject_class->finalize = hd_app_launcher_finalize;
 

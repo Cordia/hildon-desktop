@@ -15,6 +15,22 @@ AC_HEADER_STDC
 
 AC_HEADER_STDBOOL
 
+AC_CHECK_HEADERS([ftw.h],
+                 AC_DEFINE([HAVE_FTW_H], 1,
+                           [Define to 1 if ftw.h is available]))
+AC_CHECK_FUNCS([nftw])
+
+AC_MSG_CHECKING([for GNU ftw extensions])
+AC_TRY_COMPILE([#define _XOPEN_SOURCE 500
+#define _GNU_SOURCE
+#include <ftw.h>], [int flags = FTW_ACTIONRETVAL;], gtk_ok=yes, gtk_ok=no)
+if test $gtk_ok = yes; then
+  AC_MSG_RESULT([yes])
+  AC_DEFINE(HAVE_GNU_FTW, 1, [Have GNU ftw])
+else
+  AC_MSG_RESULT([no])
+fi
+
 AM_PROG_CC_C_O
 
 #++++++++++++++++++
@@ -29,16 +45,17 @@ AC_SUBST(CFLAGS)
 # Dependencies checks
 #+++++++++++++++++++++
 
-PKG_CHECK_MODULES(HD, clutter-0.8 \
-                      glib-2.0 >= 2.12 \
-		      dbus-1 \
-		      x11 \
-		      xcomposite \
-		      xfixes \
-		      libmatchbox2-0.1 \
-		      gtk+-2.0 \
-		      gconf-2.0 \
-		      xft)
+PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
+                       glib-2.0 >= 2.12 dnl
+                       gthread-2.0 dnl
+		       dbus-1 dnl
+		       x11 dnl
+		       xcomposite dnl
+		       xfixes dnl
+		       libmatchbox2-0.1 dnl
+		       gtk+-2.0 dnl
+		       gconf-2.0 dnl
+		       xft])
 
 HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util'
 

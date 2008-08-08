@@ -12,6 +12,7 @@ launcher_h = \
 	hd-launcher-item.h		\
 	hd-task-launcher.h		\
 	hd-task-launcher-private.h	\
+	hd-launcher-tree.h		\
 	hd-launcher-utils.h
 
 launcher_c = \
@@ -19,6 +20,7 @@ launcher_c = \
 	hd-dummy-launcher.c		\
 	hd-launcher-item.c		\
 	hd-task-launcher.c		\
+	hd-launcher-tree.c		\
 	hd-launcher-utils.c
 
 noinst_LTLIBRARIES = liblauncher.la

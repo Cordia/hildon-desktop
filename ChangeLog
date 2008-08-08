@@ -1,3 +1,22 @@
+2008-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* configure.ac: Check for ftw.h and its GNU extensions.
+
+	* src/launcher/Makefile.am:
+	* src/launcher/hd-launcher-tree.c: 
+	* src/launcher/hd-launcher-tree.h: Add a LauncherTree object, which
+	will populate itself with the contents of the desktop entries
+	following (a subset of) the XDG menu spec.
+
+	* src/launcher/hd-app-launcher.c: Implement the rest of the
+	LauncherItem base class methods.
+
+	* src/launcher/hd-launcher-utils.c:
+	* src/launcher/hd-launcher-utils.h: Start the launchers tree
+	population when needed.
+
+	* tests/test-launcher.c: Enable threading.
+
 2008-08-07 Tomas Frydrych  <tf@o-hand.com>
 
 	* src/home/hd-edit-menu.c:
