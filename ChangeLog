@@ -1,3 +1,9 @@
+2008-08-08  Chris Lord  <chris@openedhand.com>
+
+	* tests/Makefile.am:
+	* tests/test-signals.c:
+	Add a background-kill/low-memory signal test application
+
 2008-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* src/launcher/hd-launcher-utils.c:
