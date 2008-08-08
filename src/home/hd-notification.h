@@ -56,15 +56,6 @@ struct _HdNotification
 
 GType hd_notification_get_type (void);
 
-void hd_notification_set_background_color (HdNotification *notification,
-					   ClutterColor   *color);
-
-void hd_notification_set_text_color (HdNotification *notification,
-				     ClutterColor   *color);
-
-void hd_notification_set_heading_color (HdNotification *notification,
-					ClutterColor   *color);
-
 G_END_DECLS
 
 #endif

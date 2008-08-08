@@ -28,13 +28,12 @@
 #include "hd-notification.h"
 
 #include <clutter/clutter.h>
+#include "tidy/tidy-stylable.h"
 
 enum
 {
   PROP_HEADING = 1,
   PROP_TEXT,
-  PROP_HEADING_COLOR,
-  PROP_TEXT_COLOR,
   PROP_ICON,
 };
 
@@ -102,22 +101,6 @@ hd_notification_class_init (HdNotificationClass *klass)
 			       G_PARAM_WRITABLE);
 
   g_object_class_install_property (object_class, PROP_ICON, pspec);
-
-  pspec = g_param_spec_boxed ("heading-color",
-			      "Heading Color",
-			      "Heading Color",
-			      CLUTTER_TYPE_COLOR,
-			      G_PARAM_READWRITE);
-
-  g_object_class_install_property (object_class, PROP_HEADING_COLOR, pspec);
-
-  pspec = g_param_spec_boxed ("text-color",
-			      "text Color",
-			      "text Color",
-			      CLUTTER_TYPE_COLOR,
-			      G_PARAM_READWRITE);
-
-  g_object_class_install_property (object_class, PROP_TEXT_COLOR, pspec);
 }
 
 static void
@@ -126,24 +109,33 @@ hd_notification_constructed (GObject *object)
   ClutterActor             *a, *g;
   HdNotification           *self = HD_NOTIFICATION (object);
   HdNotificationPrivate    *priv = self->priv;
-  ClutterColor              clr_f = {0,0,0,0xff};
+  ClutterColor              clr_default = {0x44,0x44,0x44,0xff};
+  ClutterColor             *fg_color;
+
+  tidy_stylable_get (TIDY_STYLABLE (object), "fg-color", &fg_color, NULL);
+
+  if (!fg_color)
+        fg_color = &clr_default;
 
   g = clutter_group_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (object), g);
-  
+
   a = clutter_label_new ();
-  clutter_label_set_color (CLUTTER_LABEL (a), &clr_f);
+  clutter_label_set_color (CLUTTER_LABEL (a), fg_color);
   clutter_container_add_actor (CLUTTER_CONTAINER (g), a);
   priv->heading = a;
 
   a = clutter_label_new ();
-  clutter_label_set_color (CLUTTER_LABEL (a), &clr_f);
+  clutter_label_set_color (CLUTTER_LABEL (a), fg_color);
   clutter_container_add_actor (CLUTTER_CONTAINER (g), a);
   priv->text = a;
 
   a = clutter_texture_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (g), a);
   priv->icon = a;
+
+  if (fg_color != &clr_default)
+    clutter_color_free (fg_color);
 }
 
 static void
@@ -177,14 +169,6 @@ hd_notification_set_property (GObject       *object,
 
   switch (prop_id)
     {
-    case PROP_TEXT_COLOR:
-      hd_notification_set_text_color (HD_NOTIFICATION (object),
-				      g_value_get_boxed (value));
-      break;
-    case PROP_HEADING_COLOR:
-      hd_notification_set_heading_color (HD_NOTIFICATION (object),
-					 g_value_get_boxed (value));
-      break;
     case PROP_TEXT:
       {
 	const gchar * str = g_value_get_string (value);
@@ -220,20 +204,6 @@ hd_notification_get_property (GObject      *object,
 
   switch (prop_id)
     {
-    case PROP_HEADING_COLOR:
-      {
-	ClutterColor color;
-	clutter_label_get_color (CLUTTER_LABEL (priv->heading), &color);
-	g_value_set_boxed (value, &color);
-      }
-      break;
-    case PROP_TEXT_COLOR:
-      {
-	ClutterColor color;
-	clutter_label_get_color (CLUTTER_LABEL (priv->text), &color);
-	g_value_set_boxed (value, &color);
-      }
-      break;
     case PROP_HEADING:
       {
 	const gchar *str;
@@ -253,34 +223,5 @@ hd_notification_get_property (GObject      *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
     }
-}
-
-void
-hd_notification_set_background_color (HdNotification *notification,
-				      ClutterColor   *color)
-{
-/*   HdNotificationPrivate *priv = notification->priv; */
-
-  /*
-   * FIXME -- this comes from the tidy style -- should this prop be removed ?
-   */
-}
-
-void
-hd_notification_set_text_color (HdNotification *notification,
-				ClutterColor   *color)
-{
-  HdNotificationPrivate *priv = notification->priv;
-
-  clutter_label_set_color (CLUTTER_LABEL (priv->text), color);
-}
-
-void
-hd_notification_set_heading_color (HdNotification *notification,
-				   ClutterColor   *color)
-{
-  HdNotificationPrivate *priv = notification->priv;
-
-  clutter_label_set_color (CLUTTER_LABEL (priv->heading), color);
 }
 

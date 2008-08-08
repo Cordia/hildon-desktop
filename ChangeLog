@@ -1,4 +1,10 @@
 2008-08-08 Tomas Frydrych  <tf@o-hand.com>
+
+	* src/home/hd-notification.c:
+	Removed text color properties; use tidy-stylable API instead.
+
+2008-08-08 Tomas Frydrych  <tf@o-hand.com>
+
 	* configure.ac:
 	* src/Makefile.am:
 	* src/home/Makefile.am:
