@@ -34,6 +34,7 @@ HdLauncherItem *hd_app_launcher_new_from_keyfile  (GKeyFile       *key_file,
                                                    GError        **error);
 HdLauncherItem *hd_app_launcher_new_from_file     (const gchar    *filename,
                                                    GError        **error);
+
 gboolean        hd_app_launcher_load_from_keyfile (HdAppLauncher  *launcher,
                                                    GKeyFile       *key_file,
                                                    GError        **error);
@@ -46,6 +47,11 @@ G_CONST_RETURN gchar *hd_app_launcher_get_exec          (HdAppLauncher *item);
 G_CONST_RETURN gchar *hd_app_launcher_get_service       (HdAppLauncher *item);
 G_CONST_RETURN gchar *hd_app_launcher_get_text_domain   (HdAppLauncher *item);
 G_CONST_RETURN gchar *hd_app_launcher_get_preload_image (HdAppLauncher *item);
+G_CONST_RETURN gchar *hd_app_launcher_get_preload_mode  (HdAppLauncher *item);
+
+gsize                 hd_app_launcher_get_n_categories  (HdAppLauncher *item);
+gboolean              hd_app_launcher_has_category      (HdAppLauncher *item,
+                                                         const gchar   *category);
 
 G_END_DECLS
 

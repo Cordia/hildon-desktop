@@ -1,5 +1,11 @@
 2008-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
 
+	* src/launcher/hd-app-launcher.[ch]: Add prestart key support
+	to the AppLauncher class; read and parse the Categories key
+	from the desktop entry and allow checking for a category.
+
+2008-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
+
 	* src/launcher/hd-app-launcher.c: Wrap the item label and
 	center the text.
 

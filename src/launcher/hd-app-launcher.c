@@ -20,7 +20,7 @@
 #define HD_DESKTOP_ENTRY_NO_DISPLAY     "NoDisplay"
 #define HD_DESKTOP_ENTRY_PRELOAD_ICON   "X-Osso-Preload-Icon"
 #define HD_DESKTOP_ENTRY_USER_POSITION  "X-Osso-User-Position"
-
+#define HD_DESKTOP_ENTRY_PRELOAD_MODE   "X-Maemo-Prestared"
 
 #define HD_APP_LAUNCHER_GET_PRIVATE(obj)        (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_APP_LAUNCHER, HdAppLauncherPrivate))
 
@@ -38,6 +38,10 @@ struct _HdAppLauncherPrivate
   gchar *service;
   gchar *text_domain;
   gchar *preload_image;
+  gchar *preload_mode;
+
+  gchar **categories;
+  gsize n_categories;
 
   guint is_file : 1;
 };
@@ -110,6 +114,12 @@ hd_app_launcher_finalize (GObject *gobject)
   g_free (priv->service);
   g_free (priv->text_domain);
   g_free (priv->preload_image);
+  g_free (priv->preload_mode);
+
+  for (gsize i = 0; i < priv->n_categories; i++)
+    g_free (priv->categories[i]);
+
+  g_free (priv->categories);
 
   G_OBJECT_CLASS (hd_app_launcher_parent_class)->dispose (gobject);
 }
@@ -192,6 +202,7 @@ hd_app_launcher_load_from_keyfile (HdAppLauncher  *launcher,
   HdAppLauncherPrivate *priv;
   gboolean no_display = FALSE;
   GError *parse_error = NULL;
+  gsize n_categories = 0;
 
   g_return_val_if_fail (HD_IS_APP_LAUNCHER (launcher), FALSE);
   g_return_val_if_fail (key_file != NULL, FALSE);
@@ -262,6 +273,13 @@ hd_app_launcher_load_from_keyfile (HdAppLauncher  *launcher,
                                          HD_DESKTOP_ENTRY_COMMENT,
                                          NULL);
 
+  priv->categories = g_key_file_get_string_list (key_file,
+                                                 HD_DESKTOP_ENTRY_GROUP,
+                                                 HD_DESKTOP_ENTRY_CATEGORIES,
+                                                 &n_categories,
+                                                 NULL);
+  priv->n_categories = n_categories;
+
   priv->service = g_key_file_get_string (key_file,
                                          HD_DESKTOP_ENTRY_GROUP,
                                          HD_DESKTOP_ENTRY_SERVICE,
@@ -276,6 +294,11 @@ hd_app_launcher_load_from_keyfile (HdAppLauncher  *launcher,
                                                HD_DESKTOP_ENTRY_GROUP,
                                                HD_DESKTOP_ENTRY_PRELOAD_ICON,
                                                NULL);
+
+  priv->preload_mode = g_key_file_get_string (key_file,
+                                              HD_DESKTOP_ENTRY_GROUP,
+                                              HD_DESKTOP_ENTRY_PRELOAD_MODE,
+                                              NULL);
 
   return TRUE;
 }
@@ -342,4 +365,36 @@ hd_app_launcher_get_preload_image (HdAppLauncher *item)
   g_return_val_if_fail (HD_IS_APP_LAUNCHER (item), NULL);
 
   return item->priv->preload_image;
+}
+
+G_CONST_RETURN gchar *
+hd_app_launcher_get_preload_mode (HdAppLauncher *item)
+{
+  g_return_val_if_fail (HD_IS_APP_LAUNCHER (item), NULL);
+
+  return item->priv->preload_mode;
+}
+
+gsize
+hd_app_launcher_get_n_categories (HdAppLauncher *item)
+{
+  g_return_val_if_fail (HD_IS_APP_LAUNCHER (item), 0);
+
+  return item->priv->n_categories;
+}
+
+gboolean
+hd_app_launcher_has_category (HdAppLauncher *item,
+                              const gchar   *category)
+{
+  g_return_val_if_fail (HD_IS_APP_LAUNCHER (item), FALSE);
+  g_return_val_if_fail (category != NULL, FALSE);
+
+  for (gsize i = 0; i < item->priv->n_categories; i++)
+    {
+      if (strcmp (category, item->priv->categories[i]) == 0)
+        return TRUE;
+    }
+
+  return FALSE;
 }
