@@ -26,6 +26,8 @@
 
 struct _HdAppLauncherPrivate
 {
+  ClutterEffectTemplate *tmpl;
+
   gchar *filename;
 
   gchar *item_type;
@@ -77,9 +79,23 @@ hd_app_launcher_get_label (HdLauncherItem *item)
 }
 
 static void
+hd_app_launcher_show (ClutterActor *actor)
+{
+  HdAppLauncher *launcher = HD_APP_LAUNCHER (actor);
+
+  CLUTTER_ACTOR_CLASS (hd_app_launcher_parent_class)->show (actor);
+
+  clutter_effect_scale (launcher->priv->tmpl, actor,
+                        1.2, 1.2,
+                        NULL, NULL);
+}
+
+static void
 hd_app_launcher_finalize (GObject *gobject)
 {
   HdAppLauncherPrivate *priv = HD_APP_LAUNCHER (gobject)->priv;
+
+  g_object_unref (priv->tmpl);
 
   g_free (priv->filename);
 
@@ -99,11 +115,14 @@ static void
 hd_app_launcher_class_init (HdAppLauncherClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
   HdLauncherItemClass *launcher_class = HD_LAUNCHER_ITEM_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (HdAppLauncherPrivate));
 
   gobject_class->finalize = hd_app_launcher_finalize;
+
+  actor_class->show = hd_app_launcher_show;
 
   launcher_class->get_icon = hd_app_launcher_get_icon;
   launcher_class->get_label = hd_app_launcher_get_label;
@@ -113,6 +132,9 @@ static void
 hd_app_launcher_init (HdAppLauncher *launcher)
 {
   launcher->priv = HD_APP_LAUNCHER_GET_PRIVATE (launcher);
+
+  launcher->priv->tmpl =
+    clutter_effect_template_new_for_duration (150, CLUTTER_ALPHA_RAMP);
 }
 
 HdLauncherItem *

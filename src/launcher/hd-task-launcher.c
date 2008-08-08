@@ -606,11 +606,6 @@ hd_task_launcher_allocate (ClutterActor          *actor,
           cur_width       = priv->padding.left;
           max_row_height  = 0;
         }
-      else
-        {
-          if (l != priv->launchers)
-            cur_width += max_item_width + priv->h_spacing;
-        }
 
       max_row_height = MAX (max_row_height, natural_height);
 
@@ -620,6 +615,8 @@ hd_task_launcher_allocate (ClutterActor          *actor,
       child_box.y2 = child_box.y1 + natural_height;
 
       clutter_actor_allocate (child, &child_box, origin_changed);
+
+      cur_width += max_item_width + priv->h_spacing;
     }
 }
 
@@ -834,10 +831,10 @@ hd_task_launcher_init (HdTaskLauncher *launcher)
 
   launcher->priv = priv = HD_TASK_LAUNCHER_GET_PRIVATE (launcher);
 
-  priv->padding.top = priv->padding.bottom = CLUTTER_UNITS_FROM_DEVICE (12);
-  priv->padding.left = priv->padding.right = CLUTTER_UNITS_FROM_DEVICE (12);
+  priv->padding.top = priv->padding.bottom = CLUTTER_UNITS_FROM_DEVICE (6);
+  priv->padding.left = priv->padding.right = CLUTTER_UNITS_FROM_DEVICE (6);
 
-  priv->h_spacing = priv->v_spacing = CLUTTER_UNITS_FROM_DEVICE (6);
+  priv->h_spacing = priv->v_spacing = CLUTTER_UNITS_FROM_DEVICE (18);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (launcher), TRUE);
 }

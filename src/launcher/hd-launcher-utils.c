@@ -223,17 +223,10 @@ typedef struct
 
 static HdLauncher *hd_launcher = NULL;
 
-static gboolean
-populate_tree (gpointer data)
-{
-  hd_launcher_tree_populate (hd_launcher->tree);
-
-  return FALSE;
-}
-
 typedef struct
 {
   HdTaskLauncher *launcher;
+  GList *items;
   guint n_items;
   guint current_pos;
 } PopulateClosure;
@@ -244,11 +237,7 @@ populate_top_launcher (gpointer data)
   PopulateClosure *closure = data;
   HdLauncherItem *item;
 
-  if (g_random_int_range (0, 10) < 4)
-    item = hd_dummy_launcher_new (HD_APPLICATION_LAUNCHER);
-  else
-    item = hd_dummy_launcher_new (HD_SECTION_LAUNCHER);
-
+  item = g_list_nth_data (closure->items, closure->current_pos);
   hd_task_launcher_add_item (closure->launcher, item);
 
   closure->current_pos += 1;
@@ -287,20 +276,15 @@ populate_launcher_cleanup (gpointer data)
 
 static void
 lazily_populate_top_launcher (HdTaskLauncher *launcher,
-                              gint            n_items)
+                              GList          *items)
 {
   PopulateClosure *closure;
 
-  closure = g_new0 (PopulateClosure, 1);
-  closure->launcher = g_object_ref (launcher);
-  closure->n_items = n_items > 0
-    ? n_items
-    : g_random_int_range (1, (n_items * -1));
+  closure              = g_new0 (PopulateClosure, 1);
+  closure->launcher    = g_object_ref (launcher);
+  closure->items       = items;
+  closure->n_items     = g_list_length (items);
   closure->current_pos = 0;
-
-  clutter_threads_add_idle_full (G_PRIORITY_DEFAULT_IDLE + 50,
-                                 populate_tree,
-                                 NULL, NULL);
 
   clutter_threads_add_idle_full (G_PRIORITY_DEFAULT_IDLE + 50,
                                  populate_top_launcher,
@@ -379,6 +363,22 @@ sub_level_item_clicked (HdTaskLauncher *launcher,
   clutter_effect_depth (data->tmpl, data->top_scroll, 0, NULL, NULL);
 }
 
+static void
+launcher_tree_finished (HdLauncherTree *tree,
+                        gpointer        user_data)
+{
+  lazily_populate_top_launcher (HD_TASK_LAUNCHER (hd_launcher->top_level),
+                                hd_launcher_tree_get_items (tree, NULL));
+}
+
+static gboolean
+populate_tree (gpointer data)
+{
+  hd_launcher_tree_populate (hd_launcher->tree);
+
+  return FALSE;
+}
+
 ClutterActor *
 hd_get_application_launcher (void)
 {
@@ -387,6 +387,9 @@ hd_get_application_launcher (void)
       hd_launcher = g_new0 (HdLauncher, 1);
 
       hd_launcher->tree = hd_build_launcher_items ();
+      g_signal_connect (hd_launcher->tree, "finished",
+                        G_CALLBACK (launcher_tree_finished),
+                        NULL);
 
       hd_launcher->timeline = clutter_timeline_new_for_duration (250);
       hd_launcher->tmpl =
@@ -441,7 +444,7 @@ hd_get_application_launcher (void)
       clutter_behaviour_apply (hd_launcher->fade_behaviour,
                                hd_launcher->sub_level);
 
-      lazily_populate_top_launcher (HD_TASK_LAUNCHER (hd_launcher->top_level), 64);
+      clutter_threads_add_idle (populate_tree, NULL);
 
       return hd_launcher->group;
     }

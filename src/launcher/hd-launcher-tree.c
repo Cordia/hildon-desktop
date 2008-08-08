@@ -218,8 +218,6 @@ walk_visit_func (const char        *f_path,
   else
     name = f_path;
 
-  g_debug ("%s: visiting `%s'", G_STRLOC, name);
-
   is_hidden = (*name == '.') ? TRUE : FALSE;
 
   if (S_ISREG (sb->st_mode) &&
@@ -473,7 +471,6 @@ hd_launcher_tree_populate (HdLauncherTree *tree)
 
   data = walk_thread_data_new (tree);
 
-  g_debug (G_STRLOC ": creating the ftw thread");
   g_thread_create (walk_thread_func, data, FALSE, NULL);
   tree->priv->active_walk = data;
 }
@@ -486,7 +483,7 @@ hd_launcher_tree_get_items (HdLauncherTree *tree,
   g_return_val_if_fail (parent == NULL || HD_IS_LAUNCHER_ITEM (parent), NULL);
 
   if (G_LIKELY (parent == NULL))
-    return tree->priv->top_levels;
+    return tree->priv->items_list;
 
   return NULL;
 }
