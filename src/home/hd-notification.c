@@ -30,6 +30,9 @@
 #include <clutter/clutter.h>
 #include "tidy/tidy-stylable.h"
 
+#define TEXT_SPACING 5
+#define TEXT_PADDING 3
+
 enum
 {
   PROP_HEADING = 1,
@@ -122,15 +125,18 @@ hd_notification_constructed (GObject *object)
 
   a = clutter_label_new ();
   clutter_label_set_color (CLUTTER_LABEL (a), fg_color);
+  clutter_actor_set_position (a, TEXT_PADDING, TEXT_PADDING);
   clutter_container_add_actor (CLUTTER_CONTAINER (g), a);
   priv->heading = a;
 
   a = clutter_label_new ();
   clutter_label_set_color (CLUTTER_LABEL (a), fg_color);
+  clutter_actor_set_position (a, TEXT_PADDING, TEXT_PADDING);
   clutter_container_add_actor (CLUTTER_CONTAINER (g), a);
   priv->text = a;
 
   a = clutter_texture_new ();
+  clutter_actor_set_position (a, TEXT_PADDING, TEXT_PADDING);
   clutter_container_add_actor (CLUTTER_CONTAINER (g), a);
   priv->icon = a;
 
@@ -160,32 +166,30 @@ hd_notification_finalize (GObject *object)
 
 static void
 hd_notification_set_property (GObject       *object,
-			   guint         prop_id,
-			   const GValue *value,
-			   GParamSpec   *pspec)
+			      guint         prop_id,
+			      const GValue *value,
+			      GParamSpec   *pspec)
 {
-  HdNotification        *self = HD_NOTIFICATION (object);
-  HdNotificationPrivate *priv = self->priv;
+  HdNotification  *self = HD_NOTIFICATION (object);
 
   switch (prop_id)
     {
     case PROP_TEXT:
       {
 	const gchar * str = g_value_get_string (value);
-	clutter_label_set_text (CLUTTER_LABEL (priv->text), str);
+	hd_notification_set_text (self, str);
       }
       break;
     case PROP_HEADING:
       {
 	const gchar * str = g_value_get_string (value);
-	clutter_label_set_text (CLUTTER_LABEL (priv->heading), str);
+	hd_notification_set_heading (self, str);
       }
       break;
     case PROP_ICON:
       {
 	const gchar * str = g_value_get_string (value);
-	clutter_texture_set_from_file (CLUTTER_TEXTURE (priv->icon), str,
-				       NULL);
+	hd_notification_set_icon (self, str);
       }
       break;
     default:
@@ -225,3 +229,54 @@ hd_notification_get_property (GObject      *object,
     }
 }
 
+static void
+hd_notification_fix_layout (HdNotification *notification)
+{
+  HdNotificationPrivate *priv = notification->priv;
+  guint                  h_heading;
+  guint                  h_icon;
+  guint                  w_icon;
+  gint                   y_text;
+  gint                   y_heading;
+  gint                   y_icon;
+  gint                   x_heading;
+
+  y_heading = clutter_actor_get_y (priv->heading);
+  h_heading = clutter_actor_get_height (priv->heading);
+  y_icon    = clutter_actor_get_y (priv->icon);
+  h_icon    = clutter_actor_get_height (priv->icon);
+  w_icon    = clutter_actor_get_width (priv->icon);
+
+  y_text = MAX (h_heading + y_heading, h_icon + y_heading);
+  y_text += TEXT_SPACING;
+  clutter_actor_set_y (priv->text, y_text);
+
+  x_heading = w_icon + TEXT_PADDING + TEXT_SPACING;
+  clutter_actor_set_x (priv->heading, x_heading);
+}
+
+void
+hd_notification_set_heading (HdNotification *notification, const gchar *txt)
+{
+  HdNotificationPrivate *priv = notification->priv;
+
+  clutter_label_set_text (CLUTTER_LABEL (priv->heading), txt);
+  hd_notification_fix_layout (notification);
+}
+
+void
+hd_notification_set_text (HdNotification *notification, const gchar *txt)
+{
+  HdNotificationPrivate *priv = notification->priv;
+
+  clutter_label_set_text (CLUTTER_LABEL (priv->text), txt);
+}
+
+void
+hd_notification_set_icon (HdNotification *notification, const gchar *txt)
+{
+  HdNotificationPrivate *priv = notification->priv;
+
+  clutter_texture_set_from_file (CLUTTER_TEXTURE (priv->icon), txt, NULL);
+  hd_notification_fix_layout (notification);
+}

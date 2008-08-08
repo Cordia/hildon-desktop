@@ -20,6 +20,12 @@
 
 2008-08-08 Tomas Frydrych  <tf@o-hand.com>
 
+	* src/home/hd-notification.c:
+	* src/home/hd-notification.h:
+	Added setters for icon and text.
+
+2008-08-08 Tomas Frydrych  <tf@o-hand.com>
+
 	* src/tidy-frame.h:
 	* src/tidy-frame.c:
 	Add missing files.

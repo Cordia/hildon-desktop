@@ -56,6 +56,10 @@ struct _HdNotification
 
 GType hd_notification_get_type (void);
 
+void hd_notification_set_heading (HdNotification *notification, const gchar *txt);
+void hd_notification_set_text (HdNotification *notification, const gchar *txt);
+void hd_notification_set_icon (HdNotification *notification, const gchar *txt);
+
 G_END_DECLS
 
 #endif
