@@ -69,7 +69,7 @@ src/Makefile
 src/mb/Makefile
 src/home/Makefile
 src/launcher/Makefile
-src/launcher/tidy/Makefile
+src/tidy/Makefile
 src/util/Makefile
 data/Makefile
 data/icons/Makefile

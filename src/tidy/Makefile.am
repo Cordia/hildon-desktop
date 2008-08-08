@@ -5,7 +5,7 @@ GLIB_MKENUMS = `pkg-config --variable=glib_mkenums glib-2.0`
 
 INCLUDES = \
         -I$(top_srcdir)                 \
-	-I$(top_srcdir)/src/launcher/	\
+	-I$(top_srcdir)/src/		\
         -DPREFIX=\""$(prefix)"\"        \
         -DLIBDIR=\""$(libdir)"\"        \
         -DG_DISABLE_DEPRECATED          \
@@ -23,18 +23,19 @@ STAMP_FILES = stamp-tidy-marshal.h stamp-tidy-enum-types.h
 noinst_LTLIBRARIES = libtidy.la
 
 source_h = \
-	$(top_srcdir)/src/launcher/tidy/tidy-actor.h 		\
-	$(top_srcdir)/src/launcher/tidy/tidy-adjustment.h	\
-	$(top_srcdir)/src/launcher/tidy/tidy-animation.h 	\
-	$(top_srcdir)/src/launcher/tidy/tidy-finger-scroll.h	\
-	$(top_srcdir)/src/launcher/tidy/tidy-interval.h		\
-	$(top_srcdir)/src/launcher/tidy/tidy-scroll-bar.h	\
-	$(top_srcdir)/src/launcher/tidy/tidy-scrollable.h	\
-	$(top_srcdir)/src/launcher/tidy/tidy-scroll-view.h	\
-	$(top_srcdir)/src/launcher/tidy/tidy-stylable.h		\
-	$(top_srcdir)/src/launcher/tidy/tidy-style.h 		\
-	$(top_srcdir)/src/launcher/tidy/tidy-types.h 		\
-	$(top_srcdir)/src/launcher/tidy/tidy-util.h 		\
+	$(top_srcdir)/src/tidy/tidy-actor.h 		\
+	$(top_srcdir)/src/tidy/tidy-adjustment.h	\
+	$(top_srcdir)/src/tidy/tidy-animation.h 	\
+	$(top_srcdir)/src/tidy/tidy-finger-scroll.h	\
+	$(top_srcdir)/src/tidy/tidy-frame.h	\
+	$(top_srcdir)/src/tidy/tidy-interval.h		\
+	$(top_srcdir)/src/tidy/tidy-scroll-bar.h	\
+	$(top_srcdir)/src/tidy/tidy-scrollable.h	\
+	$(top_srcdir)/src/tidy/tidy-scroll-view.h	\
+	$(top_srcdir)/src/tidy/tidy-stylable.h		\
+	$(top_srcdir)/src/tidy/tidy-style.h 		\
+	$(top_srcdir)/src/tidy/tidy-types.h 		\
+	$(top_srcdir)/src/tidy/tidy-util.h 		\
 	$(NULL)
 
 source_h_private = \
@@ -46,6 +47,7 @@ source_c = \
 	tidy-adjustment.c \
 	tidy-animation.c \
 	tidy-finger-scroll.c \
+	tidy-frame.c \
 	tidy-interval.c \
 	tidy-scroll-bar.c \
 	tidy-scrollable.c \

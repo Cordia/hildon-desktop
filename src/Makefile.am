@@ -1,4 +1,4 @@
-SUBDIRS = mb launcher home util
+SUBDIRS = mb tidy launcher home util
 
 INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 

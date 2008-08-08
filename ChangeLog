@@ -1,3 +1,16 @@
+2008-08-08 Tomas Frydrych  <tf@o-hand.com>
+	* configure.ac:
+	* src/Makefile.am:
+	* src/home/Makefile.am:
+	* src/launcher/Makefile.am
+	* src/tidy/Makefile.am
+	* tests/Makefile.am:
+	Moved tidy from src/launcher to src/
+
+	* src/home/hd-notication.h:
+	* src/home/hd-notification.c:
+	Start of customized notification actor.
+
 2008-08-08  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* configure.ac: Check for ftw.h and its GNU extensions.

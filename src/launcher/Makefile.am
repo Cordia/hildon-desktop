@@ -1,4 +1,3 @@
-SUBDIRS = tidy
 
 INCLUDES = \
 	-I. \
@@ -27,6 +26,6 @@ noinst_LTLIBRARIES = liblauncher.la
 
 liblauncher_la_SOURCES = $(launcher_h) $(launcher_c)
 liblauncher_la_CFLAGS =  $(HD_CFLAGS)
-liblauncher_la_LIBADD = $(HD_LIBS) $(top_builddir)/src/launcher/tidy/libtidy.la
+liblauncher_la_LIBADD = $(HD_LIBS) $(top_builddir)/src/tidy/libtidy.la
 
 CLEANFILES = *~

@@ -1,4 +1,5 @@
 INCLUDES = -I $(top_srcdir)/src/launcher \
+	-I $(top_srcdir)src/tidy \
 	@HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
 home_h = 	hd-home.h		\
@@ -9,6 +10,7 @@ home_h = 	hd-home.h		\
 		hd-switcher.h		\
 		hd-switcher-group.h	\
 		hd-gtk-style.h		\
+		hd-notification.h	\
 		hd-gtk-utils.h
 
 home_c = 	hd-home.c		\
@@ -19,6 +21,7 @@ home_c = 	hd-home.c		\
 		hd-switcher.c		\
 		hd-switcher-group.c	\
 		hd-gtk-style.c		\
+		hd-notification.c	\
 		hd-gtk-utils.c
 
 noinst_LTLIBRARIES = libhome.la
