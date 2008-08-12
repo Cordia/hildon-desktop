@@ -32,3 +32,4 @@ tests/test-applet
 tests/test-hung-process
 tests/test-launcher
 tests/test-portrait
+tests/test-signals
