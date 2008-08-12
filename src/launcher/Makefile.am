@@ -2,7 +2,11 @@
 INCLUDES = \
 	-I. \
 	-I.. \
+	-D_GNU_SOURCE \
 	-D_XOPEN_SOURCE=500 \
+	-DPREFIX=\""$(prefix)"\" \
+	-DDATADIR=\""$(datadir)"\" \
+	-DSYSCONFDIR=\""$(sysconfdir)"\" \
 	@HD_INCS@
 
 launcher_h = \

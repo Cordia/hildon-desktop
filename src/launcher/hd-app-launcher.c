@@ -4,6 +4,7 @@
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
+#include <gdk/gdk.h>
 
 /* desktop entry group */
 #define HD_DESKTOP_ENTRY_GROUP          "Desktop Entry"
@@ -284,6 +285,13 @@ hd_app_launcher_load_from_keyfile (HdAppLauncher  *launcher,
                                          HD_DESKTOP_ENTRY_GROUP,
                                          HD_DESKTOP_ENTRY_SERVICE,
                                          NULL);
+  g_strchomp (priv->service);
+
+  priv->exec = g_key_file_get_string (key_file,
+                                      HD_DESKTOP_ENTRY_GROUP,
+                                      HD_DESKTOP_ENTRY_EXEC,
+                                      NULL);
+  g_strchomp (priv->exec);
 
   priv->text_domain = g_key_file_get_string (key_file,
                                              HD_DESKTOP_ENTRY_GROUP,
@@ -395,6 +403,100 @@ hd_app_launcher_has_category (HdAppLauncher *item,
       if (strcmp (category, item->priv->categories[i]) == 0)
         return TRUE;
     }
+
+  return FALSE;
+}
+
+gboolean
+hd_app_launcher_activate (HdAppLauncher  *item,
+                          GError        **error)
+{
+  HdAppLauncherPrivate *priv;
+  gboolean res = FALSE;
+
+  g_return_val_if_fail (HD_IS_APP_LAUNCHER (item), FALSE);
+
+  priv = item->priv;
+
+  if (priv->service)
+    {
+      /* launch the application, or if it's already running
+       * move it to the top
+       */
+      return TRUE;
+    }
+
+#if 0
+  if (hd_wm_is_lowmem_situation ())
+    {
+      if (!tn_close_application_dialog (CAD_ACTION_OPENING))
+        {
+          g_set_error (...);
+          return FALSE;
+        }
+    }
+#endif
+
+  if (priv->exec)
+    {
+      gchar *space = strchr (priv->exec, ' ');
+      gchar *exec;
+      gint argc;
+      gchar **argv = NULL;
+      GPid child_pid;
+      GError *internal_error = NULL;
+
+      g_debug ("Executing %s: `%s'", priv->name, priv->exec);
+
+      if (space)
+        {
+          gchar *cmd = g_strndup (priv->exec, space - priv->exec);
+          gchar *exc = g_find_program_in_path (cmd);
+
+          exec = g_strconcat (exc, space, NULL);
+
+          g_free (cmd);
+          g_free (exc);
+        }
+      else
+        exec = g_find_program_in_path (priv->exec);
+
+      if (!g_shell_parse_argv (exec, &argc, &argv, &internal_error))
+        {
+          g_propagate_error (error, internal_error);
+
+          g_free (exec);
+          if (argv)
+            g_strfreev (argv);
+
+          return FALSE;
+        }
+
+      res = g_spawn_async (NULL,
+                           argv, NULL,
+                           0,
+                           NULL, NULL,
+                           &child_pid,
+                           &internal_error);
+      if (internal_error)
+        g_propagate_error (error, internal_error);
+
+      g_free (exec);
+
+      if (argv)
+        g_strfreev (argv);
+
+      return res;
+    }
+  else
+    {
+#if 0
+      g_set_error (...);
+#endif
+      return FALSE;
+    }
+
+  g_assert_not_reached ();
 
   return FALSE;
 }

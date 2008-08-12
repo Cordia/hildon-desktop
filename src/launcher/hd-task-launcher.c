@@ -13,6 +13,7 @@
 #include <tidy/tidy-scrollable.h>
 
 #include "hd-launcher-item.h"
+#include "hd-app-launcher.h"
 #include "hd-task-launcher-private.h"
 
 #define HD_TASK_LAUNCHER_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_TASK_LAUNCHER, HdTaskLauncherPrivate))
@@ -91,6 +92,7 @@ launch_item (ClutterActor *actor,
     .blue  = 0xee,
     .alpha = 0xff
   };
+  GError *error;
 
   stage = clutter_stage_get_default ();
 
@@ -147,6 +149,16 @@ launch_item (ClutterActor *actor,
   g_signal_connect_swapped (animation,
                             "completed", G_CALLBACK (launch_animation_complete),
                             copy);
+
+  error = NULL;
+  hd_app_launcher_activate (HD_APP_LAUNCHER (closure->item), &error);
+  if (error)
+    {
+      g_warning ("Unable to launch `%s': %s",
+                 hd_app_launcher_get_name (HD_APP_LAUNCHER (closure->item)),
+                 error->message);
+      g_error_free (error);
+    }
 
   g_object_unref (closure->launcher);
   g_object_unref (closure->item);

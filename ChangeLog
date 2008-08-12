@@ -1,3 +1,16 @@
+2008-08-12  Emmanuele Bassi  <ebassi@openedhand.com>
+
+	* src/launcher/Makefile.am: Add defines.
+
+	* src/launcher/hd-app-launcher.[ch]: Parse the Exec key (and remove
+	trailing spaces from the service and exec keys); add an activate()
+	method to HdAppLauncher that will execute the application.
+
+	* src/launcher/hd-launcher-tree.c: Clean up.
+
+	* src/launcher/hd-task-launcher.c (launch_item): Launch the
+	application that has been tapped.
+
 2008-08-08  Chris Lord  <chris@openedhand.com>
 
 	* tests/Makefile.am:

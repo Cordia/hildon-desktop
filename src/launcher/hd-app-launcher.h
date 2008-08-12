@@ -53,6 +53,9 @@ gsize                 hd_app_launcher_get_n_categories  (HdAppLauncher *item);
 gboolean              hd_app_launcher_has_category      (HdAppLauncher *item,
                                                          const gchar   *category);
 
+gboolean              hd_app_launcher_activate          (HdAppLauncher *item,
+                                                         GError       **error);
+
 G_END_DECLS
 
 #endif /* __HD_APP_LAUNCHER_H__ */

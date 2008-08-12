@@ -2,9 +2,6 @@
 #include "config.h"
 #endif
 
-#define _XOPEN_SOURCE 500
-#define _GNU_SOURCE
-
 #include "hd-launcher-tree.h"
 #include "hd-app-launcher.h"
 
@@ -17,9 +14,22 @@
 
 #include <ftw.h>
 
+#include <glib.h>
+#include <glib/gi18n.h>
+
 #include <clutter/clutter.h>
 
-#define CHUNK_SIZE      100
+/* the amount of desktop files we parse in the loader thread
+ * before we consume them inside the ::item-added signal
+ */
+#define CHUNK_SIZE      25
+
+/* where the menu XML resides */
+#define HILDON_DESKTOP_MENU_DIR                 "xdg" G_DIR_SEPARATOR_S "menus"
+#define HILDON_DESKTOP_APPLICATIONS_MENU        "applications.menu"
+
+/* where to find the desktop files */
+#define HILDON_DESKTOP_APPLICATIONS_DIR         "applications"
 
 #define HD_LAUNCHER_TREE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TREE, HdLauncherTreePrivate))
 
@@ -28,7 +38,7 @@ typedef struct
   HdLauncherTree *tree;
 
   gchar *path;
-  GList *items_list;
+  GList *files_list;
 
   gint n_processed_files;
 
@@ -47,7 +57,11 @@ typedef struct
 
 struct _HdLauncherTreePrivate
 {
+  /* the base path of the desktop files */
   gchar *path;
+
+  /* the path of the menu file */
+  gchar *menu_path;
 
   /* keep a shortcut to the top-level items */
   GList *top_levels;
@@ -74,7 +88,7 @@ enum
 {
   PROP_0,
 
-  PROP_PATHS
+  PROP_MENU_PATH
 };
 
 enum
@@ -88,6 +102,24 @@ enum
 };
 
 static gulong tree_signals[LAST_SIGNAL] = { 0, };
+
+typedef enum {
+  HD_UTILITIES_GROUP,
+  HD_SETTINGS_GROUP,
+  HD_EXTRA_GROUP,
+} category_id_t;
+
+static const struct {
+  const gchar *name;
+  const gchar *display_name;
+  category_id_t id;
+} hd_default_categories[] = {
+  { "Utilities", N_("tana_fi_utilities"), HD_UTILITIES_GROUP },
+  { "Settings",  N_("tana_fi_settings"),  HD_SETTINGS_GROUP  },
+  { "Extra",     N_("tana_fi_extras"),    HD_EXTRA_GROUP     }
+};
+
+static const gint hd_n_default_categories = G_N_ELEMENTS (hd_default_categories);
 
 G_DEFINE_TYPE (HdLauncherTree, hd_launcher_tree, G_TYPE_OBJECT);
 
@@ -106,8 +138,12 @@ walk_thread_data_new (HdLauncherTree *tree)
 static void
 walk_thread_data_free (WalkThreadData *data)
 {
+  g_list_foreach (data->files_list, (GFunc) g_key_file_free, NULL);
+  g_list_free (data->files_list);
+
   g_object_unref (data->tree);
   g_free (data->path);
+
   g_free (data);
 }
 
@@ -130,15 +166,9 @@ walk_thread_add_items_idle (gpointer user_data)
 {
   WalkItems *items = user_data;
 
-  /* keep emitting the ::item-added signal inside the idle
-   * handler until we hit the bottom
-   */
-
   if (!items->thread_data->cancelled)
     {
-      GList *l;
-
-      for (l = items->items; l != NULL; l = l->next)
+      for (GList *l = items->items; l != NULL; l = l->next)
         {
           GKeyFile *key_file = l->data;
           HdLauncherItem *item;
@@ -146,6 +176,7 @@ walk_thread_add_items_idle (gpointer user_data)
           item = hd_app_launcher_new_from_keyfile (key_file, NULL);
           if (item)
             {
+              /* the key file must also be valid */
               if (hd_app_launcher_get_item_type (HD_APP_LAUNCHER (item)) &&
                   hd_app_launcher_get_name (HD_APP_LAUNCHER (item)))
                 {
@@ -154,6 +185,9 @@ walk_thread_add_items_idle (gpointer user_data)
                                  item);
                 }
 
+              /* the class signal handler will keep a reference
+               * on the object for us; see hd_launcher_tree_real_item_added().
+               */
               g_object_unref (item);
             }
         }
@@ -173,11 +207,11 @@ send_chunk (WalkThreadData *data)
 
   data->n_processed_files = 0;
 
-  if (data->items_list)
+  if (data->files_list)
     {
       items = g_new (WalkItems, 1);
-      items->items = data->items_list;
-      items->n_items = g_list_length (data->items_list);
+      items->items = g_list_reverse (data->files_list);
+      items->n_items = g_list_length (data->files_list);
       items->current_pos = 0;
       items->thread_data = data;
 
@@ -187,7 +221,7 @@ send_chunk (WalkThreadData *data)
                                      NULL);
     }
 
-  data->items_list = NULL;
+  data->files_list = NULL;
 }
 
 static GStaticPrivate walk_thread_data = G_STATIC_PRIVATE_INIT;
@@ -233,14 +267,21 @@ walk_visit_func (const char        *f_path,
       g_key_file_load_from_file (key_file, full_path, 0, &error);
       if (error)
         {
+          g_warning ("Unable to parse `%s' in %s: %s",
+                     name,
+                     data->tree->priv->path,
+                     error->message);
+
           g_error_free (error);
           g_key_file_free (key_file);
           key_file = NULL;
         }
+
+      g_free (full_path);
     }
 
   if (key_file)
-    data->items_list = g_list_prepend (data->items_list, key_file);
+    data->files_list = g_list_prepend (data->files_list, key_file);
 
   data->n_processed_files++;
 
@@ -282,6 +323,7 @@ hd_launcher_tree_finalize (GObject *gobject)
 {
   HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (gobject);
 
+  g_free (priv->menu_path);
   g_free (priv->path);
 
   if (priv->active_walk)
@@ -307,9 +349,9 @@ hd_launcher_tree_set_property (GObject      *gobject,
 
   switch (prop_id)
     {
-    case PROP_PATHS:
-      g_free (priv->path);
-      priv->path = g_value_dup_string (value);
+    case PROP_MENU_PATH:
+      g_free (priv->menu_path);
+      priv->menu_path = g_value_dup_string (value);
       break;
 
     default:
@@ -328,8 +370,8 @@ hd_launcher_tree_get_property (GObject    *gobject,
 
   switch (prop_id)
     {
-    case PROP_PATHS:
-      g_value_set_string (value, priv->path);
+    case PROP_MENU_PATH:
+      g_value_set_string (value, priv->menu_path);
       break;
 
     default:
@@ -352,14 +394,15 @@ hd_launcher_tree_constructor (GType                  gtype,
 
   tree = HD_LAUNCHER_TREE (retval);
 
-#define HILDON_DESKTOP_MENU_DIR                 "/etc/xdg/menus"
-#define HILDON_DESKTOP_APPLICATIONS_MENU        "applications.menu"
+  tree->priv->path = g_build_filename (DATADIR,
+                                       HILDON_DESKTOP_APPLICATIONS_DIR,
+                                       NULL);
 
-#define HILDON_DESKTOP_APPLICATIONS_DIR         "/usr/share/applications"
-
-  if (!tree->priv->path)
-    tree->priv->path = g_build_filename (HILDON_DESKTOP_APPLICATIONS_DIR,
-                                         NULL);
+  if (!tree->priv->menu_path)
+    tree->priv->menu_path = g_build_filename (SYSCONFDIR,
+                                              HILDON_DESKTOP_MENU_DIR,
+                                              HILDON_DESKTOP_APPLICATIONS_MENU,
+                                              NULL);
 
   return retval;
 }
@@ -368,16 +411,43 @@ static void
 hd_launcher_tree_real_item_added (HdLauncherTree *tree,
                                   HdLauncherItem *item)
 {
+  HdLauncherTreePrivate *priv = tree->priv;
+
   if (!item)
     return;
 
-  /* keep a reference inside the items list */
-  tree->priv->items_list = g_list_prepend (tree->priv->items_list,
-                                           g_object_ref (item));
+  /* keep a reference inside the items list, since the functions
+   * that emit the ::item-added signal are all going to remove a
+   * reference
+   */
+  priv->items_list = g_list_prepend (priv->items_list,
+                                     g_object_ref (item));
 
-  g_debug ("Added `%s' (type: %s)",
-           hd_app_launcher_get_name (HD_APP_LAUNCHER (item)),
-           hd_app_launcher_get_item_type (HD_APP_LAUNCHER (item)));
+  if (HD_IS_APP_LAUNCHER (item))
+    {
+      HdAppLauncher *launcher = HD_APP_LAUNCHER (item);
+
+      g_debug ("Added `%s' (type: %s)",
+               hd_app_launcher_get_name (launcher),
+               hd_app_launcher_get_item_type (launcher));
+
+      if (hd_app_launcher_get_n_categories (launcher) == 0)
+        {
+          /* this is a launcher without categories; we need to
+           * put it inside the top-levels
+           */
+          priv->top_levels = g_list_prepend (priv->top_levels, launcher);
+        }
+      else
+        {
+        }
+    }
+}
+
+static void
+hd_launcher_tree_real_finished (HdLauncherTree *tree)
+{
+
 }
 
 static void
@@ -388,6 +458,7 @@ hd_launcher_tree_class_init (HdLauncherTreeClass *klass)
   g_type_class_add_private (klass, sizeof (HdLauncherTreePrivate));
 
   klass->item_added = hd_launcher_tree_real_item_added;
+  klass->finished = hd_launcher_tree_real_finished;
 
   gobject_class->constructor = hd_launcher_tree_constructor;
   gobject_class->set_property = hd_launcher_tree_set_property;
@@ -395,10 +466,10 @@ hd_launcher_tree_class_init (HdLauncherTreeClass *klass)
   gobject_class->finalize = hd_launcher_tree_finalize;
 
   g_object_class_install_property (gobject_class,
-                                   PROP_PATHS,
-                                   g_param_spec_string ("path",
-                                                        "Path",
-                                                        "Search path for desktop files",
+                                   PROP_MENU_PATH,
+                                   g_param_spec_string ("menu-path",
+                                                        "Menu Path",
+                                                        "Path of the applications.menu file",
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY));
@@ -416,7 +487,7 @@ hd_launcher_tree_class_init (HdLauncherTreeClass *klass)
   tree_signals[ITEM_CHANGED] =
     g_signal_new ("item-changed",
                   G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_LAST,
+                  G_SIGNAL_RUN_FIRST,
                   G_STRUCT_OFFSET (HdLauncherTreeClass, item_changed),
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
@@ -426,7 +497,7 @@ hd_launcher_tree_class_init (HdLauncherTreeClass *klass)
   tree_signals[ITEM_REMOVED] =
     g_signal_new ("item-removed",
                   G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_LAST,
+                  G_SIGNAL_RUN_FIRST,
                   G_STRUCT_OFFSET (HdLauncherTreeClass, item_removed),
                   NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
@@ -436,7 +507,7 @@ hd_launcher_tree_class_init (HdLauncherTreeClass *klass)
   tree_signals[FINISHED] =
     g_signal_new ("finished",
                   G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_LAST,
+                  G_SIGNAL_RUN_FIRST,
                   G_STRUCT_OFFSET (HdLauncherTreeClass, finished),
                   NULL, NULL,
                   g_cclosure_marshal_VOID__VOID,
@@ -455,10 +526,22 @@ HdLauncherTree *
 hd_launcher_tree_new (const gchar *path)
 {
   return g_object_new (HD_TYPE_LAUNCHER_TREE,
-                       "path", path,
+                       "menu-path", path,
                        NULL);
 }
 
+/**
+ * hd_launcher_tree_populate:
+ * @tree: a #HdLauncherTree
+ *
+ * Populates the @tree with the launchers by walking
+ * the applications directory using an helper thread
+ * to avoid blocking.
+ *
+ * Emits the #HdLauncherTree::item-added for each launcher
+ * read, parsed and added; emits the #HdLauncherTree::finished
+ * when done.
+ */
 void
 hd_launcher_tree_populate (HdLauncherTree *tree)
 {
