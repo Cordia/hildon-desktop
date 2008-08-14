@@ -1,0 +1,20 @@
+Source: hildon-desktop
+Section: x11
+Priority: optional
+Maintainer: Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+Build-Depends: cdbs (>= 0.4.21), debhelper (>= 4.1.0), pkg-config (>= 0.18), libmatchbox2-dev, libclutter-0.8-dev, libxdamage-dev, libxcomposite-dev, libxfixes-dev, libx11-dev, libdbus-1-dev, libxft-dev, libglib2.0-dev, libgtk2.0-dev
+Standards-Version: 3.8.0
+
+Package: hildon-desktop
+Section: x11
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Hildon desktop for Fremantle
+ Hildon desktop for Fremantle.
+
+Package: hildon-desktop-dbg
+Section: devel
+Architecture: any
+Depends: hildon-desktop (= ${Source-Version})
+Description: Debug symbols for Hildon desktop
+ Debug symbols for Hildon desktop.
