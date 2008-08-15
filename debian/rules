@@ -6,3 +6,9 @@ DEB_DH_STRIP_ARGS := --dbg-package=hildon-desktop
 
 makebuilddir/hildon-desktop::
 	./autogen.sh
+
+# SB/arm could not generate these, so now pre-generated ones are used
+configure/hildon-desktop::
+	cp tidy-marshal.c $(DEB_BUILDDIR)/src/tidy
+	cp tidy-marshal.h $(DEB_BUILDDIR)/src/tidy
+	echo timestamp > $(DEB_BUILDDIR)/src/tidy/stamp-tidy-marshal.h
