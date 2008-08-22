@@ -119,6 +119,7 @@ static void hd_switcher_group_background_clicked (HdSwitcher   *switcher,
 						  ClutterActor *actor);
 static void hd_switcher_home_background_clicked (HdSwitcher   *switcher,
 						 ClutterActor *actor);
+static void hd_switcher_hide_launcher_after_launch (HdSwitcher *switcher);
 
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, CLUTTER_TYPE_GROUP);
 
@@ -483,7 +484,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
 }
 
 /* KIMMO: this is called from launcher code -- FIXME */
-void
+static void
 hd_switcher_hide_launcher_after_launch (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
