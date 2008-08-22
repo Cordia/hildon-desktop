@@ -819,6 +819,7 @@ hd_comp_mgr_raise_home_actor (HdCompMgr *hmgr)
 {
   HdCompMgrPrivate * priv = hmgr->priv;
 
+  g_debug("hd_comp_mgr_raise_home_actor: hmgr=%p\n", hmgr);
   clutter_actor_lower (priv->home, priv->switcher_group);
 }
 
@@ -827,6 +828,7 @@ hd_comp_mgr_lower_home_actor (HdCompMgr *hmgr)
 {
   HdCompMgrPrivate * priv = hmgr->priv;
 
+  g_debug("hd_comp_mgr_lower_home_actor: hmgr=%p\n", hmgr);
   clutter_actor_lower_bottom (priv->home);
 }
 
@@ -845,6 +847,7 @@ hd_comp_mgr_top_home (HdCompMgr *hmgr)
   MBWMCompMgr      *cmgr = MB_WM_COMP_MGR (hmgr);
   MBWindowManager  *wm = cmgr->wm;
 
+  g_debug("hd_comp_mgr_top_home: hmgr=%p\n", hmgr);
   mb_wm_handle_show_desktop (wm, TRUE);
   hd_comp_mgr_raise_home_actor (hmgr);
 }

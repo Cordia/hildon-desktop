@@ -414,6 +414,8 @@ hd_switcher_group_child_button_release (HdSwitcherGroup  *group,
 					ClutterEvent     *event,
 					ClutterActor     *actor)
 {
+  g_debug("hd_switcher_group_child_button_release: group=%p actor=%p\n",
+          group, actor);
   hd_switcher_group_zoom_in (group, actor);
 
   return TRUE;
@@ -427,6 +429,8 @@ hd_switcher_group_add_actor (HdSwitcherGroup *group, ClutterActor *actor)
   CoglHandle                handle;
 
   data = hd_switcher_group_get_child_data (HD_SWITCHER_GROUP (group), actor);
+  g_debug("entered hd_switcher_group_add_actor group=%p actor=%p data=%p\n",
+          group, actor, data);
 
   if (data)
     return;
@@ -455,6 +459,8 @@ hd_switcher_group_add_actor (HdSwitcherGroup *group, ClutterActor *actor)
 
   clutter_actor_show (data->close_button);
 
+  g_debug("hd_switcher_group_add_actor: group=%p close_button=%p\n",
+          data->group, data->close_button);
   clutter_container_add_actor (CLUTTER_CONTAINER (data->group),
 			       data->close_button);
 
@@ -476,6 +482,8 @@ hd_switcher_group_close_button_clicked (ClutterActor     *client_actor,
   MBWMCompMgrClutterClient * cc =
     g_object_get_data (G_OBJECT (client_actor), "HD-MBWMCompMgrClutterClient");
   MBWMCompMgr * mgr = MB_WM_COMP_MGR_CLIENT (cc)->wm->comp_mgr;
+  g_debug("hd_switcher_group_close_button_clicked, client=%p actor=%p\n",
+          client_actor, clicked_actor);
 
   hd_comp_mgr_close_client (HD_COMP_MGR (mgr), cc);
 
@@ -491,7 +499,7 @@ hd_switcher_group_show_all (ClutterActor *self)
   ClutterActor           *top_actor = NULL;
   MBWindowManagerClient  *top_client = NULL;
 
-
+  g_debug("entered hd_switcher_group_show_all\n");
   top_client = mb_wm_get_visible_main_client (wm);
 
   l = priv->children;
@@ -523,6 +531,8 @@ hd_switcher_group_show_all (ClutterActor *self)
 			 GINT_TO_POINTER (anchor_y));
 
       cc = g_object_get_data (G_OBJECT (a), "HD-MBWMCompMgrClutterClient");
+      g_debug("hd_switcher_group_show_all: a=%p cc=%p group=%p parent=%p\n",
+              a, cc, group, parent);
 
       /*
        * Set clip to match the application window (to remove decorations,
@@ -587,6 +597,7 @@ hd_switcher_group_hide_all (ClutterActor *self)
   HdSwitcherGroupPrivate *priv = HD_SWITCHER_GROUP (self)->priv;
   GList                  *l;
 
+  g_debug("entered hd_switcher_group_hide_all\n");
   l = priv->children;
 
   while (l)
@@ -609,6 +620,8 @@ hd_switcher_group_hide_all (ClutterActor *self)
       guint height;
 
       clutter_actor_get_size (a, &width, &height);
+      g_debug("hd_switcher_group_hide_all: actor=%p parent=%p w=%d h=%d\n", a,
+              orig_parent, width, height);
       clutter_actor_reparent (a, orig_parent);
       clutter_actor_set_anchor_point (a, anchor_x, anchor_y);
       clutter_actor_set_position (a, x, y);
@@ -629,6 +642,7 @@ hd_switcher_group_remove_actor (HdSwitcherGroup *group, ClutterActor *actor)
   ClutterActor           *orig_parent = g_object_get_data (G_OBJECT (actor),
 							 "HD-original-parent");
 
+  g_debug("hd_switcher_group_remove_actor, group=%p actor=%p\n", group, actor);
   data = hd_switcher_group_get_child_data (HD_SWITCHER_GROUP (group), actor);
 
   if (!data)
@@ -652,6 +666,10 @@ hd_switcher_group_remove_actor (HdSwitcherGroup *group, ClutterActor *actor)
       hd_switcher_group_place (HD_SWITCHER_GROUP (group));
       hd_switcher_group_zoom_out (HD_SWITCHER_GROUP (group), NULL);
     }
+  /*
+  g_debug("hd_switcher_group_remove_actor: after removal, children %d\n",
+          g_list_length(priv->children));
+          */
 }
 
 void
@@ -759,6 +777,8 @@ static void
 hd_switcher_group_zoom_in_completed (ClutterActor    *main_group,
 				     ClutterActor    *actor)
 {
+  g_debug("hd_switcher_group_zoom_in_completed: main_group=%p actor=%p\n",
+          main_group, actor);
   g_signal_emit (clutter_actor_get_parent (main_group),
 		 signals[SIGNAL_ITEM_SELECTED], 0, actor);
 }
@@ -795,6 +815,8 @@ hd_switcher_group_zoom_in (HdSwitcherGroup *group, ClutterActor    *actor)
    */
 
   data = hd_switcher_group_get_child_data (group, actor);
+  g_debug("hd_switcher_group_zoom_in: group=%p actor=%p data=%p\n", group,
+          actor, data);
 
   if (!data)
     return;
@@ -1019,6 +1041,8 @@ hd_switcher_group_background_release (ClutterActor    *self,
 				      ClutterEvent    *event,
 				      HdSwitcherGroup *group)
 {
+  g_debug("hd_switcher_group_background_release: self=%p group=%p\n", self,
+          group);
   g_signal_emit (group, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
 
   return TRUE;

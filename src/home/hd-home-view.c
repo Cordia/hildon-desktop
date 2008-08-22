@@ -392,6 +392,8 @@ hd_home_view_constructed (GObject *object)
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
+  g_debug("hd_home_view_constructed: xwidth=%d xheight=%d\n", priv->xwidth,
+          priv->xheight);
 
   /*
    * TODO -- for now, just add a rectangle, so we can see
@@ -449,6 +451,7 @@ hd_home_view_constructed (GObject *object)
   
   /* Register gconf notification for background image */
   gconf_path = hd_home_view_get_gconf_path (self, HDHV_GCONF_BG_IMAGE);
+  g_debug("hd_home_view_constructed: gconf path for bg image: %s\n", gconf_path);
   priv->bg_image_notify =
     gconf_client_notify_add (default_client,
 			     gconf_path,

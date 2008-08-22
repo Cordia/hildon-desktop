@@ -1,3 +1,85 @@
+2008-08-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* Added debug printouts and some white space fixes to many different
+	places to the code.
+
+	* src/home/hd-switcher.c: Use icon qgn_general_add for the Tasks
+	button in Launcher mode.
+	(hd_switcher_hide_buttons): Added for hiding Tasks button when
+	Launcher is visible.
+	(hd_switcher_home_background_clicked): Added for handling the Home
+	background clicked signal.
+	(launcher_back_button_clicked): Added for handling the back button in
+	the launcher. Closes the launcher and makes the Tasks button visible
+	again.
+	(hd_switcher_constructed): Connect
+	hd_switcher_hide_launcher_after_launch to handle actions after an
+	application was selected from the launcher. (This should be done with
+	some more Glibbish way.) Connect launcher_back_button_clicked to the
+	new back button on the launcher. Connect
+	hd_switcher_home_background_clicked to handle background-clicked
+	signal from the home.
+	(hd_switcher_clicked): Fixed pointer grab logic: keep the pointer
+	grab whenever the task switcher or task launcher is shown.
+	(hd_switcher_hide_launcher_after_launch): New.
+	(hd_switcher_item_selected): Ungrab and hide the switcher when an item
+	was selected from the switcher. Lower the home so that the selected
+	application's window is always visible (sometimes it was not). If the
+	actor argument is NULL and the switcher group is empty, ungrab the
+	pointer. This is used to handle the case when the last application
+	in the switcher closes. (There should be some more elegant way to do
+	this.)
+	(hd_switcher_setup_buttons): Show the Tasks button in switcher mode
+	after the launcher was closed and there are no items in the switcher.
+	(hd_switcher_group_background_clicked): Ungrab the pointer if either
+	the switcher or launcher was visible, and in that case, hide the
+	switcher or launcher.
+
+	* src/launcher/hd-app-launcher.c: Change text_color so that it is
+	visible on the screen.
+	(hd_app_launcher_get_icon): Implement icon loading using the default
+	Gtk+ icon theme.
+	(hd_app_launcher_activate_service): New function to implement D-Bus
+	activation of applications (mostly copy & paste from the old code).
+	(hd_app_launcher_activate): Call hd_app_launcher_activate_service to
+	D-Bus activate.
+	(hd_launcher_tree_constructor): Use hard-coded paths for now to find
+	the desktop and configuration files. (Something evil forces /usr/local
+	as prefix.)
+
+	* src/launcher/hd-launcher-utils.[ch]: Add ClutterActor back_button to
+	the launcher's private struct.
+	(populate_top_launcher): Return FALSE if there are no launcher items.
+	(create_back_button): New function to create the back button.
+	(hd_launcher_group_set_back_button_cb): New function to set up a
+	handler for the back button's button-release-event.
+	(hd_get_application_launcher): Add two arguments for the function to
+	pass a function to call when an item was selected from the launcher.
+	Make the launcher full-screen size, as in the UI spec. Add the back
+	button to the top-right corner, as in the UI spec.
+
+	* src/launcher/hd-task-launcher.c: Add the switcher callback as a
+	global variable (should be moved to inside an object).
+	(launch_animation_complete): Call the switcher callback to cause
+	closing of the launcher.
+	(hd_task_launcher_init): Define larger top padding to compensate for
+	the full-screen size.
+	(hd_task_launcher_new): Store the switcher callback into a global
+	variable for later use.
+
+	* src/main.c: Disable fatal warnings. They are not useful in this
+	development phase.
+
+	* src/mb/Makefile.am: Add new files hd-status-area.[ch].
+
+	* src/mb/hd-atoms.[ch]: Add new atoms for Status Area and Status Menu.
+
+	* src/mb/hd-wm.c: Add support for new window types, corresponding to
+	Status Area and Status Menu.
+
+	* src/mb/hd-status-area.[ch]: New files for Status Area window type
+	implementation.
+
 2008-08-12  Emmanuele Bassi  <ebassi@openedhand.com>
 
 	* src/launcher/Makefile.am: Add defines.

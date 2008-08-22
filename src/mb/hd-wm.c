@@ -44,6 +44,7 @@
 
 #include "hd-home-applet.h"
 #include "hd-note.h"
+#include "hd-status-area.h"
 #include "hd-app-menu.h"
 #include "hd-dialog.h"
 
@@ -154,6 +155,19 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
     {
       printf ("### is application menu ###\n");
       return hd_app_menu_new (wm, win);
+    }
+  else if (win->net_type ==
+      hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_STATUS_AREA))
+    {
+      printf ("### is status area ###\n");
+      return hd_status_area_new (wm, win);
+    }
+  else if (win->net_type ==
+      hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_STATUS_MENU))
+    {
+      printf ("### is status menu ###\n");
+      /* TODO: implement Status Menu window type */
+      return hd_app_new (wm, win);
     }
   else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DESKTOP])
     {

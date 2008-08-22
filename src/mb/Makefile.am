@@ -7,6 +7,7 @@ mb_h =		hd-atoms.h			\
 		hd-app.h			\
 		hd-app-menu.h			\
 		hd-note.h			\
+		hd-status-area.h		\
 		hd-dialog.h			\
 		hd-home-applet.h		\
 		hd-theme.h			\
@@ -19,6 +20,7 @@ mb_c = 		hd-atoms.c			\
 		hd-app.c			\
 		hd-app-menu.c			\
 		hd-note.c			\
+		hd-status-area.c		\
 		hd-dialog.c			\
 		hd-home-applet.c		\
 		hd-theme.c			\

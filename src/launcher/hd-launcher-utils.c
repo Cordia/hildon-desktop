@@ -12,11 +12,13 @@
 
 #include <clutter/clutter.h>
 #include <tidy/tidy-finger-scroll.h>
+#include <gtk/gtk.h>
 
 #include "hd-task-launcher.h"
 #include "hd-dummy-launcher.h"
 #include "hd-launcher-utils.h"
 #include "hd-launcher-tree.h"
+#include "../home/hd-gtk-utils.h"
 
 #define DEFAULT_APPS_DIR        "/usr/share/applications/"
 
@@ -212,6 +214,7 @@ typedef struct
   
   ClutterActor *group;
 
+  ClutterActor *back_button;
   ClutterActor *top_scroll;
   ClutterActor *sub_scroll;
 
@@ -237,6 +240,10 @@ populate_top_launcher (gpointer data)
   PopulateClosure *closure = data;
   HdLauncherItem *item;
 
+  if (closure->n_items <= 0) {
+    g_debug("populate_top_launcher: no launcher items\n");
+    return FALSE;
+  }
   item = g_list_nth_data (closure->items, closure->current_pos);
   hd_task_launcher_add_item (closure->launcher, item);
 
@@ -379,11 +386,59 @@ populate_tree (gpointer data)
   return FALSE;
 }
 
-ClutterActor *
-hd_get_application_launcher (void)
+static ClutterActor *
+create_back_button (const char *icon_name)
 {
+  ClutterActor *icon = NULL;
+  GtkIconTheme *icon_theme;
+  GtkIconInfo *info;
+
+  icon_theme = gtk_icon_theme_get_default ();
+  info = gtk_icon_theme_lookup_icon(icon_theme, icon_name, 48,
+                                    GTK_ICON_LOOKUP_NO_SVG);
+  if (info != NULL)
+    {
+      const gchar *fname = gtk_icon_info_get_filename(info);
+      g_debug("create_back_button: using %s for %s\n", fname, icon_name);
+      icon = clutter_texture_new_from_file(fname, NULL);
+      clutter_actor_set_size (icon, 112, 56);
+
+      gtk_icon_info_free(info);
+    }
+  else
+    g_debug("create_back_button: couldn't find icon %s\n", icon_name);
+
+  clutter_actor_set_position (icon, 800 - 112, 0);
+
+  return icon;
+}
+
+void
+hd_launcher_group_set_back_button_cb (ClutterActor *group, GCallback cb,
+                                      gpointer data)
+{
+  GList *children, *l;
+  children = clutter_container_get_children (CLUTTER_CONTAINER(group));
+  for (l = children; l != NULL; l = g_list_next (l)) {
+    const char *name = clutter_actor_get_name (CLUTTER_ACTOR (l->data));
+
+    if (name && strcmp (name, "back button") == 0) {
+      g_signal_connect (CLUTTER_ACTOR (l->data), "button-release-event",
+                        G_CALLBACK (cb), data);
+      g_list_free (children);
+      return;
+    }
+  }
+  g_list_free (children);
+}
+
+ClutterActor *
+hd_get_application_launcher (HdSwitcher *switcher, HdSwitcherCb switcher_cb)
+{
+  g_debug("entered hd_get_application_launcher\n");
   if (G_UNLIKELY (hd_launcher == NULL))
     {
+      ClutterActor *back_button;
       hd_launcher = g_new0 (HdLauncher, 1);
 
       hd_launcher->tree = hd_build_launcher_items ();
@@ -409,21 +464,25 @@ hd_get_application_launcher (void)
       hd_launcher->group = clutter_group_new ();
 
       hd_launcher->top_scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
-      clutter_actor_set_position (hd_launcher->top_scroll, 0, 64);
-      clutter_actor_set_size (hd_launcher->top_scroll, 780, 400);
+      /* TODO: detect screen size and determine the actor's size accordingly */
+      clutter_actor_set_position (hd_launcher->top_scroll, 0, 0);
+      clutter_actor_set_size (hd_launcher->top_scroll, 800, 480);
+
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
                                    hd_launcher->top_scroll);
 
       hd_launcher->sub_scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
-      clutter_actor_set_position (hd_launcher->sub_scroll, 0, 64);
-      clutter_actor_set_size (hd_launcher->sub_scroll, 780, 400);
+      clutter_actor_set_position (hd_launcher->sub_scroll, 0, 0);
+      clutter_actor_set_size (hd_launcher->sub_scroll, 800, 480);
+
       clutter_actor_hide (hd_launcher->sub_scroll);
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
                                    hd_launcher->sub_scroll);
 
       /* top level launcher */
-      hd_launcher->top_level = hd_task_launcher_new ();
-      clutter_actor_set_width (hd_launcher->top_level, 780);
+      hd_launcher->top_level = hd_task_launcher_new (switcher, switcher_cb);
+      clutter_actor_set_width (hd_launcher->top_level, 800);
+
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->top_scroll),
                                    hd_launcher->top_level);
       g_signal_connect (hd_launcher->top_level,
@@ -431,13 +490,21 @@ hd_get_application_launcher (void)
                         hd_launcher);
 
       /* secondary level launcher */
-      hd_launcher->sub_level = hd_task_launcher_new ();
-      clutter_actor_set_width (hd_launcher->sub_level, 780);
+      hd_launcher->sub_level = hd_task_launcher_new (switcher, switcher_cb);
+      clutter_actor_set_width (hd_launcher->sub_level, 800);
+
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->sub_scroll),
                                    hd_launcher->sub_level);
       g_signal_connect (hd_launcher->sub_level,
                         "item-clicked", G_CALLBACK (sub_level_item_clicked),
                         hd_launcher);
+
+      /* back button */
+      back_button = create_back_button ("qgn_tswitcher_back");
+      clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
+                                   back_button);
+      clutter_actor_set_reactive (back_button, TRUE);
+      clutter_actor_set_name (back_button, "back button");
 
       clutter_behaviour_apply (hd_launcher->zoom_behaviour,
                                hd_launcher->sub_level);
@@ -446,8 +513,7 @@ hd_get_application_launcher (void)
 
       clutter_threads_add_idle (populate_tree, NULL);
 
-      return hd_launcher->group;
     }
-  else
-    return hd_launcher->group;
+  g_debug("exiting hd_get_application_launcher\n");
+  return hd_launcher->group;
 }

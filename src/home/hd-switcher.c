@@ -5,6 +5,7 @@
  *
  * Author:  Johan Bilien <johan.bilien@nokia.com>
  *          Tomas Frydrych <tf@o-hand.com>
+ *          Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -44,7 +45,7 @@
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 
 #define ICON_IMAGE_SWITCHER "qgn_tswitcher_application"
-#define ICON_IMAGE_LAUNCHER "qgn_tswitcher_application"
+#define ICON_IMAGE_LAUNCHER "qgn_general_add"
 #define BUTTON_IMAGE_MENU     "menu-button.png"
 
 #define TOP_LEFT_BUTTON_HIGHLIGHT_TEXTURE "launcher-button-highlight.png"
@@ -70,9 +71,10 @@ struct _HdSwitcherPrivate
 
   MBWMCompMgrClutter   *comp_mgr;
 
-  gboolean              showing_switcher : 1;
-  gboolean              showing_launcher : 1;
-  gboolean              switcher_mode    : 1; /* What button is visible */
+  /* KIMMO: using full ints */
+  gboolean              showing_switcher;
+  gboolean              showing_launcher;
+  gboolean              switcher_mode; /* What button is visible */
 };
 
 static void hd_switcher_class_init (HdSwitcherClass *klass);
@@ -101,6 +103,8 @@ static gboolean hd_switcher_menu_clicked (HdSwitcher *switcher);
 static void hd_switcher_item_selected (HdSwitcher *switcher,
 				       ClutterActor *actor);
 
+static void hd_switcher_hide_buttons (HdSwitcher * switcher);
+
 static void hd_switcher_setup_buttons (HdSwitcher * switcher,
 				       gboolean switcher_mode);
 
@@ -113,6 +117,8 @@ static void hd_switcher_home_mode_changed (HdHome         *home,
 
 static void hd_switcher_group_background_clicked (HdSwitcher   *switcher,
 						  ClutterActor *actor);
+static void hd_switcher_home_background_clicked (HdSwitcher   *switcher,
+						 ClutterActor *actor);
 
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, CLUTTER_TYPE_GROUP);
 
@@ -142,14 +148,45 @@ hd_switcher_class_init (HdSwitcherClass *klass)
 }
 
 static void
+launcher_back_button_clicked (ClutterActor *actor, ClutterEvent *event,
+                              gpointer *data)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (data)->priv;
+  HdHome	    *home =
+      HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
+  HdSwitcherGroup *group = HD_SWITCHER_GROUP (priv->switcher_group);
+
+  g_debug("launcher_back_button_clicked\n");
+  hd_switcher_hide_launcher (HD_SWITCHER (data));
+
+  if (hd_switcher_group_have_children (group))
+    {
+      priv->showing_switcher = TRUE;
+      clutter_actor_show_all (priv->switcher_group);
+    }
+  else
+    hd_home_ungrab_pointer (home);
+
+  /* show the buttons again */
+  hd_switcher_setup_buttons (HD_SWITCHER (data), TRUE);
+}
+
+static void
 hd_switcher_constructed (GObject *object)
 {
   GError            *error = NULL;
   ClutterActor      *self = CLUTTER_ACTOR (object);
   HdSwitcherPrivate *priv = HD_SWITCHER (object)->priv;
   guint              button_width, button_height;
+  HdHome	    *home =
+    HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
 
-  priv->launcher_group = hd_get_application_launcher ();
+  priv->launcher_group =
+    hd_get_application_launcher (HD_SWITCHER(object),
+                                 hd_switcher_hide_launcher_after_launch);
+  hd_launcher_group_set_back_button_cb (priv->launcher_group,
+        G_CALLBACK (launcher_back_button_clicked), object);
+
   priv->switcher_group = g_object_new (HD_TYPE_SWITCHER_GROUP,
 				       "comp-mgr", priv->comp_mgr,
 				       NULL);
@@ -167,6 +204,9 @@ hd_switcher_constructed (GObject *object)
 			    self);
   g_signal_connect_swapped (priv->switcher_group, "background-clicked",
                             G_CALLBACK (hd_switcher_group_background_clicked),
+                            self);
+  g_signal_connect_swapped (home, "background-clicked",
+                            G_CALLBACK (hd_switcher_home_background_clicked),
                             self);
 
   priv->menu_group =
@@ -368,6 +408,7 @@ hd_switcher_menu_clicked (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
+  g_debug("hd_switcher_menu_clicked, switcher=%p\n", switcher);
   clutter_actor_show_all (priv->menu_group);
   clutter_actor_raise_top (priv->menu_group);
 
@@ -381,6 +422,8 @@ hd_switcher_clicked (HdSwitcher *switcher)
   HdHome	    *home =
     HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
 
+  g_debug("entered hd_switcher_clicked: switcher=%p ss=%d sl=%d\n", switcher,
+          priv->showing_switcher, priv->showing_launcher);
   /*
    * We have the following scenarios:
    *
@@ -397,22 +440,34 @@ hd_switcher_clicked (HdSwitcher *switcher)
   if (priv->showing_switcher ||
       (!priv->showing_launcher && !priv->switcher_mode))
     {
-      hd_switcher_hide_switcher (switcher);
+      int do_grab = 0;
+      g_debug("hd_switcher_clicked: show launcher, switcher=%p\n", switcher);
+      /* KIMMO: if switcher was visible, we already have grab */
+      if (!priv->showing_switcher)
+        do_grab = 1;
+      else
+        hd_switcher_hide_switcher (switcher);
 
-      /*
-       * Setup buttons in switcher mode, if appropriate
-       */
-      hd_switcher_setup_buttons (switcher, TRUE);
+      /* ensure that home is on top of applications */
+      hd_comp_mgr_top_home (HD_COMP_MGR (priv->comp_mgr));
+
+      /* don't show buttons when launcher is visible */
+      hd_switcher_hide_buttons (switcher);
 
       clutter_actor_show (priv->launcher_group);
       priv->showing_launcher = TRUE;
-      hd_home_grab_pointer (home);
+      if (do_grab)
+        hd_home_grab_pointer (home);
     }
   else if (priv->showing_launcher ||
 	   (!priv->showing_switcher && priv->switcher_mode))
     {
-      hd_switcher_hide_launcher (switcher);
-      hd_home_ungrab_pointer (home);
+      g_debug("hd_switcher_clicked: show switcher, switcher=%p\n", switcher);
+      /* KIMMO: keep a grab when either launcher or switcher is visible */
+      if (!priv->showing_launcher && !priv->showing_switcher)
+        hd_home_grab_pointer (home);
+      else if (priv->showing_launcher)
+        hd_switcher_hide_launcher (switcher);
 
       priv->showing_switcher = TRUE;
 
@@ -427,17 +482,38 @@ hd_switcher_clicked (HdSwitcher *switcher)
   return TRUE;
 }
 
+/* KIMMO: this is called from launcher code -- FIXME */
+void
+hd_switcher_hide_launcher_after_launch (HdSwitcher *switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  g_debug("hd_switcher_hide_launcher_after_launch: switcher=%p\n", switcher);
+  if (priv->showing_launcher)
+    {
+      HdHome	    *home =
+        HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
+      hd_home_ungrab_pointer (home);
+      hd_switcher_hide_launcher (switcher);
+      /* lower home to show the application */
+      hd_comp_mgr_lower_home_actor(HD_COMP_MGR (priv->comp_mgr));
+    }
+}
+
 static void
 hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
+  g_debug("hd_switcher_item_selected: switcher=%p actor=%p\n", switcher,
+          actor);
   if (actor)
     {
       MBWMCompMgrClient     *cclient;
       MBWindowManagerClient *c;
       MBWindowManager       *wm;
       HdCompMgrClient       *hclient;
+      HdHome                *home =
+            HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
 
       cclient =
 	g_object_get_data (G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
@@ -449,17 +525,41 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
       wm = c->wmref;
       hclient = HD_COMP_MGR_CLIENT (c->cm_client);
 
+      /* KIMMO: ungrab when an item was selected from the switcher */
+      if (priv->showing_switcher)
+        {
+          hd_home_ungrab_pointer (home);
+          hd_switcher_hide_switcher (switcher);
+        }
+      /* KIMMO: lower home to show the application */
+      hd_comp_mgr_lower_home_actor(HD_COMP_MGR (priv->comp_mgr));
+
       if (!hd_comp_mgr_client_is_hibernating (hclient))
 	{
-	  mb_wm_activate_client (wm, c);
+          g_debug("hd_switcher_item_selected: calling "
+                  "mb_wm_activate_client c=%p\n", c);
+          mb_wm_activate_client (wm, c);
 	}
       else
 	{
+          g_debug("hd_switcher_item_selected: calling "
+                  "hd_comp_mgr_wakeup_client comp_mgr=%p hclient=%p\n",
+                  priv->comp_mgr, hclient);
 	  hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
 	}
 
-      hd_switcher_hide_switcher (switcher);
       hd_switcher_setup_buttons (switcher, TRUE);
+    }
+  else
+    {
+      HdSwitcherGroup *group = HD_SWITCHER_GROUP (priv->switcher_group);
+      HdHome *home =
+            HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
+      if (!hd_switcher_group_have_children (group))
+        {
+          /* switcher group is empty and will disappear -> ungrab */
+          hd_home_ungrab_pointer (home);
+        }
     }
 }
 
@@ -530,6 +630,16 @@ hd_switcher_get_button_geometry (HdSwitcher * switcher, ClutterGeometry * geom)
 }
 
 static void
+hd_switcher_hide_buttons (HdSwitcher * switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  clutter_actor_hide (priv->button_switcher);
+  clutter_actor_hide (priv->button_launcher);
+  priv->switcher_mode = FALSE;
+}
+
+static void
 hd_switcher_setup_buttons (HdSwitcher * switcher, gboolean switcher_mode)
 {
   HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
@@ -550,6 +660,14 @@ hd_switcher_setup_buttons (HdSwitcher * switcher, gboolean switcher_mode)
     }
   else if (priv->switcher_mode && (!switcher_mode || !have_children))
     {
+      clutter_actor_hide (priv->button_switcher);
+      clutter_actor_show (priv->button_launcher);
+
+      priv->switcher_mode = FALSE;
+    }
+  else if (!priv->switcher_mode && switcher_mode && !have_children)
+    {
+      /* used after hiding launcher and there is no children */
       clutter_actor_hide (priv->button_switcher);
       clutter_actor_show (priv->button_launcher);
 
@@ -582,10 +700,10 @@ hd_switcher_hide_switcher (HdSwitcher * switcher)
 }
 
 static void
-hd_switcher_hide_launcher (HdSwitcher * switcher)
+hd_switcher_hide_launcher (HdSwitcher *switcher)
 {
   /* FIXME once we have the launcher */
-  HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
   priv->showing_launcher = FALSE;
 
@@ -626,6 +744,8 @@ hd_switcher_home_mode_changed (HdHome         *home,
 			       HdHomeMode      mode,
 			       HdSwitcher     *switcher)
 {
+  g_debug("hd_switcher_home_mode_changed: switcher=%p mode=%d\n",
+          switcher, mode);
   if (mode == HD_HOME_MODE_EDIT)
     hd_switcher_show_menu_button (switcher);
   else
@@ -656,11 +776,37 @@ hd_switcher_get_control_area_size (HdSwitcher *switcher,
 }
 
 static void
+hd_switcher_home_background_clicked (HdSwitcher   *switcher,
+	   			         ClutterActor *actor)
+{
+  g_debug("hd_switcher_home_background_clicked: switcher=%p\n", switcher);
+  hd_switcher_group_background_clicked (switcher, actor);
+}
+
+static void
 hd_switcher_group_background_clicked (HdSwitcher   *switcher,
 				      ClutterActor *actor)
 {
   HdSwitcherPrivate *priv = switcher->priv;
 
-  hd_switcher_deactivate (HD_SWITCHER (switcher));
+  g_debug("hd_switcher_group_background_clicked: switcher=%p\n", switcher);
+  if (priv->showing_switcher)
+    {
+      /* Switcher was visible and the user tapped on the background:
+       * ungrab and hide the switcher */
+      HdHome *home =
+            HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
+      hd_home_ungrab_pointer (home);
+      hd_switcher_deactivate (HD_SWITCHER (switcher));
+    }
+  else if (priv->showing_launcher)
+    {
+      /* Launcher was visible and the user tapped on the background:
+       * ungrab and hide the launcher */
+      HdHome *home =
+            HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
+      hd_home_ungrab_pointer (home);
+      hd_switcher_hide_launcher (switcher);
+    }
   hd_comp_mgr_top_home (HD_COMP_MGR (priv->comp_mgr));
 }

@@ -3,6 +3,7 @@
 
 #include <clutter/clutter-actor.h>
 #include "hd-launcher-item.h"
+#include "hd-launcher-utils.h"
 
 G_BEGIN_DECLS
 
@@ -42,7 +43,7 @@ struct _HdLauncherPadding
 };
 
 GType         hd_task_launcher_get_type (void) G_GNUC_CONST;
-ClutterActor *hd_task_launcher_new      (void);
+ClutterActor *hd_task_launcher_new      (HdSwitcher *s, HdSwitcherCb cb);
 
 void          hd_task_launcher_add_item (HdTaskLauncher *launcher,
                                          HdLauncherItem *item);

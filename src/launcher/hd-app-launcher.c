@@ -5,6 +5,8 @@
 #include <glib-object.h>
 #include <clutter/clutter.h>
 #include <gdk/gdk.h>
+#include <gtk/gtk.h>
+#include <dbus/dbus.h>
 
 /* desktop entry group */
 #define HD_DESKTOP_ENTRY_GROUP          "Desktop Entry"
@@ -49,23 +51,36 @@ struct _HdAppLauncherPrivate
 
 G_DEFINE_TYPE (HdAppLauncher, hd_app_launcher, HD_TYPE_LAUNCHER_ITEM);
 
-static const ClutterColor text_color = { 255, 255, 255, 224 };
+static const ClutterColor text_color = { 100, 100, 100, 224 };
 
 static ClutterActor *
 hd_app_launcher_get_icon (HdLauncherItem *item)
 {
-  ClutterActor *retval;
-  ClutterColor color = { 0, };
+  HdAppLauncherPrivate *priv = HD_APP_LAUNCHER (item)->priv;
+  ClutterActor *retval = NULL;
   guint size = 96;
+  GtkIconTheme *icon_theme;
+  GtkIconInfo *info;
+  const gchar *icon_name = priv->icon_name;
 
-  color.red   = g_random_int_range (0, 255);
-  color.green = g_random_int_range (0, 255);
-  color.blue  = g_random_int_range (0, 255);
-  color.alpha = 255;
+  if (icon_name == NULL)
+    /* fallback -- FIXME is this correct? */
+    icon_name = "qgn_list_app_installer";
 
-  retval = clutter_rectangle_new ();
-  clutter_rectangle_set_color (CLUTTER_RECTANGLE (retval), &color);
-  clutter_actor_set_size (retval, size, size);
+  icon_theme = gtk_icon_theme_get_default();
+  info = gtk_icon_theme_lookup_icon(icon_theme, icon_name, size,
+                                    GTK_ICON_LOOKUP_NO_SVG);
+  if (info != NULL)
+    {
+      const gchar *fname = gtk_icon_info_get_filename(info);
+      g_debug("hd_app_launcher_get_icon: using %s for %s\n", fname, icon_name);
+      retval = clutter_texture_new_from_file(fname, NULL);
+      clutter_actor_set_size (retval, size, size);
+
+      gtk_icon_info_free(info);
+    }
+  else
+    g_debug("hd_app_launcher_get_icon: couldn't find icon %s\n", icon_name);
 
   return retval;
 }
@@ -75,13 +90,13 @@ hd_app_launcher_get_label (HdLauncherItem *item)
 {
   HdAppLauncherPrivate *priv = HD_APP_LAUNCHER (item)->priv;
   ClutterActor *retval;
+  g_debug("hd_app_launcher_get_label, item=%p label=%s\n", item, priv->name);
 
   retval = clutter_label_new ();
   clutter_label_set_color (CLUTTER_LABEL (retval), &text_color);
   clutter_label_set_text (CLUTTER_LABEL (retval), priv->name);
   clutter_label_set_line_wrap (CLUTTER_LABEL (retval), TRUE);
-  clutter_label_set_alignment (CLUTTER_LABEL (retval),
-                               PANGO_ALIGN_CENTER);
+  clutter_label_set_alignment (CLUTTER_LABEL (retval), PANGO_ALIGN_CENTER);
 
   return retval;
 }
@@ -407,6 +422,64 @@ hd_app_launcher_has_category (HdAppLauncher *item,
   return FALSE;
 }
 
+
+#define SERVICE_NAME_LEN        255
+#define PATH_NAME_LEN           255
+#define INTERFACE_NAME_LEN      255
+#define TMP_NAME_LEN            255
+
+#define OSSO_BUS_ROOT          "com.nokia"
+#define OSSO_BUS_ROOT_PATH     "/com/nokia"
+#define OSSO_BUS_TOP           "top_application"
+
+static void
+hd_app_launcher_activate_service (const gchar *app)
+{
+  gchar service[SERVICE_NAME_LEN], path[PATH_NAME_LEN],
+        interface[INTERFACE_NAME_LEN], tmp[TMP_NAME_LEN];
+  DBusMessage *msg = NULL;
+  DBusError error;
+  DBusConnection *conn;
+
+  g_debug ("%s: app=%s\n", __FUNCTION__, app);
+
+  /* If we have full service name we will use it */
+  if (g_strrstr(app, "."))
+  {
+    g_snprintf(service, SERVICE_NAME_LEN, "%s", app);
+    g_snprintf(interface, INTERFACE_NAME_LEN, "%s", service);
+    g_snprintf(tmp, TMP_NAME_LEN, "%s", app);
+    g_snprintf(path, PATH_NAME_LEN, "/%s", g_strdelimit(tmp, ".", '/'));
+  }
+  else /* use com.nokia prefix */
+  {
+    g_snprintf(service, SERVICE_NAME_LEN, "%s.%s", OSSO_BUS_ROOT, app);
+    g_snprintf(path, PATH_NAME_LEN, "%s/%s", OSSO_BUS_ROOT_PATH, app);
+    g_snprintf(interface, INTERFACE_NAME_LEN, "%s", service);
+  }
+
+  dbus_error_init (&error);
+  conn = dbus_bus_get (DBUS_BUS_SESSION, &error);
+  if (dbus_error_is_set (&error))
+  {
+    g_warning ("could not start: %s: %s", service, error.message);
+    dbus_error_free (&error);
+    return;
+  }
+
+  msg = dbus_message_new_method_call (service, path, interface, OSSO_BUS_TOP);
+  if (msg == NULL)
+  {
+    g_warning ("failed to create message");
+    return;
+  }
+
+  if (!dbus_connection_send (conn, msg, NULL))
+    g_warning ("dbus_connection_send failed");
+
+  dbus_message_unref (msg);
+}
+
 gboolean
 hd_app_launcher_activate (HdAppLauncher  *item,
                           GError        **error)
@@ -423,6 +496,7 @@ hd_app_launcher_activate (HdAppLauncher  *item,
       /* launch the application, or if it's already running
        * move it to the top
        */
+      hd_app_launcher_activate_service (priv->service);
       return TRUE;
     }
 
