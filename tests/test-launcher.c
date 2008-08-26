@@ -73,7 +73,7 @@ main (int   argc,
                     "key-press-event", G_CALLBACK (on_key_press),
                     NULL);
 
-  launcher = hd_get_application_launcher ();
+  launcher = hd_get_application_launcher (NULL, NULL);
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), launcher);
 
   clutter_actor_show (stage);
