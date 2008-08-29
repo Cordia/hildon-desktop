@@ -1,3 +1,86 @@
+2008-08-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* configure.ac: new output file data/themes/Makefile
+
+	* data/Makefile.am: install also themes directory
+
+	* data/icons/48x48/Makefile.am: use a custom icon directory for the
+	temporary icons.
+
+	* data/icons/Makefile.am: install a custom icon theme for the
+	temporary icons.
+
+	* src/home/hd-home.[ch] (hd_home_constructed): prepend a temporary icon
+	directory.
+	(hd_home_remove_status_area): New function to handle removal of Status
+	Area. Calls corresponding function in HdSwitcher.
+	(hd_home_add_status_menu): New function to handle addition of Status
+	Menu. Calls corresponding function in HdSwitcher.
+	(hd_home_remove_status_menu): New function to handle removal of Status
+	Menu. Calls corresponding function in HdSwitcher.
+	(hd_home_add_status_area): New function to handle addition of Status
+	Area. Calls corresponding function in HdSwitcher.
+
+	* src/home/hd-switcher.[ch] (launcher_back_button_clicked): Add
+	controlling of Status Area's visibility.
+	(hd_switcher_clicked): Hide Status Area.
+	(hd_switcher_item_selected): Show Status Area if the switcher is going
+	to disappear.
+	(hd_switcher_add_status_menu, hd_switcher_remove_status_menu,
+	hd_switcher_add_status_area, hd_switcher_remove_status_area): New
+	functions to handle removal and addition of Status Area/Menu. These
+	functions don't have much content yet but are later expected to have.
+	(hd_switcher_remove_window_actor): Show Status Area when Switcher is
+	hidden.
+	(hd_switcher_get_control_area_size): Hard-code button width to keep it
+	in the spec value.
+	(hd_switcher_group_background_clicked): Show Status Area when the Home
+	was clicked.
+
+	* src/launcher/hd-app-launcher.c (hd_app_launcher_get_icon): Correct
+	the icon size to the specified 64.
+	(hd_app_launcher_get_label): Hard-code width to spec value. Disable
+	line wrapping in the label.
+
+	* src/launcher/hd-launcher-item.c (struct _HdLauncherItemPrivate): Add
+	bg_tile member for the background tile.
+	(hd_launcher_item_get_preferred_width,
+	hd_launcher_item_get_preferred_height): Throw away fancy arithmetics
+	and return the specified value instead!
+	(hd_launcher_item_allocate): Use specified pixel sizes where possible.
+	(hd_launcher_item_paint, hd_launcher_item_pick): Add painting of
+	bg_tile.
+	(hd_launcher_item_show): Add showing of bg_tile.
+	(hd_launcher_item_hide): Add hiding of bg_tile.
+	(hd_launcher_item_finalize): Add destruction of bg_tile.
+	(hd_launcher_item_get_icon): Load bg_tile. This should be done more
+	intelligently (e.g. shared) and be themeable.
+	
+	* src/launcher/hd-task-launcher.c (hd_task_launcher_init): Correct
+	spacings to specified values.
+
+	* src/mb/Makefile.am: Add hd-status-menu.[ch].
+
+	* src/mb/hd-status-menu.[ch]: New files for handling the Status Menu
+	window.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client): Call
+	hd_home_remove_status_area() and hd_home_remove_status_menu() for
+	closed Status Area and Status Menu respectively.
+	(hd_comp_mgr_map_notify): Call hd_home_add_status_area() and
+	hd_home_add_status_menu() for mapped Status Area/Menu.
+
+	* src/mb/hd-status-area.c (hd_status_area_class_init): Use new client
+	type HdWmClientTypeStatusArea.
+	(hd_status_area_init): Add some WM hints and make Status Area
+	transient to Home.
+
+	* src/mb/hd-wm.c (hd_wm_client_new): Call hd_status_menu_new() when
+	Status Menu is about to be mapped.
+
+	* src/mb/hd-wm.h: Define new WM client types HdWmClientTypeStatusArea
+	and HdWmClientTypeStatusMenu.
+
 2008-08-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* Added debug printouts and some white space fixes to many different

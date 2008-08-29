@@ -108,6 +108,10 @@ struct _HdHomePrivate
   ClutterActor          *operator_icon;
   ClutterActor          *operator_label;
 
+  /*
+  ClutterActor          *status_area;
+  */
+
   ClutterActor          *left_switch;
   ClutterActor          *right_switch;
 
@@ -648,7 +652,10 @@ hd_home_constructed (GObject *object)
   char		  *font_string;
   GtkIconTheme	  *icon_theme;
 
+  /* FIXME: this is temporary additional path for the temporary icons */
   icon_theme = gtk_icon_theme_get_default ();
+  gtk_icon_theme_prepend_search_path (icon_theme,
+                             "/usr/share/hildon-desktop/icons");
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
@@ -1358,6 +1365,79 @@ hd_home_applet_destroyed (ClutterActor *original, ClutterActor *clone)
   clutter_actor_destroy (clone);
 }
 
+#if 0
+static void
+hd_home_status_area_destroyed (ClutterActor *original, HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  g_debug ("hd_home_status_area_destroyed\n");
+  clutter_container_remove (CLUTTER_CONTAINER (priv->control_group),
+                            priv->status_area, NULL);
+  clutter_actor_destroy (priv->status_area);
+  priv->status_area = NULL;
+}
+#endif
+
+void
+hd_home_remove_status_area (HdHome *home, ClutterActor *sa)
+{
+  HdHomePrivate *priv = home->priv;
+  ClutterActor *switcher;
+
+  g_debug ("hd_home_remove_status_area, sa=%p\n", sa);
+  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
+  hd_switcher_remove_status_area (HD_SWITCHER (switcher), sa);
+
+  clutter_container_remove_actor (CLUTTER_CONTAINER (priv->control_group), sa);
+  hd_home_fixup_operator_position (home);
+}
+
+void
+hd_home_add_status_menu (HdHome *home, ClutterActor *sa)
+{
+  HdHomePrivate *priv = home->priv;
+  ClutterActor *switcher;
+
+  g_debug ("hd_home_add_status_menu, sa=%p\n", sa);
+
+  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
+  hd_switcher_add_status_menu (HD_SWITCHER (switcher), sa);
+
+  clutter_actor_unparent (sa);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group), sa);
+}
+
+void
+hd_home_remove_status_menu (HdHome *home, ClutterActor *sa)
+{
+  HdHomePrivate *priv = home->priv;
+  ClutterActor *switcher;
+
+  g_debug ("hd_home_remove_status_menu, sa=%p\n", sa);
+
+  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
+  hd_switcher_remove_status_menu (HD_SWITCHER (switcher), sa);
+
+  clutter_container_remove_actor (CLUTTER_CONTAINER (priv->control_group), sa);
+}
+
+void
+hd_home_add_status_area (HdHome *home, ClutterActor *sa)
+{
+  HdHomePrivate *priv = home->priv;
+  ClutterActor *switcher;
+
+  g_debug ("hd_home_add_status_area, sa=%p\n", sa);
+  /* FIXME: make a clone when FBOs work? */
+  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
+  hd_switcher_add_status_area (HD_SWITCHER (switcher), sa);
+
+  clutter_actor_unparent (sa);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group), sa);
+
+  hd_home_fixup_operator_position (home);
+}
+
 void
 hd_home_add_applet (HdHome *home, ClutterActor *applet)
 {
@@ -1369,8 +1449,7 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   view_id =
     GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet), "HD-view-id"));
 
-  client =
-  l = priv->views;
+  client = l = priv->views;
 
   while (l)
     {

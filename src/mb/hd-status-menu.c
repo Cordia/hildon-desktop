@@ -22,19 +22,19 @@
  *
  */
 
-#include "hd-status-area.h"
+#include "hd-status-menu.h"
 #include "hd-comp-mgr.h"
 #include "hd-wm.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 
-static Bool hd_status_area_request_geometry (MBWindowManagerClient *client,
+static Bool hd_status_menu_request_geometry (MBWindowManagerClient *client,
 				      MBGeometry            *new_geometry,
 				      MBWMClientReqGeomType  flags);
 
 static void
-hd_status_area_class_init (MBWMObjectClass *klass)
+hd_status_menu_class_init (MBWMObjectClass *klass)
 {
   MBWindowManagerClientClass *client;
 
@@ -42,21 +42,21 @@ hd_status_area_class_init (MBWMObjectClass *klass)
 
   client = (MBWindowManagerClientClass *)klass;
 
-  client->client_type  = HdWmClientTypeStatusArea;
-  client->geometry     = hd_status_area_request_geometry;
+  client->client_type  = HdWmClientTypeStatusMenu;
+  client->geometry     = hd_status_menu_request_geometry;
 
 #if MBWM_WANT_DEBUG
-  klass->klass_name = "HdStatusArea";
+  klass->klass_name = "HdStatusMenu";
 #endif
 }
 
 static void
-hd_status_area_destroy (MBWMObject *this)
+hd_status_menu_destroy (MBWMObject *this)
 {
 }
 
 static int
-hd_status_area_init (MBWMObject *this, va_list vap)
+hd_status_menu_init (MBWMObject *this, va_list vap)
 {
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
   MBWindowManager       *wm = client->wmref;
@@ -75,21 +75,21 @@ hd_status_area_init (MBWMObject *this, va_list vap)
   else
     {
       printf ("#### no desktop present ####\n");
-      client->stacking_layer = MBWMStackLayerBottomMid;
+      client->stacking_layer = MBWMStackLayerMid;
     }
 
-  geom.x      = 112;
+  geom.x      = (800 - 688) / 2;
   geom.y      = 0;
-  geom.width  = 112;
-  geom.height = 56;
+  geom.width  = 688;
+  geom.height = client->window->geometry.height;
 
-  hd_status_area_request_geometry (client, &geom, MBWMClientReqGeomForced);
+  hd_status_menu_request_geometry (client, &geom, MBWMClientReqGeomForced);
 
   return 1;
 }
 
 int
-hd_status_area_class_type ()
+hd_status_menu_class_type ()
 {
   static int type = 0;
 
@@ -98,9 +98,9 @@ hd_status_area_class_type ()
       static MBWMObjectClassInfo info = {
 	sizeof (MBWMClientNoteClass),
 	sizeof (MBWMClientNote),
-	hd_status_area_init,
-	hd_status_area_destroy,
-	hd_status_area_class_init
+	hd_status_menu_init,
+	hd_status_menu_destroy,
+	hd_status_menu_class_init
       };
 
       type = mb_wm_object_register_class (&info, MB_WM_TYPE_CLIENT_NOTE, 0);
@@ -110,7 +110,7 @@ hd_status_area_class_type ()
 }
 
 static Bool
-hd_status_area_request_geometry (MBWindowManagerClient *client,
+hd_status_menu_request_geometry (MBWindowManagerClient *client,
 			  MBGeometry            *new_geometry,
 			  MBWMClientReqGeomType  flags)
 {
@@ -129,12 +129,12 @@ hd_status_area_request_geometry (MBWindowManagerClient *client,
 }
 
 MBWindowManagerClient*
-hd_status_area_new (MBWindowManager *wm, MBWMClientWindow *win)
+hd_status_menu_new (MBWindowManager *wm, MBWMClientWindow *win)
 {
   MBWindowManagerClient *client;
 
   client
-    = MB_WM_CLIENT (mb_wm_object_new (HD_TYPE_STATUS_AREA,
+    = MB_WM_CLIENT (mb_wm_object_new (HD_TYPE_STATUS_MENU,
 				      MBWMObjectPropWm,           wm,
 				      MBWMObjectPropClientWindow, win,
 				      NULL));

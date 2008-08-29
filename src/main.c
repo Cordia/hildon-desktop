@@ -124,7 +124,7 @@ main (int argc, char **argv)
   Display * dpy = NULL;
   MBWindowManager *wm;
 
-  /* KIMMO
+  /* 
   g_log_set_always_fatal (G_LOG_LEVEL_ERROR    |
 			  G_LOG_LEVEL_CRITICAL |
 			  G_LOG_LEVEL_WARNING);

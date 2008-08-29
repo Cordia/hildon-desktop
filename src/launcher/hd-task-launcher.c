@@ -860,15 +860,12 @@ hd_task_launcher_init (HdTaskLauncher *launcher)
 
   launcher->priv = priv = HD_TASK_LAUNCHER_GET_PRIVATE (launcher);
 
-  /* orig
-  priv->padding.top = priv->padding.bottom = CLUTTER_UNITS_FROM_DEVICE (6);
-  */
-  priv->padding.top = CLUTTER_UNITS_FROM_DEVICE (64);
-  priv->padding.bottom = CLUTTER_UNITS_FROM_DEVICE (6);
-  priv->padding.left = CLUTTER_UNITS_FROM_DEVICE (18);
-  priv->padding.right = CLUTTER_UNITS_FROM_DEVICE (6);
-
-  priv->h_spacing = priv->v_spacing = CLUTTER_UNITS_FROM_DEVICE (48);
+  priv->padding.top = CLUTTER_UNITS_FROM_DEVICE (60);
+  priv->padding.bottom = CLUTTER_UNITS_FROM_DEVICE (0);
+  priv->padding.left = CLUTTER_UNITS_FROM_DEVICE (50);
+  priv->padding.right = CLUTTER_UNITS_FROM_DEVICE (50);
+  priv->h_spacing = CLUTTER_UNITS_FROM_DEVICE (50);
+  priv->v_spacing = CLUTTER_UNITS_FROM_DEVICE (40);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (launcher), TRUE);
 }

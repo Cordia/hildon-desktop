@@ -32,6 +32,8 @@ typedef enum _HdWmClientType
 {
   HdWmClientTypeHomeApplet = MBWMClientTypeLast + 1,
   HdWmClientTypeAppMenu,
+  HdWmClientTypeStatusArea,
+  HdWmClientTypeStatusMenu,
 } HdWmClientType;
 
 typedef struct HdWmClass   HdWmClass;

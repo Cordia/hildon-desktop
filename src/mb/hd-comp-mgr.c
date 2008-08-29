@@ -556,6 +556,20 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       g_object_set_data (G_OBJECT (actor),
 			 "HD-MBWMCompMgrClutterClient", NULL);
     }
+  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea)
+    {
+      ClutterActor  *sa;
+
+      sa = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      hd_home_remove_status_area (HD_HOME (priv->home), sa);
+    }
+  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusMenu)
+    {
+      ClutterActor  *sa;
+
+      sa = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      hd_home_remove_status_menu (HD_HOME (priv->home), sa);
+    }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeHomeApplet)
     {
       ClutterActor  *applet;
@@ -629,6 +643,16 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 			 "HD-view-id", GINT_TO_POINTER (view_id));
 
       hd_home_add_applet (HD_HOME (priv->home), actor);
+      return;
+    }
+  else if (ctype == HdWmClientTypeStatusArea)
+    {
+      hd_home_add_status_area (HD_HOME (priv->home), actor);
+      return;
+    }
+  else if (ctype == HdWmClientTypeStatusMenu)
+    {
+      hd_home_add_status_menu (HD_HOME (priv->home), actor);
       return;
     }
   else if (ctype != MBWMClientTypeApp)

@@ -5,6 +5,7 @@
  *
  * Author:  Johan Bilien <johan.bilien@nokia.com>
  *          Tomas Frydrych <tf@o-hand.com>
+ *          Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -45,6 +46,7 @@
 #include "hd-home-applet.h"
 #include "hd-note.h"
 #include "hd-status-area.h"
+#include "hd-status-menu.h"
 #include "hd-app-menu.h"
 #include "hd-dialog.h"
 
@@ -166,8 +168,7 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
       hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_STATUS_MENU))
     {
       printf ("### is status menu ###\n");
-      /* TODO: implement Status Menu window type */
-      return hd_app_new (wm, win);
+      return hd_status_menu_new (wm, win);
     }
   else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DESKTOP])
     {

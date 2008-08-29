@@ -4,6 +4,7 @@
  * Copyright (C) 2008 Nokia Corporation.
  *
  * Author:  Tomas Frydrych <tf@o-hand.com>
+ *          Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -78,8 +79,12 @@ void hd_home_show_view (HdHome * home, guint view_index);
 void hd_home_set_mode (HdHome* home, HdHomeMode mode);
 
 void hd_home_add_applet (HdHome *home, ClutterActor *applet);
+void hd_home_add_status_area (HdHome *home, ClutterActor *sa);
+void hd_home_add_status_menu (HdHome *home, ClutterActor *sa);
 
 void hd_home_remove_applet (HdHome *home, ClutterActor *applet);
+void hd_home_remove_status_area (HdHome *home, ClutterActor *sa);
+void hd_home_remove_status_menu (HdHome *home, ClutterActor *sa);
 
 void hd_home_grab_pointer (HdHome *home);
 

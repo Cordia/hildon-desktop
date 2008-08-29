@@ -4,6 +4,7 @@
  * Copyright (C) 2008 Nokia Corporation.
  *
  * Author:  Johan Bilien <johan.bilien@nokia.com>
+ *          Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -58,9 +59,15 @@ GType hd_switcher_get_type (void);
 
 void hd_switcher_add_window_actor    (HdSwitcher   * switcher,
 				      ClutterActor * actor);
+void hd_switcher_add_status_area (HdSwitcher *switcher, ClutterActor *sa);
+void hd_switcher_add_status_menu (HdSwitcher *switcher, ClutterActor *sa);
 
 void hd_switcher_remove_window_actor (HdSwitcher   * switcher,
 				      ClutterActor * actor);
+void hd_switcher_remove_status_area (HdSwitcher   * switcher,
+				     ClutterActor * sa);
+void hd_switcher_remove_status_menu (HdSwitcher   * switcher,
+				     ClutterActor * sa);
 
 void hd_switcher_replace_window_actor (HdSwitcher   * switcher,
 				       ClutterActor * old,

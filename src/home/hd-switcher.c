@@ -64,6 +64,7 @@ struct _HdSwitcherPrivate
   ClutterActor         *button_menu;
 
   ClutterActor         *status_area;
+  ClutterActor         *status_menu;
 
   ClutterActor         *switcher_group;
   ClutterActor         *launcher_group;
@@ -163,10 +164,16 @@ launcher_back_button_clicked (ClutterActor *actor, ClutterEvent *event,
   if (hd_switcher_group_have_children (group))
     {
       priv->showing_switcher = TRUE;
+      if (priv->status_area)
+        clutter_actor_hide (priv->status_area);
       clutter_actor_show_all (priv->switcher_group);
     }
   else
-    hd_home_ungrab_pointer (home);
+    {
+      hd_home_ungrab_pointer (home);
+      if (priv->status_area)
+        clutter_actor_show (priv->status_area);
+    }
 
   /* show the buttons again */
   hd_switcher_setup_buttons (HD_SWITCHER (data), TRUE);
@@ -472,6 +479,8 @@ hd_switcher_clicked (HdSwitcher *switcher)
 
       priv->showing_switcher = TRUE;
 
+      if (priv->status_area)
+        clutter_actor_hide (priv->status_area);
       clutter_actor_show_all (priv->switcher_group);
 
       /*
@@ -560,6 +569,8 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
         {
           /* switcher group is empty and will disappear -> ungrab */
           hd_home_ungrab_pointer (home);
+          if (priv->status_area)
+            clutter_actor_show (priv->status_area);
         }
     }
 }
@@ -579,6 +590,43 @@ hd_switcher_add_window_actor (HdSwitcher * switcher, ClutterActor * actor)
 }
 
 void
+hd_switcher_add_status_menu (HdSwitcher *switcher, ClutterActor *sa)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  priv->status_menu = sa;
+  hd_switcher_hide_buttons (switcher);
+}
+
+void
+hd_switcher_remove_status_menu (HdSwitcher *switcher, ClutterActor *sa)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  priv->status_menu = NULL;
+  hd_switcher_setup_buttons (switcher, TRUE);
+}
+
+void
+hd_switcher_add_status_area (HdSwitcher *switcher, ClutterActor *sa)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  priv->status_area = sa;
+
+  /* this is normally done in hd_switcher_add_window_actor for app windows */
+  hd_switcher_setup_buttons (switcher, TRUE);
+}
+
+void
+hd_switcher_remove_status_area (HdSwitcher *switcher, ClutterActor *sa)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  priv->status_area = NULL;
+}
+
+void
 hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
@@ -595,6 +643,8 @@ hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor)
        * Must close the switcher
        */
       hd_switcher_hide_switcher (switcher);
+      if (priv->status_area)
+        clutter_actor_show (priv->status_area);
     }
 
   /*
@@ -764,6 +814,8 @@ hd_switcher_get_control_area_size (HdSwitcher *switcher,
 
   clutter_actor_get_size (priv->button_launcher,
 			  &button_width, &button_height);
+  /* FIXME */
+  button_width = TOP_LEFT_BUTTON_WIDTH;
 
   if (priv->status_area)
     clutter_actor_get_size (priv->status_area,
@@ -809,5 +861,8 @@ hd_switcher_group_background_clicked (HdSwitcher   *switcher,
       hd_home_ungrab_pointer (home);
       hd_switcher_hide_launcher (switcher);
     }
+
+  if (priv->status_area)
+    clutter_actor_show (priv->status_area);
   hd_comp_mgr_top_home (HD_COMP_MGR (priv->comp_mgr));
 }
