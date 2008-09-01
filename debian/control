@@ -9,6 +9,7 @@ Package: hildon-desktop
 Section: x11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, hildon-theme | hildon-theme-devel, hildon-icons
+Conflicts: matchbox-window-manager
 Description: Hildon desktop for Fremantle
  Hildon desktop for Fremantle.
 
