@@ -1,0 +1,22 @@
+#! /bin/sh
+
+case "$1" in
+    configure)
+      HOME=/root GCONF_CONFIG_SOURCE=xml::/etc/gconf/gconf.xml.defaults \
+        gconftool-2 --makefile-install-rule \
+          /etc/gconf/schemas/hildon-desktop.schemas
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
