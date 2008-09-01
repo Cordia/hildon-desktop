@@ -1,0 +1,29 @@
+#! /bin/sh
+
+if [ -r /etc/osso-af-init/af-defines.sh ]; then
+  source /etc/osso-af-init/af-defines.sh
+fi
+
+case "$1" in
+start)
+        if [ -r /etc/osso-af-init/matchbox.sh ]; then
+          . /etc/osso-af-init/matchbox.sh stop
+        fi
+        $LAUNCHWRAPPER_TRYRESTART start hildon-desktop /usr/bin/hildon-desktop
+        ;;
+stop)
+        $LAUNCHWRAPPER_TRYRESTART stop hildon-desktop /usr/bin/hildon-desktop
+        ;;
+restart)
+        echo "$0: not implemented"
+        exit 1
+        ;;
+force-reload)
+        echo "$0: not implemented"
+        exit 1
+        ;;
+*)      echo "Usage: $0 {start|stop}"
+        exit 1
+        ;;
+esac
+

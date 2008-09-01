@@ -2,5 +2,6 @@ hildon-desktop (1:2.2.0-1~unreleased) unstable; urgency=low
 
   * Initial packaging.
   * This package contains temporary icons for hildon-desktop.
+  * TODO: Package should conflict on matchbox-window-manager.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 14 Aug 2008 17:16:04 +0300
