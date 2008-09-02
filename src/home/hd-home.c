@@ -651,12 +651,9 @@ hd_home_constructed (GObject *object)
   ClutterColor     op_color = {0xff, 0xff, 0xff, 0xff};
   char		  *font_string;
   GtkIconTheme	  *icon_theme;
-  gchar **search_path;
-  gint path_elems;
 
   /* FIXME: this is temporary additional path for the temporary icons */
   icon_theme = gtk_icon_theme_get_default ();
-  gtk_icon_theme_get_search_path (icon_theme, &search_path, &path_elems);
   gtk_icon_theme_prepend_search_path (icon_theme,
                              "/usr/share/hildon-desktop/icons");
 
@@ -841,11 +838,6 @@ hd_home_constructed (GObject *object)
 
   priv->applet_resize_button =
     hd_gtk_icon_theme_load_icon (icon_theme, APPLET_RESIZE_BUTTON, 48, 0);
-
-  /* FIXME */
-  gtk_icon_theme_set_search_path (icon_theme, (const gchar**) search_path,
-                                  path_elems);
-  g_strfreev (search_path);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->applet_resize_button);

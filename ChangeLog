@@ -1,3 +1,19 @@
+2008-09-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* debian/hildon-desktop.postinst: Added. Modify Gtk icon theme to
+	include 48x48 icons. Update Gtk icon cache. Install the GConf schema.
+
+	* debian/hildon-desktop.init: Added. Start and stop hildon-desktop
+	using a launch wrapper.
+
+	* src/hildon-desktop.schemas: Added. GConf schema specifying default
+	background images.
+
+	* src/Makefile.am: Add installation of the GConf schema.
+
+	* data/icons/Makefile.am, data/icons/48x48/Makefile.am: Install the
+	temporary icons to the same directory as the pre-installed ones.
+
 2008-08-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* configure.ac: new output file data/themes/Makefile
