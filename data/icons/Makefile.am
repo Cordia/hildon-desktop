@@ -1,7 +1,7 @@
 SUBDIRS=48x48
 
-themedir = ${datadir}/hildon-desktop/icons/hicolor
-theme_DATA = index.theme
+themedir = ${datadir}/icons/hicolor
+#theme_DATA = index.theme
 gtk_update_icon_cache = gtk-update-icon-cache -f -t ${themedir}
 
 install-data-hook: update-icon-cache

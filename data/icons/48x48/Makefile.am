@@ -1,4 +1,4 @@
-icondir = $(datadir)/hildon-desktop/icons/hicolor/48x48/apps
+icondir = $(datadir)/icons/hicolor/48x48/apps
 icon_DATA = \
 	qgn_tswitcher_application.png \
 	qgn_tswitcher_close.png \
