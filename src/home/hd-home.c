@@ -652,10 +652,7 @@ hd_home_constructed (GObject *object)
   char		  *font_string;
   GtkIconTheme	  *icon_theme;
 
-  /* FIXME: this is temporary additional path for the temporary icons */
   icon_theme = gtk_icon_theme_get_default ();
-  gtk_icon_theme_prepend_search_path (icon_theme,
-                             "/usr/share/hildon-desktop/icons");
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
