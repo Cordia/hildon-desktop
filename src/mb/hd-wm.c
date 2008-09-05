@@ -149,30 +149,30 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
   else if (win->net_type ==
       hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_HOME_APPLET))
     {
-      printf ("### is home applet ###\n");
+      g_debug ("### is home applet ###");
       return hd_home_applet_new (wm, win);
     }
   else if (win->net_type ==
       hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_APP_MENU))
     {
-      printf ("### is application menu ###\n");
+      g_debug ("### is application menu ###");
       return hd_app_menu_new (wm, win);
     }
   else if (win->net_type ==
       hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_STATUS_AREA))
     {
-      printf ("### is status area ###\n");
+      g_debug ("### is status area ###");
       return hd_status_area_new (wm, win);
     }
   else if (win->net_type ==
       hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_STATUS_MENU))
     {
-      printf ("### is status menu ###\n");
+      g_debug ("### is status menu ###");
       return hd_status_menu_new (wm, win);
     }
   else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DESKTOP])
     {
-      printf ("### is desktop ###\n");
+      g_debug ("### is desktop ###");
       /* Only one desktop allowed */
       if (wm->desktop)
 	return NULL;
@@ -181,19 +181,17 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
     }
   else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NORMAL])
     {
-      printf ("### is application ###\n");
-
+      g_debug ("### is application ###");
       return hd_app_new (wm, win);
     }
   else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DIALOG])
     {
-      printf ("### is dialog ###\n");
-
+      g_debug ("### is dialog ###");
       return hd_dialog_new (wm, win);
     }
   else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NOTIFICATION])
     {
-      MBWM_DBG ("### is notification ###\n");
+      g_debug ("### is notification ###");
       return hd_note_new (wm, win);
     }
   else if (wm_class)
