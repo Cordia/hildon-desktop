@@ -505,6 +505,7 @@ hd_comp_mgr_register_client (MBWMCompMgr           * mgr,
   MBWMCompMgrClass              * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
 
+  g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
     {
       priv->desktop = c;
@@ -526,6 +527,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
   HdCompMgrClient               * hclient = HD_COMP_MGR_CLIENT (c->cm_client);
 
+  g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
   if (hclient->priv->hibernating)
@@ -610,6 +612,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   guint                      hkey;
   MBWMClientType             ctype;
 
+  g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
   /*
    * Parent class map_notify creates the actor representing the client.
    */

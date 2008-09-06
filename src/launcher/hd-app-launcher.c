@@ -73,7 +73,6 @@ hd_app_launcher_get_icon (HdLauncherItem *item)
   if (info != NULL)
     {
       const gchar *fname = gtk_icon_info_get_filename(info);
-      g_debug("hd_app_launcher_get_icon: using %s for %s\n", fname, icon_name);
       retval = clutter_texture_new_from_file(fname, NULL);
       clutter_actor_set_size (retval, size, size);
 
@@ -90,7 +89,6 @@ hd_app_launcher_get_label (HdLauncherItem *item)
 {
   HdAppLauncherPrivate *priv = HD_APP_LAUNCHER (item)->priv;
   ClutterActor *retval;
-  g_debug("hd_app_launcher_get_label, item=%p label=%s\n", item, priv->name);
 
   retval = clutter_label_new ();
   clutter_actor_set_width (CLUTTER_ACTOR (retval), 140);

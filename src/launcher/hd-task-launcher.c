@@ -186,8 +186,6 @@ hd_task_launcher_real_item_clicked (HdTaskLauncher *launcher,
   HdTaskLauncherPrivate *priv = launcher->priv;
   HdLauncherItemType type;
 
-  g_debug("hd_task_launcher_real_item_clicked: launcher=%p item=%p\n",
-          launcher, item);
   if (G_UNLIKELY (!priv->launcher_tmpl))
     {
       priv->launcher_tmpl =
@@ -198,12 +196,10 @@ hd_task_launcher_real_item_clicked (HdTaskLauncher *launcher,
   switch (type)
     {
     case HD_SECTION_LAUNCHER:
-      g_debug("hd_task_launcher_real_item_clicked: HD_SECTION_LAUNCHER\n");
       break;
 
     case HD_APPLICATION_LAUNCHER:
       {
-        g_debug("hd_task_launcher_real_item_clicked: HD_APPLICATION_LAUNCHER\n");
         ClutterActor *icon;
         LaunchItemClosure *clos;
         gint icon_width;
@@ -873,7 +869,6 @@ hd_task_launcher_init (HdTaskLauncher *launcher)
 ClutterActor *
 hd_task_launcher_new (HdSwitcher *switcher, HdSwitcherCb switcher_cb)
 {
-  g_debug("entered hd_task_launcher_new\n");
   /* FIXME: push into an object, or something... */
   switcher_callback = switcher_cb;
   hd_switcher = switcher;
@@ -892,7 +887,6 @@ void
 hd_task_launcher_add_item (HdTaskLauncher *launcher,
                            HdLauncherItem *item)
 {
-  g_debug("entered hd_task_launcher_add_item\n");
   g_return_if_fail (HD_IS_TASK_LAUNCHER (launcher));
   g_return_if_fail (HD_IS_LAUNCHER_ITEM (item));
 
