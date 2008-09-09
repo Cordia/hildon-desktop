@@ -201,6 +201,7 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
   if (d)
     {
       MBWMList * l = d->buttons;
+      g_debug("%s: theme", __FUNCTION__);
       while (l)
 	{
 	  MBWMXmlButton * b = l->data;
@@ -247,6 +248,7 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
     }
   else
     {
+      g_debug("%s: no theme, only close/back button", __FUNCTION__);
       if (is_leader)
 	{
 	  button = mb_wm_decor_button_stock_new (wm,
