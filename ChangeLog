@@ -1,3 +1,15 @@
+2008-09-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/launcher/hd-task-launcher.c
+	(hd_task_launcher_get_preferred_height): Use amount of rows to
+	calculate the height. Fix a one-off problem when determining start of
+	a new row. Fixes: NB#88209
+
+	* src/home/hd-home.c (hd_home_constructed): Remove obsolete code for
+	adding a search path for temporary icons.
+
+	* Debug printout adjustments here and there.
+
 2008-09-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* debian/hildon-desktop.postinst: Added. Modify Gtk icon theme to
