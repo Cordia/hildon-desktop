@@ -473,7 +473,7 @@ hd_task_launcher_get_preferred_height (ClutterActor *actor,
   ClutterUnit max_item_width, max_item_height;
   ClutterUnit max_row_width, max_row_height;
   ClutterUnit cur_width, cur_height;
-  gint n_visible_launchers;
+  gint n_visible_launchers, n_rows;
   GList *l;
 
   cur_width  = priv->padding.left;
@@ -489,7 +489,7 @@ hd_task_launcher_get_preferred_height (ClutterActor *actor,
         {
           ClutterUnit natural_width, natural_height;
 
-          n_visible_launchers += 1;
+          ++n_visible_launchers;
 
           natural_width = natural_height = 0;
           clutter_actor_get_preferred_size (child,
@@ -502,11 +502,13 @@ hd_task_launcher_get_preferred_height (ClutterActor *actor,
         }
     }
 
-  max_row_width = for_width
-                - priv->padding.left
-                - priv->padding.right;
+  max_row_width = for_width - priv->padding.left - priv->padding.right;
 
   max_row_height = 0;
+  if (n_visible_launchers > 0)
+    n_rows = 1;
+  else
+    n_rows = 0;
 
   /* in this second pass we allocate the launchers */
   for (l = priv->launchers; l != NULL; l = l->next)
@@ -533,13 +535,10 @@ hd_task_launcher_get_preferred_height (ClutterActor *actor,
           cur_height     += max_row_height + priv->v_spacing;
           cur_width       = priv->padding.left;
           max_row_height  = 0;
-        }
-      else
-        {
-          if (l != priv->launchers)
-            cur_width += max_item_width + priv->h_spacing;
+	  ++n_rows;
         }
 
+      cur_width += max_item_width + priv->h_spacing;
       max_row_height = MAX (max_row_height, natural_height);
     }
 
@@ -547,7 +546,16 @@ hd_task_launcher_get_preferred_height (ClutterActor *actor,
     *min_height_p = 0;
 
   if (natural_height_p)
-    *natural_height_p = cur_height + max_row_height;
+  {
+    *natural_height_p = priv->padding.top + max_row_height * n_rows +
+			(n_rows > 0 ? priv->v_spacing * (n_rows - 1) : 0) +
+			priv->padding.bottom;
+
+    g_debug("%s: rows %d, natural height %d, max row %d, n_launchers %d",
+	    __FUNCTION__, n_rows,
+	    CLUTTER_UNITS_TO_DEVICE(*natural_height_p),
+	    CLUTTER_UNITS_TO_DEVICE(max_row_height), n_visible_launchers);
+  }
 }
 
 static void
