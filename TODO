@@ -1,5 +1,6 @@
+ TODO
+======
 
-- Implement application menu support.
 - Implement closing of dialogs when tapping outside of them.
 - Implement progress indicator in application window and dialog title.
   Window property _HILDON_WM_WINDOW_PROGRESS_INDICATOR (int), values 0 (off)
