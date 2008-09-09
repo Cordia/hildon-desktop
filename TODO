@@ -1,0 +1,5 @@
+
+- Implement progress indicator in application window and dialog title.
+  Window property _HILDON_WM_WINDOW_PROGRESS_INDICATOR (int), values 0 (off)
+  and 1 (on). Other values can be used in future if needed.
+
