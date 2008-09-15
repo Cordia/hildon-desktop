@@ -2,6 +2,8 @@ hildon-desktop (1:2.2.2-1~unreleased) unstable; urgency=low
 
   * Now using gettext for localisation.
   * Added dependency to localisation packages.
+  * Run hildon-desktop as user, not as root.
+  * Make the icon theme readable by the user after modifying it.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Sep 2008 12:46:41 +0300
 

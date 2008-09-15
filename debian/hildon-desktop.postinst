@@ -10,6 +10,7 @@ case "$1" in
         cat $THEME | awk '{ if ($0 ~ /^Directories/) { print ($0 ",48x48/apps") } else print $0 } END { print "\n[48x48/apps]\nSize=48\nContext=Applications\nType=Threshold" }' > $TMP
         sync
         mv $TMP $THEME
+	chmod ugo+r $THEME
       fi
 
       echo "Updating icon cache."
