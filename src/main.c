@@ -34,6 +34,7 @@
 #include <clutter/x11/clutter-x11.h>
 #include <clutter/clutter-container.h>
 
+#include "hildon-desktop.h"
 #include "hd-wm.h"
 #include "hd-theme.h"
 
@@ -129,6 +130,10 @@ main (int argc, char **argv)
 			  G_LOG_LEVEL_CRITICAL |
 			  G_LOG_LEVEL_WARNING);
                           */
+
+  setlocale (LC_ALL, "");
+  bindtextdomain (GETTEXT_PACKAGE, "/usr/share/locale");
+  textdomain (GETTEXT_PACKAGE);
 
   g_thread_init (NULL);
 

@@ -1,3 +1,14 @@
+2008-09-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* configure.ac: Add gettext-related stuff from the old code.
+
+	* src/main.c (main): Initialise locale and gettext system.
+
+	* src/hildon-desktop.h: New file for global defines.
+
+	* src/launcher/hd-app-launcher.c (hd_app_launcher_get_label): Use
+	gettext() to get localised application name.
+
 2008-09-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/launcher/hd-task-launcher.c

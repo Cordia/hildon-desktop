@@ -1,3 +1,10 @@
+hildon-desktop (1:2.2.2-1~unreleased) unstable; urgency=low
+
+  * Now using gettext for localisation.
+  * Added dependency to localisation packages.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Sep 2008 12:46:41 +0300
+
 hildon-desktop (1:2.2.1-1) unstable; urgency=low
 
   * Fix height calculation in Task Launcher. Fixes: NB#88209

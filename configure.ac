@@ -41,6 +41,12 @@ CFLAGS="$CFLAGS -Wall -Wno-format-extra-args -ansi -Wmissing-prototypes -Wmissin
 
 AC_SUBST(CFLAGS)
 
+# gettext
+ALL_LINGUAS="en_GB"
+AC_SUBST(ALL_LINGUAS)
+AM_GLIB_GNU_GETTEXT
+AC_DEFINE(GETTEXT_PACKAGE, ["maemo-af-desktop"], [Localisation domain])
+
 #+++++++++++++++++++++
 # Dependencies checks
 #+++++++++++++++++++++

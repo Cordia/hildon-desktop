@@ -1,3 +1,4 @@
+#include "hildon-desktop.h"
 #include "hd-app-launcher.h"
 
 #include <string.h>
@@ -93,7 +94,7 @@ hd_app_launcher_get_label (HdLauncherItem *item)
   retval = clutter_label_new ();
   clutter_actor_set_width (CLUTTER_ACTOR (retval), 140);
   clutter_label_set_color (CLUTTER_LABEL (retval), &text_color);
-  clutter_label_set_text (CLUTTER_LABEL (retval), priv->name);
+  clutter_label_set_text (CLUTTER_LABEL (retval), _(priv->name));
   clutter_label_set_line_wrap (CLUTTER_LABEL (retval), FALSE);
   clutter_label_set_alignment (CLUTTER_LABEL (retval), PANGO_ALIGN_CENTER);
 
