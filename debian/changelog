@@ -5,7 +5,7 @@ hildon-desktop (1:2.2.2-1) unstable; urgency=low
   * Run hildon-desktop as user, not as root.
   * Make the icon theme readable by the user after modifying it.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Sep 2008 12:46:41 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Sat, 20 Sep 2008 17:37:52 +0300
 
 hildon-desktop (1:2.2.1-1) unstable; urgency=low
 
