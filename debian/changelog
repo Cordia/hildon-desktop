@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.2-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.2-1) unstable; urgency=low
 
   * Now using gettext for localisation.
   * Added dependency to localisation packages.
