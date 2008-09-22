@@ -128,6 +128,7 @@ hd_dialog_release_handler (XButtonEvent    *xev,
 {
   MBWindowManagerClient *c = userdata;
 
+  g_debug ("%s: c %p", __FUNCTION__, c);
   mb_wm_client_deliver_delete (c);
   return False;
 }
@@ -139,7 +140,7 @@ hd_dialog_realize (MBWindowManagerClient *client)
   HdDialog                    *dialog = HD_DIALOG (client);
   MBWindowManager             *wm = client->wmref;
 
-    parent_klass = MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS (client));
+  parent_klass = MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS (client));
 
   if (parent_klass->realize)
     parent_klass->realize (client);
@@ -164,6 +165,15 @@ hd_dialog_realize (MBWindowManagerClient *client)
 		       CopyFromParent,
 		       CWOverrideRedirect|CWEventMask,
 		       &attr);
+      g_debug ("%s: created modal blocker %lx", __FUNCTION__, client->xwin_modal_blocker);
+    }
+  else
+    {
+      /* make sure ButtonRelease is caught */
+      XWindowAttributes attrs = { 0 };
+      XGetWindowAttributes (wm->xdpy, client->xwin_modal_blocker, &attrs);
+      attrs.your_event_mask |= ButtonReleaseMask;
+      XSelectInput (wm->xdpy, client->xwin_modal_blocker, attrs.your_event_mask);
     }
 
   dialog->release_cb_id =
