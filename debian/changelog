@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.3-1~unreleased) unstable; urgency=low
+
+  * Enable closing of system-modal dialogs, when tapping outside of them.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 22 Sep 2008 12:58:34 +0300
+
 hildon-desktop (1:2.2.2-1) unstable; urgency=low
 
   * Now using gettext for localisation.
