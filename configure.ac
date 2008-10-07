@@ -33,6 +33,8 @@ fi
 
 AM_PROG_CC_C_O
 
+AM_GCONF_SOURCE_2
+
 #++++++++++++++++++
 # Misc build flags
 #++++++++++++++++++
