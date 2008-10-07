@@ -1,7 +1,11 @@
 #include "hildon-desktop.h"
 #include "hd-app-launcher.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/resource.h>
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
@@ -480,6 +484,32 @@ hd_app_launcher_activate_service (const gchar *app)
   dbus_message_unref (msg);
 }
 
+#define OOM_DISABLE "0"
+
+static void
+_hd_app_launcher_child_setup(gpointer user_data)
+{
+  int priority;
+  int fd;
+  
+  /* If the child process inherited desktop's high priority,
+   * give child default priority */
+  priority = getpriority (PRIO_PROCESS, 0);
+
+  if (!errno && priority < 0)
+  {
+    setpriority (PRIO_PROCESS, 0, 0);
+  }
+
+  /* Unprotect from OOM */
+  fd = open ("/proc/self/oom_adj", O_WRONLY);
+  if (fd >= 0)
+  {
+    write (fd, OOM_DISABLE, sizeof (OOM_DISABLE));
+    close (fd);
+  }
+}
+
 gboolean
 hd_app_launcher_activate (HdAppLauncher  *item,
                           GError        **error)
@@ -549,7 +579,7 @@ hd_app_launcher_activate (HdAppLauncher  *item,
       res = g_spawn_async (NULL,
                            argv, NULL,
                            0,
-                           NULL, NULL,
+                           _hd_app_launcher_child_setup, NULL,
                            &child_pid,
                            &internal_error);
       if (internal_error)

@@ -1,3 +1,9 @@
+2008-10-07  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+  * src/launcher/hd-app-launcher.c (hd_app_launcher_activate) : Added a child
+  setup funcion called by g_spawn_async that sets up the correct priority and
+  OOM unprotection. Fixes: NB#87443
+
 2008-09-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 1:2.2.3-1
