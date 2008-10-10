@@ -25,6 +25,7 @@
 #include "hd-comp-mgr.h"
 #include "hd-app.h"
 
+#include <matchbox/theme-engines/mb-wm-theme-png.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 
 #define BACK_BUTTON_TIMEOUT 2000
