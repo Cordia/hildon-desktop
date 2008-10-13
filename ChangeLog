@@ -1,3 +1,9 @@
+2008-10-13  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+  * src/home/hd-edit-menu.c (hd_edit_menu_init) : Corrected edit menu strings.
+  Fixes: NB#88317
+  * src/home/hd-edit-menu.c (hd_edit_menu_constructed) : Changed tabs to spaces.
+
 2008-10-07  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
   * src/launcher/hd-app-launcher.c (hd_app_launcher_activate) : Added a child

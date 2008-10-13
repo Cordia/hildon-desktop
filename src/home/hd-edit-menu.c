@@ -155,50 +155,50 @@ hd_edit_menu_constructed (GObject *object)
   for (i = 0; i < 3; ++i)
     for (j = 0; j < 2; ++j)
       {
-	guint lw, lh;
+        guint lw, lh;
 
-	rect = clutter_rectangle_new_with_color (&clr_i);
+        rect = clutter_rectangle_new_with_color (&clr_i);
 
-	clutter_actor_set_size (rect, iwidth, HDEM_ITEM_HEIGHT);
+        clutter_actor_set_size (rect, iwidth, HDEM_ITEM_HEIGHT);
 
-	clutter_actor_set_position (rect,
-				    HDEM_PADDING_EXT +
-				    HDEM_PADDING_INT +
-				    j * (HDEM_PADDING_INT + iwidth),
-				    HDEM_PADDING_INT +
-				    i * (HDEM_PADDING_INT + HDEM_ITEM_HEIGHT));
+        clutter_actor_set_position (rect,
+                  HDEM_PADDING_EXT +
+                  HDEM_PADDING_INT +
+                  j * (HDEM_PADDING_INT + iwidth),
+                  HDEM_PADDING_INT +
+                  i * (HDEM_PADDING_INT + HDEM_ITEM_HEIGHT));
 
-	clutter_actor_show (rect);
-	clutter_actor_set_reactive (rect, TRUE);
-	clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
+        clutter_actor_show (rect);
+        clutter_actor_set_reactive (rect, TRUE);
+        clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
-	g_assert ((j + 2 * i) < G_N_ELEMENTS (priv->labels));
+        g_assert ((j + 2 * i) < G_N_ELEMENTS (priv->labels));
 
-	g_object_set_data (G_OBJECT (rect), "HD-EDIT-MENU-action",
-			   GINT_TO_POINTER (j + 2 * i));
+        g_object_set_data (G_OBJECT (rect), "HD-EDIT-MENU-action",
+               GINT_TO_POINTER (j + 2 * i));
 
-	g_signal_connect (rect, "button-release-event",
-			  G_CALLBACK (hd_edit_menu_item_release),
-			  object);
+        g_signal_connect (rect, "button-release-event",
+              G_CALLBACK (hd_edit_menu_item_release),
+              object);
 
-	label = clutter_label_new_full ("Sans 16pt",
-					priv->labels[j+2*i],
-					&clr_b);
+        label = clutter_label_new_full ("Sans 16pt",
+	              priv->labels[j+2*i],
+	              &clr_b);
 
-	clutter_actor_get_size (label, &lw, &lh);
+        clutter_actor_get_size (label, &lw, &lh);
 
-	clutter_actor_set_position (label,
-				    HDEM_PADDING_EXT +
-				    HDEM_PADDING_INT +
-				    j * (HDEM_PADDING_INT + iwidth) +
-				    HDEM_ITEM_TEXT_OFFSET,
-				    HDEM_PADDING_INT +
-				    i * (HDEM_PADDING_INT + HDEM_ITEM_HEIGHT) +
-				    (HDEM_ITEM_HEIGHT - lh)/2);
+        clutter_actor_set_position (label,
+                  HDEM_PADDING_EXT +
+                  HDEM_PADDING_INT +
+                  j * (HDEM_PADDING_INT + iwidth) +
+                  HDEM_ITEM_TEXT_OFFSET,
+                  HDEM_PADDING_INT +
+                  i * (HDEM_PADDING_INT + HDEM_ITEM_HEIGHT) +
+                  (HDEM_ITEM_HEIGHT - lh)/2);
 
-	clutter_actor_show (label);
-	clutter_actor_set_reactive (label, FALSE);
-	clutter_container_add_actor (CLUTTER_CONTAINER (object), label);
+        clutter_actor_show (label);
+        clutter_actor_set_reactive (label, FALSE);
+        clutter_container_add_actor (CLUTTER_CONTAINER (object), label);
       }
 }
 
@@ -214,9 +214,9 @@ hd_edit_menu_init (HdEditMenu *self)
   priv->labels[0] = _("home_me_select_applets");
   priv->labels[1] = _("home_me_select_shortcuts");
   priv->labels[2] = _("home_me_select_bookmarks");
-  priv->labels[3] = _("home_me_set_background");
+  priv->labels[3] = _("home_me_change_background");
   priv->labels[4] = _("home_me_select_contacts");
-  priv->labels[5] = _("home_me_select_bookmarks");
+  priv->labels[5] = _("home_me_manage_views");
 }
 
 static void
