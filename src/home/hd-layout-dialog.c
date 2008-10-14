@@ -300,77 +300,89 @@ hd_layout_dialog_constructed (GObject *object)
   i = 0;
 
   while (l)
+  {
+    HdHomeView   *view = l->data;
+    ClutterActor *thumb = clutter_group_new ();
+    ClutterActor *thumb_background;
+    ClutterActor *thumb_content;
+    ClutterColor clr_b = {0xff, 0xff, 0, 0xff};
+
+    thumb_background = clutter_rectangle_new_with_color (&clr_b);
+    clutter_actor_set_size (thumb_background,
+                            HDLD_THUMB_WIDTH, HDLD_THUMB_HEIGHT);
+    clutter_actor_hide (thumb_background);
+    clutter_container_add_actor (CLUTTER_CONTAINER (thumb),
+                                 thumb_background);
+
+    priv->highlighters =
+      g_list_append (priv->highlighters, thumb_background);
+
+    if (have_fbos)
     {
-      HdHomeView   *view = l->data;
-      ClutterActor *thumb = clutter_group_new ();
-      ClutterActor *thumb_background;
-      ClutterActor *thumb_content;
-      ClutterColor clr_b = {0xff, 0xff, 0, 0xff};
+      gdouble scale_x, scale_y;
+      thumb_content =
+        clutter_texture_new_from_actor (CLUTTER_ACTOR (view));
+      scale_x = (gdouble)(HDLD_THUMB_WIDTH - HDLD_PADDING) /
+        (gdouble)clutter_actor_get_width (CLUTTER_ACTOR (view));
+      scale_y = (gdouble)(HDLD_THUMB_HEIGHT - HDLD_PADDING) /
+        (gdouble)clutter_actor_get_height (CLUTTER_ACTOR (view));
+      clutter_actor_set_scale (CLUTTER_ACTOR (thumb_content),
+        scale_x, scale_y);
+    }
+    else
+    {
+      ClutterActor *background;
+      background = hd_home_view_get_background (view);
 
-      thumb_background = clutter_rectangle_new_with_color (&clr_b);
-      clutter_actor_set_size (thumb_background,
-			      HDLD_THUMB_WIDTH, HDLD_THUMB_HEIGHT);
-      clutter_actor_hide (thumb_background);
-      clutter_container_add_actor (CLUTTER_CONTAINER (thumb),
-				   thumb_background);
+      if (CLUTTER_IS_TEXTURE (background))
+      {
+        CoglHandle handle;
 
-      priv->highlighters =
-	g_list_append (priv->highlighters, thumb_background);
+        handle =
+          clutter_texture_get_cogl_texture (CLUTTER_TEXTURE(background));
 
-      if (have_fbos)
-	{
-	  thumb_content =
-	    clutter_texture_new_from_actor (CLUTTER_ACTOR (view));
-	}
+        thumb_content = clutter_texture_new ();
+        clutter_texture_set_cogl_texture(CLUTTER_TEXTURE (thumb_content),
+                                         handle);
+      }
       else
-	{
-	  ClutterActor *background;
-	  background = hd_home_view_get_background (view);
+      {
+        /*
+         * No fbos and no texture, so we just create a rectangle.
+         */
+        ClutterColor clr = {0xA0, 0xA0, 0xA0, 0xff};
 
-	  if (CLUTTER_IS_TEXTURE (background))
-	    {
-	      CoglHandle handle;
-
-	      handle =
-		clutter_texture_get_cogl_texture (CLUTTER_TEXTURE(background));
-
-	      thumb_content = clutter_texture_new ();
-	      clutter_texture_set_cogl_texture(CLUTTER_TEXTURE (thumb_content),
-					       handle);
-	    }
-	  else
-	    {
-	      /*
-	       * No fbos and no texture, so we just create a rectangle.
-	       */
-	      ClutterColor clr = {0xA0, 0xA0, 0xA0, 0xff};
-
-	      thumb_content = clutter_rectangle_new_with_color (&clr);
-	    }
-	}
+        thumb_content = clutter_rectangle_new_with_color (&clr);
+      }
 
       clutter_actor_set_size (thumb_content,
-			      HDLD_THUMB_WIDTH - HDLD_PADDING,
-			      HDLD_THUMB_HEIGHT - HDLD_PADDING);
-      clutter_actor_set_position (thumb_content,
-				  HDLD_PADDING/2, HDLD_PADDING/2);
-      clutter_actor_set_reactive (thumb_content, TRUE);
-
-      g_signal_connect (thumb_content, "button-release-event",
-			G_CALLBACK (hd_layout_dialog_thumb_clicked),
-			thumb_background);
-
-      clutter_container_add_actor (CLUTTER_CONTAINER (thumb),
-				   thumb_content);
-
-      clutter_actor_set_size (thumb, HDLD_THUMB_WIDTH, HDLD_THUMB_HEIGHT);
-      clutter_actor_set_position (thumb, HDLD_PADDING + i * (HDLD_THUMB_WIDTH + HDLD_PADDING), xheight - HDLD_HEIGHT + HDLD_TITLEBAR + (HDLD_HEIGHT - HDLD_TITLEBAR - HDLD_THUMB_HEIGHT - label2_height) / 2 + label2_height);
-
-      clutter_container_add_actor (CLUTTER_CONTAINER (object), thumb);
-
-      l = l->next;
-      ++i;
+            HDLD_THUMB_WIDTH - HDLD_PADDING,
+            HDLD_THUMB_HEIGHT - HDLD_PADDING);
     }
+
+    clutter_actor_set_position (thumb_content,
+	      HDLD_PADDING/2, HDLD_PADDING/2);
+    clutter_actor_set_reactive (thumb_content, TRUE);
+
+    g_signal_connect (thumb_content, "button-release-event",
+    G_CALLBACK (hd_layout_dialog_thumb_clicked),
+    thumb_background);
+
+    clutter_container_add_actor (CLUTTER_CONTAINER (thumb),
+	       thumb_content);
+
+    clutter_actor_set_size (thumb, HDLD_THUMB_WIDTH, HDLD_THUMB_HEIGHT);
+    clutter_actor_set_position (thumb,
+      HDLD_PADDING + i * (HDLD_THUMB_WIDTH + HDLD_PADDING),
+      xheight - HDLD_HEIGHT + HDLD_TITLEBAR +
+        (HDLD_HEIGHT - HDLD_TITLEBAR - HDLD_THUMB_HEIGHT - label2_height) / 2 +
+        label2_height);
+
+    clutter_container_add_actor (CLUTTER_CONTAINER (object), thumb);
+
+    l = l->next;
+    ++i;
+  }
 
   hd_layout_dialog_fixup_highlighters (HD_LAYOUT_DIALOG (object));
 }
