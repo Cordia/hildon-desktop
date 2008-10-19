@@ -1130,6 +1130,9 @@ hd_home_view_applet_release (ClutterActor       *applet,
       MBWindowManagerClient *client;
       MBWMCompMgrClient *cclient;
       MBGeometry geom;
+      GConfClient *gconf_client;
+      gchar *applet_id, *position_key;
+      GSList *position_value;
 
       cclient =
 	g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
@@ -1146,6 +1149,20 @@ hd_home_view_applet_release (ClutterActor       *applet,
 
       mb_wm_client_request_geometry (client, &geom,
 				     MBWMClientReqGeomIsViaUserAction);
+
+      gconf_client = gconf_client_get_default ();
+      applet_id = g_object_get_data (G_OBJECT (applet), "HD-applet-id");
+
+      position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", applet_id);
+      position_value = g_slist_prepend (g_slist_prepend (NULL, GINT_TO_POINTER (y)),
+                                        GINT_TO_POINTER (x));
+      gconf_client_set_list (gconf_client, position_key, 
+                             GCONF_VALUE_INT, position_value,
+                             NULL);
+
+      g_object_unref (gconf_client);
+      g_free (position_key);
+      g_slist_free (position_value);
     }
 
   return TRUE;

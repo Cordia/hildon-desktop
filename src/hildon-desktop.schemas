@@ -41,5 +41,16 @@
         <short>Background image for Home view 3</short>
       </locale>
     </schema>
+    <schema>
+      <key>/schemas/apps/osso/hildon-home/task-shortcuts</key>
+      <applyto>/apps/osso/hildon-home/task-shortcuts</applyto>
+      <owner>hildon-desktop</owner>
+      <type>list</type>
+      <listtype>string</listtype>
+      <default></default>
+      <locale name="C">
+        <short>List of Task Shortcut applets (desktop-ids)</short>
+      </locale>
+    </schema>
   </schemalist>
 </gconfschemafile>

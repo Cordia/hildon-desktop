@@ -460,6 +460,10 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
   HdHomePrivate *priv = home->priv;
   HdCompMgr     *hmgr = HD_COMP_MGR (priv->comp_mgr);
   MBWMCompMgrClutterClient *cc;
+  GConfClient   *client = gconf_client_get_default ();
+  gchar         *applet_id;
+  gchar         *view_key;
+
 
   if (!priv->active_applet)
     {
@@ -469,6 +473,13 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
 
   cc = g_object_get_data (G_OBJECT (priv->active_applet),
 			  "HD-MBWMCompMgrClutterClient");
+
+  /* Unset GConf configuration */
+  applet_id = g_object_get_data (G_OBJECT (priv->active_applet),
+                                 "HD-applet-id");
+
+  view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view", applet_id);
+  gconf_client_unset (client, view_key, NULL);
 
   hd_comp_mgr_close_client (hmgr, cc);
 
@@ -1439,16 +1450,78 @@ void
 hd_home_add_applet (HdHome *home, ClutterActor *applet)
 {
   HdHomePrivate *priv = home->priv;
-  gint           view_id;
-  GList         *l;
-  gpointer       client;
+  gint view_id;
+  GList *l;
+  GConfClient *client  = gconf_client_get_default ();
+  gchar *applet_id;
+  gchar *view_key, *position_key;
+  GConfValue *value;
+  GSList *position;
+  MBGeometry geom;
+  MBWMCompMgrClient *cclient;
 
-  view_id =
-    GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet), "HD-view-id"));
+  applet_id = g_object_get_data (G_OBJECT (applet), "HD-applet-id");
 
-  client = l = priv->views;
+  view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view", applet_id);
+  position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", applet_id);
 
-  while (l)
+  value = gconf_client_get_without_default (client,
+                                            view_key,
+                                            NULL);
+
+  if (value && value->type == GCONF_VALUE_INT)
+    view_id = gconf_value_get_int (value);
+  else
+    {
+      view_id = hd_home_get_current_view_id (home);
+
+      gconf_client_set_int (client, view_key, view_id, NULL);
+    }
+
+  if (value)
+    gconf_value_free (value);
+
+  g_object_set_data (G_OBJECT (applet),
+                     "HD-view-id", GINT_TO_POINTER (view_id));
+
+  position = gconf_client_get_list (client,
+                                    position_key,
+                                    GCONF_VALUE_INT,
+                                    NULL);
+
+  if (position && position->next)
+    {
+      geom.x = GPOINTER_TO_INT (position->data);
+      geom.y = GPOINTER_TO_INT (position->next->data);
+
+      g_slist_free (position);
+    }
+  else
+    {
+      clutter_actor_get_position (applet, &geom.x, &geom.y);
+    }
+
+    {
+      guint width, height;
+
+      clutter_actor_get_size (applet, &width, &height);
+
+      geom.width = width;
+      geom.height = height;
+    }
+
+  cclient = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
+
+  mb_wm_client_request_geometry (cclient->wm_client, &geom,
+				 MBWMClientReqGeomIsViaUserAction);
+
+  g_object_unref (client);
+  g_free (view_key);
+  g_free (position_key);
+
+  g_debug ("hd_home_add_applet (), view: %d", view_id);
+
+  for (l = priv->views; l; l = l->next)
     {
       HdHomeView * view = l->data;
       gint         id = hd_home_view_get_view_id (view);
@@ -1485,8 +1558,6 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
 	      g_debug ("Sticky applets require FBO support in GL drivers.");
 	    }
 	}
-
-      l = l->next;
     }
 }
 

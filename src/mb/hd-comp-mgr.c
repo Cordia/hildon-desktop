@@ -640,10 +640,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (ctype == HdWmClientTypeHomeApplet)
     {
       HdHomeApplet * applet  = HD_HOME_APPLET (c);
-      unsigned int   view_id = applet->view_id;
+      char         * applet_id = applet->applet_id;
 
-      g_object_set_data (G_OBJECT (actor),
-			 "HD-view-id", GINT_TO_POINTER (view_id));
+      g_object_set_data_full (G_OBJECT (actor), "HD-applet-id",
+                              g_strdup (applet_id), (GDestroyNotify) g_free);
 
       hd_home_add_applet (HD_HOME (priv->home), actor);
       return;

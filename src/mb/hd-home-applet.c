@@ -69,6 +69,9 @@ hd_home_applet_class_init (MBWMObjectClass *klass)
 static void
 hd_home_applet_destroy (MBWMObject *this)
 {
+  HdHomeApplet *applet = HD_HOME_APPLET (this);
+
+  free (applet->applet_id);
 }
 
 static int
@@ -85,6 +88,31 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
   Atom                   view_id_atom;
   int                    n_items;
   MBWindowManagerClient *desktop = wm->desktop;
+  Atom                   applet_id_atom, utf8_atom;
+  char                  *applet_id;
+
+  /* Get applet id */
+  applet_id_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ID);
+  utf8_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_UTF8_STRING);
+
+  applet_id = hd_util_get_win_prop_data_and_validate (wm->xdpy,
+                                                      win->xwindow,
+                                                      applet_id_atom,
+                                                      utf8_atom,
+                                                      8,
+                                                      0,
+                                                      &n_items);
+
+  if (applet_id)
+    {
+      printf ("#### applet id: %s ###\n", applet_id);
+      applet->applet_id = strdup (applet_id);
+      XFree (applet_id);
+    }
+  else
+    {
+      printf ("#### no applet id! ###\n");
+    }
 
   Atom actions[] = {
     wm->atoms[MBWM_ATOM_NET_WM_ACTION_CLOSE],

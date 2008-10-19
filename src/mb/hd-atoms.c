@@ -30,7 +30,11 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     "_HILDON_CLIENT_MESSAGE_PAN",
     "_HILDON_CLIENT_MESSAGE_SHOW_SETTINGS",
 
+    "_HILDON_APPLET_ID",
+
     "WM_WINDOW_ROLE",
+
+    "UTF8_STRING",
   };
 
   XInternAtoms (xdpy,

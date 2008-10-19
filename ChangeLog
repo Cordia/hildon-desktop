@@ -1,3 +1,23 @@
+2008-10-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view.c (hd_home_view_applet_release): Store new
+	applet position and view in GConf.
+	* src/home/hd-home.c (hd_home_applet_close_button_clicked): Remove
+	stored position and view.
+	  (hd_home_add_applet): Add applet with stored position and stored
+	  view (if available).
+
+	* src/mb/hd-atoms.c (hd_atoms_init):
+	* src/mb/hd-atoms.h: Add _HILDON_APPLET_ID and UTF8_STRING atoms.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Store applet id in
+	cutter actor.
+
+	* src/mb/hd-home-applet.c (hd_home_applet_destroy): Free applet_id.
+	  (hd_home_applet_init): Set applet_id to _HILDON_APPLET_ID window
+	  property.
+	* src/mb/hd-home-applet.h: Add applet_id argument.
+
 2008-10-14  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
   * src/home/hd-layout-dialog.c (hd_layout_dialog_constructed) : Scale the

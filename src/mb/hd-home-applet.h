@@ -41,6 +41,8 @@ struct HdHomeApplet
   MBWMDecorButton  *button_close;
   unsigned int      view_id;
   unsigned int      applet_layer;
+
+  char             *applet_id;
 };
 
 struct HdHomeAppletClass
