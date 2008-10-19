@@ -31,8 +31,6 @@
 #include "hd-util.h"
 #include "hd-background-dialog.h"
 
-#include "hd-add-applet-dialog.h"
-
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 
@@ -40,8 +38,6 @@
 #include <clutter/x11/clutter-x11.h>
 
 #include <matchbox/core/mb-wm.h>
-
-#include <hildon/hildon.h>
 
 #define HDEM_PADDING_EXT 10
 #define HDEM_PADDING_INT 5
@@ -298,11 +294,11 @@ hd_edit_menu_item_release (ClutterActor       *item,
   switch (action)
     {
     case 0:
-        {
-          GtkWidget *widget = hd_add_applet_dialog_new ();
-          gtk_dialog_run (GTK_DIALOG (widget));
-          hd_home_set_mode (priv->home, HD_HOME_MODE_NORMAL);
-        }
+      {
+      GtkWidget *widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+      hd_home_set_mode (priv->home, HD_HOME_MODE_NORMAL);
+      gtk_widget_show (widget);
+      }
       break;
 
     case 3:

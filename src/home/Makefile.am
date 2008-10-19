@@ -22,7 +22,6 @@ home_c = 	hd-home.c		\
 		hd-switcher-group.c	\
 		hd-gtk-style.c		\
 		hd-notification.c	\
-		hd-add-applet-dialog.c	\
 		hd-gtk-utils.c
 
 noinst_LTLIBRARIES = libhome.la
