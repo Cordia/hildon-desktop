@@ -19,6 +19,7 @@ test_launcher_CFLAGS = $(HD_CFLAGS) -I$(top_srcdir)/src/launcher \
 test_launcher_LDADD = \
         $(HD_LIBS) \
         $(top_builddir)/src/tidy/libtidy.la \
+        $(top_builddir)/src/util/libutil.la  \
         $(top_builddir)/src/launcher/liblauncher.la
 
 test_signals_SOURCES = test-signals.c

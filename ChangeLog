@@ -1,3 +1,26 @@
+2008-10-20  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Made the launcher prettier and more similar to the specs.
+	Fixes: NB#88439
+
+	* src/Makefile.am: Moved all the hd-gtk-* utils to src/util.
+	* src/home/Makefile.am:
+	* src/launcher/Makefile.am:
+	* src/launcher/hd-app-launcher.c (hd_app_launcher_get_label): Use gtk theme
+	color and font to create the launcher label.
+	* src/launcher/hd-launcher-item.c
+	(hd_launcher_item_get_preferred_width,
+	hd_launcher_item_get_preferred_height, hd_launcher_item_allocate,
+	hd_launcher_item_paint): Made launcher items fixed sized as per the layout
+	guide.
+	* src/launcher/hd-launcher-utils.c (background,
+	hd_get_application_launcher): Added a background to the main launcher group.
+	Moved the other actors to correct positions.
+	* src/launcher/hd-task-launcher.c (hd_task_launcher_init): Corrected padding
+	and spacing.
+	* src/util/Makefile.am:
+	* tests/Makefile.am:
+
 2008-10-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view.c (hd_home_view_applet_release): Store new

@@ -112,41 +112,11 @@ hd_launcher_item_get_preferred_width (ClutterActor *actor,
                                       ClutterUnit  *min_width_p,
                                       ClutterUnit  *natural_width_p)
 {
-#if 0
-  HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM (actor)->priv;
-  ClutterActor *icon;
-  ClutterUnit item_width = 0;
-
-  icon = hd_launcher_item_get_icon (HD_LAUNCHER_ITEM (actor));
-
-  if (!icon)
-    {
-      if (min_width_p)
-        *min_width_p = 0;
-
-      if (natural_width_p)
-        *natural_width_p = 0;
-
-      return;
-    };
-
-  if (icon)
-    clutter_actor_get_preferred_width (icon, for_height,
-                                       NULL,
-                                       &item_width);
-
-  /* at least we require the label to be visible */
   if (min_width_p)
-    *min_width_p = item_width;
+    *min_width_p = CLUTTER_UNITS_FROM_DEVICE (140);
 
   if (natural_width_p)
-    *natural_width_p = item_width + priv->padding.left + priv->padding.right;
-#endif
-  if (min_width_p)
-    *min_width_p = CLUTTER_UNITS_FROM_DEVICE (100);
-
-  if (natural_width_p)
-    *natural_width_p = CLUTTER_UNITS_FROM_DEVICE (100);
+    *natural_width_p = CLUTTER_UNITS_FROM_DEVICE (140);
 }
 
 static void
@@ -155,50 +125,11 @@ hd_launcher_item_get_preferred_height (ClutterActor *actor,
                                        ClutterUnit  *min_height_p,
                                        ClutterUnit  *natural_height_p)
 {
-  ClutterActor *label;
   ClutterUnit h;
 
-#if 0
-  HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM (actor)->priv;
-  ClutterActor *icon, *label;
-  ClutterUnit icon_height, label_height;
-
-  icon = hd_launcher_item_get_icon (HD_LAUNCHER_ITEM (actor));
-  label = hd_launcher_item_get_label (HD_LAUNCHER_ITEM (actor));
-
-  if (!icon || !label)
-    {
-      if (min_height_p)
-        *min_height_p = 0;
-
-      if (natural_height_p)
-        *natural_height_p = 0;
-
-      return;
-    };
-
-  clutter_actor_get_preferred_height (icon, for_width,
-                                      NULL,
-                                      &icon_height);
-  clutter_actor_get_preferred_height (label, for_width,
-                                      NULL,
-                                      &label_height);
+  h = CLUTTER_UNITS_FROM_DEVICE (140);
 
   if (min_height_p)
-    *min_height_p = icon_height + label_height;
-
-  if (natural_height_p)
-    *natural_height_p = priv->padding.top
-                      + icon_height
-                      + priv->spacing
-                      + label_height
-                      + priv->padding.bottom;
-#endif
-  label = hd_launcher_item_get_label (HD_LAUNCHER_ITEM (actor));
-  h = CLUTTER_UNITS_FROM_DEVICE (100 + clutter_actor_get_height (label) + 5);
-
-  if (min_height_p)
-    /* FIXME */
     *min_height_p = h;
 
   if (natural_height_p)
@@ -213,7 +144,7 @@ hd_launcher_item_allocate (ClutterActor          *actor,
   ClutterActor *icon, *label;
   ClutterActorClass *parent_class;
   ClutterUnit icon_width, icon_height;
-  ClutterUnit label_width, label_height;
+  ClutterUnit label_width;
 
   /* chain up to get the allocation stored */
   parent_class = CLUTTER_ACTOR_CLASS (hd_launcher_item_parent_class);
@@ -229,27 +160,39 @@ hd_launcher_item_allocate (ClutterActor          *actor,
   icon_height = icon_width = CLUTTER_UNITS_FROM_DEVICE (64);
 
   {
-    ClutterActorBox icon_box = { 0, };
+    ClutterActorBox icon_box;
 
-    icon_box.x1 = icon_box.y1 = CLUTTER_UNITS_FROM_DEVICE ((100 - 64) / 2);
-    icon_box.x2 = icon_box.y2 = CLUTTER_UNITS_FROM_DEVICE (100 - (100 - 64) / 2);
+    icon_box.x1 = CLUTTER_UNITS_FROM_DEVICE (((100 - 64) / 2) + 20);
+    icon_box.y1 = CLUTTER_UNITS_FROM_DEVICE ((100 - 64) / 2);
+    icon_box.x2 = CLUTTER_UNITS_FROM_DEVICE (((100 - 64) / 2) + 20 + 64);
+    icon_box.y2 = CLUTTER_UNITS_FROM_DEVICE (((100 - 64) / 2) + 64);
 
     clutter_actor_allocate (icon, &icon_box, origin_changed);
   }
 
   {
-    ClutterActorBox label_box = { 0, };
-
-    clutter_actor_get_preferred_height (label, label_width,
-                                        NULL,
-                                        &label_height);
-
-    label_box.x1 = 0;
+    ClutterActorBox label_box;
+    ClutterUnit label_width;
+    guint label_width_px;
+    
+    clutter_actor_get_preferred_width (label,
+      CLUTTER_UNITS_FROM_DEVICE(40), NULL, &label_width);
+    label_width_px = MIN (CLUTTER_UNITS_TO_DEVICE(label_width), 140);
+    
+    label_box.x1 = CLUTTER_UNITS_FROM_DEVICE ((140 - label_width_px) / 2);
     label_box.y1 = CLUTTER_UNITS_FROM_DEVICE (100);
-    label_box.x2 = label_width;
-    label_box.y2 = label_box.y1 + label_height;
+    label_box.x2 = CLUTTER_UNITS_FROM_DEVICE (((140 - label_width_px) / 2) + label_width_px);
+    label_box.y2 = CLUTTER_UNITS_FROM_DEVICE (140);
 
     clutter_actor_allocate (label, &label_box, origin_changed);
+  }
+  
+  HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM (actor)->priv;
+  if (priv->bg_tile)
+  {
+    ClutterActorBox tile_box = { CLUTTER_UNITS_FROM_DEVICE (20), 0,
+      CLUTTER_UNITS_FROM_DEVICE (120), CLUTTER_UNITS_FROM_DEVICE (100) };
+    clutter_actor_allocate (priv->bg_tile, &tile_box, origin_changed);
   }
 }
 
@@ -258,11 +201,11 @@ hd_launcher_item_paint (ClutterActor *actor)
 {
   HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM (actor)->priv;
 
-  if (priv->icon && CLUTTER_ACTOR_IS_VISIBLE (priv->icon))
-    clutter_actor_paint (priv->icon);
-
   if (priv->bg_tile && CLUTTER_ACTOR_IS_VISIBLE (priv->bg_tile))
     clutter_actor_paint (priv->bg_tile);
+
+  if (priv->icon && CLUTTER_ACTOR_IS_VISIBLE (priv->icon))
+    clutter_actor_paint (priv->icon);
 
   if (priv->label && CLUTTER_ACTOR_IS_VISIBLE (priv->label))
     clutter_actor_paint (priv->label);

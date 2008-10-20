@@ -9,9 +9,7 @@ home_h = 	hd-home.h		\
 		hd-layout-dialog.h	\
 		hd-switcher.h		\
 		hd-switcher-group.h	\
-		hd-gtk-style.h		\
-		hd-notification.h	\
-		hd-gtk-utils.h
+		hd-notification.h
 
 home_c = 	hd-home.c		\
 		hd-home-view.c		\
@@ -20,14 +18,14 @@ home_c = 	hd-home.c		\
 		hd-edit-menu.c		\
 		hd-switcher.c		\
 		hd-switcher-group.c	\
-		hd-gtk-style.c		\
-		hd-notification.c	\
-		hd-gtk-utils.c
+		hd-notification.c
 
 noinst_LTLIBRARIES = libhome.la
 
 libhome_la_SOURCES = $(home_h) $(home_c)
 libhome_la_CFLAGS =  @HD_CFLAGS@ -DHD_DATADIR=\"$(datadir)/hildon-desktop\"
-libhome_la_LIBADD = @HD_LIBS@ $(top_builddir)/src/launcher/liblauncher.la
+libhome_la_LIBADD = @HD_LIBS@ \
+                    $(top_builddir)/src/launcher/liblauncher.la \
+                    $(top_builddir)/src/util/libutil.la
 
 CLEANFILES = *~

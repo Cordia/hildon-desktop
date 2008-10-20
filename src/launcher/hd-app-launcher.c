@@ -1,5 +1,6 @@
 #include "hildon-desktop.h"
 #include "hd-app-launcher.h"
+#include "hd-gtk-style.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -56,8 +57,6 @@ struct _HdAppLauncherPrivate
 
 G_DEFINE_TYPE (HdAppLauncher, hd_app_launcher, HD_TYPE_LAUNCHER_ITEM);
 
-static const ClutterColor text_color = { 100, 100, 100, 224 };
-
 static ClutterActor *
 hd_app_launcher_get_icon (HdLauncherItem *item)
 {
@@ -94,14 +93,19 @@ hd_app_launcher_get_label (HdLauncherItem *item)
 {
   HdAppLauncherPrivate *priv = HD_APP_LAUNCHER (item)->priv;
   ClutterActor *retval;
+  ClutterColor text_color;
+  gchar *font_string;
 
-  retval = clutter_label_new ();
-  clutter_actor_set_width (CLUTTER_ACTOR (retval), 140);
-  clutter_label_set_color (CLUTTER_LABEL (retval), &text_color);
-  clutter_label_set_text (CLUTTER_LABEL (retval), _(priv->name));
+  hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
+			       GTK_STATE_NORMAL,
+			       &text_color);
+  font_string = hd_gtk_style_get_font_string (HD_GTK_BUTTON_SINGLETON);
+  retval = clutter_label_new_full (font_string, _(priv->name), &text_color);
   clutter_label_set_line_wrap (CLUTTER_LABEL (retval), FALSE);
+  clutter_label_set_ellipsize (CLUTTER_LABEL (retval), PANGO_ELLIPSIZE_END);
   clutter_label_set_alignment (CLUTTER_LABEL (retval), PANGO_ALIGN_CENTER);
 
+  g_free (font_string);
   return retval;
 }
 

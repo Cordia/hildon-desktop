@@ -1,11 +1,11 @@
-SUBDIRS = mb tidy launcher home util
+SUBDIRS = mb tidy util launcher home
 
 INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
 MY_LIBS =	$(top_builddir)/src/mb/libmb.a			\
 		$(top_builddir)/src/launcher/liblauncher.la 	\
 		$(top_builddir)/src/home/libhome.la		\
-		$(top_builddir)/src/util/libutil.a
+		$(top_builddir)/src/util/libutil.la
 
 bin_PROGRAMS = hildon-desktop
 
