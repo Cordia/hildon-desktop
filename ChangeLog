@@ -1,3 +1,31 @@
+2008-10-30  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Implement Add Applet dialog. Fixes NB#88341.
+
+	* configure.ac: Require hildon-1 and libhildondesktop-1.
+
+	* debian/control: Require libhildon1-dev and libhildondesktop1-dev.
+
+	* src/home/Makefile.am: Add new files to sources.
+
+	* src/home/hd-add-applet-dialog.c:
+	* src/home/hd-add-applet-dialog.h: Implement the "Add Applet" dialog.
+
+	* src/home/hd-applet-manager.c:
+	* src/home/hd-applet-manager.h: Implement an applet manager used by
+	the "Add Applet" dialog.
+
+	* src/home/hd-edit-menu.c (hd_edit_menu_item_release): Add support
+	for the "Add Applet" dialog.
+
+	* src/home/hd-home.c (hd_home_applet_close_button_clicked): Remove
+	applets if they are closed.
+
+	* src/launcher/hd-app-launcher.c (hd_app_launcher_load_from_keyfile):
+	Do not try to strchomp NULL strings.
+
+	* src/main.c (main): Initialize GnomeVFS.
+
 2008-10-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Improved switcher/launcher button managing logic.

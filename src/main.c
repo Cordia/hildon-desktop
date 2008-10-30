@@ -33,6 +33,7 @@
 #include <clutter/clutter-stage.h>
 #include <clutter/x11/clutter-x11.h>
 #include <clutter/clutter-container.h>
+#include <libgnomevfs/gnome-vfs.h>
 
 #include "hildon-desktop.h"
 #include "hd-wm.h"
@@ -136,6 +137,8 @@ main (int argc, char **argv)
   textdomain (GETTEXT_PACKAGE);
 
   g_thread_init (NULL);
+
+  gnome_vfs_init ();
 
   mb_wm_object_init();
 

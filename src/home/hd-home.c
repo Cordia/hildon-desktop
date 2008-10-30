@@ -33,6 +33,7 @@
 #include "hd-layout-dialog.h"
 #include "hd-gtk-style.h"
 #include "hd-gtk-utils.h"
+#include "hd-applet-manager.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -482,6 +483,9 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
   gconf_client_unset (client, view_key, NULL);
 
   hd_comp_mgr_close_client (hmgr, cc);
+
+  hd_applet_manager_remove_applet (hd_applet_manager_get (),
+                                   applet_id);
 
   return TRUE;
 }

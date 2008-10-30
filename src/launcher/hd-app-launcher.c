@@ -308,13 +308,15 @@ hd_app_launcher_load_from_keyfile (HdAppLauncher  *launcher,
                                          HD_DESKTOP_ENTRY_GROUP,
                                          HD_DESKTOP_ENTRY_SERVICE,
                                          NULL);
-  g_strchomp (priv->service);
+  if (priv->service)
+    g_strchomp (priv->service);
 
   priv->exec = g_key_file_get_string (key_file,
                                       HD_DESKTOP_ENTRY_GROUP,
                                       HD_DESKTOP_ENTRY_EXEC,
                                       NULL);
-  g_strchomp (priv->exec);
+  if (priv->exec)
+    g_strchomp (priv->exec);
 
   priv->text_domain = g_key_file_get_string (key_file,
                                              HD_DESKTOP_ENTRY_GROUP,

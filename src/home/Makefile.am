@@ -9,6 +9,8 @@ home_h = 	hd-home.h		\
 		hd-layout-dialog.h	\
 		hd-switcher.h		\
 		hd-switcher-group.h	\
+		hd-applet-manager.h	\
+		hd-add-applet-dialog.h	\
 		hd-notification.h
 
 home_c = 	hd-home.c		\
@@ -18,6 +20,8 @@ home_c = 	hd-home.c		\
 		hd-edit-menu.c		\
 		hd-switcher.c		\
 		hd-switcher-group.c	\
+		hd-applet-manager.c	\
+		hd-add-applet-dialog.c	\
 		hd-notification.c
 
 noinst_LTLIBRARIES = libhome.la

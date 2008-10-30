@@ -31,6 +31,8 @@
 #include "hd-util.h"
 #include "hd-background-dialog.h"
 
+#include "hd-add-applet-dialog.h"
+
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 
@@ -294,11 +296,19 @@ hd_edit_menu_item_release (ClutterActor       *item,
   switch (action)
     {
     case 0:
-      {
-      GtkWidget *widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-      hd_home_set_mode (priv->home, HD_HOME_MODE_NORMAL);
-      gtk_widget_show (widget);
-      }
+        {
+          /* Ungrab pointer */
+          hd_home_ungrab_pointer (priv->home);
+
+          /* Show dialog */
+          GtkWidget *dialog = hd_add_applet_dialog_new ();
+          gtk_dialog_run (GTK_DIALOG (dialog));
+          /* FIXME use destroy if NB#89541 is fixed */
+          gtk_widget_hide (dialog);
+
+          /* Grab pointer again */
+          hd_home_grab_pointer (priv->home);
+        }
       break;
 
     case 3:
