@@ -460,7 +460,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
       hd_comp_mgr_top_home (HD_COMP_MGR (priv->comp_mgr));
 
       /* don't show buttons when launcher is visible */
-      hd_switcher_hide_buttons (switcher);
+      hd_switcher_setup_buttons (switcher, FALSE);
 
       clutter_actor_show (priv->launcher_group);
       priv->showing_launcher = TRUE;
@@ -484,9 +484,9 @@ hd_switcher_clicked (HdSwitcher *switcher)
       clutter_actor_show_all (priv->switcher_group);
 
       /*
-       * Setup buttons in launcher mode
+       * Setup buttons in switcher mode
        */
-      hd_switcher_setup_buttons (switcher, FALSE);
+      hd_switcher_setup_buttons (switcher, TRUE);
     }
 
   return TRUE;
@@ -702,28 +702,48 @@ hd_switcher_setup_buttons (HdSwitcher * switcher, gboolean switcher_mode)
    */
   have_children = hd_switcher_group_have_children (group);
 
-  if (switcher_mode && !priv->switcher_mode && have_children)
-    {
-      clutter_actor_show (priv->button_switcher);
-      clutter_actor_hide (priv->button_launcher);
+  g_debug("%s: switcher_mode=%d priv->switcher_mode=%d ss=%d sl=%d\n", __FUNCTION__,
+          switcher_mode, priv->switcher_mode,
+          priv->showing_switcher, priv->showing_launcher);
 
-      priv->switcher_mode = TRUE;
-    }
-  else if (priv->switcher_mode && (!switcher_mode || !have_children))
-    {
-      clutter_actor_hide (priv->button_switcher);
-      clutter_actor_show (priv->button_launcher);
+  if (!switcher_mode)
+  {
+    g_debug("%s hiding both buttons\n", __FUNCTION__);
 
-      priv->switcher_mode = FALSE;
-    }
-  else if (!priv->switcher_mode && switcher_mode && !have_children)
-    {
-      /* used after hiding launcher and there is no children */
-      clutter_actor_hide (priv->button_switcher);
-      clutter_actor_show (priv->button_launcher);
+    // Hide both buttons when showing launcher
+    clutter_actor_hide (priv->button_switcher);
+    clutter_actor_hide (priv->button_launcher);
+    
+    priv->switcher_mode = FALSE;
+  }
+  else if (!have_children)
+  {
+    g_debug("%s show launcher button because no children\n", __FUNCTION__);
 
-      priv->switcher_mode = FALSE;
-    }
+    // Can't show switcher button if no children
+    clutter_actor_hide (priv->button_switcher);
+    clutter_actor_show (priv->button_launcher);
+
+    priv->switcher_mode = FALSE;
+  }
+  else if (priv->showing_switcher)
+  {
+    g_debug("%s show launcher button when in switcher\n", __FUNCTION__);
+
+    // Show launcher button
+    clutter_actor_hide (priv->button_switcher);
+    clutter_actor_show (priv->button_launcher);
+    
+    priv->switcher_mode = FALSE;
+  } else {
+    g_debug("%s show switcher button\n", __FUNCTION__);
+
+    // Show switcher button
+    clutter_actor_hide (priv->button_launcher);
+    clutter_actor_show (priv->button_switcher);
+    
+    priv->switcher_mode = TRUE;
+  }    
 }
 
 gboolean

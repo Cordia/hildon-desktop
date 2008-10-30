@@ -1,3 +1,13 @@
+2008-10-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Improved switcher/launcher button managing logic.
+	Fixes: NB#88359
+
+	* src/home/hd-switcher.c (hd_switcher_clicked,
+	  hd_switcher_setup_buttons): Changed logic so it hides both buttons when
+	  the launcher is shown. Now it also shows the launcher button when in
+	  switcher mode.
+
 2008-10-20  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Made the launcher prettier and more similar to the specs.
