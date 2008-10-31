@@ -16,6 +16,7 @@ Description: Hildon desktop for Fremantle
 Package: hildon-desktop-dbg
 Section: devel
 Architecture: any
-Depends: hildon-desktop (= ${Source-Version})
+Priority: extra
+Depends: hildon-desktop (= ${binary:Version})
 Description: Debug symbols for Hildon desktop
  Debug symbols for Hildon desktop.

@@ -16,9 +16,7 @@ case "$1" in
       echo "Updating icon cache."
       gtk-update-icon-cache -f -t /usr/share/icons/hicolor
 
-      HOME=/root GCONF_CONFIG_SOURCE=xml::/etc/gconf/gconf.xml.defaults \
-        gconftool-2 --makefile-install-rule \
-          /etc/gconf/schemas/hildon-desktop.schemas
+      gconf-schemas --register hildon-desktop.schemas
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
