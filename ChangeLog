@@ -1,3 +1,9 @@
+2008-10-31  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Release 2.2.4.
+
+	* debian/control: Update requirements.
+
 2008-10-30  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Implement Add Applet dialog. Fixes NB#88341.

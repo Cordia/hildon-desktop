@@ -1,3 +1,17 @@
+hildon-desktop (1:2.2.4-1) unstable; urgency=low
+
+  * Implement Add Applet dialog. Fixes NB#88341
+  * Improved switcher/launcher button managing logic. Fixes: NB#88359
+  * Made the launcher prettier and more similar to the specs. Fixes: NB#88439
+  * Implement storage of Applet positon. Fixes NB#89599
+  * Scale the thumbnail view instead of setting its size when using fbos.
+    Fixes: NB#88355
+  * Corrected edit menu strings. Fixes: NB#88317
+  * Added a child setup funcion called by g_spawn_async that sets up the
+    correct priority and OOM unprotection. Fixes: NB#87443
+
+ -- Jan Arne Petersen <jpetersen@openismus.com>  Fri, 31 Oct 2008 12:44:38 +0100
+
 hildon-desktop (1:2.2.3-1) unstable; urgency=low
 
   * Enable closing of system-modal dialogs, when tapping outside of them.
