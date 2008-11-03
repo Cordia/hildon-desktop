@@ -1,5 +1,13 @@
 2008-11-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/mb/hd-desktop.c (get_current_theme): Add function to get current
+	  theme.
+	  (hd_desktop_theme_change): On theme change update gconf background
+	  image keys according to the backgrounds/*.desktop file of the new
+	  theme.
+
+2008-11-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-applet-manager.c (items_configuration_loaded_cb): Add
 	  internationalization support.
 

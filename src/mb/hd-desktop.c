@@ -26,6 +26,17 @@
 #include "hd-home-applet.h"
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
+#include <gconf/gconf-client.h>
+
+#include <stdio.h>
+
+#define THEME_RC_FILE ".osso/current-gtk-theme"
+#define THEME_DIR "/usr/share/themes/"
+#define BACKGROUNDS_DESKTOP_FILE "/usr/share/backgrounds/%s.desktop"
+#define BACKGROUNDS_DESKTOP_KEY_FILE "X-File%d"
+#define BACKGROUND_GCONF_KEY "/apps/hildon_home/view_%d/bg_image"
+#define MAX_BACKGROUNDS 4
+
 static void
 hd_desktop_realize (MBWindowManagerClient *client);
 
@@ -148,9 +159,124 @@ hd_desktop_stacking_layer (MBWindowManagerClient *client)
   return MBWMStackLayerBottom;
 }
 
+static gchar *
+get_current_theme (void)
+{
+  gchar *theme_rc_filename;
+  gchar *theme_rc_contents = NULL;
+  gchar *theme = NULL;
+
+  theme_rc_filename = g_build_filename (g_get_home_dir (),
+                                        THEME_RC_FILE,
+                                        NULL);
+
+  if (g_file_get_contents (theme_rc_filename,
+                           &theme_rc_contents,
+                           NULL,
+                           NULL))
+    {
+      gchar *sep;
+
+      theme = strstr (theme_rc_contents, THEME_DIR);
+      if (!theme)
+        goto cleanup;
+
+      theme += strlen (THEME_DIR);
+
+      sep = strstr (theme, "/");
+      if (sep)
+        {
+          *sep = 0;
+          theme = g_strdup (theme);
+        }
+      else
+        {
+          g_free (theme);
+          theme = NULL;
+          goto cleanup;
+        }
+    }
+
+cleanup:
+  g_free (theme_rc_contents);
+  g_free (theme_rc_filename);
+
+  return theme;
+}
+
 static void
 hd_desktop_theme_change (MBWindowManagerClient *client)
 {
+  gchar *theme, *backgrounds_file_name = NULL;
+  GKeyFile *backgrounds = NULL;
+  GError *error = NULL;
+  GConfClient *gconf_client = NULL;
+  guint i;
+
+  theme = get_current_theme ();
+  if (!theme)
+    goto cleanup;
+
+  backgrounds_file_name = g_strdup_printf (BACKGROUNDS_DESKTOP_FILE, theme);
+
+  backgrounds = g_key_file_new ();
+  if (!g_key_file_load_from_file (backgrounds,
+                                  backgrounds_file_name,
+                                  G_KEY_FILE_NONE,
+                                  &error))
+    {
+      g_warning ("Could not load default background definition desktop files. %s",
+                 error->message);
+      g_error_free (error);
+      goto cleanup;
+    }
+
+  gconf_client = gconf_client_get_default ();
+
+  for (i = 0; i < MAX_BACKGROUNDS; i++)
+    {
+      gchar *desktop_key;
+      gchar *background_image;
+
+      /* The backgrounds are numbered from 1 to 4 in backgrounds/[theme].desktop */
+      desktop_key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE,
+                                     i + 1);
+
+      background_image = g_key_file_get_string (backgrounds,
+                                                G_KEY_FILE_DESKTOP_GROUP,
+                                                desktop_key,
+                                                NULL);
+
+      if (background_image)
+        {
+          gchar *gconf_key;
+
+          gconf_key = g_strdup_printf (BACKGROUND_GCONF_KEY, i);
+
+          if (!gconf_client_set_string (gconf_client,
+                                        gconf_key,
+                                        background_image,
+                                        &error))
+            {
+              g_warning ("Could not set background image in GConf. %s", error->message);
+              g_error_free (error);
+              error = NULL;
+            }
+
+          g_free (gconf_key);
+        }
+
+      g_free (desktop_key);
+      g_free (background_image);
+    }
+
+cleanup:
+  g_free (theme);
+  g_free (backgrounds_file_name);
+  if (backgrounds)
+    g_key_file_free (backgrounds);
+  if (gconf_client)
+    g_object_unref (gconf_client);
 }
 
 static void
