@@ -1,3 +1,8 @@
+2008-11-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-applet-manager.c (items_configuration_loaded_cb): Add
+	  internationalization support.
+
 2008-10-31  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/control:

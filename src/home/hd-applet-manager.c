@@ -25,6 +25,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include <glib/gi18n.h>
 
 #include <string.h>
 
@@ -34,6 +35,11 @@
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_APPLET_MANAGER, HDAppletManagerPrivate))
 
 #define HD_PLUGIN_MANAGER_CONFIG_GROUP "X-PluginManager"
+
+#define ITEMS_KEY_DESKTOP_FILE "X-Desktop-File"
+
+#define DESKTOP_KEY_TEXT_DOMAIN "X-Text-Domain"
+#define DESKTOP_KEY_MULTIPLE "X-Multiple"
 
 struct _HDAppletManagerPrivate 
 {
@@ -88,7 +94,7 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
 
       desktop_file = g_key_file_get_string (key_file,
                                             groups[i],
-                                            "X-Desktop-File",
+                                            ITEMS_KEY_DESKTOP_FILE,
                                             NULL);
       if (desktop_file != NULL)
         g_hash_table_insert (priv->displayed_applets,
@@ -104,6 +110,7 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
           GKeyFile *key_file = g_key_file_new ();
           GError *error = NULL;
           HDPluginInfo *info;
+          gchar *text_domain, *name;
 
           g_key_file_load_from_file (key_file, plugins[i],
                                      G_KEY_FILE_NONE, &error);
@@ -116,18 +123,41 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
               continue;
             }
 
+          text_domain = g_key_file_get_string (key_file,
+                                               G_KEY_FILE_DESKTOP_GROUP,
+                                               DESKTOP_KEY_TEXT_DOMAIN,
+                                               NULL);
+
+          name = g_key_file_get_string (key_file,
+                                        G_KEY_FILE_DESKTOP_GROUP,
+                                        G_KEY_FILE_DESKTOP_KEY_NAME,
+                                        NULL);
+
+          if (!name)
+            {
+              g_warning ("Could not read plugin .desktop file %s. %s",
+                         plugins[i],
+                         error->message);
+              g_error_free (error);
+              g_key_file_free (key_file);
+              g_free (text_domain);
+              continue;
+            }
+
           info = g_slice_new (HDPluginInfo);
 
-          /* FIXME: i18n */
-          info->name = g_key_file_get_string (key_file,
-                                              G_KEY_FILE_DESKTOP_GROUP,
-                                              G_KEY_FILE_DESKTOP_KEY_NAME,
-                                              NULL);
+          /* Translate name with given or default text domain */
+          if (text_domain)
+            info->name = dgettext (text_domain, name);
+          else
+            info->name = gettext (name);
 
-          /* FIXME: key */
+          g_free (text_domain);
+          g_free (name);
+
           info->multiple = g_key_file_get_boolean (key_file,
                                                    G_KEY_FILE_DESKTOP_GROUP,
-                                                   "Multiple",
+                                                   DESKTOP_KEY_MULTIPLE,
                                                    NULL);
 
           g_hash_table_insert (priv->installed, plugins[i],
