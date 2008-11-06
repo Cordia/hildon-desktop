@@ -1,3 +1,14 @@
+2008-11-06  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	At least one home view should be active at all times.
+
+	* src/home/hd-home.c (hd_home_activate_view, hd_home_deactivate_view): Moved
+	controlling the number of active views to the layout dialog.
+	* src/home/hd-layout-dialog.c (hd_layout_thumb_number_key,
+	  active_views, hd_layout_dialog_thumb_clicked,
+	  hd_layout_dialog_fixup_highlighters, hd_layout_dialog_constructed): Control
+	the total number of active views so that at least one is active at all times.
+
 2008-11-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/mb/hd-desktop.c (get_current_theme): Add function to get current

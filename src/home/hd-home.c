@@ -1912,6 +1912,7 @@ hd_home_get_active_views (HdHome *home)
 static void
 hd_home_activate_view (HdHome * home, guint id)
 {
+  g_debug ("%s: Activating view %d\n", __FUNCTION__, id);
   HdHomePrivate *priv = home->priv;
   ClutterActor  *view;
   GList         *l;
@@ -1954,12 +1955,10 @@ hd_home_activate_view (HdHome * home, guint id)
 static void
 hd_home_deactivate_view (HdHome * home, guint id)
 {
+  g_debug ("%s: Deactivating view %d\n", __FUNCTION__, id);
   HdHomePrivate *priv = home->priv;
   ClutterActor  *view;
   GList         *l;
-
-  if (priv->n_views < 2)
-    return;
 
   view = g_list_nth_data (priv->all_views, id);
 

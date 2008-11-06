@@ -62,6 +62,8 @@ enum
 
 static guint signals[N_SIGNALS];
 
+static const gchar *hd_layout_thumb_number_key = "hd_layout_thumb_number_key";
+
 struct _HdLayoutDialogPrivate
 {
   MBWMCompMgrClutter   *comp_mgr;
@@ -69,6 +71,7 @@ struct _HdLayoutDialogPrivate
 
   ClutterActor         *background;
 
+  guint                active_views;
   GList                *highlighters;
 };
 
@@ -158,13 +161,26 @@ hd_layout_dialog_ok_clicked (ClutterActor       *button,
 static gboolean
 hd_layout_dialog_thumb_clicked (ClutterActor       *thumb,
 				ClutterButtonEvent *event,
-				ClutterActor       *highlighter)
+				HdLayoutDialog     *dialog)
 
 {
-  if (CLUTTER_ACTOR_IS_VISIBLE (highlighter))
-    clutter_actor_hide (highlighter);
-  else
+  HdLayoutDialogPrivate *priv = dialog->priv;
+  GList                 *l = priv->highlighters;
+
+  guint i = (guint)g_object_get_data (G_OBJECT(thumb),
+                    hd_layout_thumb_number_key);
+
+  ClutterActor *highlighter = g_list_nth_data (l, i);
+  if (!CLUTTER_ACTOR_IS_VISIBLE (highlighter))
+  {
     clutter_actor_show (highlighter);
+    priv->active_views++;
+  }
+  else if (priv->active_views > 1)
+  {
+    clutter_actor_hide (highlighter);
+    priv->active_views--;
+  }
 
   return TRUE;
 }
@@ -184,6 +200,7 @@ hd_layout_dialog_fixup_highlighters (HdLayoutDialog *dialog)
     }
 
   l = hd_home_get_active_views (priv->home);
+  priv->active_views = 0;
   while (l)
     {
       HdHomeView   *view = l->data;
@@ -194,6 +211,7 @@ hd_layout_dialog_fixup_highlighters (HdLayoutDialog *dialog)
       h = g_list_nth_data (priv->highlighters, id);
       clutter_actor_show (h);
 
+      priv->active_views++;
       l = l->next;
     }
 }
@@ -364,9 +382,11 @@ hd_layout_dialog_constructed (GObject *object)
 	      HDLD_PADDING/2, HDLD_PADDING/2);
     clutter_actor_set_reactive (thumb_content, TRUE);
 
+    g_object_set_data (G_OBJECT(thumb_content),
+      hd_layout_thumb_number_key, (gpointer)i);
     g_signal_connect (thumb_content, "button-release-event",
-    G_CALLBACK (hd_layout_dialog_thumb_clicked),
-    thumb_background);
+      G_CALLBACK (hd_layout_dialog_thumb_clicked),
+      object);
 
     clutter_container_add_actor (CLUTTER_CONTAINER (thumb),
 	       thumb_content);
