@@ -7,6 +7,18 @@
   Window property _HILDON_WM_WINDOW_PROGRESS_INDICATOR (int), values 0 (off)
   and 1 (on). Other values can be used in future if needed.
 - Implement notifications in Task Switcher.
+  - Grab the keyboard focus in task switcher view.
+  - Don't show inforbanners in task switcher view.
+  - Make the operator logo disappear in task switcher view.
+  - Show incoming event notification previews.
+
+  - Show the last frame of the playing videos in the thumbnails.
+  - Show open dialogs (if any) in the thumbnails.
+  - Support applications with window stacks.
+
+  - Blink the task switcher button when a notification arrives.
+  - Blink the task switcher button when it is tapped.
+  - TV-turned-off animation when closing an application in switcher view.
 - Implement portrait mode.
 - Implement support for speech bubbles in Contacts applets.
 - Add more error checks to matchbox code (e.g. check every CreateWindow)

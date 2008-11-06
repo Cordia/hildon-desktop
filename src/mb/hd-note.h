@@ -24,6 +24,12 @@
 #ifndef _HAVE_HD_NOTE_H
 #define _HAVE_HD_NOTE_H
 
+/* We need to make sure %_GNU_SOURCE is not defined because mb-wm.h tries
+ * to define it unconditionally.  By including features.h we can have its
+ * effects if it indeed was defined. */
+#include <features.h>
+#undef _GNU_SOURCE
+
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/client-types/mb-wm-client-note.h>
 
@@ -40,13 +46,24 @@ typedef enum _HdNoteType
   HdNoteTypeBanner        = 0,
   HdNoteTypeInfo,
   HdNoteTypeConfirmation,
+  HdNoteTypeIncomingEventPreview,
+  HdNoteTypeIncomingEvent,
 }HdNoteType;
+
+enum
+{
+  HdNoteSignalChanged = 1,
+};
 
 struct HdNote
 {
   MBWMClientNote  parent;
 
   HdNoteType      note_type;
+
+  /* mb_wm_main_context_x_event_handler_add() ID,
+   * only relevant for HdNoteTypeIncomingEvent:s. */
+  unsigned long   property_changed_cb_id;
 };
 
 struct HdNoteClass
@@ -55,6 +72,9 @@ struct HdNoteClass
 };
 
 MBWindowManagerClient* hd_note_new (MBWindowManager *wm, MBWMClientWindow *win);
+char *hd_note_get_destination (HdNote *self);
+char *hd_note_get_summary (HdNote *self);
+char *hd_note_get_icon (HdNote *self);
 
 int hd_note_class_type (void);
 

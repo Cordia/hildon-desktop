@@ -1,3 +1,38 @@
+2008-11-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+ Enhancements in the task switcher view.
+
+ * src/home/Makefile.am
+ * src/home/hd-switcher-group.h
+ * src/home/hd-switcher-group.c:
+   Gone, replaced by src/home/hd-task-navigator.c.
+ * src/home/hd-scrollable-group.h
+ * src/home/hd-scrollable-group.c:
+   Generic scrollable clutter container used by hd-task-navigator.c.
+ * src/home/hd-task-navigator.h
+ * src/home/hd-task-navigator.c:
+   Adds correct thumbnail dimenstions, decorations, effects and arrangements,
+   shows incoming event notifications, blurs the background in switcher view
+   and is scrollable.
+ * src/home/hd-switcher.h
+ * src/home/hd-switcher.c:
+   Updated for hd-task-navigator.c, now HdSwitcher is more like a control point.
+   Handles the closing of notification windows.
+ * src/mb/hd-comp-mgr.c:
+   Add/remove notifications when the window is mapped/unregistered.
+ * src/mb/hd-note.h
+ * src/mb/hd-note.c:
+   Fixed the handling of infobanners, extended to cover incoming events.
+   Also fixed a bug in the class construction code.
+ * src/mb/hd-atoms.h
+ * src/mb/hd-atoms.c:
+   New X window properties for hildon-home/HDIncomingEventWindow:s:
+     _HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION
+     _HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY
+     _HILDON_INCOMING_EVENT_NOTIFICATION_ICON
+ * TODO:
+   Added TODOs for the task switcher and about incoming event notifications.
+
 2008-11-06  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	At least one home view should be active at all times.

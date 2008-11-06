@@ -30,6 +30,8 @@
 
 #include <clutter/clutter-group.h>
 
+#include "mb/hd-note.h"
+
 G_BEGIN_DECLS
 
 #define HD_TYPE_SWITCHER            (hd_switcher_get_type ())
@@ -61,6 +63,7 @@ void hd_switcher_add_window_actor    (HdSwitcher   * switcher,
 				      ClutterActor * actor);
 void hd_switcher_add_status_area (HdSwitcher *switcher, ClutterActor *sa);
 void hd_switcher_add_status_menu (HdSwitcher *switcher, ClutterActor *sa);
+void hd_switcher_add_notification (HdSwitcher *switcher, HdNote *note);
 
 void hd_switcher_remove_window_actor (HdSwitcher   * switcher,
 				      ClutterActor * actor);
@@ -68,11 +71,12 @@ void hd_switcher_remove_status_area (HdSwitcher   * switcher,
 				     ClutterActor * sa);
 void hd_switcher_remove_status_menu (HdSwitcher   * switcher,
 				     ClutterActor * sa);
+void hd_switcher_remove_notification (HdSwitcher * switcher,
+                                      HdNote *note);
 
 void hd_switcher_replace_window_actor (HdSwitcher   * switcher,
 				       ClutterActor * old,
 				       ClutterActor * new);
-
 void
 hd_switcher_hibernate_window_actor (HdSwitcher   * switcher,
 				    ClutterActor * actor);

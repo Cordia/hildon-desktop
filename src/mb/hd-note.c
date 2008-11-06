@@ -27,9 +27,64 @@
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 
+/* libmatchbox defines %LIKELY() wrong, work it around
+ * for mbwm_return_val_if_fail(). */
+#undef LIKELY
+#define LIKELY(expr) (__builtin_expect(!!(expr), 1))
+
+#undef  G_LOG_DOMAIN
+#define G_LOG_DOMAIN "hd-note"
+
 static Bool hd_note_request_geometry (MBWindowManagerClient *client,
 				      MBGeometry            *new_geometry,
 				      MBWMClientReqGeomType  flags);
+static void hd_note_stack            (MBWindowManagerClient *client,
+                                      int flags);
+
+/* Returns the value of a #MBWMCompMgr string property of @self or %NULL
+ * if the client doesn't have such property or it can't be retrieved.
+ * If the return value is not %NULL it must be XFree()d by the caller. */
+static char *
+get_x_window_string_property (HdNote *self, HdAtoms atom_id)
+{
+  Atom type;
+  int format, ret;
+  MBWindowManager *wm;
+  unsigned char *value;
+  unsigned long items, left;
+
+  /* The return @type is %None if the property is missing. */
+  wm = MB_WM_CLIENT (self)->wmref;
+  ret = XGetWindowProperty (wm->xdpy, MB_WM_CLIENT (self)->window->xwindow,
+                            hd_comp_mgr_get_atom (HD_COMP_MGR (wm->comp_mgr),
+                                                  atom_id),
+                            0, 999, False, XA_STRING, &type, &format,
+                            &items, &left, &value);
+  if (ret != Success)
+    g_warning ("%s: XGetWindowProperty(0x%lx, 0x%x): failed (%d)",
+               __FUNCTION__, MB_WM_CLIENT (self)->window->xwindow,
+               atom_id, ret);
+  return ret != Success || type == None ? NULL : (char *)value;
+}
+
+/* Called when a %HdIncomingEvent's X window property has changed. */
+static Bool
+x_window_property_changed (XPropertyEvent *event, HdNote *self)
+{
+  HdCompMgr *cmgr;
+
+  /* Emit a signal if the changed property is the notification's summary
+   * or icon.  This is used to update custom #ClutterActor:s derived from
+   * this #HdNote. */
+  cmgr = HD_COMP_MGR (MB_WM_CLIENT (self)->wmref->comp_mgr);
+  if (event->atom == hd_comp_mgr_get_atom (cmgr,
+                    HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY))
+    mb_wm_object_signal_emit (MB_WM_OBJECT (self), HdNoteSignalChanged);
+  else if (event->atom == hd_comp_mgr_get_atom (cmgr,
+                       HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_ICON))
+    mb_wm_object_signal_emit (MB_WM_OBJECT (self), HdNoteSignalChanged);
+  return False;
+}
 
 static void
 hd_note_class_init (MBWMObjectClass *klass)
@@ -42,6 +97,7 @@ hd_note_class_init (MBWMObjectClass *klass)
 
   client->client_type  = MBWMClientTypeNote;
   client->geometry     = hd_note_request_geometry;
+  client->stack        = hd_note_stack;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdNote";
@@ -51,6 +107,11 @@ hd_note_class_init (MBWMObjectClass *klass)
 static void
 hd_note_destroy (MBWMObject *this)
 {
+  if (HD_NOTE (this)->note_type == HdNoteTypeIncomingEvent)
+    mb_wm_main_context_x_event_handler_remove (
+                                MB_WM_CLIENT (this)->wmref->main_ctx,
+                                PropertyNotify,
+                                HD_NOTE (this)->property_changed_cb_id);
 }
 
 static int
@@ -58,54 +119,43 @@ hd_note_init (MBWMObject *this, va_list vap)
 {
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
   MBWindowManager       *wm = client->wmref;
-  MBWMClientWindow      *win = client->window;
-  HdCompMgr             *hmgr = HD_COMP_MGR (wm->comp_mgr);
   HdNote                *note = HD_NOTE (this);
   MBGeometry             geom;
-  unsigned char         *prop;
-  unsigned long          items, left;
-  int                    format;
-  Atom                   note_type;
-  Atom                   type;
+  char                  *prop;
   int                    n, s, w, e;
 
-  note_type = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_NOTIFICATION_TYPE);
-
-  XGetWindowProperty (wm->xdpy, win->xwindow,
-		      note_type, 0, 1, False,
-		      XA_ATOM, &type, &format,
-		      &items, &left,
-		      &prop);
-
-  if (prop)
+  prop = get_x_window_string_property (note,
+                                       HD_ATOM_HILDON_NOTIFICATION_TYPE);
+  if (prop != NULL)
     {
-      Atom *a = (Atom*)prop;
-      Atom  note_type_banner;
-      Atom  note_type_info;
-      Atom  note_type_confirmation;
-
-      note_type_banner =
-	hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_NOTIFICATION_TYPE_BANNER);
-
-      note_type_info =
-	hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_NOTIFICATION_TYPE_INFO);
-
-      note_type_confirmation =
-	hd_comp_mgr_get_atom (hmgr,
-			      HD_ATOM_HILDON_NOTIFICATION_TYPE_CONFIRMATION);
-
-      if (*a == note_type_banner)
+      if (!strcmp (prop, "_HILDON_NOTIFICATION_TYPE_BANNER"))
 	note->note_type = HdNoteTypeBanner;
-      else if (*a == note_type_info)
+      else if (!strcmp (prop, "_HILDON_NOTIFICATION_TYPE_INFO"))
 	note->note_type = HdNoteTypeInfo;
-      else if (*a == note_type_confirmation)
+      else if (!strcmp (prop, "_HILDON_NOTIFICATION_TYPE_CONFIRMATION"))
 	note->note_type = HdNoteTypeConfirmation;
+      else if (!strcmp (prop, "_HILDON_NOTIFICATION_TYPE_PREVIEW"))
+	note->note_type = HdNoteTypeIncomingEventPreview;
+      else if (!strcmp (prop, "_HILDON_NOTIFICATION_TYPE_INCOMING_EVENT"))
+	note->note_type = HdNoteTypeIncomingEvent;
       else
 	{
 	  g_warning ("Unknown hildon notification type.");
 	}
 
       XFree (prop);
+    }
+
+  if (note->note_type == HdNoteTypeIncomingEvent)
+    {
+      /* Leave it up to the client to specify size; position doesn't matter. */
+      hd_note_request_geometry (client, &client->window->geometry,
+                                MBWMClientReqGeomForced);
+
+      note->property_changed_cb_id = mb_wm_main_context_x_event_handler_add (
+                       wm->main_ctx, client->window->xwindow, PropertyNotify,
+                       (MBWMXEventFunc)x_window_property_changed, note);
+      return 1;
     }
 
   mb_wm_theme_get_decor_dimensions (wm->theme, client, &n, &s, &w, &e);
@@ -156,8 +206,8 @@ hd_note_class_type ()
   if (UNLIKELY(type == 0))
     {
       static MBWMObjectClassInfo info = {
-	sizeof (MBWMClientNoteClass),
-	sizeof (MBWMClientNote),
+	sizeof (HdNoteClass),
+	sizeof (HdNote),
 	hd_note_init,
 	hd_note_destroy,
 	hd_note_class_init
@@ -231,6 +281,7 @@ hd_note_request_geometry (MBWindowManagerClient *client,
 	    = client->window->geometry.width + (west + east);
 	  client->frame_geometry.height
 	    = client->window->geometry.height + (south + north);
+
 	}
       else
 	{
@@ -279,6 +330,20 @@ hd_note_request_geometry (MBWindowManagerClient *client,
   return True; /* Geometry accepted */
 }
 
+static void
+hd_note_stack(MBWindowManagerClient *client, int flags)
+{
+  MBWindowManagerClientClass* parent_klass =
+    MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
+  
+  if (HD_NOTE (client)->note_type == HdNoteTypeIncomingEvent)
+    /* Ignore the request to make the window "disappear" from the screen.
+     * It will remain mapped, but the user cannot click it directly. */
+    return;
+  else if (parent_klass->stack)
+    parent_klass->stack (client, flags);
+}
+
 MBWindowManagerClient*
 hd_note_new (MBWindowManager *wm, MBWMClientWindow *win)
 {
@@ -293,3 +358,23 @@ hd_note_new (MBWindowManager *wm, MBWMClientWindow *win)
   return client;
 }
 
+char *hd_note_get_destination (HdNote *self)
+{
+  mbwm_return_val_if_fail (self->note_type == HdNoteTypeIncomingEvent, NULL);
+  return get_x_window_string_property (self,
+                   HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION);
+}
+
+char *hd_note_get_summary (HdNote *self)
+{
+  mbwm_return_val_if_fail (self->note_type == HdNoteTypeIncomingEvent, NULL);
+  return get_x_window_string_property (self,
+                    HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY);
+}
+
+char *hd_note_get_icon (HdNote *self)
+{
+  mbwm_return_val_if_fail (self->note_type == HdNoteTypeIncomingEvent, NULL);
+  return get_x_window_string_property (self,
+                       HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_ICON);
+}

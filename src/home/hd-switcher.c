@@ -28,7 +28,7 @@
 #endif
 
 #include "hd-switcher.h"
-#include "hd-switcher-group.h"
+#include "hd-task-navigator.h"
 #include "hd-launcher-utils.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
@@ -102,7 +102,10 @@ static ClutterActor * hd_switcher_top_left_button_new (const char *icon_name);
 static gboolean hd_switcher_menu_clicked (HdSwitcher *switcher);
 
 static void hd_switcher_item_selected (HdSwitcher *switcher,
-				       ClutterActor *actor);
+				       ClutterActor *actor, HdTaskNavigator *navigator);
+
+static void hd_switcher_item_closed (HdSwitcher *switcher,
+                                     ClutterActor *actor);
 
 static void hd_switcher_hide_buttons (HdSwitcher * switcher);
 
@@ -121,6 +124,11 @@ static void hd_switcher_group_background_clicked (HdSwitcher   *switcher,
 static void hd_switcher_home_background_clicked (HdSwitcher   *switcher,
 						 ClutterActor *actor);
 static void hd_switcher_hide_launcher_after_launch (HdSwitcher *switcher);
+
+static gboolean hd_switcher_notification_clicked (HdSwitcher *switcher,
+                                                  HdNote *note);
+static gboolean hd_switcher_notification_closed (HdSwitcher *switcher,
+                                                 HdNote *note);
 
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, CLUTTER_TYPE_GROUP);
 
@@ -156,17 +164,17 @@ launcher_back_button_clicked (ClutterActor *actor, ClutterEvent *event,
   HdSwitcherPrivate *priv = HD_SWITCHER (data)->priv;
   HdHome	    *home =
       HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
-  HdSwitcherGroup *group = HD_SWITCHER_GROUP (priv->switcher_group);
+  HdTaskNavigator *group = HD_TASK_NAVIGATOR (priv->switcher_group);
 
   g_debug("launcher_back_button_clicked\n");
   hd_switcher_hide_launcher (HD_SWITCHER (data));
 
-  if (hd_switcher_group_have_children (group))
+  if (!hd_task_navigator_is_empty (group))
     {
       priv->showing_switcher = TRUE;
       if (priv->status_area)
         clutter_actor_hide (priv->status_area);
-      clutter_actor_show_all (priv->switcher_group);
+      hd_task_navigator_enter (group);
     }
   else
     {
@@ -195,9 +203,7 @@ hd_switcher_constructed (GObject *object)
   hd_launcher_group_set_back_button_cb (priv->launcher_group,
         G_CALLBACK (launcher_back_button_clicked), object);
 
-  priv->switcher_group = g_object_new (HD_TYPE_SWITCHER_GROUP,
-				       "comp-mgr", priv->comp_mgr,
-				       NULL);
+  priv->switcher_group = CLUTTER_ACTOR (hd_task_navigator_new ());
 
   clutter_container_add (CLUTTER_CONTAINER (self),
                          priv->switcher_group,
@@ -207,8 +213,17 @@ hd_switcher_constructed (GObject *object)
   clutter_actor_hide (priv->switcher_group);
   clutter_actor_hide (priv->launcher_group);
 
-  g_signal_connect_swapped (priv->switcher_group, "item-selected",
+  g_signal_connect_swapped (priv->switcher_group, "thumbnail-clicked",
 			    G_CALLBACK (hd_switcher_item_selected),
+			    self);
+  g_signal_connect_swapped (priv->switcher_group, "thumbnail-closed",
+			    G_CALLBACK (hd_switcher_item_closed),
+			    self);
+  g_signal_connect_swapped (priv->switcher_group, "notification-clicked",
+			    G_CALLBACK (hd_switcher_notification_clicked),
+			    self);
+  g_signal_connect_swapped (priv->switcher_group, "notification-closed",
+			    G_CALLBACK (hd_switcher_notification_closed),
 			    self);
   g_signal_connect_swapped (priv->switcher_group, "background-clicked",
                             G_CALLBACK (hd_switcher_group_background_clicked),
@@ -470,6 +485,9 @@ hd_switcher_clicked (HdSwitcher *switcher)
   else if (priv->showing_launcher ||
 	   (!priv->showing_switcher && priv->switcher_mode))
     {
+      MBWindowManager *mb;
+      MBWindowManagerClient *mbclient;
+
       g_debug("hd_switcher_clicked: show switcher, switcher=%p\n", switcher);
       /* KIMMO: keep a grab when either launcher or switcher is visible */
       if (!priv->showing_launcher && !priv->showing_switcher)
@@ -481,7 +499,32 @@ hd_switcher_clicked (HdSwitcher *switcher)
 
       if (priv->status_area)
         clutter_actor_hide (priv->status_area);
-      clutter_actor_show_all (priv->switcher_group);
+
+      /* Are we in application view?  Then zoom out, otherwise just enter
+       * the navigator without animation. */
+      mb = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+      if ((mbclient = mb_wm_get_visible_main_client (mb)) != NULL)
+        {
+          ClutterActor *actor;
+          MBWMCompMgrClutterClient *cmgrcc;
+          HdTaskNavigator *navigator;
+
+          cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (mbclient->cm_client);
+          if (cmgrcc != NULL)
+            {
+              actor = mb_wm_comp_mgr_clutter_client_get_actor (cmgrcc);
+              navigator = HD_TASK_NAVIGATOR (priv->switcher_group);
+              if (hd_task_navigator_has_window (navigator, actor))
+                hd_task_navigator_zoom_out (navigator, actor, NULL, NULL);
+              else
+                hd_task_navigator_enter (navigator);
+              g_object_unref (actor);
+            }
+          else /* TODO This is probably the case we're interested in. */
+            hd_task_navigator_enter (HD_TASK_NAVIGATOR (priv->switcher_group));
+        }
+      else /* TODO can @mbclient be NULL at all? */
+        hd_task_navigator_enter (HD_TASK_NAVIGATOR (priv->switcher_group));
 
       /*
        * Setup buttons in switcher mode
@@ -510,69 +553,70 @@ hd_switcher_hide_launcher_after_launch (HdSwitcher *switcher)
 }
 
 static void
-hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
+hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  MBWMCompMgrClient     *cclient;
+  MBWindowManagerClient *c;
+  MBWindowManager       *wm;
+  HdCompMgrClient       *hclient;
+  HdHome                *home =
+        HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
 
-  g_debug("hd_switcher_item_selected: switcher=%p actor=%p\n", switcher,
+  g_debug("hd_switcher_zoom_in_complete: switcher=%p actor=%p\n", switcher,
           actor);
-  if (actor)
+
+  cclient =
+    g_object_get_data (G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
+
+  g_assert (cclient);
+
+  c = cclient->wm_client;
+
+  wm = c->wmref;
+  hclient = HD_COMP_MGR_CLIENT (c->cm_client);
+
+  /* KIMMO: ungrab when an item was selected from the switcher */
+  hd_home_ungrab_pointer (home);
+  hd_switcher_hide_switcher (switcher);
+
+  /* KIMMO: lower home to show the application */
+  hd_comp_mgr_lower_home_actor(HD_COMP_MGR (priv->comp_mgr));
+
+  if (!hd_comp_mgr_client_is_hibernating (hclient))
     {
-      MBWMCompMgrClient     *cclient;
-      MBWindowManagerClient *c;
-      MBWindowManager       *wm;
-      HdCompMgrClient       *hclient;
-      HdHome                *home =
-            HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
-
-      cclient =
-	g_object_get_data (G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
-
-      g_assert (cclient);
-
-      c = cclient->wm_client;
-
-      wm = c->wmref;
-      hclient = HD_COMP_MGR_CLIENT (c->cm_client);
-
-      /* KIMMO: ungrab when an item was selected from the switcher */
-      if (priv->showing_switcher)
-        {
-          hd_home_ungrab_pointer (home);
-          hd_switcher_hide_switcher (switcher);
-        }
-      /* KIMMO: lower home to show the application */
-      hd_comp_mgr_lower_home_actor(HD_COMP_MGR (priv->comp_mgr));
-
-      if (!hd_comp_mgr_client_is_hibernating (hclient))
-	{
-          g_debug("hd_switcher_item_selected: calling "
-                  "mb_wm_activate_client c=%p\n", c);
-          mb_wm_activate_client (wm, c);
-	}
-      else
-	{
-          g_debug("hd_switcher_item_selected: calling "
-                  "hd_comp_mgr_wakeup_client comp_mgr=%p hclient=%p\n",
-                  priv->comp_mgr, hclient);
-	  hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
-	}
-
-      hd_switcher_setup_buttons (switcher, TRUE);
+      g_debug("hd_switcher_zoom_in_complete: calling "
+              "mb_wm_activate_client c=%p\n", c);
+      mb_wm_activate_client (wm, c);
     }
   else
     {
-      HdSwitcherGroup *group = HD_SWITCHER_GROUP (priv->switcher_group);
-      HdHome *home =
-            HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
-      if (!hd_switcher_group_have_children (group))
-        {
-          /* switcher group is empty and will disappear -> ungrab */
-          hd_home_ungrab_pointer (home);
-          if (priv->status_area)
-            clutter_actor_show (priv->status_area);
-        }
+      g_debug("hd_switcher_zoom_in_complete: calling "
+              "hd_comp_mgr_wakeup_client comp_mgr=%p hclient=%p\n",
+              priv->comp_mgr, hclient);
+      hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
     }
+
+  hd_switcher_setup_buttons (switcher, TRUE);
+}
+
+static void
+hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor,
+                           HdTaskNavigator *navigator)
+{
+  hd_task_navigator_zoom_in (navigator, actor,
+              (ClutterEffectCompleteFunc) hd_switcher_zoom_in_complete,
+              switcher);
+}
+
+static void
+hd_switcher_item_closed (HdSwitcher *switcher, ClutterActor *actor)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  MBWMCompMgrClutterClient * cc;
+
+  cc = g_object_get_data(G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
+  hd_comp_mgr_close_client (HD_COMP_MGR (priv->comp_mgr), cc);
 }
 
 void
@@ -580,8 +624,8 @@ hd_switcher_add_window_actor (HdSwitcher * switcher, ClutterActor * actor)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
-  hd_switcher_group_add_actor (HD_SWITCHER_GROUP (priv->switcher_group),
-			       actor);
+  hd_task_navigator_add_window (HD_TASK_NAVIGATOR (priv->switcher_group),
+                                actor);
 
   /*
    * Setup buttons in switcher mode, if appropriate
@@ -626,21 +670,70 @@ hd_switcher_remove_status_area (HdSwitcher *switcher, ClutterActor *sa)
   priv->status_area = NULL;
 }
 
+static gboolean
+hd_switcher_notification_clicked (HdSwitcher *switcher, HdNote *note)
+{
+  Window xwin;
+  Display *xdpy;
+  XButtonEvent ev;
+
+  /*
+   * Deliver an #XButtonEvent to @win, so #HdIncomingEventWindow will know
+   * there is a response and will invoke the appropriate action.
+   * Note that %MBWindowManager->root_win->xwindow is different from what
+   * DefaultRootWindow() returns, which may or may not be intentional.
+   */
+  xwin = MB_WM_CLIENT (note)->window->xwindow;
+  xdpy = MB_WM_CLIENT (note)->wmref->xdpy;
+
+  memset (&ev, 0, sizeof (ev));
+  ev.type         = ButtonPress;
+  ev.send_event   = True;
+  ev.display      = xdpy;
+  ev.window       = xwin;
+  ev.root         = DefaultRootWindow (xdpy);
+  ev.time         = CurrentTime;
+  ev.button       = Button1;
+  ev.same_screen  = True;
+
+  XSendEvent(xdpy, xwin, False, ButtonPressMask, (XEvent *)&ev);
+  XSync (xdpy, FALSE);
+
+  return TRUE;
+}
+
+static gboolean
+hd_switcher_notification_closed (HdSwitcher *switcher, HdNote *note)
+{
+  mb_wm_client_deliver_delete (MB_WM_CLIENT (note));
+  return TRUE;
+}
+
 void
-hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor)
+hd_switcher_add_notification (HdSwitcher * switcher, HdNote * note)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-  HdSwitcherGroup   *group = HD_SWITCHER_GROUP (priv->switcher_group);
+  HdTaskNavigator *navigator = HD_TASK_NAVIGATOR (priv->switcher_group);
+  hd_task_navigator_add_notification (navigator, note);
+  hd_switcher_setup_buttons (switcher, TRUE);
+}
+
+/* Called when a window or a notification is removed from the switcher.
+ * Exit the switcher if it's become empty and set up the switcher button
+ * appropriately. */
+static void
+hd_swticher_something_removed (HdSwitcher * switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdTaskNavigator *group = HD_TASK_NAVIGATOR (priv->switcher_group);
   gboolean           have_children;
 
-  hd_switcher_group_remove_actor (group, actor);
-
-  have_children = hd_switcher_group_have_children (group);
-
+  have_children = !hd_task_navigator_is_empty (group);
   if (!have_children && priv->showing_switcher)
     {
       /*
        * Must close the switcher
+       * XXX pointer ungrab?
        */
       hd_switcher_hide_switcher (switcher);
       if (priv->status_area)
@@ -654,22 +747,40 @@ hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor)
 }
 
 void
+hd_switcher_remove_notification (HdSwitcher * switcher, HdNote * note)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdTaskNavigator *group = HD_TASK_NAVIGATOR (priv->switcher_group);
+  hd_task_navigator_remove_notification (group, note);
+  hd_swticher_something_removed (switcher);
+}
+
+void
+hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdTaskNavigator   *group = HD_TASK_NAVIGATOR (priv->switcher_group);
+  hd_task_navigator_remove_window (group, actor);
+  hd_swticher_something_removed (switcher);
+}
+
+void
 hd_switcher_replace_window_actor (HdSwitcher   * switcher,
 				  ClutterActor * old,
 				  ClutterActor * new)
 {
-  HdSwitcherGroup *group = HD_SWITCHER_GROUP (switcher->priv->switcher_group);
+  HdTaskNavigator *group = HD_TASK_NAVIGATOR (switcher->priv->switcher_group);
 
-  hd_switcher_group_replace_actor (group, old, new);
+  hd_task_navigator_replace_window (group, old, new);
 }
 
 void
 hd_switcher_hibernate_window_actor (HdSwitcher   * switcher,
 				    ClutterActor * actor)
 {
-  HdSwitcherGroup *group = HD_SWITCHER_GROUP (switcher->priv->switcher_group);
+  HdTaskNavigator *group = HD_TASK_NAVIGATOR (switcher->priv->switcher_group);
 
-  hd_switcher_group_hibernate_actor (group, actor);
+  hd_task_navigator_hibernate_window (group, actor);
 }
 
 void
@@ -694,13 +805,13 @@ static void
 hd_switcher_setup_buttons (HdSwitcher * switcher, gboolean switcher_mode)
 {
   HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
-  HdSwitcherGroup   * group = HD_SWITCHER_GROUP (priv->switcher_group);
+  HdTaskNavigator   * group = HD_TASK_NAVIGATOR (priv->switcher_group);
   gboolean            have_children;
 
   /*
    * Switcher mode can only be entered if there is something to switch
    */
-  have_children = hd_switcher_group_have_children (group);
+  have_children = !hd_task_navigator_is_empty (group);
 
   g_debug("%s: switcher_mode=%d priv->switcher_mode=%d ss=%d sl=%d\n", __FUNCTION__,
           switcher_mode, priv->switcher_mode,
@@ -761,7 +872,7 @@ hd_switcher_hide_switcher (HdSwitcher * switcher)
 
   priv->showing_switcher = FALSE;
 
-  clutter_actor_hide_all (priv->switcher_group);
+  hd_task_navigator_exit (HD_TASK_NAVIGATOR (priv->switcher_group));
 
   /*
    * Now request stack sync from the CM, in case there were some changes while

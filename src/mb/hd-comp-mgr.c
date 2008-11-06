@@ -33,6 +33,7 @@
 #include "hd-home.h"
 #include "hd-gtk-style.h"
 #include "hd-applet-layout-manager.h"
+#include "hd-note.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-window-manager.h>
@@ -594,6 +595,12 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       hd_home_remove_applet (HD_HOME (priv->home), applet);
     }
+  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeNote
+           && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
+    {
+      hd_switcher_remove_notification (HD_SWITCHER (priv->switcher_group),
+                                       HD_NOTE (c));
+    }
 
   if (parent_klass->unregister_client)
     parent_klass->unregister_client (mgr, c);
@@ -656,6 +663,19 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   else if (ctype == HdWmClientTypeStatusMenu)
     {
       hd_home_add_status_menu (HD_HOME (priv->home), actor);
+      return;
+    }
+  else if (ctype == MBWMClientTypeNote)
+    {
+      if (HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
+        {
+          /* Unparent @actor from its desktop and leave it
+           * up to the swithcer to show it wherever it wants. */
+          ClutterActor *parent = clutter_actor_get_parent (actor);
+          clutter_container_remove_actor (CLUTTER_CONTAINER (parent), actor);
+          hd_switcher_add_notification (HD_SWITCHER (priv->switcher_group),
+                                        HD_NOTE (c));
+        }
       return;
     }
   else if (ctype != MBWMClientTypeApp)
