@@ -1,3 +1,11 @@
+2008-11-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Patch from Tapani Pälli for HildonStackableWindow. This
+	implementation will change in the future to support more exotic use
+	cases.
+
+	* src/mb/hd-app.c: TODO
+
 2008-11-07  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Test for presence of su, which is not available in scratchbox. Copied from

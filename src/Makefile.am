@@ -14,7 +14,7 @@ hildon_desktop_SOURCES = main.c hildon-desktop.h
 hildon_desktop_LDADD = $(MY_LIBS) $(HD_LIBS)
 hildon_desktop_CFLAGS = -std=c99 -fgnu89-inline
 
-schemadir = /etc/gconf/schemas
+schemadir = ${datadir}/gconf/schemas
 schema_DATA = hildon-desktop.schemas
 
 CLEANFILES = *~

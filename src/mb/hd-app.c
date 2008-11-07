@@ -94,40 +94,40 @@ hd_app_init (MBWMObject *this, va_list vap)
       win_group = win->xwin_group;
 
       mb_wm_stack_enumerate (wm, c_tmp)
-	{
-	  if (c_tmp != client &&
-	      (MB_WM_CLIENT_CLIENT_TYPE (c_tmp) == MBWMClientTypeApp) &&
-	      c_tmp->window->xwin_group == win_group)
-	    {
-	      HdApp *h_tmp = HD_APP (c_tmp);
+        {
+          if (c_tmp != client &&
+              (MB_WM_CLIENT_CLIENT_TYPE (c_tmp) == MBWMClientTypeApp) &&
+              c_tmp->window->xwin_group == win_group)
+            {
+              HdApp *h_tmp = HD_APP (c_tmp);
 
-	      app->secondary_window = TRUE;
-	      app->leader = h_tmp->leader;
+              app->secondary_window = TRUE;
+              app->leader = h_tmp->leader;
 
-	      /*
-	       * This forces the decors to be redone, taking into account the
-	       * secondary_window flag.
-	       */
-	      mb_wm_client_theme_change (client);
-	      break;
-	    }
-	}
+              /*
+               * This forces the decors to be redone, taking into account the
+               * secondary_window flag.
+               */
+              mb_wm_client_theme_change (client);
+              break;
+            }
+        }
 
       XFree (prop);
-    }
 
-  if (app->secondary_window)
-    {
-      HdApp *leader = app->leader;
-
-      leader->followers = g_list_append (leader->followers, this);
-    }
-  else
-    {
-      /*
-       * We set the leader field to ourselves.
-       */
-      app->leader = app;
+      if (app->secondary_window)
+        {
+          HdApp *leader = app->leader;
+          
+          leader->followers = g_list_append (leader->followers, this);
+        }
+      else
+        {
+          /*
+           * We set the leader field to ourselves.
+           */
+          app->leader = app;
+        }
     }
 
   return 1;

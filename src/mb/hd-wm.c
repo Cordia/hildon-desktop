@@ -175,7 +175,7 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
       g_debug ("### is desktop ###");
       /* Only one desktop allowed */
       if (wm->desktop)
-	return NULL;
+        return NULL;
 
       return hd_desktop_new (wm, win);
     }

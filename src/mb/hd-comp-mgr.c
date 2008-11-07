@@ -31,6 +31,7 @@
 #include "hd-wm.h"
 #include "hd-home-applet.h"
 #include "hd-home.h"
+#include "hd-app.h"
 #include "hd-gtk-style.h"
 #include "hd-applet-layout-manager.h"
 #include "hd-note.h"
@@ -498,6 +499,7 @@ hd_comp_mgr_turn_on (MBWMCompMgr *mgr)
   hd_comp_mgr_setup_input_viewport (HD_COMP_MGR (mgr), &geom);
 }
 
+
 static void
 hd_comp_mgr_register_client (MBWMCompMgr           * mgr,
 			     MBWindowManagerClient * c)
@@ -516,6 +518,7 @@ hd_comp_mgr_register_client (MBWMCompMgr           * mgr,
   if (parent_klass->register_client)
     parent_klass->register_client (mgr, c);
 }
+
 
 static void
 hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
@@ -553,8 +556,29 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    */
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeApp)
     {
-      hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
-				       actor);
+      HdApp *app = HD_APP(c);
+      MBWMCompMgrClutterClient * prev = NULL;
+
+      /* handle hildon-stackable-window */
+      if (HD_IS_APP (app))
+      {
+
+      /* if we are secondary, there must be leader and probably even followers */
+      if (app->leader && app->secondary_window)
+        {
+          /* show the topmost follower and replace switcher actor for the stackable */
+          prev = MB_WM_COMP_MGR_CLUTTER_CLIENT ((hd_app_get_prev_group_member(app))->cm_client);
+
+          clutter_actor_show (mb_wm_comp_mgr_clutter_client_get_actor(prev));
+
+          hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group), actor,
+                                            mb_wm_comp_mgr_clutter_client_get_actor(prev));
+        }
+      }
+      /* we are the leader, just remove actor from switcher */
+      else
+        hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
+                                         actor);
 
       g_object_set_data (G_OBJECT (actor),
 			 "HD-MBWMCompMgrClutterClient", NULL);
@@ -701,7 +725,41 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       g_hash_table_remove (priv->hibernating_apps, &hkey);
     }
   else
-    hd_switcher_add_window_actor (HD_SWITCHER (priv->switcher_group), actor);
+    {
+      HdApp *app = HD_APP(c);
+
+      if (HD_IS_APP (app))
+      {
+        if (app->leader && app->secondary_window)
+          {
+            MBWMCompMgrClutterClient * top =
+              MB_WM_COMP_MGR_CLUTTER_CLIENT (((MBWindowManagerClient *)app->leader)->cm_client);
+
+            if (top)
+              clutter_actor_hide (mb_wm_comp_mgr_clutter_client_get_actor(top));
+
+            if (app->leader->followers)
+              {
+                GList *l = app->leader->followers;
+
+                while (HD_APP(l->data) != app)
+                  {
+                    HdApp *a = HD_APP (l->data);
+          
+                    top = MB_WM_COMP_MGR_CLUTTER_CLIENT (((MBWindowManagerClient *)a)->cm_client);
+                    clutter_actor_hide (mb_wm_comp_mgr_clutter_client_get_actor(top));
+                    l = l->next;
+                  }
+              }
+
+            hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group),
+                                              mb_wm_comp_mgr_clutter_client_get_actor(top),
+                                            actor);
+          }
+        else
+          hd_switcher_add_window_actor (HD_SWITCHER (priv->switcher_group), actor);
+      }
+    }
 }
 
 typedef struct _HDEffectData
@@ -908,7 +966,6 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
   HdCompMgrPrivate      * priv = hmgr->priv;
   HdCompMgrClient       * h_client = HD_COMP_MGR_CLIENT (cc);
 
-
   if (h_client->priv->hibernating)
     {
       ClutterActor * actor;
@@ -923,8 +980,17 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
   else
     {
       MBWindowManagerClient * c = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
+      HdApp *app = HD_APP(c);
 
-      mb_wm_client_deliver_delete (c);
+      if (app && app->secondary_window)
+        {
+          /* user wants to close the application,
+             deliver delete to followers and leader */
+          hd_app_close_followers (app->leader);
+          mb_wm_client_deliver_delete ((MBWindowManagerClient*)app->leader);
+        }
+      else
+        mb_wm_client_deliver_delete (c);
     }
 }
 
