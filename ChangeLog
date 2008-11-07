@@ -1,3 +1,11 @@
+2008-11-07  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Test for presence of su, which is not available in scratchbox. Copied from
+	hildon-home, thanks jpetersen.
+
+	* debian/hildon-desktop.init: If su is not present, launch hildon-desktop
+	  directly.
+
 2008-11-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
  Enhancements in the task switcher view.
