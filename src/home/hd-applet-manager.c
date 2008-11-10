@@ -153,7 +153,8 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
             info->name = gettext (name);
 
           g_free (text_domain);
-          g_free (name);
+          if (info->name != name)
+            g_free (name);
 
           info->multiple = g_key_file_get_boolean (key_file,
                                                    G_KEY_FILE_DESKTOP_GROUP,

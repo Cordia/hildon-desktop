@@ -12,7 +12,9 @@ home_h = 	hd-home.h		\
 		hd-task-navigator.h	\
 		hd-applet-manager.h	\
 		hd-add-applet-dialog.h	\
-		hd-notification.h
+		hd-notification.h	\
+		hd-task-manager.h	\
+		hd-add-task-dialog.h
 
 home_c = 	hd-home.c		\
 		hd-home-view.c		\
@@ -24,12 +26,16 @@ home_c = 	hd-home.c		\
 		hd-task-navigator.c	\
 		hd-applet-manager.c	\
 		hd-add-applet-dialog.c	\
-		hd-notification.c
+		hd-notification.c	\
+		hd-task-manager.c	\
+		hd-add-task-dialog.c
 
 noinst_LTLIBRARIES = libhome.la
 
 libhome_la_SOURCES = $(home_h) $(home_c)
-libhome_la_CFLAGS =  @HD_CFLAGS@ -DHD_DATADIR=\"$(datadir)/hildon-desktop\"
+libhome_la_CFLAGS =  @HD_CFLAGS@						\
+		     -DHD_DATADIR=\"$(datadir)/hildon-desktop\"			\
+		     -DHD_APPLICATIONS_DIR=\"$(datadir)/applications/hildon\"
 libhome_la_LIBADD = @HD_LIBS@ \
                     $(top_builddir)/src/launcher/liblauncher.la \
                     $(top_builddir)/src/util/libutil.la

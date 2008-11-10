@@ -32,6 +32,7 @@
 #include "hd-background-dialog.h"
 
 #include "hd-add-applet-dialog.h"
+#include "hd-add-task-dialog.h"
 
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
@@ -310,6 +311,23 @@ hd_edit_menu_item_release (ClutterActor       *item,
           hd_home_grab_pointer (priv->home);
         }
       break;
+
+    case 1:
+        {
+          /* Ungrab pointer */
+          hd_home_ungrab_pointer (priv->home);
+
+          /* Show dialog */
+          GtkWidget *dialog = hd_add_task_dialog_new ();
+          gtk_dialog_run (GTK_DIALOG (dialog));
+          /* FIXME use destroy if NB#89541 is fixed */
+          gtk_widget_hide (dialog);
+
+          /* Grab pointer again */
+          hd_home_grab_pointer (priv->home);
+        }
+      break;
+
 
     case 3:
       dialog = hd_background_dialog_new (priv->home,

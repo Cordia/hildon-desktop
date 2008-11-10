@@ -1,3 +1,22 @@
+2008-11-10  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/Makefile.am: Add new hd-task-manager.[ch] and
+	hd-add-task-dialog.[ch] files.
+
+	* src/home/hd-edit-menu.c (hd_edit_menu_item_release): Add support for
+	Add shortcut dialog.
+
+	* src/home/hd-task-manager.c:
+	* src/home/hd-task-manager.h: Add class to load the available tasks
+	from the .desktop files (used by the Add shortcut dialog).
+
+	* src/home/hd-add-task-dialog.c:
+	* src/home/hd-add-task-dialog.h: Add class which implements the Add
+	shortcut dialog
+
+	* src/home/hd-applet-manager.c (items_configuration_loaded_cb): Fix
+	bug in i18n code.
+
 2008-11-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Patch from Tapani Pälli for HildonStackableWindow. This
