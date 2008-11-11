@@ -23,7 +23,7 @@
 	implementation will change in the future to support more exotic use
 	cases.
 
-	* src/mb/hd-app.c: TODO
+	* src/mb/hd-app.c: Tapani's patch.
 
 2008-11-07  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
