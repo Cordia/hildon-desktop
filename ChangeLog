@@ -1,3 +1,9 @@
+2008-11-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+  * src/mb/hd-comp-mgr.c:
+    Fix r31798's patch application which left the application's
+    thumbnail in the switcher.
+
 2008-11-10  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/Makefile.am: Add new hd-task-manager.[ch] and

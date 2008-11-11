@@ -561,24 +561,23 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       /* handle hildon-stackable-window */
       if (HD_IS_APP (app))
-      {
-
-      /* if we are secondary, there must be leader and probably even followers */
-      if (app->leader && app->secondary_window)
         {
-          /* show the topmost follower and replace switcher actor for the stackable */
-          prev = MB_WM_COMP_MGR_CLUTTER_CLIENT ((hd_app_get_prev_group_member(app))->cm_client);
+          /* if we are secondary, there must be leader and probably even followers */
+          if (app->leader && app->secondary_window)
+            {
+              /* show the topmost follower and replace switcher actor for the stackable */
+              prev = MB_WM_COMP_MGR_CLUTTER_CLIENT ((hd_app_get_prev_group_member(app))->cm_client);
 
-          clutter_actor_show (mb_wm_comp_mgr_clutter_client_get_actor(prev));
+              clutter_actor_show (mb_wm_comp_mgr_clutter_client_get_actor(prev));
 
-          hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group), actor,
-                                            mb_wm_comp_mgr_clutter_client_get_actor(prev));
+              hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group), actor,
+                                                mb_wm_comp_mgr_clutter_client_get_actor(prev));
+            }
+          else
+            /* we are the leader, just remove actor from switcher */
+            hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
+                                             actor);
         }
-      }
-      /* we are the leader, just remove actor from switcher */
-      else
-        hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
-                                         actor);
 
       g_object_set_data (G_OBJECT (actor),
 			 "HD-MBWMCompMgrClutterClient", NULL);
