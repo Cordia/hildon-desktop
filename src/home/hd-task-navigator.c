@@ -1532,7 +1532,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
       g_object_unref(thumb->apwin);
     }
 
-  /* We Don't need .class_hint even if we're doing the TV-turned-off
+  /* We don't need .class_hint even if we're doing the TV-turned-off
    * effect on @thumb. */
   if (thumb->class_hint)
     {

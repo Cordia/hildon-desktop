@@ -26,6 +26,7 @@
   - Blink the task switcher button when a notification arrives.
   - Blink the task switcher button when it is tapped.
 
+  - Remove status area handling from task switcher.
   - Handle commands received during animation gracefully.
   - Be more sensible differentiating clicks vs. scroll attempts.
 - Implement portrait mode.
