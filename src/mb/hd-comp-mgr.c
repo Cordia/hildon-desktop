@@ -572,7 +572,13 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                                                 mb_wm_comp_mgr_clutter_client_get_actor(prev));
             }
           else
-            /* we are the leader, just remove actor from switcher */
+            /*
+             * We are the leader, just remove actor from switcher.
+             * Attempt to remove it even if the client initially
+             * requested SkipTaskbar, because this state flag might
+             * have been changed, which we don't track.  The downside
+             * is an unconditional critical warning from the switcher.
+             */
             hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
                                              actor);
         }
@@ -750,7 +756,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                                               mb_wm_comp_mgr_clutter_client_get_actor(top),
                                             actor);
           }
-        else
+        else if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar))
+          /* Taskbar == task switcher in our case.  Introduced for systemui. */
           hd_switcher_add_window_actor (HD_SWITCHER (priv->switcher_group), actor);
       }
     }

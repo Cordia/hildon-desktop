@@ -1,5 +1,10 @@
 2008-11-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+  * src/mb/hd-comp-mgr.c:
+    Don't add windows marked as SkipTaskbar to the task switcher.
+
+2008-11-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
   Do a TV-turned-off-like effect when an application is closed
   in switcher view.
 
