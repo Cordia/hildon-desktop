@@ -551,8 +551,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   /*
    * If the actor is an application, remove it also to the switcher
-   *
-   * FIXME: will need to do this for notifications as well.
    */
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeApp)
     {
@@ -654,9 +652,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   /*
    * If the actor is an appliation, add it also to the switcher
-   *
-   * FIXME: will need to do this for notifications as well.
-   *
    * If it is Home applet, add it to the home
    */
   ctype = MB_WM_CLIENT_CLIENT_TYPE (c);
@@ -834,6 +829,11 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 	    ClutterEffectTemplate    * tmpl;
 	    gdouble                    scale_x, scale_y;
 	    HDEffectData             * data;
+
+            /* The switcher will do the effect if it's active,
+             * don't interfere. */
+            if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
+              return;
 
 	    cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
 	    actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);

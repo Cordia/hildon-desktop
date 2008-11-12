@@ -37,7 +37,9 @@ void hd_task_navigator_zoom_out  (HdTaskNavigator *self,
 void hd_task_navigator_add_window       (HdTaskNavigator *self,
                                          ClutterActor *win);
 void hd_task_navigator_remove_window    (HdTaskNavigator *self,
-                                         ClutterActor *win);
+                                         ClutterActor *win,
+                                         ClutterEffectCompleteFunc fun,
+                                         gpointer funparam);
 void hd_task_navigator_replace_window   (HdTaskNavigator *self,
                                          ClutterActor *old_win,
                                          ClutterActor *new_win);

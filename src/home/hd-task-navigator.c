@@ -348,18 +348,27 @@ load_icon (const gchar * iname, guint isize)
       return empty_texture (isize, isize);
     }
   else
-    texture = pixbuf2texture (pixbuf);
 
-  clutter_actor_get_size(CLUTTER_ACTOR (texture), &w, &h);
-  clutter_actor_set_anchor_point (CLUTTER_ACTOR (texture), w/2, h/2);
-
-  /* Scale @texture down if it's larger than desired.  It would be the
-   * responsibility if gtk_icon_theme_load_icon() but it fails to do it. */
+  /* Scale @texture down if it's larger than desired.
+   * TODO Unused right now. */
+  w = gdk_pixbuf_get_width (pixbuf);
+  h = gdk_pixbuf_get_height (pixbuf);
   if (w > isize || h > isize)
     {
-      gdouble scale = h >= w ? (gdouble)isize / w : (gdouble)isize / h;
-      clutter_actor_set_scale (CLUTTER_ACTOR (texture), scale, scale);
+      GdkPixbuf *p;
+
+      p = h >= w
+        ? gdk_pixbuf_scale_simple (pixbuf, isize, isize * h/w,
+                                   GDK_INTERP_NEAREST)
+        : gdk_pixbuf_scale_simple (pixbuf, isize * w/h, isize,
+                                   GDK_INTERP_NEAREST);
+      g_object_unref (pixbuf);
+      pixbuf = p;
     }
+
+  texture = pixbuf2texture (pixbuf);
+  clutter_actor_set_anchor_point_from_gravity (CLUTTER_ACTOR (texture),
+                                               CLUTTER_GRAVITY_CENTER);
 
   return texture;
 }
@@ -968,13 +977,14 @@ find_by_apwin (ClutterActor * apwin)
 /* Setting a thumbnail's title {{{ */
 static MBWMClientWindow *actor_to_client_window (ClutterActor *win);
 
-/* Sets or replaces @thumb's title. */
+/* Sets or replaces @thumb's title.  Its exact position is expected
+ * to be set by layout_thumbs() later. */
 static void
 set_thumb_title (Thumbnail * thumb, ClutterActor * title)
 {
   /* Anchor @title at the bottom-middle. */
-  clutter_actor_set_anchor_point (title,
-                                  clutter_actor_get_width(title)/2, 0);
+  clutter_actor_set_anchor_point_from_gravity (title,
+                                               CLUTTER_GRAVITY_NORTH);
   clutter_container_add_actor (CLUTTER_CONTAINER (thumb->thwin), title);
 
   if (thumb->title)
@@ -1071,7 +1081,6 @@ title_note_changed (HdNote * hdnote, int unused, Thumbnail * thumb)
 static void
 set_thumb_title_from_hdnote (Thumbnail * thumb, HdNote * hdnote)
 {
-  guint h;
   ClutterActor *title;
   gchar *summary, *icon;
 
@@ -1083,20 +1092,21 @@ set_thumb_title_from_hdnote (Thumbnail * thumb, HdNote * hdnote)
     return;
   icon = hd_note_get_icon (hdnote);
 
-  /* @title = @icon + @text. */
+  /* Center the @icon vertically in the title area. */
   thumb->title_icon = CLUTTER_ACTOR (load_icon (icon,
                                                 TITLE_NOTE_ICON_SIZE));
   clutter_actor_set_position (thumb->title_icon,
                               TITLE_NOTE_ICON_SIZE / 2,
                               THWIN_TITLE_AREA_HEIGHT
-                                - TITLE_NOTE_ICON_SIZE/2);
+                                - TITLE_NOTE_ICON_SIZE / 2);
 
+  /* Align @summary to the top, so it doesn't look different
+   * from application titles. */
   thumb->title_text = thumb_title_text (summary);
-  h = clutter_actor_get_height (thumb->title_text);
-  clutter_actor_set_position (thumb->title_text,
-                              TITLE_NOTE_ICON_SIZE+TITLE_NOTE_TEXT_MARGIN,
-                              THWIN_TITLE_AREA_HEIGHT - h);
+  clutter_actor_set_x (thumb->title_text,
+                       TITLE_NOTE_ICON_SIZE + TITLE_NOTE_TEXT_MARGIN);
 
+  /* @title = @title_icon + @title_text. */
   title = clutter_group_new ();
   clutter_container_add (CLUTTER_CONTAINER (title),
                          thumb->title_icon, thumb->title_text, NULL);
@@ -1266,7 +1276,6 @@ void
 hd_task_navigator_hibernate_window (HdTaskNavigator * self,
                                     ClutterActor * win)
 {
-  guint w, h;
   Thumbnail *thumb;
 
   if (!(thumb = find_by_apwin(win)))
@@ -1275,8 +1284,8 @@ hd_task_navigator_hibernate_window (HdTaskNavigator * self,
     return;
 
   thumb->hibernation = clutter_clone_texture_new (Master_hibernated);
-  clutter_actor_get_size (thumb->hibernation, &w, &h);
-  clutter_actor_set_anchor_point (thumb->hibernation, w/2, h/2);
+  clutter_actor_set_anchor_point_from_gravity (thumb->hibernation,
+                                               CLUTTER_GRAVITY_CENTER);
   clutter_actor_set_position (thumb->hibernation,
                               THWIN_TITLE_AREA_LEFT_GAP / 2,
                               THWIN_TITLE_AREA_HEIGHT / 2);
@@ -1324,6 +1333,34 @@ actor_to_client_window (ClutterActor * win)
   return MB_WM_COMP_MGR_CLIENT (cmgrcc)->wm_client->window;
 }
 
+/* #ClutterEffectCompleteFunc for hd_task_navigator_remove_window()
+ * called when the TV-turned-off effect of @thumb finishes. */
+static void
+thwin_turned_off_1 (ClutterActor * unused, Thumbnail * thumb)
+{
+  /* Release .apwin, forget .thwin and deallocate @thumb. */
+  release_win (thumb);
+  clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator_area),
+                                  thumb->thwin);
+  g_object_unref(thumb->apwin);
+  g_free (thumb);
+}
+
+/* Likewise.  This is a separate function because it needs a different
+ * user data pointer (@cmgrcc) and we don't feel like defining a new
+ * struture only for this purpose. */
+static void
+thwin_turned_off_2 (ClutterActor * unused, MBWMCompMgrClutterClient * cmgrcc)
+{
+  /* Undo what we did to @cmgrcc in hd_task_navigator_remove_window().
+   * TODO hd-comp-mgr.c would ask for a hd_comp_mgr_sync_stacking(),
+   *      do we need to? */
+  mb_wm_comp_mgr_clutter_client_unset_flags (cmgrcc,
+                                 MBWMCompMgrClutterClientDontUpdate
+                               | MBWMCompMgrClutterClientEffectRunning);
+  mb_wm_object_unref (MB_WM_OBJECT(cmgrcc));
+}
+
 /* Called when a %Thumbnail.thwin is clicked. */
 static gboolean
 thwin_clicked (ClutterActor * thwin, ClutterButtonEvent * event,
@@ -1354,7 +1391,7 @@ thwin_close_clicked (ClutterActor * thwin, ClutterButtonEvent * event,
 static void
 create_thumb (Thumbnail * thumb, ClutterActor * apwin)
 {
-  guint i, w, h;
+  guint i;
   const TNote *tnote;
   XClassHint xwinhint;
   const MBWMClientWindow *mbwmcwin;
@@ -1408,6 +1445,7 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
         { /* Yes, steal it from the @Notification_area. */
           set_thumb_title_from_hdnote (thumb, tnote->hdnote);
           remove_notewin (thumb->hdnote);
+          break;
         }
     }
 
@@ -1421,22 +1459,29 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
   g_signal_connect_swapped (thumb->close, "button-release-event",
                             G_CALLBACK (thwin_close_clicked),
                             thumb->thwin);
-  clutter_actor_get_size (thumb->close, &w, &h);
-  clutter_actor_set_anchor_point (thumb->close, w/2, h/2);
+  clutter_actor_set_anchor_point_from_gravity (thumb->close,
+                                               CLUTTER_GRAVITY_CENTER);
   clutter_container_add_actor (CLUTTER_CONTAINER (thumb->thwin),
                                thumb->close);
 }
 
-/* Asks the navigator to forget about @win. */
+/*
+ * Asks the navigator to forget about @win.  If @fun is not %NULL it is
+ * called when @win is actually removed from the screen; this may take
+ * some time if there is an effect.  If not, it is called immedeately
+ * with @funparam.
+ */
 void
 hd_task_navigator_remove_window (HdTaskNavigator * self,
-                                 ClutterActor * win)
+                                 ClutterActor * win,
+                                 ClutterEffectCompleteFunc fun,
+                                 gpointer funparam)
 { g_debug (__FUNCTION__);
   guint i;
   Thumbnail *thumb;
   ClutterActor *newborn;
 
-  /* Finf @thumb for @win. */
+  /* Find @thumb for @win. */
   for (i = 0; ; i++)
     {
       g_return_if_fail (i < Thumbnails->len);
@@ -1445,26 +1490,76 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
         break;
     }
 
-  if (hd_task_navigator_is_active (HD_TASK_NAVIGATOR (Navigator)))
-    release_win (thumb);
-  clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator_area),
-                                  thumb->thwin);
+  /* If we're active let's do the TV-turned-off effect on @thumb.
+   * This effect is run in parallel with the flying effects. */
+  if (hd_task_navigator_is_active (self))
+    {
+      MBWMCompMgrClutterClient *cmgrcc;
 
-  g_object_unref(thumb->apwin);
+      /* @thumb points to an element of a #GArray, which is going
+       * to be removed.  Let's make a copy of it. */
+      thumb = g_memdup (thumb, sizeof (*thumb));
+
+      /* Hold a reference on @win's clutter client.
+       * This is taken from hd-comp-mgr.c:hd_comp_mgr_effect(), */
+      cmgrcc = g_object_get_data(G_OBJECT(thumb->apwin),
+                                 "HD-MBWMCompMgrClutterClient");
+      mb_wm_object_ref (MB_WM_OBJECT(cmgrcc));
+      mb_wm_comp_mgr_clutter_client_set_flags (cmgrcc,
+                                 MBWMCompMgrClutterClientDontUpdate
+                               | MBWMCompMgrClutterClientEffectRunning);
+
+      /* Like when closing in application view, the effect is to scale down
+       * vertically the thumbnail until its height becomes 0. */
+      clutter_actor_lower_bottom (thumb->thwin);
+      clutter_actor_move_anchor_point_from_gravity (thumb->thwin,
+                                                    CLUTTER_GRAVITY_CENTER);
+
+      /* At the end of effect deallocate @thumb which we just duplicated,
+       * and release @cmgrcc. */
+      clutter_effect_scale(Fly_effect, thumb->thwin, 1, 0, NULL, NULL);
+      add_effect_closure(Fly_effect_timeline,
+                         (ClutterEffectCompleteFunc)thwin_turned_off_1,
+                         thumb->thwin, thumb);
+      add_effect_closure(Fly_effect_timeline,
+                         (ClutterEffectCompleteFunc)thwin_turned_off_2,
+                         thumb->thwin, cmgrcc);
+    }
+  else
+    { /* Not active, just remove .thwin. */
+      clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator_area),
+                                      thumb->thwin);
+      g_object_unref(thumb->apwin);
+    }
+
+  /* We Don't need .class_hint even if we're doing the TV-turned-off
+   * effect on @thumb. */
   if (thumb->class_hint)
-    XFree (thumb->class_hint);
+    {
+      XFree (thumb->class_hint);
+      thumb->class_hint = NULL;
+    }
 
+  /* If @win had a notification, add it to @Notification_area. */
   newborn = NULL;
   if (thumb->hdnote)
-    { /* @win had a notification, add it to @Notification_area. */
+    {
       mb_wm_object_signal_disconnect (MB_WM_OBJECT (thumb->hdnote),
                                       thumb->hdnote_changed_cb_id);
       newborn = add_notewin_from_hdnote (thumb->hdnote);
       mb_wm_object_unref (MB_WM_OBJECT (thumb->hdnote));
+      thumb->hdnote = NULL;
     }
 
   g_array_remove_index (Thumbnails, i);
   layout (newborn);
+
+  /* Arrange for calling @fun(@funparam) if/when appripriate. */
+  if (is_flying ())
+    add_effect_closure (Fly_effect_timeline,
+                        fun, CLUTTER_ACTOR (self), funparam);
+  else if (fun)
+    fun(CLUTTER_ACTOR (self), funparam);
 }
 
 /*
@@ -1860,7 +1955,7 @@ new_effect (ClutterTimeline ** timelinep)
 static void
 hd_task_navigator_init (HdTaskNavigator * self)
 {
-  static const ClutterColor bgcolor = { 0XFF, 0XFF, 0XFF, 0X7F };
+  static const ClutterColor bgcolor = { 0X00, 0X00, 0X00, 0XAA };
   GtkStyle *style;
   ClutterActor *bg;
 

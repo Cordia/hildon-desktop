@@ -12,13 +12,22 @@
   - Make the operator logo disappear in task switcher view.
   - Show incoming event notification previews.
 
+  - Enter the switcher when an application is closed
+    and the switcher is not empty.
+  - Let the systemui powersave black window overtake the switcher
+    (and don't add it there).
+
   - Show the last frame of the playing videos in the thumbnails.
   - Show open dialogs (if any) in the thumbnails.
   - Support applications with window stacks.
+  - Don't show incoming event notification previews
+    if the do not disturb flag is set.
 
   - Blink the task switcher button when a notification arrives.
   - Blink the task switcher button when it is tapped.
-  - TV-turned-off animation when closing an application in switcher view.
+
+  - Handle commands received during animation gracefully.
+  - Be more sensible differentiating clicks vs. scroll attempts.
 - Implement portrait mode.
 - Implement support for speech bubbles in Contacts applets.
 - Add more error checks to matchbox code (e.g. check every CreateWindow)

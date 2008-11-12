@@ -755,13 +755,22 @@ hd_switcher_remove_notification (HdSwitcher * switcher, HdNote * note)
   hd_swticher_something_removed (switcher);
 }
 
+/* Called when #HdTaskNavigator has finished removing a thumbnail
+ * from the navigator area. */
+static void
+hd_switcher_window_actor_removed (ClutterActor * unused, gpointer switcher)
+{
+  hd_swticher_something_removed (switcher);
+}
+
 void
 hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   HdTaskNavigator   *group = HD_TASK_NAVIGATOR (priv->switcher_group);
-  hd_task_navigator_remove_window (group, actor);
-  hd_swticher_something_removed (switcher);
+  hd_task_navigator_remove_window (group, actor,
+                                   hd_switcher_window_actor_removed,
+                                   switcher);
 }
 
 void
