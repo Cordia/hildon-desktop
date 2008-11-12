@@ -453,6 +453,16 @@ hd_home_desktop_client_message (XClientMessageEvent *xev, void *userdata)
   return True;
 }
 
+static void 
+hd_home_status_area_allocation_changed (
+		ClutterActor    *sa,
+		GParamSpec      *arg1,
+		HdHome          *home)
+{
+	g_debug ("The size of the status area has been changed.");
+	hd_home_fixup_operator_position (home);
+}
+
 static gboolean
 hd_home_applet_close_button_clicked (ClutterActor       *button,
 				     ClutterButtonEvent *event,
@@ -1448,6 +1458,10 @@ hd_home_add_status_area (HdHome *home, ClutterActor *sa)
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group), sa);
 
   hd_home_fixup_operator_position (home);
+
+	g_signal_connect (sa, "notify::allocation",
+			G_CALLBACK (hd_home_status_area_allocation_changed),
+			home);
 }
 
 void

@@ -943,6 +943,11 @@ hd_switcher_home_mode_changed (HdHome         *home,
     hd_switcher_hide_menu_button (switcher);
 }
 
+/**
+ * This function will get the height of the task switcher and the width of the
+ * task switcher plus the width of the status area (if the status area is
+ * present). 
+ */
 void
 hd_switcher_get_control_area_size (HdSwitcher *switcher,
 				   guint *control_width,

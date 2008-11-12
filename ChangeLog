@@ -1,3 +1,17 @@
+2008-11-12  Pere Laszlo  <ext-laszlo.pere@nokia.com>
+
+        Make the operator name move out of the way of the status
+	area when it resizes.
+	closes bug #88444
+        patch number 36447
+	reviewed by: Thomas Thurman
+
+	* src/home/hd-home.c: add new function
+          hd_home_status_area_allocation_changed() to fix up the
+	  position of the operator name, attached as a callback
+	  to the size changing signal of the status area
+	* src/home/hd-switcher.c: add comment describing function
+
 2008-11-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
   * src/mb/hd-comp-mgr.c:
