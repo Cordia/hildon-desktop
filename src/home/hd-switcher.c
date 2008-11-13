@@ -513,6 +513,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
           if (cmgrcc != NULL)
             {
               actor = mb_wm_comp_mgr_clutter_client_get_actor (cmgrcc);
+g_warning("TOP ACTOR %p", actor);
               navigator = HD_TASK_NAVIGATOR (priv->switcher_group);
               if (hd_task_navigator_has_window (navigator, actor))
                 hd_task_navigator_zoom_out (navigator, actor, NULL, NULL);
@@ -624,6 +625,17 @@ hd_switcher_add_window_actor (HdSwitcher * switcher, ClutterActor * actor)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
+  /*
+   * Don't readd @actor if it's already there.  This is not an error:
+   * the frame window of applications being unfullscreened is mapped again
+   * and since HdCompMgr doesn't know the cause of the map it attempts to
+   * add the same client again.
+   */
+  if (hd_task_navigator_has_window (HD_TASK_NAVIGATOR (priv->switcher_group),
+                                    actor))
+    return;
+
+g_warning("ADD %p", actor);
   hd_task_navigator_add_window (HD_TASK_NAVIGATOR (priv->switcher_group),
                                 actor);
 

@@ -1299,7 +1299,7 @@ void
 hd_task_navigator_replace_window (HdTaskNavigator * self,
                                   ClutterActor * old_win,
                                   ClutterActor * new_win)
-{
+{ g_debug(__FUNCTION__);
   Thumbnail *thumb;
   gboolean showing;
 
@@ -1566,7 +1566,8 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
  * Tells the swicher to show @win in a thumbnail when active.  If the
  * navigator is active now it starts managing @win.  When @win is managed
  * by the navigator it is not changed in any means other than reparenting
- * it and setting it to be non-reactive.
+ * it and setting it to be non-reactive.  It is an error to add @win
+ * multiple times.
  */
 void
 hd_task_navigator_add_window (HdTaskNavigator * self,

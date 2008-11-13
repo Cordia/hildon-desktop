@@ -1,3 +1,13 @@
+2008-11-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+  * src/home/hd-switcher.c:
+    Don't add the same window to the switcher more than once,
+    as it happens with unfullscreened windows.
+  * src/home/hd-task-navigator.c:
+    Comment clarification.
+  * src/mb/hd-comp-mgr.c:
+    hd_comp_mgr_close_client(): don't crash if it's errornously passed NULL.
+
 2008-11-12  Pere Laszlo  <ext-laszlo.pere@nokia.com>
 
         Make the operator name move out of the way of the status

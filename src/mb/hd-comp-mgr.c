@@ -972,6 +972,7 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
   HdCompMgrPrivate      * priv = hmgr->priv;
   HdCompMgrClient       * h_client = HD_COMP_MGR_CLIENT (cc);
 
+  g_return_if_fail (cc != NULL);
   if (h_client->priv->hibernating)
     {
       ClutterActor * actor;
