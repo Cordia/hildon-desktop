@@ -711,6 +711,9 @@ hd_background_dialog_init (HdBackgroundDialog *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
 					    HD_TYPE_BACKGROUND_DIALOG,
 					    HdBackgroundDialogPrivate);
+
+  gtk_window_set_title (GTK_WINDOW (self),
+                        _("home_ti_change_backgr"));
 }
 
 GtkWidget *

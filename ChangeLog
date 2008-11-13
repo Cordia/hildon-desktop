@@ -1,3 +1,8 @@
+2008-11-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-background-dialog.c (hd_background_dialog_init): Set
+	window title. Fixes: NB#92490
+
 2008-11-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
   * src/home/hd-switcher.c:
