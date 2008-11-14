@@ -1,3 +1,7 @@
+2008-11-14  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/mb/hd-comp-mgr.c: initialise variable to avoid warning
+
 2008-11-14  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-dummy-launcher.c

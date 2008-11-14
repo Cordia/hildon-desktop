@@ -1122,7 +1122,7 @@ hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid)
 {
   MBWindowManager  *wm;
 /*   HdCompMgrPrivate *priv = hmgr->priv; */
-  gchar            *service;
+  gchar            *service = NULL;
   XClassHint        class_hint;
   Status            status = 0;
 
@@ -1144,8 +1144,6 @@ hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid)
 #if 0
   service = g_hash_table_lookup (apps,
 				(gconstpointer)class_hint.res_name);
-#else
-  service = NULL;
 #endif
 
  out:
