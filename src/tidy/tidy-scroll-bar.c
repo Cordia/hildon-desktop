@@ -648,6 +648,7 @@ tidy_scroll_bar_set_handle (TidyScrollBar *bar,
       ClutterColor *color;
       
       handle = clutter_rectangle_new ();
+      clutter_actor_set_name(handle, "TidyScrollBar:handle");
   
       tidy_stylable_get (TIDY_STYLABLE (bar), "active-color", &color, NULL);
       if (color)

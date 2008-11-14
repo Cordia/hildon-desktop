@@ -1,3 +1,20 @@
+2008-11-14  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-dummy-launcher.c
+	* src/launcher/hd-launcher-utils.c
+	* src/launcher/hd-task-launcher.c
+	* src/home/hd-edit-menu.c
+	* src/tidy/tidy-scroll-bar.c
+	* src/util/hd-gtk-utils.c
+	Named some clutter actors to ease debugging
+	* src/home/hd-home.c
+	Named some clutter actors to ease debugging
+	Removed large background texture
+	* src/home/hd-home-view.c
+	Named some clutter actors to ease debugging
+	Removed the solid background rectangle when an image is added
+	Background Image added at the same position as previous image
+
 2008-11-14  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.5

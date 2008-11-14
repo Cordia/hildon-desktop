@@ -135,6 +135,7 @@ launch_item (ClutterActor *actor,
 
   /* copy the launcher icon, then scale it to fit */
   copy = clutter_rectangle_new ();
+  clutter_actor_set_name(copy, "HdTaskLauncher:iconcopy");
   clutter_rectangle_set_color (CLUTTER_RECTANGLE (copy), &color);
   clutter_actor_set_position (copy, item_x, item_y);
   clutter_actor_set_size (copy, item_width, item_height);

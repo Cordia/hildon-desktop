@@ -427,7 +427,7 @@ hd_home_view_constructed (GObject *object)
       clr.green = 0;
     }
   rect = clutter_rectangle_new_with_color (&clr);
-
+  clutter_actor_set_name (rect, "HdHomeView::background");
   clutter_actor_set_size (rect, priv->xwidth, priv->xheight);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
 
@@ -489,6 +489,7 @@ hd_home_view_init (HdHomeView *self)
   self->priv =
     G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME_VIEW, HdHomeViewPrivate);
   self->priv->background_mode = HDHV_BACKGROUND_STRETCHED;
+  clutter_actor_set_name(CLUTTER_ACTOR(self), "HdHomeView");
 }
 
 static void
@@ -601,11 +602,19 @@ bg_image_set_idle_cb (gpointer data)
   clutter_container_add_actor (CLUTTER_CONTAINER (self), new_bg);
   
   if (priv->background_image)
-    clutter_actor_destroy (priv->background_image);
+    {
+      /* make us the same level as the old image */
+      clutter_actor_lower (new_bg, priv->background_image);      
+      clutter_actor_destroy (priv->background_image);
+    }
   priv->background_image = new_bg;
-
-  if (priv->background)
-    clutter_actor_raise (priv->background_image, priv->background);
+  
+  /* remove the background because we don't want it now */
+  if (priv->background) 
+    {
+      clutter_actor_destroy (priv->background);
+      priv->background = 0;
+    }
   
   if (!priv->bg_image_skip_gconf)
     {
@@ -777,7 +786,7 @@ hd_home_view_refresh_bg (HdHomeView		  *self,
 			 HdHomeViewBackgroundMode  mode)
 {
   HdHomeViewPrivate *priv = self->priv;
-
+  
   /* Join with former thread */
   if (priv->bg_image_thread)
     {

@@ -29,6 +29,7 @@ hd_dummy_launcher_get_icon (HdLauncherItem *item)
   color.alpha = 255;
 
   retval = clutter_rectangle_new ();
+  clutter_actor_set_name(retval, "hd_dummy_launcher_get_icon");
   clutter_rectangle_set_color (CLUTTER_RECTANGLE (retval), &color);
   clutter_actor_set_size (retval, size, size);
 

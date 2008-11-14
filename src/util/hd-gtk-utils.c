@@ -58,6 +58,7 @@ error:
   g_error ("Failure loading icon %s: %s", icon_name, tmp_error->message);
   fake_icon = clutter_rectangle_new ();
   clutter_actor_set_size (fake_icon, size, size);
+  clutter_actor_set_name (fake_icon, "LOAD FAIL ICON");
   return fake_icon;
 }
 

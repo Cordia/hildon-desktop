@@ -86,7 +86,6 @@ struct _HdHomePrivate
   ClutterEffectTemplate *zoom_template;
   ClutterEffectTemplate *edit_button_template;
 
-  ClutterActor          *background;
   ClutterActor          *main_group; /* Where the views + their buttons live */
   ClutterActor          *edit_group; /* An overlay group for edit mode */
   ClutterActor          *control_group;
@@ -682,9 +681,6 @@ hd_home_constructed (GObject *object)
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
 
-  priv->background = clutter_rectangle_new_with_color (&clr);
-  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->background);
-
   main_group = priv->main_group = clutter_group_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (object), main_group);
 
@@ -730,8 +726,6 @@ hd_home_constructed (GObject *object)
     }
 
   priv->n_views = i;
-
-  clutter_actor_set_size (priv->background, priv->xwidth * i, priv->xheight);
 
   priv->back_button =
     hd_gtk_icon_theme_load_icon (icon_theme, BACK_BUTTON, 48, 0);
@@ -781,6 +775,7 @@ hd_home_constructed (GObject *object)
 			       priv->operator_label);
 
   priv->left_switch = clutter_rectangle_new ();
+  clutter_actor_set_name (priv->left_switch, "HdHome:left_switch");
 
   /* FIXME -- should the color come from theme ? */
   clr.red = 0;
@@ -795,6 +790,7 @@ hd_home_constructed (GObject *object)
   clutter_actor_hide (priv->left_switch);
 
   priv->right_switch = clutter_rectangle_new ();
+  clutter_actor_set_name (priv->right_switch, "HdHome:right_switch");
 
   clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->right_switch), &clr);
 
@@ -828,6 +824,7 @@ hd_home_constructed (GObject *object)
   clr.blue  = 0x77;
 
   priv->grey_filter = clutter_rectangle_new_with_color (&clr);
+  clutter_actor_set_name (priv->grey_filter, "HdHome:grey_filter");
 
   clutter_actor_set_size (priv->grey_filter, priv->xwidth, priv->xheight);
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
@@ -1961,9 +1958,6 @@ hd_home_activate_view (HdHome * home, guint id)
   ++priv->n_views;
 
   clutter_actor_show (view);
-
-  clutter_actor_set_size (priv->background, priv->xwidth * priv->n_views,
-			  priv->xheight);
 }
 
 static void
@@ -1985,9 +1979,6 @@ hd_home_deactivate_view (HdHome * home, guint id)
   --priv->n_views;
 
   clutter_actor_hide (view);
-
-  clutter_actor_set_size (priv->background, priv->xwidth * priv->n_views,
-			  priv->xheight);
 
   if (priv->current_view == priv->n_views)
     priv->current_view = 0;

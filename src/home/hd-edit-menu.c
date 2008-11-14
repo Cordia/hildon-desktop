@@ -131,7 +131,8 @@ hd_edit_menu_constructed (GObject *object)
   iwidth = (xwidth - 2 * HDEM_PADDING_EXT - 3 * HDEM_PADDING_INT) / 2;
 
   rect = clutter_rectangle_new_with_color (&clr_c);
-
+  
+  clutter_actor_set_name (rect, "HdEditMenu:edit");
   clutter_actor_set_size (rect, xwidth, wm->xdpy_height);
   clutter_actor_show (rect);
   clutter_actor_set_reactive (rect, TRUE);
@@ -146,6 +147,7 @@ hd_edit_menu_constructed (GObject *object)
 
   rect = clutter_rectangle_new_with_color (&clr_b);
 
+  clutter_actor_set_name (rect, "HdEditMenu:padding");
   clutter_actor_set_size (rect,
 			  xwidth - 2 * HDEM_PADDING_EXT,
 			  (HDEM_ITEM_HEIGHT + HDEM_PADDING_INT)*3 +

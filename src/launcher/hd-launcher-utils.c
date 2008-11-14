@@ -468,6 +468,7 @@ hd_get_application_launcher (HdSwitcher *switcher, HdSwitcherCb switcher_cb)
       ClutterColor background_color = { 0, 0, 0, 0xAA };
       hd_launcher->background =
         clutter_rectangle_new_with_color (&background_color);
+      clutter_actor_set_name(hd_launcher->background, "hd_get_application_launcher");
       clutter_actor_set_position (hd_launcher->background, 0, 0);
       clutter_actor_set_size (hd_launcher->background, 800, 480);
       clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
