@@ -2,6 +2,8 @@
 
 	Release 2.2.5
 
+	Removed data/themes
+
 2008-11-13  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-background-dialog.c (hd_background_dialog_init): Set
