@@ -5,53 +5,54 @@
 
 2008-11-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-  * src/home/hd-switcher.c:
-    Don't add the same window to the switcher more than once,
-    as it happens with unfullscreened windows.
-  * src/home/hd-task-navigator.c:
-    Comment clarification.
-  * src/mb/hd-comp-mgr.c:
-    hd_comp_mgr_close_client(): don't crash if it's errornously passed NULL.
+	* src/home/hd-switcher.c:
+	Don't add the same window to the switcher more than once,
+	as it happens with unfullscreened windows.
+	* src/home/hd-task-navigator.c:
+	Comment clarification.
+	* src/mb/hd-comp-mgr.c:
+	hd_comp_mgr_close_client(): don't crash if it's erroneously
+	passed NULL.
 
 2008-11-12  Pere Laszlo  <ext-laszlo.pere@nokia.com>
 
-        Make the operator name move out of the way of the status
+	Make the operator name move out of the way of the status
 	area when it resizes.
 	closes bug #88444
-        patch number 36447
+	patch number 36447
 	reviewed by: Thomas Thurman
 
 	* src/home/hd-home.c: add new function
-          hd_home_status_area_allocation_changed() to fix up the
-	  position of the operator name, attached as a callback
-	  to the size changing signal of the status area
+	hd_home_status_area_allocation_changed() to fix up the
+	position of the operator name, attached as a callback
+	to the size changing signal of the status area
 	* src/home/hd-switcher.c: add comment describing function
 
 2008-11-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-  * src/mb/hd-comp-mgr.c:
-    Don't add windows marked as SkipTaskbar to the task switcher.
+	* src/mb/hd-comp-mgr.c:
+	Don't add windows marked as SkipTaskbar to the task switcher.
 
 2008-11-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-  Do a TV-turned-off-like effect when an application is closed
-  in switcher view.
+	Do a TV-turned-off-like effect when an application is closed
+	in switcher view.
 
-  * src/home/hd-switcher.c:
-    Keep the switcher open while the effect is running.
-  * src/home/hd-task-navigator.h
-  * src/home/hd-task-navigator.c:
-    Take advantage of clutter_actor_set_anchor_point_from_gravity().
-  * src/mb/hd-comp-mgr.c:
-    Disable its own TV-turned-off effect in switcher view.
-  * TODO:
-    Switcher-related todos updated.
+	* src/home/hd-switcher.c:
+	Keep the switcher open while the effect is running.
+	* src/home/hd-task-navigator.h
+	* src/home/hd-task-navigator.c:
+	Take advantage of clutter_actor_set_anchor_point_from_gravity().
+	* src/mb/hd-comp-mgr.c:
+	Disable its own TV-turned-off effect in switcher view.
+	* TODO:
+	Switcher-related todos updated.
 
 2008-11-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-  * src/mb/hd-comp-mgr.c:
-    Fix r31798's patch application which left the application's
-    thumbnail in the switcher.
+	* src/mb/hd-comp-mgr.c:
+	Fix r31798's patch application which left the application's
+	thumbnail in the switcher.
 
 2008-11-10  Jan Arne Petersen  <jpetersen@openismus.com>
 

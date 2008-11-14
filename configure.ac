@@ -82,7 +82,6 @@ src/util/Makefile
 data/Makefile
 data/icons/Makefile
 data/icons/48x48/Makefile
-data/themes/Makefile
 tests/Makefile
 ])
 

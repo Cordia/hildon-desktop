@@ -1,11 +1,11 @@
-hildon-desktop (1:2.2.5-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.5-1) unstable; urgency=low
 
   * Adam: Enhancements in the task switcher view.
   * Marc: Fix hildon-desktop startup in Scratchbox.
   * Fix installation location of Gconf schemas.
   * Set window title in background image dialog. Fixes: NB#92490
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 07 Nov 2008 18:13:21 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 14 Nov 2008 12:20:38 +0200
 
 hildon-desktop (1:2.2.4-1) unstable; urgency=low
 

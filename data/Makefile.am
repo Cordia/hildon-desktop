@@ -1,4 +1,4 @@
-SUBDIRS = icons themes
+SUBDIRS = icons
 
 resdir = $(datadir)/hildon-desktop
 res_DATA = \
