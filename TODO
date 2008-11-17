@@ -14,17 +14,11 @@
 
   - Enter the switcher when an application is closed
     and the switcher is not empty.
-  - Let the systemui powersave black window overtake the switcher
-    (and don't add it there).
 
-  - Show the last frame of the playing videos in the thumbnails.
   - Show open dialogs (if any) in the thumbnails.
   - Support applications with window stacks.
   - Don't show incoming event notification previews
     if the do not disturb flag is set.
-
-  - Blink the task switcher button when a notification arrives.
-  - Blink the task switcher button when it is tapped.
 
   - Remove status area handling from task switcher.
   - Handle commands received during animation gracefully.

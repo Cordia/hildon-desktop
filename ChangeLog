@@ -1,3 +1,13 @@
+2008-11-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Show the last frame of a paused video in switcher view.
+
+	* src/home/hd-task-navigator.c:
+	  * pixbuf2texture(): Be more robust and check the input pixbuf.
+	    Accept pixbufs with alpha channel.
+	* src/home/hd-switcher.c:
+	  Removed some debug prints.
+
 2008-11-14  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/mb/hd-comp-mgr.c: initialise variable to avoid warning
