@@ -1065,6 +1065,8 @@ layout (ClutterActor * newborn)
 /* Layout engine }}} */
 
 /* Child adoption {{{ */
+static void reset_thumb_title (Thumbnail * thumb);
+
 /* Returns whether the application represented by @thumb has
  * a video screenshot and it should be loaded or reloaded.
  * If so it refreshes @thumb->video_mtime. */
@@ -1162,6 +1164,10 @@ claim_win (Thumbnail * thumb)
   else
     /* Only show @thumb->video. */
     clutter_actor_hide (thumb->apwin);
+
+  /* Make sure @thumb->title is up-to-date. */
+  if (!thumb->hdnote)
+    reset_thumb_title (thumb);
 }
 
 /* Stop managing @thumb's application window and give it back
@@ -1234,7 +1240,7 @@ set_thumb_title (Thumbnail * thumb, ClutterActor * title)
       guint wthumb;
 
       /* Either called from hd_task_navigator_add_notification()
-       * or *_remove_notification(). */
+       * or *_remove_notification() or claim_win(). */
 
       thumb_size (&wthumb, NULL);
       clutter_actor_set_x (title, title_area_pos (wthumb));
@@ -1269,18 +1275,24 @@ reset_thumb_title (Thumbnail * thumb)
 {
   const MBWMClientWindow *mbwmcwin;
 
-  if (thumb->title)
+  mbwmcwin = actor_to_client_window (thumb->apwin);
+  if (!thumb->title)
+    { /* @thumb is being created */
+      g_assert (thumb->hdnote == NULL);
+    }
+  else if (thumb->hdnote)
     { /* Reset the title being set_thumb_title_from_hdnote(). */
-      g_assert (thumb->hdnote != NULL);
       mb_wm_object_signal_disconnect (MB_WM_OBJECT (thumb->hdnote),
                                       thumb->hdnote_changed_cb_id);
       mb_wm_object_unref (MB_WM_OBJECT (thumb->hdnote));
       thumb->hdnote = NULL;
       thumb->title_icon = thumb->title_text = NULL;
-    } else /* @thumb is being created */
-      g_assert (thumb->hdnote == NULL);
+    }
+  else if (!strcmp (mbwmcwin->name,
+                    clutter_label_get_text (CLUTTER_LABEL (thumb->title))))
+    /* Called from claim_win() to refresh the title if it's changed. */
+    return;
 
-  mbwmcwin = actor_to_client_window (thumb->apwin);
   set_thumb_title (thumb, thumb_title_text (mbwmcwin->name));
 }
 
@@ -1548,6 +1560,8 @@ hd_task_navigator_replace_window (HdTaskNavigator * self,
   if (old_win == new_win || !(thumb = find_by_apwin(old_win)))
     return;
 
+  /* The title is reset from claim_win() if it's changed,
+   * eg. if the window is replaced because of stacking. */
   showing = hd_task_navigator_is_active (self);
   if (showing)
     release_win (thumb);

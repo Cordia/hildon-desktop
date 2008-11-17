@@ -11,12 +11,11 @@
   - Don't show inforbanners in task switcher view.
   - Make the operator logo disappear in task switcher view.
   - Show incoming event notification previews.
+  - Ellipsize/truncate thumbnail titles.
 
   - Enter the switcher when an application is closed
     and the switcher is not empty.
-
   - Show open dialogs (if any) in the thumbnails.
-  - Support applications with window stacks.
   - Don't show incoming event notification previews
     if the do not disturb flag is set.
 

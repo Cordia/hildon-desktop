@@ -1,5 +1,13 @@
 2008-11-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-task-navigator.c:
+	  Show the correct (wrt stacking) and up-to-date window title in
+	  the thumbnails in switcher view.
+	* TODO:
+	  Added and removed switcher todos.
+
+2008-11-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Show the last frame of a paused video in switcher view.
 
 	* src/home/hd-task-navigator.c:
