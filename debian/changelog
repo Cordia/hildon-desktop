@@ -1,3 +1,44 @@
+hildon-desktop (1:2.2.6-1~unreleased) unstable; urgency=low
+
+        Adam:
+
+        * src/home/hd-task-navigator.c:
+          Show the correct (wrt stacking) and up-to-date window title in
+          the thumbnails in switcher view.
+        * TODO:
+          Added and removed switcher todos.
+
+        Show the last frame of a paused video in switcher view.
+
+        * src/home/hd-task-navigator.c:
+          * pixbuf2texture(): Be more robust and check the input pixbuf.
+            Accept pixbufs with alpha channel.
+        * src/home/hd-switcher.c:
+          Removed some debug prints.
+
+        Thomas:
+
+        * src/mb/hd-comp-mgr.c: initialise variable to avoid warning
+
+        Gordon:
+
+        * src/launcher/hd-dummy-launcher.c
+        * src/launcher/hd-launcher-utils.c
+        * src/launcher/hd-task-launcher.c
+        * src/home/hd-edit-menu.c
+        * src/tidy/tidy-scroll-bar.c
+        * src/util/hd-gtk-utils.c
+        Named some clutter actors to ease debugging
+        * src/home/hd-home.c
+        Named some clutter actors to ease debugging
+        Removed large background texture
+        * src/home/hd-home-view.c
+        Named some clutter actors to ease debugging
+        Removed the solid background rectangle when an image is added
+        Background Image added at the same position as previous image
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 17 Nov 2008 12:45:01 +0200
+
 hildon-desktop (1:2.2.5-1) unstable; urgency=low
 
   * Adam: Enhancements in the task switcher view.
