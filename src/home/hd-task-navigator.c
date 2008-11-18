@@ -17,6 +17,7 @@
  * Thumbnail.thwin hierarchy:
  *   .prison                  #ClutterGroup
  *     .apwin                 #ClutterActor
+ *     .dialog                #ClutterActor
  *     .video                 #ClutterTexture
  *   .foreground              #ClutterCloneTexture
  *   .title                   #ClutterLabel or #ClutterGroup
@@ -193,9 +194,12 @@ typedef struct
    * -- @inapwin:     Delimits the non-decoration area in @apwin; this is
    *                  what we want to show in the navigator, not the whole
    *                  @apwin.
-   * -- @parent:      @apwin's original parent we took it away from when we
-   *                  entered the navigator.
-   * -- @class_hint:  @apwin's XClassHint.res_class (effectively the name
+   * -- @dialog:      The application's dialog if it as any.  It is shown
+   *                  along with .apwin, and its parent is expected to be
+   *                  the same as @apwin's.  Hidden if we have a .video.
+   * -- @parent:      .apwin's (and @dialog's) original parent we took it
+   *                  away from when we entered the navigator.
+   * -- @class_hint:  .apwin's XClassHint.res_class (effectively the name
    *                  of the application).  Needs to be XFree()d.
    *
    * -- @video_fname: Where to look for the last-frame video screenshot
@@ -216,7 +220,7 @@ typedef struct
   ClutterActor                *thwin, *prison, *foreground;
   ClutterActor                *title, *title_icon, *title_text;
   ClutterActor                *close, *hibernation;
-  ClutterActor                *parent, *apwin, *video;
+  ClutterActor                *parent, *apwin, *dialog, *video;
   const MBGeometry            *inapwin;
   gchar                       *class_hint, *video_fname;
   time_t                       video_mtime;
@@ -1120,8 +1124,9 @@ need_to_load_video (Thumbnail * thumb)
   return FALSE;
 }
 
-/* Start managing @thumb's application window and loads/reloads
- * its last-frame video screenshot if necessary. */
+/* Start managing @thumb's application window and loads/reloads its
+ * last-frame video screenshot if necessary.  Called when we enter
+ * the switcher or when a new window is added in switcher view. */
 static void
 claim_win (Thumbnail * thumb)
 {
@@ -1132,9 +1137,18 @@ claim_win (Thumbnail * thumb)
    * If we don't @thumb->apwin will be managed by its current parent and
    * we cannot force hiding it which would result in a full-size apwin
    * appearing in the background if it's added in switcher mode.
+   * TODO It may be unnecessary to play with reactivity.
    */
   thumb->parent = clutter_actor_get_parent (thumb->apwin);
   reparent (thumb->apwin, thumb->prison, thumb->parent);
+  if (thumb->dialog)
+    { /* Do the same to .dialog; its position is already right. */
+      if (clutter_actor_get_parent (thumb->dialog) == thumb->parent)
+        reparent (thumb->dialog, thumb->prison, thumb->parent);
+      else /* This would be a problem when we release_win() because we're
+            * lazy and don't want to track .dialog's parent separately. */
+        g_critical ("dialog has unexpected parent");
+    }
 
   /* Load the video screenshot and place its actor in the hierarchy. */
   if (need_to_load_video (thumb))
@@ -1160,10 +1174,22 @@ claim_win (Thumbnail * thumb)
        * window's clicks, so we can zoom in. */
       clutter_actor_show (thumb->apwin);
       clutter_actor_set_reactive (thumb->apwin, FALSE);
+      if (thumb->dialog)
+        {
+          clutter_actor_show (thumb->dialog);
+          clutter_actor_set_reactive (thumb->dialog, FALSE);
+        }
     }
   else
-    /* Only show @thumb->video. */
-    clutter_actor_hide (thumb->apwin);
+    {
+      /* Only show @thumb->video. */
+      clutter_actor_hide (thumb->apwin);
+      if (thumb->dialog)
+        { /* That sure is odd. */
+          g_warning ("apwin %p has both dialog and video", thumb->apwin);
+          clutter_actor_hide (thumb->apwin);
+        }
+    }
 
   /* Make sure @thumb->title is up-to-date. */
   if (!thumb->hdnote)
@@ -1181,6 +1207,9 @@ release_win (const Thumbnail * thumb)
    * clutter_actor_hide (thumb->apwin);
    */
   reparent (thumb->apwin, thumb->parent, thumb->prison);
+  if (thumb->dialog && clutter_actor_get_parent (thumb->dialog) == thumb->prison)
+    /* Made sure we managed to claim .dialog in claim_win(). */
+    reparent (thumb->dialog, thumb->parent, thumb->prison);
 }
 /* Child adoption }}} */
 
@@ -1548,7 +1577,8 @@ hd_task_navigator_hibernate_window (HdTaskNavigator * self,
 }
 
 /* Tells us to show @new_win in place of @old_win, and forget about
- * the latter one entirely. */
+ * the latter one entirely.  Replaceing the window doesn't affect
+ * its dialog if one was set earlier. */
 void
 hd_task_navigator_replace_window (HdTaskNavigator * self,
                                   ClutterActor * old_win,
@@ -1561,11 +1591,12 @@ hd_task_navigator_replace_window (HdTaskNavigator * self,
     return;
 
   /* The title is reset from claim_win() if it's changed,
-   * eg. if the window is replaced because of stacking. */
+   * eg. if the window is replaced because of stacking.
+   * TODO Should we ditch .dialog? */
   showing = hd_task_navigator_is_active (self);
   if (showing)
     release_win (thumb);
-  g_object_unref(thumb->apwin);
+  g_object_unref (thumb->apwin);
   thumb->apwin = g_object_ref(new_win);
   if (showing)
     claim_win (thumb);
@@ -1598,7 +1629,9 @@ thwin_turned_off_1 (ClutterActor * unused, Thumbnail * thumb)
   release_win (thumb);
   clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator_area),
                                   thumb->thwin);
-  g_object_unref(thumb->apwin);
+  g_object_unref (thumb->apwin);
+  if (thumb->dialog)
+    g_object_unref (thumb->dialog);
   g_free (thumb);
 }
 
@@ -1787,7 +1820,9 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
     { /* Not active, just remove .thwin. */
       clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator_area),
                                       thumb->thwin);
-      g_object_unref(thumb->apwin);
+      g_object_unref (thumb->apwin);
+      if (thumb->dialog)
+        g_object_unref (thumb->dialog);
     }
 
   /* We don't need .class_hint even if we're doing the TV-turned-off
@@ -1851,6 +1886,65 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
     }
 
   layout (thumb.thwin);
+}
+
+/* Remove @dialog from the switcher and don't show it again. */
+void
+hd_task_navigator_remove_dialog (HdTaskNavigator * self,
+                                 ClutterActor * dialog)
+{ g_debug (__FUNCTION__);
+  guint i;
+  Thumbnail *thumb;
+
+  /* Find @thumb by @dialog. */
+  for (i = 0; i < Thumbnails->len; i++)
+    {
+      thumb = &g_array_index (Thumbnails, Thumbnail, i);
+      if (thumb->dialog == dialog)
+        {
+          if (hd_task_navigator_is_active (self))
+            reparent (dialog, thumb->parent, thumb->prison);
+          g_object_unref (thumb->dialog);
+          thumb->dialog = NULL;
+          return;
+        }
+    }
+
+  g_critical("couldn't find application for dialog %p", dialog);
+}
+
+/*
+ * Show a dialog window in @win's thumbnail.  An application should have
+ * at most one dialog at a time.  @dialog is expected to be positioned
+ * already.  It is an error to add the same @dialog to two different
+ * applications.
+ */
+void
+hd_task_navigator_add_dialog (HdTaskNavigator * self,
+                              ClutterActor * win,
+                              ClutterActor * dialog)
+{ g_debug (__FUNCTION__);
+  Thumbnail *thumb;
+
+  if (!(thumb = find_by_apwin(win)))
+    return;
+
+  if (thumb->dialog)
+    {
+      /* Replace it.  When the caller wants to *_remove_dialog(@dialog)
+       * it will simply get another critical warning. */
+      g_critical ("win %p already has a dialog", win);
+      hd_task_navigator_remove_dialog (self, dialog);
+    }
+
+  /* Claim @dialog now if we're active. */
+  if (hd_task_navigator_is_active (self))
+    { /* We don't want to track @dialog's parent separately. */
+      g_return_if_fail (clutter_actor_get_parent (dialog) == thumb->parent);
+      reparent (dialog, thumb->prison, thumb->parent);
+    }
+
+  thumb->dialog = g_object_ref (dialog);
 }
 /* Add/remove windows }}} */
 

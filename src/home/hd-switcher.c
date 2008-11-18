@@ -728,6 +728,26 @@ hd_switcher_add_notification (HdSwitcher * switcher, HdNote * note)
   hd_switcher_setup_buttons (switcher, TRUE);
 }
 
+void
+hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
+                        ClutterActor *dialog)
+{
+  ClutterActor *parent;
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdTaskNavigator *navigator = HD_TASK_NAVIGATOR (priv->switcher_group);
+
+  g_return_if_fail (mbwmc->transient_for);
+  parent = mb_wm_comp_mgr_clutter_client_get_actor (
+       MB_WM_COMP_MGR_CLUTTER_CLIENT (mbwmc->transient_for->cm_client));
+  hd_task_navigator_add_dialog (navigator, parent, dialog);
+
+  /* Zoom in the application @dialog belongs to if this is a confirmation
+   * note.  This is to support closing applications that want to show a
+   * confirmation before closing. */
+  if (HD_IS_NOTE (mbwmc) && hd_switcher_showing_switcher (switcher))
+    hd_switcher_item_selected (switcher, parent, navigator);
+}
+
 /* Called when a window or a notification is removed from the switcher.
  * Exit the switcher if it's become empty and set up the switcher button
  * appropriately. */
@@ -763,6 +783,15 @@ hd_switcher_remove_notification (HdSwitcher * switcher, HdNote * note)
   HdTaskNavigator *group = HD_TASK_NAVIGATOR (priv->switcher_group);
   hd_task_navigator_remove_notification (group, note);
   hd_swticher_something_removed (switcher);
+}
+
+void
+hd_switcher_remove_dialog (HdSwitcher * switcher,
+                           ClutterActor * dialog)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdTaskNavigator *group = HD_TASK_NAVIGATOR (priv->switcher_group);
+  hd_task_navigator_remove_dialog (group, dialog);
 }
 
 /* Called when #HdTaskNavigator has finished removing a thumbnail

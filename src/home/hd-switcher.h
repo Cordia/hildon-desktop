@@ -64,6 +64,9 @@ void hd_switcher_add_window_actor    (HdSwitcher   * switcher,
 void hd_switcher_add_status_area (HdSwitcher *switcher, ClutterActor *sa);
 void hd_switcher_add_status_menu (HdSwitcher *switcher, ClutterActor *sa);
 void hd_switcher_add_notification (HdSwitcher *switcher, HdNote *note);
+void hd_switcher_add_dialog (HdSwitcher *switcher,
+                             MBWindowManagerClient *mbwmc,
+                             ClutterActor *dialog);
 
 void hd_switcher_remove_window_actor (HdSwitcher   * switcher,
 				      ClutterActor * actor);
@@ -72,7 +75,9 @@ void hd_switcher_remove_status_area (HdSwitcher   * switcher,
 void hd_switcher_remove_status_menu (HdSwitcher   * switcher,
 				     ClutterActor * sa);
 void hd_switcher_remove_notification (HdSwitcher * switcher,
-                                      HdNote *note);
+                                      HdNote * note);
+void hd_switcher_remove_dialog (HdSwitcher * switcher,
+                                ClutterActor * dialog);
 
 void hd_switcher_replace_window_actor (HdSwitcher   * switcher,
 				       ClutterActor * old,

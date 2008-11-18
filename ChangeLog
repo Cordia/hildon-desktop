@@ -1,3 +1,16 @@
+2008-11-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Show open dialogs in the applications' thumbnail in switcher view.
+	Switch to the application if it opens a confirmation note.
+
+	* src/mb/hd-comp-mgr.c:
+	  Add/remove dialogs and confirmation notes to the switcher
+	  on map/unregister.
+	* src/home/hd-switcher.c
+	* src/home/hd-task-navigator.c
+	* src/home/hd-switcher.h
+	* src/home/hd-task-navigator.h
+
 2008-11-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.6

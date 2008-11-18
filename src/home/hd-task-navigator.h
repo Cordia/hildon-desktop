@@ -46,6 +46,12 @@ void hd_task_navigator_replace_window   (HdTaskNavigator *self,
 void hd_task_navigator_hibernate_window (HdTaskNavigator *self,
                                          ClutterActor *win);
 
+void hd_task_navigator_add_dialog (HdTaskNavigator *self,
+                                   ClutterActor *win,
+                                   ClutterActor *dialog);
+void hd_task_navigator_remove_dialog (HdTaskNavigator *self,
+                                      ClutterActor *dialog);
+
 void hd_task_navigator_add_notification    (HdTaskNavigator *self,
                                             HdNote *hdnote);
 void hd_task_navigator_remove_notification (HdTaskNavigator *self,
