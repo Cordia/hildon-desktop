@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.7-1~unreleased) unstable; urgency=low
+
+  * <Write here>
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Nov 2008 13:26:21 +0200
+
 hildon-desktop (1:2.2.6-1) unstable; urgency=low
 
         * src/mb/hd-comp-mgr.c, src/mb/hd-theme.c: Patch from Laszlo Pere to
