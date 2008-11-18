@@ -1,5 +1,7 @@
 2008-11-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.6
+
 	* src/mb/hd-comp-mgr.c, src/mb/hd-theme.c: Patch from Laszlo Pere to
 	make stackable windows better supported. Fixes: NB#87040
 

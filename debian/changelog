@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.6-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.6-1) unstable; urgency=low
 
         * src/mb/hd-comp-mgr.c, src/mb/hd-theme.c: Patch from Laszlo Pere to
         make stackable windows better supported. Fixes: NB#87040
