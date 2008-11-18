@@ -627,7 +627,8 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       hd_switcher_remove_notification (HD_SWITCHER (priv->switcher_group),
                                        HD_NOTE (c));
     }
-  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDialog)
+  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDialog
+           && c->transient_for)
     {
       hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
     }
@@ -707,7 +708,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         hd_switcher_add_dialog (HD_SWITCHER (priv->switcher_group), c, actor);
       return;
     }
-  else if (ctype == MBWMClientTypeDialog)
+  else if (ctype == MBWMClientTypeDialog && c->transient_for)
     {
       hd_switcher_add_dialog (HD_SWITCHER (priv->switcher_group), c, actor);
       return;

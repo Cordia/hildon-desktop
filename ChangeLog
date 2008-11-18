@@ -1,5 +1,10 @@
 2008-11-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/mb/hd-comp-mgr.c:
+	  Dont't give system-modal dialogs to the switcher.
+
+2008-11-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Show open dialogs in the applications' thumbnail in switcher view.
 	Switch to the application if it opens a confirmation note.
 
