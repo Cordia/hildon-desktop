@@ -113,12 +113,8 @@ back_button_timeout (gpointer data)
 {
   BackButtonData        *bd = data;
   MBWindowManagerClient *c;
-  MBWindowManagerClient *leader;
-  MBWindowManager       *wm;
-  HdApp                 *app;
 
   c = bd->button->decor->parent_client;
-  wm = c->wmref;
 
   bd->timeout_handled = TRUE;
   bd->timeout_id = 0;
@@ -129,12 +125,8 @@ back_button_timeout (gpointer data)
       g_warning ("Custom button on a something other than App.");
       return FALSE;
     }
-
-  app = HD_APP (c);
-
-  leader = hd_app_close_followers (app);
-  mb_wm_activate_client (wm, leader);
-
+  
+  mb_wm_client_deliver_delete (c);
   return FALSE;
 }
 
@@ -159,10 +151,9 @@ back_button_release_handler (MBWindowManager   *wm,
 {
   BackButtonData        *bd = userdata;
   MBWindowManagerClient *c;
-  MBWindowManagerClient *prev;
-  HdApp                 *app;
 
-  if (!bd || bd->timeout_handled)
+  g_warning ("------------> bd = %p", bd);
+  if (bd->timeout_handled) 
     return;
 
   g_source_remove (bd->timeout_id);
@@ -170,31 +161,7 @@ back_button_release_handler (MBWindowManager   *wm,
 
   /* TODO -- switch to previous window in group */
   c = button->decor->parent_client;
-
-  if (!HD_IS_APP (c))
-    {
-      g_warning ("Custom button on a something other than App.");
-      return;
-    }
-
-  app = HD_APP (c);
-
-  if (app->secondary_window)
-    {
-      MBWMCompMgrClutterClient *self = NULL;
-
-      /* hide self, show previous, delete self */
-
-      self = MB_WM_COMP_MGR_CLUTTER_CLIENT (((MBWindowManagerClient *)app)->cm_client);
-
-      prev = hd_app_get_prev_group_member (app);
-      mb_wm_activate_client (wm, prev);
-
-      clutter_actor_show
-        (mb_wm_comp_mgr_clutter_client_get_actor(MB_WM_COMP_MGR_CLUTTER_CLIENT (((MBWindowManagerClient *)prev)->cm_client)));
-
-      mb_wm_client_deliver_delete (c);
-    }
+  mb_wm_client_deliver_delete (c);
 }
 
 
@@ -205,6 +172,7 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
   MBWindowManager       *wm     = client->wmref;
   MBWMDecorButton       *button = NULL;
   gboolean               is_leader = TRUE;
+
 
   if (MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeApp)
     {
@@ -220,28 +188,19 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
       while (l)
 	{
 	  MBWMXmlButton * b = l->data;
-
-      /* Close button only for group leader */
-      if (b->type == MBWMDecorButtonClose && is_leader)
-      {
-        button = mb_wm_decor_button_stock_new (wm,
-                                               b->type,
-                                               b->packing,
-                                               decor,
-                                               0);
-      }
+	
 	  /* Back button only for group followers */
-	  else if (b->type == HdHomeThemeButtonBack && !is_leader)
+	  if (b->type == HdHomeThemeButtonBack && !is_leader)
 	    {
 	      BackButtonData *bd;
 
 	      button = mb_wm_decor_button_new (wm,
-                                           b->type,
-                                           b->packing,
-                                           decor,
-                                           back_button_press_handler,
-                                           back_button_release_handler,
-                                           0);
+					       b->type,
+					       b->packing,
+					       decor,
+					       back_button_press_handler,
+					       back_button_release_handler,
+					       0);
 
 	      bd = g_new0 (BackButtonData, 1);
 	      bd->button = button;
@@ -249,8 +208,28 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 	      mb_wm_decor_button_set_user_data (button, bd,
 						back_button_data_destroy);
 	    }
-      else
-	    button = NULL;
+	  /* No close button for group followers */
+	  else if (b->type == MBWMDecorButtonClose && is_leader)
+	    {
+	      button = mb_wm_decor_button_stock_new (wm,
+						     b->type,
+						     b->packing,
+						     decor,
+						     0);
+	    }
+	  else if (b->type != HdHomeThemeButtonBack && 
+	      b->type != MBWMDecorButtonClose)
+	    {
+	      button = mb_wm_decor_button_stock_new (wm,
+						     b->type,
+						     b->packing,
+						     decor,
+						     0);
+	    }
+	  else 
+	    {
+	      button = NULL;
+	    }
 
 	  if (button)
 	    {
@@ -558,7 +537,7 @@ hd_theme_simple_paint_back_button (MBWMTheme *theme, MBWMDecorButton *button)
   xwin = decor->xwin;
   dd = mb_wm_decor_get_theme_data (decor);
 
-  if (client == NULL || xwin == None || !dd || dd->xpix == None)
+  if (client == NULL || xwin == None || dd->xpix == None)
     return;
 
   c_type = MB_WM_CLIENT_CLIENT_TYPE (client);

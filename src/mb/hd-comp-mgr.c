@@ -30,7 +30,6 @@
 #include "hd-util.h"
 #include "hd-wm.h"
 #include "hd-home-applet.h"
-#include "hd-home.h"
 #include "hd-app.h"
 #include "hd-gtk-style.h"
 #include "hd-applet-layout-manager.h"
@@ -987,17 +986,8 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
   else
     {
       MBWindowManagerClient * c = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
-      HdApp *app = HD_APP(c);
 
-      if (app && app->secondary_window)
-        {
-          /* user wants to close the application,
-             deliver delete to followers and leader */
-          hd_app_close_followers (app->leader);
-          mb_wm_client_deliver_delete ((MBWindowManagerClient*)app->leader);
-        }
-      else
-        mb_wm_client_deliver_delete (c);
+      mb_wm_client_deliver_delete (c);
     }
 }
 
