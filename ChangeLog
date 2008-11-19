@@ -1,3 +1,18 @@
+2008-11-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-switcher.c:
+	  Ungrab the pointer when hd_swticher_something_removed() and the
+	  switcher has become empty, thus leaving it.  Fixes one case of
+	  making applications unresponsive to touchscreen events after
+	  leaving the switcher.
+	* src/home/hd-task-navigator.c:
+	  Don't allow interactions with the thumbnails while animation is
+	  in progress.  Fixes the weirdness you could observe by tapping
+	  the same or another thumbnail while zooming and a crash when
+	  you tried to close the zooming thumbnail.
+	* TODO:
+	  Removed done todos.
+
 2008-11-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c:

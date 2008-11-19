@@ -761,13 +761,15 @@ hd_swticher_something_removed (HdSwitcher * switcher)
   have_children = !hd_task_navigator_is_empty (group);
   if (!have_children && priv->showing_switcher)
     {
+      HdCompMgr *cmgr = HD_COMP_MGR (priv->comp_mgr);
+
       /*
        * Must close the switcher
-       * XXX pointer ungrab?
        */
       hd_switcher_hide_switcher (switcher);
       if (priv->status_area)
         clutter_actor_show (priv->status_area);
+      hd_home_ungrab_pointer (HD_HOME (hd_comp_mgr_get_home (cmgr)));
     }
 
   /*

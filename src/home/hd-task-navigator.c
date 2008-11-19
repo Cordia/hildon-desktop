@@ -689,16 +689,14 @@ show_when_complete (ClutterActor * actor)
   add_effect_closure (Fly_effect_timeline, show_newborn, actor, NULL);
 }
 
-/* Returns whether we're doing any flying animation. */
+/* Returns whether we're in the middle of an animation,
+ * when certain interactions may not be wise to allow. */
 static gboolean
-is_flying (void)
+animation_in_progress (ClutterEffectTemplate *effect)
 {
-  /*
-   * The template is referenced by every effect,
-   * therefore if it's not referenced by anyone
-   * we're not flying.
-   */
-  return G_OBJECT (Fly_effect)->ref_count > 1;
+  /* The template is referenced by every effect, therefore
+   * if it's not referenced by anyone we're not flying. */
+  return G_OBJECT (effect)->ref_count > 1;
 }
 
 /* Tells whether we should bother with animation or just setting the
@@ -1063,7 +1061,7 @@ layout (ClutterActor * newborn)
   hnavigator += notes_height ();
   set_navigator_height (hnavigator);
 
-  if (newborn && is_flying ())
+  if (newborn && animation_in_progress (Fly_effect))
     show_when_complete (newborn);
 }
 /* Layout engine }}} */
@@ -1170,14 +1168,18 @@ claim_win (Thumbnail * thumb)
   if (!thumb->video)
     {
       /* Show @apwin just in case it isn't.  Make sure it doesn't hide
-       * our decoration.  Let the thumbnail window steal the application
-       * window's clicks, so we can zoom in. */
+       * our decoration. */
       clutter_actor_show (thumb->apwin);
-      clutter_actor_set_reactive (thumb->apwin, FALSE);
+      if (clutter_actor_get_reactive (thumb->apwin))
+        /* We should explicitly let the thumbnail window steal the
+         * application window's clicks (so we can switch to it),
+         * but tests show it's already non-reactive anyway. */
+        g_critical ("application window is still reactive");
       if (thumb->dialog)
         {
           clutter_actor_show (thumb->dialog);
-          clutter_actor_set_reactive (thumb->dialog, FALSE);
+          if (clutter_actor_get_reactive (thumb->dialog))
+            g_critical ("application dialog is still reactive");
         }
     }
   else
@@ -1657,6 +1659,10 @@ thwin_clicked (ClutterActor * thwin, ClutterButtonEvent * event,
 {
   const Thumbnail *thumb;
 
+  if (animation_in_progress (Fly_effect) || animation_in_progress (Zoom_effect))
+    /* Clicking on the thumbnail while it's zooming would result in multiple
+     * delivery of "thumbnail-clicked". */
+    return TRUE;
   if ((thumb = find_by_thwin (thwin)) != NULL)
     g_signal_emit_by_name (Navigator, "thumbnail-clicked", thumb->apwin);
   return TRUE;
@@ -1669,6 +1675,9 @@ thwin_close_clicked (ClutterActor * thwin, ClutterButtonEvent * event,
 {
   const Thumbnail *thumb;
 
+  if (animation_in_progress (Fly_effect) || animation_in_progress (Zoom_effect))
+    /* Closing an application while it's zooming would crash us. */
+    return TRUE;
   if ((thumb = find_by_thwin (thwin)) != NULL)
     g_signal_emit_by_name (Navigator, "thumbnail-closed", thumb->apwin);
   return TRUE;
@@ -1849,7 +1858,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
   layout (newborn);
 
   /* Arrange for calling @fun(@funparam) if/when appripriate. */
-  if (is_flying ())
+  if (animation_in_progress (Fly_effect))
     add_effect_closure (Fly_effect_timeline,
                         fun, CLUTTER_ACTOR (self), funparam);
   else if (fun)

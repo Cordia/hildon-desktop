@@ -15,12 +15,10 @@
 
   - Enter the switcher when an application is closed
     and the switcher is not empty.
-  - Show open dialogs (if any) in the thumbnails.
   - Don't show incoming event notification previews
     if the do not disturb flag is set.
 
   - Remove status area handling from task switcher.
-  - Handle commands received during animation gracefully.
   - Be more sensible differentiating clicks vs. scroll attempts.
 - Implement portrait mode.
 - Implement support for speech bubbles in Contacts applets.
