@@ -570,14 +570,10 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
               hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group), actor,
                                                 mb_wm_comp_mgr_clutter_client_get_actor(prev));
             }
-          else
-            /*
-             * We are the leader, just remove actor from switcher.
-             * Attempt to remove it even if the client initially
-             * requested SkipTaskbar, because this state flag might
-             * have been changed, which we don't track.  The downside
-             * is an unconditional critical warning from the switcher.
-             */
+          else if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar))
+            /* We are the leader, just remove actor from switcher.
+             * NOTE The test above breaks if the client changed
+             * the flag after it's been mapped. */
             hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
                                              actor);
         }

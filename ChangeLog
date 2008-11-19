@@ -1,3 +1,11 @@
+2008-11-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c:
+	  When a client is unregistered don't try to remove its actor
+	  from the switcher if the client specified to SkipTaskbar.
+	  This is to avoid a harmless critical warning at the cost
+	  of not removing actors whose client changed that flag.
+
 2008-11-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-app.c, src/mb/hd-theme.c: Patch from Laszlo Pere to fix
