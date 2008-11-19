@@ -1,3 +1,8 @@
+2008-11-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-app.c, src/mb/hd-theme.c: Patch from Laszlo Pere to fix
+	the long press handling for the Back button on stackable window.
+
 2008-11-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-switcher.c:

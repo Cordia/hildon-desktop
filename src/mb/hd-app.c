@@ -247,13 +247,14 @@ hd_app_close_followers (HdApp *app)
   HdApp *leader = app->leader;
   GList *l = leader->followers;
 
+  l = g_list_last (l);
   while (l)
     {
       MBWindowManagerClient *f = l->data;
 
-      g_debug ("Closing App client %p", f);
+      //g_debug ("%s: Closing App client %s", __func__, mb_wm_client_get_name(f));
       mb_wm_client_deliver_delete (f);
-      l = l->next;
+      l = l->prev;
     }
 
   return MB_WM_CLIENT (leader);

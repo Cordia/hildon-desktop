@@ -126,7 +126,8 @@ back_button_timeout (gpointer data)
       return FALSE;
     }
   
-  mb_wm_client_deliver_delete (c);
+  hd_app_close_followers (HD_APP(c));
+
   return FALSE;
 }
 
@@ -137,6 +138,7 @@ back_button_press_handler (MBWindowManager   *wm,
 {
   BackButtonData *bd = userdata;
 
+  g_debug ("%s: *** button = %p", __func__, button);
   bd->timeout_id =
     g_timeout_add_full (G_PRIORITY_HIGH_IDLE,
 			BACK_BUTTON_TIMEOUT, back_button_timeout, bd, NULL);
@@ -152,8 +154,7 @@ back_button_release_handler (MBWindowManager   *wm,
   BackButtonData        *bd = userdata;
   MBWindowManagerClient *c;
 
-  g_warning ("------------> bd = %p", bd);
-  if (bd->timeout_handled) 
+  if (!bd || bd->timeout_handled) 
     return;
 
   g_source_remove (bd->timeout_id);
