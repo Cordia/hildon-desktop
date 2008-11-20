@@ -617,11 +617,13 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       hd_home_remove_applet (HD_HOME (priv->home), applet);
     }
-  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeNote
-           && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
+  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeNote)
     {
-      hd_switcher_remove_notification (HD_SWITCHER (priv->switcher_group),
-                                       HD_NOTE (c));
+      if (HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
+        hd_switcher_remove_notification (HD_SWITCHER (priv->switcher_group),
+                                         HD_NOTE (c));
+      else
+        hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDialog
            && c->transient_for)
@@ -700,7 +702,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           hd_switcher_add_notification (HD_SWITCHER (priv->switcher_group),
                                         HD_NOTE (c));
         }
-      else if (HD_NOTE (c)->note_type == HdNoteTypeConfirmation)
+      else
         hd_switcher_add_dialog (HD_SWITCHER (priv->switcher_group), c, actor);
       return;
     }

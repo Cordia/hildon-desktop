@@ -744,8 +744,9 @@ hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
   /* Zoom in the application @dialog belongs to if this is a confirmation
    * note.  This is to support closing applications that want to show a
    * confirmation before closing. */
-  if (HD_IS_NOTE (mbwmc) && hd_switcher_showing_switcher (switcher))
-    hd_switcher_item_selected (switcher, parent, navigator);
+  if (HD_IS_NOTE (mbwmc) && HD_NOTE(mbwmc)->note_type == HdNoteTypeConfirmation)
+    if (hd_switcher_showing_switcher (switcher))
+      hd_switcher_item_selected (switcher, parent, navigator);
 }
 
 /* Called when a window or a notification is removed from the switcher.
