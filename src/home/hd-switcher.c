@@ -616,7 +616,7 @@ hd_switcher_item_closed (HdSwitcher *switcher, ClutterActor *actor)
   MBWMCompMgrClutterClient * cc;
 
   cc = g_object_get_data(G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
-  hd_comp_mgr_close_client (HD_COMP_MGR (priv->comp_mgr), cc);
+  hd_comp_mgr_close_app (HD_COMP_MGR (priv->comp_mgr), cc, TRUE);
 }
 
 void

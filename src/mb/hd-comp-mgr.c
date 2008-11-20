@@ -745,7 +745,14 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
               MB_WM_COMP_MGR_CLUTTER_CLIENT (((MBWindowManagerClient *)app->leader)->cm_client);
 
             if (top)
-              clutter_actor_hide (mb_wm_comp_mgr_clutter_client_get_actor(top));
+              {
+                ClutterActor *top_actor;
+
+                top_actor = mb_wm_comp_mgr_clutter_client_get_actor(top);
+                hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group),
+                                                  top_actor, actor);
+                clutter_actor_hide (top_actor);
+              }
 
             if (app->leader->followers)
               {
@@ -760,10 +767,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                     l = l->next;
                   }
               }
-
-            hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group),
-                                              mb_wm_comp_mgr_clutter_client_get_actor(top),
-                                            actor);
           }
         else if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar))
           /* Taskbar == task switcher in our case.  Introduced for systemui. */
@@ -974,9 +977,12 @@ hd_comp_mgr_top_home (HdCompMgr *hmgr)
 
 /*
  * Shuts down a client, handling hibernated applications correctly.
+ * if @close_all and @cc is associated with a window stack then
+ * close all windows in the stack, otherwise only @cc's.
  */
 void
-hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
+hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
+                       gboolean close_all)
 {
   HdCompMgrPrivate      * priv = hmgr->priv;
   HdCompMgrClient       * h_client = HD_COMP_MGR_CLIENT (cc);
@@ -997,8 +1003,21 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
     {
       MBWindowManagerClient * c = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
 
-      mb_wm_client_deliver_delete (c);
+      if (close_all && HD_IS_APP (c) && HD_APP (c)->secondary_window)
+        {
+          c = MB_WM_CLIENT (HD_APP (c)->leader);
+          hd_app_close_followers (HD_APP (c));
+          mb_wm_client_deliver_delete (c);
+        }
+      else
+        mb_wm_client_deliver_delete (c);
     }
+}
+
+void
+hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
+{
+  hd_comp_mgr_close_app (hmgr, cc, FALSE);
 }
 
 void

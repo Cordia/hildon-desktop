@@ -84,6 +84,9 @@ void hd_comp_mgr_sync_stacking       (HdCompMgr *hmgr);
 void hd_comp_mgr_raise_home_actor    (HdCompMgr *hmgr);
 void hd_comp_mgr_lower_home_actor    (HdCompMgr *hmgr);
 void hd_comp_mgr_top_home            (HdCompMgr *hmgr);
+void hd_comp_mgr_close_app           (HdCompMgr                *hmgr,
+                                      MBWMCompMgrClutterClient *cc,
+                                      gboolean                  close_all);
 void hd_comp_mgr_close_client        (HdCompMgr *hmgr,
 				      MBWMCompMgrClutterClient *c);
 void hd_comp_mgr_hibernate_client    (HdCompMgr                *hmgr,
