@@ -33,6 +33,8 @@ fi
 
 AM_PROG_CC_C_O
 
+AC_PATH_PROG(DBUS_BINDING_TOOL, dbus-binding-tool)
+
 #++++++++++++++++++
 # Misc build flags
 #++++++++++++++++++

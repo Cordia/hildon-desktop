@@ -26,6 +26,7 @@
 #endif
 
 #include "hd-home.h"
+#include "hd-home-glue.h"
 #include "hd-switcher.h"
 #include "hd-home-view.h"
 #include "hd-comp-mgr.h"
@@ -40,6 +41,9 @@
 #include <matchbox/core/mb-wm.h>
 
 #include <gconf/gconf-client.h>
+
+#include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-bindings.h>
 
 #define HDH_MOVE_DURATION 300
 #define HDH_ZOOM_DURATION 3000
@@ -60,6 +64,9 @@
 #define APPLET_RESIZE_BUTTON   "applet-resize-button"
 
 #define EDIT_BUTTON  "edit-button.png"
+
+#define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home" 
+#define HD_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
 
 #undef WITH_SETTINGS_BUTTON
 
@@ -933,7 +940,11 @@ hd_home_constructed (GObject *object)
 static void
 hd_home_init (HdHome *self)
 {
-  HdHomePrivate * priv;
+  HdHomePrivate *priv;
+  DBusGConnection *connection;
+  DBusGProxy *bus_proxy = NULL;
+  guint result;
+  GError *error = NULL;
 
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
 						   HD_TYPE_HOME, HdHomePrivate);
@@ -955,6 +966,52 @@ hd_home_init (HdHome *self)
 			HDH_GCONF_PREFIX,
 			GCONF_CLIENT_PRELOAD_NONE,
 			NULL);
+
+  /* Register to D-Bus */
+  connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+  if (error != NULL)
+    {
+      g_warning ("Failed to open connection to session bus: %s", error->message);
+      g_error_free (error);
+
+      goto cleanup;
+    }
+
+  /* Request the well known name from the Bus */
+  bus_proxy = dbus_g_proxy_new_for_name (connection,
+                                         DBUS_SERVICE_DBUS,
+                                         DBUS_PATH_DBUS,
+                                         DBUS_INTERFACE_DBUS);
+
+  if (!org_freedesktop_DBus_request_name (bus_proxy,
+                                          HD_HOME_DBUS_NAME,
+                                          DBUS_NAME_FLAG_DO_NOT_QUEUE,
+                                          &result, 
+                                          &error))
+    {
+      g_warning ("Could not register name: %s", error->message);
+      g_error_free (error);
+
+      goto cleanup;
+    }
+
+  if (result == DBUS_REQUEST_NAME_REPLY_EXISTS)
+    goto cleanup;
+
+  dbus_g_object_type_install_info (HD_TYPE_HOME,
+                                   &dbus_glib_hd_home_object_info);
+
+  dbus_g_connection_register_g_object (connection,
+                                       HD_HOME_DBUS_PATH,
+                                       G_OBJECT (self));
+
+  g_debug ("%s registered to session bus at %s",
+           HD_HOME_DBUS_NAME,
+           HD_HOME_DBUS_PATH);
+
+cleanup:
+  if (bus_proxy != NULL)
+    g_object_unref (bus_proxy);
 }
 
 static void

@@ -1,5 +1,36 @@
 2008-11-21  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* configure.ac: Add check for dbus-binding-tool.
+
+	* src/home/Makefile.am: Add generation of hd-home-glue.h file used by
+	  D-Bus.
+
+	* src/home/hd-home-dbus.xml: Export some methods of HdHome required by
+	  hildon-home to D-Bus.
+
+	* src/home/hd-home.c (HD_HOME_DBUS_NAME, HD_HOME_DBUS_PATH,
+	  hd_home_init): Export some methods to D-Bus.
+
+	* src/home/hd-switcher.c (launcher_group, connection,
+	  hildon_home_proxy, hd_switcher_constructed,
+	  hd_switcher_menu_clicked): Call hildon-home via D-Bus to show the
+	  edit menu.
+
+	* src/home/hd-add-applet-dialog.c (deleted):
+	* src/home/hd-task-manager.c (deleted):
+	* src/home/hd-background-dialog.c (deleted):
+	* src/home/hd-add-applet-dialog.h (deleted):
+	* src/home/hd-task-manager.h (deleted):
+	* src/home/hd-background-dialog.h (deleted):
+	* src/home/hd-add-task-dialog.c (deleted):
+	* src/home/hd-edit-menu.c (deleted):
+	* src/home/hd-add-task-dialog.h (deleted):
+	* src/home/hd-edit-menu.h (deleted):
+	* src/home/hd-applet-manager.c (deleted):
+	* src/home/hd-applet-manager.h (deleted): Moved to hildon-home.
+
+2008-11-21  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-home.c (applet_close_button, edit_button_cb, desktop,
 	  hd_home_view_background_clicked, hd_home_view_applet_clicked,
 	  hd_home_applet_settings_button_clicked, hd_home_constructed,

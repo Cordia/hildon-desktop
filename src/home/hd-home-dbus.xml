@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/com/nokia/HildonDesktop/Home">
+
+  <interface name="com.nokia.HildonDesktop.Home">
+                
+    <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="HdHome"/>
+
+    <method name="GrabPointer">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_grab_pointer"/>
+
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+    </method>
+
+    <method name="ShowActivateViewsDialog">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_show_activate_views_dialog"/>
+
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+    </method>
+
+  </interface>
+</node>

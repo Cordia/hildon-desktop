@@ -32,7 +32,6 @@
 #include "hd-launcher-utils.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
-#include "hd-edit-menu.h"
 #include "hd-home.h"
 #include "hd-gtk-utils.h"
 
@@ -43,6 +42,8 @@
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
+
+#include <dbus/dbus-glib.h>
 
 #define ICON_IMAGE_SWITCHER "qgn_tswitcher_application"
 #define ICON_IMAGE_LAUNCHER "qgn_general_add"
@@ -68,7 +69,9 @@ struct _HdSwitcherPrivate
 
   ClutterActor         *switcher_group;
   ClutterActor         *launcher_group;
-  ClutterActor         *menu_group;
+
+  DBusGConnection      *connection;
+  DBusGProxy           *hildon_home_proxy;
 
   MBWMCompMgrClutter   *comp_mgr;
 
@@ -232,16 +235,21 @@ hd_switcher_constructed (GObject *object)
                             G_CALLBACK (hd_switcher_home_background_clicked),
                             self);
 
-  priv->menu_group =
-    g_object_new (HD_TYPE_EDIT_MENU,
-		  "comp-mgr", priv->comp_mgr,
-		  "home", hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)),
-		  NULL);
-
-  clutter_container_add_actor (CLUTTER_CONTAINER (self),
-			       priv->menu_group);
-
-  clutter_actor_hide (priv->menu_group);
+  /* Connect to D-Bus */
+  priv->connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+  if (G_UNLIKELY (error))
+    {
+      g_warning ("Could not connect to Session Bus. %s", error->message);
+      g_error_free (error);
+      error = NULL;
+    }
+  else
+    {
+      priv->hildon_home_proxy = dbus_g_proxy_new_for_name (priv->connection,
+                                                           "com.nokia.HildonHome",
+                                                           "/com/nokia/HildonHome",
+                                                           "com.nokia.HildonHome");
+    }
 
   priv->button_switcher =
     hd_switcher_top_left_button_new (ICON_IMAGE_SWITCHER);
@@ -430,10 +438,17 @@ static gboolean
 hd_switcher_menu_clicked (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdHome	    *home =
+    HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
 
   g_debug("hd_switcher_menu_clicked, switcher=%p\n", switcher);
-  clutter_actor_show_all (priv->menu_group);
-  clutter_actor_raise_top (priv->menu_group);
+
+  hd_home_ungrab_pointer (home);
+  
+  if (priv->hildon_home_proxy)
+    dbus_g_proxy_call_no_reply (priv->hildon_home_proxy, "ShowEditMenu",
+                                G_TYPE_UINT, hd_home_get_current_view_id (home),
+                                G_TYPE_INVALID);
 
   return TRUE;
 }
