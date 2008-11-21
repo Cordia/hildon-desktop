@@ -405,6 +405,20 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 }
 
 static Bool
+hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
+{
+/*  HdHome *home = userdata; */
+  char buffer[10];
+
+  XLookupString (xev, buffer, 10, NULL, NULL);
+
+  g_debug ("Key Press: %d, %s. Call a D-Bus interface in Dialpad which is not there yet.",
+           xev->keycode, buffer);
+
+  return TRUE;
+}
+
+static Bool
 hd_home_desktop_press (XButtonEvent *xev, void *userdata)
 {
   HdHome *home = userdata;
@@ -892,7 +906,9 @@ hd_home_constructed (GObject *object)
    * place.
    */
   attr.event_mask = MBWMChildMask |
-    ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask;
+    ButtonPressMask | ButtonReleaseMask | 
+    PointerMotionMask | ExposureMask |
+    KeyPressMask;
 
   priv->desktop = XCreateWindow (wm->xdpy,
 				 wm->root_win->xwindow,
@@ -934,6 +950,13 @@ hd_home_constructed (GObject *object)
 					  ClientMessage,
 					  (MBWMXEventFunc)
 					  hd_home_desktop_client_message,
+					  object);
+
+  mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+					  priv->desktop,
+					  KeyPress,
+					  (MBWMXEventFunc)
+					  hd_home_desktop_key_press,
 					  object);
 }
 

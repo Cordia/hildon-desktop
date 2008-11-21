@@ -1,3 +1,9 @@
+2008-11-21  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home.c (hd_home_desktop_key_press): Add boilerplate
+	  handler for KeyPress handling.
+	  (hd_home_constructed): Listen for KeyPress events on Home.
+
 2008-11-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c:
