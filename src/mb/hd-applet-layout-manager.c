@@ -57,7 +57,10 @@ hd_applet_layout_layer_sort_func (gconstpointer a, gconstpointer b)
    * then our algorithm is broken.
    */
   if (r1->x == r2->x && r1->y == r2->y)
-    g_warning ("Error in applet layout algorithm detected.");
+    {
+      g_warning ("Error in applet layout algorithm detected.");
+      return 0;
+    }
 
   if (r1->x < r2->x || r1->y < r2->y)
     return -1;

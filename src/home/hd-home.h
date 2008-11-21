@@ -77,6 +77,7 @@ GType hd_home_get_type (void);
 void hd_home_show_view (HdHome * home, guint view_index);
 
 void hd_home_set_mode (HdHome* home, HdHomeMode mode);
+void hd_home_show_activate_views_dialog (HdHome *home);
 
 void hd_home_add_applet (HdHome *home, ClutterActor *applet);
 void hd_home_add_status_area (HdHome *home, ClutterActor *sa);

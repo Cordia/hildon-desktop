@@ -1,3 +1,17 @@
+2008-11-21  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home.c (applet_close_button, edit_button_cb, desktop,
+	  hd_home_view_background_clicked, hd_home_view_applet_clicked,
+	  hd_home_applet_settings_button_clicked, hd_home_constructed,
+	  hd_home_set_mode, hd_home_show_activate_views_dialog,
+	  hd_home_show_applet_buttons, hd_home_hide_applet_buttons,
+	  hd_home_move_applet_buttons):
+	* src/home/hd-home.h: Add function to show the Activate views dialog.
+	Do not show resize button for applets. Fixes NB#92125.
+
+	* src/mb/hd-applet-layout-manager.c
+	(hd_applet_layout_layer_sort_func): Fix a bug which crashed the sort.
+
 2008-11-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c:

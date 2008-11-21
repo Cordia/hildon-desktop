@@ -33,7 +33,6 @@
 #include "hd-layout-dialog.h"
 #include "hd-gtk-style.h"
 #include "hd-gtk-utils.h"
-#include "hd-applet-manager.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -93,10 +92,10 @@ struct _HdHomePrivate
   ClutterActor          *edit_button;
 
   ClutterActor          *applet_close_button;
-#ifdef WITH_SETTINGS_BUTTON
+#if 0
   ClutterActor          *applet_settings_button;
-#endif
   ClutterActor          *applet_resize_button;
+#endif
 
   ClutterActor          *layout_dialog;
 
@@ -130,6 +129,7 @@ struct _HdHomePrivate
 
   guint                  edit_button_cb;
 
+#if 0
   gint                   applet_resize_start_x;
   gint                   applet_resize_start_y;
   gint                   applet_resize_last_x;
@@ -138,6 +138,7 @@ struct _HdHomePrivate
   guint                  applet_resize_height;
 
   guint                  applet_resize_motion_cb;
+#endif
 
   /* Pan variables */
   gint                   last_x;
@@ -177,13 +178,13 @@ static void hd_home_show_edit_button (HdHome *home);
 
 static void hd_home_hide_edit_button (HdHome *home);
 
-#ifdef WITH_SETTINGS_BUTTON
+#if 0
 static void hd_home_send_settings_message (HdHome *home, Window xwin);
-#endif
 
 static gboolean hd_home_applet_resize_button_release (ClutterActor *button,
 						   ClutterButtonEvent *event,
 						   HdHome *home);
+#endif
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -281,6 +282,7 @@ hd_home_view_background_clicked (HdHomeView         *view,
     g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
   else
     {
+#if 0
       /*
        * When tracking resize motion, the pointer can get outside the
        * resize button, so if we get a button click on the background in edit
@@ -292,6 +294,7 @@ hd_home_view_background_clicked (HdHomeView         *view,
 	  hd_home_applet_resize_button_release (priv->applet_resize_button,
 						event, home);
 	}
+#endif
     }
 }
 
@@ -304,6 +307,7 @@ hd_home_view_applet_clicked (HdHomeView         *view,
 
   if (priv->mode == HD_HOME_MODE_EDIT)
     {
+#if 0
       /*
        * When tracking resize motion, the pointer can get outside the
        * resize button, so if we get a button click on an applet in edit
@@ -316,6 +320,7 @@ hd_home_view_applet_clicked (HdHomeView         *view,
 						NULL, home);
 	}
       else
+#endif
 	hd_home_show_applet_buttons (home, applet);
     }
 }
@@ -493,9 +498,6 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
 
   hd_comp_mgr_close_client (hmgr, cc);
 
-  hd_applet_manager_remove_applet (hd_applet_manager_get (),
-                                   applet_id);
-
   return TRUE;
 }
 
@@ -533,6 +535,7 @@ hd_home_applet_settings_button_clicked (ClutterActor       *button,
 }
 #endif
 
+#if 0
 static gboolean
 hd_home_applet_resize_button_motion (ClutterActor       *button,
 				     ClutterMotionEvent *event,
@@ -652,6 +655,7 @@ hd_home_applet_resize_button_press (ClutterActor       *button,
 
   return TRUE;
 }
+#endif
 
 static void
 hd_home_layout_dialog_ok_clicked (HdLayoutDialog *dialog, HdHome *home)
@@ -855,6 +859,7 @@ hd_home_constructed (GObject *object)
 		    object);
 #endif
 
+#if 0
   priv->applet_resize_button =
     hd_gtk_icon_theme_load_icon (icon_theme, APPLET_RESIZE_BUTTON, 48, 0);
 
@@ -870,6 +875,7 @@ hd_home_constructed (GObject *object)
   g_signal_connect (priv->applet_resize_button, "button-release-event",
 		    G_CALLBACK (hd_home_applet_resize_button_release),
 		    object);
+#endif
 
   hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_NORMAL);
 
@@ -878,7 +884,7 @@ hd_home_constructed (GObject *object)
    * that will automatically wrap it, ensuring it is located in the correct
    * place.
    */
-  attr.event_mask        = MBWMChildMask |
+  attr.event_mask = MBWMChildMask |
     ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask;
 
   priv->desktop = XCreateWindow (wm->xdpy,
@@ -1209,6 +1215,13 @@ hd_home_set_mode (HdHome *home, HdHomeMode mode)
   priv->mode = mode;
 
   g_signal_emit (home, signals[SIGNAL_MODE_CHANGED], 0, mode);
+}
+
+void
+hd_home_show_activate_views_dialog (HdHome *home)
+{
+  hd_home_grab_pointer (home);
+  hd_home_set_mode (home, HD_HOME_MODE_LAYOUT);
 }
 
 static void
@@ -1702,19 +1715,19 @@ hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet)
 			      y_a - h_b/2);
   clutter_actor_show (priv->applet_close_button);
 
-#ifdef WITH_SETTINGS_BUTTON
+#if 0
   clutter_actor_get_size (priv->applet_settings_button, &w_b, &h_b);
   clutter_actor_set_position (priv->applet_settings_button,
 			      x_a - w_b/2,
 			      y_a + h_a - h_b/2);
   clutter_actor_show (priv->applet_settings_button);
-#endif
 
   clutter_actor_get_size (priv->applet_resize_button, &w_b, &h_b);
   clutter_actor_set_position (priv->applet_resize_button,
 			      x_a + w_a - w_b/2,
 			      y_a + h_a - h_b/2);
   clutter_actor_show (priv->applet_resize_button);
+#endif
 
   priv->active_applet = applet;
 }
@@ -1725,10 +1738,10 @@ hd_home_hide_applet_buttons (HdHome *home)
   HdHomePrivate   *priv = home->priv;
 
   clutter_actor_hide (priv->applet_close_button);
-#ifdef WITH_SETTINGS_BUTTON
+#if 0
   clutter_actor_hide (priv->applet_settings_button);
-#endif
   clutter_actor_hide (priv->applet_resize_button);
+#endif
 
   priv->active_applet = NULL;
 }
@@ -1742,13 +1755,13 @@ hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by)
     return;
 
   clutter_actor_move_by (priv->applet_close_button, x_by, y_by);
-#ifdef WITH_SETTINGS_BUTTON
+#if 0
   clutter_actor_move_by (priv->applet_settings_button, x_by, y_by);
-#endif
   clutter_actor_move_by (priv->applet_resize_button, x_by, y_by);
+#endif
 }
 
-#ifdef WITH_SETTINGS_BUTTON
+#if 0
 static void
 hd_home_send_settings_message (HdHome *home, Window xwin)
 {
