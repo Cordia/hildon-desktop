@@ -1740,8 +1740,14 @@ thwin_close_clicked (ClutterActor * thwin, ClutterButtonEvent * event,
   if (animation_in_progress (Fly_effect) || animation_in_progress (Zoom_effect))
     /* Closing an application while it's zooming would crash us. */
     return TRUE;
+
+  /* Report a regular click on the thumbnail (and make %HdSwitcher zoom in)
+   * if the application has open dialogs. */
   if ((thumb = find_by_thwin (thwin)) != NULL)
-    g_signal_emit_by_name (Navigator, "thumbnail-closed", thumb->apwin);
+    g_signal_emit_by_name (Navigator,
+                           thumb->dialogs && thumb->dialogs->len > 0
+                             ? "thumbnail-clicked" : "thumbnail-closed",
+                           thumb->apwin);
   return TRUE;
 }
 
