@@ -736,6 +736,7 @@ hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   HdTaskNavigator *navigator = HD_TASK_NAVIGATOR (priv->switcher_group);
 
+return; // FIXME
   g_return_if_fail (mbwmc->transient_for);
   parent = mb_wm_comp_mgr_clutter_client_get_actor (
        MB_WM_COMP_MGR_CLUTTER_CLIENT (mbwmc->transient_for->cm_client));
@@ -794,6 +795,7 @@ hd_switcher_remove_dialog (HdSwitcher * switcher,
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   HdTaskNavigator *group = HD_TASK_NAVIGATOR (priv->switcher_group);
+return; // FIXME
   hd_task_navigator_remove_dialog (group, dialog);
 }
 
