@@ -51,6 +51,7 @@
 #include "hd-gtk-utils.h"
 #include "hd-task-navigator.h"
 #include "hd-scrollable-group.h"
+#include "hd-switcher.h"
 
 /* Standard definitions {{{ */
 #undef  G_LOG_DOMAIN
@@ -586,6 +587,25 @@ hd_task_navigator_has_window (HdTaskNavigator * self, ClutterActor * win)
   return FALSE;
 }
 
+/* Set the background to blur or not - it will change smoothly between
+ * being blurred + not blurred */
+static void
+hd_task_navigator_set_bg_blur(HdTaskNavigator * self, gboolean blur) 
+{
+  HdSwitcher *parent;
+  HdCompMgr  *comp_mgr;        
+         
+  parent = HD_SWITCHER(clutter_actor_get_parent(CLUTTER_ACTOR(self)));
+  if (!parent || !HD_IS_SWITCHER(parent))
+    return;
+    
+  g_object_get(G_OBJECT(parent), "comp-mgr", &comp_mgr, NULL);
+  if (!comp_mgr)
+    return;
+  
+  hd_comp_mgr_blur_home(comp_mgr, blur);
+}  
+
 /* Enters the navigator without animation. */
 void
 hd_task_navigator_enter (HdTaskNavigator * self)
@@ -596,6 +616,8 @@ hd_task_navigator_enter (HdTaskNavigator * self)
   clutter_actor_set_position (Scroller, 0, 0);
   hd_scrollable_group_set_viewport_y (Navigator_area, 0);
   clutter_actor_show (Navigator);
+  
+  hd_task_navigator_set_bg_blur( self, TRUE );
 }
 
 /* Leaves the navigator without a single word.
@@ -604,7 +626,11 @@ void
 hd_task_navigator_exit (HdTaskNavigator *self)
 {
   clutter_actor_hide (CLUTTER_ACTOR (self));
+  
+  hd_task_navigator_set_bg_blur( self, FALSE);
 }
+
+
 
 /*
  * Returns the height of the @Notification_area in pixels.
@@ -1532,6 +1558,9 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
                       CLUTTER_ACTOR(self), win);
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)fun, win, funparam);
+                      
+  hd_task_navigator_set_bg_blur( self, FALSE );
+  
   return;
 
 damage_control:
@@ -1548,7 +1577,7 @@ damage_control:
 void
 hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
                             ClutterEffectCompleteFunc fun, gpointer funparam)
-{ g_debug (__FUNCTION__);
+{ g_debug (__FUNCTION__);        
   guint hthumb;
   const Thumbnail *thumb;
   gdouble sxprison, syprison, sxscroller, syscroller;
@@ -1606,6 +1635,8 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   clutter_effect_scale (Zoom_effect, Scroller, 1, 1, NULL, NULL);
   clutter_effect_move  (Zoom_effect, Scroller, 0, 0, NULL, NULL);
   add_effect_closure (Zoom_effect_timeline, fun, win, funparam);
+  
+  hd_task_navigator_set_bg_blur(self, TRUE);
   return;
 
 damage_control:
@@ -2387,9 +2418,7 @@ new_effect (ClutterTimeline ** timelinep)
 static void
 hd_task_navigator_init (HdTaskNavigator * self)
 {
-  static const ClutterColor bgcolor = { 0X00, 0X00, 0X00, 0XAA };
   GtkStyle *style;
-  ClutterActor *bg;
 
   /* Data structures */
   Thumbnails = g_array_new (FALSE, FALSE, sizeof (Thumbnail));
@@ -2401,10 +2430,6 @@ hd_task_navigator_init (HdTaskNavigator * self)
   g_signal_connect (Navigator, "hide", G_CALLBACK (navigator_hidden), NULL);
 
   /* Actor hierarchy */
-  bg = clutter_rectangle_new_with_color (&bgcolor);
-  clutter_actor_set_size (bg, SCREEN_WIDTH, SCREEN_HEIGHT);
-  clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), bg);
-
   Scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), Scroller);

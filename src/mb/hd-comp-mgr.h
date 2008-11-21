@@ -65,6 +65,7 @@ typedef struct HdCompMgrPrivate HdCompMgrPrivate;
 #define HD_COMP_MGR(c)       ((HdCompMgr*)(c))
 #define HD_COMP_MGR_CLASS(c) ((HdCompMgrClass*)(c))
 #define HD_TYPE_COMP_MGR     (hd_comp_mgr_class_type ())
+#define HD_IS_COMP_MGR(obj)  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HD_TYPE_COMP_MGR))
 
 struct HdCompMgr
 {
@@ -120,6 +121,7 @@ gint hd_comp_mgr_request_home_applet_geometry (HdCompMgr  *hmgr,
 					       MBGeometry *geom);
 
 gint hd_comp_mgr_get_home_applet_layer_count (HdCompMgr *hmgr, gint view_id);
+void hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur);
 
 G_END_DECLS
 

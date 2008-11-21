@@ -45,6 +45,8 @@
 #include <clutter/clutter-container.h>
 #include <clutter/x11/clutter-x11.h>
 
+#include "../tidy/tidy-blur-group.h"
+
 #include <sys/types.h>
 #include <signal.h>
 
@@ -71,6 +73,9 @@ struct HdCompMgrPrivate
 
   ClutterActor          *switcher_group;
   ClutterActor          *home;
+  /* blurring for home group */
+  ClutterActor          *blur_group; 
+  ClutterTimeline       *blur_timeline;
 
   GHashTable            *hibernating_apps;
 
@@ -278,6 +283,30 @@ hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient)
   return priv->hibernating;
 }
 
+static void
+on_blur_timeline_new_frame(ClutterTimeline *timeline, 
+                           gint frame_num, gpointer data)
+{
+  HdCompMgr *hmgr;
+  HdCompMgrPrivate *priv;
+  gint frames;         
+  float amt;
+        
+  if (!HD_IS_COMP_MGR(data))
+    return;
+    
+  hmgr = HD_COMP_MGR(data);
+  priv = hmgr->priv;
+   
+  frames = clutter_timeline_get_n_frames(priv->blur_timeline);
+  amt = frame_num / (float)frames;
+    
+  tidy_blur_group_set_blur(priv->blur_group, amt*8.0f);
+  tidy_blur_group_set_saturation(priv->blur_group, 1.0f-amt);
+  tidy_blur_group_set_brightness(priv->blur_group, (2.0f-amt) * 0.5f);
+}
+
+
 static int  hd_comp_mgr_init (MBWMObject *obj, va_list vap);
 static void hd_comp_mgr_class_init (MBWMObjectClass *klass);
 static void hd_comp_mgr_destroy (MBWMObject *obj);
@@ -341,6 +370,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   HdCompMgr            *hmgr = HD_COMP_MGR (obj);
   HdCompMgrPrivate     *priv;
   ClutterActor         *stage, *switcher, *home;
+  ClutterActor         *arena;
   gint                  i;
 
   priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
@@ -352,6 +382,16 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   hd_gtk_style_init ();
 
   stage = clutter_stage_get_default ();
+  
+  /* Create a blur group that will contain the home view, so we
+   * can blur out and desaturate the home view */
+   
+  priv->blur_group = tidy_blur_group_new();
+  tidy_blur_group_set_update_children(priv->blur_group, FALSE);
+  clutter_actor_set_size(priv->blur_group, wm->xdpy_width, wm->xdpy_height);
+  clutter_container_add_actor (CLUTTER_CONTAINER (stage), priv->blur_group);
+  priv->blur_timeline = clutter_timeline_new(30 /* frames */, 30 /* frames per second. */);
+  g_signal_connect (priv->blur_timeline, "new-frame", G_CALLBACK (on_blur_timeline_new_frame), hmgr);  
 
   /*
    * Create the home group before the switcher, so the switcher can
@@ -367,7 +407,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
                             cmgr);
 
   clutter_actor_show (home);
-  clutter_container_add_actor (CLUTTER_CONTAINER (stage), home);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->blur_group), home);
 
   /* NB -- home must be constructed before constructing the switcher;
    * TODO -- see if we can refactor this, to make switcher home-agnostic
@@ -383,8 +423,14 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   hd_home_fixup_operator_position (HD_HOME (home));
 
-  /* Lowever home below the switcher */
+  /* Lower home below the switcher */
   clutter_actor_lower_bottom (home);
+  clutter_actor_lower_bottom (priv->blur_group);
+
+  /* Reparent our comp-mgr-clutter's 'arena' into blur, so we blur the app as well */
+  arena = mb_wm_comp_mgr_clutter_get_arena(MB_WM_COMP_MGR_CLUTTER(cmgr));
+  if (arena)
+    clutter_actor_reparent(arena, priv->blur_group);  
 
   /*
    * Create a hash table for hibernating windows.
@@ -937,7 +983,8 @@ hd_comp_mgr_raise_home_actor (HdCompMgr *hmgr)
   HdCompMgrPrivate * priv = hmgr->priv;
 
   g_debug("hd_comp_mgr_raise_home_actor: hmgr=%p\n", hmgr);
-  clutter_actor_lower (priv->home, priv->switcher_group);
+  /*clutter_actor_lower (priv->home, priv->switcher_group);*/
+  clutter_actor_lower (priv->blur_group, priv->switcher_group);
 }
 
 void
@@ -946,7 +993,8 @@ hd_comp_mgr_lower_home_actor (HdCompMgr *hmgr)
   HdCompMgrPrivate * priv = hmgr->priv;
 
   g_debug("hd_comp_mgr_lower_home_actor: hmgr=%p\n", hmgr);
-  clutter_actor_lower_bottom (priv->home);
+  /*clutter_actor_lower_bottom (priv->home);*/
+  clutter_actor_lower_bottom (priv->blur_group);
 }
 
 static void
@@ -1304,4 +1352,37 @@ hd_comp_mgr_get_home_applet_layer_count (HdCompMgr *hmgr, gint view_id)
     hd_applet_layout_manager_get_layer_count (priv->applet_manager[view_id]);
 
   return count;
+}
+
+void
+hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur)
+{
+  HdCompMgrPrivate *priv = hmgr->priv;   
+  ClutterTimelineDirection dir, odir;
+  gint frame;
+  guint nframes;
+  
+  frame = clutter_timeline_get_current_frame(priv->blur_timeline);
+  nframes = clutter_timeline_get_n_frames(priv->blur_timeline);
+  g_debug("hd_comp_mgr_blur_home %s %d:%d", blur?"TRUE":"FALSE",
+          frame, nframes);
+  
+  dir = blur ? CLUTTER_TIMELINE_FORWARD : CLUTTER_TIMELINE_BACKWARD;
+  odir = clutter_timeline_get_direction(priv->blur_timeline);
+     
+  if (clutter_timeline_is_playing(priv->blur_timeline)) 
+    {
+      if (odir!=dir)
+        clutter_timeline_pause(priv->blur_timeline);
+      else
+        return;
+    }
+  
+  if (odir!=dir)
+    frame = nframes - frame;  
+    
+  clutter_timeline_set_direction(priv->blur_timeline, dir);
+  /* we have to reset the frame because sometimes set_direction breaks it */
+  clutter_timeline_advance(priv->blur_timeline, frame);
+  clutter_timeline_start(priv->blur_timeline);
 }

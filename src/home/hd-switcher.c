@@ -5,7 +5,7 @@
  *
  * Author:  Johan Bilien <johan.bilien@nokia.com>
  *          Tomas Frydrych <tf@o-hand.com>
- *          Kimmo H‰m‰l‰inen <kimmo.hamalainen@nokia.com>
+ *          Kimmo H√§m√§l√§inen <kimmo.hamalainen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -496,6 +496,9 @@ hd_switcher_clicked (HdSwitcher *switcher)
       priv->showing_launcher = TRUE;
       if (do_grab)
         hd_home_grab_pointer (home);
+        
+      /* blur out the background */
+      hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), TRUE);
     }
   else if (priv->showing_launcher ||
 	   (!priv->showing_switcher && priv->switcher_mode))
@@ -956,6 +959,9 @@ hd_switcher_hide_launcher (HdSwitcher *switcher)
   priv->showing_launcher = FALSE;
 
   clutter_actor_hide (priv->launcher_group);
+  
+  /* get background back after it has been blurred*/
+  hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), FALSE);
 }
 
 void

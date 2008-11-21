@@ -1,3 +1,26 @@
+2008-11-21  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/tidy/tidy-blur-group.c:
+	* src/tidy/tidy-blur-group.h:
+	* src/tidy/Makefile.am:
+	  Added a tidy/clutter class that blurs all of its children. Fallback
+          of dimming for Xephyr which doesn't appear to handle fragment shaders
+
+	* src/mb/hd-comp-mgr.c:
+	* src/mb/hd-comp-mgr.h:
+	  Added tidy-blur-group and made home view a child of it. Added function
+	  to allow background blur to be turned on/off when needed
+
+	* src/launcher/hd-launcher-utils.c:
+	  Removed dimmed background (now use blur in hd-comp-mgr)
+
+	* src/home/hd-task-navigator.c:
+	  Removed dimmed background (now use blur in hd-comp-mgr)
+
+	* src/home/hd-switcher.c:
+	  use blur in hd-comp-mgr for task switcher background
+
+
 2008-11-21  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home.c (hd_home_desktop_key_press): Add boilerplate

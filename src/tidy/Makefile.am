@@ -26,6 +26,7 @@ source_h = \
 	$(top_srcdir)/src/tidy/tidy-actor.h 		\
 	$(top_srcdir)/src/tidy/tidy-adjustment.h	\
 	$(top_srcdir)/src/tidy/tidy-animation.h 	\
+	$(top_srcdir)/src/tidy/tidy-blur-group.h 	\	
 	$(top_srcdir)/src/tidy/tidy-finger-scroll.h	\
 	$(top_srcdir)/src/tidy/tidy-frame.h	\
 	$(top_srcdir)/src/tidy/tidy-interval.h		\
@@ -46,6 +47,7 @@ source_c = \
 	tidy-actor.c \
 	tidy-adjustment.c \
 	tidy-animation.c \
+	tidy-blur-group.c \
 	tidy-finger-scroll.c \
 	tidy-frame.c \
 	tidy-interval.c \

@@ -214,7 +214,6 @@ typedef struct
   
   ClutterActor *group;
 
-  ClutterActor *background;
   ClutterActor *back_button;
   ClutterActor *top_scroll;
   ClutterActor *sub_scroll;
@@ -463,16 +462,6 @@ hd_get_application_launcher (HdSwitcher *switcher, HdSwitcherCb switcher_cb)
                                      200, 0);
 
       hd_launcher->group = clutter_group_new ();
-
-      // FIXME: Should the background be completely opaque, or a shader?
-      ClutterColor background_color = { 0, 0, 0, 0xAA };
-      hd_launcher->background =
-        clutter_rectangle_new_with_color (&background_color);
-      clutter_actor_set_name(hd_launcher->background, "hd_get_application_launcher");
-      clutter_actor_set_position (hd_launcher->background, 0, 0);
-      clutter_actor_set_size (hd_launcher->background, 800, 480);
-      clutter_container_add_actor (CLUTTER_CONTAINER (hd_launcher->group),
-                                   hd_launcher->background);
 
       hd_launcher->top_scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
       /* TODO: detect screen size and determine the actor's size accordingly */
