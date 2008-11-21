@@ -1,3 +1,12 @@
+2008-11-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c:
+	  Remove dialogs from the switcher in hd_comp_mgr_effect()
+	  rather than hd_comp_mgr_unregister_client() to have access
+	  to MBWMClientBase::transient_for.  This fixes critical warnings.
+	* src/home/hd-switcher.c:
+	  Re-enable handling of dialogs in switcher view.
+
 2008-11-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.h

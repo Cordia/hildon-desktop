@@ -617,19 +617,9 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       hd_home_remove_applet (HD_HOME (priv->home), applet);
     }
-  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeNote)
-    {
-      if (HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
-        hd_switcher_remove_notification (HD_SWITCHER (priv->switcher_group),
-                                         HD_NOTE (c));
-      else
-        hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
-    }
-  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDialog
-           && c->transient_for)
-    {
-      hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
-    }
+  /* Dialogs and Notes (including notifications) have already been dealt
+   * with in hd_comp_mgr_effect().  This is because by this time we don't
+   * have information about transiency. */
 
   if (parent_klass->unregister_client)
     parent_klass->unregister_client (mgr, c);
@@ -702,7 +692,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           hd_switcher_add_notification (HD_SWITCHER (priv->switcher_group),
                                         HD_NOTE (c));
         }
-      else
+      else if (c->transient_for)
         hd_switcher_add_dialog (HD_SWITCHER (priv->switcher_group), c, actor);
       return;
     }
@@ -835,64 +825,68 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 {
   MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
   HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
+  MBWMCompMgrClutterClient * cclient;
+  ClutterActor             * actor;
+
+  if (event != MBWMCompMgrClientEventUnmap)
+    return;
 
   if (c_type == MBWMClientTypeApp)
     {
-      switch (event)
-	{
-	case MBWMCompMgrClientEventUnmap:
-	  {
-	    MBWMCompMgrClutterClient * cclient;
-	    ClutterActor             * actor;
-	    ClutterTimeline          * timeline;
-	    ClutterEffectTemplate    * tmpl;
-	    gdouble                    scale_x, scale_y;
-	    HDEffectData             * data;
+      ClutterTimeline          * timeline;
+      ClutterEffectTemplate    * tmpl;
+      gdouble                    scale_x, scale_y;
+      HDEffectData             * data;
 
-            /* The switcher will do the effect if it's active,
-             * don't interfere. */
-            if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
-              return;
+      /* The switcher will do the effect if it's active,
+       * don't interfere. */
+      if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
+        return;
 
-	    cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
-	    actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
-	    tmpl =
-	      clutter_effect_template_new_for_duration (HDCM_UNMAP_DURATION,
-						   CLUTTER_ALPHA_RAMP_INC);
+      tmpl = clutter_effect_template_new_for_duration (HDCM_UNMAP_DURATION,
+                                                       CLUTTER_ALPHA_RAMP_INC);
 
-	    clutter_actor_get_scale (actor, &scale_x, &scale_y);
+      clutter_actor_get_scale (actor, &scale_x, &scale_y);
 
-	    /* Need to store also pointer to the manager, as by the time
-	     * the effect finishes, the back pointer in the cm_client to
-	     * MBWindowManagerClient is not longer valid/set.
-	     */
-	    data = g_new0 (HDEffectData, 1);
-	    data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
-	    data->hmgr = HD_COMP_MGR (mgr);
+      /* Need to store also pointer to the manager, as by the time
+       * the effect finishes, the back pointer in the cm_client to
+       * MBWindowManagerClient is not longer valid/set.
+       */
+      data = g_new0 (HDEffectData, 1);
+      data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+      data->hmgr = HD_COMP_MGR (mgr);
 
-	    clutter_actor_move_anchor_point_from_gravity (actor,
-						     CLUTTER_GRAVITY_CENTER);
+      clutter_actor_move_anchor_point_from_gravity (actor,
+                                               CLUTTER_GRAVITY_CENTER);
 
-	    timeline = clutter_effect_scale (tmpl, actor,
-					     scale_x, 0.1,
-					     (ClutterEffectCompleteFunc)
-					     hd_comp_mgr_effect_completed,
-					     data);
+      timeline = clutter_effect_scale (tmpl, actor,
+                                       scale_x, 0.1,
+                                       (ClutterEffectCompleteFunc)
+                                       hd_comp_mgr_effect_completed,
+                                       data);
 
-	    mb_wm_comp_mgr_clutter_client_set_flags (cclient,
-					MBWMCompMgrClutterClientDontUpdate |
-                                        MBWMCompMgrClutterClientEffectRunning);
+      mb_wm_comp_mgr_clutter_client_set_flags (cclient,
+                                  MBWMCompMgrClutterClientDontUpdate |
+                                  MBWMCompMgrClutterClientEffectRunning);
 
-	    priv->unmap_effect_running++;
+      priv->unmap_effect_running++;
 
-	    clutter_timeline_start (timeline);
-	  }
-	  break;
-
-	default:
-	  break;
-	}
+      clutter_timeline_start (timeline);
+    }
+  else if (HD_IS_NOTE (c) && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
+    {
+      hd_switcher_remove_notification (HD_SWITCHER (priv->switcher_group),
+                                       HD_NOTE (c));
+    }
+  else if ((c_type == MBWMClientTypeNote || c_type == MBWMClientTypeDialog)
+           && c->transient_for)
+    { /* Remove application-transient dialogs from the switcher. */
+      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
     }
 }
 
