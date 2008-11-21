@@ -553,13 +553,14 @@ get_bg_image_processed_name (HdHomeView *view, const gchar *filename)
   HdHomeViewPrivate *priv  = view->priv;
   
   basename = g_path_get_basename (filename);
-  tmpname = g_strdup_printf ("%s/%d-%dx%d-%s.png",
+  tmpname = g_strdup_printf ("%s/%d-%dx%d-%s",
 			     g_get_tmp_dir (),
 			     priv->background_mode,
                              clutter_actor_get_width (actor),
                              clutter_actor_get_height (actor),
 			     basename);
   g_free (basename);
+  g_debug ("%s: '%s'", __FUNCTION__, tmpname);
   
   return tmpname;
 }
@@ -765,12 +766,17 @@ process_bg_image_thread (gpointer data)
   
   if (pixbuf)
     {
-      if (!gdk_pixbuf_save (pixbuf, priv->processed_bg_image_file, "png",
+      if (!g_file_test (priv->processed_bg_image_file, G_FILE_TEST_EXISTS))
+      {
+       g_debug ("%s: SAVING IMAGE %s", __FUNCTION__,
+                priv->processed_bg_image_file);
+       if (!gdk_pixbuf_save (pixbuf, priv->processed_bg_image_file, "png",
                             &error, NULL))
 	{
 	  g_warning ("Error saving background: %s", error->message);
 	  g_error_free (error);
 	}
+      }
       g_object_unref (pixbuf);
     }
   
@@ -787,6 +793,15 @@ hd_home_view_refresh_bg (HdHomeView		  *self,
 {
   HdHomeViewPrivate *priv = self->priv;
   
+  g_debug ("%s entered, '%s'", __FUNCTION__, image);
+
+  if (mode == priv->background_mode &&
+      g_strcmp0 (image, priv->background_image_file) == 0)
+    {
+      g_debug ("%s: background is the same as old one", __FUNCTION__);
+      return;
+    }
+
   /* Join with former thread */
   if (priv->bg_image_thread)
     {

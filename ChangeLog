@@ -1,3 +1,12 @@
+2008-11-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-home-view.c (get_bg_image_processed_name): Strip extra
+	".png" from background image names.
+	(process_bg_image_thread): Check for existing file before saving the
+	pixbuf.
+	(hd_home_view_refresh_bg): Only change the background if the file name
+	or mode is different.
+
 2008-11-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-blur-group.c:

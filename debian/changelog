@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.7-1~unreleased) unstable; urgency=low
 
-  * <Write here>
+        * <Write here>
+        * Avoid loading background images twice. Do not save if the converted
+          file is already there.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Nov 2008 13:26:21 +0200
 
