@@ -130,10 +130,10 @@
  *                                screenshots.  If an application has such
  *                                an image it is displayed in switcher mode
  *                                instead of its its thumbnail.  The file is
- *                                "%VIDEO_SCREENSHOT_DIR/<class_hint>.jpg".
+ *                                "%VIDEO_SCREENSHOT_DIR/<class_hint>".
  */
 #define EFFECT_LENGTH                   1000
-#define VIDEO_SCREENSHOT_DIR            "/tmp/fmp/out"
+#define VIDEO_SCREENSHOT_DIR            "/var/tmp/app-screenshots"
 
 /* Standard definitions }}} */
 
@@ -1772,7 +1772,7 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
     {
       thumb->class_hint = xwinhint.res_class;
       XFree (xwinhint.res_name);
-      thumb->video_fname = g_strdup_printf(VIDEO_SCREENSHOT_DIR "/%s.jpg",
+      thumb->video_fname = g_strdup_printf(VIDEO_SCREENSHOT_DIR "/%s",
                                            thumb->class_hint);
     }
   else
