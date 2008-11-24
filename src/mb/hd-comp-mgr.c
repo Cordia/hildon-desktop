@@ -817,30 +817,6 @@ typedef struct _HDEffectData
   HdCompMgr                *hmgr;
 } HDEffectData;
 
-#if 0
-static void
-dump_clutter_tree (ClutterContainer *c, int offset)
-{
-  GList *l = clutter_container_get_children (c);
-
-  while (l)
-    {
-      ClutterActor *a = l->data;
-      int i;
-
-      for (i = 0; i < offset; ++i)
-	printf (" ");
-
-      printf ("Actor %p (%s)\n", a, G_OBJECT_TYPE_NAME (a));
-
-      if (CLUTTER_IS_CONTAINER (a))
-	dump_clutter_tree (CLUTTER_CONTAINER (a), offset+1);
-
-      l = l->next;
-    }
-}
-#endif
-
 static void
 hd_comp_mgr_effect_completed (ClutterActor * actor, HDEffectData *data)
 {
@@ -1385,4 +1361,46 @@ hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur)
   /* we have to reset the frame because sometimes set_direction breaks it */
   clutter_timeline_advance(priv->blur_timeline, frame);
   clutter_timeline_start(priv->blur_timeline);
+}
+
+static void
+dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
+{
+  if (!indent)
+    indent = g_string_new ("");
+  g_debug ("actor[%u]: %s%p (type=%s, name=%s), "
+           "mapped: %d, realized: %d, visible: %d, reactive: %d",
+           indent->len, indent->str, actor,
+           G_OBJECT_TYPE_NAME (actor), clutter_actor_get_name (actor),
+           CLUTTER_ACTOR_IS_MAPPED (actor)   != 0,
+           CLUTTER_ACTOR_IS_REALIZED (actor) != 0,
+           CLUTTER_ACTOR_IS_VISIBLE (actor)  != 0,
+           CLUTTER_ACTOR_IS_REACTIVE (actor) != 0);
+  if (CLUTTER_IS_CONTAINER (actor))
+    {
+      g_string_append_c (indent, ' ');
+      clutter_container_foreach (CLUTTER_CONTAINER (actor),
+                                 (ClutterCallback)dump_clutter_actor_tree,
+                                 indent);
+      g_string_truncate (indent, indent->len-1);
+    }
+}
+
+void
+hd_comp_mgr_dump_debug_info (void)
+{
+  int revert;
+  Window focus;
+
+  XGetInputFocus (clutter_x11_get_default_display (), &focus, &revert);
+  g_debug ("input focus: %ld", focus);
+  if (revert == RevertToParent)
+    g_debug ("input focus reverts to parent");
+  else if (revert == RevertToPointerRoot)
+    g_debug ("input focus reverts to pointer root");
+  else if (revert == RevertToNone)
+    g_debug ("input focus reverts to none");
+  else
+    g_debug ("input focus reverts to %d", revert);
+  dump_clutter_actor_tree (clutter_stage_get_default (), NULL);
 }

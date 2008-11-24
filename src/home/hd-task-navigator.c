@@ -2431,6 +2431,7 @@ hd_task_navigator_init (HdTaskNavigator * self)
 
   /* Actor hierarchy */
   Scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
+  clutter_actor_set_name (Scroller, "Scroller");
   clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), Scroller);
 
@@ -2441,6 +2442,7 @@ hd_task_navigator_init (HdTaskNavigator * self)
    * at the same time it is set.  TODO This can be considered a hack.
    */
   Navigator_area = HD_SCROLLABLE_GROUP (hd_scrollable_group_new ());
+  clutter_actor_set_name (CLUTTER_ACTOR (Navigator_area), "Navigator area");
   clutter_actor_set_reactive (CLUTTER_ACTOR (Navigator_area), TRUE);
   g_signal_connect (Navigator_area, "notify::has-clip",
                     G_CALLBACK (unclip), NULL);
@@ -2456,6 +2458,7 @@ hd_task_navigator_init (HdTaskNavigator * self)
    * notification until the end of effect, which is bogus.
    */
   Notification_area = clutter_group_new ();
+  clutter_actor_set_name (Notification_area, "Notification area");
   clutter_actor_set_position (Notification_area,
                               0, SCREEN_HEIGHT - NOTE_HEIGHT);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator_area),

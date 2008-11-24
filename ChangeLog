@@ -1,3 +1,18 @@
+2008-11-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.h
+	* src/mb/hd-comp-mgr.c:
+	  hd_comp_mgr_dump_debug_info() added.  Currently it g_debug()s
+	  who has the XGetInputFocus() and the clutter actor hierarchy.
+	  Call it whenever you want.
+	* src/main.c:
+	  Dump debug info on SIGUSR1.
+	* src/launcher/hd-launcher-utils.c
+	* src/home/hd-switcher.c
+	* src/home/hd-task-navigator.c:
+	  clutter_actor_set_name() some actors to be easier to recognize
+	  in the debug dump.
+
 2008-11-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-home-view.c (get_bg_image_processed_name): Strip extra

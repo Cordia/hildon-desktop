@@ -462,6 +462,7 @@ hd_get_application_launcher (HdSwitcher *switcher, HdSwitcherCb switcher_cb)
                                      200, 0);
 
       hd_launcher->group = clutter_group_new ();
+      clutter_actor_set_name (hd_launcher->group, "Launcher");
 
       hd_launcher->top_scroll = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
       /* TODO: detect screen size and determine the actor's size accordingly */

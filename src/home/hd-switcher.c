@@ -391,6 +391,7 @@ hd_switcher_top_left_button_new (const char *icon_name)
   icon_theme = gtk_icon_theme_get_default ();
 
   top_left_button = clutter_group_new ();
+  clutter_actor_set_name (top_left_button, icon_name);
 
   top_left_button_bg = clutter_rectangle_new_with_color (&clr);
 

@@ -34,6 +34,7 @@
 #include <clutter/x11/clutter-x11.h>
 #include <clutter/clutter-container.h>
 #include <libgnomevfs/gnome-vfs.h>
+#include <signal.h>
 
 #include "hildon-desktop.h"
 #include "hd-wm.h"
@@ -120,11 +121,28 @@ clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
   return CLUTTER_X11_FILTER_CONTINUE;
 }
 
+static gboolean
+dump_debug_info_when_idle (gpointer unused)
+{
+  extern void hd_comp_mgr_dump_debug_info (void);
+  hd_comp_mgr_dump_debug_info ();
+  return FALSE;
+}
+
+static void
+dump_debug_info_sighand (int unused)
+{
+  g_idle_add (dump_debug_info_when_idle, GINT_TO_POINTER (0));
+  signal(SIGUSR1, dump_debug_info_sighand);
+}
+
 int
 main (int argc, char **argv)
 {
   Display * dpy = NULL;
   MBWindowManager *wm;
+
+  signal(SIGUSR1, dump_debug_info_sighand);
 
   /* 
   g_log_set_always_fatal (G_LOG_LEVEL_ERROR    |
