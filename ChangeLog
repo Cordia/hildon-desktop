@@ -1,3 +1,8 @@
+2008-11-24  Gordon Williams <gordon.williams@collabora.co.uk>
+	* src/mb/hd-comp-mgc.c:
+	Fixed problem with home view settings window not being shown
+	because of clutter ordering
+
 2008-11-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-theme.c: Use MB_WM_DECOR_BUTTON_NOHANDLERS for the dummy
