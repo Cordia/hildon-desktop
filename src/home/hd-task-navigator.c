@@ -1249,7 +1249,10 @@ release_win (const Thumbnail * thumb)
         { /* Make sure we managed to claim @dialog in claim_win(). */
           dialog = thumb->dialogs->pdata[i];
           if (clutter_actor_get_parent (dialog) == thumb->prison)
-            reparent (dialog, thumb->parent, thumb->prison);
+            {
+              reparent (dialog, thumb->parent, thumb->prison);
+              clutter_actor_hide (dialog);
+            }
         }
     }
 }
@@ -1498,11 +1501,15 @@ set_thumb_title_from_hdnote (Thumbnail * thumb, HdNote * hdnote)
 static void
 zoom_in_complete (ClutterActor * navigator, ClutterActor * apwin)
 {
+  const Thumbnail *thumb;
+
   /* To minimuze confusion the navigator hides all application windows it
    * knows about when it starts hiding.  Undo it for the one we have zoomed
    * inte, because it is expected to be shown. */
   clutter_actor_hide (navigator);
   clutter_actor_show (apwin);
+  if ((thumb = find_by_apwin (apwin)) && thumb->dialogs)
+    g_ptr_array_foreach (thumb->dialogs, (GFunc)clutter_actor_show, NULL);
 }
 
 /*
