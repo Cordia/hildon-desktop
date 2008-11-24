@@ -191,7 +191,8 @@ typedef struct
    *                  such decoration.  Anchored in the middle.
    *
    * -- @apwin:       The pristine application window, not to be touched.
-   *                  Hidden if we have a .video.
+   *                  Hidden if we have a .video.  Its name is set to the
+   *                  client's class_hint unless it had a name already.
    * -- @inapwin:     Delimits the non-decoration area in @apwin; this is
    *                  what we want to show in the navigator, not the whole
    *                  @apwin.
@@ -1499,7 +1500,7 @@ zoom_in_complete (ClutterActor * navigator, ClutterActor * apwin)
 {
   /* To minimuze confusion the navigator hides all application windows it
    * knows about when it starts hiding.  Undo it for the one we have zoomed
-   * inte, because it is expected to be shown. XXX Not necessary ATM. */
+   * inte, because it is expected to be shown. */
   clutter_actor_hide (navigator);
   clutter_actor_show (apwin);
 }
@@ -1801,6 +1802,8 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
       XFree (xwinhint.res_name);
       thumb->video_fname = g_strdup_printf(VIDEO_SCREENSHOT_DIR "/%s",
                                            thumb->class_hint);
+      if (!clutter_actor_get_name (apwin))
+        clutter_actor_set_name (apwin, thumb->class_hint);
     }
   else
     g_warning ("XGetClassHint(%lx): failed", mbwmcwin->xwindow);

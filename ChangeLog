@@ -1,3 +1,10 @@
+2008-11-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c:
+	  When an application window actor is added to the switcher
+	  set its clutter name to the class_hint of the client
+	  unless it had a name already.
+
 2008-11-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-task-navigator.c (release_win): Add clutter_actor_hide()
