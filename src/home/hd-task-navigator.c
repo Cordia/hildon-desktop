@@ -1224,7 +1224,7 @@ claim_win (Thumbnail * thumb)
       if (thumb->dialogs && thumb->dialogs->len > 0)
         { /* That sure is odd. */
           g_warning ("apwin %p has both dialogs and video", thumb->apwin);
-          clutter_actor_hide (thumb->apwin);
+          g_ptr_array_foreach (thumb->dialogs, (GFunc)clutter_actor_hide, NULL);
         }
     }
 
@@ -2019,10 +2019,10 @@ hd_task_navigator_remove_dialog (HdTaskNavigator * self,
 }
 
 /*
- * Register a @dialog to show in an application's thumbnail in front of
- * @parent, which should be the actor of the window @dialog is transient for.
- * The @dialog is expected to have been positioned already.  It is an error
- * to add the same @dialog more than once.
+ * Register a @dialog to show on the top of an application's thumbnail.
+ * @parent should be the actor of the window @dialog is transient for.
+ * The @dialog is expected to have been positioned already.  It is an
+ * error to add the same @dialog more than once.
  */
 void
 hd_task_navigator_add_dialog (HdTaskNavigator * self,
@@ -2042,17 +2042,13 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
     { /* We don't want to track @dialog's parent separately. */
       g_return_if_fail (clutter_actor_get_parent (dialog) == thumb->parent);
       reparent (dialog, thumb->prison, thumb->parent);
-      clutter_actor_raise (dialog, parent);
     }
 
   /* Insert @dialog at thumb->dialog[i].  glib doesn't have a function
    * for insertion.  We'll burn in hell for this pointer arithmetic. */
   if (!thumb->dialogs)
     thumb->dialogs = g_ptr_array_new ();
-  g_ptr_array_add (thumb->dialogs, NULL);
-  memmove (&thumb->dialogs->pdata[i], &thumb->dialogs->pdata[i+1], 
-           sizeof(dialog) * (thumb->dialogs->len - i - 1));
-  thumb->dialogs->pdata[i] = dialog;
+  g_ptr_array_add (thumb->dialogs, dialog);
 }
 /* Add/remove windows }}} */
 
