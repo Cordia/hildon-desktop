@@ -1237,12 +1237,8 @@ claim_win (Thumbnail * thumb)
 static void
 release_win (const Thumbnail * thumb)
 {
-  /*
-   * It would be important to hide before reparenting the application window
-   * otherwise it would remain shown.  But this is not the case it seems.
-   * clutter_actor_hide (thumb->apwin);
-   */
   reparent (thumb->apwin, thumb->parent, thumb->prison);
+  clutter_actor_hide (thumb->apwin);
   if (thumb->dialogs)
     {
       guint i;

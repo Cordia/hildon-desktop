@@ -1,4 +1,10 @@
+2008-11-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-task-navigator.c (release_win): Add clutter_actor_hide()
+	to fix problem with switching to application when tapping on home.
+
 2008-11-24  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/mb/hd-comp-mgc.c:
 	Fixed problem with home view settings window not being shown
 	because of clutter ordering
