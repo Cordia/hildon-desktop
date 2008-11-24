@@ -1,3 +1,8 @@
+2008-11-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-theme.c: Use MB_WM_DECOR_BUTTON_NOHANDLERS for the dummy
+	decor button that is created for moving the application title.
+
 2008-11-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.h

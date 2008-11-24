@@ -165,7 +165,6 @@ back_button_release_handler (MBWindowManager   *wm,
   mb_wm_client_deliver_delete (c);
 }
 
-
 static void
 construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 {
@@ -195,6 +194,7 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 	    {
 	      BackButtonData *bd;
 
+              g_debug("%s: back button", __FUNCTION__);
 	      button = mb_wm_decor_button_new (wm,
 					       b->type,
 					       b->packing,
@@ -212,6 +212,7 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 	  /* No close button for group followers */
 	  else if (b->type == MBWMDecorButtonClose && is_leader)
 	    {
+              g_debug("%s: close button", __FUNCTION__);
 	      button = mb_wm_decor_button_stock_new (wm,
 						     b->type,
 						     b->packing,
@@ -221,14 +222,17 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 	  else if (b->type != HdHomeThemeButtonBack && 
 	      b->type != MBWMDecorButtonClose)
 	    {
+              g_debug("%s: other button", __FUNCTION__);
+              /* do not install press/release handler */
 	      button = mb_wm_decor_button_stock_new (wm,
 						     b->type,
 						     b->packing,
 						     decor,
-						     0);
+	                        MB_WM_DECOR_BUTTON_NOHANDLERS);
 	    }
 	  else 
 	    {
+              g_debug("%s: no button", __FUNCTION__);
 	      button = NULL;
 	    }
 
