@@ -707,9 +707,11 @@ hd_home_constructed (GObject *object)
   priv->xheight = wm->xdpy_height;
 
   main_group = priv->main_group = clutter_group_new ();
+  clutter_actor_set_name (main_group, "HdHome:main_group");
   clutter_container_add_actor (CLUTTER_CONTAINER (object), main_group);
 
   edit_group = priv->edit_group = clutter_group_new ();
+  clutter_actor_set_name (edit_group, "HdHome:edit_group");
   clutter_container_add_actor (CLUTTER_CONTAINER (object), edit_group);
   clutter_actor_hide (edit_group);
 
@@ -719,6 +721,7 @@ hd_home_constructed (GObject *object)
    * than moving it).
    */
   priv->control_group = clutter_group_new ();
+  clutter_actor_set_name (priv->control_group, "HdHome:control_group");
   clutter_container_add_actor (CLUTTER_CONTAINER (object),
 			       priv->control_group);
 

@@ -1817,6 +1817,7 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
 
   /* .thwin */
   thumb->thwin = clutter_group_new ();
+  clutter_actor_set_name (thumb->thwin, "thwin");
   clutter_actor_set_reactive (thumb->thwin, TRUE);
   g_signal_connect (thumb->thwin, "button-release-event",
                     G_CALLBACK (thwin_clicked), NULL);
@@ -1826,6 +1827,7 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
   /* .prison: clip @apwin's non-decoration area and anchor it
    * where the area starts. */
   thumb->prison = clutter_group_new ();
+  clutter_actor_set_name (thumb->prison, "prison");
   clutter_actor_set_clip (thumb->prison,
                           thumb->inapwin->x,      thumb->inapwin->y,
                           thumb->inapwin->width,  thumb->inapwin->height);

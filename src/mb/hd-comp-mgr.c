@@ -1367,12 +1367,16 @@ hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur)
 static void
 dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
 {
+  const gchar *name;
+
   if (!indent)
     indent = g_string_new ("");
+  if (!(name = clutter_actor_get_name (actor)) && CLUTTER_IS_LABEL (actor))
+    name = clutter_label_get_text (CLUTTER_LABEL (actor));
   g_debug ("actor[%u]: %s%p (type=%s, name=%s), "
            "mapped: %d, realized: %d, visible: %d, reactive: %d",
            indent->len, indent->str, actor,
-           G_OBJECT_TYPE_NAME (actor), clutter_actor_get_name (actor),
+           G_OBJECT_TYPE_NAME (actor), name,
            CLUTTER_ACTOR_IS_MAPPED (actor)   != 0,
            CLUTTER_ACTOR_IS_REALIZED (actor) != 0,
            CLUTTER_ACTOR_IS_VISIBLE (actor)  != 0,

@@ -1,3 +1,13 @@
+2008-11-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c:
+	  dump_clutter_actor_tree(): if the actor to dump is a ClutterLabel
+	  and it doesn't have a name otherwise print the label text as name.
+	* src/home/hd-home.c
+	* src/home/hd-task-navigator.c:
+	  Added more explicit clutter_actor_set_name()s to make debugging
+	  easier.
+
 2008-11-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c:
