@@ -1932,11 +1932,22 @@ hd_home_fixup_operator_position (HdHome *home)
   guint          op_width, op_height = 0;
   guint          label_width, label_height;
   ClutterActor  *switcher;
+  MBWindowManager *wm;
 
   switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
 
   hd_switcher_get_control_area_size (HD_SWITCHER (switcher),
 				     &control_width, &control_height);
+
+  wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  if (wm)
+    {
+      g_debug ("Adjust dialogue position of %p", wm);
+      mb_adjust_dialog_title_position (wm,
+				       control_width);
+    }
+  else
+    g_debug ("Don't adjust position because there's no WM");
 
   if (priv->operator_icon)
     clutter_actor_get_size (priv->operator_icon, &icon_width, &icon_height);

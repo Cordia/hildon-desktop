@@ -1,3 +1,10 @@
+2008-11-25  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+        Move and redraw title when status area changes size or appears or
+	disappears.
+
+	* src/home/hd-home.c:
+
 2008-11-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.7
