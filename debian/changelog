@@ -1,52 +1,54 @@
-hildon-desktop (1:2.2.7-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.7-1) unstable; urgency=low
 
-        * Avoid loading background images twice. Do not save if the converted
-          file is already there.
-        * Use MB_WM_DECOR_BUTTON_NOHANDLERS for the dummy decor button.
+  * Avoid loading background images twice. Do not save if the converted
+    file is already there.
+  * Use MB_WM_DECOR_BUTTON_NOHANDLERS for the dummy decor button.
+    libmatchbox2-dev (>= 0.2.4-0maemo1) needed for this.
+  * Adam: implement SIGUSR1 debug information.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Nov 2008 13:26:21 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 25 Nov 2008 14:13:12 +0200
 
 hildon-desktop (1:2.2.6-1) unstable; urgency=low
 
-        * src/mb/hd-comp-mgr.c, src/mb/hd-theme.c: Patch from Laszlo Pere to
-        make stackable windows better supported. Fixes: NB#87040
+  * src/mb/hd-comp-mgr.c, src/mb/hd-theme.c: Patch from Laszlo Pere to
+    make stackable windows better supported. Fixes: NB#87040
 
-        Adam:
+  Adam:
 
-        * src/home/hd-task-navigator.c:
-          Show the correct (wrt stacking) and up-to-date window title in
-          the thumbnails in switcher view.
-        * TODO:
-          Added and removed switcher todos.
+  * src/home/hd-task-navigator.c:
+  Show the correct (wrt stacking) and up-to-date window title in
+  the thumbnails in switcher view.
+  * TODO:
+  Added and removed switcher todos.
 
-        Show the last frame of a paused video in switcher view.
+  Show the last frame of a paused video in switcher view.
 
-        * src/home/hd-task-navigator.c:
-          * pixbuf2texture(): Be more robust and check the input pixbuf.
-            Accept pixbufs with alpha channel.
-        * src/home/hd-switcher.c:
-          Removed some debug prints.
+  * src/home/hd-task-navigator.c:
+    * pixbuf2texture(): Be more robust and check the input pixbuf.
+      Accept pixbufs with alpha channel.
+  * src/home/hd-switcher.c:
+    Removed some debug prints.
 
-        Thomas:
+  Thomas:
 
-        * src/mb/hd-comp-mgr.c: initialise variable to avoid warning
+  * src/mb/hd-comp-mgr.c: initialise variable to avoid warning
 
-        Gordon:
+  Gordon:
 
-        * src/launcher/hd-dummy-launcher.c
-        * src/launcher/hd-launcher-utils.c
-        * src/launcher/hd-task-launcher.c
-        * src/home/hd-edit-menu.c
-        * src/tidy/tidy-scroll-bar.c
-        * src/util/hd-gtk-utils.c
-        Named some clutter actors to ease debugging
-        * src/home/hd-home.c
-        Named some clutter actors to ease debugging
-        Removed large background texture
-        * src/home/hd-home-view.c
-        Named some clutter actors to ease debugging
-        Removed the solid background rectangle when an image is added
-        Background Image added at the same position as previous image
+  * src/launcher/hd-dummy-launcher.c
+  * src/launcher/hd-launcher-utils.c
+  * src/launcher/hd-task-launcher.c
+  * src/home/hd-edit-menu.c
+  * src/tidy/tidy-scroll-bar.c
+  * src/util/hd-gtk-utils.c
+  Named some clutter actors to ease debugging
+  * src/home/hd-home.c
+  Named some clutter actors to ease debugging
+  Removed large background texture
+  * src/home/hd-home-view.c
+  Named some clutter actors to ease debugging
+  Removed the solid background rectangle when an image is added
+  Background Image added at the same position as previous image
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 17 Nov 2008 12:45:01 +0200
 
