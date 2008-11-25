@@ -1368,15 +1368,21 @@ static void
 dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
 {
   const gchar *name;
+  MBWMCompMgrClient *cmgrc;
 
   if (!indent)
     indent = g_string_new ("");
+
   if (!(name = clutter_actor_get_name (actor)) && CLUTTER_IS_LABEL (actor))
     name = clutter_label_get_text (CLUTTER_LABEL (actor));
-  g_debug ("actor[%u]: %s%p (type=%s, name=%s), "
+  cmgrc = g_object_get_data(G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
+
+  g_debug ("actor[%u]: %s%p (type=%s, name=%s, win=0x%lx), "
            "mapped: %d, realized: %d, visible: %d, reactive: %d",
            indent->len, indent->str, actor,
            G_OBJECT_TYPE_NAME (actor), name,
+           cmgrc && cmgrc->wm_client && cmgrc->wm_client->window
+               ? cmgrc->wm_client->window->xwindow : 0,
            CLUTTER_ACTOR_IS_MAPPED (actor)   != 0,
            CLUTTER_ACTOR_IS_REALIZED (actor) != 0,
            CLUTTER_ACTOR_IS_VISIBLE (actor)  != 0,
@@ -1392,13 +1398,26 @@ dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
 }
 
 void
-hd_comp_mgr_dump_debug_info (void)
+hd_comp_mgr_dump_debug_info (const gchar *tag)
 {
   int revert;
   Window focus;
+  MBWMRootWindow *root;
+  MBWindowManagerClient *mbwmc;
+
+  if (tag)
+    g_debug ("%s", tag);
+
+  g_debug ("Windows:");
+  root = mb_wm_root_window_get (NULL);
+  mb_wm_stack_enumerate_reverse (root->wm, mbwmc)
+    g_debug (" client=%p, type=%d, win=%lx",
+             mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc),
+             mbwmc && mbwmc->window ? mbwmc->window->xwindow : 0);
+  mb_wm_object_unref (MB_WM_OBJECT (root));
 
   XGetInputFocus (clutter_x11_get_default_display (), &focus, &revert);
-  g_debug ("input focus: %ld", focus);
+  g_debug ("input focus: 0x%lx", focus);
   if (revert == RevertToParent)
     g_debug ("input focus reverts to parent");
   else if (revert == RevertToPointerRoot)
@@ -1407,5 +1426,6 @@ hd_comp_mgr_dump_debug_info (void)
     g_debug ("input focus reverts to none");
   else
     g_debug ("input focus reverts to %d", revert);
+
   dump_clutter_actor_tree (clutter_stage_get_default (), NULL);
 }

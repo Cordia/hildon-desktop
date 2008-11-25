@@ -1190,6 +1190,7 @@ claim_win (Thumbnail * thumb)
                                      thumb->inapwin->height);
       if (thumb->video)
         {
+          clutter_actor_set_name (thumb->video, "video");
           clutter_actor_set_position (thumb->video,
                                       thumb->inapwin->x,
                                       thumb->inapwin->y);

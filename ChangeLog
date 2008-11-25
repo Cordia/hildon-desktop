@@ -1,5 +1,17 @@
 2008-11-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/mb/hd-comp-mgr.h
+	* src/mb/hd-comp-mgr.c:
+	  Added a @tag parameter to hd_comp_mgr_dump_debug_info() to identify
+	  the debug dump as a whole.
+	  Include the wm client stack in the debug dump.
+	  Add the client's XWindow number for actors.
+	* src/main.c
+	* src/home/hd-task-navigator.c:
+	  More clutter_actor_set_name()s.
+
+2008-11-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/mb/hd-comp-mgr.c:
 	  dump_clutter_actor_tree(): if the actor to dump is a ClutterLabel
 	  and it doesn't have a name otherwise print the label text as name.

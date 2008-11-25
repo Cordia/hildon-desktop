@@ -124,8 +124,8 @@ clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
 static gboolean
 dump_debug_info_when_idle (gpointer unused)
 {
-  extern void hd_comp_mgr_dump_debug_info (void);
-  hd_comp_mgr_dump_debug_info ();
+  extern void hd_comp_mgr_dump_debug_info (const gchar *tag);
+  hd_comp_mgr_dump_debug_info ("SIGUSR1");
   return FALSE;
 }
 
