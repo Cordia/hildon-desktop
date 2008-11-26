@@ -1803,7 +1803,7 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
       thumb->class_hint = xwinhint.res_class;
       XFree (xwinhint.res_name);
       thumb->video_fname = g_strdup_printf (VIDEO_SCREENSHOT_DIR "/%s",
-                                           thumb->class_hint);
+                                            thumb->class_hint);
       if (!clutter_actor_get_name (apwin))
         clutter_actor_set_name (apwin, thumb->class_hint);
     }
