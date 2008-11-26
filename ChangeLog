@@ -1,3 +1,8 @@
+2008-11-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-app.c: initialise variable before use, from Laszlo.
+	Fixes: NB#92638
+
 2008-11-26  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c:

@@ -68,7 +68,7 @@ hd_app_init (MBWMObject *this, va_list vap)
   HdCompMgr             *hmgr = HD_COMP_MGR (wm->comp_mgr);
   Window                 win_group;
   HdApp                 *app = HD_APP (this);
-  unsigned char         *prop;
+  unsigned char         *prop = NULL;
   unsigned long          items, left;
   int                    format;
   Atom                   stackable_atom;
