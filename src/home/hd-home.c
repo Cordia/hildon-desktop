@@ -705,6 +705,8 @@ hd_home_constructed (GObject *object)
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
+  
+  clutter_actor_set_name (CLUTTER_ACTOR(object), "HdHome");
 
   main_group = priv->main_group = clutter_group_new ();
   clutter_actor_set_name (main_group, "HdHome:main_group");
@@ -786,6 +788,7 @@ hd_home_constructed (GObject *object)
 		    object);
 
   priv->operator = clutter_group_new ();
+  clutter_actor_set_name(priv->operator, "HdHome:operator");
   clutter_actor_show (priv->operator);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
 			       priv->operator);

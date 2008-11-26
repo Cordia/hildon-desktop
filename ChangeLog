@@ -1,5 +1,13 @@
 2008-11-26  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/home/hd-home.c:
+	Added more names to actors for debugging
+	* src/mb/hd-comp-mgr.c:
+	Fixed bug where tapping on the background would cause the screen
+	to suddenly blur and fade back in
+
+2008-11-26  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/tidy/tidy-finger-scroll.c:
 	Changed code for dragging so that position updates immediately
 	* src/tidy/tidy-blur-group.c:

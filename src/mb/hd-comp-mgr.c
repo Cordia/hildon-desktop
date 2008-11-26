@@ -76,6 +76,8 @@ struct HdCompMgrPrivate
   /* blurring for home group */
   ClutterActor          *blur_group; 
   ClutterTimeline       *blur_timeline;
+  /* because we don't seem to be able to use the timeline? */
+  float                 blur_amt; 
 
   GHashTable            *hibernating_apps;
 
@@ -299,7 +301,8 @@ on_blur_timeline_new_frame(ClutterTimeline *timeline,
   priv = hmgr->priv;
    
   frames = clutter_timeline_get_n_frames(priv->blur_timeline);
-  amt = frame_num / (float)frames;
+  amt = priv->blur_amt = frame_num / (float)frames;
+  
     
   tidy_blur_group_set_blur(priv->blur_group, amt*8.0f);
   tidy_blur_group_set_saturation(priv->blur_group, 1.0f-amt);
@@ -387,12 +390,14 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
    * can blur out and desaturate the home view */
    
   priv->blur_group = tidy_blur_group_new();
+  clutter_actor_set_name (priv->blur_group, "HdCompMgr:blur_group");
   tidy_blur_group_set_update_children(priv->blur_group, FALSE);
   clutter_actor_set_size(priv->blur_group, wm->xdpy_width, wm->xdpy_height);
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), priv->blur_group);
   clutter_actor_lower_bottom(priv->blur_group);
   priv->blur_timeline = clutter_timeline_new(30 /* frames */, 30 /* frames per second. */);
-  g_signal_connect (priv->blur_timeline, "new-frame", G_CALLBACK (on_blur_timeline_new_frame), hmgr);  
+  g_signal_connect (priv->blur_timeline, "new-frame", G_CALLBACK (on_blur_timeline_new_frame), hmgr);
+  priv->blur_amt = 0;  
 
   /*
    * Create the home group before the switcher, so the switcher can
@@ -1339,10 +1344,8 @@ hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur)
   gint frame;
   guint nframes;
   
-  frame = clutter_timeline_get_current_frame(priv->blur_timeline);
   nframes = clutter_timeline_get_n_frames(priv->blur_timeline);
-  g_debug("hd_comp_mgr_blur_home %s %d:%d", blur?"TRUE":"FALSE",
-          frame, nframes);
+  frame = (int)(priv->blur_amt * nframes);
   
   dir = blur ? CLUTTER_TIMELINE_FORWARD : CLUTTER_TIMELINE_BACKWARD;
   odir = clutter_timeline_get_direction(priv->blur_timeline);
@@ -1355,9 +1358,6 @@ hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur)
         return;
     }
   
-  if (odir!=dir)
-    frame = nframes - frame;  
-    
   clutter_timeline_set_direction(priv->blur_timeline, dir);
   /* we have to reset the frame because sometimes set_direction breaks it */
   clutter_timeline_advance(priv->blur_timeline, frame);
