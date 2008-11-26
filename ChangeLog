@@ -1,3 +1,9 @@
+2008-11-26  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c:
+	  hd_comp_mgr_dump_debug_info(): print more information about
+	  client windows.
+
 2008-11-26  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-home.c:

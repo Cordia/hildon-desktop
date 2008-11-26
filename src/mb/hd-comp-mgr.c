@@ -1378,14 +1378,13 @@ dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
   cmgrc = g_object_get_data(G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
 
   g_debug ("actor[%u]: %s%p (type=%s, name=%s, win=0x%lx), "
-           "mapped: %d, realized: %d, visible: %d, reactive: %d",
+           "mapped: %d, realized: %d, reactive: %d",
            indent->len, indent->str, actor,
            G_OBJECT_TYPE_NAME (actor), name,
            cmgrc && cmgrc->wm_client && cmgrc->wm_client->window
                ? cmgrc->wm_client->window->xwindow : 0,
            CLUTTER_ACTOR_IS_MAPPED (actor)   != 0,
            CLUTTER_ACTOR_IS_REALIZED (actor) != 0,
-           CLUTTER_ACTOR_IS_VISIBLE (actor)  != 0,
            CLUTTER_ACTOR_IS_REACTIVE (actor) != 0);
   if (CLUTTER_IS_CONTAINER (actor))
     {
@@ -1411,9 +1410,10 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
   g_debug ("Windows:");
   root = mb_wm_root_window_get (NULL);
   mb_wm_stack_enumerate_reverse (root->wm, mbwmc)
-    g_debug (" client=%p, type=%d, win=%lx",
+    g_debug (" client=%p, type=%d, win=0x%lx, name=%s",
              mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc),
-             mbwmc && mbwmc->window ? mbwmc->window->xwindow : 0);
+             mbwmc && mbwmc->window ? mbwmc->window->xwindow : 0,
+             mbwmc && mbwmc->window ? mbwmc->window->name : "<unset>");
   mb_wm_object_unref (MB_WM_OBJECT (root));
 
   XGetInputFocus (clutter_x11_get_default_display (), &focus, &revert);
