@@ -86,6 +86,23 @@ struct _TidyBlurGroupPrivate
 G_DEFINE_TYPE (TidyBlurGroup,
                tidy_blur_group,
                CLUTTER_TYPE_GROUP);
+ 
+/* When the blur group's children are modified we need to
+   re-paint to the source texture. When it is only us that
+   has been modified child==NULL */            
+static
+gboolean tidy_blur_group_notify_modified_real(ClutterActor          *actor,
+                                              ClutterActor          *child)
+{  
+  if (!TIDY_IS_BLUR_GROUP(actor))
+    return TRUE;
+    
+  TidyBlurGroup *container = TIDY_BLUR_GROUP(actor);
+  TidyBlurGroupPrivate *priv = container->priv;
+  if (child != NULL)
+    priv->source_changed = TRUE;
+  return TRUE;
+}               
 
 /* An implementation for the ClutterGroup::paint() vfunc,
    painting all the child actors: */
@@ -282,6 +299,7 @@ tidy_blur_group_class_init (TidyBlurGroupClass *klass)
   /* Provide implementations for ClutterActor vfuncs: */
   klass->overridden_paint = actor_class->paint;
   actor_class->paint = tidy_blur_group_paint;
+  actor_class->notify_modified = tidy_blur_group_notify_modified_real;
 }
 
 static void
@@ -330,11 +348,15 @@ tidy_blur_group_new (void)
  */
 void tidy_blur_group_set_blur(ClutterActor *blur_group, float blur)
 {  
+  TidyBlurGroupPrivate *priv;
+  
   if (!TIDY_IS_BLUR_GROUP(blur_group))
     return;
+  
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
  
-  TIDY_BLUR_GROUP(blur_group)->priv->blur = blur;
-  TIDY_BLUR_GROUP(blur_group)->priv->blur_changed = TRUE;
+  priv->blur = blur;
+  priv->blur_changed = TRUE;
   clutter_actor_queue_redraw(blur_group); 
 }
 
@@ -345,11 +367,15 @@ void tidy_blur_group_set_blur(ClutterActor *blur_group, float blur)
  */
 void tidy_blur_group_set_saturation(ClutterActor *blur_group, float saturation)
 {
+  TidyBlurGroupPrivate *priv;
+  
   if (!TIDY_IS_BLUR_GROUP(blur_group))
     return;
+    
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
  
-  TIDY_BLUR_GROUP(blur_group)->priv->saturation = saturation;
-  TIDY_BLUR_GROUP(blur_group)->priv->blur_changed = TRUE;
+  priv->saturation = saturation;
+  priv->blur_changed = TRUE;
   clutter_actor_queue_redraw(blur_group); 
 }
 
@@ -360,11 +386,15 @@ void tidy_blur_group_set_saturation(ClutterActor *blur_group, float saturation)
  */
 void tidy_blur_group_set_brightness(ClutterActor *blur_group, float brightness)
 {
+  TidyBlurGroupPrivate *priv;
+  
   if (!TIDY_IS_BLUR_GROUP(blur_group))
     return;
  
-  TIDY_BLUR_GROUP(blur_group)->priv->brightness = brightness;
-  TIDY_BLUR_GROUP(blur_group)->priv->blur_changed = TRUE;
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
+  
+  priv->brightness = brightness;
+  priv->blur_changed = TRUE;
   clutter_actor_queue_redraw(blur_group); 
 }
 
@@ -377,8 +407,12 @@ void tidy_blur_group_set_brightness(ClutterActor *blur_group, float brightness)
  */
 void tidy_blur_group_set_update_children(ClutterActor *blur_group, gboolean update)
 {
+  TidyBlurGroupPrivate *priv;
+  
   if (!TIDY_IS_BLUR_GROUP(blur_group))
     return;
+    
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
  
-  TIDY_BLUR_GROUP(blur_group)->priv->update_children = update;
+  priv->update_children = update;
 }

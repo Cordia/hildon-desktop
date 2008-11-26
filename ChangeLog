@@ -1,3 +1,11 @@
+2008-11-26  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/tidy/tidy-finger-scroll.c:
+	Changed code for dragging so that position updates immediately
+	* src/tidy/tidy-blur-group.c:
+	Modified blur group to use new clutter's 'notify-modified' so
+	that it now updates if something that is blurred changes.
+
 2008-11-25  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
         Move and redraw title when status area changes size or appears or
