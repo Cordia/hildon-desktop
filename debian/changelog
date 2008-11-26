@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.8-1~unreleased) unstable; urgency=low
+
+  * <write here>
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 26 Nov 2008 17:04:06 +0200
+
 hildon-desktop (1:2.2.7-1) unstable; urgency=low
 
   * Avoid loading background images twice. Do not save if the converted
