@@ -7,7 +7,6 @@
  *
  * Actor hierarchy:
  * @Navigator                 #ClutterGroup
- *   background               #ClutterRectangle, blurs the home view
  *   @Scroller                #TidyFingerScroll
  *     @Navigator_area        #HdScrollableGroup
  *       @Thumbnails          #ClutterGroup:s
@@ -340,7 +339,7 @@ pixbuf2texture (GdkPixbuf *pixbuf, gboolean fallback)
       || gdk_pixbuf_get_n_channels (pixbuf) !=
          (gdk_pixbuf_get_has_alpha (pixbuf) ? 4 : 3))
     {
-      g_critical("image not in expected rgb/8bps format");
+      g_critical ("image not in expected rgb/8bps format");
       goto damage_control;
     }
 #endif
@@ -444,7 +443,7 @@ load_image (const gchar * fname)
  * returns %NULL.
  */
 static ClutterActor *
-load_image_fit(char const * fname, guint aw, guint ah)
+load_image_fit (char const * fname, guint aw, guint ah)
 {
   GError *err;
   GdkPixbuf *pixbuf;
@@ -518,8 +517,8 @@ load_image_fit(char const * fname, guint aw, guint ah)
        * properties as the old one has, gdk_pixbuf_scale()
        * may not like it otherwise. */
       tmp = gdk_pixbuf_new (GDK_COLORSPACE_RGB,
-                            gdk_pixbuf_get_has_alpha(pixbuf),
-                            gdk_pixbuf_get_bits_per_sample(pixbuf),
+                            gdk_pixbuf_get_has_alpha (pixbuf),
+                            gdk_pixbuf_get_bits_per_sample (pixbuf),
                             dw, dh);
       gdk_pixbuf_scale (pixbuf, tmp, 0, 0,
                         dw, dh, dx, dy, scale, scale,
@@ -528,7 +527,7 @@ load_image_fit(char const * fname, guint aw, guint ah)
       pixbuf = tmp;
     }
 
-  if (!(texture = pixbuf2texture(pixbuf, FALSE)))
+  if (!(texture = pixbuf2texture (pixbuf, FALSE)))
     return NULL;
 
   /* If @pixbuf is smaller than desired place it centered
@@ -561,7 +560,22 @@ load_image_fit(char const * fname, guint aw, guint ah)
 /* Graphics loading }}} */
 
 /* Navigator utilities {{{ */
-/* Tells whether we're in the navigator view. */
+/* Starts blurring/unblurring the home view smoothly. */
+static void
+make_background_blurred (gboolean blurred) 
+{
+  HdCompMgr *cmgr;
+  HdSwitcher *switcher;
+
+  switcher = HD_SWITCHER (clutter_actor_get_parent (CLUTTER_ACTOR (Navigator)));
+  g_return_if_fail (switcher);
+  g_return_if_fail (HD_IS_SWITCHER (switcher));
+  g_object_get (G_OBJECT (switcher), "comp-mgr", &cmgr, NULL);
+  g_return_if_fail (cmgr);
+  hd_comp_mgr_blur_home (cmgr, blurred);
+}  
+
+/* Tells whether we're in switcher view view. */
 gboolean
 hd_task_navigator_is_active (HdTaskNavigator * self)
 {
@@ -588,26 +602,7 @@ hd_task_navigator_has_window (HdTaskNavigator * self, ClutterActor * win)
   return FALSE;
 }
 
-/* Set the background to blur or not - it will change smoothly between
- * being blurred + not blurred */
-static void
-hd_task_navigator_set_bg_blur(HdTaskNavigator * self, gboolean blur) 
-{
-  HdSwitcher *parent;
-  HdCompMgr  *comp_mgr;        
-         
-  parent = HD_SWITCHER(clutter_actor_get_parent(CLUTTER_ACTOR(self)));
-  if (!parent || !HD_IS_SWITCHER(parent))
-    return;
-    
-  g_object_get(G_OBJECT(parent), "comp-mgr", &comp_mgr, NULL);
-  if (!comp_mgr)
-    return;
-  
-  hd_comp_mgr_blur_home(comp_mgr, blur);
-}  
-
-/* Enters the navigator without animation. */
+/* Enters the navigator without animation (modulo background blurring). */
 void
 hd_task_navigator_enter (HdTaskNavigator * self)
 {
@@ -617,8 +612,7 @@ hd_task_navigator_enter (HdTaskNavigator * self)
   clutter_actor_set_position (Scroller, 0, 0);
   hd_scrollable_group_set_viewport_y (Navigator_area, 0);
   clutter_actor_show (Navigator);
-  
-  hd_task_navigator_set_bg_blur( self, TRUE );
+  make_background_blurred (TRUE);
 }
 
 /* Leaves the navigator without a single word.
@@ -627,11 +621,8 @@ void
 hd_task_navigator_exit (HdTaskNavigator *self)
 {
   clutter_actor_hide (CLUTTER_ACTOR (self));
-  
-  hd_task_navigator_set_bg_blur( self, FALSE);
+  make_background_blurred (FALSE);
 }
-
-
 
 /*
  * Returns the height of the @Notification_area in pixels.
@@ -671,7 +662,7 @@ set_navigator_height (guint hnavigator)
 /* Clutter utilities {{{ */
 /* add_effect_closure()'s #ClutterTimeline::completed handler. */
 static gboolean
-call_effect_closure(ClutterTimeline * timeline, EffectClosure *closure)
+call_effect_closure (ClutterTimeline * timeline, EffectClosure *closure)
 {
   g_signal_handler_disconnect (timeline, closure->handler_id);
   closure->fun (closure->actor, closure->funparam);
@@ -683,9 +674,9 @@ call_effect_closure(ClutterTimeline * timeline, EffectClosure *closure)
 /* If @fun is not %NULL call it with @actor and @funparam when
  * @timeline is "completed".  Otherwise NOP. */
 static void
-add_effect_closure(ClutterTimeline * timeline,
-                   ClutterEffectCompleteFunc fun,
-                   ClutterActor * actor, gpointer funparam)
+add_effect_closure (ClutterTimeline * timeline,
+                    ClutterEffectCompleteFunc fun,
+                    ClutterActor * actor, gpointer funparam)
 {
   EffectClosure *closure;
 
@@ -1139,7 +1130,7 @@ need_to_load_video (Thumbnail * thumb)
       struct stat sbuf;
 
       /* Do we need to load it? */
-      if (stat(thumb->video_fname, &sbuf) == 0)
+      if (stat (thumb->video_fname, &sbuf) == 0)
         {
           thumb->video_mtime = sbuf.st_mtime;
           return TRUE;
@@ -1239,8 +1230,12 @@ claim_win (Thumbnail * thumb)
 static void
 release_win (const Thumbnail * thumb)
 {
+  /* If we don't hide after reparenting, having clicked the background
+   * of the switcher .apwin will be shown in home view. */
   reparent (thumb->apwin, thumb->parent, thumb->prison);
   clutter_actor_hide (thumb->apwin);
+
+  /* Do the same to .dialogs. */
   if (thumb->dialogs)
     {
       guint i;
@@ -1274,7 +1269,7 @@ find_by_thwin (ClutterActor * thwin)
         return thumb;
     }
 
-  g_critical("find_by_thwin(%p): thwin not found", thwin);
+  g_critical ("find_by_thwin(%p): thwin not found", thwin);
   return NULL;
 }
 
@@ -1292,7 +1287,7 @@ find_by_apwin (ClutterActor * apwin)
         return thumb;
     }
 
-  g_critical("find_by_apwin(%p): apwin not found", apwin);
+  g_critical ("find_by_apwin(%p): apwin not found", apwin);
   return NULL;
 }
 
@@ -1334,7 +1329,7 @@ find_dialog (guint * idxp, ClutterActor * dialog, gboolean for_removal)
 
   if (idxp)
     /* The caller was just testing. */
-    g_critical("couldn't find application for dialog %p", dialog);
+    g_critical ("couldn't find application for dialog %p", dialog);
   return NULL;
 }
 /* Managing @Thumbnails }}} */
@@ -1529,7 +1524,7 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
 
   if (!hd_task_navigator_is_active (self))
     {
-      g_critical("attempt to zoom in from an inactive navigator");
+      g_critical ("attempt to zoom in from an inactive navigator");
       goto damage_control;
     }
   if (!(thumb = find_by_apwin (win)))
@@ -1560,17 +1555,16 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
 
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)zoom_in_complete,
-                      CLUTTER_ACTOR(self), win);
+                      CLUTTER_ACTOR (self), win);
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)fun, win, funparam);
                       
-  hd_task_navigator_set_bg_blur( self, FALSE );
-  
+  make_background_blurred (FALSE);
   return;
 
 damage_control:
   if (fun != NULL)
-    fun(win, funparam);
+    fun (win, funparam);
 }
 
 /*
@@ -1590,7 +1584,7 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
 
   if (hd_task_navigator_is_active (self))
     {
-      g_critical("attempt to zoom out of an already active navigator");
+      g_critical ("attempt to zoom out of an already active navigator");
       goto damage_control;
     }
   if (!(thumb = find_by_apwin (win)))
@@ -1641,12 +1635,12 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   clutter_effect_move  (Zoom_effect, Scroller, 0, 0, NULL, NULL);
   add_effect_closure (Zoom_effect_timeline, fun, win, funparam);
   
-  hd_task_navigator_set_bg_blur(self, TRUE);
+  make_background_blurred (TRUE);
   return;
 
 damage_control:
   if (fun != NULL)
-    fun(win, funparam);
+    fun (win, funparam);
 }
 /* Zooming }}} */
 
@@ -1658,7 +1652,7 @@ hd_task_navigator_hibernate_window (HdTaskNavigator * self,
 {
   Thumbnail *thumb;
 
-  if (!(thumb = find_by_apwin(win)))
+  if (!(thumb = find_by_apwin (win)))
     return;
   if (thumb->hibernation)
     return;
@@ -1680,11 +1674,11 @@ void
 hd_task_navigator_replace_window (HdTaskNavigator * self,
                                   ClutterActor * old_win,
                                   ClutterActor * new_win)
-{ g_debug(__FUNCTION__);
+{ g_debug (__FUNCTION__);
   Thumbnail *thumb;
   gboolean showing;
 
-  if (old_win == new_win || !(thumb = find_by_apwin(old_win)))
+  if (old_win == new_win || !(thumb = find_by_apwin (old_win)))
     return;
 
   /* The title is reset from claim_win() if it's changed,
@@ -1694,7 +1688,7 @@ hd_task_navigator_replace_window (HdTaskNavigator * self,
   if (showing)
     release_win (thumb);
   g_object_unref (thumb->apwin);
-  thumb->apwin = g_object_ref(new_win);
+  thumb->apwin = g_object_ref (new_win);
   if (showing)
     claim_win (thumb);
 }
@@ -1747,7 +1741,7 @@ thwin_turned_off_2 (ClutterActor * unused, MBWMCompMgrClutterClient * cmgrcc)
   mb_wm_comp_mgr_clutter_client_unset_flags (cmgrcc,
                                  MBWMCompMgrClutterClientDontUpdate
                                | MBWMCompMgrClutterClientEffectRunning);
-  mb_wm_object_unref (MB_WM_OBJECT(cmgrcc));
+  mb_wm_object_unref (MB_WM_OBJECT (cmgrcc));
 }
 
 /* Called when a %Thumbnail.thwin is clicked. */
@@ -1802,13 +1796,13 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
   memset (thumb, 0, sizeof (*thumb));
 
   /* @apwin related fields */
-  thumb->apwin      = g_object_ref(apwin);
+  thumb->apwin      = g_object_ref (apwin);
   thumb->inapwin    = &mbwmcwin->geometry;
-  if (XGetClassHint(mbwmcwin->wm->xdpy, mbwmcwin->xwindow, &xwinhint))
+  if (XGetClassHint (mbwmcwin->wm->xdpy, mbwmcwin->xwindow, &xwinhint))
     {
       thumb->class_hint = xwinhint.res_class;
       XFree (xwinhint.res_name);
-      thumb->video_fname = g_strdup_printf(VIDEO_SCREENSHOT_DIR "/%s",
+      thumb->video_fname = g_strdup_printf (VIDEO_SCREENSHOT_DIR "/%s",
                                            thumb->class_hint);
       if (!clutter_actor_get_name (apwin))
         clutter_actor_set_name (apwin, thumb->class_hint);
@@ -1910,9 +1904,9 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
 
       /* Hold a reference on @win's clutter client.
        * This is taken from hd-comp-mgr.c:hd_comp_mgr_effect(), */
-      cmgrcc = g_object_get_data(G_OBJECT(thumb->apwin),
-                                 "HD-MBWMCompMgrClutterClient");
-      mb_wm_object_ref (MB_WM_OBJECT(cmgrcc));
+      cmgrcc = g_object_get_data (G_OBJECT (thumb->apwin),
+                                  "HD-MBWMCompMgrClutterClient");
+      mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
       mb_wm_comp_mgr_clutter_client_set_flags (cmgrcc,
                                  MBWMCompMgrClutterClientDontUpdate
                                | MBWMCompMgrClutterClientEffectRunning);
@@ -1925,13 +1919,13 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
 
       /* At the end of effect deallocate @thumb which we just duplicated,
        * and release @cmgrcc. */
-      clutter_effect_scale(Fly_effect, thumb->thwin, 1, 0, NULL, NULL);
-      add_effect_closure(Fly_effect_timeline,
-                         (ClutterEffectCompleteFunc)thwin_turned_off_1,
-                         thumb->thwin, thumb);
-      add_effect_closure(Fly_effect_timeline,
-                         (ClutterEffectCompleteFunc)thwin_turned_off_2,
-                         thumb->thwin, cmgrcc);
+      clutter_effect_scale (Fly_effect, thumb->thwin, 1, 0, NULL, NULL);
+      add_effect_closure (Fly_effect_timeline,
+                          (ClutterEffectCompleteFunc)thwin_turned_off_1,
+                          thumb->thwin, thumb);
+      add_effect_closure (Fly_effect_timeline,
+                          (ClutterEffectCompleteFunc)thwin_turned_off_2,
+                          thumb->thwin, cmgrcc);
     }
   else
     { /* Not active, just remove .thwin. */
@@ -1973,7 +1967,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
     add_effect_closure (Fly_effect_timeline,
                         fun, CLUTTER_ACTOR (self), funparam);
   else if (fun)
-    fun(CLUTTER_ACTOR (self), funparam);
+    fun (CLUTTER_ACTOR (self), funparam);
 }
 
 /*
@@ -2129,7 +2123,7 @@ create_notewin (HdNote * hdnote)
 
   notewin = clutter_group_new ();
   clutter_actor_set_size (notewin, NOTE_WIDTH, NOTE_HEIGHT);
-  clutter_actor_set_reactive(notewin, TRUE);
+  clutter_actor_set_reactive (notewin, TRUE);
   g_signal_connect (notewin, "button-release-event",
                     G_CALLBACK (notewin_clicked), hdnote);
 
@@ -2480,12 +2474,12 @@ hd_task_navigator_init (HdTaskNavigator * self)
                                  MIN (THWIN_TITLE_AREA_LEFT_GAP,
                                       THWIN_TITLE_AREA_HEIGHT));
 
-  style = gtk_rc_get_style_by_paths (gtk_settings_get_default(),
+  style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
                                      "task-switcher-thumbnail", NULL,
                                      G_TYPE_NONE);
   if (style != NULL)
     { /* @Title_text_color.alpha is fixed and already set. */
-      Title_text_font         = pango_font_description_to_string(style->font_desc);
+      Title_text_font         = pango_font_description_to_string (style->font_desc);
       Title_text_color.red    = style->text[GTK_STATE_NORMAL].red   >> 8;
       Title_text_color.green  = style->text[GTK_STATE_NORMAL].green >> 8;
       Title_text_color.blue   = style->text[GTK_STATE_NORMAL].blue  >> 8;
