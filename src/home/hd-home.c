@@ -46,7 +46,7 @@
 #include <dbus/dbus-glib-bindings.h>
 
 #define HDH_MOVE_DURATION 300
-#define HDH_ZOOM_DURATION 3000
+#define HDH_ZOOM_DURATION 400
 #define HDH_EDIT_BUTTON_DURATION 200
 #define HDH_EDIT_BUTTON_TIMEOUT 3000
 

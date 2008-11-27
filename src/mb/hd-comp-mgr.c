@@ -395,8 +395,9 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   clutter_actor_set_size(priv->blur_group, wm->xdpy_width, wm->xdpy_height);
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), priv->blur_group);
   clutter_actor_lower_bottom(priv->blur_group);
-  priv->blur_timeline = clutter_timeline_new(30 /* frames */, 30 /* frames per second. */);
-  g_signal_connect (priv->blur_timeline, "new-frame", G_CALLBACK (on_blur_timeline_new_frame), hmgr);
+  priv->blur_timeline = clutter_timeline_new_for_duration (250);
+  g_signal_connect (priv->blur_timeline, "new-frame",
+                    G_CALLBACK (on_blur_timeline_new_frame), hmgr);
   priv->blur_amt = 0;  
 
   /*

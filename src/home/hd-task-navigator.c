@@ -132,7 +132,7 @@
  *                                instead of its its thumbnail.  The file is
  *                                "%VIDEO_SCREENSHOT_DIR/<class_hint>".
  */
-#define EFFECT_LENGTH                   1000
+#define EFFECT_LENGTH                   200
 #define VIDEO_SCREENSHOT_DIR            "/var/tmp/app-screenshots"
 
 /* Standard definitions }}} */
