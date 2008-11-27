@@ -609,30 +609,35 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       HdApp *app = HD_APP(c);
       MBWMCompMgrClutterClient * prev = NULL;
 
-      /* handle hildon-stackable-window */
-      if (HD_IS_APP (app))
+      if (actor)
         {
-          /* if we are secondary, there must be leader and probably even followers */
-          if (app->leader && app->secondary_window)
+          /* handle hildon-stackable-window */
+          if (HD_IS_APP (app))
             {
-              /* show the topmost follower and replace switcher actor for the stackable */
-              prev = MB_WM_COMP_MGR_CLUTTER_CLIENT ((hd_app_get_prev_group_member(app))->cm_client);
+              /* if we are secondary, there must be leader and probably even followers */
+              if (app->leader && app->secondary_window)
+                {
+                  /* show the topmost follower and replace switcher actor for the stackable */
+                  prev = MB_WM_COMP_MGR_CLUTTER_CLIENT ((hd_app_get_prev_group_member(app))->cm_client);
 
-              clutter_actor_show (mb_wm_comp_mgr_clutter_client_get_actor(prev));
+                  clutter_actor_show (mb_wm_comp_mgr_clutter_client_get_actor(prev));
 
-              hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group), actor,
-                                                mb_wm_comp_mgr_clutter_client_get_actor(prev));
+                  hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group), actor,
+                                                    mb_wm_comp_mgr_clutter_client_get_actor(prev));
+                }
+              else if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar))
+                /* We are the leader, just remove actor from switcher.
+                 * NOTE The test above breaks if the client changed
+                 * the flag after it's been mapped. */
+                hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
+                                                 actor);
             }
-          else if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar))
-            /* We are the leader, just remove actor from switcher.
-             * NOTE The test above breaks if the client changed
-             * the flag after it's been mapped. */
-            hd_switcher_remove_window_actor (HD_SWITCHER (priv->switcher_group),
-                                             actor);
-        }
 
-      g_object_set_data (G_OBJECT (actor),
-			 "HD-MBWMCompMgrClutterClient", NULL);
+          g_object_set_data (G_OBJECT (actor),
+                             "HD-MBWMCompMgrClutterClient", NULL);
+        }
+      else
+        /* We wasn't mapped in the first place. */;
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea)
     {
@@ -874,6 +879,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      if (!actor)
+        return;
 
       tmpl = clutter_effect_template_new_for_duration (HDCM_UNMAP_DURATION,
                                                        CLUTTER_ALPHA_RAMP_INC);
@@ -915,6 +922,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
     { /* Remove application-transient dialogs from the switcher. */
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      if (!actor)
+        return;
       hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
     }
 }
