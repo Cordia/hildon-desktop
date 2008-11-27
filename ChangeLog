@@ -1,5 +1,11 @@
 2008-11-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
+        (some of this checkin was accidentally in the previous commit)
+
+	* src/mb/hd-theme.c: Menus do not have back buttons, per Tuomas.
+
+2008-11-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
         Created X windows are named, for debugging.
 
 	* src/home/hd-home.c:

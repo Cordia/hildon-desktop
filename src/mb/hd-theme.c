@@ -587,7 +587,6 @@ hd_theme_simple_paint_back_button (MBWMTheme *theme, MBWMDecorButton *button)
       XSetForeground (xdpy, gc, pixel_from_clr (xdpy, xscreen, &clr));
     }
 
-  /*
   XFillRectangle (xdpy, dd->xpix, gc, x, y, w+1, h+1);
 
   XSetLineAttributes (xdpy, gc, 3, LineSolid, CapRound, JoinRound);
@@ -603,7 +602,6 @@ hd_theme_simple_paint_back_button (MBWMTheme *theme, MBWMDecorButton *button)
   XFreeGC (xdpy, gc);
 
   XClearWindow (wm->xdpy, xwin);
-  */
 }
 
 static void
