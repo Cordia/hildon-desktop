@@ -176,7 +176,6 @@ typedef struct
    *                  covering the whole thumbnail.
    *
    * -- @title:       What to put in the thumbnail's title area.
-   *                  Anchored at top-middle.
    * -- @title_icon:  If the title is a notification (@hdnote is set)
    *                  then its icon, otherwise %NULL.
    *                  Anchored in the middle.
@@ -847,15 +846,33 @@ thumb_size (guint * wthumbp, guint * hthumbp)
     *hthumbp = hthumb;
 }
 
-/* Returns the top-middle coordinates of the title area of
- * a thumbnail of width @wthumb.  This is used to position
- * the title material, which is anchored at the same point. */
+/* Returns where to position the title material horizontally.
+ * Makes sure @title is not wider than @wthumb allows,
+ * clipping it if necessary. */
 static guint
-title_area_pos (guint wthumb)
+title_area_pos (ClutterActor *title, guint wthumb)
 {
-  return (wthumb - (- THWIN_TITLE_AREA_LEFT_GAP
-                    + THWIN_TITLE_AREA_RIGHT_GAP
-                    + THWIN_CLOSE_WIDTH)) / 2;
+  guint wtitle, maxwidth;
+
+  wtitle = clutter_actor_get_width (title);
+  maxwidth = wthumb - (  THWIN_TITLE_AREA_LEFT_GAP
+                       + THWIN_TITLE_AREA_RIGHT_GAP
+                       + THWIN_CLOSE_WIDTH);
+
+  if (wtitle > maxwidth)
+    {
+      clutter_actor_set_clip (title, 0, 0, maxwidth,
+                              clutter_actor_get_height (title));
+      return THWIN_TITLE_AREA_LEFT_GAP;
+    }
+  else
+    {
+      clutter_actor_remove_clip (title);
+      return (wthumb - (- THWIN_TITLE_AREA_LEFT_GAP
+                        + wtitle
+                        + THWIN_TITLE_AREA_RIGHT_GAP
+                        + THWIN_CLOSE_WIDTH)) / 2;
+    }
 }
 
 /*
@@ -915,7 +932,9 @@ layout_thumbs (const Layout * lout, ClutterActor * newborn)
           check_and_move (thumb->thwin, xthumb, ythumb);
           check_and_scale (thumb->foreground, sxfg, syfg);
           check_and_scale (thumb->prison, sxprison, syprison);
-          check_and_move (thumb->title, title_area_pos (lout->wthumb), 0);
+          check_and_move (thumb->title, title_area_pos (thumb->title,
+                                                        lout->wthumb),
+                          0);
           check_and_move (thumb->close, /* Anchored in the middle. */
                           lout->wthumb - THWIN_CLOSE_WIDTH / 2,
                           THWIN_CLOSE_HEIGHT / 2);
@@ -926,8 +945,8 @@ layout_thumbs (const Layout * lout, ClutterActor * newborn)
           clutter_actor_set_position (thumb->thwin, xthumb, ythumb);
           clutter_actor_set_scale (thumb->foreground, sxfg, syfg);
           clutter_actor_set_scale (thumb->prison, sxprison, syprison);
-          clutter_actor_set_position (thumb->title,
-                                      title_area_pos (lout->wthumb), 0);
+          clutter_actor_set_x (thumb->title, title_area_pos (thumb->title,
+                                                             lout->wthumb));
           clutter_actor_set_position (thumb->close,
                                       lout->wthumb - THWIN_CLOSE_WIDTH / 2,
                                       THWIN_CLOSE_HEIGHT / 2);
@@ -1342,9 +1361,6 @@ static MBWMClientWindow *actor_to_client_window (ClutterActor *win);
 static void
 set_thumb_title (Thumbnail * thumb, ClutterActor * title)
 {
-  /* Anchor @title at the bottom-middle. */
-  clutter_actor_set_anchor_point_from_gravity (title,
-                                               CLUTTER_GRAVITY_NORTH);
   clutter_container_add_actor (CLUTTER_CONTAINER (thumb->thwin), title);
 
   if (thumb->title)
@@ -1355,7 +1371,7 @@ set_thumb_title (Thumbnail * thumb, ClutterActor * title)
        * or *_remove_notification() or claim_win(). */
 
       thumb_size (&wthumb, NULL);
-      clutter_actor_set_x (title, title_area_pos (wthumb));
+      clutter_actor_set_x (title, title_area_pos (title, wthumb));
 
       /* NOTE Some fading effect later? */
       clutter_container_raise_child (CLUTTER_CONTAINER (thumb->thwin),

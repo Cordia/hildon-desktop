@@ -10,7 +10,6 @@
   - Grab the keyboard focus in task switcher view.
   - Make the operator logo disappear in task switcher view.
   - Show incoming event notification previews.
-  - Truncate thumbnail titles.
 
   - Enter the switcher when an application is closed
     and the switcher is not empty.

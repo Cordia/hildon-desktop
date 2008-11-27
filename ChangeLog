@@ -1,3 +1,8 @@
+2008-11-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-task-navigator.c:
+	  Truncate the thumbnail titles.
+
 2008-11-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
         (some of this checkin was accidentally in the previous commit)
