@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.8-1~unreleased) unstable; urgency=low
 
-  * <write here>
+  * Initialise a variable before use, from Laszlo. Fixes: NB#92638
+  * Gordon: Modified blur group to use new clutter's 'notify-modified' so
+    that it now updates if something that is blurred changes.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 26 Nov 2008 17:04:06 +0200
 
