@@ -927,6 +927,7 @@ hd_home_constructed (GObject *object)
 				 CopyFromParent,
 				 CWEventMask,
 				 &attr);
+  mb_wm_rename_window (wm, priv->desktop, "desktop");
 
   XChangeProperty (wm->xdpy, priv->desktop,
 		   wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE],

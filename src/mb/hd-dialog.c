@@ -165,6 +165,7 @@ hd_dialog_realize (MBWindowManagerClient *client)
 		       CopyFromParent,
 		       CWOverrideRedirect|CWEventMask,
 		       &attr);
+      mb_wm_rename_window (wm, client->xwin_modal_blocker, "hdmodalblocker");
       g_debug ("%s: created modal blocker %lx", __FUNCTION__, client->xwin_modal_blocker);
     }
   else

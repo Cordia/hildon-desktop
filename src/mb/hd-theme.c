@@ -190,7 +190,8 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 	  MBWMXmlButton * b = l->data;
 	
 	  /* Back button only for group followers */
-	  if (b->type == HdHomeThemeButtonBack && !is_leader)
+	  if (b->type == HdHomeThemeButtonBack && !is_leader &&
+	      MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeMenu)
 	    {
 	      BackButtonData *bd;
 
@@ -586,6 +587,7 @@ hd_theme_simple_paint_back_button (MBWMTheme *theme, MBWMDecorButton *button)
       XSetForeground (xdpy, gc, pixel_from_clr (xdpy, xscreen, &clr));
     }
 
+  /*
   XFillRectangle (xdpy, dd->xpix, gc, x, y, w+1, h+1);
 
   XSetLineAttributes (xdpy, gc, 3, LineSolid, CapRound, JoinRound);
@@ -601,6 +603,7 @@ hd_theme_simple_paint_back_button (MBWMTheme *theme, MBWMDecorButton *button)
   XFreeGC (xdpy, gc);
 
   XClearWindow (wm->xdpy, xwin);
+  */
 }
 
 static void
