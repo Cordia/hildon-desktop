@@ -66,7 +66,7 @@ hd_app_menu_class_type ()
 	hd_app_menu_class_init
       };
 
-      type = mb_wm_object_register_class (&info, MB_WM_TYPE_CLIENT_DIALOG, 0);
+      type = mb_wm_object_register_class (&info, MB_WM_TYPE_CLIENT_MENU, 0);
     }
 
   return type;

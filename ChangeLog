@@ -1,5 +1,9 @@
 2008-11-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
+	* src/mb/hd-app-menu.[ch]: A HildonAppMenu is a menu, not a dialog.
+
+2008-11-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
 	* src/mb/hd-theme.c: Only non-leader app windows have back buttons.
 
 2008-11-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>

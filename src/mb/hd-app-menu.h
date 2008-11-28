@@ -25,7 +25,7 @@
 #define _HAVE_HD_APP_MENU_H
 
 #include <matchbox/core/mb-wm.h>
-#include <matchbox/client-types/mb-wm-client-dialog.h>
+#include <matchbox/client-types/mb-wm-client-menu.h>
 
 typedef struct HdAppMenu      HdAppMenu;
 typedef struct HdAppMenuClass HdAppMenuClass;
@@ -37,12 +37,12 @@ typedef struct HdAppMenuClass HdAppMenuClass;
 
 struct HdAppMenu
 {
-  MBWMClientDialog  parent;
+  MBWMClientMenu  parent;
 };
 
 struct HdAppMenuClass
 {
-  MBWMClientDialogClass parent;
+  MBWMClientMenuClass parent;
 };
 
 MBWindowManagerClient* hd_app_menu_new (MBWindowManager *wm,
