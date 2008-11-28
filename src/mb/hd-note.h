@@ -64,6 +64,9 @@ struct HdNote
   /* mb_wm_main_context_x_event_handler_add() ID,
    * only relevant for HdNoteTypeIncomingEvent:s. */
   unsigned long   property_changed_cb_id;
+
+  /* For hd_util_modal_blocker_realize(). */
+  unsigned long   modal_blocker_cb_id;
 };
 
 struct HdNoteClass

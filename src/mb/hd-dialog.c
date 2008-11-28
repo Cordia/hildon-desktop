@@ -22,6 +22,7 @@
  */
 
 #include "hd-dialog.h"
+#include "hd-util.h"
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
 static Bool
@@ -122,67 +123,18 @@ hd_dialog_class_type ()
   return type;
 }
 
-static Bool
-hd_dialog_release_handler (XButtonEvent    *xev,
-			   void            *userdata)
-{
-  MBWindowManagerClient *c = userdata;
-
-  g_debug ("%s: c %p", __FUNCTION__, c);
-  mb_wm_client_deliver_delete (c);
-  return False;
-}
-
 static void
 hd_dialog_realize (MBWindowManagerClient *client)
 {
   MBWindowManagerClientClass  *parent_klass = NULL;
   HdDialog                    *dialog = HD_DIALOG (client);
-  MBWindowManager             *wm = client->wmref;
 
   parent_klass = MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS (client));
 
   if (parent_klass->realize)
     parent_klass->realize (client);
 
-  if (!client->xwin_modal_blocker)
-    {
-      XSetWindowAttributes   attr;
-
-      attr.override_redirect = True;
-      attr.event_mask        = MBWMChildMask|ButtonPressMask|ButtonReleaseMask|
-	                       ExposureMask;
-
-      client->xwin_modal_blocker =
-	XCreateWindow (wm->xdpy,
-		       wm->root_win->xwindow,
-		       0, 0,
-		       wm->xdpy_width,
-		       wm->xdpy_height,
-		       0,
-		       CopyFromParent,
-		       InputOnly,
-		       CopyFromParent,
-		       CWOverrideRedirect|CWEventMask,
-		       &attr);
-      mb_wm_rename_window (wm, client->xwin_modal_blocker, "hdmodalblocker");
-      g_debug ("%s: created modal blocker %lx", __FUNCTION__, client->xwin_modal_blocker);
-    }
-  else
-    {
-      /* make sure ButtonRelease is caught */
-      XWindowAttributes attrs = { 0 };
-      XGetWindowAttributes (wm->xdpy, client->xwin_modal_blocker, &attrs);
-      attrs.your_event_mask |= ButtonReleaseMask;
-      XSelectInput (wm->xdpy, client->xwin_modal_blocker, attrs.your_event_mask);
-    }
-
-  dialog->release_cb_id =
-    mb_wm_main_context_x_event_handler_add (wm->main_ctx,
-				client->xwin_modal_blocker,
-				ButtonRelease,
-			        (MBWMXEventFunc)hd_dialog_release_handler,
-			        client);
+  dialog->release_cb_id = hd_util_modal_blocker_realize (client);
 }
 
 static Bool

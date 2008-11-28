@@ -1,3 +1,14 @@
+2008-11-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-dialog.c
+	* src/util/hd-util.h
+	* src/util/hd-util.c:
+	  Moved the modal blocker window creation code to a common place.
+	* src/mb/hd-note.h
+	* src/mb/hd-note.c:
+	  Create a modal blocker for information notes like HdDialog does
+	  to close them when the user clicks outside the note.
+
 2008-11-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/mb/hd-app-menu.[ch]: A HildonAppMenu is a menu, not a dialog.

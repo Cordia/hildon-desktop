@@ -23,6 +23,7 @@
 
 #include "hd-note.h"
 #include "hd-comp-mgr.h"
+#include "hd-util.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -35,6 +36,7 @@
 #undef  G_LOG_DOMAIN
 #define G_LOG_DOMAIN "hd-note"
 
+static void hd_note_realize (MBWindowManagerClient *client);
 static Bool hd_note_request_geometry (MBWindowManagerClient *client,
 				      MBGeometry            *new_geometry,
 				      MBWMClientReqGeomType  flags);
@@ -96,6 +98,7 @@ hd_note_class_init (MBWMObjectClass *klass)
   client = (MBWindowManagerClientClass *)klass;
 
   client->client_type  = MBWMClientTypeNote;
+  client->realize      = hd_note_realize;
   client->geometry     = hd_note_request_geometry;
   client->stack        = hd_note_stack;
 
@@ -112,6 +115,11 @@ hd_note_destroy (MBWMObject *this)
                                 MB_WM_CLIENT (this)->wmref->main_ctx,
                                 PropertyNotify,
                                 HD_NOTE (this)->property_changed_cb_id);
+  if (HD_NOTE (this)->note_type == HdNoteTypeInfo)
+    mb_wm_main_context_x_event_handler_remove (
+                                MB_WM_CLIENT (this)->wmref->main_ctx,
+                                ButtonRelease,
+                                HD_NOTE (this)->modal_blocker_cb_id);
 }
 
 static int
@@ -217,6 +225,18 @@ hd_note_class_type ()
     }
 
   return type;
+}
+
+static void
+hd_note_realize (MBWindowManagerClient *client)
+{
+  MBWindowManagerClientClass* parent_klass =
+    MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
+
+  parent_klass->realize (client);
+  if (HD_NOTE (client)->note_type == HdNoteTypeInfo)
+    /* Close information notes when clicked outside. */
+    HD_NOTE(client)->modal_blocker_cb_id = hd_util_modal_blocker_realize (client);
 }
 
 static Bool
