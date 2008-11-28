@@ -12,6 +12,12 @@
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
     </method>
 
+    <method name="UngrabPointer">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_ungrab_pointer"/>
+
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+    </method>
+
     <method name="ShowActivateViewsDialog">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_show_activate_views_dialog"/>
 

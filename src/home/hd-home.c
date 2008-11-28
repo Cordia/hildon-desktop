@@ -1307,7 +1307,6 @@ hd_home_set_mode (HdHome *home, HdHomeMode mode)
 void
 hd_home_show_activate_views_dialog (HdHome *home)
 {
-  hd_home_grab_pointer (home);
   hd_home_set_mode (home, HD_HOME_MODE_LAYOUT);
 }
 

@@ -1,3 +1,10 @@
+2008-11-28  Jan Arne Petersen,Berlin  <jpetersen@openismus.com>
+
+	* src/home/hd-home-dbus.xml: Also export the UngrapPointer method.
+
+	* src/home/hd-home.c: grab_pointer is already called when the edit
+	  menu is closed.
+
 2008-11-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-dialog.c
