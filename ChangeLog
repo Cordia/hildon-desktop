@@ -1,3 +1,7 @@
+2008-11-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/mb/hd-theme.c: Only non-leader app windows have back buttons.
+
 2008-11-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-task-navigator.c:

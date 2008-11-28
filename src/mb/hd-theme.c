@@ -191,7 +191,7 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 	
 	  /* Back button only for group followers */
 	  if (b->type == HdHomeThemeButtonBack && !is_leader &&
-	      MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeMenu)
+	      MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeApp)
 	    {
 	      BackButtonData *bd;
 
