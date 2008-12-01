@@ -213,11 +213,8 @@ tidy_blur_group_paint (ClutterActor *actor)
       priv->source_changed = FALSE;
     }    
   
-  col.red = (int)(priv->brightness*255);
-  col.green = (int)(priv->brightness*255);
-  col.blue = (int)(priv->brightness*255);
-  col.alpha = clutter_actor_get_paint_opacity (actor);
-  cogl_color (&col);
+  /* set white, fully opaque */
+  cogl_color (&col); 
 
   /* if we have no shader, so attempt to create one */ 
   if (priv->use_shader && !priv->shader) 
@@ -253,6 +250,14 @@ tidy_blur_group_paint (ClutterActor *actor)
       priv->blur_changed = FALSE;      
     }
     
+  /* set our brightness here, so we don't have to re-render
+   * the blur if it changes */
+  col.red = (int)(priv->brightness*255);
+  col.green = (int)(priv->brightness*255);
+  col.blue = (int)(priv->brightness*255);
+  col.alpha = clutter_actor_get_paint_opacity (actor);
+  cogl_color (&col);  
+  
   /* Render the blurred texture to the screen */
   cogl_draw_buffer(COGL_WINDOW_BUFFER, 0);        
   cogl_texture_rectangle (priv->tex_postblur, 0, 0,
@@ -394,7 +399,6 @@ void tidy_blur_group_set_brightness(ClutterActor *blur_group, float brightness)
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
   
   priv->brightness = brightness;
-  priv->blur_changed = TRUE;
   clutter_actor_queue_redraw(blur_group); 
 }
 

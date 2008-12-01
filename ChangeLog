@@ -1,3 +1,10 @@
+2008-12-01  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/tidy/tidy-blur-group.c:
+	  Moved dimming code to where texture is rendered, so we make better
+	  use of our 4bpp. Also means that changes in brightness are much
+	  quicker to render.
+
 2008-11-28  Jan Arne Petersen,Berlin  <jpetersen@openismus.com>
 
 	* src/home/hd-home-dbus.xml: Also export the UngrapPointer method.
