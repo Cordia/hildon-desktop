@@ -1,3 +1,8 @@
+2008-12-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-home-view.c (hd_home_view_constructed): Make all home
+	views black by default.
+
 2008-12-01  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-blur-group.c:

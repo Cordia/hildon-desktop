@@ -383,7 +383,7 @@ static void
 hd_home_view_constructed (GObject *object)
 {
   ClutterActor             *rect;
-  ClutterColor              clr = {0xff, 0, 0, 0xff};
+  ClutterColor              clr = {0, 0, 0, 0xff};
   HdHomeView               *self = HD_HOME_VIEW (object);
   HdHomeViewPrivate        *priv = self->priv;
   MBWindowManager          *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
@@ -392,40 +392,7 @@ hd_home_view_constructed (GObject *object)
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
-  g_debug("hd_home_view_constructed: xwidth=%d xheight=%d\n", priv->xwidth,
-          priv->xheight);
 
-  /*
-   * TODO -- for now, just add a rectangle, so we can see
-   * where the home view is. Later we will need to be able to use
-   * a texture.
-   */
-
-  /* Some default colours when gconf values aren't set */
-  if (priv->id % 4 == 0)
-    {
-      clr.red   = 0xff;
-      clr.blue  = 0;
-      clr.green = 0;
-    }
-  else if (priv->id % 4 == 1)
-    {
-      clr.red   = 0;
-      clr.blue  = 0xff;
-      clr.green = 0;
-    }
-  else if (priv->id % 4 == 2)
-    {
-      clr.red   = 0;
-      clr.blue  = 0;
-      clr.green = 0xff;
-    }
-  else
-    {
-      clr.red   = 0xff;
-      clr.blue  = 0xff;
-      clr.green = 0;
-    }
   rect = clutter_rectangle_new_with_color (&clr);
   clutter_actor_set_name (rect, "HdHomeView::background");
   clutter_actor_set_size (rect, priv->xwidth, priv->xheight);
