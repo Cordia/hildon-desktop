@@ -727,11 +727,12 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
   
   loading_image = hd_launcher_app_get_loading_image( item );
-  /* FIXME: Do we do this for ALL applications? */
+  /* We only do this is loading_image is NOT defined. If it is blank
+   * then see below - we don't do anything. */
   if (!loading_image)
     loading_image = HD_LAUNCHER_LAUNCH_IMAGE_BLANK;
     
-  if (loading_image)
+  if (loading_image && strlen(loading_image)>0)
     {
       gchar *loading_path = g_strdup(loading_image);
       /* FIXME: Is there a relative path for these? */
