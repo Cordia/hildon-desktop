@@ -533,7 +533,8 @@ hd_switcher_clicked (HdSwitcher *switcher)
             {
               actor = mb_wm_comp_mgr_clutter_client_get_actor (cmgrcc);
               navigator = HD_TASK_NAVIGATOR (priv->switcher_group);
-              if (hd_task_navigator_has_window (navigator, actor))
+              if (CLUTTER_ACTOR_IS_VISIBLE (actor)
+                  && hd_task_navigator_has_window (navigator, actor))
                 hd_task_navigator_zoom_out (navigator, actor, NULL, NULL);
               else
                 hd_task_navigator_enter (navigator);

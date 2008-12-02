@@ -1,6 +1,13 @@
 2008-12-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-	* src/mb/hd-app: hd_app_show(), hd_app_destroy():
+	* src/home/hd-switcher.c:
+	  Enter the switcher without zooming if the topmost "visible" client
+	  /to matchbox' knowledge/ is not visible after all, as it happens
+	  after closing the app in application view.
+
+2008-12-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-app.c: hd_app_show(), hd_app_destroy():
 	  Hide the switcher (Tasks button) when we are showing fullscreen.
 
 2008-12-02  Thomas Thurman  <thomas.thurman@collabora.co.uk>
