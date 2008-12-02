@@ -1,15 +1,39 @@
+/*
+ * This file is part of hildon-desktop
+ *
+ * Copyright (C) 2008 Nokia Corporation.
+ *
+ * Author:  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <glib-object.h>
-
-#include <clutter/clutter.h>
-
 #include "hd-launcher-item.h"
-#include "hd-task-launcher.h"
+#include "hd-launcher-app.h"
+#include "hd-launcher-cat.h"
 
 #define I_(str) (g_intern_static_string ((str)))
+#define HD_PARAM_READ (G_PARAM_READABLE    | \
+                       G_PARAM_STATIC_NICK | \
+                       G_PARAM_STATIC_NAME | \
+                       G_PARAM_STATIC_BLURB)
 
 GType
 hd_launcher_item_type_get_type (void)
@@ -19,8 +43,8 @@ hd_launcher_item_type_get_type (void)
   if (G_UNLIKELY (gtype == 0))
     {
       static GEnumValue values[] = {
-        { HD_APPLICATION_LAUNCHER, "HD_APPLICATION_LAUNCHER", "application" },
-        { HD_SECTION_LAUNCHER, "HD_SECTION_LAUNCHER", "section" },
+        { HD_APPLICATION_LAUNCHER, "HdLauncherApp", "Application" },
+        { HD_CATEGORY_LAUNCHER, "HdLauncherCat", "Category" },
         { 0, NULL, NULL }
       };
 
@@ -30,316 +54,116 @@ hd_launcher_item_type_get_type (void)
   return gtype;
 }
 
-/* HdLauncherItem layout:
- *
- *              _  <padding.right>
- *             | 
- *             v
- * +------------+
- * |            | <- <padding.top>
- * |   +----+   |
- * |   |xxxx|   |
- * |   |xxxx|   |  icon
- * |   |xxxx|   |
- * |   +----+   |
- * |            | <- <spacing>
- * |  xxxxxxxx  |
- * |  xxxxxxxx  |  label
- * |  xxxxxxxx  |
- * |            | <- <padding.bottom>
- * +------------+
- *  ^
- *  |_ <padding.left>
- */
-
 #define HD_LAUNCHER_ITEM_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_ITEM, HdLauncherItemPrivate))
 
 struct _HdLauncherItemPrivate
 {
   HdLauncherItemType item_type;
+  gchar *id;
+  gchar *name;
+  gchar *icon_name;
+  gchar *comment;
+  gchar *text_domain;
+  gboolean nodisplay;
 
-  ClutterActor *icon;
-  ClutterActor *bg_tile;
-  ClutterActor *label;
-
-  HdLauncherPadding padding;
-  ClutterUnit spacing;
-
-  guint is_pressed : 1;
+  gchar *category;
+  guint position;
 };
 
 enum
 {
   PROP_0,
 
-  PROP_LAUNCHER_TYPE
+  PROP_LAUNCHER_ITEM_TYPE,
+  PROP_LAUNCHER_ITEM_ID,
+  PROP_LAUNCHER_ITEM_NAME,
+  PROP_LAUNCHER_ITEM_ICON_NAME,
 };
 
-enum
-{
-  CLICKED,
+G_DEFINE_ABSTRACT_TYPE (HdLauncherItem, hd_launcher_item, G_TYPE_OBJECT);
 
-  LAST_SIGNAL
-};
+/* Desktop file entries */
+#define HD_DESKTOP_ENTRY_TYPE          "Type"
+#define HD_DESKTOP_ENTRY_NAME          "Name"
+#define HD_DESKTOP_ENTRY_ICON          "Icon"
+#define HD_DESKTOP_ENTRY_COMMENT       "Comment"
+#define HD_DESKTOP_ENTRY_CATEGORY      "Category"
+#define HD_DESKTOP_ENTRY_TEXT_DOMAIN   "X-Text-Domain"
+#define HD_DESKTOP_ENTRY_NO_DISPLAY    "NoDisplay"
+#define HD_DESKTOP_ENTRY_USER_POSITION "X-Osso-User-Position"
 
-static guint launcher_signals[LAST_SIGNAL] = { 0, };
-
-G_DEFINE_ABSTRACT_TYPE (HdLauncherItem, hd_launcher_item, CLUTTER_TYPE_ACTOR);
-
-static ClutterActor *
-hd_launcher_item_get_icon_unimplemented (HdLauncherItem *item)
-{
-  g_critical ("%s: HdLauncherItem of type `%s' does not implement "
-              "the HdLauncherItemClass::get_icon() virtual function",
-              G_STRLOC,
-              G_OBJECT_TYPE_NAME (item));
-  return NULL;
-}
-
-static ClutterActor *
-hd_launcher_item_get_label_unimplemented (HdLauncherItem *item)
-{
-  g_critical ("%s: HdLauncherItem of type `%s' does not implement "
-              "the HdLauncherItemClass::get_label() virtual function",
-              G_STRLOC,
-              G_OBJECT_TYPE_NAME (item));
-  return NULL;
-}
-
-static void
-hd_launcher_item_get_preferred_width (ClutterActor *actor,
-                                      ClutterUnit   for_height,
-                                      ClutterUnit  *min_width_p,
-                                      ClutterUnit  *natural_width_p)
-{
-  if (min_width_p)
-    *min_width_p = CLUTTER_UNITS_FROM_DEVICE (140);
-
-  if (natural_width_p)
-    *natural_width_p = CLUTTER_UNITS_FROM_DEVICE (140);
-}
-
-static void
-hd_launcher_item_get_preferred_height (ClutterActor *actor,
-                                       ClutterUnit   for_width,
-                                       ClutterUnit  *min_height_p,
-                                       ClutterUnit  *natural_height_p)
-{
-  ClutterUnit h;
-
-  h = CLUTTER_UNITS_FROM_DEVICE (140);
-
-  if (min_height_p)
-    *min_height_p = h;
-
-  if (natural_height_p)
-    *natural_height_p = h;
-}
-
-static void
-hd_launcher_item_allocate (ClutterActor          *actor,
-                           const ClutterActorBox *box,
-                           gboolean               origin_changed)
-{
-  ClutterActor *icon, *label;
-  ClutterActorClass *parent_class;
-  ClutterUnit icon_width, icon_height;
-  ClutterUnit label_width;
-
-  /* chain up to get the allocation stored */
-  parent_class = CLUTTER_ACTOR_CLASS (hd_launcher_item_parent_class);
-  parent_class->allocate (actor, box, origin_changed);
-
-  icon  = hd_launcher_item_get_icon (HD_LAUNCHER_ITEM (actor));
-  label = hd_launcher_item_get_label (HD_LAUNCHER_ITEM (actor));
-
-  if (!icon || !label)
-    return;
-
-  label_width = CLUTTER_UNITS_FROM_DEVICE (140);
-  icon_height = icon_width = CLUTTER_UNITS_FROM_DEVICE (64);
-
-  {
-    ClutterActorBox icon_box;
-
-    icon_box.x1 = CLUTTER_UNITS_FROM_DEVICE (((100 - 64) / 2) + 20);
-    icon_box.y1 = CLUTTER_UNITS_FROM_DEVICE ((100 - 64) / 2);
-    icon_box.x2 = CLUTTER_UNITS_FROM_DEVICE (((100 - 64) / 2) + 20 + 64);
-    icon_box.y2 = CLUTTER_UNITS_FROM_DEVICE (((100 - 64) / 2) + 64);
-
-    clutter_actor_allocate (icon, &icon_box, origin_changed);
-  }
-
-  {
-    ClutterActorBox label_box;
-    ClutterUnit label_width;
-    guint label_width_px;
-    
-    clutter_actor_get_preferred_width (label,
-      CLUTTER_UNITS_FROM_DEVICE(40), NULL, &label_width);
-    label_width_px = MIN (CLUTTER_UNITS_TO_DEVICE(label_width), 140);
-    
-    label_box.x1 = CLUTTER_UNITS_FROM_DEVICE ((140 - label_width_px) / 2);
-    label_box.y1 = CLUTTER_UNITS_FROM_DEVICE (100);
-    label_box.x2 = CLUTTER_UNITS_FROM_DEVICE (((140 - label_width_px) / 2) + label_width_px);
-    label_box.y2 = CLUTTER_UNITS_FROM_DEVICE (140);
-
-    clutter_actor_allocate (label, &label_box, origin_changed);
-  }
-  
-  HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM (actor)->priv;
-  if (priv->bg_tile)
-  {
-    ClutterActorBox tile_box = { CLUTTER_UNITS_FROM_DEVICE (20), 0,
-      CLUTTER_UNITS_FROM_DEVICE (120), CLUTTER_UNITS_FROM_DEVICE (100) };
-    clutter_actor_allocate (priv->bg_tile, &tile_box, origin_changed);
-  }
-}
-
-static void
-hd_launcher_item_paint (ClutterActor *actor)
-{
-  HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM (actor)->priv;
-
-  if (priv->bg_tile && CLUTTER_ACTOR_IS_VISIBLE (priv->bg_tile))
-    clutter_actor_paint (priv->bg_tile);
-
-  if (priv->icon && CLUTTER_ACTOR_IS_VISIBLE (priv->icon))
-    clutter_actor_paint (priv->icon);
-
-  if (priv->label && CLUTTER_ACTOR_IS_VISIBLE (priv->label))
-    clutter_actor_paint (priv->label);
-}
-
-static void
-hd_launcher_item_pick (ClutterActor       *actor,
-                       const ClutterColor *pick_color)
-{
-  HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM (actor)->priv;
-
-  CLUTTER_ACTOR_CLASS (hd_launcher_item_parent_class)->pick (actor, pick_color);
-
-  if (priv->label && CLUTTER_ACTOR_IS_VISIBLE (priv->label))
-    clutter_actor_paint (priv->label);
-
-  if (priv->bg_tile && CLUTTER_ACTOR_IS_VISIBLE (priv->bg_tile))
-    clutter_actor_paint (priv->bg_tile);
-
-  if (priv->icon && CLUTTER_ACTOR_IS_VISIBLE (priv->icon))
-    clutter_actor_paint (priv->icon);
-}
-
-static void
-hd_launcher_item_show (ClutterActor *actor)
-{
-  HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM (actor)->priv;
-
-  if (priv->icon)
-    clutter_actor_show (priv->icon);
-
-  if (priv->bg_tile)
-    clutter_actor_show (priv->bg_tile);
-
-  if (priv->label)
-    clutter_actor_show (priv->label);
-
-  CLUTTER_ACTOR_SET_FLAGS (actor, CLUTTER_ACTOR_MAPPED);
-}
-
-static void
-hd_launcher_item_hide (ClutterActor *actor)
-{
-  HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM (actor)->priv;
-
-  CLUTTER_ACTOR_UNSET_FLAGS (actor, CLUTTER_ACTOR_MAPPED);
-
-  if (priv->icon)
-    clutter_actor_hide (priv->icon);
-
-  if (priv->bg_tile)
-    clutter_actor_hide (priv->bg_tile);
-
-  if (priv->label)
-    clutter_actor_hide (priv->label);
-}
-
-static gboolean
-hd_launcher_item_button_press (ClutterActor       *actor,
-                               ClutterButtonEvent *event)
-{
-  if (event->button == 1)
-    {
-      HdLauncherItem *item = HD_LAUNCHER_ITEM (actor);
-      HdLauncherItemPrivate *priv = item->priv;
-      HdLauncherItemClass *klass = HD_LAUNCHER_ITEM_GET_CLASS (item);
-
-      priv->is_pressed = TRUE;
-
-      if (klass->pressed)
-        klass->pressed (item);
-
-      return TRUE;
-    }
-
-  return FALSE;
-}
-
-static gboolean
-hd_launcher_item_button_release (ClutterActor       *actor,
-                                 ClutterButtonEvent *event)
-{
-  if (event->button == 1)
-    {
-      HdLauncherItem *item = HD_LAUNCHER_ITEM (actor);
-      HdLauncherItemPrivate *priv = item->priv;
-      HdLauncherItemClass *klass = HD_LAUNCHER_ITEM_GET_CLASS (item);
-
-      if (!priv->is_pressed)
-        return FALSE;
-
-      priv->is_pressed = FALSE;
-
-      if (klass->released)
-        klass->released (item);
-
-      g_print ("released: %s", G_OBJECT_TYPE_NAME (item));
-
-      g_signal_emit (item, launcher_signals[CLICKED], 0);
-
-      return TRUE;
-    }
-
-  return FALSE;
-}
+/* Forward declarations */
+gboolean hd_launcher_item_parse_keyfile (HdLauncherItem *item,
+                                         GKeyFile *key_file,
+                                         GError **error);
 
 static void
 hd_launcher_item_finalize (GObject *gobject)
 {
   HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM_GET_PRIVATE (gobject);
 
-  clutter_actor_destroy (priv->label);
-  clutter_actor_destroy (priv->icon);
-  clutter_actor_destroy (priv->bg_tile);
+  if (priv->name)
+    {
+      g_free (priv->name);
+      priv->name = NULL;
+    }
+  if (priv->icon_name)
+    {
+      g_free (priv->icon_name);
+      priv->icon_name = NULL;
+    }
+  if (priv->comment)
+    {
+      g_free (priv->comment);
+      priv->comment = NULL;
+    }
+  if (priv->text_domain)
+    {
+      g_free (priv->text_domain);
+      priv->text_domain = NULL;
+    }
+
+  if (priv->category)
+    {
+      g_free (priv->category);
+      priv->category = NULL;
+    }
 
   G_OBJECT_CLASS (hd_launcher_item_parent_class)->finalize (gobject);
 }
 
 static void
-hd_launcher_item_set_property (GObject      *gobject,
-                               guint         prop_id,
-                               const GValue *value,
-                               GParamSpec   *pspec)
+hd_launcher_item_get_property (GObject    *object,
+                               guint       property_id,
+                               GValue     *value,
+                               GParamSpec *pspec)
 {
-  HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM_GET_PRIVATE (gobject);
+  HdLauncherItem *item = HD_LAUNCHER_ITEM (object);
 
-  switch (prop_id)
+  switch (property_id)
     {
-    case PROP_LAUNCHER_TYPE:
-      priv->item_type = g_value_get_enum (value);
+    case PROP_LAUNCHER_ITEM_TYPE:
+      g_value_set_enum (value,
+          hd_launcher_item_get_item_type (item));
+
+    case PROP_LAUNCHER_ITEM_ID:
+      g_value_set_string (value,
+          hd_launcher_item_get_id (item));
+      break;
+
+    case PROP_LAUNCHER_ITEM_NAME:
+      g_value_set_string (value,
+          hd_launcher_item_get_name (item));
+      break;
+
+    case PROP_LAUNCHER_ITEM_ICON_NAME:
+      g_value_set_string (value,
+          hd_launcher_item_get_icon_name (item));
       break;
 
     default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop_id, pspec);
+      /* We don't have any other property... */
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
     }
 }
@@ -348,43 +172,38 @@ static void
 hd_launcher_item_class_init (HdLauncherItemClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-  ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
   GParamSpec *pspec;
 
   g_type_class_add_private (klass, sizeof (HdLauncherItemPrivate));
 
-  klass->get_icon  = hd_launcher_item_get_icon_unimplemented;
-  klass->get_label = hd_launcher_item_get_label_unimplemented;
-
-  gobject_class->set_property = hd_launcher_item_set_property;
+  gobject_class->get_property = hd_launcher_item_get_property;
   gobject_class->finalize     = hd_launcher_item_finalize;
-
-  actor_class->get_preferred_width  = hd_launcher_item_get_preferred_width;
-  actor_class->get_preferred_height = hd_launcher_item_get_preferred_height;
-  actor_class->allocate             = hd_launcher_item_allocate;
-  actor_class->paint                = hd_launcher_item_paint;
-  actor_class->pick                 = hd_launcher_item_pick;
-  actor_class->button_press_event   = hd_launcher_item_button_press;
-  actor_class->button_release_event = hd_launcher_item_button_release;
-  actor_class->show                 = hd_launcher_item_show;
-  actor_class->hide                 = hd_launcher_item_hide;
 
   pspec = g_param_spec_enum ("launcher-type",
                              "Launcher Type",
                              "Type of the launcher",
                              HD_TYPE_LAUNCHER_ITEM_TYPE,
                              HD_APPLICATION_LAUNCHER,
-                             G_PARAM_CONSTRUCT_ONLY | G_PARAM_WRITABLE);
-  g_object_class_install_property (gobject_class, PROP_LAUNCHER_TYPE, pspec);
-
-  launcher_signals[CLICKED] =
-    g_signal_new (I_("clicked"),
-                  G_TYPE_FROM_CLASS (gobject_class),
-                  G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (HdLauncherItemClass, clicked),
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
+                             HD_PARAM_READ);
+  g_object_class_install_property (gobject_class, PROP_LAUNCHER_ITEM_TYPE, pspec);
+  pspec = g_param_spec_string ("id",
+                               "Id",
+                               "Unique id of the item",
+                               "Unknown",
+                               HD_PARAM_READ);
+  g_object_class_install_property (gobject_class, PROP_LAUNCHER_ITEM_ID, pspec);
+  pspec = g_param_spec_string ("name",
+                               "Name",
+                               "Name of the item, before i18n",
+                               "Unknown",
+                               HD_PARAM_READ);
+  g_object_class_install_property (gobject_class, PROP_LAUNCHER_ITEM_NAME, pspec);
+  pspec = g_param_spec_string ("icon-name",
+                               "Icon Name",
+                               "Name of the icon to display",
+                               "qgn_list_app_installer",
+                               HD_PARAM_READ);
+  g_object_class_install_property (gobject_class, PROP_LAUNCHER_ITEM_ICON_NAME, pspec);
 }
 
 static void
@@ -395,13 +214,6 @@ hd_launcher_item_init (HdLauncherItem *item)
   item->priv = priv = HD_LAUNCHER_ITEM_GET_PRIVATE (item);
 
   priv->item_type = HD_APPLICATION_LAUNCHER;
-
-  priv->padding.top = priv->padding.bottom = 0;
-  priv->padding.right = priv->padding.left = 0;
-
-  priv->spacing = CLUTTER_UNITS_FROM_DEVICE (2);
-
-  clutter_actor_set_reactive (CLUTTER_ACTOR (item), TRUE);
 }
 
 HdLauncherItemType
@@ -412,62 +224,185 @@ hd_launcher_item_get_item_type (HdLauncherItem *item)
   return item->priv->item_type;
 }
 
-ClutterActor *
-hd_launcher_item_get_icon (HdLauncherItem *item)
+const gchar *
+hd_launcher_item_get_id (HdLauncherItem *item)
 {
   g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), NULL);
 
-  if (!item->priv->icon)
-    {
-      ClutterActor *icon;
-
-      if (!item->priv->bg_tile)
-      {
-        /* FIXME */
-        item->priv->bg_tile = clutter_texture_new_from_file (
-          "/usr/share/themes/default/images/TaskSwitcherThumbnailTile.png",
-          NULL);
-        clutter_actor_set_parent (item->priv->bg_tile, CLUTTER_ACTOR (item));
-      }
-
-      icon = HD_LAUNCHER_ITEM_GET_CLASS (item)->get_icon (item);
-      if (!icon)
-        return NULL;
-
-      item->priv->icon = icon;
-      clutter_actor_set_parent (icon, CLUTTER_ACTOR (item));
-    }
-
-  return item->priv->icon;
-}
-
-ClutterActor *
-hd_launcher_item_get_label (HdLauncherItem *item)
-{
-  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), NULL);
-
-  if (!item->priv->label)
-    {
-      ClutterActor *label;
-
-      label = HD_LAUNCHER_ITEM_GET_CLASS (item)->get_label (item);
-      if (!label)
-        return NULL;
-
-      item->priv->label = label;
-      clutter_actor_set_parent (label, CLUTTER_ACTOR (item));
-    }
-
-  return item->priv->label;
+  return item->priv->id;
 }
 
 const gchar *
-hd_launcher_item_get_text (HdLauncherItem *item)
+hd_launcher_item_get_name (HdLauncherItem *item)
 {
   g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), NULL);
 
-  if (item->priv->label)
-    return clutter_label_get_text (CLUTTER_LABEL (item->priv->label));
+  return item->priv->name;
+}
 
-  return NULL;
+const gchar *
+hd_launcher_item_get_icon_name (HdLauncherItem *item)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), 0);
+
+  return item->priv->icon_name;
+}
+
+const gchar *
+hd_launcher_item_get_comment (HdLauncherItem *item)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), 0);
+
+  return item->priv->comment;
+}
+
+const gchar *
+hd_launcher_item_get_text_domain (HdLauncherItem *item)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), 0);
+
+  return item->priv->text_domain;
+}
+
+const gchar *
+hd_launcher_item_get_category (HdLauncherItem *item)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), 0);
+
+  return item->priv->category;
+}
+
+guint
+hd_launcher_item_get_position (HdLauncherItem *item)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), 0);
+
+  return item->priv->position;
+}
+
+gboolean
+hd_launcher_item_parse_keyfile (HdLauncherItem *item,
+                                GKeyFile *key_file,
+                                GError **error)
+{
+  HdLauncherItemPrivate *priv = HD_LAUNCHER_ITEM_GET_PRIVATE (item);
+
+  priv->name = g_key_file_get_string (key_file,
+                                      HD_DESKTOP_ENTRY_GROUP,
+                                      HD_DESKTOP_ENTRY_NAME,
+                                      NULL);
+  if (!priv->name)
+    {
+      g_free (priv->name);
+      return FALSE;
+    }
+
+  priv->icon_name = g_key_file_get_string (key_file,
+                                           HD_DESKTOP_ENTRY_GROUP,
+                                           HD_DESKTOP_ENTRY_ICON,
+                                           NULL);
+  priv->comment = g_key_file_get_string (key_file,
+                                         HD_DESKTOP_ENTRY_GROUP,
+                                         HD_DESKTOP_ENTRY_COMMENT,
+                                         NULL);
+  priv->text_domain = g_key_file_get_string (key_file,
+                                             HD_DESKTOP_ENTRY_GROUP,
+                                             HD_DESKTOP_ENTRY_TEXT_DOMAIN,
+                                             NULL);
+  priv->category = g_key_file_get_string (key_file,
+                                          HD_DESKTOP_ENTRY_GROUP,
+                                          HD_DESKTOP_ENTRY_CATEGORY,
+                                          NULL);
+  priv->position = g_key_file_get_integer (key_file,
+                                           HD_DESKTOP_ENTRY_GROUP,
+                                           HD_DESKTOP_ENTRY_USER_POSITION,
+                                           NULL);
+  if (priv->position == 0)
+    priv->position = 1000;
+
+  return TRUE;
+}
+
+HdLauncherItem *
+hd_launcher_item_new_from_keyfile (const gchar *id,
+                                   GKeyFile *key_file,
+                                   GError **error)
+{
+  HdLauncherItem *result;
+  GError *parse_error = NULL;
+  GType item_type;
+  gboolean no_display;
+
+  g_return_val_if_fail (key_file != NULL, NULL);
+
+  if (!g_key_file_has_group (key_file, HD_DESKTOP_ENTRY_GROUP))
+    return FALSE;
+
+  if (!g_key_file_has_key (key_file,
+                           HD_DESKTOP_ENTRY_GROUP,
+                           HD_DESKTOP_ENTRY_TYPE,
+                           &parse_error))
+    {
+      g_propagate_error (error, parse_error);
+      return NULL;
+    }
+
+  if (!g_key_file_has_key (key_file,
+                           HD_DESKTOP_ENTRY_GROUP,
+                           HD_DESKTOP_ENTRY_NAME,
+                           &parse_error))
+    {
+      g_propagate_error (error, parse_error);
+      return NULL;
+    }
+
+  /* skip NoDisplay entries */
+  no_display = g_key_file_get_boolean (key_file,
+                                       HD_DESKTOP_ENTRY_GROUP,
+                                       HD_DESKTOP_ENTRY_NO_DISPLAY,
+                                       &parse_error);
+  if (parse_error)
+    g_clear_error (&parse_error);
+  else if (no_display)
+    return FALSE;
+
+  gchar *type_name = g_key_file_get_string (key_file,
+                                            HD_DESKTOP_ENTRY_GROUP,
+                                            HD_DESKTOP_ENTRY_TYPE,
+                                            NULL);
+  GTypeClass *item_type_class = g_type_class_ref (HD_TYPE_LAUNCHER_ITEM_TYPE);
+  GEnumValue *type_value = g_enum_get_value_by_nick (
+                             G_ENUM_CLASS (item_type_class),
+                             type_name);
+  g_free (type_name);
+  g_type_class_unref (item_type_class);
+  if (!type_value)
+    {
+      return NULL;
+    }
+  if (type_value->value == HD_APPLICATION_LAUNCHER)
+    item_type = HD_TYPE_LAUNCHER_APP;
+  else
+    item_type = HD_TYPE_LAUNCHER_CAT;
+
+  result = g_object_new (item_type, NULL);
+  if (!result)
+    return NULL;
+
+  result->priv->item_type = type_value->value;
+  result->priv->id = g_strdup (id);
+  if (!hd_launcher_item_parse_keyfile (result, key_file, error))
+    {
+      g_object_unref (result);
+      return NULL;
+    }
+
+  if (!(HD_LAUNCHER_ITEM_GET_CLASS (result))->parse_key_file
+            (result, key_file, error))
+    {
+      g_object_unref (result);
+      return NULL;
+    }
+
+  return result;
 }

@@ -31,9 +31,7 @@
 
 #include "tidy/tidy-finger-scroll.h"
 
-#include "hd-task-launcher.h"
-#include "hd-dummy-launcher.h"
-#include "hd-launcher-utils.h"
+#include "hd-launcher-grid.h"
 
 static gboolean
 on_key_press (ClutterActor    *actor,
@@ -73,7 +71,7 @@ main (int   argc,
                     "key-press-event", G_CALLBACK (on_key_press),
                     NULL);
 
-  launcher = hd_get_application_launcher (NULL, NULL);
+  launcher = hd_launcher_grid_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), launcher);
 
   clutter_actor_show (stage);

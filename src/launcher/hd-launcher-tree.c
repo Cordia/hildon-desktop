@@ -3,7 +3,6 @@
 #endif
 
 #include "hd-launcher-tree.h"
-#include "hd-app-launcher.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +31,12 @@
 #define HILDON_DESKTOP_APPLICATIONS_DIR         "applications"
 
 #define HD_LAUNCHER_TREE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TREE, HdLauncherTreePrivate))
+
+typedef struct
+{
+  gchar *id;
+  GKeyFile *key_file;
+} WalkItem;
 
 typedef struct
 {
@@ -123,6 +128,13 @@ static const gint hd_n_default_categories = G_N_ELEMENTS (hd_default_categories)
 
 G_DEFINE_TYPE (HdLauncherTree, hd_launcher_tree, G_TYPE_OBJECT);
 
+static void
+walk_item_free (WalkItem *item)
+{
+  g_free (item->id);
+  g_key_file_free (item->key_file);
+}
+
 static WalkThreadData *
 walk_thread_data_new (HdLauncherTree *tree)
 {
@@ -147,10 +159,23 @@ walk_thread_data_free (WalkThreadData *data)
   g_free (data);
 }
 
+static gint
+walk_thread_compare_items (HdLauncherItem *a, HdLauncherItem *b)
+{
+  guint apos = hd_launcher_item_get_position (a);
+  guint bpos = hd_launcher_item_get_position (b);
+
+  return apos - bpos;
+}
+
 static gboolean
 walk_thread_done_idle (gpointer user_data)
 {
   WalkThreadData *data = user_data;
+
+  /* FIXME: This is a nasty hack. */
+  data->tree->priv->items_list = g_list_sort (data->tree->priv->items_list,
+      (GCompareFunc) walk_thread_compare_items);
 
   if (!data->cancelled)
     g_signal_emit (data->tree, tree_signals[FINISHED], 0);
@@ -170,20 +195,17 @@ walk_thread_add_items_idle (gpointer user_data)
     {
       for (GList *l = items->items; l != NULL; l = l->next)
         {
-          GKeyFile *key_file = l->data;
+          WalkItem *witem = l->data;
           HdLauncherItem *item;
 
-          item = hd_app_launcher_new_from_keyfile (key_file, NULL);
+          item = hd_launcher_item_new_from_keyfile (witem->id,
+                                                    witem->key_file,
+                                                    NULL);
           if (item)
             {
-              /* the key file must also be valid */
-              if (hd_app_launcher_get_item_type (HD_APP_LAUNCHER (item)) &&
-                  hd_app_launcher_get_name (HD_APP_LAUNCHER (item)))
-                {
-                  g_signal_emit (items->thread_data->tree,
-                                 tree_signals[ITEM_ADDED], 0,
-                                 item);
-                }
+              g_signal_emit (items->thread_data->tree,
+                             tree_signals[ITEM_ADDED], 0,
+                             item);
 
               /* the class signal handler will keep a reference
                * on the object for us; see hd_launcher_tree_real_item_added().
@@ -193,7 +215,7 @@ walk_thread_add_items_idle (gpointer user_data)
         }
     }
 
-   g_list_foreach (items->items, (GFunc) g_key_file_free, NULL);
+   g_list_foreach (items->items, (GFunc) walk_item_free, NULL);
    g_list_free (items->items);
    g_free (items);
 
@@ -260,7 +282,7 @@ walk_visit_func (const char        *f_path,
     {
       GError *error = NULL;
       gchar *full_path;
-      
+
       full_path = g_build_filename (data->tree->priv->path, name, NULL);
 
       key_file = g_key_file_new ();
@@ -280,8 +302,13 @@ walk_visit_func (const char        *f_path,
       g_free (full_path);
     }
 
-  if (key_file)
-    data->files_list = g_list_prepend (data->files_list, key_file);
+  if (key_file) {
+    WalkItem *item = g_new0 (WalkItem, 1);
+    item->key_file = key_file;
+    item->id = g_strndup (name, strlen (name) - strlen (".desktop"));
+    data->files_list = g_list_prepend (data->files_list, item);
+  }
+
 
   data->n_processed_files++;
 
@@ -430,26 +457,6 @@ hd_launcher_tree_real_item_added (HdLauncherTree *tree,
    */
   priv->items_list = g_list_prepend (priv->items_list,
                                      g_object_ref (item));
-
-  if (HD_IS_APP_LAUNCHER (item))
-    {
-      HdAppLauncher *launcher = HD_APP_LAUNCHER (item);
-
-      g_debug ("Added `%s' (type: %s)",
-               hd_app_launcher_get_name (launcher),
-               hd_app_launcher_get_item_type (launcher));
-
-      if (hd_app_launcher_get_n_categories (launcher) == 0)
-        {
-          /* this is a launcher without categories; we need to
-           * put it inside the top-levels
-           */
-          priv->top_levels = g_list_prepend (priv->top_levels, launcher);
-        }
-      else
-        {
-        }
-    }
 }
 
 static void

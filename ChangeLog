@@ -1,3 +1,30 @@
+2008-12-02  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Task Launcher refactor. Separated UI and data into different classes.
+	Also updates to latest UI spec.
+	Fixes: NB#92644, NB#89202, NB#88460
+	
+	* src/home/hd-switcher.c: Changes to new HdLauncher API.
+	* src/launcher/Makefile.am:
+	* src/launcher/hd-launcher-app.c: Removed UI.
+	* src/launcher/hd-launcher-app.h:
+	* src/launcher/hd-launcher-cat.c: Removed UI.
+	* src/launcher/hd-launcher-cat.h:
+	* src/launcher/hd-launcher-grid.c: New UI actor, keeps the app grid.
+	* src/launcher/hd-launcher-grid.h:
+	* src/launcher/hd-launcher-item.c:
+	* src/launcher/hd-launcher-item.h:
+	* src/launcher/hd-launcher-page.c: New UI actor, shows a whole app
+	category.
+	* src/launcher/hd-launcher-page.h:
+	* src/launcher/hd-launcher-tile.c: New UI actor, shows an app icon and
+	label.
+	* src/launcher/hd-launcher-tile.h:
+	* src/launcher/hd-launcher-tree.c:
+	* src/launcher/hd-launcher.c: New HdLauncher singleton, 
+	* src/launcher/hd-launcher.h:
+	* tests/test-launcher.c:
+
 2008-12-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-theme.c: Patch from Laszlo to keep a reference count in

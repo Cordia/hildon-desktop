@@ -10,21 +10,24 @@ INCLUDES = \
 	@HD_INCS@
 
 launcher_h = \
-	hd-app-launcher.h		\
-	hd-dummy-launcher.h		\
-	hd-launcher-item.h		\
-	hd-task-launcher.h		\
-	hd-task-launcher-private.h	\
 	hd-launcher-tree.h		\
-	hd-launcher-utils.h
+	hd-launcher-item.h		\
+	hd-launcher-cat.h		\
+	hd-launcher-app.h		\
+	hd-launcher-tile.h		\
+	hd-launcher-grid.h		\
+	hd-launcher-page.h		\
+	hd-launcher.h
 
 launcher_c = \
-	hd-app-launcher.c		\
-	hd-dummy-launcher.c		\
-	hd-launcher-item.c		\
-	hd-task-launcher.c		\
 	hd-launcher-tree.c		\
-	hd-launcher-utils.c
+	hd-launcher-item.c		\
+	hd-launcher-cat.c		\
+	hd-launcher-app.c		\
+	hd-launcher-tile.c		\
+	hd-launcher-grid.c		\
+	hd-launcher-page.c		\
+	hd-launcher.c
 
 noinst_LTLIBRARIES = liblauncher.la
 

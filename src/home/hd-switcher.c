@@ -29,7 +29,7 @@
 
 #include "hd-switcher.h"
 #include "hd-task-navigator.h"
-#include "hd-launcher-utils.h"
+#include "hd-launcher.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
 #include "hd-home.h"
@@ -67,8 +67,9 @@ struct _HdSwitcherPrivate
   ClutterActor         *status_area;
   ClutterActor         *status_menu;
 
+  HdLauncher           *launcher;
+
   ClutterActor         *switcher_group;
-  ClutterActor         *launcher_group;
 
   DBusGConnection      *connection;
   DBusGProxy           *hildon_home_proxy;
@@ -126,7 +127,8 @@ static void hd_switcher_group_background_clicked (HdSwitcher   *switcher,
 						  ClutterActor *actor);
 static void hd_switcher_home_background_clicked (HdSwitcher   *switcher,
 						 ClutterActor *actor);
-static void hd_switcher_hide_launcher_after_launch (HdSwitcher *switcher);
+static void hd_switcher_hide_launcher_after_launch (HdLauncher *launcher,
+                                                    HdSwitcher *switcher);
 
 static gboolean hd_switcher_notification_clicked (HdSwitcher *switcher,
                                                   HdNote *note);
@@ -161,7 +163,7 @@ hd_switcher_class_init (HdSwitcherClass *klass)
 }
 
 static void
-launcher_back_button_clicked (ClutterActor *actor, ClutterEvent *event,
+launcher_back_button_clicked (HdLauncher *launcher,
                               gpointer *data)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (data)->priv;
@@ -200,21 +202,23 @@ hd_switcher_constructed (GObject *object)
   HdHome	    *home =
     HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
 
-  priv->launcher_group =
-    hd_get_application_launcher (HD_SWITCHER(object),
-                                 hd_switcher_hide_launcher_after_launch);
-  hd_launcher_group_set_back_button_cb (priv->launcher_group,
-        G_CALLBACK (launcher_back_button_clicked), object);
+  priv->launcher = hd_launcher_get ();
+  g_signal_connect (priv->launcher, "application-launched",
+                    G_CALLBACK (hd_switcher_hide_launcher_after_launch),
+                    object);
+  g_signal_connect (priv->launcher, "launcher-hidden",
+                    G_CALLBACK (launcher_back_button_clicked),
+                    object);
 
   priv->switcher_group = CLUTTER_ACTOR (hd_task_navigator_new ());
 
   clutter_container_add (CLUTTER_CONTAINER (self),
                          priv->switcher_group,
-                         priv->launcher_group,
+                         hd_launcher_get_group (),
                          NULL);
 
   clutter_actor_hide (priv->switcher_group);
-  clutter_actor_hide (priv->launcher_group);
+  hd_launcher_hide ();
 
   g_signal_connect_swapped (priv->switcher_group, "thumbnail-clicked",
 			    G_CALLBACK (hd_switcher_item_selected),
@@ -445,7 +449,7 @@ hd_switcher_menu_clicked (HdSwitcher *switcher)
   g_debug("hd_switcher_menu_clicked, switcher=%p\n", switcher);
 
   hd_home_ungrab_pointer (home);
-  
+
   if (priv->hildon_home_proxy)
     dbus_g_proxy_call_no_reply (priv->hildon_home_proxy, "ShowEditMenu",
                                 G_TYPE_UINT, hd_home_get_current_view_id (home),
@@ -493,11 +497,11 @@ hd_switcher_clicked (HdSwitcher *switcher)
       /* don't show buttons when launcher is visible */
       hd_switcher_setup_buttons (switcher, FALSE);
 
-      clutter_actor_show (priv->launcher_group);
+      hd_launcher_show ();
       priv->showing_launcher = TRUE;
       if (do_grab)
         hd_home_grab_pointer (home);
-        
+
       /* blur out the background */
       hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), TRUE);
     }
@@ -555,9 +559,9 @@ hd_switcher_clicked (HdSwitcher *switcher)
   return TRUE;
 }
 
-/* KIMMO: this is called from launcher code -- FIXME */
 static void
-hd_switcher_hide_launcher_after_launch (HdSwitcher *switcher)
+hd_switcher_hide_launcher_after_launch (HdLauncher *launcher,
+                                        HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   g_debug("hd_switcher_hide_launcher_after_launch: switcher=%p\n", switcher);
@@ -895,7 +899,7 @@ hd_switcher_setup_buttons (HdSwitcher * switcher, gboolean switcher_mode)
     // Hide both buttons when showing launcher
     clutter_actor_hide (priv->button_switcher);
     clutter_actor_hide (priv->button_launcher);
-    
+
     priv->switcher_mode = FALSE;
   }
   else if (!have_children)
@@ -915,7 +919,7 @@ hd_switcher_setup_buttons (HdSwitcher * switcher, gboolean switcher_mode)
     // Show launcher button
     clutter_actor_hide (priv->button_switcher);
     clutter_actor_show (priv->button_launcher);
-    
+
     priv->switcher_mode = FALSE;
   } else {
     g_debug("%s show switcher button\n", __FUNCTION__);
@@ -923,9 +927,9 @@ hd_switcher_setup_buttons (HdSwitcher * switcher, gboolean switcher_mode)
     // Show switcher button
     clutter_actor_hide (priv->button_launcher);
     clutter_actor_show (priv->button_switcher);
-    
+
     priv->switcher_mode = TRUE;
-  }    
+  }
 }
 
 gboolean
@@ -960,8 +964,8 @@ hd_switcher_hide_launcher (HdSwitcher *switcher)
 
   priv->showing_launcher = FALSE;
 
-  clutter_actor_hide (priv->launcher_group);
-  
+  hd_launcher_hide ();
+
   /* get background back after it has been blurred*/
   hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), FALSE);
 }
@@ -1011,7 +1015,7 @@ hd_switcher_home_mode_changed (HdHome         *home,
 /**
  * This function will get the height of the task switcher and the width of the
  * task switcher plus the width of the status area (if the status area is
- * present). 
+ * present).
  */
 void
 hd_switcher_get_control_area_size (HdSwitcher *switcher,
