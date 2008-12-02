@@ -803,32 +803,38 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       if (HD_IS_APP (app))
       {
-        if (app->leader && app->secondary_window)
+        if (app->secondary_window && app->leader)
           {
-            MBWMCompMgrClutterClient * top =
-              MB_WM_COMP_MGR_CLUTTER_CLIENT (((MBWindowManagerClient *)app->leader)->cm_client);
+            ClutterActor *top_actor;
+            MBWMCompMgrClutterClient *top;
 
-            if (top)
-              {
-                ClutterActor *top_actor;
-
-                top_actor = mb_wm_comp_mgr_clutter_client_get_actor(top);
+            if (!app->leader->followers->next)
+              { /* First secondary window, the top is the leader. */
+                top = MB_WM_COMP_MGR_CLUTTER_CLIENT (MB_WM_CLIENT (app->leader)->cm_client);
+                top_actor = mb_wm_comp_mgr_clutter_client_get_actor (top);
                 hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group),
                                                   top_actor, actor);
                 clutter_actor_hide (top_actor);
               }
+            else
+              { /* Subsequenct secondary, the top is the last of the followers. */
+                GList *l;
 
-            if (app->leader->followers)
-              {
-                GList *l = app->leader->followers;
-
-                while (HD_APP(l->data) != app)
+                /* Hide the followers and replace the last one preceeding us
+                 * with outselfves in the switcher. */
+                for (l = app->leader->followers; ; l = l->next)
                   {
-                    HdApp *a = HD_APP (l->data);
-          
-                    top = MB_WM_COMP_MGR_CLUTTER_CLIENT (((MBWindowManagerClient *)a)->cm_client);
-                    clutter_actor_hide (mb_wm_comp_mgr_clutter_client_get_actor(top));
-                    l = l->next;
+                    g_return_if_fail (l != NULL);
+                    top = MB_WM_COMP_MGR_CLUTTER_CLIENT (MB_WM_CLIENT (l->data)->cm_client);
+                    top_actor = mb_wm_comp_mgr_clutter_client_get_actor (top);
+                    clutter_actor_hide (top_actor);
+                    if (l->next->data == app)
+                      { /* We should be the last of the followers. */
+                        hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group),
+                                                          top_actor, actor);
+                        g_return_if_fail (!l->next->next);
+                        break;
+                      }
                   }
               }
           }

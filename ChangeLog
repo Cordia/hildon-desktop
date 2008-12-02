@@ -1,3 +1,8 @@
+2008-12-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c: hd_comp_mgr_map_notify():
+	  Replace 3+ subsequent stackable windows correctly in the switcher.
+
 2008-12-02  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-switcher.c (hd_switcher_menu_clicked): Move the call to
