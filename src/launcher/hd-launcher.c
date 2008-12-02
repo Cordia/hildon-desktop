@@ -48,6 +48,8 @@
 
 #define I_(str) (g_intern_static_string ((str)))
 #define HD_LAUNCHER_TOP_ID "Applications"
+#define HD_LAUNCHER_LAUNCH_IMAGE_BLANK \
+                "/usr/share/hildon-desktop/blank-window.png"
 
 struct _HdLauncherPrivate
 {
@@ -703,6 +705,19 @@ hd_launcher_execute (const gchar *exec, GError **error)
   return res;
 }
 
+/* handle clicks to the fake launch image. If we've been up this long the 
+   app may have died and we just want to remove ourselves. */
+static gboolean
+_hd_launcher_transition_clicked(ClutterActor *actor, 
+                                ClutterEvent *event, 
+                                gpointer user_data)
+{
+  hd_launcher_window_created();
+  /* redraw the stage so it is immediately removed */
+  clutter_actor_queue_redraw( clutter_stage_get_default() );
+  return TRUE;
+}
+
 /* Does the transition for the application launch */ 
 static void
 hd_launcher_transition_app_start (HdLauncherApp *item)
@@ -712,6 +727,10 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
   
   loading_image = hd_launcher_app_get_loading_image( item );
+  /* FIXME: Do we do this for ALL applications? */
+  if (!loading_image)
+    loading_image = HD_LAUNCHER_LAUNCH_IMAGE_BLANK;
+    
   if (loading_image)
     {
       gchar *loading_path = g_strdup(loading_image);
@@ -730,7 +749,11 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
           clutter_actor_set_name(priv->launch_image, 
                                  "HdLauncher:launch_image");
           clutter_container_add_actor(CLUTTER_CONTAINER(parent),
-                                      priv->launch_image);
+                                      priv->launch_image);          
+          clutter_actor_set_reactive ( priv->launch_image, TRUE );
+          g_signal_connect (priv->launch_image, "button-release-event",
+                            G_CALLBACK(_hd_launcher_transition_clicked), 0);
+                         
           hd_launcher_transition_new_frame(priv->launch_transition, 
                                            0, launcher);
           clutter_actor_show(priv->launch_image);      

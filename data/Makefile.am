@@ -4,4 +4,5 @@ resdir = $(datadir)/hildon-desktop
 res_DATA = \
 	menu-button.png \
 	edit-button.png \
-	launcher-button-highlight.png
+	launcher-button-highlight.png \
+        blank-window.png

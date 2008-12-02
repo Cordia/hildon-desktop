@@ -1,5 +1,17 @@
 2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/launcher/hd-launcher.c:
+	Now load a blank window image if no other window is chosen. Because
+	we can't be sure of apps also made a click on the fake window 
+	remove it silently.
+
+	* data/blank-window.png
+	* data/Makefile.am:
+	Added a blank window image to show the transition with if there wasn't
+	one defined in the .desktop file with X-App-Loading-Image
+
+2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/launcher/hd-launcher-page.c
 	* src/launcher/hd-launcher-page.h : 
         Added function to return the scroll amount of the page
