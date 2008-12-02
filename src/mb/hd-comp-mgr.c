@@ -49,6 +49,7 @@
 
 #include <sys/types.h>
 #include <signal.h>
+#include <math.h>
 
 #define HDCM_UNMAP_DURATION 200
 
@@ -307,6 +308,9 @@ on_blur_timeline_new_frame(ClutterTimeline *timeline,
   tidy_blur_group_set_blur(priv->blur_group, amt*8.0f);
   tidy_blur_group_set_saturation(priv->blur_group, 1.0f-amt);
   tidy_blur_group_set_brightness(priv->blur_group, (2.0f-amt) * 0.5f);
+  
+  tidy_blur_group_set_zoom(priv->blur_group, 
+                        (15.0f + cos(amt*3.141592f)) / 16);
 }
 
 
@@ -391,11 +395,12 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
    
   priv->blur_group = tidy_blur_group_new();
   clutter_actor_set_name (priv->blur_group, "HdCompMgr:blur_group");
-  tidy_blur_group_set_update_children(priv->blur_group, FALSE);
+  tidy_blur_group_set_use_alpha(priv->blur_group, FALSE);
+  tidy_blur_group_set_use_mirror(priv->blur_group, TRUE);
   clutter_actor_set_size(priv->blur_group, wm->xdpy_width, wm->xdpy_height);
   clutter_container_add_actor (CLUTTER_CONTAINER (stage), priv->blur_group);
   clutter_actor_lower_bottom(priv->blur_group);
-  priv->blur_timeline = clutter_timeline_new_for_duration (250);
+  priv->blur_timeline = clutter_timeline_new_for_duration (500);
   g_signal_connect (priv->blur_timeline, "new-frame",
                     G_CALLBACK (on_blur_timeline_new_frame), hmgr);
   priv->blur_amt = 0;  

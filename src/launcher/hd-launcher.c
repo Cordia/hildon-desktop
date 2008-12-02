@@ -34,11 +34,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/resource.h>
+#include <math.h>
 
 #include <dbus/dbus.h>
 
 #include <clutter/clutter.h>
 #include <tidy/tidy-finger-scroll.h>
+#include <tidy/tidy-blur-group.h>
 
 #include "hildon-desktop.h"
 #include "hd-launcher-page.h"
@@ -54,6 +56,7 @@ struct _HdLauncherPrivate
   ClutterActor *back_button;
   GData *pages;
   ClutterActor *active_page;
+  ClutterActor *top_blur; /* blurring applied to top page when in sub page */
 
   HdLauncherTree *tree;
 };
@@ -157,10 +160,16 @@ static void hd_launcher_constructed (GObject *gobject)
 
   priv->group = clutter_group_new ();
   clutter_actor_hide(priv->group);
+  
+  priv->top_blur = tidy_blur_group_new();
+  clutter_actor_show(priv->top_blur);  
+  tidy_blur_group_set_use_alpha(priv->top_blur, TRUE);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->group), 
+                               priv->top_blur);
 
   ClutterActor *top_page = hd_launcher_page_new (NULL, NULL);
   g_debug ("%s: top_page: %p\n", __FUNCTION__, top_page);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->group),
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->top_blur),
                                top_page);
   clutter_actor_hide (top_page);
   priv->active_page = NULL;
@@ -183,6 +192,12 @@ hd_launcher_dispose (GObject *gobject)
 {
   HdLauncher *self = HD_LAUNCHER (gobject);
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (self);
+  
+  if (priv->top_blur)
+    {
+      clutter_actor_destroy (priv->top_blur);
+      priv->top_blur = NULL;
+    }
 
   if (priv->group)
     {
@@ -272,7 +287,7 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
       hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page), 
         HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB);
       hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page), 
-        HD_LAUNCHER_PAGE_TRANSITION_BACK);
+        HD_LAUNCHER_PAGE_TRANSITION_FORWARD);
       priv->active_page = top_page;
     }
 }
@@ -282,6 +297,22 @@ ClutterActor *hd_launcher_get_group (void)
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
 
   return priv->group;
+}
+
+/* sets blur amount for transitions involving blurring out the top view */
+void
+hd_launcher_set_top_blur (float amount)
+{
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+  
+  if (amount<0) amount=0;
+  if (amount>1) amount=1;
+
+  tidy_blur_group_set_blur(priv->top_blur, amount*5.0f);
+  tidy_blur_group_set_saturation(priv->top_blur, 1.0f - amount*0.5f);
+  tidy_blur_group_set_brightness(priv->top_blur, 1.0f - amount*0.25f);
+  tidy_blur_group_set_zoom(priv->top_blur, 
+                        (15.0f + cos(amount*3.141592f)) / 16);
 }
 
 static void

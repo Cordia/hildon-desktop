@@ -1,3 +1,26 @@
+2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
+	* src/launcher/hd-launcher.h
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-grid.c
+	* src/launcher/hd-launcher.c	
+	Fixed transitions from sub-menu, added blurring of bottom level
+	and zooming out as per UI Transitions
+
+	* src/tidy/tidy-blur-group.c
+	* src/tidy/tidy-blur-group.h
+	Added options for zoom and mirroring, removed update_children as it's always
+	used when off. Stopped blending problems when blurring transparent textures
+	(but that requires clutter 0.8.2-maemo11)
+
+ 	* src/tidy/tidy-animation.c: (removed)
+	* src/tidy/tidy-animation.h: (removed)
+	* src/tidy/Makefile.am :
+	Removed tidy-animation for legal reasons (GPLv3)
+
+	* src/mb/hd-comp-mgr.c
+	Lengthened blur a little, added zoom out as per transitions, increased
+	blur colour depth because there's no alpha
+
 2008-12-02  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Added a default icon to HdLauncherTile.

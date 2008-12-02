@@ -68,6 +68,9 @@ void          hd_launcher_show (void);
 void          hd_launcher_hide (void);
 void          hd_launcher_hide_final (void); 
 
+/* to be used by hd-launcher-page only */
+void          hd_launcher_set_top_blur (float amount);
+
 G_END_DECLS
 
 #endif /* __HD_LAUNCHER_H__ */

@@ -35,7 +35,6 @@
 #include <hildon/hildon-defines.h>
 
 #include <tidy/tidy-adjustment.h>
-#include <tidy/tidy-animation.h>
 #include <tidy/tidy-interval.h>
 #include <tidy/tidy-scrollable.h>
 
@@ -804,18 +803,20 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
                 clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*255));
                 clutter_actor_set_opacity(tile_label, 255 - (int)(amount*255));
-                break;      
+                break;
+            /* We do't do anything for these now because we just use blur on
+             * the whole group */      
             case HD_LAUNCHER_PAGE_TRANSITION_BACK:
-                depth = CLUTTER_UNITS_FROM_FLOAT(-50*amount);        
+               /* depth = CLUTTER_UNITS_FROM_FLOAT(-50*amount);        
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
                 clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*191));
-                clutter_actor_set_opacity(tile_label, 255 - (int)(amount*191));
+                clutter_actor_set_opacity(tile_label, 255 - (int)(amount*191));*/
                 break;
             case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
-                depth = CLUTTER_UNITS_FROM_FLOAT(-50*(1-amount));        
+                /*depth = CLUTTER_UNITS_FROM_FLOAT(-50*(1-amount));        
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
                 clutter_actor_set_opacity(tile_icon, 64 + (int)(amount*191));
-                clutter_actor_set_opacity(tile_label, 64 + (int)(amount*191));
+                clutter_actor_set_opacity(tile_label, 64 + (int)(amount*191));*/
                 break;
           } 
       }

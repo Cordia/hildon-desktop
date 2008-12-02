@@ -192,7 +192,7 @@ hd_launcher_page_constructed (GObject *object)
   priv->grid = g_object_ref (hd_launcher_grid_new ());
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->scroller),
                                priv->grid);
-  priv->transition = g_object_ref (clutter_timeline_new_for_duration (1000));
+  priv->transition = g_object_ref (clutter_timeline_new_for_duration (750));
   g_signal_connect (priv->transition, "new-frame",
                     G_CALLBACK (hd_launcher_page_new_frame), object);
   g_signal_connect (priv->transition, "completed",
@@ -577,6 +577,9 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
   priv->transition_type = trans_type;  
   switch (priv->transition_type) {
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
+         clutter_actor_show(CLUTTER_ACTOR(page));
+         hd_launcher_set_top_blur(0);
+         break;
     case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
          clutter_actor_show(CLUTTER_ACTOR(page));
          break;
@@ -624,24 +627,23 @@ hd_launcher_page_new_frame(ClutterTimeline *timeline,
     switch (priv->transition_type) 
       {
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
+    case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
         clutter_actor_set_opacity(priv->icon, (int)(255*amt));
         clutter_actor_set_opacity(priv->label, (int)(255*amt));
         break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
+    case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
     case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
         clutter_actor_set_opacity(priv->icon, 255-(int)(255*amt));
         clutter_actor_set_opacity(priv->label, 255-(int)(255*amt));
         break;
-    case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
-    case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
-    case HD_LAUNCHER_PAGE_TRANSITION_BACK:         
-    case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:         
+    case HD_LAUNCHER_PAGE_TRANSITION_BACK:
+        hd_launcher_set_top_blur(amt);
+        break;         
+    case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
+        hd_launcher_set_top_blur(1-amt);         
         break;  
       }                              
-                              
-  /* We must force a redraw here because these things aren't properly
-   * in the clutter hierarchy so don't actually force redraws */
-  clutter_actor_queue_redraw(CLUTTER_ACTOR(page));                              
 }
 
 static void

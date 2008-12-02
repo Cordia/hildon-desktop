@@ -3,8 +3,8 @@
  * This class blurs all of its children, also changing saturation and lightness. 
  * It renders its children into a half-size texture first, then blurs this into
  * another texture, finally rendering that to the screen. Because of this, when
- * the blurring doesn't change from frame to frame, children and NOT rendered
- * unless update_children is TRUE, making this pretty quick. */
+ * the blurring doesn't change from frame to frame, children and NOT rendered,
+ * making this pretty quick. */
 
 #include "tidy-blur-group.h"
 
@@ -68,7 +68,9 @@ struct _TidyBlurGroupPrivate
   float saturation; /* 0->1 how much colour there is */
   float blur; /* amount of blur in pixels */
   float brightness; /* 1=normal, 0=black */
-  gboolean update_children; /* whether we re-draw the children each frame or not */
+  float zoom; /* amount to zoom. 1=normal, 0.5=out, 2=double-size */
+  gboolean use_alpha; /* whether to use an alpha channel in our textures */
+  gboolean use_mirror; /* whether to mirror the edge of teh blurred texture */
   
   gboolean source_changed; /* if anything changed we need to recalculate preblur */
   gboolean blur_changed; /* if anything changed we need to recalculate postblur */        
@@ -104,11 +106,54 @@ gboolean tidy_blur_group_notify_modified_real(ClutterActor          *actor,
   return TRUE;
 }               
 
+static void _set_rect_tris(CoglTextureVertex *verts,
+                           ClutterFixed x1,
+                           ClutterFixed y1,
+                           ClutterFixed x2,
+                           ClutterFixed y2,
+                           ClutterFixed tx1,
+                           ClutterFixed ty1,
+                           ClutterFixed tx2,
+                           ClutterFixed ty2)
+{
+  gint i;
+  for (i=0;i<4;i++) 
+    {
+      verts[i].color.red = 0xFF;
+      verts[i].color.green = 0xFF;
+      verts[i].color.blue = 0xFF;
+      verts[i].color.alpha = 0xFF;
+    }
+  verts[0].x = x1;
+  verts[0].y = y1;
+  verts[0].z = 0;
+  verts[0].tx = tx1;
+  verts[0].ty = ty1;
+  verts[1].x = x2;
+  verts[1].y = y1;
+  verts[1].z = 0;
+  verts[1].tx = tx2;
+  verts[1].ty = ty1;
+  verts[2].x = x2;
+  verts[2].y = y2;
+  verts[2].z = 0;
+  verts[2].tx = tx2;
+  verts[2].ty = ty2;
+  verts[3].x = x1;
+  verts[3].y = y2;
+  verts[3].z = 0;
+  verts[3].tx = tx1;
+  verts[3].ty = ty2;
+  verts[4] = verts[0];
+  verts[5] = verts[2];
+}
+
 /* An implementation for the ClutterGroup::paint() vfunc,
    painting all the child actors: */
 static void
 tidy_blur_group_paint (ClutterActor *actor)
 {
+  ClutterColor    white = { 0xff, 0xff, 0xff, 0xff };
   ClutterColor    col = { 0xff, 0xff, 0xff, 0xff };
   ClutterColor    bgcol = { 0x00, 0x00, 0x00, 0x00 };
   gint            x_1, y_1, x_2, y_2;        
@@ -143,9 +188,6 @@ tidy_blur_group_paint (ClutterActor *actor)
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
       return;
     }
-  
-  if (priv->update_children)
-    priv->source_changed = TRUE;
   
   clutter_actor_get_allocation_coords (actor, &x_1, &y_1, &x_2, &y_2);
  
@@ -185,7 +227,10 @@ tidy_blur_group_paint (ClutterActor *actor)
     {
       tex_width = exp_width;
       tex_height = exp_height;
-      priv->tex_preblur = cogl_texture_new_with_size(tex_width, tex_height, 0, 0, COGL_PIXEL_FORMAT_RGBA_4444);
+      priv->tex_preblur = cogl_texture_new_with_size(
+                tex_width, tex_height, 0, 0, 
+                priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_4444 : 
+                                  COGL_PIXEL_FORMAT_RGB_565);
       /* set nearest texture filter - this just takes a single sample */
       cogl_texture_set_filters(priv->tex_preblur, CGL_NEAREST, CGL_NEAREST);      
       priv->fbo_preblur = cogl_offscreen_new_to_texture (priv->tex_preblur);
@@ -193,7 +238,10 @@ tidy_blur_group_paint (ClutterActor *actor)
     }
   if (!priv->tex_postblur) 
     {
-      priv->tex_postblur = cogl_texture_new_with_size(tex_width, tex_height, 0, 0, COGL_PIXEL_FORMAT_RGBA_4444);
+      priv->tex_postblur = cogl_texture_new_with_size(
+                tex_width, tex_height, 0, 0, 
+                priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_4444 : 
+                                  COGL_PIXEL_FORMAT_RGB_565);
       priv->fbo_postblur = cogl_offscreen_new_to_texture (priv->tex_postblur);
       priv->blur_changed = TRUE;
     }
@@ -206,6 +254,7 @@ tidy_blur_group_paint (ClutterActor *actor)
       cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height); 
   
       cogl_paint_init(&bgcol);
+      cogl_color (&white);
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
   
       cogl_pop_matrix();  
@@ -213,9 +262,6 @@ tidy_blur_group_paint (ClutterActor *actor)
       priv->source_changed = FALSE;
     }    
   
-  /* set white, fully opaque */
-  cogl_color (&col); 
-
   /* if we have no shader, so attempt to create one */ 
   if (priv->use_shader && !priv->shader) 
     {
@@ -241,10 +287,17 @@ tidy_blur_group_paint (ClutterActor *actor)
           clutter_shader_set_uniform_1f (priv->shader, "blur", priv->blur/width);
           clutter_shader_set_uniform_1f (priv->shader, "saturation", priv->saturation);
         }
+        
+      cogl_blend_func(CGL_ONE, CGL_ZERO);
+      cogl_color (&white);
       cogl_texture_rectangle (priv->tex_preblur, 0, 0,
                               CLUTTER_INT_TO_FIXED (tex_width),
                               CLUTTER_INT_TO_FIXED (tex_height),
-                              0, 0, CFX_ONE, CFX_ONE);
+                              0, 0,
+                              CFX_ONE,
+                              CFX_ONE);
+      cogl_blend_func(CGL_SRC_ALPHA, CGL_ONE_MINUS_SRC_ALPHA);
+      
       if (priv->use_shader && priv->shader)
         clutter_shader_set_is_enabled (priv->shader, FALSE);
       priv->blur_changed = FALSE;      
@@ -259,11 +312,60 @@ tidy_blur_group_paint (ClutterActor *actor)
   cogl_color (&col);  
   
   /* Render the blurred texture to the screen */
-  cogl_draw_buffer(COGL_WINDOW_BUFFER, 0);        
-  cogl_texture_rectangle (priv->tex_postblur, 0, 0,
-                          CLUTTER_INT_TO_FIXED (width),
-                          CLUTTER_INT_TO_FIXED (height),
-                          0, 0, CFX_ONE, CFX_ONE);
+  cogl_draw_buffer(COGL_WINDOW_BUFFER, 0);
+  
+  col.red = (int)(priv->brightness*255);
+  col.green = (int)(priv->brightness*255);
+  col.blue = (int)(priv->brightness*255);
+  col.alpha = clutter_actor_get_paint_opacity (actor);
+  cogl_color (&col);
+  
+  {
+    ClutterFixed mx, my, zx, zy;
+    mx = CLUTTER_INT_TO_FIXED (width) / 2;
+    my = CLUTTER_INT_TO_FIXED (height) / 2;
+    zx = CLUTTER_FLOAT_TO_FIXED(width*0.5f*priv->zoom);
+    zy = CLUTTER_FLOAT_TO_FIXED(height*0.5f*priv->zoom);
+    
+    if ((priv->zoom >= 1) || !priv->use_mirror)
+      {
+        cogl_texture_rectangle (priv->tex_postblur, 
+                                mx-zx, my-zy,
+                                mx+zx, my+zy,
+                                0, 0, CFX_ONE, CFX_ONE);
+      }
+    else
+      {
+        /* draw a 3x3 grid with the texture mirrored  */
+        CoglTextureVertex verts[6*9];
+        gint x,y;
+        for (y=0;y<3;y++)
+          for (x=0;x<3;x++)
+            {
+              ClutterFixed x1,x2,y1,y2;
+              gboolean flipx, flipy;
+              x1 = mx+(zx*(x*2-3));
+              y1 = my+(zy*(y*2-3));
+              x2 = mx+(zx*(x*2-1));
+              y2 = my+(zy*(y*2-1));
+              flipx = x!=1;
+              flipy = y!=1;
+              _set_rect_tris(
+                        &verts[(x+(y*3))*6], 
+                        flipx ? x2 : x1, 
+                        flipy ? y2 : y1, 
+                        flipx ? x1 : x2, 
+                        flipy ? y1 : y2,
+                        0,0,
+                        CFX_ONE,
+                        CFX_ONE);
+            }
+        cogl_texture_triangles (priv->tex_postblur,
+                                6*9,
+                                verts,
+                                FALSE);                 
+      }
+  }
                      
 }
 
@@ -317,7 +419,8 @@ tidy_blur_group_init (TidyBlurGroup *self)
   priv->blur = 0;
   priv->saturation = 1;
   priv->brightness = 1;
-  priv->update_children = TRUE;
+  priv->use_alpha = TRUE;
+  priv->use_mirror = FALSE;
   priv->blur_changed = TRUE;
   priv->source_changed = TRUE;
  
@@ -359,9 +462,9 @@ void tidy_blur_group_set_blur(ClutterActor *blur_group, float blur)
     return;
   
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
- 
+  
+  priv->blur_changed |=  priv->blur != blur;
   priv->blur = blur;
-  priv->blur_changed = TRUE;
   clutter_actor_queue_redraw(blur_group); 
 }
 
@@ -377,10 +480,10 @@ void tidy_blur_group_set_saturation(ClutterActor *blur_group, float saturation)
   if (!TIDY_IS_BLUR_GROUP(blur_group))
     return;
     
-  priv = TIDY_BLUR_GROUP(blur_group)->priv;
- 
+  priv = TIDY_BLUR_GROUP(blur_group)->priv; 
+  
+  priv->blur_changed |= priv->saturation != saturation;
   priv->saturation = saturation;
-  priv->blur_changed = TRUE;
   clutter_actor_queue_redraw(blur_group); 
 }
 
@@ -402,14 +505,14 @@ void tidy_blur_group_set_brightness(ClutterActor *blur_group, float brightness)
   clutter_actor_queue_redraw(blur_group); 
 }
 
+
 /**
- * tidy_blur_group_set_update_children:
+ * tidy_blur_group_set_zoom:
  *
- * Sets whether to bother updating children when blurring or not...
- * For blurring all children are stored in a texture, so the update
- * of this can be skipped.
+ * Set how far to zoom in on what has been blurred
+ * 1=normal, 0.5=out, 2=double-size 
  */
-void tidy_blur_group_set_update_children(ClutterActor *blur_group, gboolean update)
+void tidy_blur_group_set_zoom(ClutterActor *blur_group, float zoom)
 {
   TidyBlurGroupPrivate *priv;
   
@@ -418,5 +521,41 @@ void tidy_blur_group_set_update_children(ClutterActor *blur_group, gboolean upda
     
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
  
-  priv->update_children = update;
+  priv->zoom = zoom;
+  clutter_actor_queue_redraw(blur_group);        
+}
+
+/**
+ * tidy_blur_group_set_use_alpha:
+ *
+ * Sets whether to use an alpha channel in the textures used for blurring.
+ * Only useful if we're blurring something transparent
+ */
+void tidy_blur_group_set_use_alpha(ClutterActor *blur_group, gboolean alpha)
+{
+  TidyBlurGroupPrivate *priv;
+  
+  if (!TIDY_IS_BLUR_GROUP(blur_group))
+    return;
+    
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
+ 
+  priv->use_alpha = alpha;
+}
+
+/**
+ * tidy_blur_group_set_use_mirror:
+ *
+ * Sets whether to mirror the blurred texture when it is zoomed out, or just leave the edges dark...
+ */
+void tidy_blur_group_set_use_mirror(ClutterActor *blur_group, gboolean mirror)
+{
+  TidyBlurGroupPrivate *priv;
+  
+  if (!TIDY_IS_BLUR_GROUP(blur_group))
+    return;
+    
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
+ 
+  priv->use_mirror = mirror;
 }

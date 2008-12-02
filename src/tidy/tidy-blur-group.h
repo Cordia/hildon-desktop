@@ -41,8 +41,9 @@ ClutterActor *tidy_blur_group_new (void);
 void tidy_blur_group_set_blur(ClutterActor *blur_group, float blur);
 void tidy_blur_group_set_saturation(ClutterActor *blur_group, float saturation);
 void tidy_blur_group_set_brightness(ClutterActor *blur_group, float brightness);
-void tidy_blur_group_set_update_children(ClutterActor *blur_group, gboolean update);
-
+void tidy_blur_group_set_zoom(ClutterActor *blur_group, float zoom);
+void tidy_blur_group_set_use_alpha(ClutterActor *blur_group, gboolean alpha);
+void tidy_blur_group_set_use_mirror(ClutterActor *blur_group, gboolean mirror);
 
 G_END_DECLS
 
