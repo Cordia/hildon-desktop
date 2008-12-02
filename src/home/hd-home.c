@@ -125,6 +125,7 @@ struct _HdHomePrivate
   GList                 *all_views;
   guint                  n_views;
   guint                  current_view;
+  guint                  current_desktop;
   gint                   xwidth;
   gint                   xheight;
 
@@ -184,6 +185,10 @@ static void hd_home_pan_full (HdHome *home, gboolean left);
 static void hd_home_show_edit_button (HdHome *home);
 
 static void hd_home_hide_edit_button (HdHome *home);
+
+static void hd_home_store_n_views(HdHome *home);
+
+static void hd_home_store_current_desktop(HdHome *home, guint new_desktop);
 
 #if 0
 static void hd_home_send_settings_message (HdHome *home, Window xwin);
@@ -684,6 +689,22 @@ hd_home_layout_dialog_ok_clicked (HdLayoutDialog *dialog, HdHome *home)
   hd_home_set_mode (home, HD_HOME_MODE_NORMAL);
 }
 
+/* Called when a client message is sent to the root window. */
+static Bool
+root_window_client_message (XClientMessageEvent *event, HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+
+  if (event->message_type == wm->atoms[MBWM_ATOM_NET_CURRENT_DESKTOP])
+    {
+      gint desktop = event->data.l[0];
+      hd_home_show_view (home, desktop);
+    }
+
+  return False;
+}
+
 static void
 hd_home_constructed (GObject *object)
 {
@@ -756,6 +777,8 @@ hd_home_constructed (GObject *object)
     }
 
   priv->n_views = i;
+  hd_home_store_n_views (HD_HOME (object));
+  priv->current_desktop = 0;
 
   priv->back_button =
     hd_gtk_icon_theme_load_icon (icon_theme, BACK_BUTTON, 48, 0);
@@ -965,6 +988,14 @@ hd_home_constructed (GObject *object)
 					  (MBWMXEventFunc)
 					  hd_home_desktop_key_press,
 					  object);
+
+  mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+					  wm->root_win->xwindow,
+					  ClientMessage,
+					  (MBWMXEventFunc)
+					  root_window_client_message,
+					  object); 
+
 }
 
 static void
@@ -1110,6 +1141,7 @@ hd_home_show_view (HdHome * home, guint view_index)
     }
 
   priv->current_view = view_index;
+  hd_home_store_current_desktop (home, view_index);
 
   if (priv->mode == HD_HOME_MODE_NORMAL)
     {
@@ -1426,6 +1458,8 @@ hd_home_pan_full (HdHome *home, gboolean left)
 	{
 	  ++priv->current_view;
 	}
+
+      hd_home_store_current_desktop (home, (priv->current_desktop+1)%priv->n_views);
     }
   else
     {
@@ -1454,6 +1488,8 @@ hd_home_pan_full (HdHome *home, gboolean left)
 	{
 	  --priv->current_view;
 	}
+
+      hd_home_store_current_desktop (home, (priv->current_desktop-1)%priv->n_views);
     }
 
   hd_home_pan_by (home, by);
@@ -2066,6 +2102,7 @@ hd_home_activate_view (HdHome * home, guint id)
     priv->views = g_list_append (priv->views, view);
 
   ++priv->n_views;
+  hd_home_store_n_views (home);
 
   clutter_actor_show (view);
 }
@@ -2087,6 +2124,7 @@ hd_home_deactivate_view (HdHome * home, guint id)
 
   priv->views = g_list_remove (priv->views, view);
   --priv->n_views;
+  hd_home_store_n_views (home);
 
   clutter_actor_hide (view);
 
@@ -2101,5 +2139,39 @@ hd_home_set_view_status (HdHome * home, guint id, gboolean active)
     hd_home_activate_view (home, id);
   else
     hd_home_deactivate_view (home, id);
+}
+
+static void
+hd_home_store_n_views(HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  long propvalue[1] = {priv->n_views, };
+
+  g_debug ("------- Number of desktops is now %d", priv->n_views);
+
+  XChangeProperty (wm->xdpy, wm->root_win->xwindow,
+		   wm->atoms[MBWM_ATOM_NET_NUMBER_OF_DESKTOPS],
+		   XA_CARDINAL, 32, PropModeReplace,
+		   (unsigned char *) propvalue,
+		   1);
+}
+
+static void
+hd_home_store_current_desktop(HdHome *home, guint new_desktop)
+{
+  HdHomePrivate *priv = home->priv;
+  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  long propvalue[1] = {new_desktop, };
+
+  priv->current_desktop = new_desktop;
+
+  g_debug ("------- Current desktop is now %d", new_desktop);
+
+  XChangeProperty (wm->xdpy, wm->root_win->xwindow,
+		   wm->atoms[MBWM_ATOM_NET_CURRENT_DESKTOP],
+		   XA_CARDINAL, 32, PropModeReplace,
+		   (unsigned char *) propvalue,
+		   1);
 }
 

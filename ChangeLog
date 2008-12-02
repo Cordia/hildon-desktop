@@ -1,3 +1,10 @@
+2008-12-02  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/home/hd-home.c: Set _NET_CURRENT_DESKTOP and
+	_NET_NUMBER_OF_DESKTOPS according to the current view,
+	and honour _NET_CURRENT_DESKTOP being set to change the current view.
+	Closes #93720.
+
 2008-12-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-home-view.c (hd_home_view_constructed): Make all home
