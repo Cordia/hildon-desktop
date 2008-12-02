@@ -606,6 +606,9 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
 
   /* KIMMO: lower home to show the application */
   hd_comp_mgr_lower_home_actor(HD_COMP_MGR (priv->comp_mgr));
+  
+  /* We stop the background blur effect suddenly now if it was ongoing */
+  hd_comp_mgr_unblur(HD_COMP_MGR (priv->comp_mgr));
 
   if (!hd_comp_mgr_client_is_hibernating (hclient))
     {

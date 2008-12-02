@@ -1401,6 +1401,16 @@ hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur)
   clutter_timeline_start(priv->blur_timeline);
 }
 
+/* remove all blurring */
+void hd_comp_mgr_unblur(HdCompMgr *hmgr)
+{
+  HdCompMgrPrivate *priv = hmgr->priv;   
+  
+  clutter_timeline_pause(priv->blur_timeline);
+  
+  on_blur_timeline_new_frame(priv->blur_timeline, 0, hmgr);
+}
+
 static void
 dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
 {

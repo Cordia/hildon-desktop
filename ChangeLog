@@ -1,4 +1,11 @@
 2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
+	* src/home/hd-switcher.c
+	* src/mb/hd-comp-mgr.c
+	* src/mb/hd-comp-mgr.h
+	Added function to explicitly stop blur and call it from task switcher, so
+	when zooming in from an app the end bit doesn't get blurred.
+	
+2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 	* src/launcher/hd-launcher.h
 	* src/launcher/hd-launcher-page.c
 	* src/launcher/hd-launcher-grid.c
