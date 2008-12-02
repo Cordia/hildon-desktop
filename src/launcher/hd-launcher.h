@@ -69,9 +69,10 @@ void          hd_launcher_hide (void);
 void          hd_launcher_hide_final (void); 
 
 /* Called when an app window has been created */
-void          hd_launcher_window_created(void);
+void          hd_launcher_window_created (void);
 /* to be used by hd-launcher-page only */
 void          hd_launcher_set_top_blur (float amount);
+void          hd_launcher_set_back_arrow_opacity (float amount);
 
 
 G_END_DECLS

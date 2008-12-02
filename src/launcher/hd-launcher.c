@@ -338,6 +338,15 @@ hd_launcher_set_top_blur (float amount)
                         (15.0f + cos(amount*3.141592f)) / 16);
 }
 
+/* sets the opacity of the back button for a nice fade in */
+void
+hd_launcher_set_back_arrow_opacity(float amount)
+{
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+  
+  clutter_actor_set_opacity(priv->back_button, (int)(255*amount));
+}
+
 static void
 hd_launcher_category_tile_clicked (HdLauncherTile *tile, gpointer data)
 {
