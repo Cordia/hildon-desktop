@@ -1,3 +1,9 @@
+2008-12-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_set_show_home): New function.
+	Patch from Laszlo Pere. Hide Task Switcher when there is a fullscreen
+	application on top. Fixes: NB#89269
+
 2008-12-02  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Task Launcher refactor. Separated UI and data into different classes.

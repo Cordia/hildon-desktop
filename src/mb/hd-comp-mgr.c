@@ -414,6 +414,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
                             cmgr);
 
   clutter_actor_show (home);
+  priv->showing_home = TRUE;
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->blur_group), home);
 
   /* NB -- home must be constructed before constructing the switcher;
@@ -929,11 +930,32 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 }
 
 static void
+hd_comp_mgr_set_show_home (HdCompMgr *hmgr, gboolean show_home)
+{
+  if (show_home == hmgr->priv->showing_home)
+    return;
+
+  if (show_home) {
+    if (hmgr->priv->switcher_group)
+      clutter_actor_show (hmgr->priv->switcher_group);
+  } else {
+    if (hmgr->priv->switcher_group)
+      clutter_actor_hide (hmgr->priv->switcher_group);
+  }
+
+  hmgr->priv->showing_home = show_home;
+}
+
+
+static void
 hd_comp_mgr_restack (MBWMCompMgr * mgr)
 {
   HdCompMgrPrivate         * priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClass         * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
+
+  hd_comp_mgr_set_show_home (HD_COMP_MGR(mgr),
+      mb_wm_stack_get_highest_full_screen (mgr->wm) == NULL);
 
   /*
    * We use the parent class restack() method to do the stacking, but as our
