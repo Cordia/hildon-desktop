@@ -503,8 +503,8 @@ hd_launcher_tile_button_release (ClutterActor       *actor,
       HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
 
       if (!(priv->is_pressed &&
-           (abs(priv->x_press_pos - event->x) < 10) &&
-           (abs(priv->y_press_pos - event->y) < 10)))
+           (abs(priv->x_press_pos - event->x) < 20) &&
+           (abs(priv->y_press_pos - event->y) < 20)))
         return FALSE;
 
       priv->is_pressed = FALSE;

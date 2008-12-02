@@ -1,3 +1,10 @@
+2008-12-02  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Increased tile clicking threshold to make it easier to launch
+	applications.
+
+	* src/launcher/hd-launcher-tile.c (hd_launcher_tile_button_release):
+
 2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher.c:
