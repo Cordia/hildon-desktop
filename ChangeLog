@@ -1,5 +1,11 @@
 2008-12-02  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/home/hd-switcher.c (hd_switcher_menu_clicked): Move the call to
+	ungrab the pointer to hildon-home. So the desktop does not freeze if
+	hildon-home is not running.
+
+2008-12-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-switcher.c (hd_switcher_show_menu_button): Hide status
 	  area. Set the size of the menu button to the size of switcher and
 	  staus area.

@@ -448,8 +448,6 @@ hd_switcher_menu_clicked (HdSwitcher *switcher)
 
   g_debug("hd_switcher_menu_clicked, switcher=%p\n", switcher);
 
-  hd_home_ungrab_pointer (home);
-
   if (priv->hildon_home_proxy)
     dbus_g_proxy_call_no_reply (priv->hildon_home_proxy, "ShowEditMenu",
                                 G_TYPE_UINT, hd_home_get_current_view_id (home),
