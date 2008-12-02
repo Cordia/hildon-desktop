@@ -1,3 +1,7 @@
+2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
+	* src/tidy/tidy-blur-group.c
+	Made all lines <80 chars long	
+
 2008-12-02  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home.c (hd_home_pan_full): Hide edit button on pan.

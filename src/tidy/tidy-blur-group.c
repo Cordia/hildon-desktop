@@ -37,7 +37,8 @@ const char *BLUR_FRAGMENT_SHADER =
 "  mediump vec2 tex_coord = vec2(gl_TexCoord[0]); \n"
 #endif
 "  lowp vec4 color =  texture2D (tex, tex_coord+diffa)*0.333 + "
-" texture2D (tex, tex_coord+diffb)*0.333 + texture2D (tex, tex_coord+diffc)*0.333;\n"
+" texture2D (tex, tex_coord+diffb)*0.333 + "
+"texture2D (tex, tex_coord+diffc)*0.333;\n"
 #if CLUTTER_COGL_HAS_GLES
 "  color = color * frag_color;\n"
 #endif /* CLUTTER_COGL_HAS_GLES */
@@ -72,8 +73,10 @@ struct _TidyBlurGroupPrivate
   gboolean use_alpha; /* whether to use an alpha channel in our textures */
   gboolean use_mirror; /* whether to mirror the edge of teh blurred texture */
   
-  gboolean source_changed; /* if anything changed we need to recalculate preblur */
-  gboolean blur_changed; /* if anything changed we need to recalculate postblur */        
+  /* if anything changed we need to recalculate preblur */
+  gboolean source_changed;
+  /* if anything changed we need to recalculate postblur */ 
+  gboolean blur_changed;         
 };
 
 /**
@@ -206,7 +209,6 @@ tidy_blur_group_paint (ClutterActor *actor)
     }
   /* free texture if the size is wrong */
   if (tex_width!=exp_width || tex_height!=exp_height) {
-    //g_print("Re-allocating texture as it changed size - %dx%d to %dx%d\n", tex_width, tex_height, exp_width, exp_height);
     if (priv->fbo_preblur) 
       {
         cogl_offscreen_unref(priv->fbo_preblur);
@@ -222,7 +224,8 @@ tidy_blur_group_paint (ClutterActor *actor)
         priv->tex_postblur = 0;
       }
   }
-  /* create the texture + offscreen buffer if they didn't exist. We can specify mipmapping here, but we don't need it */
+  /* create the texture + offscreen buffer if they didn't exist. 
+   * We can specify mipmapping here, but we don't need it */
   if (!priv->tex_preblur) 
     {
       tex_width = exp_width;
@@ -267,7 +270,8 @@ tidy_blur_group_paint (ClutterActor *actor)
     {
       GError           *error = NULL;
       priv->shader = clutter_shader_new();
-      clutter_shader_set_fragment_source (priv->shader, BLUR_FRAGMENT_SHADER, -1);
+      clutter_shader_set_fragment_source (priv->shader, 
+                                          BLUR_FRAGMENT_SHADER, -1);
       clutter_shader_compile (priv->shader, &error);
       if (error) 
         {
@@ -284,8 +288,10 @@ tidy_blur_group_paint (ClutterActor *actor)
       if (priv->use_shader && priv->shader) 
         {
           clutter_shader_set_is_enabled (priv->shader, TRUE);
-          clutter_shader_set_uniform_1f (priv->shader, "blur", priv->blur/width);
-          clutter_shader_set_uniform_1f (priv->shader, "saturation", priv->saturation);
+          clutter_shader_set_uniform_1f (priv->shader, "blur", 
+                                         priv->blur/width);
+          clutter_shader_set_uniform_1f (priv->shader, "saturation", 
+                                         priv->saturation);
         }
         
       cogl_blend_func(CGL_ONE, CGL_ZERO);
@@ -415,7 +421,8 @@ tidy_blur_group_init (TidyBlurGroup *self)
   TidyBlurGroupPrivate *priv;
 
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-                                                   TIDY_TYPE_BLUR_GROUP, TidyBlurGroupPrivate);
+                                                   TIDY_TYPE_BLUR_GROUP, 
+                                                   TidyBlurGroupPrivate);
   priv->blur = 0;
   priv->saturation = 1;
   priv->brightness = 1;
@@ -546,7 +553,8 @@ void tidy_blur_group_set_use_alpha(ClutterActor *blur_group, gboolean alpha)
 /**
  * tidy_blur_group_set_use_mirror:
  *
- * Sets whether to mirror the blurred texture when it is zoomed out, or just leave the edges dark...
+ * Sets whether to mirror the blurred texture when it is zoomed out, or just 
+ * leave the edges dark...
  */
 void tidy_blur_group_set_use_mirror(ClutterActor *blur_group, gboolean mirror)
 {
