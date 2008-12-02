@@ -39,7 +39,7 @@
                             G_PARAM_STATIC_NICK | \
                             G_PARAM_STATIC_NAME | \
                             G_PARAM_STATIC_BLURB)
-
+#define HD_LAUNCHER_TILE_DEFAULT_ICON "qgn_list_app_installer"
 #define HD_LAUNCHER_TILE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TILE, HdLauncherTilePrivate))
 
 struct _HdLauncherTilePrivate
@@ -241,14 +241,15 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
   GtkIconTheme *icon_theme;
   GtkIconInfo *info;
 
-  if (!icon_name)
-    return;
-
   if (priv->icon_name)
     {
       g_free (priv->icon_name);
     }
-  priv->icon_name = g_strdup (icon_name);
+  if (icon_name)
+    priv->icon_name = g_strdup (icon_name);
+  else
+    /* Set the default if none was passed. */
+    priv->icon_name = g_strdup (HD_LAUNCHER_TILE_DEFAULT_ICON);
 
   /* Recreate the icon actor */
   if (priv->icon)

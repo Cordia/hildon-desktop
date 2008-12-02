@@ -1,3 +1,10 @@
+2008-12-02  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Added a default icon to HdLauncherTile.
+
+	* src/launcher/hd-launcher-tile.c (HD_LAUNCHER_TILE_DEFAULT_ICON,
+	  hd_launcher_tile_set_icon_name):
+
 2008-12-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c:
