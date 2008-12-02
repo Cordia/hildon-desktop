@@ -1,3 +1,8 @@
+2008-12-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-theme.c: Patch from Laszlo to keep a reference count in
+	the close button, avoiding a crash in certain case. Fixes: NB#93472
+
 2008-12-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-switcher.c:

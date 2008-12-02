@@ -118,16 +118,29 @@ back_button_timeout (gpointer data)
 
   bd->timeout_handled = TRUE;
   bd->timeout_id = 0;
-
-  /* TODO -- kill all windows in this group other than the primary */
+  /*
+   * The button might be unrealized while we were waiting for the timeout.
+   */
+  if (!bd->button->realized)
+    goto finalize;
+  /*
+   * We protect ourselves against the non-app windows.
+   */
   if (!HD_IS_APP (c))
     {
       g_warning ("Custom button on a something other than App.");
-      return FALSE;
+      goto finalize;
     }
-  
-  hd_app_close_followers (HD_APP(c));
+ 
+  /*
+   * We have to check if the button is still pressed. The user might released
+   * the stylus outside the button.
+   */
+  if (bd->button->state == MBWMDecorButtonStatePressed)
+    hd_app_close_followers (HD_APP(c));
 
+finalize:
+  mb_wm_object_unref (MB_WM_OBJECT(bd->button));
   return FALSE;
 }
 
@@ -138,7 +151,19 @@ back_button_press_handler (MBWindowManager   *wm,
 {
   BackButtonData *bd = userdata;
 
-  g_debug ("%s: *** button = %p", __func__, button);
+  mb_wm_object_ref (MB_WM_OBJECT(button));
+  /*
+   * The user might released outside the back button and pressed the button
+   * again.
+   */
+  if (bd->timeout_id != 0) {
+    /*
+     * We unref the button on behalf the timeout function.
+     */
+    g_source_remove (bd->timeout_id);
+    mb_wm_object_unref (MB_WM_OBJECT(bd->button));
+  }
+
   bd->timeout_id =
     g_timeout_add_full (G_PRIORITY_HIGH_IDLE,
 			BACK_BUTTON_TIMEOUT, back_button_timeout, bd, NULL);
@@ -146,6 +171,10 @@ back_button_press_handler (MBWindowManager   *wm,
   bd->timeout_handled = FALSE;
 }
 
+/*
+ * Called when the pointer button is released over the back button. If the user
+ * moves the pointer outside the back button this function will not be called.
+ */
 static void
 back_button_release_handler (MBWindowManager   *wm,
 			     MBWMDecorButton   *button,
@@ -163,6 +192,8 @@ back_button_release_handler (MBWindowManager   *wm,
   /* TODO -- switch to previous window in group */
   c = button->decor->parent_client;
   mb_wm_client_deliver_delete (c);
+  
+  mb_wm_object_unref (MB_WM_OBJECT(button));
 }
 
 static void
