@@ -41,7 +41,7 @@
 /* desktop entry keys */
 #define HD_DESKTOP_ENTRY_EXEC           "Exec"
 #define HD_DESKTOP_ENTRY_SERVICE        "X-Osso-Service"
-#define HD_DESKTOP_ENTRY_PRELOAD_ICON   "X-Osso-Preload-Icon"
+#define HD_DESKTOP_ENTRY_LOADING_IMAGE  "X-App-Loading-Image"
 #define HD_DESKTOP_ENTRY_PRESTART_MODE  "X-Maemo-Prestart"
 
 /* DBus names */
@@ -54,7 +54,7 @@ struct _HdLauncherAppPrivate
 {
   gchar *exec;
   gchar *service;
-  gchar *preload_image;
+  gchar *loading_image;
 
   HdLauncherAppPrestartMode prestart_mode;
 };
@@ -72,7 +72,7 @@ hd_launcher_app_finalize (GObject *gobject)
 
   g_free (priv->exec);
   g_free (priv->service);
-  g_free (priv->preload_image);
+  g_free (priv->loading_image);
 
   G_OBJECT_CLASS (hd_launcher_app_parent_class)->dispose (gobject);
 }
@@ -159,9 +159,9 @@ hd_launcher_app_parse_keyfile (HdLauncherItem *item,
   if (priv->exec)
     g_strchomp (priv->exec);
 
-  priv->preload_image = g_key_file_get_string (key_file,
+  priv->loading_image = g_key_file_get_string (key_file,
                                                HD_DESKTOP_ENTRY_GROUP,
-                                               HD_DESKTOP_ENTRY_PRELOAD_ICON,
+                                               HD_DESKTOP_ENTRY_LOADING_IMAGE,
                                                NULL);
 
   priv->prestart_mode =
@@ -190,11 +190,11 @@ hd_launcher_app_get_service (HdLauncherApp *item)
 }
 
 G_CONST_RETURN gchar *
-hd_launcher_app_get_preload_image (HdLauncherApp *item)
+hd_launcher_app_get_loading_image (HdLauncherApp *item)
 {
   g_return_val_if_fail (HD_IS_LAUNCHER_APP (item), NULL);
 
-  return item->priv->preload_image;
+  return item->priv->loading_image;
 }
 
 HdLauncherAppPrestartMode

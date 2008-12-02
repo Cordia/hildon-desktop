@@ -81,12 +81,14 @@ void hd_launcher_page_set_text      (HdLauncherPage *page,
 void hd_launcher_page_add_tile (HdLauncherPage *page, HdLauncherTile* tile);
 void hd_launcher_page_transition(HdLauncherPage *page, 
                                  HdLauncherPageTransition trans_type);
+ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page);                                 
 
 /* Fixed sizes.
  * FIXME: These should come from getting the screen size
  */
 #define HD_LAUNCHER_PAGE_WIDTH  (800)
 #define HD_LAUNCHER_PAGE_HEIGHT (480)
+#define HD_LAUNCHER_PAGE_YMARGIN (70)
 
 G_END_DECLS
 

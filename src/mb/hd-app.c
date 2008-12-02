@@ -24,6 +24,8 @@
 #include "hd-app.h"
 #include "hd-comp-mgr.h"
 
+#include "launcher/hd-launcher.h"
+
 static void
 hd_app_show (MBWindowManagerClient *client)
 {
@@ -41,6 +43,10 @@ hd_app_show (MBWindowManagerClient *client)
     clutter_actor_hide(switcher);
   else
     clutter_actor_show(switcher);
+    
+  /* We're now showing this app, so remove our app 
+   * starting screen if we had one */
+  hd_launcher_window_created();
 }
 
 static void

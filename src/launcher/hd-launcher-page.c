@@ -31,6 +31,9 @@
 #include <clutter/clutter.h>
 #include <clutter/clutter-timeline.h>
 #include <tidy/tidy-finger-scroll.h>
+#include <tidy/tidy-scroll-view.h>
+#include <tidy/tidy-scroll-bar.h>
+#include <tidy/tidy-adjustment.h>
 #include <hildon/hildon-defines.h>
 
 #include "hd-launcher.h"
@@ -447,7 +450,7 @@ hd_launcher_page_allocate (ClutterActor          *actor,
 
   /* The scroller */
   nbox.x1 = CLUTTER_UNITS_FROM_DEVICE (0);
-  nbox.y1 = CLUTTER_UNITS_FROM_DEVICE (70);
+  nbox.y1 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_YMARGIN);
   nbox.x2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_WIDTH);
   nbox.y2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_HEIGHT);
   clutter_actor_allocate (priv->scroller, &nbox, origin_changed);
@@ -677,4 +680,20 @@ hd_launcher_page_transition_end(ClutterTimeline *timeline,
          clutter_actor_hide(CLUTTER_ACTOR(page));
          break;         
   }                              
+}
+
+ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page)
+{
+  HdLauncherPagePrivate *priv;
+  ClutterActor *bar;
+  TidyAdjustment *adjust;
+ 
+  if (!HD_IS_LAUNCHER_PAGE(page))
+    return 0;
+    
+  priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
+    
+  bar = tidy_scroll_view_get_vscroll_bar (TIDY_SCROLL_VIEW(priv->scroller));
+  adjust = tidy_scroll_bar_get_adjustment (TIDY_SCROLL_BAR(bar));
+  return tidy_adjustment_get_valuex( adjust );            
 }
