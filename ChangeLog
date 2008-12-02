@@ -1,4 +1,5 @@
 2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/tidy/tidy-blur-group.c
 	Made all lines <80 chars long	
 
@@ -21,13 +22,16 @@
 	* src/mb/hd-comp-mgr.h: Make hd_comp_mgr_setup_input_viewport public.
 
 2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-switcher.c
 	* src/mb/hd-comp-mgr.c
 	* src/mb/hd-comp-mgr.h
-	Added function to explicitly stop blur and call it from task switcher, so
-	when zooming in from an app the end bit doesn't get blurred.
+	Added function to explicitly stop blur and call it from task
+	switcher, so when zooming in from an app the end bit doesn't get
+	blurred.
 
 2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/launcher/hd-launcher.h
 	* src/launcher/hd-launcher-page.c
 	* src/launcher/hd-launcher-grid.c
@@ -37,8 +41,9 @@
 
 	* src/tidy/tidy-blur-group.c
 	* src/tidy/tidy-blur-group.h
-	Added options for zoom and mirroring, removed update_children as it's always
-	used when off. Stopped blending problems when blurring transparent textures
+	Added options for zoom and mirroring, removed update_children as
+	it's always used when off. Stopped blending problems when blurring
+	transparent textures
 	(but that requires clutter 0.8.2-maemo11)
 
  	* src/tidy/tidy-animation.c: (removed)
