@@ -25,11 +25,31 @@
 #include "hd-comp-mgr.h"
 
 static void
+hd_app_show (MBWindowManagerClient *client)
+{
+  MBWindowManagerClientClass* parent_klass =
+    MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
+  ClutterActor *switcher;
+
+  if (parent_klass->show)
+    parent_klass->show(client);
+
+  /* Hide/show the switcher (the Tasks button in particular) depending on
+   * whether we're fullscreen or not. */
+  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (client->wmref->comp_mgr));
+  if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+    clutter_actor_hide(switcher);
+  else
+    clutter_actor_show(switcher);
+}
+
+static void
 hd_app_class_init (MBWMObjectClass *klass)
 {
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdApp";
 #endif
+  MB_WM_CLIENT_CLASS (klass)->show = hd_app_show;
 }
 
 static void
@@ -46,6 +66,7 @@ hd_app_destroy (MBWMObject *this)
   else
     {
       GList *l = app->followers;
+      MBWindowManagerClient *client;
 
       while (l)
 	{
@@ -56,6 +77,15 @@ hd_app_destroy (MBWMObject *this)
 	}
 
       g_list_free (app->followers);
+
+      /* Show the Tasks button again if we made it hidden when we went
+       * fullscreen and the client died in this state. */
+      client = MB_WM_CLIENT (this);
+      if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+        {
+          HdCompMgr *cmgr = HD_COMP_MGR (client->wmref->comp_mgr);
+          clutter_actor_show (hd_comp_mgr_get_switcher (cmgr));
+        }
     }
 }
 
