@@ -558,106 +558,6 @@ load_image_fit (char const * fname, guint aw, guint ah)
 }
 /* Graphics loading }}} */
 
-/* Navigator utilities {{{ */
-/* Starts blurring/unblurring the home view smoothly. */
-static void
-make_background_blurred (gboolean blurred) 
-{
-  HdCompMgr *cmgr;
-  HdSwitcher *switcher;
-
-  switcher = HD_SWITCHER (clutter_actor_get_parent (CLUTTER_ACTOR (Navigator)));
-  g_return_if_fail (switcher);
-  g_return_if_fail (HD_IS_SWITCHER (switcher));
-  g_object_get (G_OBJECT (switcher), "comp-mgr", &cmgr, NULL);
-  g_return_if_fail (cmgr);
-  hd_comp_mgr_blur_home (cmgr, blurred);
-}  
-
-/* Tells whether we're in switcher view view. */
-gboolean
-hd_task_navigator_is_active (HdTaskNavigator * self)
-{
-  return CLUTTER_ACTOR_IS_VISIBLE (self);
-}
-
-/* Tells whether the navigator (@Navigator_area) is empty. */
-gboolean
-hd_task_navigator_is_empty (HdTaskNavigator * self)
-{
-  return !Thumbnails->len && !Notifications->len;
-}
-
-/* Returns whether we can and will show @win in the navigator.
- * @win can be %NULL, in which case this function returns %FALSE. */
-gboolean
-hd_task_navigator_has_window (HdTaskNavigator * self, ClutterActor * win)
-{
-  guint i;
-
-  for (i = 0; i < Thumbnails->len; i++)
-    if (g_array_index (Thumbnails, Thumbnail, i).apwin == win)
-      return TRUE;
-  return FALSE;
-}
-
-/* Enters the navigator without animation (modulo background blurring). */
-void
-hd_task_navigator_enter (HdTaskNavigator * self)
-{
-  /* Reset the position of @Scroller, which may have been changed when
-   * we zoomed in last time.  Also scroll @Navigator_area to the top. */
-  clutter_actor_set_scale (Scroller, 1, 1);
-  clutter_actor_set_position (Scroller, 0, 0);
-  hd_scrollable_group_set_viewport_y (Navigator_area, 0);
-  clutter_actor_show (Navigator);
-  make_background_blurred (TRUE);
-}
-
-/* Leaves the navigator without a single word.
- * It's up to you what's left on the screen. */
-void
-hd_task_navigator_exit (HdTaskNavigator *self)
-{
-  clutter_actor_hide (CLUTTER_ACTOR (self));
-  make_background_blurred (FALSE);
-}
-
-/*
- * Returns the height of the @Notification_area in pixels.
- * It's like clutter_actor_get_height() but that function
- * is not reliable always due to clutter's allocation and
- * layout mechanisms.  In a sense this function returns
- * the intended height of the area, which we know for sure.
- */
-static guint
-notes_height (void)
-{
-  guint note_rows;
-
-  note_rows = Notifications->len / 2 + Notifications->len % 2;
-  return NOTE_HEIGHT * note_rows;
-}
-
-/* Misnamed function returning the expected height of the @Navigator_area. */
-static guint
-navigator_height (void)
-{
-  /* We assume the vertical position of @Notification_area
-   * is always correct. */
-  return clutter_actor_get_y (Notification_area) + notes_height ();
-}
-
-/* Updates our #HdScrollableGroup's idea about @Navigator_area's height. */
-static void
-set_navigator_height (guint hnavigator)
-{
-  hd_scrollable_group_set_real_estate (Navigator_area,
-                                       HD_SCROLLABLE_GROUP_VERTICAL,
-                                       hnavigator);
-}
-/* Navigator utilities }}} */
-
 /* Clutter utilities {{{ */
 /* add_effect_closure()'s #ClutterTimeline::completed handler. */
 static gboolean
@@ -806,6 +706,118 @@ reparent (ClutterActor * actor, ClutterActor * new_parent,
   g_object_unref (actor);
 }
 /* Clutter utilities }}} */
+
+/* Navigator utilities {{{ */
+/* Starts blurring/unblurring the home view smoothly. */
+static void
+make_background_blurred (gboolean blurred) 
+{
+  HdCompMgr *cmgr;
+  HdSwitcher *switcher;
+
+  switcher = HD_SWITCHER (clutter_actor_get_parent (CLUTTER_ACTOR (Navigator)));
+  g_return_if_fail (switcher);
+  g_return_if_fail (HD_IS_SWITCHER (switcher));
+  g_object_get (G_OBJECT (switcher), "comp-mgr", &cmgr, NULL);
+  g_return_if_fail (cmgr);
+  hd_comp_mgr_blur_home (cmgr, blurred);
+}  
+
+/* Tells whether we're in switcher view view. */
+gboolean
+hd_task_navigator_is_active (HdTaskNavigator * self)
+{
+  return CLUTTER_ACTOR_IS_VISIBLE (self);
+}
+
+/* Tells whether the navigator (@Navigator_area) is empty. */
+gboolean
+hd_task_navigator_is_empty (HdTaskNavigator * self)
+{
+  return !Thumbnails->len && !Notifications->len;
+}
+
+/* Returns whether we can and will show @win in the navigator.
+ * @win can be %NULL, in which case this function returns %FALSE. */
+gboolean
+hd_task_navigator_has_window (HdTaskNavigator * self, ClutterActor * win)
+{
+  guint i;
+
+  for (i = 0; i < Thumbnails->len; i++)
+    if (g_array_index (Thumbnails, Thumbnail, i).apwin == win)
+      return TRUE;
+  return FALSE;
+}
+
+/* Enters the navigator without animation (modulo background blurring). */
+void
+hd_task_navigator_enter (HdTaskNavigator * self)
+{
+  /* Reset the position of @Scroller, which may have been changed when
+   * we zoomed in last time.  Also scroll @Navigator_area to the top. */
+  clutter_actor_set_scale (Scroller, 1, 1);
+  clutter_actor_set_position (Scroller, 0, 0);
+  hd_scrollable_group_set_viewport_y (Navigator_area, 0);
+  clutter_actor_show (Navigator);
+  make_background_blurred (TRUE);
+}
+
+/* Leaves the navigator without a single word.
+ * It's up to you what's left on the screen. */
+void
+hd_task_navigator_exit (HdTaskNavigator *self)
+{
+  /* Stop zooming */
+  if (animation_in_progress (Zoom_effect))
+    {
+      /* Make sure add_effect_closure()s are not called.
+       * Advance to the end to clear up effects. */
+      g_signal_handlers_disconnect_matched (Zoom_effect_timeline,
+                                            G_SIGNAL_MATCH_FUNC, 0, 0, NULL,
+                                            call_effect_closure, NULL);
+      clutter_timeline_advance (Zoom_effect_timeline,
+                  clutter_timeline_get_n_frames (Zoom_effect_timeline));
+    }
+
+  clutter_actor_hide (CLUTTER_ACTOR (self));
+  make_background_blurred (FALSE);
+}
+
+/*
+ * Returns the height of the @Notification_area in pixels.
+ * It's like clutter_actor_get_height() but that function
+ * is not reliable always due to clutter's allocation and
+ * layout mechanisms.  In a sense this function returns
+ * the intended height of the area, which we know for sure.
+ */
+static guint
+notes_height (void)
+{
+  guint note_rows;
+
+  note_rows = Notifications->len / 2 + Notifications->len % 2;
+  return NOTE_HEIGHT * note_rows;
+}
+
+/* Misnamed function returning the expected height of the @Navigator_area. */
+static guint
+navigator_height (void)
+{
+  /* We assume the vertical position of @Notification_area
+   * is always correct. */
+  return clutter_actor_get_y (Notification_area) + notes_height ();
+}
+
+/* Updates our #HdScrollableGroup's idea about @Navigator_area's height. */
+static void
+set_navigator_height (guint hnavigator)
+{
+  hd_scrollable_group_set_real_estate (Navigator_area,
+                                       HD_SCROLLABLE_GROUP_VERTICAL,
+                                       hnavigator);
+}
+/* Navigator utilities }}} */
 
 /* Layout engine {{{ */
 /*

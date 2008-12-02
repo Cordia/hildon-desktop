@@ -1,3 +1,8 @@
+2008-12-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c:
+	  Stop animations when leaving switcher view.
+
 2008-12-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_set_show_home): New function.
