@@ -1,3 +1,10 @@
+2008-12-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-switcher.c (hd_switcher_show_menu_button): Hide status
+	  area. Set the size of the menu button to the size of switcher and
+	  staus area.
+	  (hd_switcher_hide_menu_button): Show status area.
+
 2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-blur-group.c

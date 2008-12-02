@@ -988,10 +988,19 @@ static void
 hd_switcher_show_menu_button (HdSwitcher * switcher)
 {
   HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
+  guint width, height;
+
+  /* Set size to control area size */
+  hd_switcher_get_control_area_size (switcher, &width, &height);
+  clutter_actor_set_size (priv->button_menu,
+                          width, height);
 
   clutter_actor_hide (priv->button_switcher);
   clutter_actor_hide (priv->button_launcher);
   priv->switcher_mode = !priv->switcher_mode;
+
+  if (priv->status_area)
+    clutter_actor_hide (priv->status_area);
 
   clutter_actor_show_all (priv->button_menu);
   clutter_actor_raise_top (priv->button_menu);
@@ -1001,6 +1010,9 @@ static void
 hd_switcher_hide_menu_button (HdSwitcher * switcher)
 {
   HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
+
+  if (priv->status_area)
+    clutter_actor_show (priv->status_area);
 
   clutter_actor_hide (priv->button_menu);
   hd_switcher_setup_buttons (switcher, TRUE);
