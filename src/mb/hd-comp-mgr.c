@@ -972,6 +972,10 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   hd_comp_mgr_set_show_home (HD_COMP_MGR(mgr),
       mb_wm_stack_get_highest_full_screen (mgr->wm) == NULL);
 
+  /* Hide the Edit button if it is currently shown */
+  if (priv->home)
+    hd_home_hide_edit_button (HD_HOME (priv->home));
+
   /*
    * We use the parent class restack() method to do the stacking, but as our
    * switcher shares actors with the CM, we cannot run this when the switcher
