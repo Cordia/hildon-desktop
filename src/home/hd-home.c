@@ -68,6 +68,10 @@
 #define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home" 
 #define HD_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
 
+#define CALL_UI_DBUS_NAME "com.nokia.CallUI"
+#define CALL_UI_DBUS_PATH "/com/nokia/CallUI"
+#define CALL_UI_DBUS_METHOD_SHOW_DIALPAD "ShowDialpad"
+
 #undef WITH_SETTINGS_BUTTON
 
 enum
@@ -159,6 +163,10 @@ struct _HdHomePrivate
   gboolean               showing_edit_button : 1;
 
   Window                 desktop;
+
+  /* DBus Proxy for the call to com.nokia.CallUI.ShowDialpad */
+  DBusGConnection       *connection;
+  DBusGProxy            *call_ui_proxy;
 };
 
 static void hd_home_class_init (HdHomeClass *klass);
@@ -410,15 +418,26 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 static Bool
 hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 {
-/*  HdHome *home = userdata; */
+  HdHome *home = userdata;
+  HdHomePrivate *priv = home->priv;
+
   char buffer[10];
 
   XLookupString (xev, buffer, 10, NULL, NULL);
 
-  g_debug ("Key Press: %d, %s. Call a D-Bus interface in Dialpad which is not there yet.",
-           xev->keycode, buffer);
+  if (priv->call_ui_proxy)
+    {
+      g_debug ("Call Dialpad via D-BUS. " CALL_UI_DBUS_NAME "." CALL_UI_DBUS_METHOD_SHOW_DIALPAD " (s: %s)", buffer);
 
-  return TRUE;
+      dbus_g_proxy_call_no_reply (priv->call_ui_proxy, CALL_UI_DBUS_METHOD_SHOW_DIALPAD,
+                                  G_TYPE_STRING, buffer,
+                                  G_TYPE_INVALID);
+      return TRUE;
+    }
+
+  g_warning ("No Proxy for " CALL_UI_DBUS_NAME);
+
+  return FALSE;
 }
 
 static Bool
@@ -1067,6 +1086,12 @@ hd_home_init (HdHome *self)
   g_debug ("%s registered to session bus at %s",
            HD_HOME_DBUS_NAME,
            HD_HOME_DBUS_PATH);
+
+  priv->connection = connection;
+  priv->call_ui_proxy = dbus_g_proxy_new_for_name (priv->connection,
+                                                   CALL_UI_DBUS_NAME,
+                                                   CALL_UI_DBUS_PATH,
+                                                   CALL_UI_DBUS_NAME);
 
 cleanup:
   if (bus_proxy != NULL)

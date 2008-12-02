@@ -1,3 +1,9 @@
+2008-12-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home.c (hd_home_desktop_key_press): call
+	  com.nokia.CallUI.ShowDialpad via D-Bus.
+	  (hd_home_init): Get D-Bus proxy for com.nokia.CallUI.
+
 2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher.h
