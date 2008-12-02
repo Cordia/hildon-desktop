@@ -184,8 +184,6 @@ static void hd_home_pan_full (HdHome *home, gboolean left);
 
 static void hd_home_show_edit_button (HdHome *home);
 
-static void hd_home_hide_edit_button (HdHome *home);
-
 static void hd_home_store_n_views(HdHome *home);
 
 static void hd_home_store_current_desktop(HdHome *home, guint new_desktop);
@@ -1423,6 +1421,9 @@ hd_home_pan_full (HdHome *home, gboolean left)
   if (priv->n_views < 2)
     return;
 
+  /* Hide edit button */
+  hd_home_hide_edit_button (home);
+
   by = xwidth = priv->xwidth;
 
   /*
@@ -1764,6 +1765,8 @@ hd_home_show_edit_button (HdHome *home)
   guint            button_width, button_height;
   ClutterTimeline *timeline;
   gint             x;
+  HdCompMgr       *comp_mgr = HD_COMP_MGR (priv->comp_mgr);
+  ClutterGeometry  geom[2];
 
   if (priv->showing_edit_button)
     return;
@@ -1789,7 +1792,12 @@ hd_home_show_edit_button (HdHome *home)
 
   priv->showing_edit_button = TRUE;
 
-  hd_home_grab_pointer (home);
+  /* Add the area of the edit button to the input viewport */
+  hd_switcher_get_button_geometry (HD_SWITCHER (hd_comp_mgr_get_switcher (comp_mgr)),
+                                   &geom[0]);
+  clutter_actor_get_geometry (priv->edit_button, &geom[1]);
+  geom[1].y = 0;
+  hd_comp_mgr_setup_input_viewport (comp_mgr, geom, 2);
 
   priv->edit_button_cb =
     g_timeout_add (HDH_EDIT_BUTTON_TIMEOUT, hd_home_edit_button_timeout, home);
@@ -1801,6 +1809,8 @@ void
 hd_home_hide_edit_button (HdHome *home)
 {
   HdHomePrivate   *priv = home->priv;
+  HdCompMgr       *comp_mgr = HD_COMP_MGR (priv->comp_mgr);
+  ClutterGeometry  geom;
 
   g_debug ("Hiding button");
 
@@ -1813,7 +1823,10 @@ hd_home_hide_edit_button (HdHome *home)
       priv->edit_button_cb = 0;
     }
 
-  hd_home_ungrab_pointer (home);
+  /* Remove the area of the edit button from the input viewport */
+  hd_switcher_get_button_geometry (HD_SWITCHER (hd_comp_mgr_get_switcher (comp_mgr)),
+                                   &geom);
+  hd_comp_mgr_setup_input_viewport (comp_mgr, &geom, 1);
 }
 
 void

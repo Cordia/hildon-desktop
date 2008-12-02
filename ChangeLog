@@ -1,10 +1,28 @@
+2008-12-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home.c (hd_home_pan_full): Hide edit button on pan.
+	  (hd_home_show_edit_button): Add edit button area to input viewport
+	  instead of the grab.
+	  (hd_home_hide_edit_button): Remove edit button area from input
+	  viewport.
+	* src/home/hd-home.h: Make hd_home_hide_edit_button public.
+
+	* src/home/hd-switcher.c (hd_switcher_clicked): Hide edit button if
+	  switcher is clicked.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_setup_input_viewport,
+	  hd_comp_mgr_turn_on): Update hd_comp_mgr_setup_input_viewport
+	  function to accept an array of ClutterGeometry.
+	  (hd_comp_mgr_map_notify): Hide edit button if a window is mapped.
+	* src/mb/hd-comp-mgr.h: Make hd_comp_mgr_setup_input_viewport public.
+
 2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 	* src/home/hd-switcher.c
 	* src/mb/hd-comp-mgr.c
 	* src/mb/hd-comp-mgr.h
 	Added function to explicitly stop blur and call it from task switcher, so
 	when zooming in from an app the end bit doesn't get blurred.
-	
+
 2008-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 	* src/launcher/hd-launcher.h
 	* src/launcher/hd-launcher-page.c

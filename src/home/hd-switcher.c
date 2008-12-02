@@ -467,6 +467,10 @@ hd_switcher_clicked (HdSwitcher *switcher)
 
   g_debug("entered hd_switcher_clicked: switcher=%p ss=%d sl=%d\n", switcher,
           priv->showing_switcher, priv->showing_launcher);
+
+  /* Hide Home edit button */
+  hd_home_hide_edit_button (home);
+
   /*
    * We have the following scenarios:
    *

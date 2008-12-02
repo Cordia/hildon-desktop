@@ -123,6 +123,8 @@ GList* hd_home_get_active_views (HdHome *home);
 
 void hd_home_set_view_status (HdHome * home, guint id, gboolean active);
 
+void hd_home_hide_edit_button (HdHome *home);
+
 G_END_DECLS
 
 #endif

@@ -469,17 +469,18 @@ hd_comp_mgr_destroy (MBWMObject *obj)
     g_hash_table_destroy (priv->hibernating_apps);
 }
 
-static void
-hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry * geom)
+void
+hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry * geom, int count)
 {
   XserverRegion      region;
   Window             overlay;
   Window             clutter_window;
-  XRectangle         rectangle;
+  XRectangle        *rectangle;
   MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
   MBWindowManager   *wm = mgr->wm;
   Display           *xdpy = wm->xdpy;
   ClutterActor      *stage;
+  guint              i;
 
   overlay = XCompositeGetOverlayWindow (xdpy, wm->root_win->xwindow);
 
@@ -491,12 +492,17 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry * geom)
                 ButtonPressMask | ButtonReleaseMask |
                 KeyPressMask | KeyReleaseMask);
 
-  rectangle.x      = geom->x;
-  rectangle.y      = geom->y;
-  rectangle.width  = geom->width;
-  rectangle.height = geom->height;
+  rectangle = g_new (XRectangle, count);
+  for (i = 0; i < count; i++)
+    {
+      rectangle[i].x      = geom[i].x;
+      rectangle[i].y      = geom[i].y;
+      rectangle[i].width  = geom[i].width;
+      rectangle[i].height = geom[i].height;
+    }
 
-  region = XFixesCreateRegion (wm->xdpy, &rectangle, 1);
+  region = XFixesCreateRegion (wm->xdpy, rectangle, count);
+  g_free (rectangle);
 
   XFixesSetWindowShapeRegion (xdpy,
                               overlay,
@@ -554,7 +560,7 @@ hd_comp_mgr_turn_on (MBWMCompMgr *mgr)
     parent_klass->turn_on (mgr);
 
   hd_switcher_get_button_geometry (HD_SWITCHER (priv->switcher_group), &geom);
-  hd_comp_mgr_setup_input_viewport (HD_COMP_MGR (mgr), &geom);
+  hd_comp_mgr_setup_input_viewport (HD_COMP_MGR (mgr), &geom, 1);
 }
 
 
@@ -711,6 +717,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   if (parent_klass->map_notify)
     parent_klass->map_notify (mgr, c);
+
+  /* Hide the Edit button if it is currently shown */
+  if (priv->home)
+    hd_home_hide_edit_button (HD_HOME (priv->home));
 
   /*
    * If the actor is an appliation, add it also to the switcher
