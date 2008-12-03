@@ -786,23 +786,29 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
                 if (label_amt>1) label_amt=1;
                 depth = CLUTTER_UNITS_FROM_FLOAT(
                                 150 - 150*sexy_overshoot(tile_amt));        
-                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
-                clutter_actor_set_opacity(tile_icon, (int)(tile_amt*255));
-                clutter_actor_set_opacity(tile_label, (int)(label_amt*255));
+                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);  
+                if (tile_icon)      
+                  clutter_actor_set_opacity(tile_icon, (int)(tile_amt*255));
+                if (tile_label)      
+                  clutter_actor_set_opacity(tile_label, (int)(label_amt*255));
                 break;
               }
             case HD_LAUNCHER_PAGE_TRANSITION_OUT:
             case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
                 depth = CLUTTER_UNITS_FROM_FLOAT(150*amount);        
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
-                clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*255));
-                clutter_actor_set_opacity(tile_label, 255 - (int)(amount*255));
+                if (tile_icon)      
+                  clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*255));
+                if (tile_label)      
+                  clutter_actor_set_opacity(tile_label, 255-(int)(amount*255));
                 break;
             case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
                 depth = CLUTTER_UNITS_FROM_FLOAT(-150*tile_amt);        
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
-                clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*255));
-                clutter_actor_set_opacity(tile_label, 255 - (int)(amount*255));
+                if (tile_icon)      
+                  clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*255));
+                if (tile_label)      
+                  clutter_actor_set_opacity(tile_label, 255-(int)(amount*255));
                 break;
             /* We do't do anything for these now because we just use blur on
              * the whole group */      
@@ -810,13 +816,15 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
                /* depth = CLUTTER_UNITS_FROM_FLOAT(-50*amount);        
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
                 clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*191));
-                clutter_actor_set_opacity(tile_label, 255 - (int)(amount*191));*/
+                clutter_actor_set_opacity(tile_label, 255 - (int)(amount*191));
+                */
                 break;
             case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
                 /*depth = CLUTTER_UNITS_FROM_FLOAT(-50*(1-amount));        
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
                 clutter_actor_set_opacity(tile_icon, 64 + (int)(amount*191));
-                clutter_actor_set_opacity(tile_label, 64 + (int)(amount*191));*/
+                clutter_actor_set_opacity(tile_label, 64 + (int)(amount*191));
+                */
                 break;
           } 
       }

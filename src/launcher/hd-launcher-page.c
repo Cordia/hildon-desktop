@@ -632,15 +632,19 @@ hd_launcher_page_new_frame(ClutterTimeline *timeline,
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
         hd_launcher_set_back_arrow_opacity(amt);
     case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
-        clutter_actor_set_opacity(priv->icon, (int)(255*amt));
-        clutter_actor_set_opacity(priv->label, (int)(255*amt));
+        if (priv->icon)
+          clutter_actor_set_opacity(priv->icon, (int)(255*amt));
+        if (priv->label)
+          clutter_actor_set_opacity(priv->label, (int)(255*amt));
         break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
     case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
         hd_launcher_set_back_arrow_opacity(1-amt);
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:    
-        clutter_actor_set_opacity(priv->icon, 255-(int)(255*amt));
-        clutter_actor_set_opacity(priv->label, 255-(int)(255*amt));
+        if (priv->icon)
+          clutter_actor_set_opacity(priv->icon, 255-(int)(255*amt));
+        if (priv->label)
+          clutter_actor_set_opacity(priv->label, 255-(int)(255*amt));
         break;
     case HD_LAUNCHER_PAGE_TRANSITION_BACK:
         hd_launcher_set_top_blur(amt);
