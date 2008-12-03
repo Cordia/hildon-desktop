@@ -43,6 +43,7 @@ struct HdHomeApplet
   unsigned int      applet_layer;
 
   char             *applet_id;
+  time_t            modified;
 };
 
 struct HdHomeAppletClass

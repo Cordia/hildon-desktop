@@ -29,6 +29,7 @@
 #include "hd-comp-mgr.h"
 #include "hd-home.h"
 #include "hd-util.h"
+#include "hd-home-applet.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -1071,8 +1072,19 @@ hd_home_view_applet_press (ClutterActor       *applet,
 			   HdHomeView         *view)
 {
   HdHomeViewPrivate *priv = view->priv;
-
+  GConfClient *client = gconf_client_get_default ();
+  gchar *modified_key, *modified;
   guint id;
+  MBWMCompMgrClient *cclient;
+  HdHomeApplet *wm_applet;
+  MBWindowManagerClient *desktop_client;
+
+  desktop_client = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
+  cclient = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
+  wm_applet = (HdHomeApplet *) cclient->wm_client;
+
+  /* Get all pointer events */
+  clutter_grab_pointer (applet);
 
   id = g_signal_connect (applet, "motion-event",
 			 G_CALLBACK (hd_home_view_applet_motion),
@@ -1080,6 +1092,24 @@ hd_home_view_applet_press (ClutterActor       *applet,
 
   g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb",
 		     GINT_TO_POINTER (id));
+
+  /* Raise the applet */
+  clutter_actor_raise_top (applet);
+
+  /* Store the modifed time of the applet */
+  time (&wm_applet->modified);
+
+  modified = g_strdup_printf ("%ld", wm_applet->modified);
+  modified_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/modified", wm_applet->applet_id);
+        
+  gconf_client_set_string (client,
+                           modified_key,
+                           modified,
+                           NULL);
+  g_free (modified);
+  g_object_unref (client);
+
+  mb_wm_client_stacking_mark_dirty (desktop_client);
 
   priv->applet_motion_handled = FALSE;
   priv->applet_motion_start_x = event->x;
@@ -1097,6 +1127,9 @@ hd_home_view_applet_release (ClutterActor       *applet,
 {
   HdHomeViewPrivate *priv = view->priv;
   guint id;
+
+  /* Get all pointer events */
+  clutter_ungrab_pointer ();
 
   id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
 					   "HD-VIEW-motion-cb"));
@@ -1142,7 +1175,7 @@ hd_home_view_applet_release (ClutterActor       *applet,
 				     MBWMClientReqGeomIsViaUserAction);
 
       gconf_client = gconf_client_get_default ();
-      applet_id = g_object_get_data (G_OBJECT (applet), "HD-applet-id");
+      applet_id = HD_HOME_APPLET (client)->applet_id;
 
       position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", applet_id);
       position_value = g_slist_prepend (g_slist_prepend (NULL, GINT_TO_POINTER (y)),
@@ -1159,12 +1192,47 @@ hd_home_view_applet_release (ClutterActor       *applet,
   return TRUE;
 }
 
+static gint
+cmp_applet_modified (gconstpointer a,
+                     gconstpointer b)
+{
+  const MBWMCompMgrClient *cc_a = a;
+  const MBWMCompMgrClient *cc_b = b;
+
+  return HD_HOME_APPLET (cc_a->wm_client)->modified - HD_HOME_APPLET (cc_b->wm_client)->modified;
+}
+
+static void
+hd_home_view_restack_applets (HdHomeView *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+  GList             *a;
+  GSList            *sorted = NULL, *s;
+  ClutterActor      *top = CLUTTER_ACTOR (view);
+
+  for (a = priv->applets; a; a = a->next)
+    {
+      MBWMCompMgrClient *cc = a->data;
+
+      sorted = g_slist_insert_sorted (sorted, cc, cmp_applet_modified);
+    }
+
+  for (s = sorted; s; s = s->next)
+    {
+      MBWMCompMgrClutterClient *cc = s->data;
+      ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor (cc);
+
+      clutter_actor_raise (actor, top);
+      top = actor;
+    }
+}
+
 void
 hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
 {
-  HdHomeViewPrivate        *priv = view->priv;
-  MBWMCompMgrClutterClient *cc;
-  guint                     id;
+  HdHomeViewPrivate *priv = view->priv;
+  MBWMCompMgrClient *cc;
+  guint              id;
 
   /*
    * Reparent the applet to ourselves; note that this automatically
@@ -1191,6 +1259,7 @@ hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
 
   priv->applets = g_list_prepend (priv->applets, cc);
 
+  hd_home_view_restack_applets (view);
 }
 
 void

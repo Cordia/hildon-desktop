@@ -1,3 +1,29 @@
+2008-12-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view.c (hd_home_view_applet_press): Grab the
+	  pointer so it is easier to move an applet. Update modified time of
+	  an applet.
+	  (hd_home_view_applet_release): Gngrab the pointer.
+
+	  (cmp_applet_modified, hd_home_view_restack_applets): Add function to
+	  restack the applets clutter actors according to the modified time.
+
+	  (hd_home_view_add_applet): Restack the applets.
+
+	* src/home/hd-home.c (hd_home_applet_close_button_clicked): Remove all
+	  GConf settings for an applet if it closed.
+	  (hd_home_add_applet): Use applet id from MBWMClient.
+
+	* src/mb/hd-desktop.c (cmp_applet_modified): Add function to compare
+	  modified times.
+	  (hd_desktop_stack): Stack the applet windows according to the
+	  modified time.
+
+	* src/mb/hd-home-applet.c (hd_home_applet_init): Read modified time
+	from GConf.
+
+	* src/mb/hd-home-applet.h (modified): Added modified member.
+
 2008-12-03  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher-page.c

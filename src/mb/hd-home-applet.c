@@ -28,6 +28,8 @@
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
+#include <gconf/gconf-client.h>
+
 static Bool
 hd_home_applet_request_geometry (MBWindowManagerClient *client,
 				 MBGeometry            *new_geometry,
@@ -90,6 +92,8 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
   MBWindowManagerClient *desktop = wm->desktop;
   Atom                   applet_id_atom, utf8_atom;
   char                  *applet_id;
+  GConfClient           *gconf_client  = gconf_client_get_default ();
+  char                  *modified_key, *modified;
 
   /* Get applet id */
   applet_id_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ID);
@@ -113,6 +117,30 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
     {
       printf ("#### no applet id! ###\n");
     }
+
+  modified_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/modified", applet->applet_id);
+  modified = gconf_client_get_string (gconf_client,
+                                      modified_key,
+                                      NULL);
+
+  if (modified)
+    {
+      applet->modified = (time_t) atol (modified);
+    }
+  else
+    {
+      time (&applet->modified);
+
+      modified = g_strdup_printf ("%ld", applet->modified);
+        
+      gconf_client_set_string (gconf_client,
+                               modified_key,
+                               modified,
+                               NULL);
+    }
+
+  g_free (modified_key);
+  g_free (modified);
 
   Atom actions[] = {
     wm->atoms[MBWM_ATOM_NET_WM_ACTION_CLOSE],

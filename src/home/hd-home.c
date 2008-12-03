@@ -34,6 +34,7 @@
 #include "hd-layout-dialog.h"
 #include "hd-gtk-style.h"
 #include "hd-gtk-utils.h"
+#include "hd-home-applet.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -460,7 +461,7 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
   MBWMCompMgrClutterClient *cc;
   GConfClient   *client = gconf_client_get_default ();
   gchar         *applet_id;
-  gchar         *view_key;
+  gchar         *applet_key;
 
 
   if (!priv->active_applet)
@@ -476,8 +477,9 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
   applet_id = g_object_get_data (G_OBJECT (priv->active_applet),
                                  "HD-applet-id");
 
-  view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view", applet_id);
-  gconf_client_unset (client, view_key, NULL);
+  applet_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s", applet_id);
+  gconf_client_recursive_unset (client, applet_key, 0, NULL);
+  g_free (applet_key);
 
   hd_comp_mgr_close_client (hmgr, cc);
 
@@ -1369,17 +1371,18 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   gint view_id;
   GList *l;
   GConfClient *client  = gconf_client_get_default ();
-  gchar *applet_id;
   gchar *view_key, *position_key;
   GConfValue *value;
   GSList *position;
   MBGeometry geom;
   MBWMCompMgrClient *cclient;
+  HdHomeApplet *wm_applet;
 
-  applet_id = g_object_get_data (G_OBJECT (applet), "HD-applet-id");
+  cclient = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
+  wm_applet = (HdHomeApplet *) cclient->wm_client;
 
-  view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view", applet_id);
-  position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", applet_id);
+  view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view", wm_applet->applet_id);
+  position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", wm_applet->applet_id);
 
   value = gconf_client_get_without_default (client,
                                             view_key,
@@ -1393,6 +1396,8 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
 
       gconf_client_set_int (client, view_key, view_id, NULL);
     }
+
+  wm_applet->view_id = view_id;
 
   if (value)
     gconf_value_free (value);
@@ -1425,8 +1430,6 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
       geom.width = width;
       geom.height = height;
     }
-
-  cclient = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
 
   mb_wm_client_request_geometry (cclient->wm_client, &geom,
 				 MBWMClientReqGeomIsViaUserAction);
@@ -1906,4 +1909,3 @@ hd_home_store_current_desktop(HdHome *home, guint new_desktop)
 		   (unsigned char *) propvalue,
 		   1);
 }
-
