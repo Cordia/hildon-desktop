@@ -1,3 +1,9 @@
+2008-12-03  Tuomas Kuosmanen  <tuomas.kuosmanen@nokia.com>
+
+	* data/launcher-button-highlight.png: *
+	data/icons/48x48/qgn_tswitcher_application.png: *
+	data/icons/48x48/back-button.png: some hack styling for demo
+
 2008-12-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home.c: Remove unused code (for resizing and settings
@@ -13,6 +19,7 @@
 	Fixes for Tasks button
 	* src/mb/hd-app.c: show Tasks in hide handler.
 
+>>>>>>> .r32864
 2008-12-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-app.c: hd_app_destroy():
