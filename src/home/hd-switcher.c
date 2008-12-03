@@ -163,6 +163,15 @@ hd_switcher_class_init (HdSwitcherClass *klass)
 }
 
 static void
+hd_switcher_show_status_area (HdSwitcher *switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  if (priv->status_area)
+    clutter_actor_show (priv->status_area);
+}
+
+static void
 launcher_back_button_clicked (HdLauncher *launcher,
                               gpointer *data)
 {
@@ -184,8 +193,7 @@ launcher_back_button_clicked (HdLauncher *launcher,
   else
     {
       hd_home_ungrab_pointer (home);
-      if (priv->status_area)
-        clutter_actor_show (priv->status_area);
+      hd_switcher_show_status_area (HD_SWITCHER (data));
     }
 
   /* show the buttons again */
@@ -626,6 +634,9 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
     }
 
+  /* Show status area */
+  hd_switcher_show_status_area (switcher);
+
   hd_switcher_setup_buttons (switcher, TRUE);
 }
 
@@ -797,8 +808,7 @@ hd_swticher_something_removed (HdSwitcher * switcher)
        * Must close the switcher
        */
       hd_switcher_hide_switcher (switcher);
-      if (priv->status_area)
-        clutter_actor_show (priv->status_area);
+      hd_switcher_show_status_area (switcher);
       hd_home_ungrab_pointer (HD_HOME (hd_comp_mgr_get_home (cmgr)));
     }
 
@@ -1016,8 +1026,7 @@ hd_switcher_hide_menu_button (HdSwitcher * switcher)
 {
   HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
 
-  if (priv->status_area)
-    clutter_actor_show (priv->status_area);
+  hd_switcher_show_status_area (switcher);
 
   clutter_actor_hide (priv->button_menu);
   hd_switcher_setup_buttons (switcher, TRUE);
@@ -1100,7 +1109,6 @@ hd_switcher_group_background_clicked (HdSwitcher   *switcher,
       hd_switcher_hide_launcher (switcher);
     }
 
-  if (priv->status_area)
-    clutter_actor_show (priv->status_area);
+  hd_switcher_show_status_area (switcher);
   hd_comp_mgr_top_home (HD_COMP_MGR (priv->comp_mgr));
 }
