@@ -1,8 +1,8 @@
 2008-12-03  Tuomas Kuosmanen  <tuomas.kuosmanen@nokia.com>
 
-	* data/launcher-button-highlight.png: *
-	data/icons/48x48/qgn_tswitcher_application.png: *
-	data/icons/48x48/back-button.png: some hack styling for demo
+	* data/launcher-button-highlight.png: 
+	* data/icons/48x48/qgn_tswitcher_application.png: 
+	* data/icons/48x48/back-button.png: some hack styling for demo
 
 2008-12-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
