@@ -1,3 +1,8 @@
+2008-12-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes for Tasks button
+	* src/mb/hd-app.c: show Tasks in hide handler.
+
 2008-12-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-app.c: hd_app_destroy():

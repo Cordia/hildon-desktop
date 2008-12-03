@@ -107,6 +107,10 @@ void hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
 				     const gchar *app_service,
 				     const gchar *launch_param);
 
+void hd_comp_mgr_set_show_home (HdCompMgr *hmgr, gboolean show_home);
+
+gboolean hd_comp_mgr_get_showing_home (HdCompMgr *hmgr);
+
 Atom hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id);
 
 ClutterActor * hd_comp_mgr_get_home (HdCompMgr *hmgr);

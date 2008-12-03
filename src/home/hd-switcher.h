@@ -89,6 +89,8 @@ hd_switcher_hibernate_window_actor (HdSwitcher   * switcher,
 void hd_switcher_get_button_geometry (HdSwitcher      * switcher,
 				      ClutterGeometry * geom);
 
+ClutterActor *hd_switcher_get_task_navigator (HdSwitcher *switcher);
+
 gboolean hd_switcher_showing_switcher (HdSwitcher * switcher);
 
 void hd_switcher_deactivate (HdSwitcher * switcher);

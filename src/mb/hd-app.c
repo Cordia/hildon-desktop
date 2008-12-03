@@ -23,6 +23,7 @@
 
 #include "hd-app.h"
 #include "hd-comp-mgr.h"
+#include "hd-switcher.h"
 
 #include "launcher/hd-launcher.h"
 
@@ -31,22 +32,37 @@ hd_app_show (MBWindowManagerClient *client)
 {
   MBWindowManagerClientClass* parent_klass =
     MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
-  ClutterActor *switcher;
+  HdCompMgr             *hmgr = HD_COMP_MGR (client->wmref->comp_mgr);
 
   if (parent_klass->show)
     parent_klass->show(client);
 
   /* Hide/show the switcher (the Tasks button in particular) depending on
    * whether we're fullscreen or not. */
-  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (client->wmref->comp_mgr));
   if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
-    clutter_actor_hide(switcher);
-  else
-    clutter_actor_show(switcher);
+  {
+    hd_comp_mgr_set_show_home (hmgr, FALSE);
+  }
     
   /* We're now showing this app, so remove our app 
    * starting screen if we had one */
   hd_launcher_window_created();
+}
+
+static void
+hd_app_hide (MBWindowManagerClient *client)
+{
+  MBWindowManagerClientClass* parent_klass =
+    MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
+  HdCompMgr             *hmgr = HD_COMP_MGR (client->wmref->comp_mgr);
+
+  if (parent_klass->hide)
+    parent_klass->hide(client);
+
+  if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+  {
+    hd_comp_mgr_set_show_home (hmgr, TRUE);
+  }
 }
 
 static void
@@ -56,13 +72,13 @@ hd_app_class_init (MBWMObjectClass *klass)
   klass->klass_name = "HdApp";
 #endif
   MB_WM_CLIENT_CLASS (klass)->show = hd_app_show;
+  MB_WM_CLIENT_CLASS (klass)->hide = hd_app_hide;
 }
 
 static void
 hd_app_destroy (MBWMObject *this)
 {
   HdApp *app = HD_APP (this);
-  MBWindowManagerClient *client;
 
   if (app->secondary_window && app->leader)
     {
@@ -84,16 +100,6 @@ hd_app_destroy (MBWMObject *this)
 
       g_list_free (app->followers);
     }
-
-    /* Show the Tasks button again if we made it hidden when we went
-     * fullscreen and the client died in this state. */
-    client = MB_WM_CLIENT (this);
-    if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen
-        && mb_wm_get_visible_main_client (client->wmref) == client)
-      {
-        HdCompMgr *cmgr = HD_COMP_MGR (client->wmref->comp_mgr);
-        clutter_actor_show (hd_comp_mgr_get_switcher (cmgr));
-      }
 }
 
 static int

@@ -24,6 +24,7 @@
 
 #include "hd-comp-mgr.h"
 #include "hd-switcher.h"
+#include "hd-task-navigator.h"
 #include "hd-home.h"
 #include "hd-dbus.h"
 #include "hd-atoms.h"
@@ -470,17 +471,16 @@ hd_comp_mgr_destroy (MBWMObject *obj)
 }
 
 void
-hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry * geom, int count)
+hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
+                                  int count)
 {
   XserverRegion      region;
   Window             overlay;
   Window             clutter_window;
-  XRectangle        *rectangle;
   MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
   MBWindowManager   *wm = mgr->wm;
   Display           *xdpy = wm->xdpy;
   ClutterActor      *stage;
-  guint              i;
 
   overlay = XCompositeGetOverlayWindow (xdpy, wm->root_win->xwindow);
 
@@ -492,17 +492,22 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry * geom, int c
                 ButtonPressMask | ButtonReleaseMask |
                 KeyPressMask | KeyReleaseMask);
 
-  rectangle = g_new (XRectangle, count);
-  for (i = 0; i < count; i++)
+  if (count > 0)
     {
-      rectangle[i].x      = geom[i].x;
-      rectangle[i].y      = geom[i].y;
-      rectangle[i].width  = geom[i].width;
-      rectangle[i].height = geom[i].height;
+      XRectangle *rectangle = g_new (XRectangle, count);
+      guint      i;
+      for (i = 0; i < count; i++)
+        {
+          rectangle[i].x      = geom[i].x;
+          rectangle[i].y      = geom[i].y;
+          rectangle[i].width  = geom[i].width;
+          rectangle[i].height = geom[i].height;
+        }
+      region = XFixesCreateRegion (wm->xdpy, rectangle, count);
+      g_free (rectangle);
     }
-
-  region = XFixesCreateRegion (wm->xdpy, rectangle, count);
-  g_free (rectangle);
+  else
+    region = XFixesCreateRegion (wm->xdpy, NULL, 0);
 
   XFixesSetWindowShapeRegion (xdpy,
                               overlay,
@@ -950,23 +955,39 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
     }
 }
 
-static void
+void
 hd_comp_mgr_set_show_home (HdCompMgr *hmgr, gboolean show_home)
 {
-  if (show_home == hmgr->priv->showing_home)
+  static int first_time = 1;
+  HdCompMgrPrivate         * priv = hmgr->priv;
+
+  if (!first_time && show_home == priv->showing_home)
     return;
 
+  first_time = 0;
+
   if (show_home) {
-    if (hmgr->priv->switcher_group)
-      clutter_actor_show (hmgr->priv->switcher_group);
+    ClutterGeometry    geom;
+    if (priv->switcher_group)
+      clutter_actor_show (priv->switcher_group);
+    hd_switcher_get_button_geometry (HD_SWITCHER (priv->switcher_group), &geom);
+    hd_comp_mgr_setup_input_viewport (hmgr, &geom, 1);
   } else {
-    if (hmgr->priv->switcher_group)
-      clutter_actor_hide (hmgr->priv->switcher_group);
+    g_debug ("%s: hide the switcher group", __FUNCTION__);
+    if (priv->switcher_group)
+      clutter_actor_hide (priv->switcher_group);
+    hd_comp_mgr_setup_input_viewport (hmgr, NULL, 0);
   }
 
-  hmgr->priv->showing_home = show_home;
+  priv->showing_home = show_home;
 }
 
+gboolean
+hd_comp_mgr_get_showing_home (HdCompMgr *hmgr)
+{
+  HdCompMgrPrivate         * priv = hmgr->priv;
+  return  priv->showing_home;
+}
 
 static void
 hd_comp_mgr_restack (MBWMCompMgr * mgr)
@@ -974,9 +995,16 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   HdCompMgrPrivate         * priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClass         * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
+  MBWindowManagerClient    * highest_fs;
+  HdTaskNavigator          *tn;
 
-  hd_comp_mgr_set_show_home (HD_COMP_MGR(mgr),
-      mb_wm_stack_get_highest_full_screen (mgr->wm) == NULL);
+  tn = HD_TASK_NAVIGATOR (
+        hd_switcher_get_task_navigator (HD_SWITCHER (priv->switcher_group)));
+  highest_fs = mb_wm_stack_get_highest_full_screen (mgr->wm);
+  if (highest_fs != NULL && !hd_task_navigator_is_empty (tn))
+    hd_comp_mgr_set_show_home (HD_COMP_MGR(mgr), FALSE);
+  else
+    hd_comp_mgr_set_show_home (HD_COMP_MGR(mgr), TRUE);
 
   /* Hide the Edit button if it is currently shown */
   if (priv->home)

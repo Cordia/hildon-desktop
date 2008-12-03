@@ -881,6 +881,13 @@ hd_switcher_hide_buttons (HdSwitcher * switcher)
   priv->switcher_mode = FALSE;
 }
 
+ClutterActor *
+hd_switcher_get_task_navigator (HdSwitcher *switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  return priv->switcher_group;
+}
+
 static void
 hd_switcher_setup_buttons (HdSwitcher * switcher, gboolean switcher_mode)
 {

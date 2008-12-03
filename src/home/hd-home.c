@@ -1837,7 +1837,7 @@ hd_home_hide_edit_button (HdHome *home)
   HdCompMgr       *comp_mgr = HD_COMP_MGR (priv->comp_mgr);
   ClutterGeometry  geom;
 
-  g_debug ("Hiding button");
+  g_debug ("%s: Hiding button", __FUNCTION__);
 
   clutter_actor_hide (priv->edit_button);
   priv->showing_edit_button = FALSE;
@@ -1848,10 +1848,13 @@ hd_home_hide_edit_button (HdHome *home)
       priv->edit_button_cb = 0;
     }
 
-  /* Remove the area of the edit button from the input viewport */
-  hd_switcher_get_button_geometry (HD_SWITCHER (hd_comp_mgr_get_switcher (comp_mgr)),
-                                   &geom);
-  hd_comp_mgr_setup_input_viewport (comp_mgr, &geom, 1);
+  if (hd_comp_mgr_get_showing_home (comp_mgr))
+  {
+    /* Remove the area of the edit button from the input viewport */
+    hd_switcher_get_button_geometry (
+                  HD_SWITCHER (hd_comp_mgr_get_switcher (comp_mgr)), &geom);
+    hd_comp_mgr_setup_input_viewport (comp_mgr, &geom, 1);
+  }
 }
 
 void

@@ -298,7 +298,7 @@ static void
 hd_desktop_stack (MBWindowManagerClient *client,
 		  int                    flags)
 {
-  /* Stack to highest/lowest possible possition in stack */
+  /* Stack to highest/lowest possible position in stack */
   MBWMList  *l, *l_start;
   HdCompMgr *hmgr = HD_COMP_MGR (client->wmref->comp_mgr);
   gint       current_view = hd_comp_mgr_get_current_home_view_id (hmgr);
