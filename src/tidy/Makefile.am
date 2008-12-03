@@ -25,7 +25,7 @@ noinst_LTLIBRARIES = libtidy.la
 source_h = \
 	$(top_srcdir)/src/tidy/tidy-actor.h 		\
 	$(top_srcdir)/src/tidy/tidy-adjustment.h	\
-	$(top_srcdir)/src/tidy/tidy-blur-group.h 	\	
+	$(top_srcdir)/src/tidy/tidy-blur-group.h 	\
 	$(top_srcdir)/src/tidy/tidy-finger-scroll.h	\
 	$(top_srcdir)/src/tidy/tidy-frame.h	\
 	$(top_srcdir)/src/tidy/tidy-interval.h		\

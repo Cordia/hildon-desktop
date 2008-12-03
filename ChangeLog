@@ -1,3 +1,14 @@
+2008-12-03  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/tidy/Makefile.am: Fixed autoconf warning
+
+	* src/mb/hd-comp-mgr.c: Added TV-style app-close effect
+
+	* src/mb/Makefile.am: Added HD_DATADIR #define as for src/home
+	
+	* data/white-particle.png
+	* data/Makefile.am: Added white particle required for app close	effect
+
 2008-12-03  Tuomas Kuosmanen  <tuomas.kuosmanen@nokia.com>
 
 	* data/launcher-button-highlight.png: 
@@ -19,7 +30,6 @@
 	Fixes for Tasks button
 	* src/mb/hd-app.c: show Tasks in hide handler.
 
->>>>>>> .r32864
 2008-12-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-app.c: hd_app_destroy():

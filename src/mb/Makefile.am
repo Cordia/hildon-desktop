@@ -31,7 +31,8 @@ mb_c = 		hd-atoms.c			\
 noinst_LIBRARIES = libmb.a
 
 libmb_a_SOURCES = $(mb_h) $(mb_c)
-libmb_a_CFLAGS =  @HD_CFLAGS@
+libmb_a_CFLAGS =  @HD_CFLAGS@						\
+		     -DHD_DATADIR=\"$(datadir)/hildon-desktop\"
 libmb_a_LIBS = @HD_LIBS@
 
 CLEANFILES = *~
