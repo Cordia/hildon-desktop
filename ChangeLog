@@ -1,5 +1,10 @@
 2008-12-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/home/hd-home.c: Remove unused code (for resizing and settings
+	  button).
+
+2008-12-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-switcher.c (hd_switcher_zoom_in_complete): Show status
 	  are if a window is selected from the switcher. Fixes NB#93999
 
