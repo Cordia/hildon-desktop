@@ -1,0 +1,15 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+Name=Media Player
+Exec=/usr/bin/mediaplayer
+X-Osso-Service=com.nokia.mediaplayer
+X-Icon-path=/usr/share/icons/hicolor/26x26/hildon
+Icon=qgn_list_medi
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Type=application/x-executable
+MimeType=video/x-msvideo;audio/x-mp3;video/mpeg;audio/x-wav;audio/x-real;audio/x-m4a;audio/x-amr;video/3gpp;audio/x-mp2;audio/x-ms-wma;video/x-ms-wmv;audio/x-mpegurl;audio/x-scpls;audio/x-pn-realaudio;application/x-ms-asx;application/vnd.ms-wpl;audio/AMR;
+X-Osso-User-Position=2
+X-Maemo-Category=Main
+

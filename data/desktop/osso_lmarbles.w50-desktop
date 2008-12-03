@@ -1,0 +1,17 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=0.1
+Type=Application
+Name=Marbles
+Exec=/usr/bin/osso_lmarbles.sh
+Icon=tasklaunch_marbles
+Comment=game_ap_mahjong_name_thumb
+X-Icon-path=/usr/share/pixmaps/
+X-Window-Icon=tn-bookmarks-link
+X-Window-Icon-Dimmed=tn-bookmarks-link-dimmed
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Service=com.nokia.osso_lmarbles.startup
+X-Osso-Type=application/x-executable
+StartupWMClass=lmarbles_startup
+X-Maemo-Category=applications
+X-Osso-User-Position=7

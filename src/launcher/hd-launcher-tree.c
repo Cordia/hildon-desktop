@@ -108,24 +108,6 @@ enum
 
 static gulong tree_signals[LAST_SIGNAL] = { 0, };
 
-typedef enum {
-  HD_UTILITIES_GROUP,
-  HD_SETTINGS_GROUP,
-  HD_EXTRA_GROUP,
-} category_id_t;
-
-static const struct {
-  const gchar *name;
-  const gchar *display_name;
-  category_id_t id;
-} hd_default_categories[] = {
-  { "Utilities", N_("tana_fi_utilities"), HD_UTILITIES_GROUP },
-  { "Settings",  N_("tana_fi_settings"),  HD_SETTINGS_GROUP  },
-  { "Extra",     N_("tana_fi_extras"),    HD_EXTRA_GROUP     }
-};
-
-static const gint hd_n_default_categories = G_N_ELEMENTS (hd_default_categories);
-
 G_DEFINE_TYPE (HdLauncherTree, hd_launcher_tree, G_TYPE_OBJECT);
 
 static void
@@ -256,6 +238,9 @@ walk_visit_func (const char        *f_path,
 {
   WalkThreadData *data;
   const gchar *name;
+  GError *error = NULL;
+  gchar *full_path = NULL;
+  gchar *id = NULL;
   gboolean is_hidden;
   GKeyFile *key_file = NULL;
 
@@ -275,16 +260,46 @@ walk_visit_func (const char        *f_path,
     name = f_path;
 
   is_hidden = (*name == '.') ? TRUE : FALSE;
+  if (is_hidden)
+#ifdef HAVE_GNU_FTW
+    return FTW_SKIP_SUBTREE;
+#else
+  return 0;
+#endif /* HAVE_GNU_FTW */
 
-  if (S_ISREG (sb->st_mode) &&
-      g_str_has_suffix (name, ".desktop") &&
-      !is_hidden)
+  if (!S_ISREG (sb->st_mode))
+#ifdef HAVE_GNU_FTW
+    return FTW_CONTINUE;
+#else
+  return 0;
+#endif /* HAVE_GNU_FTW */
+
+  if (g_str_has_suffix (name, ".desktop"))
     {
-      GError *error = NULL;
-      gchar *full_path;
+      gchar *w50_id = g_strndup (name, strlen (name) - strlen (".desktop"));
+      /* If there's an equivalent .w50-desktop file, ignore this one. */
+      gchar *w50_name = g_strdup_printf ("%s.w50-desktop", w50_id);
+      gchar *w50_path =
+        g_build_filename (data->tree->priv->path, w50_name, NULL);
 
+      if (!g_file_test (w50_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR))
+        {
+          /* .w50-desktop does not file exist. */
+          full_path = g_build_filename (data->tree->priv->path, name, NULL);
+          id = g_strndup (name, strlen (name) - strlen (".desktop"));
+        }
+      g_free (w50_id);
+      g_free (w50_name);
+      g_free (w50_path);
+    }
+  else if (g_str_has_suffix (name, ".w50-desktop"))
+    {
+      id = g_strndup (name, strlen (name) - strlen (".w50-desktop"));
       full_path = g_build_filename (data->tree->priv->path, name, NULL);
+    }
 
+  if (full_path)
+    {
       key_file = g_key_file_new ();
       g_key_file_load_from_file (key_file, full_path, 0, &error);
       if (error)
@@ -305,10 +320,9 @@ walk_visit_func (const char        *f_path,
   if (key_file) {
     WalkItem *item = g_new0 (WalkItem, 1);
     item->key_file = key_file;
-    item->id = g_strndup (name, strlen (name) - strlen (".desktop"));
+    item->id = id;
     data->files_list = g_list_prepend (data->files_list, item);
   }
-
 
   data->n_processed_files++;
 

@@ -1,0 +1,18 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0.49
+Type=Application
+Name=Mahjong
+Comment=game_ap_lmarbles_name_thumb
+Exec=/usr/bin/osso_mahjong.sh
+Icon=tasklaunch_mahjong
+X-Icon-path=/usr/share/pixmaps/
+X-Window-Icon=tn-bookmarks-link
+X-Window-Icon-Dimmed=tn-bookmarks-link-dimmed
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Service=com.nokia.osso_mahjong.startup
+X-Osso-Type=application/x-executable
+StartupWMClass=mahjong_startup
+X-Maemo-Category=applications
+X-Osso-User-Position=8
+

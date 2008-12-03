@@ -1,0 +1,15 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+Name=Maps
+Exec=/usr/bin/nokia-maps /usr/share/nokia-maps/html/index.html
+Icon=general_map
+X-Window-Icon=nokia-maps
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Service=NokiaMaps
+X-Osso-Type=application/x-executable
+Terminal=false
+X-Osso-User-Position=7
+X-Maemo-Category=Main
+

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=0.1
+Type=Application
+Name=Calendar
+Exec=/usr/bin/Calendar
+Icon=qgn_list_calendar
+X-Osso-Service=calendar
+X-Osso-Type=application/x-executable
+MimeType=text/x-ical
+X-Osso-User-Position=3
+X-Maemo-Category=Main
+

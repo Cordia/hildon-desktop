@@ -1,3 +1,50 @@
+2008-12-03  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Hard-coded UI spec for w50. Fixes NB#94416
+	If there's a .w50-desktop file present, it supplants the real .desktop
+	file. This is to present a launcher menu according to the UI spec until
+	every app has been updated.
+
+	* configure.ac:
+	* data/Makefile.am:
+	* data/desktop/Makefile.am: Added .w50-desktop files.
+	* data/desktop/applications.w50-desktop:
+	* data/desktop/bookmark.w50-desktop:
+	* data/desktop/browser.w50-desktop:
+	* data/desktop/calendar.w50-desktop:
+	* data/desktop/camera-ui.w50-desktop:
+	* data/desktop/filemanager.w50-desktop:
+	* data/desktop/hildon-application-manager.w50-desktop:
+	* data/desktop/hildon-control-panel.w50-desktop:
+	* data/desktop/image-viewer.w50-desktop:
+	* data/desktop/mahjong_startup.w50-desktop:
+	* data/desktop/mediaplayer.w50-desktop:
+	* data/desktop/modest.w50-desktop:
+	* data/desktop/nokia-maps.w50-desktop:
+	* data/desktop/osso-addressbook.w50-desktop:
+	* data/desktop/osso-backup.w50-desktop:
+	* data/desktop/osso_calculator.w50-desktop:
+	* data/desktop/osso_lmarbles.w50-desktop:
+	* data/desktop/osso_pdfviewer.w50-desktop:
+	* data/desktop/rhapsody.w50-desktop:
+	* data/desktop/rtcom-call-ui.w50-desktop:
+	* data/desktop/rtcom-messaging-ui.w50-desktop:
+	* data/desktop/worldclock.w50-desktop:
+	* src/launcher/hd-launcher-app.c (HD_DESKTOP_ENTRY_PRESTART_MODE):
+	Changed to X-Maemo-Prestarted.
+	* src/launcher/hd-launcher-item.c (HD_DESKTOP_ENTRY_CATEGORY,
+	  hd_launcher_item_parse_keyfile): Changed to X-Maemo-Category.
+	* src/launcher/hd-launcher-item.h (HD_LAUNCHER_ITEM_DEFAULT_CATEGORY,
+	  HD_LAUNCHER_ITEM_TOP_CATEGORY): Gave a name to the top category,
+	  non-categorized apps go into applications.
+	* src/launcher/hd-launcher-tile.c (hd_launcher_tile_set_icon_name):
+	Use a default icon if the given one was not found.
+	* src/launcher/hd-launcher-tree.c (walk_visit_func):
+	If there's a .w50-desktop file present for an app, ignore the .desktop
+	one.
+	* src/launcher/hd-launcher.c: Place non-categorized apps in default
+	category. Use HD_LAUNCHER_ITEM_TOP_CATEGORY for top level.
+
 2008-12-03  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/Makefile.am: Fixed autoconf warning

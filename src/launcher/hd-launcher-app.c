@@ -42,7 +42,7 @@
 #define HD_DESKTOP_ENTRY_EXEC           "Exec"
 #define HD_DESKTOP_ENTRY_SERVICE        "X-Osso-Service"
 #define HD_DESKTOP_ENTRY_LOADING_IMAGE  "X-App-Loading-Image"
-#define HD_DESKTOP_ENTRY_PRESTART_MODE  "X-Maemo-Prestart"
+#define HD_DESKTOP_ENTRY_PRESTART_MODE  "X-Maemo-Prestarted"
 
 /* DBus names */
 #define OSSO_BUS_ROOT          "com.nokia"

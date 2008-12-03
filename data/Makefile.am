@@ -1,4 +1,4 @@
-SUBDIRS = icons
+SUBDIRS = icons desktop
 
 resdir = $(datadir)/hildon-desktop
 res_DATA = \

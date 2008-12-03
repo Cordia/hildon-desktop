@@ -87,7 +87,7 @@ G_DEFINE_ABSTRACT_TYPE (HdLauncherItem, hd_launcher_item, G_TYPE_OBJECT);
 #define HD_DESKTOP_ENTRY_NAME          "Name"
 #define HD_DESKTOP_ENTRY_ICON          "Icon"
 #define HD_DESKTOP_ENTRY_COMMENT       "Comment"
-#define HD_DESKTOP_ENTRY_CATEGORY      "Category"
+#define HD_DESKTOP_ENTRY_CATEGORY      "X-Maemo-Category"
 #define HD_DESKTOP_ENTRY_TEXT_DOMAIN   "X-Text-Domain"
 #define HD_DESKTOP_ENTRY_NO_DISPLAY    "NoDisplay"
 #define HD_DESKTOP_ENTRY_USER_POSITION "X-Osso-User-Position"
@@ -313,6 +313,9 @@ hd_launcher_item_parse_keyfile (HdLauncherItem *item,
                                           HD_DESKTOP_ENTRY_GROUP,
                                           HD_DESKTOP_ENTRY_CATEGORY,
                                           NULL);
+  if (!priv->category)
+    priv->category = g_strdup (HD_LAUNCHER_ITEM_DEFAULT_CATEGORY);
+
   priv->position = g_key_file_get_integer (key_file,
                                            HD_DESKTOP_ENTRY_GROUP,
                                            HD_DESKTOP_ENTRY_USER_POSITION,

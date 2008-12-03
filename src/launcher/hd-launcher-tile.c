@@ -261,17 +261,26 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
   icon_theme = gtk_icon_theme_get_default();
   info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name, size,
                                     GTK_ICON_LOOKUP_NO_SVG);
-  if (info != NULL)
+  if (info == NULL)
     {
-      const gchar *fname = gtk_icon_info_get_filename(info);
-      priv->icon = clutter_texture_new_from_file(fname, NULL);
-      clutter_actor_set_size (priv->icon, size, size);
-      clutter_actor_set_parent (priv->icon, CLUTTER_ACTOR (tile));
-
-      gtk_icon_info_free(info);
+      /* Try to get the default icon. */
+      g_free (priv->icon_name);
+      priv->icon_name = g_strdup (HD_LAUNCHER_TILE_DEFAULT_ICON);
+      info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name, size,
+                                        GTK_ICON_LOOKUP_NO_SVG);
     }
-  else
-    g_debug("%s: couldn't find icon %s\n", __FUNCTION__, priv->icon_name);
+  if (info == NULL)
+    {
+      g_debug("%s: couldn't find icon %s\n", __FUNCTION__, priv->icon_name);
+      return;
+    }
+
+  const gchar *fname = gtk_icon_info_get_filename(info);
+  priv->icon = clutter_texture_new_from_file(fname, NULL);
+  clutter_actor_set_size (priv->icon, size, size);
+  clutter_actor_set_parent (priv->icon, CLUTTER_ACTOR (tile));
+
+  gtk_icon_info_free(info);
 }
 
 void

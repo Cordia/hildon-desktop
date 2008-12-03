@@ -1,0 +1,15 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.2.26
+Type=Application
+Name=PDF reader
+Comment=pdvi_ap_application_title_thumb
+Exec=/usr/bin/osso_pdfviewer
+Icon=general_pdf
+Categories=Office;Viewer
+MimeType=application/pdf;
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Service=osso_pdfviewer
+X-Osso-Type=application/x-executable
+X-Maemo-Category=applications
+X-Osso-User-Position=4

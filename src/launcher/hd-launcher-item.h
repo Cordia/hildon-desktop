@@ -41,8 +41,12 @@ G_BEGIN_DECLS
 #define HD_LAUNCHER_ITEM_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), HD_TYPE_LAUNCHER_ITEM, HdLauncherItemClass))
 #define HD_IS_LAUNCHER_ITEM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), HD_TYPE_LAUNCHER_ITEM))
 #define HD_LAUNCHER_ITEM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), HD_TYPE_LAUNCHER_ITEM, HdLauncherItemClass))
+
 /* Desktop file entries */
 #define HD_DESKTOP_ENTRY_GROUP         "Desktop Entry"
+/* Standard categories */
+#define HD_LAUNCHER_ITEM_DEFAULT_CATEGORY "applications"
+#define HD_LAUNCHER_ITEM_TOP_CATEGORY     "Top"
 
 typedef enum {
   HD_APPLICATION_LAUNCHER,

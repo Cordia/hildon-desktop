@@ -1,0 +1,30 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+Name=E-mail
+Comment=mcen_ap_name_thumb
+Exec=/usr/bin/modest
+
+X-Osso-Service=com.nokia.modest
+X-Osso-Type=application/x-executable
+X-Osso-User-Position=9
+X-Maemo-Category=Main
+
+Icon=general_email
+X-Window-Icon=qgn_list_messagin
+X-Window-Icon-Dimmed=qgn_list_messagin
+
+StartupWMClass=modest
+
+MimeType=application/x-executable;
+
+#
+# below to be activated when dbus/send to functionality works
+#
+X-Osso-URI-Actions=mailto;
+[X-Osso-URI-Action Handler mailto]
+Method=MailTo
+Name=uri_link_compose_email
+TranslationDomain=osso-uri
+
