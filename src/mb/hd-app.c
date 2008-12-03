@@ -62,6 +62,7 @@ static void
 hd_app_destroy (MBWMObject *this)
 {
   HdApp *app = HD_APP (this);
+  MBWindowManagerClient *client;
 
   if (app->secondary_window && app->leader)
     {
@@ -72,7 +73,6 @@ hd_app_destroy (MBWMObject *this)
   else
     {
       GList *l = app->followers;
-      MBWindowManagerClient *client;
 
       while (l)
 	{
@@ -83,16 +83,17 @@ hd_app_destroy (MBWMObject *this)
 	}
 
       g_list_free (app->followers);
-
-      /* Show the Tasks button again if we made it hidden when we went
-       * fullscreen and the client died in this state. */
-      client = MB_WM_CLIENT (this);
-      if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
-        {
-          HdCompMgr *cmgr = HD_COMP_MGR (client->wmref->comp_mgr);
-          clutter_actor_show (hd_comp_mgr_get_switcher (cmgr));
-        }
     }
+
+    /* Show the Tasks button again if we made it hidden when we went
+     * fullscreen and the client died in this state. */
+    client = MB_WM_CLIENT (this);
+    if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen
+        && mb_wm_get_visible_main_client (client->wmref) == client)
+      {
+        HdCompMgr *cmgr = HD_COMP_MGR (client->wmref->comp_mgr);
+        clutter_actor_show (hd_comp_mgr_get_switcher (cmgr));
+      }
 }
 
 static int
