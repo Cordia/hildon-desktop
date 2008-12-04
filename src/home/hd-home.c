@@ -1071,7 +1071,6 @@ hd_home_do_edit_layout (HdHome *home)
   priv->mode = HD_HOME_MODE_EDIT;
 
   clutter_actor_show (priv->grey_filter);
-  hd_home_show_switches (home);
   hd_home_grab_pointer (home);
 }
 

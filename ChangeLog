@@ -1,3 +1,10 @@
+2008-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view.c (hd_home_view_applet_motion): Show edges of
+	  desktop.
+	  (hd_home_view_applet_release): Hide edges of desktop.
+	* src/home/hd-home.c: Do not show edges if changed in layout mode.
+
 2008-12-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-home.c: 
@@ -10,7 +17,7 @@
 	* src/home/hd-home-view.c (hd_home_view_applet_press): Grab the
 	  pointer so it is easier to move an applet. Update modified time of
 	  an applet.
-	  (hd_home_view_applet_release): Gngrab the pointer.
+	  (hd_home_view_applet_release): Ungrab the pointer.
 
 	  (cmp_applet_modified, hd_home_view_restack_applets): Add function to
 	  restack the applets clutter actors according to the modified time.

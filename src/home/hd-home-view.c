@@ -1013,6 +1013,7 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   gint x, y;
   guint w, h;
 
+  hd_home_show_switches (priv->home);
   g_debug ("Applet motion, %d,%d", event->x, event->y);
 
   /*
@@ -1187,6 +1188,8 @@ hd_home_view_applet_release (ClutterActor       *applet,
       g_object_unref (gconf_client);
       g_free (position_key);
       g_slist_free (position_value);
+
+      hd_home_hide_switches (priv->home);
     }
 
   return TRUE;
