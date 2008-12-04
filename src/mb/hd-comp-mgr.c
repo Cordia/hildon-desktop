@@ -39,6 +39,7 @@
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-window-manager.h>
 #include <matchbox/core/mb-wm-client.h>
+#include <matchbox/theme-engines/mb-wm-theme.h>
 
 #include <X11/extensions/Xcomposite.h>
 #include <X11/extensions/shape.h>
@@ -54,6 +55,7 @@
 
 #define HDCM_UNMAP_DURATION 750
 #define HDCM_BLUR_DURATION 500
+#define HDCM_STATUS_DURATION 500
 #define HDCM_UNMAP_PARTICLES 8
 
 #define HIBERNATION_TIMEMOUT 3000 /* as suggested by 31410#10 */
@@ -73,6 +75,7 @@ static gboolean hd_comp_mgr_memory_limits (guint *pages_used,
 
 typedef struct _HDEffectData
 {
+  MBWMCompMgrClientEvent   event;
   ClutterTimeline          *timeline;
   MBWMCompMgrClutterClient *cclient;
   HdCompMgr                *hmgr;
@@ -329,6 +332,61 @@ on_blur_timeline_new_frame(ClutterTimeline *timeline,
 }
 
 static void
+on_popup_timeline_new_frame(ClutterTimeline *timeline, 
+                            gint frame_num, HDEffectData *data)
+{
+  float amt;
+  ClutterActor *actor, *filler;
+  int status_low, status_high;
+  float status_pos;
+  
+  float smooth_ramp, converge, overshoot;
+  
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+  if (!CLUTTER_IS_ACTOR(actor))
+    return;
+    
+  amt =  (float)clutter_timeline_get_progress(timeline);
+  /* reverse if we're removing this */
+  if (data->event == MBWMCompMgrClientEventUnmap)
+    amt = 1-amt;
+  
+  
+  smooth_ramp = 1.0f - cos(amt*3.141592);   
+  converge = sin(0.5*3.141592*(1-amt));
+  overshoot = (smooth_ramp*0.75)*converge + (1-converge);
+  
+  status_low = -data->geo.height;
+  status_high = data->geo.y;
+  status_pos = status_low*(1-overshoot) + status_high*overshoot;
+  
+  clutter_actor_set_positionu(actor, 
+                             CLUTTER_INT_TO_FIXED(data->geo.x), 
+                             CLUTTER_FLOAT_TO_FIXED(status_pos));
+  clutter_actor_set_opacity(actor, (int)(255*amt)); 
+  
+  /* use a slither of filler to fill in the gap where the menu
+   * has jumped a bit too far up */
+  filler = data->particles[0];
+  if (filler)
+    {
+      if (status_pos<=0)
+        clutter_actor_hide(filler);
+      else
+        {
+          clutter_actor_show(filler);
+          clutter_actor_set_positionu(filler,
+                        CLUTTER_INT_TO_FIXED(data->geo.x),
+                        0);        
+          clutter_actor_set_sizeu(filler,
+                        CLUTTER_INT_TO_FIXED(data->geo.width),
+                        CLUTTER_FLOAT_TO_FIXED(status_pos));
+          clutter_actor_set_opacity(filler, (int)(255*amt)); 
+        }
+    }
+}                            
+
+static void
 on_close_timeline_new_frame(ClutterTimeline *timeline, 
                             gint frame_num, HDEffectData *data)
 {  
@@ -370,7 +428,7 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
   clutter_actor_set_opacity(actor, (int)(255 * (1-amtp)));
   /* do sparkles... */
   for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
-    if ((amtp > 0) && (amtp < 1))
+    if (data->particles[i] && (amtp > 0) && (amtp < 1))
       {    
         /* space particles equally and rotate once */
         float ang = i * 2 * 3.141592f / HDCM_UNMAP_PARTICLES + 
@@ -923,29 +981,35 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 }
 
 static void
-hd_comp_mgr_effect_completed (ClutterActor * actor, HDEffectData *data)
+hd_comp_mgr_effect_completed (ClutterActor* timeline, HDEffectData *data)
 {
   gint i;
   HdCompMgr *hmgr = HD_COMP_MGR (data->hmgr);
   HdCompMgrPrivate *priv = hmgr->priv;
+  ClutterActor *actor;
 
   mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient,
 					MBWMCompMgrClutterClientDontUpdate |
                                         MBWMCompMgrClutterClientEffectRunning);
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);                                        
 
 /*   dump_clutter_tree (CLUTTER_CONTAINER (clutter_stage_get_default()), 0); */
 
   mb_wm_object_unref (MB_WM_OBJECT (data->cclient));
 
-  g_object_unref (actor);
+  if (data->event == MBWMCompMgrClientEventUnmap && actor)
+    {
+      ClutterActor *parent = clutter_actor_get_parent(actor);
+      if (CLUTTER_IS_CONTAINER(parent))
+        clutter_container_remove_actor( CLUTTER_CONTAINER(parent), actor );
+    }
+  g_object_unref ( timeline );
 
   priv->unmap_effect_running--;
   
-  g_object_unref (data->timeline);
-  
   for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
     if (data->particles[i])
-      clutter_actor_destroy(data->particles[i]);
+      clutter_actor_destroy(data->particles[i]);  
 
   hd_comp_mgr_sync_stacking (hmgr);
 
@@ -953,19 +1017,88 @@ hd_comp_mgr_effect_completed (ClutterActor * actor, HDEffectData *data)
 };
 
 static void
-hd_comp_mgr_effect (MBWMCompMgr                *mgr,
-                    MBWindowManagerClient      *c,
-                    MBWMCompMgrClientEvent      event)
+hd_comp_mgr_effect_popup(MBWMCompMgr                *mgr,
+                         MBWindowManagerClient      *c,
+                         MBWMCompMgrClientEvent     event)
+{
+  HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
+  MBWMCompMgrClutterClient * cclient;
+  ClutterActor             * actor;        
+  
+    {
+      HDEffectData             * data;
+      ClutterGeometry            geo;
+      ClutterColor col;
+      
+      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      if (!actor)
+        return;
+      clutter_actor_get_geometry(actor, &geo);
+
+      /* Need to store also pointer to the manager, as by the time
+       * the effect finishes, the back pointer in the cm_client to
+       * MBWindowManagerClient is not longer valid/set.
+       */
+      data = g_new0 (HDEffectData, 1);
+      data->event = event;
+      data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+      data->hmgr = HD_COMP_MGR (mgr);
+      data->timeline = g_object_ref(
+                clutter_timeline_new_for_duration (HDCM_STATUS_DURATION) );                                               
+      g_signal_connect (data->timeline, "new-frame",
+                            G_CALLBACK (on_popup_timeline_new_frame), data);
+      g_signal_connect (data->timeline, "completed",
+                            G_CALLBACK (hd_comp_mgr_effect_completed), data);
+      data->geo = geo;
+
+      mb_wm_comp_mgr_clutter_client_set_flags (cclient,
+                                  MBWMCompMgrClutterClientDontUpdate |
+                                  MBWMCompMgrClutterClientEffectRunning);                                  
+      priv->unmap_effect_running++;
+      
+      /* Add actor for the background when we pop a bit too far */      
+      data->particles[0] = clutter_rectangle_new();      
+      clutter_actor_hide(data->particles[0]);
+      clutter_container_add_actor(
+                CLUTTER_CONTAINER(clutter_actor_get_parent(actor)),
+                data->particles[0]);
+      hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL, 
+                                  &col);
+      clutter_rectangle_set_color(CLUTTER_RECTANGLE(data->particles[0]),
+                                  &col);
+
+      /* first call to stop flicker */
+      on_popup_timeline_new_frame(data->timeline, 0, data);
+      clutter_timeline_start (data->timeline);
+    }  
+}
+
+static void
+hd_comp_mgr_effect_map (MBWMCompMgr                *mgr,
+                        MBWindowManagerClient      *c)
+{
+  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
+/*  HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
+  MBWMCompMgrClutterClient * cclient;
+  ClutterActor             * actor;*/        
+  
+  if (c_type == HdWmClientTypeStatusMenu)
+    hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventMap);
+}
+
+static void
+hd_comp_mgr_effect_unmap (MBWMCompMgr                *mgr,
+                          MBWindowManagerClient      *c)
 {
   MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
   HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClutterClient * cclient;
-  ClutterActor             * actor;
+  ClutterActor             * actor;  
 
-  if (event != MBWMCompMgrClientEventUnmap)
-    return;
-
-  if (c_type == MBWMClientTypeApp)
+  if (c_type == HdWmClientTypeStatusMenu)
+    hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventUnmap);
+  else if (c_type == MBWMClientTypeApp)
     {
       HDEffectData             * data;
       ClutterGeometry            geo;
@@ -991,6 +1124,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
        * MBWindowManagerClient is not longer valid/set.
        */
       data = g_new0 (HDEffectData, 1);
+      data->event = MBWMCompMgrClientEventUnmap;
       data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
       data->hmgr = HD_COMP_MGR (mgr);
       data->timeline = g_object_ref(
@@ -1011,13 +1145,17 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                 g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL), 0);                    
       for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
         {    
-          if (i>0)
+          if (i>0 && data->particles[0])
             data->particles[i] = clutter_clone_texture_new(
                                     CLUTTER_TEXTURE(data->particles[0]));
-          clutter_actor_set_anchor_point_from_gravity(data->particles[i],
+          if (data->particles[i])
+            {
+              clutter_actor_set_anchor_point_from_gravity(data->particles[i],
                                                 CLUTTER_GRAVITY_CENTER);
-          clutter_container_add_actor(CLUTTER_CONTAINER(stage), 
-                data->particles[i]);
+              clutter_container_add_actor(CLUTTER_CONTAINER(stage), 
+                                          data->particles[i]);
+              clutter_actor_hide(data->particles[i]);
+            }
         }
 
       priv->unmap_effect_running++;
@@ -1038,6 +1176,20 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
         return;
       hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
     }
+}
+
+static void
+hd_comp_mgr_effect (MBWMCompMgr                *mgr,
+                    MBWindowManagerClient      *c,
+                    MBWMCompMgrClientEvent      event)
+{
+  /*MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
+  g_debug("hd_comp_mgr_effect(mgr, %d, %d)", c_type, event);*/
+
+  if (event == MBWMCompMgrClientEventUnmap)
+    hd_comp_mgr_effect_unmap(mgr, c);
+  if (event == MBWMCompMgrClientEventMap)
+    hd_comp_mgr_effect_map(mgr, c);
 }
 
 void

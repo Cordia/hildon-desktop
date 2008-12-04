@@ -1318,7 +1318,7 @@ void
 hd_home_add_status_menu (HdHome *home, ClutterActor *sa)
 {
   HdHomePrivate *priv = home->priv;
-  ClutterActor *switcher;
+  ClutterActor *switcher, *stage;
 
   g_debug ("hd_home_add_status_menu, sa=%p\n", sa);
 
@@ -1326,7 +1326,10 @@ hd_home_add_status_menu (HdHome *home, ClutterActor *sa)
   hd_switcher_add_status_menu (HD_SWITCHER (switcher), sa);
 
   clutter_actor_unparent (sa);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group), sa);
+  stage = clutter_stage_get_default();
+  clutter_container_add_actor (CLUTTER_CONTAINER (stage), sa);
+  
+  hd_comp_mgr_blur_home(HD_COMP_MGR (priv->comp_mgr), TRUE);
 }
 
 void
@@ -1340,7 +1343,11 @@ hd_home_remove_status_menu (HdHome *home, ClutterActor *sa)
   switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
   hd_switcher_remove_status_menu (HD_SWITCHER (switcher), sa);
 
-  clutter_container_remove_actor (CLUTTER_CONTAINER (priv->control_group), sa);
+  hd_comp_mgr_blur_home(HD_COMP_MGR (priv->comp_mgr), FALSE);
+  /* The removal animation will now take care of the actor at the
+   * end of the animation...
+   clutter_container_remove_actor (CLUTTER_CONTAINER (priv->control_group), sa);
+   */
 }
 
 void
