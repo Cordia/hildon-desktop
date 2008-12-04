@@ -1,3 +1,18 @@
+2008-12-04  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-switcher.c
+	* src/home/hd-home.c
+	* src/home/hd-task-navigator.c
+	* src/home/hd-task-navigator.h
+	* src/mb/hd-comp-mgr.c
+	* src/mb/hd-comp-mgr.h:
+	Allowed main blur to zoom by different amounts (0 for status + dialogs,
+        normal for switcher + launcher. Added popup effect for dialogs and 
+	blurring of background.
+
+	* src/tidy/tidy-blur-group.c
+	* src/tidy/tidy-blur-group.h: Added function to get zoom amount
+
 2008-12-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-app.c: Don't accept focus when the clutter actor is hidden.

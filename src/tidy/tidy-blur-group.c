@@ -533,6 +533,24 @@ void tidy_blur_group_set_zoom(ClutterActor *blur_group, float zoom)
 }
 
 /**
+ * tidy_blur_group_get_zoom:
+ *
+ * Get how far to zoom in on what has been blurred
+ * 1=normal, 0.5=out, 2=double-size 
+ */
+float tidy_blur_group_get_zoom(ClutterActor *blur_group)
+{
+  TidyBlurGroupPrivate *priv;
+  
+  if (!TIDY_IS_BLUR_GROUP(blur_group))
+    return 1.0f;
+    
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
+ 
+  return priv->zoom;        
+}
+
+/**
  * tidy_blur_group_set_use_alpha:
  *
  * Sets whether to use an alpha channel in the textures used for blurring.

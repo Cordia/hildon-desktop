@@ -11,8 +11,18 @@
                              HdTaskNavigator)
 
 /* Adds nothing to its parent. */
-typedef ClutterGroupClass HdTaskNavigatorClass;
-typedef ClutterGroup HdTaskNavigator;
+typedef struct _HdTaskNavigator HdTaskNavigator;
+typedef struct _HdTaskNavigatorClass HdTaskNavigatorClass;
+
+struct _HdTaskNavigator
+{
+  ClutterGroup             parent;
+};
+
+struct _HdTaskNavigatorClass
+{
+  ClutterGroupClass        parent_class;
+};
 
 GType            hd_task_navigator_get_type  (void);
 HdTaskNavigator *hd_task_navigator_new       (void);

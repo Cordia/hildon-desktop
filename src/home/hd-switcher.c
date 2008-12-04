@@ -513,7 +513,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
         hd_home_grab_pointer (home);
 
       /* blur out the background */
-      hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), TRUE);
+      hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), TRUE, 1);
     }
   else if (priv->showing_launcher ||
 	   (!priv->showing_switcher && priv->switcher_mode))
@@ -775,8 +775,14 @@ hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
   ClutterActor *parent;
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   HdTaskNavigator *navigator = HD_TASK_NAVIGATOR (priv->switcher_group);
-
-  g_return_if_fail (mbwmc->transient_for);
+  
+  g_return_if_fail (mbwmc->transient_for);  
+  
+  /* put this dialog in the foreground and blur the background */ 
+  if (!hd_switcher_showing_switcher (switcher))
+    clutter_actor_reparent(dialog, clutter_stage_get_default());  
+  hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), TRUE, 0);
+  
   parent = mb_wm_comp_mgr_clutter_client_get_actor (
        MB_WM_COMP_MGR_CLUTTER_CLIENT (mbwmc->transient_for->cm_client));
   hd_task_navigator_add_dialog (navigator, parent, dialog);
@@ -834,6 +840,10 @@ hd_switcher_remove_dialog (HdSwitcher * switcher,
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   HdTaskNavigator *group = HD_TASK_NAVIGATOR (priv->switcher_group);
   hd_task_navigator_remove_dialog (group, dialog);
+  
+  /* put this dialog in the foreground and unblur the background.
+   * FIXME: Can this happen while in the task navigator */ 
+  hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), FALSE, 0);
 }
 
 /* Called when #HdTaskNavigator has finished removing a thumbnail
@@ -989,7 +999,7 @@ hd_switcher_hide_launcher (HdSwitcher *switcher)
   hd_launcher_hide ();
 
   /* get background back after it has been blurred*/
-  hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), FALSE);
+  hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), FALSE, 0);
 }
 
 void

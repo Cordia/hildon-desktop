@@ -125,7 +125,7 @@ gint hd_comp_mgr_request_home_applet_geometry (HdCompMgr  *hmgr,
 					       MBGeometry *geom);
 
 gint hd_comp_mgr_get_home_applet_layer_count (HdCompMgr *hmgr, gint view_id);
-void hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur);
+void hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur, int zoom_level);
 void hd_comp_mgr_unblur(HdCompMgr *hmgr);
 
 void hd_comp_mgr_dump_debug_info (const gchar *tag);

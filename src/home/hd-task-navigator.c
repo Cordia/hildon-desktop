@@ -693,18 +693,6 @@ check_and_scale (ClutterActor * actor, gdouble sx_new, gdouble sy_new)
     ? scale (actor, sx_new, sy_new) : FALSE;
 }
 
-/* Moves @actor between #ClutterContainer:s safely. */
-static void
-reparent (ClutterActor * actor, ClutterActor * new_parent,
-          ClutterActor * old_parent)
-{
-  /* Removing an actor from a group unreferences it.
-   * Make sure it's not destroyed accidentally. */
-  g_object_ref (actor);
-  clutter_container_remove_actor (CLUTTER_CONTAINER (old_parent), actor);
-  clutter_container_add_actor (CLUTTER_CONTAINER (new_parent), actor);
-  g_object_unref (actor);
-}
 /* Clutter utilities }}} */
 
 /* Navigator utilities {{{ */
@@ -720,7 +708,7 @@ make_background_blurred (gboolean blurred)
   g_return_if_fail (HD_IS_SWITCHER (switcher));
   g_object_get (G_OBJECT (switcher), "comp-mgr", &cmgr, NULL);
   g_return_if_fail (cmgr);
-  hd_comp_mgr_blur_home (cmgr, blurred);
+  hd_comp_mgr_blur_home (cmgr, blurred, blurred ? 1 : 0);
 }  
 
 /* Tells whether we're in switcher view view. */
@@ -1191,16 +1179,12 @@ claim_win (Thumbnail * thumb)
    * appearing in the background if it's added in switcher mode.
    */
   thumb->parent = clutter_actor_get_parent (thumb->apwin);
-  reparent (thumb->apwin, thumb->prison, thumb->parent);
+  clutter_actor_reparent(thumb->apwin, thumb->prison);
   if (thumb->dialogs)
       for (i = 0; i < thumb->dialogs->len; i++)
         { /* Do the same to .dialogs; their position is already right. */
           dialog = thumb->dialogs->pdata[i];
-          if (clutter_actor_get_parent (dialog) == thumb->parent)
-            reparent (dialog, thumb->prison, thumb->parent);
-          else /* This would be a problem when we release_win() because we're
-                * lazy and don't want to track @dialog's parent separately. */
-            g_critical ("dialog %p has unexpected parent", dialog);
+          clutter_actor_reparent(dialog, thumb->prison);          
         }
 
   /* Load the video screenshot and place its actor in the hierarchy. */
@@ -1263,7 +1247,7 @@ release_win (const Thumbnail * thumb)
 {
   /* If we don't hide after reparenting, having clicked the background
    * of the switcher .apwin will be shown in home view. */
-  reparent (thumb->apwin, thumb->parent, thumb->prison);
+  clutter_actor_reparent(thumb->apwin, thumb->parent);
   clutter_actor_hide (thumb->apwin);
 
   /* Do the same to .dialogs. */
@@ -1277,7 +1261,7 @@ release_win (const Thumbnail * thumb)
           dialog = thumb->dialogs->pdata[i];
           if (clutter_actor_get_parent (dialog) == thumb->prison)
             {
-              reparent (dialog, thumb->parent, thumb->prison);
+              clutter_actor_reparent(dialog, thumb->parent);
               clutter_actor_hide (dialog);
             }
         }
@@ -2044,7 +2028,7 @@ hd_task_navigator_remove_dialog (HdTaskNavigator * self,
     return;
 
   if (hd_task_navigator_is_active (self))
-    reparent (dialog, thumb->parent, thumb->prison);
+    clutter_actor_reparent(dialog, thumb->parent);
 
   g_object_unref (dialog);
   g_ptr_array_remove_index (thumb->dialogs, i);
@@ -2071,9 +2055,8 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
 
   /* Claim @dialog now if we're active. */
   if (hd_task_navigator_is_active (self))
-    { /* We don't want to track @dialog's parent separately. */
-      g_return_if_fail (clutter_actor_get_parent (dialog) == thumb->parent);
-      reparent (dialog, thumb->prison, thumb->parent);
+    { 
+      clutter_actor_reparent (dialog, thumb->prison);
     }
 
   /* Insert @dialog at thumb->dialog[i].  glib doesn't have a function
