@@ -1,5 +1,9 @@
 2008-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Update changelog.
+
+2008-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-home-view.c (hd_home_view_applet_motion): Show edges of
 	  desktop.
 	  (hd_home_view_applet_release): Hide edges of desktop.
@@ -10,7 +14,7 @@
 	* src/home/hd-home.c: 
 	* src/mb/hd-comp-mgr.c: Made status menu blur out the background
 	(had to move to front of stage first) and added pop-up animation 
-	for status menu
+	for status menu. Fixes NB#93217
 
 2008-12-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
