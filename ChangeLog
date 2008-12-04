@@ -1,3 +1,10 @@
+2008-12-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-app.c: Don't accept focus when the clutter actor is hidden.
+	  The switcher has an unfortunate habit of hiding actors, about which
+	  matchbox knows nothing and may try to transfer focus to an invisible
+	  client when another is closed.
+
 2008-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Update changelog.
