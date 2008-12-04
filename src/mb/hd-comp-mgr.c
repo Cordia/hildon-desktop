@@ -82,7 +82,7 @@ typedef struct _HDEffectData
   /* original/expected position of application/menu */
   ClutterGeometry           geo;
   /* Any extra particles if they are used for this effect */
-  ClutterActor             *particles[HDCM_UNMAP_PARTICLES];             
+  ClutterActor             *particles[HDCM_UNMAP_PARTICLES];
 } HDEffectData;
 
 #define HD_EFFECT_PARTICLE "white-particle.png"
@@ -94,10 +94,10 @@ struct HdCompMgrPrivate
   ClutterActor          *switcher_group;
   ClutterActor          *home;
   /* blurring for home group */
-  ClutterActor          *blur_group; 
+  ClutterActor          *blur_group;
   ClutterTimeline       *blur_timeline;
   /* because we don't seem to be able to use the timeline? */
-  float                  blur_amt; 
+  float                  blur_amt;
   float                  blur_from, blur_to;
   float                  blurzoom_from, blurzoom_to;
 
@@ -308,37 +308,37 @@ hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient)
 }
 
 static void
-on_blur_timeline_new_frame(ClutterTimeline *timeline, 
+on_blur_timeline_new_frame(ClutterTimeline *timeline,
                            gint frame_num, gpointer data)
 {
   HdCompMgr *hmgr;
   gint frames;
-  HdCompMgrPrivate *priv;       
-  float amt, blur_amt, smooth;  
-        
+  HdCompMgrPrivate *priv;
+  float amt, blur_amt, smooth;
+
   if (!HD_IS_COMP_MGR(data))
     return;
-    
+
   hmgr = HD_COMP_MGR(data);
   priv = hmgr->priv;
 
   frames = clutter_timeline_get_n_frames(priv->blur_timeline);
   amt = frame_num / (float)frames;
   smooth = (1.0f - cos(amt*3.141592f)) * 0.5f;
-  
+
   blur_amt = priv->blur_amt = priv->blur_from*(1-amt) + priv->blur_to*amt;
-  
-    
+
+
   tidy_blur_group_set_blur(priv->blur_group, blur_amt*4.0f);
   tidy_blur_group_set_saturation(priv->blur_group, 1.0f - blur_amt*0.75f);
   tidy_blur_group_set_brightness(priv->blur_group, (2.0f-blur_amt) * 0.5f);
-  
-  tidy_blur_group_set_zoom(priv->blur_group, 
+
+  tidy_blur_group_set_zoom(priv->blur_group,
       priv->blurzoom_from*(1-smooth) + priv->blurzoom_to*smooth);
 }
 
 static void
-on_popup_timeline_new_frame(ClutterTimeline *timeline, 
+on_popup_timeline_new_frame(ClutterTimeline *timeline,
                             gint frame_num, HDEffectData *data)
 {
   float amt;
@@ -346,27 +346,27 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
   int status_low, status_high;
   float status_pos;
   gboolean pop_top, pop_bottom; /* pop in from the top, or the bottom */
-  
+
   float smooth_ramp, converge, overshoot;
-  
+
   actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
   if (!CLUTTER_IS_ACTOR(actor))
     return;
-    
-  pop_top = data->geo.y==0;  
+
+  pop_top = data->geo.y==0;
   pop_bottom = data->geo.y+data->geo.height==480;
   amt =  (float)clutter_timeline_get_progress(timeline);
   /* reverse if we're removing this */
   if (data->event == MBWMCompMgrClientEventUnmap)
     amt = 1-amt;
-  
-  
-  smooth_ramp = 1.0f - cos(amt*3.141592);   
+
+
+  smooth_ramp = 1.0f - cos(amt*3.141592);
   converge = sin(0.5*3.141592*(1-amt));
   overshoot = (smooth_ramp*0.75)*converge + (1-converge);
 
   if (pop_top)
-    {  
+    {
       status_low = -data->geo.height;
       status_high = data->geo.y;
     }
@@ -381,12 +381,12 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
       status_high = data->geo.y;
     }
   status_pos = status_low*(1-overshoot) + status_high*overshoot;
-  
-  clutter_actor_set_positionu(actor, 
-                             CLUTTER_INT_TO_FIXED(data->geo.x), 
+
+  clutter_actor_set_positionu(actor,
+                             CLUTTER_INT_TO_FIXED(data->geo.x),
                              CLUTTER_FLOAT_TO_FIXED(status_pos));
-  clutter_actor_set_opacity(actor, (int)(255*amt)); 
-  
+  clutter_actor_set_opacity(actor, (int)(255*amt));
+
   /* use a slither of filler to fill in the gap where the menu
    * has jumped a bit too far up */
   filler = data->particles[0];
@@ -400,44 +400,44 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
           clutter_actor_show(filler);
           clutter_actor_set_opacity(filler, (int)(255*amt));
           if (pop_top)
-            {  
+            {
               clutter_actor_set_positionu(filler,
                         CLUTTER_INT_TO_FIXED(data->geo.x),
-                        status_high);        
+                        status_high);
               clutter_actor_set_sizeu(filler,
                         CLUTTER_INT_TO_FIXED(data->geo.width),
                         CLUTTER_FLOAT_TO_FIXED(status_pos-status_high));
             }
           else if (pop_bottom)
-            {  
+            {
               clutter_actor_set_positionu(filler,
                         CLUTTER_INT_TO_FIXED(data->geo.x),
-                        CLUTTER_FLOAT_TO_FIXED(status_pos + data->geo.height));        
+                        CLUTTER_FLOAT_TO_FIXED(status_pos + data->geo.height));
               clutter_actor_set_sizeu(filler,
                         CLUTTER_INT_TO_FIXED(data->geo.width),
                         CLUTTER_FLOAT_TO_FIXED(status_high-status_pos));
             }
         }
     }
-}                            
+}
 
 static void
-on_close_timeline_new_frame(ClutterTimeline *timeline, 
+on_close_timeline_new_frame(ClutterTimeline *timeline,
                             gint frame_num, HDEffectData *data)
-{  
+{
   float amt;
   ClutterActor *actor;
   float amtx, amty, amtp;
   int centrex, centrey;
-  float particle_opacity, particle_radius; 
+  float particle_opacity, particle_radius;
   gint i;
-  
+
   actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
   if (!CLUTTER_IS_ACTOR(actor))
     return;
-    
+
   amt = (float)clutter_timeline_get_progress(timeline);
-  
+
   amtx = 2 - amt*3;
   amty = 1 - amt*3;
   amtp = amt*2 - 1;
@@ -446,30 +446,30 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
   if (amty<0.1) amty=0.1;
   if (amty>1) amty=1;
   if (amtp<0) amtp=0;
-  if (amtp>1) amtp=1;  
+  if (amtp>1) amtp=1;
   /* smooth out movement */
   amtx = (1-cos(amtx * 3.141592)) * 0.5f;
   amty = (1-cos(amty * 3.141592)) * 0.5f;
   particle_opacity = sin(amtp * 3.141592);
   particle_radius = 8 + (1-cos(amtp * 3.141592)) * 32.0f;
-  
+
   centrex =  data->geo.x + data->geo.width / 2 ;
   centrey =  data->geo.y + data->geo.height / 2 ;
   /* set app location and fold up like a turned-off TV */
   clutter_actor_set_scale(actor, amtx, amty);
-  clutter_actor_set_position(actor, 
-                        centrex - data->geo.width * amtx / 2, 
+  clutter_actor_set_position(actor,
+                        centrex - data->geo.width * amtx / 2,
                         centrey - data->geo.height * amty / 2);
   clutter_actor_set_opacity(actor, (int)(255 * (1-amtp)));
   /* do sparkles... */
   for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
     if (data->particles[i] && (amtp > 0) && (amtp < 1))
-      {    
+      {
         /* space particles equally and rotate once */
-        float ang = i * 2 * 3.141592f / HDCM_UNMAP_PARTICLES + 
+        float ang = i * 2 * 3.141592f / HDCM_UNMAP_PARTICLES +
                     amtp * 2 * 3.141592f;
         clutter_actor_show( data->particles[i] );
-        clutter_actor_set_opacity(data->particles[i], 
+        clutter_actor_set_opacity(data->particles[i],
                 (int)(255 * particle_opacity));
         clutter_actor_set_positionu(data->particles[i],
                 CLUTTER_FLOAT_TO_FIXED(centrex +  sin(ang) * particle_radius),
@@ -555,10 +555,10 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   hd_gtk_style_init ();
 
   stage = clutter_stage_get_default ();
-  
+
   /* Create a blur group that will contain the home view, so we
    * can blur out and desaturate the home view */
-   
+
   priv->blur_group = tidy_blur_group_new();
   clutter_actor_set_name (priv->blur_group, "HdCompMgr:blur_group");
   tidy_blur_group_set_use_alpha(priv->blur_group, FALSE);
@@ -569,9 +569,9 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   priv->blur_timeline = clutter_timeline_new_for_duration (HDCM_BLUR_DURATION);
   g_signal_connect (priv->blur_timeline, "new-frame",
                     G_CALLBACK (on_blur_timeline_new_frame), hmgr);
-  priv->blur_amt = 0;  
+  priv->blur_amt = 0;
   priv->blur_from = priv->blur_to = 0;
-  priv->blurzoom_from = priv->blurzoom_to = 0;  
+  priv->blurzoom_from = priv->blurzoom_to = 0;
 
   /*
    * Create the home group before the switcher, so the switcher can
@@ -611,7 +611,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   /* Reparent our comp-mgr-clutter's 'arena' into blur, so we blur the app as well */
   arena = mb_wm_comp_mgr_clutter_get_arena(MB_WM_COMP_MGR_CLUTTER(cmgr));
   if (arena)
-    clutter_actor_reparent(arena, priv->blur_group);  
+    clutter_actor_reparent(arena, priv->blur_group);
 
   /*
    * Create a hash table for hibernating windows.
@@ -1028,7 +1028,7 @@ hd_comp_mgr_effect_completed (ClutterActor* timeline, HDEffectData *data)
   mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient,
 					MBWMCompMgrClutterClientDontUpdate |
                                         MBWMCompMgrClutterClientEffectRunning);
-  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);                                        
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
 
 /*   dump_clutter_tree (CLUTTER_CONTAINER (clutter_stage_get_default()), 0); */
 
@@ -1043,10 +1043,10 @@ hd_comp_mgr_effect_completed (ClutterActor* timeline, HDEffectData *data)
   g_object_unref ( timeline );
 
   priv->unmap_effect_running--;
-  
+
   for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
     if (data->particles[i])
-      clutter_actor_destroy(data->particles[i]);  
+      clutter_actor_destroy(data->particles[i]);
 
   hd_comp_mgr_sync_stacking (hmgr);
 
@@ -1060,13 +1060,13 @@ hd_comp_mgr_effect_popup(MBWMCompMgr                *mgr,
 {
   HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClutterClient * cclient;
-  ClutterActor             * actor;        
-  
+  ClutterActor             * actor;
+
     {
       HDEffectData             * data;
       ClutterGeometry            geo;
       ClutterColor col;
-      
+
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
       if (!actor)
@@ -1082,7 +1082,7 @@ hd_comp_mgr_effect_popup(MBWMCompMgr                *mgr,
       data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
       data->hmgr = HD_COMP_MGR (mgr);
       data->timeline = g_object_ref(
-                clutter_timeline_new_for_duration (HDCM_STATUS_DURATION) );                                               
+                clutter_timeline_new_for_duration (HDCM_STATUS_DURATION) );
       g_signal_connect (data->timeline, "new-frame",
                             G_CALLBACK (on_popup_timeline_new_frame), data);
       g_signal_connect (data->timeline, "completed",
@@ -1091,16 +1091,16 @@ hd_comp_mgr_effect_popup(MBWMCompMgr                *mgr,
 
       mb_wm_comp_mgr_clutter_client_set_flags (cclient,
                                   MBWMCompMgrClutterClientDontUpdate |
-                                  MBWMCompMgrClutterClientEffectRunning);                                  
+                                  MBWMCompMgrClutterClientEffectRunning);
       priv->unmap_effect_running++;
-      
-      /* Add actor for the background when we pop a bit too far */      
-      data->particles[0] = clutter_rectangle_new();      
+
+      /* Add actor for the background when we pop a bit too far */
+      data->particles[0] = clutter_rectangle_new();
       clutter_actor_hide(data->particles[0]);
       clutter_container_add_actor(
                 CLUTTER_CONTAINER(clutter_actor_get_parent(actor)),
                 data->particles[0]);
-      hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL, 
+      hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL,
                                   &col);
       clutter_rectangle_set_color(CLUTTER_RECTANGLE(data->particles[0]),
                                   &col);
@@ -1108,7 +1108,7 @@ hd_comp_mgr_effect_popup(MBWMCompMgr                *mgr,
       /* first call to stop flicker */
       on_popup_timeline_new_frame(data->timeline, 0, data);
       clutter_timeline_start (data->timeline);
-    }  
+    }
 }
 
 static void
@@ -1118,12 +1118,21 @@ hd_comp_mgr_effect_map (MBWMCompMgr                *mgr,
   MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
 /*  HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClutterClient * cclient;
-  ClutterActor             * actor;*/        
-  
+  ClutterActor             * actor;*/
+
   if (c_type == HdWmClientTypeStatusMenu)
     hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventMap);
   else if (c_type == MBWMClientTypeDialog)
     hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventMap);
+
+  if (c_type == MBWMClientTypeApp)
+    {
+      /* Look if it's a stackable window. */
+      HdApp *app = HD_APP (c);
+      if (app->secondary_window)
+        /* FIXME: Transitions. */
+        g_debug ("%s: Mapping secondary app window.\n", __FUNCTION__);
+    }
 }
 
 static void
@@ -1133,21 +1142,31 @@ hd_comp_mgr_effect_unmap (MBWMCompMgr                *mgr,
   MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
   HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClutterClient * cclient;
-  ClutterActor             * actor;  
+  ClutterActor             * actor;
 
   if (c_type == HdWmClientTypeStatusMenu)
     hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventUnmap);
   else if (c_type == MBWMClientTypeApp)
     {
+      HdApp *app;
       HDEffectData             * data;
       ClutterGeometry            geo;
       ClutterActor             * stage;
       gint i;
-      
+
       /* The switcher will do the effect if it's active,
        * don't interfere. */
       if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
         return;
+
+      /* Don't do the unmap transition if it's a secondary. */
+      app = HD_APP (c);
+      if (app->secondary_window)
+        {
+          /* FIXME: Transitions. */
+          g_debug ("%s: Unmapping secondary window.\n", __FUNCTION__);
+          return;
+        }
 
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
@@ -1167,7 +1186,7 @@ hd_comp_mgr_effect_unmap (MBWMCompMgr                *mgr,
       data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
       data->hmgr = HD_COMP_MGR (mgr);
       data->timeline = g_object_ref(
-                clutter_timeline_new_for_duration (HDCM_UNMAP_DURATION) );                                               
+                clutter_timeline_new_for_duration (HDCM_UNMAP_DURATION) );
       g_signal_connect (data->timeline, "new-frame",
                             G_CALLBACK (on_close_timeline_new_frame), data);
       g_signal_connect (data->timeline, "completed",
@@ -1176,14 +1195,14 @@ hd_comp_mgr_effect_unmap (MBWMCompMgr                *mgr,
 
       mb_wm_comp_mgr_clutter_client_set_flags (cclient,
                                   MBWMCompMgrClutterClientDontUpdate |
-                                  MBWMCompMgrClutterClientEffectRunning);                                  
-      
-      stage = clutter_stage_get_default();                                  
-      /* we need to load some actors for this animation... */              
+                                  MBWMCompMgrClutterClientEffectRunning);
+
+      stage = clutter_stage_get_default();
+      /* we need to load some actors for this animation... */
       data->particles[0] = clutter_texture_new_from_file (
-                g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL), 0);                    
+                g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL), 0);
       for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
-        {    
+        {
           if (i>0 && data->particles[0])
             data->particles[i] = clutter_clone_texture_new(
                                     CLUTTER_TEXTURE(data->particles[0]));
@@ -1191,7 +1210,7 @@ hd_comp_mgr_effect_unmap (MBWMCompMgr                *mgr,
             {
               clutter_actor_set_anchor_point_from_gravity(data->particles[i],
                                                 CLUTTER_GRAVITY_CENTER);
-              clutter_container_add_actor(CLUTTER_CONTAINER(stage), 
+              clutter_container_add_actor(CLUTTER_CONTAINER(stage),
                                           data->particles[i]);
               clutter_actor_hide(data->particles[i]);
             }
@@ -1214,7 +1233,7 @@ hd_comp_mgr_effect_unmap (MBWMCompMgr                *mgr,
       if (!actor)
         return;
       hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventUnmap);
-      hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);      
+      hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
     }
 }
 
@@ -1701,13 +1720,13 @@ hd_comp_mgr_get_home_applet_layer_count (HdCompMgr *hmgr, gint view_id)
 void
 hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur, int zoom_level)
 {
-  HdCompMgrPrivate *priv = hmgr->priv;   
-  
+  HdCompMgrPrivate *priv = hmgr->priv;
+
   priv->blur_from = priv->blur_amt;
   priv->blur_to = blur ? 1 : 0;
   priv->blurzoom_from = tidy_blur_group_get_zoom(priv->blur_group);
   priv->blurzoom_to = (8-zoom_level) / 8.0f;
-  
+
   clutter_timeline_rewind(priv->blur_timeline);
   clutter_timeline_start(priv->blur_timeline);
 }
@@ -1715,10 +1734,10 @@ hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur, int zoom_level)
 /* remove all blurring */
 void hd_comp_mgr_unblur(HdCompMgr *hmgr)
 {
-  HdCompMgrPrivate *priv = hmgr->priv;   
-  
+  HdCompMgrPrivate *priv = hmgr->priv;
+
   clutter_timeline_stop(priv->blur_timeline);
-  
+
   priv->blur_from = 0;
   priv->blur_to = 0;
   priv->blurzoom_from = 1;

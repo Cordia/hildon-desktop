@@ -1,3 +1,11 @@
+2008-12-04  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Prevent unmapping transition for secondary stackable windows. This is a
+	temporary fix until the real stackable transitions are added.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_effect_map,
+	hd_comp_mgr_effect_unmap):
+
 2008-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view.c (hd_home_view_applet_motion): Hide close
