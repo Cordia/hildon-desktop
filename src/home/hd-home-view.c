@@ -1014,6 +1014,8 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   guint w, h;
 
   hd_home_show_switches (priv->home);
+  hd_home_hide_applet_buttons (priv->home);
+
   g_debug ("Applet motion, %d,%d", event->x, event->y);
 
   /*
