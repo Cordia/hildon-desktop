@@ -55,7 +55,7 @@
 
 #define HDCM_UNMAP_DURATION 750
 #define HDCM_BLUR_DURATION 500
-#define HDCM_STATUS_DURATION 500
+#define HDCM_POPUP_DURATION 500
 #define HDCM_UNMAP_PARTICLES 8
 
 #define HIBERNATION_TIMEMOUT 3000 /* as suggested by 31410#10 */
@@ -484,11 +484,16 @@ static int  hd_comp_mgr_init (MBWMObject *obj, va_list vap);
 static void hd_comp_mgr_class_init (MBWMObjectClass *klass);
 static void hd_comp_mgr_destroy (MBWMObject *obj);
 static void hd_comp_mgr_register_client (MBWMCompMgr *mgr,
-					 MBWindowManagerClient *c);
+                                         MBWindowManagerClient *c);
 static void hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c);
-static void hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c);
+static void hd_comp_mgr_map_notify 
+                        (MBWMCompMgr *mgr, MBWindowManagerClient *c);
+static void hd_comp_mgr_unmap_notify 
+                        (MBWMCompMgr *mgr, MBWindowManagerClient *c);
 static void hd_comp_mgr_turn_on (MBWMCompMgr *mgr);
 static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c, MBWMCompMgrClientEvent event);
+static void hd_comp_mgr_effect_close_app (MBWMCompMgr                *mgr,
+                                          MBWindowManagerClient      *c);
 static void hd_comp_mgr_restack (MBWMCompMgr * mgr);
 static void hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor);
 
@@ -526,6 +531,7 @@ hd_comp_mgr_class_init (MBWMObjectClass *klass)
   cm_klass->client_event      = hd_comp_mgr_effect;
   cm_klass->turn_on           = hd_comp_mgr_turn_on;
   cm_klass->map_notify        = hd_comp_mgr_map_notify;
+  cm_klass->unmap_notify        = hd_comp_mgr_unmap_notify;
   cm_klass->restack           = hd_comp_mgr_restack;
 
   clutter_klass->client_new   = hd_comp_mgr_client_new;
@@ -1018,6 +1024,30 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 }
 
 static void
+hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
+{
+  HdCompMgrPrivate          * priv = HD_COMP_MGR (mgr)->priv;    
+  MBWMClientType            c_type = MB_WM_CLIENT_CLIENT_TYPE (c);  
+  MBWMCompMgrClutterClient *cclient;
+  
+  cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+        
+  if (HD_IS_NOTE (c) && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
+    {      
+      hd_switcher_remove_notification (HD_SWITCHER (priv->switcher_group),
+                                       HD_NOTE (c));
+    }
+  else if ((c_type == MBWMClientTypeNote || c_type == MBWMClientTypeDialog)
+           && c->transient_for)
+    { /* Remove application-transient dialogs from the switcher. */
+      ClutterActor *actor;
+      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      if (actor)
+        hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
+    }        
+}
+
+static void
 hd_comp_mgr_effect_completed (ClutterActor* timeline, HDEffectData *data)
 {
   gint i;
@@ -1082,7 +1112,7 @@ hd_comp_mgr_effect_popup(MBWMCompMgr                *mgr,
       data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
       data->hmgr = HD_COMP_MGR (mgr);
       data->timeline = g_object_ref(
-                clutter_timeline_new_for_duration (HDCM_STATUS_DURATION) );
+                clutter_timeline_new_for_duration (HDCM_POPUP_DURATION) );
       g_signal_connect (data->timeline, "new-frame",
                             G_CALLBACK (on_popup_timeline_new_frame), data);
       g_signal_connect (data->timeline, "completed",
@@ -1112,129 +1142,87 @@ hd_comp_mgr_effect_popup(MBWMCompMgr                *mgr,
 }
 
 static void
-hd_comp_mgr_effect_map (MBWMCompMgr                *mgr,
-                        MBWindowManagerClient      *c)
-{
-  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
-/*  HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
-  MBWMCompMgrClutterClient * cclient;
-  ClutterActor             * actor;*/
-
-  if (c_type == HdWmClientTypeStatusMenu)
-    hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventMap);
-  else if (c_type == MBWMClientTypeDialog)
-    hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventMap);
-
-  if (c_type == MBWMClientTypeApp)
-    {
-      /* Look if it's a stackable window. */
-      HdApp *app = HD_APP (c);
-      if (app->secondary_window)
-        /* FIXME: Transitions. */
-        g_debug ("%s: Mapping secondary app window.\n", __FUNCTION__);
-    }
-}
-
-static void
-hd_comp_mgr_effect_unmap (MBWMCompMgr                *mgr,
-                          MBWindowManagerClient      *c)
+hd_comp_mgr_effect_close_app (MBWMCompMgr                *mgr,
+                               MBWindowManagerClient      *c)
 {
   MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
   HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClutterClient * cclient;
   ClutterActor             * actor;
 
-  if (c_type == HdWmClientTypeStatusMenu)
-    hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventUnmap);
-  else if (c_type == MBWMClientTypeApp)
+  /* proper app close animation */
+  if (c_type != MBWMClientTypeApp)
+    return;
+    
+  HdApp *app;
+  HDEffectData             * data;
+  ClutterGeometry            geo;
+  ClutterActor             * stage;
+  gint i;
+
+  /* The switcher will do the effect if it's active,
+   * don't interfere. */
+  if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
+    return;
+
+  /* Don't do the unmap transition if it's a secondary. */
+  app = HD_APP (c);
+  if (app->secondary_window)
     {
-      HdApp *app;
-      HDEffectData             * data;
-      ClutterGeometry            geo;
-      ClutterActor             * stage;
-      gint i;
+      /* FIXME: Transitions. */
+      g_debug ("%s: Unmapping secondary window.\n", __FUNCTION__);
+      return;
+    }
 
-      /* The switcher will do the effect if it's active,
-       * don't interfere. */
-      if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
-        return;
+  cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+  if (!actor || !CLUTTER_ACTOR_IS_VISIBLE(actor))
+    return;
+  /* Don't bother for anything tiny */
+  clutter_actor_get_geometry(actor, &geo);
+  if (geo.width<16 || geo.height<16)
+    return;
 
-      /* Don't do the unmap transition if it's a secondary. */
-      app = HD_APP (c);
-      if (app->secondary_window)
-        {
-          /* FIXME: Transitions. */
-          g_debug ("%s: Unmapping secondary window.\n", __FUNCTION__);
-          return;
-        }
-
-      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
-      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-      if (!actor || !CLUTTER_ACTOR_IS_VISIBLE(actor))
-        return;
-      /* Don't bother for anything tiny */
-      clutter_actor_get_geometry(actor, &geo);
-      if (geo.width<16 || geo.height<16)
-        return;
-
-      /* Need to store also pointer to the manager, as by the time
-       * the effect finishes, the back pointer in the cm_client to
-       * MBWindowManagerClient is not longer valid/set.
-       */
-      data = g_new0 (HDEffectData, 1);
-      data->event = MBWMCompMgrClientEventUnmap;
-      data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
-      data->hmgr = HD_COMP_MGR (mgr);
-      data->timeline = g_object_ref(
+  /* Need to store also pointer to the manager, as by the time
+   * the effect finishes, the back pointer in the cm_client to
+   * MBWindowManagerClient is not longer valid/set.
+   */
+  data = g_new0 (HDEffectData, 1);
+  data->event = MBWMCompMgrClientEventUnmap;
+  data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+  data->hmgr = HD_COMP_MGR (mgr);
+  data->timeline = g_object_ref(
                 clutter_timeline_new_for_duration (HDCM_UNMAP_DURATION) );
-      g_signal_connect (data->timeline, "new-frame",
-                            G_CALLBACK (on_close_timeline_new_frame), data);
-      g_signal_connect (data->timeline, "completed",
-                            G_CALLBACK (hd_comp_mgr_effect_completed), data);
-      data->geo = geo;
+  g_signal_connect (data->timeline, "new-frame",
+                    G_CALLBACK (on_close_timeline_new_frame), data);
+  g_signal_connect (data->timeline, "completed",
+                    G_CALLBACK (hd_comp_mgr_effect_completed), data);
+  data->geo = geo;
 
-      mb_wm_comp_mgr_clutter_client_set_flags (cclient,
+  mb_wm_comp_mgr_clutter_client_set_flags (cclient,
                                   MBWMCompMgrClutterClientDontUpdate |
                                   MBWMCompMgrClutterClientEffectRunning);
 
-      stage = clutter_stage_get_default();
-      /* we need to load some actors for this animation... */
-      data->particles[0] = clutter_texture_new_from_file (
-                g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL), 0);
-      for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
-        {
-          if (i>0 && data->particles[0])
-            data->particles[i] = clutter_clone_texture_new(
-                                    CLUTTER_TEXTURE(data->particles[0]));
-          if (data->particles[i])
-            {
-              clutter_actor_set_anchor_point_from_gravity(data->particles[i],
-                                                CLUTTER_GRAVITY_CENTER);
-              clutter_container_add_actor(CLUTTER_CONTAINER(stage),
-                                          data->particles[i]);
-              clutter_actor_hide(data->particles[i]);
-            }
-        }
-
-      priv->unmap_effect_running++;
-
-      clutter_timeline_start (data->timeline);
-    }
-  else if (HD_IS_NOTE (c) && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
+  stage = clutter_stage_get_default();
+  /* we need to load some actors for this animation... */
+  data->particles[0] = clutter_texture_new_from_file (
+           g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL), 0);
+  for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
     {
-      hd_switcher_remove_notification (HD_SWITCHER (priv->switcher_group),
-                                       HD_NOTE (c));
+      if (i>0 && data->particles[0])
+        data->particles[i] = clutter_clone_texture_new(
+                                CLUTTER_TEXTURE(data->particles[0]));
+      if (data->particles[i])
+        {
+          clutter_actor_set_anchor_point_from_gravity(data->particles[i],
+                                                CLUTTER_GRAVITY_CENTER);
+          clutter_container_add_actor(CLUTTER_CONTAINER(stage),
+                                          data->particles[i]);
+          clutter_actor_hide(data->particles[i]);
+        }
     }
-  else if ((c_type == MBWMClientTypeNote || c_type == MBWMClientTypeDialog)
-           && c->transient_for)
-    { /* Remove application-transient dialogs from the switcher. */
-      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
-      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-      if (!actor)
-        return;
-      hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventUnmap);
-      hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
-    }
+  priv->unmap_effect_running++;
+  clutter_timeline_start (data->timeline);
 }
 
 static void
@@ -1242,13 +1230,38 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                     MBWindowManagerClient      *c,
                     MBWMCompMgrClientEvent      event)
 {
-  /*MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
-  g_debug("hd_comp_mgr_effect(mgr, %d, %d)", c_type, event);*/
-
-  if (event == MBWMCompMgrClientEventUnmap)
-    hd_comp_mgr_effect_unmap(mgr, c);
-  if (event == MBWMCompMgrClientEventMap)
-    hd_comp_mgr_effect_map(mgr, c);
+  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
+  /*HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;*/       
+  if (event == MBWMCompMgrClientEventUnmap) 
+    {
+      if (c_type == HdWmClientTypeStatusMenu)
+        hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventUnmap);
+      else if (HD_IS_NOTE(c)  &&
+               HD_NOTE(c)->note_type == HdNoteTypeIncomingEventPreview)
+        hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventUnmap);
+      else if (c_type == MBWMClientTypeDialog)
+        hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventUnmap);
+      else if (c_type == MBWMClientTypeApp)
+        hd_comp_mgr_effect_close_app (mgr, c);
+    }
+  else if (event == MBWMCompMgrClientEventMap)
+    {
+      if (c_type == HdWmClientTypeStatusMenu)
+        hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventMap);
+      else if (c_type == MBWMClientTypeDialog)
+        hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventMap);
+      else if (HD_IS_NOTE(c) &&
+               HD_NOTE(c)->note_type == HdNoteTypeIncomingEventPreview)
+        hd_comp_mgr_effect_popup(mgr, c, MBWMCompMgrClientEventMap);
+      else if (c_type == MBWMClientTypeApp)
+        {
+          /* Look if it's a stackable window. */
+          HdApp *app = HD_APP (c);
+          if (app->secondary_window)
+            /* FIXME: Transitions. */
+            g_debug ("%s: Mapping secondary app window.\n", __FUNCTION__);
+        }
+    }
 }
 
 void

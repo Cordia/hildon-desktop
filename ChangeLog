@@ -1,3 +1,9 @@
+2008-12-05  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	*  src/mb/hd-comp-mgr.c: Removed unmap_notify stuff from the effects
+	  function and put it in its own callback. Added popup animation for
+	  notifications (not the correct one, but it's a good placeholder)
+
 2008-12-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view.c (BACKGROUND_COLOR, background_container,
