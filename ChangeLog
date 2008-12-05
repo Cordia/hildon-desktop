@@ -1,3 +1,10 @@
+2008-12-05  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Hide launcher button when switching to an already open app.
+	Fixes NB#92583
+
+	* src/home/hd-switcher.c (hd_switcher_item_selected):
+
 2008-12-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-app.c: Show the application's actor when it receives focus.

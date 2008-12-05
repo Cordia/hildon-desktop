@@ -617,7 +617,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
 
   /* KIMMO: lower home to show the application */
   hd_comp_mgr_lower_home_actor(HD_COMP_MGR (priv->comp_mgr));
-  
+
   /* We stop the background blur effect suddenly now if it was ongoing */
   hd_comp_mgr_unblur(HD_COMP_MGR (priv->comp_mgr));
 
@@ -645,6 +645,7 @@ static void
 hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor,
                            HdTaskNavigator *navigator)
 {
+  hd_switcher_hide_buttons (switcher);
   hd_task_navigator_zoom_in (navigator, actor,
               (ClutterEffectCompleteFunc) hd_switcher_zoom_in_complete,
               switcher);
@@ -776,9 +777,9 @@ hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
   ClutterActor *parent;
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   HdTaskNavigator *navigator = HD_TASK_NAVIGATOR (priv->switcher_group);
-  
-  g_return_if_fail (mbwmc->transient_for);  
-  
+
+  g_return_if_fail (mbwmc->transient_for);
+
   parent = mb_wm_comp_mgr_clutter_client_get_actor (
        MB_WM_COMP_MGR_CLUTTER_CLIENT (mbwmc->transient_for->cm_client));
   hd_task_navigator_add_dialog (navigator, parent, dialog);
