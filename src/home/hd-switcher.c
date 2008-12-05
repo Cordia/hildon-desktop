@@ -583,6 +583,7 @@ hd_switcher_hide_launcher_after_launch (HdLauncher *launcher,
       hd_switcher_hide_launcher (switcher);
       /* lower home to show the application */
       hd_comp_mgr_lower_home_actor(HD_COMP_MGR (priv->comp_mgr));
+      hd_switcher_setup_buttons (switcher, TRUE);
     }
 }
 

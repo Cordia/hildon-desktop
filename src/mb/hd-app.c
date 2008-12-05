@@ -73,15 +73,15 @@ hd_app_focus (MBWindowManagerClient *client)
   MBWindowManagerClientClass* parent_klass =
     MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
 
-  /* If we're not visible clutter-wise, don't accept focus. */
+  if (!parent_klass->focus (client))
+    return False;
+
+  /* Show our actor (hidden by the switcher) if we accept focus. */
   cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cmgrcc);
   if (actor && !CLUTTER_ACTOR_IS_VISIBLE (actor))
-    return False;
-  else if (parent_klass->focus)
-    return parent_klass->focus (client);
-  else
-    return True;
+    clutter_actor_show (actor);
+  return True;
 }
 
 static void

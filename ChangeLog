@@ -1,3 +1,9 @@
+2008-12-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-app.c: Show the application's actor when it receives focus.
+	  This is a workaround.
+	* src/home/hd-switcher.c: Show the tasks button having launched something.
+
 2008-12-05  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	*  src/mb/hd-comp-mgr.c: Removed unmap_notify stuff from the effects
