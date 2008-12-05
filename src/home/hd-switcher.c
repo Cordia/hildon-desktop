@@ -163,15 +163,6 @@ hd_switcher_class_init (HdSwitcherClass *klass)
 }
 
 static void
-hd_switcher_show_status_area (HdSwitcher *switcher)
-{
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-
-  if (priv->status_area)
-    clutter_actor_show (priv->status_area);
-}
-
-static void
 launcher_back_button_clicked (HdLauncher *launcher,
                               gpointer *data)
 {
@@ -186,8 +177,7 @@ launcher_back_button_clicked (HdLauncher *launcher,
   if (!hd_task_navigator_is_empty (group))
     {
       priv->showing_switcher = TRUE;
-      if (priv->status_area)
-        clutter_actor_hide (priv->status_area);
+      hd_switcher_hide_status_area (HD_SWITCHER (data));
       hd_task_navigator_enter (group);
     }
   else
@@ -477,6 +467,9 @@ hd_switcher_clicked (HdSwitcher *switcher)
   /* Hide Home edit button */
   hd_home_hide_edit_button (home);
 
+  /* Hide the status area */
+  hd_switcher_hide_status_area (switcher);
+
   /*
    * We have the following scenarios:
    *
@@ -529,9 +522,6 @@ hd_switcher_clicked (HdSwitcher *switcher)
         hd_switcher_hide_launcher (switcher);
 
       priv->showing_switcher = TRUE;
-
-      if (priv->status_area)
-        clutter_actor_hide (priv->status_area);
 
       /* Are we in application view?  Then zoom out, otherwise just enter
        * the navigator without animation. */
@@ -701,6 +691,24 @@ hd_switcher_remove_status_menu (HdSwitcher *switcher, ClutterActor *sa)
 
   priv->status_menu = NULL;
   hd_switcher_setup_buttons (switcher, TRUE);
+}
+
+void
+hd_switcher_show_status_area (HdSwitcher *switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  if (priv->status_area)
+    clutter_actor_show (priv->status_area);
+}
+
+void
+hd_switcher_hide_status_area (HdSwitcher *switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  if (priv->status_area)
+    clutter_actor_hide (priv->status_area);
 }
 
 void
@@ -993,6 +1001,8 @@ hd_switcher_hide_launcher (HdSwitcher *switcher)
 
   /* get background back after it has been blurred*/
   hd_comp_mgr_blur_home(HD_COMP_MGR(priv->comp_mgr), FALSE, 0);
+
+  hd_switcher_show_status_area (switcher);
 }
 
 void
@@ -1017,8 +1027,7 @@ hd_switcher_show_menu_button (HdSwitcher * switcher)
   clutter_actor_hide (priv->button_launcher);
   priv->switcher_mode = !priv->switcher_mode;
 
-  if (priv->status_area)
-    clutter_actor_hide (priv->status_area);
+  hd_switcher_hide_status_area (switcher);
 
   clutter_actor_show_all (priv->button_menu);
   clutter_actor_raise_top (priv->button_menu);

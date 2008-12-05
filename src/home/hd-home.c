@@ -1309,7 +1309,8 @@ hd_home_remove_status_area (HdHome *home, ClutterActor *sa)
   switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
   hd_switcher_remove_status_area (HD_SWITCHER (switcher), sa);
 
-  clutter_container_remove_actor (CLUTTER_CONTAINER (priv->control_group), sa);
+/*  clutter_container_remove_actor (CLUTTER_CONTAINER (priv->control_group), sa); */
+  clutter_actor_unparent (sa);
   hd_home_fixup_operator_position (home);
 }
 
@@ -1360,14 +1361,15 @@ hd_home_add_status_area (HdHome *home, ClutterActor *sa)
   switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
   hd_switcher_add_status_area (HD_SWITCHER (switcher), sa);
 
-  clutter_actor_unparent (sa);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group), sa);
+/*  clutter_actor_unparent (sa);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group), sa);*/
+  clutter_actor_reparent (sa, switcher);
 
   hd_home_fixup_operator_position (home);
 
-	g_signal_connect (sa, "notify::allocation",
-			G_CALLBACK (hd_home_status_area_allocation_changed),
-			home);
+  g_signal_connect (sa, "notify::allocation",
+                    G_CALLBACK (hd_home_status_area_allocation_changed),
+                    home);
 }
 
 void

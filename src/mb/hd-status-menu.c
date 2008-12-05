@@ -59,24 +59,12 @@ static int
 hd_status_menu_init (MBWMObject *this, va_list vap)
 {
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
-  MBWindowManager       *wm = client->wmref;
-  MBWindowManagerClient *desktop = wm->desktop;
   MBGeometry             geom;
 
   mb_wm_client_set_layout_hints (client, LayoutPrefPositionFree |
                                  LayoutPrefVisible);
 
-  if (desktop)
-    {
-      printf ("#### making transient to desktop ###\n");
-      mb_wm_client_add_transient (desktop, client);
-      client->stacking_layer = 0;  /* We stack with whatever transient too */
-    }
-  else
-    {
-      printf ("#### no desktop present ####\n");
-      client->stacking_layer = MBWMStackLayerMid;
-    }
+  client->stacking_layer = MBWMStackLayerTopMid;
 
   geom.x      = (800 - 688) / 2;
   geom.y      = 0;

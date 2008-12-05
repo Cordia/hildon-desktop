@@ -114,6 +114,8 @@ struct HdCompMgrPrivate
   gboolean               low_mem         : 1;
 
   gint                   unmap_effect_running;
+
+  MBWindowManagerClient *status_area_client;
 };
 
 /*
@@ -835,6 +837,8 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       sa = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
       hd_home_remove_status_area (HD_HOME (priv->home), sa);
+
+      priv->status_area_client = NULL;
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusMenu)
     {
@@ -926,6 +930,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   else if (ctype == HdWmClientTypeStatusArea)
     {
       hd_home_add_status_area (HD_HOME (priv->home), actor);
+
+      priv->status_area_client = c;
       return;
     }
   else if (ctype == HdWmClientTypeStatusMenu)
@@ -1279,12 +1285,16 @@ hd_comp_mgr_set_show_home (HdCompMgr *hmgr, gboolean show_home)
     ClutterGeometry    geom;
     if (priv->switcher_group)
       clutter_actor_show (priv->switcher_group);
+    if (priv->status_area_client)
+      mb_wm_client_show (priv->status_area_client);
     hd_switcher_get_button_geometry (HD_SWITCHER (priv->switcher_group), &geom);
     hd_comp_mgr_setup_input_viewport (hmgr, &geom, 1);
   } else {
     g_debug ("%s: hide the switcher group", __FUNCTION__);
     if (priv->switcher_group)
       clutter_actor_hide (priv->switcher_group);
+    if (priv->status_area_client)
+      mb_wm_client_hide (priv->status_area_client);
     hd_comp_mgr_setup_input_viewport (hmgr, NULL, 0);
   }
 
@@ -1306,6 +1316,8 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
   MBWindowManagerClient    * highest_fs;
   HdTaskNavigator          *tn;
+
+  g_debug ("%s", __FUNCTION__);
 
   tn = HD_TASK_NAVIGATOR (
         hd_switcher_get_task_navigator (HD_SWITCHER (priv->switcher_group)));

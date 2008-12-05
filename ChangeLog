@@ -1,3 +1,28 @@
+2008-12-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home.c (hd_home_remove_status_area): Unparent status
+	  area.
+	  (hd_home_add_status_area): Add status area to switcher instead of
+	  home.
+	* src/home/hd-switcher.c (launcher_back_button_clicked,
+	  hd_switcher_clicked, hd_switcher_show_status_area,
+	  hd_switcher_hide_status_area, hd_switcher_hide_launcher,
+	  hd_switcher_show_menu_button): Use new hd_switcher_show_status_area and
+	  hd_switcher_hide_status_area functions.
+
+	* src/home/hd-switcher.h: Add hd_switcher_show_status_area and
+	  hd_switcher_hide_status_area.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client,
+	  hd_comp_mgr_map_notify): Store the wm client of the staus area.
+	  (hd_comp_mgr_set_show_home): Do not show the status area wm client
+	  if there is a fullscreen window.
+
+	* src/mb/hd-status-area.c (hd_status_area_init): Use TopMid stacking
+	  layer and remove transiency to desktop.
+	* src/mb/hd-status-menu.c (hd_status_menu_init): Use TopMid stacking
+	  layer and remove transiency to desktop.
+
 2008-12-05  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Hide launcher button when switching to an already open app.
