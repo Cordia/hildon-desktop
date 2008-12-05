@@ -40,6 +40,8 @@
 #include <gconf/gconf-client.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
+#define BACKGROUND_COLOR {0, 0, 0, 0xff}
+
 enum
 {
   SIGNAL_THUMBNAIL_CLICKED,
@@ -64,6 +66,9 @@ struct _HdHomeViewPrivate
 {
   MBWMCompMgrClutter       *comp_mgr;
   HdHome                   *home;
+
+  ClutterActor             *background_container;
+  ClutterActor             *applets_container;
 
   ClutterActor             *background;
   ClutterActor             *background_image;
@@ -384,7 +389,7 @@ static void
 hd_home_view_constructed (GObject *object)
 {
   ClutterActor             *rect;
-  ClutterColor              clr = {0, 0, 0, 0xff};
+  ClutterColor              clr = BACKGROUND_COLOR;
   HdHomeView               *self = HD_HOME_VIEW (object);
   HdHomeViewPrivate        *priv = self->priv;
   MBWindowManager          *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
@@ -394,10 +399,25 @@ hd_home_view_constructed (GObject *object)
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
 
+  priv->background_container = clutter_group_new ();
+  clutter_actor_set_name (priv->background_container, "HdHomeView::background-container");
+  clutter_actor_set_position (priv->background_container, 0, 0);
+  clutter_actor_set_size (priv->background_container, priv->xwidth, priv->xheight);
+  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->background_container);
+
+  priv->applets_container = clutter_group_new ();
+  clutter_actor_set_name (priv->applets_container, "HdHomeView::applets-container");
+  clutter_actor_set_position (priv->applets_container, 0, 0);
+  clutter_actor_set_size (priv->applets_container, priv->xwidth, priv->xheight);
+  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->applets_container);
+
+  /* Raise applets container over background container */
+  clutter_actor_raise (priv->applets_container, priv->background_container);
+
   rect = clutter_rectangle_new_with_color (&clr);
   clutter_actor_set_name (rect, "HdHomeView::background");
   clutter_actor_set_size (rect, priv->xwidth, priv->xheight);
-  clutter_container_add_actor (CLUTTER_CONTAINER (object), rect);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->background_container), rect);
 
   priv->background = rect;
 
@@ -568,22 +588,21 @@ bg_image_set_idle_cb (gpointer data)
 				  (clutter_actor_get_height (actor) -
 				   clutter_actor_get_height (new_bg))/2);
     }
-  clutter_container_add_actor (CLUTTER_CONTAINER (self), new_bg);
-  
+
+  /* Add new background to the background container */
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->background_container), new_bg);
+
+  /* Raise the texture above the solid color */
+  if (priv->background)
+    clutter_actor_raise (new_bg, priv->background);
+
+  /* Remove old background image */
   if (priv->background_image)
     {
       /* make us the same level as the old image */
-      clutter_actor_lower (new_bg, priv->background_image);      
       clutter_actor_destroy (priv->background_image);
     }
   priv->background_image = new_bg;
-  
-  /* remove the background because we don't want it now */
-  if (priv->background) 
-    {
-      clutter_actor_destroy (priv->background);
-      priv->background = 0;
-    }
   
   if (!priv->bg_image_skip_gconf)
     {
@@ -1213,7 +1232,6 @@ hd_home_view_restack_applets (HdHomeView *view)
   HdHomeViewPrivate *priv = view->priv;
   GList             *a;
   GSList            *sorted = NULL, *s;
-  ClutterActor      *top = CLUTTER_ACTOR (view);
 
   for (a = priv->applets; a; a = a->next)
     {
@@ -1227,8 +1245,7 @@ hd_home_view_restack_applets (HdHomeView *view)
       MBWMCompMgrClutterClient *cc = s->data;
       ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor (cc);
 
-      clutter_actor_raise (actor, top);
-      top = actor;
+      clutter_actor_raise_top (actor);
     }
 }
 
@@ -1243,7 +1260,7 @@ hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
    * Reparent the applet to ourselves; note that this automatically
    * gets us the correct position within the view.
    */
-  clutter_actor_reparent (applet, CLUTTER_ACTOR (view));
+  clutter_actor_reparent (applet, priv->applets_container);
   clutter_actor_set_reactive (applet, TRUE);
 
   id = g_signal_connect (applet, "button-release-event",

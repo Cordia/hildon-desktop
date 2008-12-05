@@ -1,3 +1,13 @@
+2008-12-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view.c (BACKGROUND_COLOR, background_container,
+	  applets_container, hd_home_view_constructed, bg_image_set_idle_cb,
+	  hd_home_view_restack_applets, hd_home_view_add_applet): Put the
+	  background into a background container, put all applets into an
+	  applet container and raise the applets container above the
+	  background container. Fixes applets are hidden behind background
+	  bug.
+
 2008-12-05  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-switcher.c
