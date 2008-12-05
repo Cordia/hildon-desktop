@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.9-1~unreleased) unstable; urgency=low
 
   * Gordon: Made status menu blur out the background. Fixes NB#93217
+  * Fix Home background image paths for the new theme package.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  3 Dec 2008 16:50:07 +0200
 

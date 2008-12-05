@@ -6,7 +6,7 @@
       <applyto>/apps/hildon_home/view_0/bg_image</applyto>
       <owner>hildon-desktop</owner>
       <type>string</type>
-      <default>/usr/share/backgrounds/devel1.png</default>
+      <default>/usr/share/themes/default/backgrounds/wallpaper1.png</default>
       <locale name="C">
         <short>Background image for Home view 0</short>
       </locale>
@@ -16,7 +16,7 @@
       <applyto>/apps/hildon_home/view_1/bg_image</applyto>
       <owner>hildon-desktop</owner>
       <type>string</type>
-      <default>/usr/share/backgrounds/devel2.png</default>
+      <default>/usr/share/themes/default/backgrounds/wallpaper2.png</default>
       <locale name="C">
         <short>Background image for Home view 1</short>
       </locale>
@@ -26,7 +26,7 @@
       <applyto>/apps/hildon_home/view_2/bg_image</applyto>
       <owner>hildon-desktop</owner>
       <type>string</type>
-      <default>/usr/share/backgrounds/devel3.png</default>
+      <default>/usr/share/themes/default/backgrounds/wallpaper3.png</default>
       <locale name="C">
         <short>Background image for Home view 2</short>
       </locale>
@@ -36,7 +36,7 @@
       <applyto>/apps/hildon_home/view_3/bg_image</applyto>
       <owner>hildon-desktop</owner>
       <type>string</type>
-      <default>/usr/share/backgrounds/devel4.png</default>
+      <default>/usr/share/themes/default/backgrounds/wallpaper4.png</default>
       <locale name="C">
         <short>Background image for Home view 3</short>
       </locale>
