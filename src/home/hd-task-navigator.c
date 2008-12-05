@@ -1184,7 +1184,11 @@ claim_win (Thumbnail * thumb)
       for (i = 0; i < thumb->dialogs->len; i++)
         { /* Do the same to .dialogs; their position is already right. */
           dialog = thumb->dialogs->pdata[i];
-          clutter_actor_reparent(dialog, thumb->prison);          
+          if (clutter_actor_get_parent (dialog) == thumb->parent) 
+            clutter_actor_reparent(dialog, thumb->prison);
+          else /* This would be a problem when we release_win() because we're 
+                * lazy and don't want to track @dialog's parent separately. */ 
+            g_critical ("dialog %p has unexpected parent", dialog); 
         }
 
   /* Load the video screenshot and place its actor in the hierarchy. */

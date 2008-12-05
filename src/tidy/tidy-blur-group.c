@@ -426,6 +426,7 @@ tidy_blur_group_init (TidyBlurGroup *self)
   priv->blur = 0;
   priv->saturation = 1;
   priv->brightness = 1;
+  priv->zoom = 1;
   priv->use_alpha = TRUE;
   priv->use_mirror = FALSE;
   priv->blur_changed = TRUE;
@@ -470,9 +471,13 @@ void tidy_blur_group_set_blur(ClutterActor *blur_group, float blur)
   
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
   
-  priv->blur_changed |=  priv->blur != blur;
-  priv->blur = blur;
-  clutter_actor_queue_redraw(blur_group); 
+  if (priv->blur != blur)
+    {
+      priv->blur_changed = TRUE;
+      priv->blur = blur;
+      if (CLUTTER_ACTOR_IS_VISIBLE(blur_group))
+        clutter_actor_queue_redraw(blur_group);
+    } 
 }
 
 /**
@@ -489,9 +494,13 @@ void tidy_blur_group_set_saturation(ClutterActor *blur_group, float saturation)
     
   priv = TIDY_BLUR_GROUP(blur_group)->priv; 
   
-  priv->blur_changed |= priv->saturation != saturation;
-  priv->saturation = saturation;
-  clutter_actor_queue_redraw(blur_group); 
+  if (priv->saturation != saturation)
+    {
+      priv->blur_changed = TRUE;
+      priv->saturation = saturation;
+      if (CLUTTER_ACTOR_IS_VISIBLE(blur_group))
+        clutter_actor_queue_redraw(blur_group);
+    } 
 }
 
 /**
@@ -508,8 +517,12 @@ void tidy_blur_group_set_brightness(ClutterActor *blur_group, float brightness)
  
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
   
-  priv->brightness = brightness;
-  clutter_actor_queue_redraw(blur_group); 
+  if (priv->brightness != brightness)
+    {
+      priv->brightness = brightness;
+      if (CLUTTER_ACTOR_IS_VISIBLE(blur_group))
+        clutter_actor_queue_redraw(blur_group);
+    } 
 }
 
 
@@ -528,8 +541,12 @@ void tidy_blur_group_set_zoom(ClutterActor *blur_group, float zoom)
     
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
  
-  priv->zoom = zoom;
-  clutter_actor_queue_redraw(blur_group);        
+  if (priv->zoom != zoom)
+    {
+      priv->zoom = zoom;
+      if (CLUTTER_ACTOR_IS_VISIBLE(blur_group))
+        clutter_actor_queue_redraw(blur_group);
+    }        
 }
 
 /**

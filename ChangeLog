@@ -1,3 +1,15 @@
+2008-12-05  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-switcher.c
+	* src/home/hd-task-navigator.c
+	Reverted changes for blurred backgrounds on dialogs, as they caused
+	problems with the VKB (and any new window that appears after a
+	dialog)
+
+	* src/tidy/tidy-blur-group.c
+	Added variable initialisation and added a few checks to reduce redraws
+	if nothing had changed
+
 2008-12-04  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Prevent unmapping transition for secondary stackable windows. This is a
