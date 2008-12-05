@@ -1286,7 +1286,7 @@ hd_comp_mgr_set_show_home (HdCompMgr *hmgr, gboolean show_home)
     if (priv->switcher_group)
       clutter_actor_show (priv->switcher_group);
     if (priv->status_area_client)
-      mb_wm_client_show (priv->status_area_client);
+      priv->status_area_client->stacking_layer = MBWMStackLayerTopMid;
     hd_switcher_get_button_geometry (HD_SWITCHER (priv->switcher_group), &geom);
     hd_comp_mgr_setup_input_viewport (hmgr, &geom, 1);
   } else {
@@ -1294,7 +1294,7 @@ hd_comp_mgr_set_show_home (HdCompMgr *hmgr, gboolean show_home)
     if (priv->switcher_group)
       clutter_actor_hide (priv->switcher_group);
     if (priv->status_area_client)
-      mb_wm_client_hide (priv->status_area_client);
+      priv->status_area_client->stacking_layer = MBWMStackLayerBottom;
     hd_comp_mgr_setup_input_viewport (hmgr, NULL, 0);
   }
 

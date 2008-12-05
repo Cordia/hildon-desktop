@@ -1,5 +1,10 @@
 2008-12-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_set_show_home): Stack the status
+	area wm client to the bottom instead of hiding it.
+
+2008-12-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-home.c (hd_home_remove_status_area): Unparent status
 	  area.
 	  (hd_home_add_status_area): Add status area to switcher instead of
