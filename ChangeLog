@@ -1,5 +1,11 @@
 2008-12-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/mb/hd-app.c (hd_app_init): Patch from Laszlo to check that the
+	window in the same window group is indeed a stackable window.
+	Fixes: NB#94559
+
+2008-12-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
 	Release 2.2.9
 
 2008-12-05  Jan Arne Petersen  <jpetersen@openismus.com>

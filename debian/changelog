@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.10-1~unreleased) unstable; urgency=low
 
-  * unreleased
+  * Patch from Laszlo to separate stackable windows from other windows in
+    the same group. Fixes: NB#94559
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  8 Dec 2008 10:16:40 +0200
 

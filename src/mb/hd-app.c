@@ -164,9 +164,18 @@ hd_app_init (MBWMObject *this, va_list vap)
             {
               HdApp *h_tmp = HD_APP (c_tmp);
 
-              app->secondary_window = TRUE;
-              app->leader = h_tmp->leader;
-
+	      /*
+	       * If the leader is a stackable window it has to be a valid leader
+	       * (if it is the first in the stack it is its own leader).
+	       */
+	      if (!h_tmp->leader) {
+		g_warning ("Trying to add a secondary stackable window to "
+		    "a non-stackable window leader?");
+		break;
+	      } else {
+                app->secondary_window = TRUE;
+                app->leader = h_tmp->leader;
+	      }
               /*
                * This forces the decors to be redone, taking into account the
                * secondary_window flag.
