@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.9-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.9-1) unstable; urgency=low
 
   * Gordon: Made status menu blur out the background. Fixes NB#93217
   * Fix Home background image paths for the new theme package.
