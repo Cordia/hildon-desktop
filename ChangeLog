@@ -1,3 +1,7 @@
+2008-12-09  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/mb/hd-app.c: set MB_SECONDARY on secondary windows
+
 2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view.c (bg_image_notify, bg_image_dest_height,

@@ -25,6 +25,8 @@
 #include "hd-comp-mgr.h"
 #include "hd-switcher.h"
 
+#include <matchbox/core/mb-wm.h>
+
 #include "launcher/hd-launcher.h"
 
 static void
@@ -163,6 +165,7 @@ hd_app_init (MBWMObject *this, va_list vap)
               c_tmp->window->xwin_group == win_group)
             {
               HdApp *h_tmp = HD_APP (c_tmp);
+	      guint32 one = 1;
 
 	      /*
 	       * If the leader is a stackable window it has to be a valid leader
@@ -176,6 +179,13 @@ hd_app_init (MBWMObject *this, va_list vap)
                 app->secondary_window = TRUE;
                 app->leader = h_tmp->leader;
 	      }
+	      /* Flag it with an X property */
+              XChangeProperty (wm->xdpy, win->xwindow,
+			       wm->atoms[MBWM_ATOM_MB_SECONDARY],
+			       XA_CARDINAL, 32, PropModeReplace,
+			       (unsigned char *) &one,
+			       1);
+
               /*
                * This forces the decors to be redone, taking into account the
                * secondary_window flag.
