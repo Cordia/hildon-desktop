@@ -698,7 +698,7 @@ check_and_scale (ClutterActor * actor, gdouble sx_new, gdouble sy_new)
 /* Navigator utilities {{{ */
 /* Starts blurring/unblurring the home view smoothly. */
 static void
-make_background_blurred (gboolean blurred) 
+make_background_blurred (gboolean blurred)
 {
   HdCompMgr *cmgr;
   HdSwitcher *switcher;
@@ -709,7 +709,7 @@ make_background_blurred (gboolean blurred)
   g_object_get (G_OBJECT (switcher), "comp-mgr", &cmgr, NULL);
   g_return_if_fail (cmgr);
   hd_comp_mgr_blur_home (cmgr, blurred, blurred ? 1 : 0);
-}  
+}
 
 /* Tells whether we're in switcher view view. */
 gboolean
@@ -1184,11 +1184,11 @@ claim_win (Thumbnail * thumb)
       for (i = 0; i < thumb->dialogs->len; i++)
         { /* Do the same to .dialogs; their position is already right. */
           dialog = thumb->dialogs->pdata[i];
-          if (clutter_actor_get_parent (dialog) == thumb->parent) 
+          if (clutter_actor_get_parent (dialog) == thumb->parent)
             clutter_actor_reparent(dialog, thumb->prison);
-          else /* This would be a problem when we release_win() because we're 
-                * lazy and don't want to track @dialog's parent separately. */ 
-            g_critical ("dialog %p has unexpected parent", dialog); 
+          else /* This would be a problem when we release_win() because we're
+                * lazy and don't want to track @dialog's parent separately. */
+            g_critical ("dialog %p has unexpected parent", dialog);
         }
 
   /* Load the video screenshot and place its actor in the hierarchy. */
@@ -1568,13 +1568,15 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
                        -xpos / xscale + thumb->inapwin->x,
                        -ypos / yscale + thumb->inapwin->y,
                        NULL, NULL);
+  clutter_effect_fade(Zoom_effect, thumb->foreground, 0, NULL, NULL);
+  clutter_effect_fade(Zoom_effect, thumb->title, 0, NULL, NULL);
 
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)zoom_in_complete,
                       CLUTTER_ACTOR (self), win);
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)fun, win, funparam);
-                      
+
   make_background_blurred (FALSE);
   return;
 
@@ -1592,7 +1594,7 @@ damage_control:
 void
 hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
                             ClutterEffectCompleteFunc fun, gpointer funparam)
-{ g_debug (__FUNCTION__);        
+{ g_debug (__FUNCTION__);
   guint hthumb;
   const Thumbnail *thumb;
   gdouble sxprison, syprison, sxscroller, syscroller;
@@ -1649,8 +1651,10 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   clutter_actor_set_position  (Scroller,  xscroller,  yscroller);
   clutter_effect_scale (Zoom_effect, Scroller, 1, 1, NULL, NULL);
   clutter_effect_move  (Zoom_effect, Scroller, 0, 0, NULL, NULL);
+  clutter_effect_fade(Zoom_effect, thumb->foreground, 255, NULL, NULL);
+  clutter_effect_fade(Zoom_effect, thumb->title, 255, NULL, NULL);
   add_effect_closure (Zoom_effect_timeline, fun, win, funparam);
-  
+
   make_background_blurred (TRUE);
   return;
 
@@ -2059,7 +2063,7 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
 
   /* Claim @dialog now if we're active. */
   if (hd_task_navigator_is_active (self))
-    { 
+    {
       clutter_actor_reparent (dialog, thumb->prison);
     }
 
@@ -2446,7 +2450,9 @@ hd_task_navigator_init (HdTaskNavigator * self)
   /* Actor hierarchy */
   Scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_actor_set_name (Scroller, "Scroller");
-  clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
+  /* We make the scroller large so it isn't clipped by the
+     * clutter visibility detection code */
+  clutter_actor_set_size (Scroller, SCREEN_WIDTH*8, SCREEN_HEIGHT*8);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), Scroller);
 
   /*
@@ -2536,7 +2542,7 @@ hd_task_navigator_class_init (HdTaskNavigatorClass * klass)
                 0, NULL, NULL, g_cclosure_marshal_VOID__OBJECT,
                 G_TYPE_NONE, 1, CLUTTER_TYPE_ACTOR);
 
-  /* notification_clicked(@hdnote) is emitted when the notification window 
+  /* notification_clicked(@hdnote) is emitted when the notification window
    * is clicked by the user to activate its action. */
   g_signal_new ("notification-clicked", G_TYPE_FROM_CLASS (klass),
                 G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
