@@ -9,9 +9,10 @@
 	  code .
 
 2008-12-09  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-task-navigator.c:
-	  Fixed flicker to background that appeared on zoom in/out, added smooth
-	  fade in + out of application border + title.
+	  Fixed flicker to background that appeared on zoom in/out,
+	  added smooth fade in + out of application border + title.
 
 2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
@@ -22,9 +23,9 @@
 2008-12-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c: hd_comp_mgr_map_notify():
-	  g_return_if_fail(the newly mapped window is the latest in the window stack),
-	  which can happen when we're starting to manage clients.
-	  Mitigates a NULL-pointer dereference.
+	  g_return_if_fail(the newly mapped window is the latest in the
+	  window stack), which can happen when we're starting to manage
+	  clients. Mitigates a NULL-pointer dereference.
 
 2008-12-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
