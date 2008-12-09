@@ -1012,6 +1012,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                     top = MB_WM_COMP_MGR_CLUTTER_CLIENT (MB_WM_CLIENT (l->data)->cm_client);
                     top_actor = mb_wm_comp_mgr_clutter_client_get_actor (top);
                     clutter_actor_hide (top_actor);
+                    g_return_if_fail(l->next != NULL);
                     if (l->next->data == app)
                       { /* We should be the last of the followers. */
                         hd_switcher_replace_window_actor (HD_SWITCHER (priv->switcher_group),
@@ -1816,9 +1817,10 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
   g_debug ("Windows:");
   root = mb_wm_root_window_get (NULL);
   mb_wm_stack_enumerate_reverse (root->wm, mbwmc)
-    g_debug (" client=%p, type=%d, win=0x%lx, name=%s",
+    g_debug (" client=%p, type=%d, win=0x%lx, group=%lx, name=%s",
              mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc),
              mbwmc && mbwmc->window ? mbwmc->window->xwindow : 0,
+             mbwmc && mbwmc->window ? mbwmc->window->xwin_group : 0,
              mbwmc && mbwmc->window ? mbwmc->window->name : "<unset>");
   mb_wm_object_unref (MB_WM_OBJECT (root));
 
