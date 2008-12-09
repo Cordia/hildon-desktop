@@ -199,7 +199,7 @@ static void hd_launcher_constructed (GObject *gobject)
   /* App launch transition */
   priv->launch_image = 0;
   priv->launch_transition = g_object_ref (
-                                clutter_timeline_new_for_duration (750));
+                                clutter_timeline_new_for_duration (400));
   g_signal_connect (priv->launch_transition, "new-frame",
                     G_CALLBACK (hd_launcher_transition_new_frame), gobject);
   priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
