@@ -71,7 +71,6 @@ struct _HdHomeViewPrivate
   ClutterActor             *applets_container;
 
   ClutterActor             *background;
-  ClutterActor             *background_image;
   gchar                    *background_image_file;
   gchar                    *processed_bg_image_file;
   HdHomeViewBackgroundMode  background_mode;
@@ -388,7 +387,6 @@ hd_home_view_gconf_bgstyle_notify (GConfClient *client,
 static void
 hd_home_view_constructed (GObject *object)
 {
-  ClutterActor             *rect;
   ClutterColor              clr = BACKGROUND_COLOR;
   HdHomeView               *self = HD_HOME_VIEW (object);
   HdHomeViewPrivate        *priv = self->priv;
@@ -414,12 +412,12 @@ hd_home_view_constructed (GObject *object)
   /* Raise applets container over background container */
   clutter_actor_raise (priv->applets_container, priv->background_container);
 
-  rect = clutter_rectangle_new_with_color (&clr);
-  clutter_actor_set_name (rect, "HdHomeView::background");
-  clutter_actor_set_size (rect, priv->xwidth, priv->xheight);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->background_container), rect);
-
-  priv->background = rect;
+  /* By default the background is a black rectangle */
+  priv->background = clutter_rectangle_new_with_color (&clr);
+  clutter_actor_set_name (priv->background, "HdHomeView::background");
+  clutter_actor_set_size (priv->background, priv->xwidth, priv->xheight);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->background_container),
+                               priv->background);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (object), TRUE);
 
@@ -556,53 +554,44 @@ get_bg_image_processed_name (HdHomeView *view, const gchar *filename)
 static gboolean
 bg_image_set_idle_cb (gpointer data)
 {
-  ClutterActor      *new_bg;
-  
   HdHomeView	    *self  = HD_HOME_VIEW (data);
   HdHomeViewPrivate *priv  = self->priv;
+  ClutterActor      *new_bg;
+  ClutterColor       clr = BACKGROUND_COLOR;
   ClutterActor      *actor = CLUTTER_ACTOR (self);
   GError            *error = NULL;
   
   new_bg = clutter_texture_new_from_file (priv->processed_bg_image_file,
                                           &error);
-  
+
   if (!new_bg)
     {
       g_warning ("Error loading background: %s", error->message);
       g_error_free (error);
-      return FALSE;
-    }
 
-  if (priv->background_mode == HDHV_BACKGROUND_TILED)
-    {
-      g_object_set (new_bg, "repeat-x", TRUE, "repeat-y", TRUE, NULL);
-      clutter_actor_set_size (new_bg,
-			      clutter_actor_get_width (actor),
-			      clutter_actor_get_height (actor));
+      /* Add a black background */
+      new_bg = clutter_rectangle_new_with_color (&clr);
+      clutter_actor_set_size (new_bg, priv->xwidth, priv->xheight);
     }
   else
     {
       clutter_actor_set_position (new_bg,
-				  (clutter_actor_get_width (actor) -
-				   clutter_actor_get_width (new_bg))/2,
-				  (clutter_actor_get_height (actor) -
-				   clutter_actor_get_height (new_bg))/2);
+                                  (clutter_actor_get_width (actor) -
+                                   clutter_actor_get_width (new_bg))/2,
+                                  (clutter_actor_get_height (actor) -
+                                   clutter_actor_get_height (new_bg))/2);
     }
+
+  clutter_actor_set_name (new_bg, "HdHomeView::background");
 
   /* Add new background to the background container */
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->background_container), new_bg);
 
-  /* Raise the texture above the solid color */
+ /* Remove the old background (color or image) */
   if (priv->background)
-    clutter_actor_raise (new_bg, priv->background);
+    clutter_actor_destroy (priv->background);
 
-  /* Remove old background image */
-  if (priv->background_image)
-    {
-      /* make us the same level as the old image */
-      clutter_actor_destroy (priv->background_image);
-    }
-  priv->background_image = new_bg;
+  priv->background = new_bg;
   
   if (!priv->bg_image_skip_gconf)
     {
@@ -1372,9 +1361,6 @@ ClutterActor *
 hd_home_view_get_background (HdHomeView *view)
 {
   HdHomeViewPrivate *priv = view->priv;
-
-  if (priv->background_image)
-    return priv->background_image;
 
   return priv->background;
 }
