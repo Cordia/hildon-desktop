@@ -1,3 +1,13 @@
+2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view.c (bg_image_notify, bg_image_dest_height,
+	  hd_home_view_allocate, hd_home_view_dispose,
+	  get_bg_image_processed_name, process_bg_image_thread,
+	  hd_home_view_refresh_bg, hd_home_view_set_property,
+	  hd_home_view_get_property, hd_home_view_set_background_image):
+	* src/home/hd-home-view.h (priv): Remove unused color/background mode
+	  code .
+
 2008-12-09  Gordon Williams <gordon.williams@collabora.co.uk>
 	* src/home/hd-task-navigator.c:
 	  Fixed flicker to background that appeared on zoom in/out, added smooth

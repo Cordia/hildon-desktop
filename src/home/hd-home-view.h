@@ -42,15 +42,6 @@ G_BEGIN_DECLS
 #define HD_IS_HOME_VIEW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), HD_TYPE_HOME_VIEW))
 #define HD_HOME_VIEW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), HD_TYPE_HOME_VIEW, HdHomeViewClass))
 
-typedef enum _HdHomeViewBackgroundMode
-{
-  HDHV_BACKGROUND_STRETCHED,
-  HDHV_BACKGROUND_CENTERED,
-  HDHV_BACKGROUND_SCALED,
-  HDHV_BACKGROUND_TILED,
-  HDHV_BACKGROUND_CROPPED,
-} HdHomeViewBackgroundMode;
-
 typedef struct _HdHomeView        HdHomeView;
 typedef struct _HdHomeViewClass   HdHomeViewClass;
 typedef struct _HdHomeViewPrivate HdHomeViewPrivate;
@@ -73,12 +64,7 @@ struct _HdHomeView
 
 GType hd_home_view_get_type (void);
 
-void hd_home_view_set_background_color (HdHomeView *view, ClutterColor *color);
-
 void hd_home_view_set_background_image (HdHomeView *view, const gchar * path);
-
-void hd_home_view_set_background_mode (HdHomeView               *view,
-				       HdHomeViewBackgroundMode  mode);
 
 void hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on);
 

@@ -56,7 +56,6 @@ enum
 {
   PROP_COMP_MGR = 1,
   PROP_HOME,
-  PROP_BACKGROUND_COLOR,
   PROP_BACKGROUND_IMAGE,
   PROP_BACKGROUND_MODE,
   PROP_ID,
@@ -73,7 +72,6 @@ struct _HdHomeViewPrivate
   ClutterActor             *background;
   gchar                    *background_image_file;
   gchar                    *processed_bg_image_file;
-  HdHomeViewBackgroundMode  background_mode;
 
   gint                      xwidth;
   gint                      xheight;
@@ -92,9 +90,7 @@ struct _HdHomeViewPrivate
 
   guint                     capture_cb;
   
-  guint                     bg_color_notify;
   guint                     bg_image_notify;
-  guint                     bg_style_notify;
   gboolean		    bg_image_skip_gconf;
   
   GThread                  *bg_image_thread;
@@ -120,9 +116,8 @@ static void hd_home_view_get_property (GObject      *object,
 
 static void hd_home_view_constructed (GObject *object);
 
-static void hd_home_view_refresh_bg (HdHomeView		      *self,
-				     gchar		      *image,
-				     HdHomeViewBackgroundMode  mode);
+static void hd_home_view_refresh_bg (HdHomeView	 *self,
+				     const gchar *image);
 
 G_DEFINE_TYPE (HdHomeView, hd_home_view, CLUTTER_TYPE_GROUP);
 
@@ -138,8 +133,7 @@ hd_home_view_allocate (ClutterActor          *actor,
   if ((CLUTTER_UNITS_TO_INT (box->x2 - box->x1) != priv->bg_image_dest_width) ||
       (CLUTTER_UNITS_TO_INT (box->y2 - box->y1) != priv->bg_image_dest_height))
     hd_home_view_refresh_bg (view,
-                             priv->background_image_file,
-                             priv->background_mode);
+                             priv->background_image_file);
   
   CLUTTER_ACTOR_CLASS (hd_home_view_parent_class)->
     allocate (actor, box, absolute_origin_changed);
@@ -185,14 +179,6 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 
   g_object_class_install_property (object_class, PROP_ID, pspec);
 
-  pspec = g_param_spec_boxed ("background-color",
-			      "Background Color",
-			      "Background Color",
-			      CLUTTER_TYPE_COLOR,
-			      G_PARAM_READWRITE);
-
-  g_object_class_install_property (object_class, PROP_BACKGROUND_COLOR, pspec);
-
   pspec = g_param_spec_string ("background-image",
 			       "Background Image",
 			       "Background Image",
@@ -200,15 +186,6 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 			       G_PARAM_READWRITE);
 
   g_object_class_install_property (object_class, PROP_BACKGROUND_IMAGE, pspec);
-
-  pspec = g_param_spec_enum ("background-mode",
-			     "Background mode",
-			     "Background mode",
-			     hd_home_view_background_mode_get_type (),
-			     HDHV_BACKGROUND_STRETCHED,
-			     G_PARAM_READWRITE);
-
-  g_object_class_install_property (object_class, PROP_BACKGROUND_MODE, pspec);
 
   signals[SIGNAL_THUMBNAIL_CLICKED] =
       g_signal_new ("thumbnail-clicked",
@@ -321,30 +298,6 @@ hd_home_view_get_gconf_path (HdHomeView *view, const gchar *key)
 }
 
 static void
-hd_home_view_gconf_bgcolor_notify (GConfClient *client,
-				   guint        cnxn_id,
-				   GConfEntry  *entry,
-				   HdHomeView  *view)
-{
-  GConfValue   *value;
-  
-  value = gconf_entry_get_value (entry);
-  if (value)
-    {
-      const gchar *color_string = gconf_value_get_string (value);
-      if (color_string)
-	{
-	  HdHomeViewPrivate *priv = view->priv;
-	  ClutterColor       color;
-	  
-	  clutter_color_parse (color_string, &color);
-	  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->background),
-				       &color);
-	}
-    }
-}
-
-static void
 hd_home_view_gconf_bgimage_notify (GConfClient *client,
 				   guint        cnxn_id,
 				   GConfEntry  *entry,
@@ -362,25 +315,6 @@ hd_home_view_gconf_bgimage_notify (GConfClient *client,
 	  priv->bg_image_skip_gconf = TRUE;
 	  g_object_set (view, "background-image", image_string, NULL);
 	}
-    }
-}
-
-static void
-hd_home_view_gconf_bgstyle_notify (GConfClient *client,
-				   guint        cnxn_id,
-				   GConfEntry  *entry,
-				   HdHomeView  *view)
-{
-  GConfValue   *value;
-  
-  value = gconf_entry_get_value (entry);
-  if (value)
-    {
-      HdHomeViewPrivate *priv = view->priv;
-      
-      hd_home_view_refresh_bg (view,
-			       priv->background_image_file,
-			       gconf_value_get_int (value));
     }
 }
 
@@ -423,18 +357,6 @@ hd_home_view_constructed (GObject *object)
 
   default_client = gconf_client_get_default ();
 
-  /* Register gconf notification for background colour */
-  gconf_path = hd_home_view_get_gconf_path (self, HDHV_GCONF_BG_COLOR);
-  priv->bg_color_notify =
-    gconf_client_notify_add (default_client,
-			     gconf_path,
-			     (GConfClientNotifyFunc)
-			     hd_home_view_gconf_bgcolor_notify,
-			     self,
-			     NULL, NULL);
-  gconf_client_notify (default_client, gconf_path);
-  g_free (gconf_path);
-  
   /* Register gconf notification for background image */
   gconf_path = hd_home_view_get_gconf_path (self, HDHV_GCONF_BG_IMAGE);
   g_debug("hd_home_view_constructed: gconf path for bg image: %s\n", gconf_path);
@@ -443,18 +365,6 @@ hd_home_view_constructed (GObject *object)
 			     gconf_path,
 			     (GConfClientNotifyFunc)
 			     hd_home_view_gconf_bgimage_notify,
-			     self,
-			     NULL, NULL);
-  gconf_client_notify (default_client, gconf_path);
-  g_free (gconf_path);
-
-  /* Register gconf notification for background display style */
-  gconf_path = hd_home_view_get_gconf_path (self, HDHV_GCONF_BG_STYLE);
-  priv->bg_style_notify =
-    gconf_client_notify_add (default_client,
-			     gconf_path,
-			     (GConfClientNotifyFunc)
-			     hd_home_view_gconf_bgstyle_notify,
 			     self,
 			     NULL, NULL);
   gconf_client_notify (default_client, gconf_path);
@@ -474,7 +384,6 @@ hd_home_view_init (HdHomeView *self)
 {
   self->priv =
     G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME_VIEW, HdHomeViewPrivate);
-  self->priv->background_mode = HDHV_BACKGROUND_STRETCHED;
   clutter_actor_set_name(CLUTTER_ACTOR(self), "HdHomeView");
 }
 
@@ -487,23 +396,13 @@ hd_home_view_dispose (GObject *object)
   GConfClient        *default_client = gconf_client_get_default ();
 
   /* Remove background image thread/source and delete processed image */
-  hd_home_view_refresh_bg (self, NULL, priv->background_mode);
+  hd_home_view_refresh_bg (self, NULL);
   
   /* Remove gconf notifications */
-  if (priv->bg_color_notify)
-    {
-      gconf_client_notify_remove (default_client, priv->bg_color_notify);
-      priv->bg_color_notify = 0;
-    }
   if (priv->bg_image_notify)
     {
       gconf_client_notify_remove (default_client, priv->bg_image_notify);
       priv->bg_image_notify = 0;
-    }
-  if (priv->bg_style_notify)
-    {
-      gconf_client_notify_remove (default_client, priv->bg_style_notify);
-      priv->bg_style_notify = 0;
     }
   
   /* Shutdown any applets associated with this view */
@@ -536,12 +435,10 @@ get_bg_image_processed_name (HdHomeView *view, const gchar *filename)
 {
   gchar		    *basename, *tmpname;
   ClutterActor      *actor = CLUTTER_ACTOR (view);
-  HdHomeViewPrivate *priv  = view->priv;
   
   basename = g_path_get_basename (filename);
-  tmpname = g_strdup_printf ("%s/%d-%dx%d-%s",
+  tmpname = g_strdup_printf ("%s/%dx%d-%s",
 			     g_get_tmp_dir (),
-			     priv->background_mode,
                              clutter_actor_get_width (actor),
                              clutter_actor_get_height (actor),
 			     basename);
@@ -614,148 +511,39 @@ bg_image_set_idle_cb (gpointer data)
 static gpointer
 process_bg_image_thread (gpointer data)
 {
-  gint               width, height;
   GError	    *error  = NULL;
   GdkPixbuf         *pixbuf = NULL;
   HdHomeView	    *self   = HD_HOME_VIEW (data);
   HdHomeViewPrivate *priv   = self->priv;
 
-  switch (priv->background_mode)
+  pixbuf = gdk_pixbuf_new_from_file_at_scale (priv->background_image_file,
+                                              priv->bg_image_dest_width,
+                                              priv->bg_image_dest_height,
+                                              TRUE,
+                                              &error);
+  if (!pixbuf)
     {
-    default :
-    case HDHV_BACKGROUND_STRETCHED:
-      pixbuf = gdk_pixbuf_new_from_file_at_scale (priv->background_image_file,
-						  priv->bg_image_dest_width,
-						  priv->bg_image_dest_height,
-						  FALSE,
-						  &error);
-      if (!pixbuf)
-	{
-	  g_warning ("Error loading background: %s", error->message);
-	  g_error_free (error);
-	  error = NULL;
-	}
-      break;
-    case HDHV_BACKGROUND_CENTERED:
-      pixbuf = gdk_pixbuf_new_from_file (priv->background_image_file, &error);
-      if (!pixbuf)
-	{
-	  g_warning ("Error loading background: %s", error->message);
-	  g_error_free (error);
-	  error = NULL;
-	  break;
-	}
-      width = gdk_pixbuf_get_width (pixbuf);
-      height = gdk_pixbuf_get_height (pixbuf);
-      if ((width > priv->bg_image_dest_width) ||
-	  (height > priv->bg_image_dest_height))
-	{
-	  gint x, y;
-	  GdkPixbuf *new_pixbuf;
-	  
-	  /* Crop/centre */
-	  x = MAX (0, (width - priv->bg_image_dest_width)/2);
-	  y = MAX (0, (height - priv->bg_image_dest_height)/2);
-	  width = MIN (width, priv->bg_image_dest_width);
-	  height = MIN (height, priv->bg_image_dest_height);
-	  
-	  new_pixbuf = gdk_pixbuf_new_subpixbuf (pixbuf, x, y, width, height);
-	  g_object_unref (pixbuf);
-	  pixbuf = new_pixbuf;
-	}
-      break;
-    case HDHV_BACKGROUND_SCALED:
-      pixbuf = gdk_pixbuf_new_from_file_at_scale (priv->background_image_file,
-						  priv->bg_image_dest_width,
-						  priv->bg_image_dest_height,
-						  TRUE,
-						  &error);
-      if (!pixbuf)
-	{
-	  g_warning ("Error loading background: %s", error->message);
-	  g_error_free (error);
-	  error = NULL;
-	}
-      break;
-    case HDHV_BACKGROUND_TILED:
-      pixbuf = gdk_pixbuf_new_from_file (priv->background_image_file, &error);
-      if (!pixbuf)
-	{
-	  g_warning ("Error loading background: %s", error->message);
-	  g_error_free (error);
-	  error = NULL;
-	  break;
-	}
-      width = gdk_pixbuf_get_width (pixbuf);
-      height = gdk_pixbuf_get_height (pixbuf);
-      if ((width > priv->bg_image_dest_width) ||
-	  (height > priv->bg_image_dest_height))
-	{
-	  GdkPixbuf *new_pixbuf;
-	  
-	  /* Crop */
-	  width = MIN (width, priv->bg_image_dest_width);
-	  height = MIN (height, priv->bg_image_dest_height);
-	  
-	  new_pixbuf = gdk_pixbuf_new_subpixbuf (pixbuf, 0, 0, width, height);
-	  g_object_unref (pixbuf);
-	  pixbuf = new_pixbuf;
-	}
-      break;
-    case HDHV_BACKGROUND_CROPPED:
-      pixbuf = gdk_pixbuf_new_from_file (priv->background_image_file, &error);
-      if (!pixbuf)
-	{
-	  g_warning ("Error loading background: %s", error->message);
-	  g_error_free (error);
-	  error = NULL;
-	  break;
-	}
-      width = gdk_pixbuf_get_width (pixbuf);
-      height = gdk_pixbuf_get_height (pixbuf);
-      if ((width > priv->bg_image_dest_width) ||
-	  (height > priv->bg_image_dest_height))
-	{
-	  GdkPixbuf *new_pixbuf;
-	  
-	  if ((width - priv->bg_image_dest_width) >
-	      (height - priv->bg_image_dest_height))
-	    {
-	      height = height * priv->bg_image_dest_width / (gdouble)width;
-	      width = priv->bg_image_dest_width;
-	    }
-	  else
-	    {
-	      width = width * priv->bg_image_dest_height / (gdouble)height;
-	      height = priv->bg_image_dest_height;
-	    }
-	  
-	  new_pixbuf = gdk_pixbuf_scale_simple (pixbuf,
-						width,
-						height,
-						GDK_INTERP_HYPER);
-	  g_object_unref (pixbuf);
-	  pixbuf = new_pixbuf;
-	}
-      break;
+      g_warning ("Error loading background: %s", error->message);
+      g_error_free (error);
+      error = NULL;
     }
   
   if (pixbuf)
     {
       if (!g_file_test (priv->processed_bg_image_file, G_FILE_TEST_EXISTS))
-      {
-       g_debug ("%s: SAVING IMAGE %s", __FUNCTION__,
-                priv->processed_bg_image_file);
-       if (!gdk_pixbuf_save (pixbuf, priv->processed_bg_image_file, "png",
-                            &error, NULL))
-	{
-	  g_warning ("Error saving background: %s", error->message);
-	  g_error_free (error);
-	}
-      }
+        {
+          g_debug ("%s: SAVING IMAGE %s", __FUNCTION__,
+                   priv->processed_bg_image_file);
+          if (!gdk_pixbuf_save (pixbuf, priv->processed_bg_image_file, "png",
+                                &error, NULL))
+            {
+              g_warning ("Error saving background: %s", error->message);
+              g_error_free (error);
+            }
+        }
       g_object_unref (pixbuf);
     }
-  
+
   priv->bg_image_set_source = g_idle_add (bg_image_set_idle_cb, self);
   
   g_thread_exit (NULL);
@@ -763,16 +551,14 @@ process_bg_image_thread (gpointer data)
 }
 
 static void
-hd_home_view_refresh_bg (HdHomeView		  *self,
-			 gchar			  *image,
-			 HdHomeViewBackgroundMode  mode)
+hd_home_view_refresh_bg (HdHomeView  *self,
+			 const gchar *image)
 {
   HdHomeViewPrivate *priv = self->priv;
   
   g_debug ("%s entered, '%s'", __FUNCTION__, image);
 
-  if (mode == priv->background_mode &&
-      g_strcmp0 (image, priv->background_image_file) == 0)
+  if (g_strcmp0 (image, priv->background_image_file) == 0)
     {
       g_debug ("%s: background is the same as old one", __FUNCTION__);
       return;
@@ -805,10 +591,9 @@ hd_home_view_refresh_bg (HdHomeView		  *self,
       if (image != priv->background_image_file)
 	g_free (priv->background_image_file);
     }
-  
-  priv->background_image_file = image;
-  priv->background_mode = mode;
-  
+
+  priv->background_image_file = g_strdup (image);
+
   if (priv->background_image_file)
     {
       priv->processed_bg_image_file =
@@ -864,30 +649,9 @@ hd_home_view_set_property (GObject       *object,
     case PROP_ID:
       priv->id = g_value_get_int (value);
       break;
-    case PROP_BACKGROUND_COLOR:
-      hd_home_view_set_background_color (HD_HOME_VIEW (object),
-					 g_value_get_boxed (value));
-      break;
     case PROP_BACKGROUND_IMAGE:
       hd_home_view_refresh_bg (self,
-			       g_value_dup_string (value),
-			       priv->background_mode);
-      break;
-    case PROP_BACKGROUND_MODE:
-      {
-	gchar *gconf_path;
-
-	hd_home_view_refresh_bg (self,
-				 priv->background_image_file,
-				 g_value_get_enum (value));
-
-	gconf_path = hd_home_view_get_gconf_path (self, HDHV_GCONF_BG_STYLE);
-	gconf_client_set_int (gconf_client_get_default (),
-			      gconf_path,
-			      priv->background_mode,
-			      NULL);
-	g_free (gconf_path);
-      }
+			       g_value_get_string (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -914,20 +678,8 @@ hd_home_view_get_property (GObject      *object,
     case PROP_ID:
       g_value_set_int (value, priv->id);
       break;
-    case PROP_BACKGROUND_COLOR:
-      {
-	ClutterColor color;
-	
-	clutter_rectangle_get_color (CLUTTER_RECTANGLE (priv->background),
-				     &color);
-	g_value_set_boxed (value, &color);
-      }
-      break;
     case PROP_BACKGROUND_IMAGE:
       g_value_set_string (value, priv->background_image_file);
-      break;
-    case PROP_BACKGROUND_MODE:
-      g_value_set_enum (value, priv->background_mode);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -936,34 +688,9 @@ hd_home_view_get_property (GObject      *object,
 }
 
 void
-hd_home_view_set_background_color (HdHomeView *view, ClutterColor *color)
-{
-  gchar             *gconf_path, *color_string;
-  HdHomeViewPrivate *priv = view->priv;
-
-  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->background), color);
-
-  gconf_path = hd_home_view_get_gconf_path (view, HDHV_GCONF_BG_COLOR);
-  color_string = clutter_color_to_string (color);
-  gconf_client_set_string (gconf_client_get_default (),
-			   gconf_path,
-			   color_string,
-			   NULL);
-  g_free (gconf_path);
-  g_free (color_string);
-}
-
-void
 hd_home_view_set_background_image (HdHomeView *view, const gchar * path)
 {
   g_object_set (G_OBJECT (view), "background-image", path, NULL);
-}
-
-void
-hd_home_view_set_background_mode (HdHomeView               *view,
-				  HdHomeViewBackgroundMode  mode)
-{
-  g_object_set (G_OBJECT (view), "background-mode", mode, NULL);
 }
 
 /*
@@ -1363,23 +1090,4 @@ hd_home_view_get_background (HdHomeView *view)
   HdHomeViewPrivate *priv = view->priv;
 
   return priv->background;
-}
-
-GType
-hd_home_view_background_mode_get_type (void)
-{
-  static GType etype = 0;
-  if (G_UNLIKELY (!etype))
-    {
-      static const GEnumValue values[] = {
-	{HDHV_BACKGROUND_STRETCHED, "HDHV_BACKGROUND_STRETCHED", "stretched"},
-	{HDHV_BACKGROUND_CENTERED, "HDHV_BACKGROUND_CENTERED", "centered"},
-	{HDHV_BACKGROUND_SCALED, "HDHV_BACKGROUND_SCALED", "scaled"},
-	{HDHV_BACKGROUND_TILED, "HDHV_BACKGROUND_TILED", "tiled"},
-	{HDHV_BACKGROUND_CROPPED, "HDHV_BACKGROUND_CROPPED", "cropped"},
-	{0, NULL, NULL}
-      };
-      etype = g_enum_register_static (g_intern_static_string ("HdHomeViewBackgroundMode"), values);
-    }
-  return etype;
 }
