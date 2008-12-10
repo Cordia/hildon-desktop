@@ -1653,7 +1653,7 @@ hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by)
   clutter_actor_move_by (priv->applet_close_button, x_by, y_by);
 }
 
-gint
+guint
 hd_home_get_current_view_id (HdHome *home)
 {
   HdHomePrivate   *priv = home->priv;

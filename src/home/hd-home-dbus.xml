@@ -24,5 +24,12 @@
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
     </method>
 
+    <method name="GetCurrentViewID">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_get_current_view_id"/>
+
+      <arg type="u" direction="out">
+        <annotation name="org.freedesktop.DBus.GLib.ReturnVal" value=""/>
+      </arg>
+    </method>
   </interface>
 </node>
