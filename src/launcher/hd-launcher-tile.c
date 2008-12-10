@@ -312,7 +312,7 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
   font_string = hd_gtk_style_get_font_string (HD_GTK_BUTTON_SINGLETON);
   priv->label = clutter_label_new_full (font_string, priv->text, &text_color);
   clutter_label_set_line_wrap (CLUTTER_LABEL (priv->label), FALSE);
-  clutter_label_set_ellipsize (CLUTTER_LABEL (priv->label), PANGO_ELLIPSIZE_END);
+  clutter_label_set_ellipsize (CLUTTER_LABEL (priv->label), PANGO_ELLIPSIZE_NONE);
   clutter_label_set_alignment (CLUTTER_LABEL (priv->label), PANGO_ALIGN_CENTER);
   clutter_actor_set_parent (priv->label, CLUTTER_ACTOR (tile));
 
