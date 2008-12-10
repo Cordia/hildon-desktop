@@ -1,5 +1,12 @@
 2008-12-10  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
+	Adjusted dimming values so foreground is more distinct.
+
+	* src/launcher/hd-launcher.c (hd_launcher_set_top_blur):
+	* src/mb/hd-comp-mgr.c (on_blur_timeline_new_frame):
+
+2008-12-10  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
 	Set "ellipsization" to none in launcher tiles.
 
 	* src/launcher/hd-launcher-tile.c (hd_launcher_tile_set_text):

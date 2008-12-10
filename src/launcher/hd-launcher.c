@@ -331,8 +331,8 @@ hd_launcher_set_top_blur (float amount)
   if (amount>1) amount=1;
 
   tidy_blur_group_set_blur(priv->top_blur, amount*5.0f);
-  tidy_blur_group_set_saturation(priv->top_blur, 1.0f - amount*0.5f);
-  tidy_blur_group_set_brightness(priv->top_blur, 1.0f - amount*0.25f);
+  tidy_blur_group_set_saturation(priv->top_blur, 1.0f - amount*0.7f);
+  tidy_blur_group_set_brightness(priv->top_blur, 1.0f - amount*0.7f);
   tidy_blur_group_set_zoom(priv->top_blur,
                         (15.0f + cos(amount*3.141592f)) / 16);
 }

@@ -332,8 +332,8 @@ on_blur_timeline_new_frame(ClutterTimeline *timeline,
 
 
   tidy_blur_group_set_blur(priv->blur_group, blur_amt*4.0f);
-  tidy_blur_group_set_saturation(priv->blur_group, 1.0f - blur_amt*0.75f);
-  tidy_blur_group_set_brightness(priv->blur_group, (2.0f-blur_amt) * 0.5f);
+  tidy_blur_group_set_saturation(priv->blur_group, 1.0f - blur_amt*0.6f);
+  tidy_blur_group_set_brightness(priv->blur_group, 1.0f - blur_amt*0.6f);
 
   tidy_blur_group_set_zoom(priv->blur_group,
       priv->blurzoom_from*(1-smooth) + priv->blurzoom_to*smooth);
