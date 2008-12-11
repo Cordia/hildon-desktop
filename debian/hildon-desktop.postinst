@@ -17,6 +17,7 @@ case "$1" in
       gtk-update-icon-cache -f -t /usr/share/icons/hicolor
 
       gconf-schemas --register hildon-desktop.schemas
+      gconf-schemas --register hildon-desktop-active.schemas
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

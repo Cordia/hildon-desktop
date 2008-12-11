@@ -1,5 +1,12 @@
 2008-12-11  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/hildon-desktop.postinst: 
+	* src/Makefile.am:
+	* src/hildon-desktop-active.schemas: Install schema file for active
+	  views.
+
+2008-12-11  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hildon-desktop.schemas: Update bg-image gconf keys.
 
 	* src/home/hd-home-view.c:

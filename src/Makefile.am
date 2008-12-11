@@ -15,6 +15,8 @@ hildon_desktop_LDADD = $(MY_LIBS) $(HD_LIBS)
 hildon_desktop_CFLAGS = -std=c99 -fgnu89-inline
 
 schemadir = ${datadir}/gconf/schemas
-schema_DATA = hildon-desktop.schemas
+schema_DATA = \ 
+	hildon-desktop.schemas \
+	hildon-desktop-active.schemas
 
 CLEANFILES = *~
