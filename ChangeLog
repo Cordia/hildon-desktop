@@ -1,3 +1,13 @@
+2008-12-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Recognize popup menus and such and add/remove from their
+	application's thumbnail in the switcher.
+
+	* src/home/hd-switcher.c
+	* src/home/hd-task-navigator.c
+	* src/home/hd-switcher.h
+	* src/mb/hd-comp-mgr.c
+
 2008-12-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.10

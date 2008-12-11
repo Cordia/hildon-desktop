@@ -2044,6 +2044,8 @@ hd_task_navigator_remove_dialog (HdTaskNavigator * self,
 
 /*
  * Register a @dialog to show on the top of an application's thumbnail.
+ * @dialog needn't be a dialog, actually, it can be just about anything
+ * you want to show along with the application, like menus.
  * @parent should be the actor of the window @dialog is transient for.
  * The @dialog is expected to have been positioned already.  It is an
  * error to add the same @dialog more than once.

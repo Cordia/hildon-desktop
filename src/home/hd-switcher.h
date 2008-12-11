@@ -64,6 +64,8 @@ void hd_switcher_add_window_actor    (HdSwitcher   * switcher,
 void hd_switcher_add_status_area (HdSwitcher *switcher, ClutterActor *sa);
 void hd_switcher_add_status_menu (HdSwitcher *switcher, ClutterActor *sa);
 void hd_switcher_add_notification (HdSwitcher *switcher, HdNote *note);
+void hd_switcher_add_dialog_explicit (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
+                                      ClutterActor *dialog, MBWindowManagerClient *transfor);
 void hd_switcher_add_dialog (HdSwitcher *switcher,
                              MBWindowManagerClient *mbwmc,
                              ClutterActor *dialog);

@@ -891,6 +891,24 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     parent_klass->unregister_client (mgr, c);
 }
 
+/* Returns the client @c is transient for.  Some clients (notably menus)
+ * don't have their c->transient_for field set even though they are
+ * transient.  Figure it out from the c->window in this case. */
+static MBWindowManagerClient *
+hd_comp_mgr_get_client_transient_for (MBWindowManagerClient *c)
+{
+  Window xtransfor;
+
+  if (c->transient_for)
+    return c->transient_for;
+
+  xtransfor = c->window->xwin_transient_for;
+  return xtransfor && xtransfor != c->window->xwindow
+      && xtransfor != c->wmref->root_win->xwindow
+    ? mb_wm_managed_client_from_xwindow (c->wmref, xtransfor)
+    : NULL;
+}
+
 static void
 hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
@@ -996,6 +1014,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       hd_switcher_add_dialog (HD_SWITCHER (priv->switcher_group), c, actor);
       return;
     }
+  else if (c->window->net_type == c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
+    {
+      MBWindowManagerClient *transfor;
+
+      if ((transfor = hd_comp_mgr_get_client_transient_for (c)) != NULL)
+          hd_switcher_add_dialog_explicit (HD_SWITCHER (priv->switcher_group),
+                                           c, actor, transfor);
+      return;
+    }
   else if (ctype != MBWMClientTypeApp)
     return;
 
@@ -1073,16 +1100,23 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   HdCompMgrPrivate          * priv = HD_COMP_MGR (mgr)->priv;    
   MBWMClientType            c_type = MB_WM_CLIENT_CLIENT_TYPE (c);  
   MBWMCompMgrClutterClient *cclient;
+  MBWindowManagerClient    *transfor;
   
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
-        
   if (HD_IS_NOTE (c) && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
     {      
       hd_switcher_remove_notification (HD_SWITCHER (priv->switcher_group),
                                        HD_NOTE (c));
+      return;
     }
-  else if ((c_type == MBWMClientTypeNote || c_type == MBWMClientTypeDialog)
-           && c->transient_for)
+  else if (c_type == MBWMClientTypeNote || c_type == MBWMClientTypeDialog)
+    transfor = c->transient_for;
+  else if (c->window->net_type == c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
+    transfor = hd_comp_mgr_get_client_transient_for (c);
+  else
+    return;
+
+  if (transfor)
     { /* Remove application-transient dialogs from the switcher. */
       ClutterActor *actor;
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
@@ -1853,8 +1887,8 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
   g_debug ("Windows:");
   root = mb_wm_root_window_get (NULL);
   mb_wm_stack_enumerate_reverse (root->wm, mbwmc)
-    g_debug (" client=%p, type=%d, win=0x%lx, group=0x%lx, name=%s",
-             mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc),
+    g_debug (" client=%p, type=%d, trfor=%p, win=0x%lx, group=0x%lx, name=%s",
+             mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc), mbwmc->transient_for,
              mbwmc && mbwmc->window ? mbwmc->window->xwindow : 0,
              mbwmc && mbwmc->window ? mbwmc->window->xwin_group : 0,
              mbwmc && mbwmc->window ? mbwmc->window->name : "<unset>");

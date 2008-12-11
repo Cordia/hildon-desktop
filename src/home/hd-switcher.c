@@ -779,17 +779,17 @@ hd_switcher_add_notification (HdSwitcher * switcher, HdNote * note)
 }
 
 void
-hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
-                        ClutterActor *dialog)
+hd_switcher_add_dialog_explicit (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
+                                 ClutterActor *dialog, MBWindowManagerClient *transfor)
 {
   ClutterActor *parent;
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   HdTaskNavigator *navigator = HD_TASK_NAVIGATOR (priv->switcher_group);
 
-  g_return_if_fail (mbwmc->transient_for);
+  g_return_if_fail (transfor);
 
   parent = mb_wm_comp_mgr_clutter_client_get_actor (
-       MB_WM_COMP_MGR_CLUTTER_CLIENT (mbwmc->transient_for->cm_client));
+       MB_WM_COMP_MGR_CLUTTER_CLIENT (transfor->cm_client));
   hd_task_navigator_add_dialog (navigator, parent, dialog);
 
   /* Zoom in the application @dialog belongs to if this is a confirmation
@@ -798,6 +798,13 @@ hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
   if (HD_IS_NOTE (mbwmc) && HD_NOTE(mbwmc)->note_type == HdNoteTypeConfirmation)
     if (hd_switcher_showing_switcher (switcher))
       hd_switcher_item_selected (switcher, parent, navigator);
+}
+
+void
+hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
+                        ClutterActor *dialog)
+{
+  hd_switcher_add_dialog_explicit (switcher, mbwmc, dialog, mbwmc->transient_for);
 }
 
 /* Called when a window or a notification is removed from the switcher.
