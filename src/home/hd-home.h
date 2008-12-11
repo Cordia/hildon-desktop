@@ -35,8 +35,6 @@
 /* FIXME -- match spec */
 #define HDH_SWITCH_WIDTH 20
 
-#define HDH_GCONF_PREFIX "/apps/hildon_home"
-
 G_BEGIN_DECLS
 
 #define HD_TYPE_HOME            (hd_home_get_type ())

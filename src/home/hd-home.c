@@ -796,7 +796,7 @@ hd_home_init (HdHome *self)
 
   /* Listen to gconf notifications */
   gconf_client_add_dir (gconf_client_get_default (),
-			HDH_GCONF_PREFIX,
+                        "/apps/osso/hildon-desktop",
 			GCONF_CLIENT_PRELOAD_NONE,
 			NULL);
 
@@ -1403,12 +1403,13 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
                                             NULL);
 
   if (value && value->type == GCONF_VALUE_INT)
-    view_id = gconf_value_get_int (value);
+    view_id = gconf_value_get_int (value) - 1;
   else
     {
       view_id = hd_home_get_current_view_id (home);
 
-      gconf_client_set_int (client, view_key, view_id, NULL);
+      /* from 0 to 3 */
+      gconf_client_set_int (client, view_key, view_id + 1, NULL);
     }
 
   wm_applet->view_id = view_id;

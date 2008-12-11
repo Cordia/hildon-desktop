@@ -42,6 +42,11 @@
 
 #define BACKGROUND_COLOR {0, 0, 0, 0xff}
 
+#define GCONF_BACKGROUND_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/bg-image", i + 1)
+#define GCONF_ACTIVE_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/active", i + 1)
+
+#define MAX_VIEWS 4
+
 enum
 {
   SIGNAL_THUMBNAIL_CLICKED,
@@ -173,7 +178,7 @@ hd_home_view_class_init (HdHomeViewClass *klass)
   pspec = g_param_spec_int ("id",
 			    "id",
 			    "Numerical id for this view",
-			    0, G_MAXINT,
+			    0, MAX_VIEWS - 1,
 			    0,
 			    G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
 
@@ -290,13 +295,6 @@ hd_home_view_captured_event (ClutterActor       *self,
   return TRUE;
 }
 
-static gchar *
-hd_home_view_get_gconf_path (HdHomeView *view, const gchar *key)
-{
-  HdHomeViewPrivate *priv = view->priv;
-  return g_strdup_printf (HDH_GCONF_PREFIX "/view_%d%s", priv->id, key);
-}
-
 static void
 hd_home_view_gconf_bgimage_notify (GConfClient *client,
 				   guint        cnxn_id,
@@ -358,7 +356,7 @@ hd_home_view_constructed (GObject *object)
   default_client = gconf_client_get_default ();
 
   /* Register gconf notification for background image */
-  gconf_path = hd_home_view_get_gconf_path (self, HDHV_GCONF_BG_IMAGE);
+  gconf_path = GCONF_BACKGROUND_KEY (priv->id);
   g_debug("hd_home_view_constructed: gconf path for bg image: %s\n", gconf_path);
   priv->bg_image_notify =
     gconf_client_notify_add (default_client,
@@ -492,8 +490,7 @@ bg_image_set_idle_cb (gpointer data)
   
   if (!priv->bg_image_skip_gconf)
     {
-      gchar *gconf_path =
-	hd_home_view_get_gconf_path (self, HDHV_GCONF_BG_IMAGE);
+      gchar *gconf_path = GCONF_BACKGROUND_KEY (priv->id);
       gconf_client_set_string (gconf_client_get_default (),
 			       gconf_path,
 			       priv->background_image_file,

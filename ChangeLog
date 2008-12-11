@@ -1,3 +1,21 @@
+2008-12-11  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hildon-desktop.schemas: Update bg-image gconf keys.
+
+	* src/home/hd-home-view.c:
+	* src/home/hd-home-view.h: Update bg-image gconf keys.
+
+	* src/home/hd-home.c (hd_home_init, hd_home_add_applet):
+	* src/home/hd-home.h: Update bg-image gconf keys. Update applet view
+	  values.
+
+	* src/mb/hd-desktop.c (hd_desktop_theme_change): Update for new theme
+	  dir layout.
+	  hd_desktop_stack): Only stack visible applet windows.
+	* src/mb/hd-status-area.c (hd_status_area_class_type,
+	  hd_status_area_request_geometry, hd_status_area_new): Add debug
+	  output.
+
 2008-12-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Recognize popup menus and such and add/remove from their

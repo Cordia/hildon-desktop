@@ -30,8 +30,8 @@
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 
 static Bool hd_status_area_request_geometry (MBWindowManagerClient *client,
-				      MBGeometry            *new_geometry,
-				      MBWMClientReqGeomType  flags);
+                                             MBGeometry            *new_geometry,
+                                             MBWMClientReqGeomType  flags);
 
 static void
 hd_status_area_class_init (MBWMObjectClass *klass)
@@ -84,11 +84,11 @@ hd_status_area_class_type ()
   if (UNLIKELY(type == 0))
     {
       static MBWMObjectClassInfo info = {
-	sizeof (MBWMClientNoteClass),
-	sizeof (MBWMClientNote),
-	hd_status_area_init,
-	hd_status_area_destroy,
-	hd_status_area_class_init
+          sizeof (MBWMClientNoteClass),
+          sizeof (MBWMClientNote),
+          hd_status_area_init,
+          hd_status_area_destroy,
+          hd_status_area_class_init
       };
 
       type = mb_wm_object_register_class (&info, MB_WM_TYPE_CLIENT_NOTE, 0);
@@ -99,9 +99,11 @@ hd_status_area_class_type ()
 
 static Bool
 hd_status_area_request_geometry (MBWindowManagerClient *client,
-			  MBGeometry            *new_geometry,
-			  MBWMClientReqGeomType  flags)
+                                 MBGeometry            *new_geometry,
+                                 MBWMClientReqGeomType  flags)
 {
+  g_debug ("%s: %d", __FUNCTION__, new_geometry->width);
+
   client->frame_geometry.x = new_geometry->x;
   client->frame_geometry.y = new_geometry->y;
   client->frame_geometry.width  = new_geometry->width;
@@ -123,9 +125,9 @@ hd_status_area_new (MBWindowManager *wm, MBWMClientWindow *win)
 
   client
     = MB_WM_CLIENT (mb_wm_object_new (HD_TYPE_STATUS_AREA,
-				      MBWMObjectPropWm,           wm,
-				      MBWMObjectPropClientWindow, win,
-				      NULL));
+                                      MBWMObjectPropWm,           wm,
+                                      MBWMObjectPropClientWindow, win,
+                                      NULL));
 
   return client;
 }

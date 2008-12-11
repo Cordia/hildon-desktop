@@ -29,10 +29,6 @@
 
 #include <clutter/clutter-group.h>
 
-#define HDHV_GCONF_BG_COLOR "/bg_color"
-#define HDHV_GCONF_BG_IMAGE "/bg_image"
-#define HDHV_GCONF_BG_STYLE "/bg_display_style"
-
 G_BEGIN_DECLS
 
 #define HD_TYPE_HOME_VIEW            (hd_home_view_get_type ())
