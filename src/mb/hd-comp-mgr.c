@@ -116,6 +116,9 @@ struct HdCompMgrPrivate
   gint                   unmap_effect_running;
 
   MBWindowManagerClient *status_area_client;
+
+  /* Clients who need to block the Tasksk button. */
+  GHashTable            *tasks_button_blockers;
 };
 
 /*
@@ -630,6 +633,8 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 			   NULL,
 			   (GDestroyNotify)mb_wm_object_unref);
 
+  priv->tasks_button_blockers = g_hash_table_new (NULL, NULL);
+
   for (i = 0; i < 4; ++i)
     priv->applet_manager[i] = hd_applet_layout_manager_new ();
 
@@ -778,6 +783,15 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
+  if (g_hash_table_remove (priv->tasks_button_blockers, c)
+      && g_hash_table_size (priv->tasks_button_blockers) == 0)
+    { /* Last system modal dialog being unmapped, undo evil. */
+      if (hd_switcher_showing_either (HD_SWITCHER (priv->switcher_group))
+          || hd_home_get_mode (HD_HOME (priv->home)) != HD_HOME_MODE_NORMAL)
+        hd_home_grab_pointer (HD_HOME (priv->home));
+      hd_switcher_revive (HD_SWITCHER (priv->switcher_group));
+    }
+
   if (hclient->priv->hibernating)
     {
       /*
@@ -916,6 +930,29 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   g_object_set_data (G_OBJECT (actor),
 		     "HD-MBWMCompMgrClutterClient", cclient);
 
+  /* Do evil.  Do we need to block the Tasks button? */
+  if ((ctype == MBWMClientTypeDialog || (ctype == MBWMClientTypeNote && HD_NOTE (c)->note_type != HdNoteTypeIncomingEvent))
+      && hd_util_is_client_system_modal (c))
+    {
+      if (g_hash_table_size (priv->tasks_button_blockers) == 0)
+        { /* First system modal client, allow it to receive events and
+           * block the switcher buttons. */
+          if (hd_switcher_showing_either (HD_SWITCHER (priv->switcher_group))
+              || hd_home_get_mode (HD_HOME (priv->home)) != HD_HOME_MODE_NORMAL)
+            hd_home_ungrab_pointer (HD_HOME (priv->home));
+          hd_switcher_act_like_dead (HD_SWITCHER (priv->switcher_group));
+        }
+
+      /*
+       * Save the client's address and undo evil when the last of its
+       * kind is unregistered.  We need to do this way because maps
+       * and unmaps arrive unreliable, for exampe we get not unmap
+       * notification for VKB.  In other cases we may receive two
+       * maps for the same client.
+       */
+      g_hash_table_insert (priv->tasks_button_blockers, c, GINT_TO_POINTER(1));
+    }
+
   if (ctype == HdWmClientTypeHomeApplet)
     {
       HdHomeApplet * applet  = HD_HOME_APPLET (c);
@@ -1051,7 +1088,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
       if (actor)
         hd_switcher_remove_dialog (HD_SWITCHER (priv->switcher_group), actor);
-    }        
+    }
 }
 
 static void
@@ -1167,8 +1204,7 @@ hd_comp_mgr_effect_close_app (MBWMCompMgr                *mgr,
   ClutterActor             * stage;
   gint i;
 
-  /* The switcher will do the effect if it's active,
-   * don't interfere. */
+  /* The switcher will do the effect if it's active, don't interfere. */
   if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
     return;
 
@@ -1817,7 +1853,7 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
   g_debug ("Windows:");
   root = mb_wm_root_window_get (NULL);
   mb_wm_stack_enumerate_reverse (root->wm, mbwmc)
-    g_debug (" client=%p, type=%d, win=0x%lx, group=%lx, name=%s",
+    g_debug (" client=%p, type=%d, win=0x%lx, group=0x%lx, name=%s",
              mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc),
              mbwmc && mbwmc->window ? mbwmc->window->xwindow : 0,
              mbwmc && mbwmc->window ? mbwmc->window->xwin_group : 0,

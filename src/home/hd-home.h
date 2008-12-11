@@ -76,6 +76,7 @@ GType hd_home_get_type (void);
 
 void hd_home_show_view (HdHome * home, guint view_index);
 
+HdHomeMode hd_home_get_mode (HdHome *home);
 void hd_home_set_mode (HdHome* home, HdHomeMode mode);
 void hd_home_show_activate_views_dialog (HdHome *home);
 

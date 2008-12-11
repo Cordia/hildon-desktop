@@ -1,3 +1,20 @@
+2008-12-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Disable the Tasks button when a system-modal dialog is showing.
+
+	* src/home/hd-home.h
+	* src/home/hd-home.c:
+	  Added hd_home_get_mode().
+	* src/home/hd-switcher.h
+	* src/home/hd-switcher.c:
+	  Added functions to enable/disable the Tasks button.
+	* src/util/hd-util.h
+	* src/util/hd-util.c:
+	  Added hd_util_is_client_system_modal().
+	* src/mb/hd-comp-mgr.c:
+	  Disable the Tasks button when a system-modal dialog is mapped.
+	  Re-enable if the last system-modal is unregistered.
+
 2008-12-10  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-dbus.xml: Add GetCurrentViewID method to D-Bus

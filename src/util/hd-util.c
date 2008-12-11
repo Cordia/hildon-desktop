@@ -120,3 +120,11 @@ hd_util_modal_blocker_realize(MBWindowManagerClient *client)
                   (MBWMXEventFunc)hd_util_modal_blocker_release_handler,
                   client);
 }
+
+Bool
+hd_util_is_client_system_modal (MBWindowManagerClient *c)
+{
+  return mb_wm_client_is_modal (c) &&
+      !mb_wm_client_get_transient_for (c) &&
+      mb_wm_get_modality_type (c->wmref) == MBWMModalitySystem;
+}

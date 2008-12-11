@@ -973,6 +973,14 @@ hd_switcher_showing_switcher (HdSwitcher * switcher)
   return priv->showing_switcher;
 }
 
+gboolean
+hd_switcher_showing_either (HdSwitcher * switcher)
+{
+  HdSwitcherPrivate * priv = HD_SWITCHER (switcher)->priv;
+
+  return priv->showing_switcher || priv->showing_launcher;
+}
+
 static void
 hd_switcher_hide_switcher (HdSwitcher * switcher)
 {
@@ -1123,4 +1131,18 @@ hd_switcher_group_background_clicked (HdSwitcher   *switcher,
 
   hd_switcher_show_status_area (switcher);
   hd_comp_mgr_top_home (HD_COMP_MGR (priv->comp_mgr));
+}
+
+void hd_switcher_act_like_dead (HdSwitcher *switcher)
+{
+  clutter_actor_set_reactive (switcher->priv->button_switcher,  FALSE);
+  clutter_actor_set_reactive (switcher->priv->button_launcher,  FALSE);
+  clutter_actor_set_reactive (switcher->priv->button_menu,      FALSE);
+}
+
+void hd_switcher_revive (HdSwitcher *switcher)
+{
+  clutter_actor_set_reactive (switcher->priv->button_switcher,  TRUE);
+  clutter_actor_set_reactive (switcher->priv->button_launcher,  TRUE);
+  clutter_actor_set_reactive (switcher->priv->button_menu,      TRUE);
 }

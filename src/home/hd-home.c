@@ -1113,6 +1113,12 @@ hd_home_set_mode (HdHome *home, HdHomeMode mode)
   g_signal_emit (home, signals[SIGNAL_MODE_CHANGED], 0, mode);
 }
 
+HdHomeMode
+hd_home_get_mode (HdHome *home)
+{
+  return home->priv->mode;
+}
+
 void
 hd_home_show_activate_views_dialog (HdHome *home)
 {
