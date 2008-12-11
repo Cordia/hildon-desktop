@@ -30,10 +30,10 @@ G_BEGIN_DECLS
 
 typedef enum _HdWmClientType
 {
-  HdWmClientTypeHomeApplet = MBWMClientTypeLast + 1,
-  HdWmClientTypeAppMenu,
-  HdWmClientTypeStatusArea,
-  HdWmClientTypeStatusMenu,
+  HdWmClientTypeHomeApplet  = MBWMClientTypeLast << 1,
+  HdWmClientTypeAppMenu     = MBWMClientTypeLast << 2,
+  HdWmClientTypeStatusArea  = MBWMClientTypeLast << 3,
+  HdWmClientTypeStatusMenu  = MBWMClientTypeLast << 4,
 } HdWmClientType;
 
 typedef struct HdWmClass   HdWmClass;
