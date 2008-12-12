@@ -124,20 +124,27 @@
 #define THWIN_CLOSE_HEIGHT              THWIN_TITLE_BACKGROUND_HEIGHT
 
 /*
- * %EFFECT_LENGTH:                Determines how many miliseconds should it
- *                                take to fly and zoom thumbnails.  Tunable.
- *                                Increase for the better observation of the
+ * %ZOOM_EFFECT_DURATION:         Determines how many miliseconds should
+ *                                it take to zoom thumbnails.  Tunable.
+ *                                Increase for the better observation of
  *                                effects or decrase for faster feedback.
+ * %FLY_EFFECT_DURATION:          Same for the flying animation, ie. when
+ *                                the windows are repositioned.
+ */
+#define ZOOM_EFFECT_DURATION            200
+#define FLY_EFFECT_DURATION             400
+
+/*
  * %VIDEO_SCREENSHOT_DIR:         Where to search for the last-frame video
  *                                screenshots.  If an application has such
  *                                an image it is displayed in switcher mode
  *                                instead of its its thumbnail.  The file is
  *                                "%VIDEO_SCREENSHOT_DIR/<class_hint>".
+ * %WINDOW_OPEN_NOISE, %WINDOW_CLOSE_NOISE:
+ *                                What to play when a window is added toor
+ *                                removed from the switcher.
  */
-#define EFFECT_LENGTH                   200
 #define VIDEO_SCREENSHOT_DIR            "/var/tmp/app-screenshots"
-
-/* What noise to make when a window is added/removed from the switcher. */
 #define WINDOW_OPEN_NOISE               "/usr/share/sounds/ui-window_open.wav"
 #define WINDOW_CLOSE_NOISE              "/usr/share/sounds/ui-window_close.wav"
 /* Standard definitions }}} */
@@ -2456,10 +2463,10 @@ unclip (ClutterActor * actor, GParamSpec * prop, gpointer unused)
 }
 /* Callbacks }}} */
 
-/* Creates an effect template for %EFFECT_LENGTH and also returns its timeline.
+/* Creates an effect template for @duration and also returns its timeline.
  * The timeline is usually needed to hook onto its "completed" signal. */
 static ClutterEffectTemplate *
-new_effect (ClutterTimeline ** timelinep)
+new_effect (ClutterTimeline ** timelinep, guint duration)
 {
   ClutterEffectTemplate *effect;
 
@@ -2470,7 +2477,7 @@ new_effect (ClutterTimeline ** timelinep)
    * otherwise * it would have to be clutter_timeline_start()ed for every
    * animation to get its signals.
    */
-  *timelinep = clutter_timeline_new_for_duration (EFFECT_LENGTH);
+  *timelinep = clutter_timeline_new_for_duration (duration);
   effect = clutter_effect_template_new (*timelinep, CLUTTER_ALPHA_RAMP_INC);
   clutter_effect_template_set_timeline_clone (effect, FALSE);
 
@@ -2530,8 +2537,8 @@ hd_task_navigator_init (HdTaskNavigator * self)
                                Notification_area);
 
   /* Effect timelines */
-  Fly_effect = new_effect (&Fly_effect_timeline);
-  Zoom_effect = new_effect (&Zoom_effect_timeline);
+  Fly_effect = new_effect (&Fly_effect_timeline,   FLY_EFFECT_DURATION);
+  Zoom_effect = new_effect (&Zoom_effect_timeline, ZOOM_EFFECT_DURATION);
 
   /* Master pieces */
   Master_close      = load_icon ("qgn_home_close",

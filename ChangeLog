@@ -1,5 +1,11 @@
 2008-12-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-task-navigator.c:
+	  Doubled the duration of the window fly effect because
+	  it became invisibly fast.  Zooming is untouched.
+
+2008-12-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Don't create threads interfering with gdb on sbox/x86
 	if $HD_NOTHREADS is defined.
 
