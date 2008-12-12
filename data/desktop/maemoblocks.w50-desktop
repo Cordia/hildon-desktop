@@ -1,0 +1,16 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=0.1
+Type=Application
+Name=Blocks
+Exec=/usr/bin/maemoblocks.sh
+Comment=game_ap_blocks_name_thumb
+Icon=tasklaunch_blocks
+X-Icon-path=/usr/share/pixmaps
+X-Window-Icon=tn-bookmarks-link
+X-Window-Icon-Dimmed=tn-bookmarks-link
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Service=br.org.indt.maemoblocks.startup
+X-Osso-Type=application/x-executable
+StartupWMClass=maemoblocks_startup
+

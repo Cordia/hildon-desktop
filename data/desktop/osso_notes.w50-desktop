@@ -1,0 +1,17 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=0.1
+Type=Application
+Name=Notes
+Comment=note_ap_notes_name_thumb
+Exec=/usr/bin/osso_notes
+Icon=general_notes
+MimeType=text/note;text/plain
+X-Icon-path=/usr/local/share/pixmaps/
+X-Window-Icon=tn-bookmarks-link
+X-Window-Icon-Dimmed=tn-bookmarks-link-dimmed
+X-HildonDesk-ShowInToolbar=true
+
+X-Osso-Service=osso_notes
+X-Osso-Type=application/x-executable
+

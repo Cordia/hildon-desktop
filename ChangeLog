@@ -1,3 +1,15 @@
+2008-12-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Correct hard-coded menu.
+
+	* data/desktop/hildon-control-panel.w50-desktop:
+	* data/desktop/maemoblocks.w50-desktop:
+	* data/desktop/mediaplayer.w50-desktop:
+	* data/desktop/osso_notes.w50-desktop:
+	* data/desktop/osso_rss_feed_reader.w50-desktop:
+	* data/desktop/osso_sketch.w50-desktop:
+	* data/desktop/rhapsody.w50-desktop:
+
 2008-12-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/hildon-desktop.postinst:

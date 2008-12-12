@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Name=Sketch
+Comment=sket_ap_sketch_title_thumb
+Exec=/usr/bin/osso_sketch
+Icon=general_sketch
+Type=Application
+MimeType=sketch/png
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Service=osso_sketch
+X-Osso-Type=application/x-executable
+
