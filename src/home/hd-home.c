@@ -957,6 +957,16 @@ hd_home_grab_pointer (HdHome *home)
 
   clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
 
+  g_debug ("%s count: %d", __FUNCTION__, priv->grab_count);
+
+  if (priv->grab_count < 0)
+    {
+      priv->grab_count++;
+      return;
+    }
+
+  g_debug ("%s do real grab (count: %d)", __FUNCTION__, priv->grab_count + 1);
+
   status = XGrabPointer (dpy,
 			 clutter_window,
 			 False,
@@ -986,6 +996,8 @@ hd_home_ungrab_pointer (HdHome *home)
   /* NB: X grabs can not be nested, but for our needs it is much easier
    * to manage things with nesting semantics */
 
+  g_debug ("%s count: %d", __FUNCTION__, priv->grab_count);
+
   if (--priv->grab_count > 0)
     {
       g_debug ("Skipping ungrab (grab_count = %d) !!!", priv->grab_count);
@@ -997,6 +1009,8 @@ hd_home_ungrab_pointer (HdHome *home)
       g_debug ("(Will now be reset to zero)\n");
     }
 
+  g_debug ("%s do real ungrab (count: %d)", __FUNCTION__, priv->grab_count);
+
   XUngrabPointer (dpy, CurrentTime);
 
   /* NB: any return status is meaningless for an XUngrabPointer, it should
@@ -1004,7 +1018,7 @@ hd_home_ungrab_pointer (HdHome *home)
    * before returning) */
   g_debug ("Doing pointer ungrab !!!");
 
-  priv->grab_count = 0;
+  /* priv->grab_count = 0; */
 }
 
 static void
@@ -1039,7 +1053,8 @@ hd_home_do_normal_layout (HdHome *home)
 
   hd_home_hide_switches (home);
 
-  hd_home_ungrab_pointer (home);
+  if (priv->grab_count > 0)
+    hd_home_ungrab_pointer (home);
 }
 
 static void

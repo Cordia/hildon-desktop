@@ -1,3 +1,9 @@
+2008-12-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home.c (hd_home_grab_pointer, hd_home_ungrab_pointer,
+	  hd_home_do_normal_layout): Fix pointer grab/ungrab with Home edit
+	  menu.
+
 2008-12-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Changed the default loading screen to a rect created from the theme's
