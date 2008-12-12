@@ -5,5 +5,4 @@ res_DATA = \
 	menu-button.png \
 	edit-button.png \
 	launcher-button-highlight.png \
-        blank-window.png \
 	white-particle.png

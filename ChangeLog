@@ -1,3 +1,14 @@
+2008-12-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Changed the default loading screen to a rect created from the theme's
+	bg color. Also, remove it after the animation is complete.
+
+	* data/Makefile.am: Removed the blank-window.png file.
+	* src/launcher/hd-launcher.c (launcher_signals,
+	  hd_launcher_constructed, _hd_launcher_transition_clicked,
+	  hd_launcher_transition_app_start, hd_launcher_transition_new_frame,
+	  hd_launcher_transition_completed):
+
 2008-12-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/launcher/hd-launcher.c:
