@@ -46,6 +46,7 @@
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 
+#include "hildon-desktop.h"
 #include "hd-atoms.h"
 #include "hd-comp-mgr.h"
 #include "hd-gtk-utils.h"
@@ -563,11 +564,15 @@ load_image_fit (char const * fname, guint aw, guint ah)
 
 /* Start playing @fname asynchronously. */
 static void
-play(const gchar * fname)
+play (const gchar * fname)
 {
     static ca_context *ca;
     ca_proplist *pl;
     int ret;
+
+    /* Canberra uses threads. */
+    if (hd_disable_threads())
+      return;
 
     /* Initialize the canberra context once. */
     if (!ca)
@@ -581,6 +586,7 @@ play(const gchar * fname)
           {
             g_warning("ca_context_open: %s", ca_strerror (ret));
             ca_context_destroy(ca);
+            ca = NULL;
             return;
           }
       }

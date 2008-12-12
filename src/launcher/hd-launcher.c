@@ -206,7 +206,8 @@ static void hd_launcher_constructed (GObject *gobject)
   priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
   priv->launch_position.z = 0;
 
-  hd_launcher_tree_populate (priv->tree);
+  if (!hd_disable_threads())
+    hd_launcher_tree_populate (priv->tree);
 }
 
 static void

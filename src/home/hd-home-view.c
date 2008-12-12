@@ -30,6 +30,7 @@
 #include "hd-home.h"
 #include "hd-util.h"
 #include "hd-home-applet.h"
+#include "hildon-desktop.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -589,7 +590,9 @@ hd_home_view_refresh_bg (HdHomeView  *self,
 	g_free (priv->background_image_file);
     }
 
-  priv->background_image_file = g_strdup (image);
+
+  if (!hd_disable_threads())
+    priv->background_image_file = g_strdup (image);
 
   if (priv->background_image_file)
     {

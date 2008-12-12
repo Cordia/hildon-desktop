@@ -1,3 +1,16 @@
+2008-12-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Don't create threads interfering with gdb on sbox/x86
+	if $HD_NOTHREADS is defined.
+
+	* src/hildon-desktop.h:
+	  hd_disable_threads() defined.
+	* src/home/hd-home-view.c:
+	* src/launcher/hd-launcher.c
+	  Use.
+	* src/home/hd-task-navigator.c:
+	  Also don't crash if we can't play with canberra.
+
 2008-12-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Correct hard-coded menu.

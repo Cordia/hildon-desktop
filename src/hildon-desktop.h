@@ -24,9 +24,18 @@
 #ifndef HILDON_DESKTOP_H
 #define HILDON_DESKTOP_H
 
+#include <stdlib.h>
 #include <locale.h>
 #include <libintl.h>
 
 #define _(X) gettext(X)
+
+/* Do not create threads in scratchbox if $HD_NOTHREADS is defined.
+ * gdb doesn't like threads. */
+#ifdef __i386__
+# define hd_disable_threads()          getenv("HD_NOTHREADS")
+#else
+# define hd_disable_threads()          0
+#endif
 
 #endif
