@@ -40,6 +40,7 @@
 #include <clutter/clutter.h>
 #include <cogl/cogl.h>
 #include <tidy/tidy-finger-scroll.h>
+#include <canberra.h>
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
@@ -135,6 +136,9 @@
 #define EFFECT_LENGTH                   200
 #define VIDEO_SCREENSHOT_DIR            "/var/tmp/app-screenshots"
 
+/* What noise to make when a window is added/removed from the switcher. */
+#define WINDOW_OPEN_NOISE               "/usr/share/sounds/ui-window_open.wav"
+#define WINDOW_CLOSE_NOISE              "/usr/share/sounds/ui-window_close.wav"
 /* Standard definitions }}} */
 
 /* Type definitions {{{ */
@@ -300,7 +304,7 @@ static const gchar *Title_text_font  = "Anything but NULL";
 /* Private variables }}} */
 
 /* Program code */
-/* Graphics loading {{{ */
+/* Graphics loading and noise making {{{ */
 /* Returns the texture of an invisible (transparent) @width x @height box. */
 static ClutterTexture *
 empty_texture (guint width, guint height)
@@ -556,7 +560,38 @@ load_image_fit (char const * fname, guint aw, guint ah)
 
   return final;
 }
-/* Graphics loading }}} */
+
+/* Start playing @fname asynchronously. */
+static void
+play(const gchar * fname)
+{
+    static ca_context *ca;
+    ca_proplist *pl;
+    int ret;
+
+    /* Initialize the canberra context once. */
+    if (!ca)
+      {
+        if ((ret = ca_context_create (&ca)) != CA_SUCCESS)
+          {
+            g_warning("ca_context_create: %s", ca_strerror (ret));
+            return;
+          }
+        else if ((ret = ca_context_open (ca)) != CA_SUCCESS)
+          {
+            g_warning("ca_context_open: %s", ca_strerror (ret));
+            ca_context_destroy(ca);
+            return;
+          }
+      }
+
+    ca_proplist_create (&pl);
+    ca_proplist_sets (pl, CA_PROP_MEDIA_FILENAME, fname);
+    if ((ret = ca_context_play_full (ca, 0, pl, NULL, NULL)) != CA_SUCCESS)
+      g_warning("%s: %s", fname, ca_strerror (ret));
+    ca_proplist_destroy(pl);
+}
+/* Graphics loading and noise making }}} */
 
 /* Clutter utilities {{{ */
 /* add_effect_closure()'s #ClutterTimeline::completed handler. */
@@ -1981,6 +2016,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
 
   g_array_remove_index (Thumbnails, i);
   layout (newborn);
+  play (WINDOW_CLOSE_NOISE);
 
   /* Arrange for calling @fun(@funparam) if/when appripriate. */
   if (animation_in_progress (Fly_effect))
@@ -2021,6 +2057,7 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
     }
 
   layout (thumb.thwin);
+  play (WINDOW_OPEN_NOISE);
 }
 
 /* Remove @dialog from its application's thumbnail
