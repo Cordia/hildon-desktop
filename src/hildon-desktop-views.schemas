@@ -2,6 +2,16 @@
 <gconfschemafile>
   <schemalist>
     <schema>
+      <key>/schemas/apps/osso/hildon-desktop/views/currently-shown</key>
+      <applyto>/apps/osso/hildon-desktop/views/currently-shown</applyto>
+      <owner>hildon-desktop</owner>
+      <type>int</type>
+      <default>1</default>
+      <locale name="C">
+        <short>The currently shown Home view</short>
+      </locale>
+    </schema>
+    <schema>
       <key>/schemas/apps/osso/hildon-desktop/views/1/active</key>
       <applyto>/apps/osso/hildon-desktop/views/1/active</applyto>
       <owner>hildon-desktop</owner>

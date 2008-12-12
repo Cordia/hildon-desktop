@@ -1,3 +1,10 @@
+2008-12-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/hildon-desktop.postinst:
+	* src/Makefile.am:
+	* src/hildon-desktop-views.schemas:
+	* src/hildon-desktop-active.schemas (deleted): Rename .schemas file.
+
 2008-12-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Make noise when a window is added to/removed from the switcher,
