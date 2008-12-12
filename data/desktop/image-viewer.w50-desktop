@@ -11,7 +11,7 @@ X-HildonDesk-ShowInToolbar=true
 X-Osso-Service=image_viewer
 X-Osso-Type=application/x-executable
 MimeType=image/bmp;image/gif;image/jpeg;image/png;image/tiff;image/x-icon;image/vnd.wap.wbmp
-#Prestarted=always
+X-Maemo-Prestarted=always
 X-Osso-User-Position=4
 X-Maemo-Category=Main
 
