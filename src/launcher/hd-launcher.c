@@ -160,6 +160,8 @@ hd_launcher_init (HdLauncher *self)
   g_datalist_init (&priv->pages);
 }
 
+static gboolean blackhole (void) { return TRUE; }
+
 static void hd_launcher_constructed (GObject *gobject)
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (gobject);
@@ -169,8 +171,13 @@ static void hd_launcher_constructed (GObject *gobject)
                     G_CALLBACK (hd_launcher_populate_tree_finished),
                     NULL);
 
+  /* Don't let events propagate to HomeView.  Only exit when the
+   * back button is clicked, not when the background is. */
   priv->group = clutter_group_new ();
   clutter_actor_hide(priv->group);
+  clutter_actor_set_size (priv->group, 800, 480);
+  g_signal_connect (priv->group, "event", G_CALLBACK(blackhole), NULL);
+  clutter_actor_set_reactive (priv->group, TRUE);
 
   /* Blurring for the top-level launcher */
   priv->top_blur = tidy_blur_group_new();

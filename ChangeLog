@@ -1,3 +1,9 @@
+2008-12-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/launcher/hd-launcher.c:
+	  Don't exit launcher view to home view when clicking the backgound
+	  where the title area would be.
+
 2008-12-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Added X-Maemo-Prestarted=always to imageviewer as requested by the
