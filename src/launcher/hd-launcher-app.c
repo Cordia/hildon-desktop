@@ -98,7 +98,7 @@ hd_launcher_app_init (HdLauncherApp *launcher)
 static HdLauncherAppPrestartMode
 hd_launcher_app_parse_prestart_mode (gchar *mode)
 {
-  HdLauncherAppPrestartMode res;
+  HdLauncherAppPrestartMode res = HD_APP_PRESTART_USAGE;
 
   if (!mode)
     return HD_APP_PRESTART_NONE;

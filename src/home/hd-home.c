@@ -415,6 +415,27 @@ hd_home_desktop_press (XButtonEvent *xev, void *userdata)
 }
 
 static Bool
+hd_property_notify_message (XPropertyEvent *xev, void *userdata)
+{
+  HdHome          *home = userdata;
+  HdHomePrivate *priv = home->priv;
+  HdCompMgr     *hmgr = HD_COMP_MGR (priv->comp_mgr);
+
+  if (xev->atom==hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_PROGRESS_INDICATOR))
+    {
+      /* 
+       * The progress indicator should appear, or disappear.
+       * We don't actually need to change the operator position
+       * but this will cause the title to be redrawn, which
+       * means we can display or remove the progress indicator.
+       */
+      hd_home_fixup_operator_position (home);
+    }
+
+  return True;
+}
+
+static Bool
 hd_home_desktop_client_message (XClientMessageEvent *xev, void *userdata)
 {
   HdHome          *home = userdata;
@@ -768,6 +789,12 @@ hd_home_constructed (GObject *object)
 					  root_window_client_message,
 					  object); 
 
+  mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+					  None,
+					  PropertyNotify,
+					  (MBWMXEventFunc)
+					  hd_property_notify_message,
+					  object);
 }
 
 static void

@@ -1,3 +1,15 @@
+2008-12-12  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+          Partial checkin of progress indicator implementation.
+
+	* src/mb/hd-atoms.[ch]: Add atom for progress indicator
+	* src/home/hd-home.c: Respond to progress indicator change by
+          redrawing screen.
+	* src/mb/hd-theme.c: Pick up when to add progress indicator (not
+	  yet actually drawn).
+	* src/launcher/hd-launcher-app.c: initialise variable to avoid
+	  compiler warning.
+
 2008-12-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home.c (hd_home_grab_pointer, hd_home_ungrab_pointer,

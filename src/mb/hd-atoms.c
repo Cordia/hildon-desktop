@@ -36,6 +36,8 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
 
     "_HILDON_APPLET_ID",
 
+    "_HILDON_WM_WINDOW_PROGRESS_INDICATOR",
+
     "WM_WINDOW_ROLE",
 
     "UTF8_STRING",
