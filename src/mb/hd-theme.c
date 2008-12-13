@@ -768,6 +768,7 @@ decordata_free (MBWMDecor * decor, void *data)
   free (dd);
 }
 
+#ifndef USE_PANGO
 static gboolean
 window_is_waiting (MBWindowManager *wm, Window w)
 {
@@ -801,7 +802,7 @@ window_is_waiting (MBWindowManager *wm, Window w)
   else
     return 0;
 }
-
+#endif
 
 static void
 hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
