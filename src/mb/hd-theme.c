@@ -1197,7 +1197,9 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
       int len = strlen (title);
       int is_secondary_dialog;
       int centering_padding = 0;
+#ifndef USE_PANGO
       gboolean is_waiting_window = window_is_waiting (theme->wm, client->window->xwindow);
+#endif
 
       // TODO: This doesn't need to be done with a separate
       // attribute any more.
