@@ -1,10 +1,19 @@
+2008-12-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Xmas workaround:
+	Hide launcher and switcher if they are shown when a new window is
+	mapped. This enables using things like power menu in launcher and
+	switcher views.
+	* src/home/hd-switcher.h (hd_switcher_hide_launcher): Make public for
+	the above code.
+
 2008-12-12  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
-          Partial checkin of progress indicator implementation.
+	Partial checkin of progress indicator implementation.
 
 	* src/mb/hd-atoms.[ch]: Add atom for progress indicator
 	* src/home/hd-home.c: Respond to progress indicator change by
-          redrawing screen.
+	  redrawing screen.
 	* src/mb/hd-theme.c: Pick up when to add progress indicator (not
 	  yet actually drawn).
 	* src/launcher/hd-launcher-app.c: initialise variable to avoid

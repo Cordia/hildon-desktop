@@ -948,8 +948,29 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   g_object_set_data (G_OBJECT (actor),
 		     "HD-MBWMCompMgrClutterClient", cclient);
 
+  /* deactivate launcher and switcher in case of new window */
+  if (hd_switcher_showing_either (HD_SWITCHER (priv->switcher_group))
+      && !(ctype == MBWMClientTypeNote
+           && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
+      && ctype != HdWmClientTypeHomeApplet)
+  {
+    hd_home_ungrab_pointer (HD_HOME (priv->home));
+    if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
+    {
+      hd_switcher_deactivate (HD_SWITCHER (priv->switcher_group));
+    }
+    else
+    {
+      hd_switcher_hide_launcher (HD_SWITCHER (priv->switcher_group));
+      /* hack inside a hack: call this to setup the Tasks button */
+      hd_switcher_deactivate (HD_SWITCHER (priv->switcher_group));
+    }
+  }
+
   /* Do evil.  Do we need to block the Tasks button? */
-  if ((ctype == MBWMClientTypeDialog || (ctype == MBWMClientTypeNote && HD_NOTE (c)->note_type != HdNoteTypeIncomingEvent))
+  if ((ctype == MBWMClientTypeDialog ||
+      (ctype == MBWMClientTypeNote &&
+       HD_NOTE (c)->note_type != HdNoteTypeIncomingEvent))
       && hd_util_is_client_system_modal (c))
     {
       if (g_hash_table_size (priv->tasks_button_blockers) == 0)

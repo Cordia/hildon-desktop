@@ -97,6 +97,7 @@ gboolean hd_switcher_showing_switcher (HdSwitcher * switcher);
 gboolean hd_switcher_showing_either (HdSwitcher * switcher);
 
 void hd_switcher_deactivate (HdSwitcher * switcher);
+void hd_switcher_hide_launcher (HdSwitcher * switcher);
 
 void hd_switcher_get_control_area_size (HdSwitcher *switcher,
 					guint *control_width,

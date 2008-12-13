@@ -117,7 +117,7 @@ static void hd_switcher_setup_buttons (HdSwitcher * switcher,
 				       gboolean switcher_mode);
 
 static void hd_switcher_hide_switcher (HdSwitcher * switcher);
-static void hd_switcher_hide_launcher (HdSwitcher * switcher);
+void hd_switcher_hide_launcher (HdSwitcher * switcher);
 
 static void hd_switcher_home_mode_changed (HdHome         *home,
 					   HdHomeMode      mode,
@@ -1004,7 +1004,7 @@ hd_switcher_hide_switcher (HdSwitcher * switcher)
   hd_comp_mgr_sync_stacking (HD_COMP_MGR (priv->comp_mgr));
 }
 
-static void
+void
 hd_switcher_hide_launcher (HdSwitcher *switcher)
 {
   /* FIXME once we have the launcher */
