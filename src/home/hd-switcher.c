@@ -635,7 +635,6 @@ static void
 hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor,
                            HdTaskNavigator *navigator)
 {
-  hd_switcher_hide_buttons (switcher);
   hd_task_navigator_zoom_in (navigator, actor,
               (ClutterEffectCompleteFunc) hd_switcher_zoom_in_complete,
               switcher);
