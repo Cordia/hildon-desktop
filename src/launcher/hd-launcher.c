@@ -75,6 +75,8 @@ struct _HdLauncherPrivate
 enum
 {
   APP_LAUNCHED,
+  CAT_LAUNCHED,
+  CAT_HIDDEN,
   HIDDEN,
 
   LAST_SIGNAL
@@ -137,6 +139,20 @@ hd_launcher_class_init (HdLauncherClass *klass)
 
   launcher_signals[APP_LAUNCHED] =
     g_signal_new (I_("application-launched"),
+                  HD_TYPE_LAUNCHER,
+                  G_SIGNAL_RUN_FIRST,
+                  0, NULL, NULL,
+                  g_cclosure_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0, NULL);
+  launcher_signals[CAT_LAUNCHED] =
+    g_signal_new (I_("category-launched"),
+                  HD_TYPE_LAUNCHER,
+                  G_SIGNAL_RUN_FIRST,
+                  0, NULL, NULL,
+                  g_cclosure_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0, NULL);
+  launcher_signals[CAT_HIDDEN] =
+    g_signal_new (I_("category-hidden"),
                   HD_TYPE_LAUNCHER,
                   G_SIGNAL_RUN_FIRST,
                   0, NULL, NULL,
@@ -319,6 +335,8 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
       hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
         HD_LAUNCHER_PAGE_TRANSITION_FORWARD);
       priv->active_page = top_page;
+      g_signal_emit (hd_launcher_get (), launcher_signals[CAT_HIDDEN],
+                     0, NULL);
     }
 }
 
@@ -373,6 +391,9 @@ hd_launcher_category_tile_clicked (HdLauncherTile *tile, gpointer data)
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(page),
         HD_LAUNCHER_PAGE_TRANSITION_IN_SUB);
   priv->active_page = page;
+
+  g_signal_emit (hd_launcher_get (), launcher_signals[CAT_LAUNCHED],
+                 0, NULL);
 }
 
 static void

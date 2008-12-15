@@ -129,6 +129,10 @@ static void hd_switcher_home_background_clicked (HdSwitcher   *switcher,
 						 ClutterActor *actor);
 static void hd_switcher_hide_launcher_after_launch (HdLauncher *launcher,
                                                     HdSwitcher *switcher);
+static void hd_switcher_launcher_cat_launched (HdLauncher *launcher,
+                                               HdSwitcher *switcher);
+static void hd_switcher_launcher_cat_hidden (HdLauncher *launcher,
+                                             HdSwitcher *switcher);
 
 static gboolean hd_switcher_notification_clicked (HdSwitcher *switcher,
                                                   HdNote *note);
@@ -206,6 +210,12 @@ hd_switcher_constructed (GObject *object)
                     object);
   g_signal_connect (priv->launcher, "launcher-hidden",
                     G_CALLBACK (launcher_back_button_clicked),
+                    object);
+  g_signal_connect (priv->launcher, "category-launched",
+                    G_CALLBACK (hd_switcher_launcher_cat_launched),
+                    object);
+  g_signal_connect (priv->launcher, "category-hidden",
+                    G_CALLBACK (hd_switcher_launcher_cat_hidden),
                     object);
 
   priv->switcher_group = CLUTTER_ACTOR (hd_task_navigator_new ());
@@ -575,6 +585,24 @@ hd_switcher_hide_launcher_after_launch (HdLauncher *launcher,
       hd_comp_mgr_lower_home_actor(HD_COMP_MGR (priv->comp_mgr));
       hd_switcher_setup_buttons (switcher, TRUE);
     }
+}
+
+static void
+hd_switcher_launcher_cat_launched (HdLauncher *launcher,
+                                   HdSwitcher *switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  hd_comp_mgr_blur_home(HD_COMP_MGR (priv->comp_mgr), TRUE, 2);
+}
+
+static void
+hd_switcher_launcher_cat_hidden (HdLauncher *launcher,
+                                 HdSwitcher *switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  hd_comp_mgr_blur_home(HD_COMP_MGR (priv->comp_mgr), TRUE, 1);
 }
 
 static void

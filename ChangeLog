@@ -1,3 +1,15 @@
+2008-12-15  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Zoom out when jumping to the second level in task launcher.
+
+	* src/home/hd-switcher.c (switcher_mode, hd_switcher_constructed,
+	  hd_switcher_launcher_cat_launched, hd_switcher_launcher_cat_hidden,
+	  hd_switcher_zoom_in_complete):
+	* src/launcher/hd-launcher.c (CAT_LAUNCHED, CAT_HIDDEN,
+	  hd_launcher_class_init, hd_launcher_back_button_clicked,
+	  hd_launcher_category_tile_clicked): Added new signals for launching
+	  subcategory and hiding it.
+
 2008-12-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/launcher/hd-launcher-page.c, src/launcher/hd-launcher.c:
