@@ -102,8 +102,6 @@ hd_status_area_request_geometry (MBWindowManagerClient *client,
                                  MBGeometry            *new_geometry,
                                  MBWMClientReqGeomType  flags)
 {
-  g_debug ("%s: %d", __FUNCTION__, new_geometry->width);
-
   client->frame_geometry.x = new_geometry->x;
   client->frame_geometry.y = new_geometry->y;
   client->frame_geometry.width  = new_geometry->width;
