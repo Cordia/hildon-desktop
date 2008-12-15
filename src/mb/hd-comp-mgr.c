@@ -1242,33 +1242,29 @@ hd_comp_mgr_effect_popup(MBWMCompMgr                *mgr,
 
 static void
 hd_comp_mgr_effect_close_app (MBWMCompMgr                *mgr,
-                               MBWindowManagerClient      *c)
+                              MBWindowManagerClient      *c)
 {
   MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
   HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClutterClient * cclient;
   ClutterActor             * actor;
-
-  /* proper app close animation */
-  if (c_type != MBWMClientTypeApp)
-    return;
-    
-  HdApp *app;
   HDEffectData             * data;
   ClutterGeometry            geo;
   ClutterActor             * stage;
   gint i;
+
+  if (c_type != MBWMClientTypeApp)
+    return;
 
   /* The switcher will do the effect if it's active, don't interfere. */
   if (hd_switcher_showing_switcher (HD_SWITCHER (priv->switcher_group)))
     return;
 
   /* Don't do the unmap transition if it's a secondary. */
-  app = HD_APP (c);
-  if (app->secondary_window)
+  if (HD_APP (c)->secondary_window)
     {
       /* FIXME: Transitions. */
-      g_debug ("%s: Unmapping secondary window.\n", __FUNCTION__);
+      g_debug ("%s: secondary window", __FUNCTION__);
       return;
     }
 
@@ -1276,9 +1272,10 @@ hd_comp_mgr_effect_close_app (MBWMCompMgr                *mgr,
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
   if (!actor || !CLUTTER_ACTOR_IS_VISIBLE(actor))
     return;
+
   /* Don't bother for anything tiny */
   clutter_actor_get_geometry(actor, &geo);
-  if (geo.width<16 || geo.height<16)
+  if (geo.width < 16 || geo.height < 16)
     return;
 
   /* Need to store also pointer to the manager, as by the time
@@ -1305,9 +1302,9 @@ hd_comp_mgr_effect_close_app (MBWMCompMgr                *mgr,
   /* we need to load some actors for this animation... */
   data->particles[0] = clutter_texture_new_from_file (
            g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL), 0);
-  for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
+  for (i = 0; i < HDCM_UNMAP_PARTICLES; i++)
     {
-      if (i>0 && data->particles[0])
+      if (i > 0 && data->particles[0])
         data->particles[i] = clutter_clone_texture_new(
                                 CLUTTER_TEXTURE(data->particles[0]));
       if (data->particles[i])
