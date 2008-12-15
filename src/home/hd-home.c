@@ -73,6 +73,10 @@
 #define CALL_UI_DBUS_PATH "/com/nokia/CallUI"
 #define CALL_UI_DBUS_METHOD_SHOW_DIALPAD "ShowDialpad"
 
+#define OSSO_ADDRESSBOOK_DBUS_NAME "com.nokia.osso_addressbook"
+#define OSSO_ADDRESSBOOK_DBUS_PATH "/com/nokia/osso_addressbook"
+#define OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND "search_append"
+
 enum
 {
   PROP_COMP_MGR = 1,
@@ -147,6 +151,7 @@ struct _HdHomePrivate
   /* DBus Proxy for the call to com.nokia.CallUI.ShowDialpad */
   DBusGConnection       *connection;
   DBusGProxy            *call_ui_proxy;
+  DBusGProxy            *osso_addressbook_proxy;
 };
 
 static void hd_home_class_init (HdHomeClass *klass);
@@ -362,11 +367,11 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
   HdHome *home = userdata;
   HdHomePrivate *priv = home->priv;
 
-  char buffer[10];
+  char buffer[10] = {0,};
 
   XLookupString (xev, buffer, 10, NULL, NULL);
 
-  if (priv->call_ui_proxy)
+  if (priv->call_ui_proxy && g_ascii_isdigit (buffer[0]))
     {
       g_debug ("Call Dialpad via D-BUS. " CALL_UI_DBUS_NAME "." CALL_UI_DBUS_METHOD_SHOW_DIALPAD " (s: %s)", buffer);
 
@@ -375,8 +380,16 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
                                   G_TYPE_INVALID);
       return TRUE;
     }
+  else if (priv->osso_addressbook_proxy && buffer[0])
+    {
+      /* FIXME: NYI
+      g_debug ("Call via D-BUS. " OSSO_ADDRESSBOOK_DBUS_NAME "." OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND " (s: %s)", buffer);
 
-  g_warning ("No Proxy for " CALL_UI_DBUS_NAME);
+      dbus_g_proxy_call_no_reply (priv->osso_addressbook_proxy, OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND,
+                                  G_TYPE_STRING, buffer,
+                                  G_TYPE_INVALID);
+      return TRUE; */
+    }
 
   return FALSE;
 }
@@ -874,6 +887,11 @@ hd_home_init (HdHome *self)
                                                    CALL_UI_DBUS_NAME,
                                                    CALL_UI_DBUS_PATH,
                                                    CALL_UI_DBUS_NAME);
+
+  priv->osso_addressbook_proxy = dbus_g_proxy_new_for_name (priv->connection,
+                                                            OSSO_ADDRESSBOOK_DBUS_NAME,
+                                                            OSSO_ADDRESSBOOK_DBUS_PATH,
+                                                            OSSO_ADDRESSBOOK_DBUS_NAME);
 
 cleanup:
   if (bus_proxy != NULL)

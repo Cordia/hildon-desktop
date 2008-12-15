@@ -1,3 +1,9 @@
+2008-12-15  Jan Arne Petersen  <jpetersen@openismus.com>
+	
+	* src/home/hd-home.c (hd_home_desktop_key_press, hd_home_init): Only
+	  open dialpad if a number was pressed. Add code for the addressbook
+	  live search.
+
 2008-12-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.11
