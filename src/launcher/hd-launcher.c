@@ -343,8 +343,9 @@ hd_launcher_set_top_blur (float amount)
   tidy_blur_group_set_brightness(priv->top_blur, 1.0f - amount*0.7f);
   tidy_blur_group_set_zoom(priv->top_blur,
                         (15.0f + cos(amount*3.141592f)) / 16);
+
   clutter_actor_set_opacity (CLUTTER_ACTOR (priv->top_blur),
-                             0xff - (0xff * amount));
+                             (int)(0xff - (0xff * 0.3 * amount)));
 }
 
 /* sets the opacity of the back button for a nice fade in */

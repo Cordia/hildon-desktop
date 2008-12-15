@@ -553,12 +553,9 @@ hd_home_view_refresh_bg (HdHomeView  *self,
 			 const gchar *image)
 {
   HdHomeViewPrivate *priv = self->priv;
-  
-  g_debug ("%s entered, '%s'", __FUNCTION__, image);
 
   if (g_strcmp0 (image, priv->background_image_file) == 0)
     {
-      g_debug ("%s: background is the same as old one", __FUNCTION__);
       return;
     }
 

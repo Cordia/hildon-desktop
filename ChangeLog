@@ -1,3 +1,11 @@
+2008-12-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/launcher/hd-launcher-page.c, src/launcher/hd-launcher.c:
+	Task Launcher animation adjustments from 1:2.2.10-1fix tag.
+	
+	* src/home/hd-home-view.c (hd_home_view_refresh_bg): Remove debug to
+	enable speedier scrolling.
+
 2008-12-15  Jan Arne Petersen  <jpetersen@openismus.com>
 	
 	* src/home/hd-home.c (hd_home_desktop_key_press, hd_home_init): Only

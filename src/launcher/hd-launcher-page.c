@@ -195,7 +195,7 @@ hd_launcher_page_constructed (GObject *object)
   priv->grid = g_object_ref (hd_launcher_grid_new ());
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->scroller),
                                priv->grid);
-  priv->transition = g_object_ref (clutter_timeline_new_for_duration (500));
+  priv->transition = g_object_ref (clutter_timeline_new_for_duration (350));
   g_signal_connect (priv->transition, "new-frame",
                     G_CALLBACK (hd_launcher_page_new_frame), object);
   g_signal_connect (priv->transition, "completed",
