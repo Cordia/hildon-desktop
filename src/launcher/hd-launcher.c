@@ -45,7 +45,6 @@
 #include "hildon-desktop.h"
 #include "hd-launcher-page.h"
 #include "hd-gtk-utils.h"
-#include "hd-gtk-style.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 #define HD_LAUNCHER_LAUNCH_IMAGE_BLANK \
@@ -101,8 +100,6 @@ static void hd_launcher_populate_tree_finished (HdLauncherTree *tree,
 static void hd_launcher_transition_app_start (HdLauncherApp *item);
 static void hd_launcher_transition_new_frame(ClutterTimeline *timeline,
                                              gint frame_num, gpointer data);
-static void hd_launcher_transition_completed(ClutterTimeline *timeline,
-                                             gpointer data);
 
 /* DBus names */
 #define OSSO_BUS_ROOT          "com.nokia"
@@ -209,11 +206,9 @@ static void hd_launcher_constructed (GObject *gobject)
   /* App launch transition */
   priv->launch_image = 0;
   priv->launch_transition = g_object_ref (
-                                clutter_timeline_new_for_duration (1000));
+                                clutter_timeline_new_for_duration (400));
   g_signal_connect (priv->launch_transition, "new-frame",
                     G_CALLBACK (hd_launcher_transition_new_frame), gobject);
-  g_signal_connect (priv->launch_transition, "completed",
-                    G_CALLBACK (hd_launcher_transition_completed), gobject);
   priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
   priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
   priv->launch_position.z = 0;
@@ -732,7 +727,6 @@ _hd_launcher_transition_clicked(ClutterActor *actor,
                                 ClutterEvent *event,
                                 gpointer user_data)
 {
-  g_debug ("%s\n", __FUNCTION__);
   hd_launcher_window_created();
   /* redraw the stage so it is immediately removed */
   clutter_actor_queue_redraw( clutter_stage_get_default() );
@@ -748,7 +742,11 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
 
   loading_image = hd_launcher_app_get_loading_image( item );
-  /* If loading image is blank, we don't anything. */
+  /* We only do this is loading_image is NOT defined. If it is blank
+   * then see below - we don't do anything. */
+  if (!loading_image)
+    loading_image = HD_LAUNCHER_LAUNCH_IMAGE_BLANK;
+
   if (loading_image && strlen(loading_image)>0)
     {
       gchar *loading_path = g_strdup(loading_image);
@@ -760,50 +758,31 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
        * step of the transition so we don't get flicker before the timeline
        * is called */
       priv->launch_image = clutter_texture_new_from_file(loading_path, 0);
-      if (!priv->launch_image)
+      if (priv->launch_image)
+        {
+          ClutterActor *parent = clutter_stage_get_default();
+
+          clutter_actor_set_name(priv->launch_image,
+                                 "HdLauncher:launch_image");
+          clutter_container_add_actor(CLUTTER_CONTAINER(parent),
+                                      priv->launch_image);
+          clutter_actor_set_reactive ( priv->launch_image, TRUE );
+          g_signal_connect (priv->launch_image, "button-release-event",
+                            G_CALLBACK(_hd_launcher_transition_clicked), 0);
+
+          hd_launcher_transition_new_frame(priv->launch_transition,
+                                           0, launcher);
+          clutter_actor_show(priv->launch_image);
+
+          clutter_timeline_rewind(priv->launch_transition);
+          clutter_timeline_start(priv->launch_transition);
+        }
+      else
         g_debug("%s: Preload image file '%s' specified for '%s'"
-                    " couldn't be loaded",
-                    __FUNCTION__, loading_path, hd_launcher_app_get_exec(item));
+                " couldn't be loaded",
+                __FUNCTION__, loading_path, hd_launcher_app_get_exec(item));
 
       g_free(loading_path);
-    }
-  else if (!loading_image)
-    {
-      /* We build a default one. We only do this is loading_image is NOT
-       * defined. If it is blank then see below - we don't do anything. */
-      ClutterColor clr;
-
-      if (priv->launch_image)
-        clutter_actor_destroy(priv->launch_image);
-      hd_gtk_style_get_bg_color (HD_GTK_BUTTON_SINGLETON,
-                                 GTK_STATE_NORMAL, &clr);
-      priv->launch_image = clutter_rectangle_new_with_color (&clr);
-      /*
-      clutter_actor_set_positionu (priv->launch_image,
-                                   priv->launch_position.x,
-                                   priv->launch_position.y);
-      clutter_actor_set_size (priv->launch_image, 64, 64);
-      */
-    }
-
-  if (priv->launch_image)
-    {
-      ClutterActor *parent = clutter_stage_get_default();
-
-      clutter_actor_set_name(priv->launch_image,
-                             "HdLauncher:launch_image");
-      clutter_container_add_actor(CLUTTER_CONTAINER(parent),
-                                  priv->launch_image);
-      clutter_actor_set_reactive ( priv->launch_image, TRUE );
-      g_signal_connect (priv->launch_image, "button-release-event",
-                        G_CALLBACK(_hd_launcher_transition_clicked), 0);
-
-      hd_launcher_transition_new_frame(priv->launch_transition,
-                                       0, launcher);
-      clutter_actor_show(priv->launch_image);
-
-      clutter_timeline_rewind(priv->launch_transition);
-      clutter_timeline_start(priv->launch_transition);
     }
 }
 
@@ -847,24 +826,13 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
                 HD_LAUNCHER_PAGE_WIDTH*0.5f*amt +
                 CLUTTER_FIXED_TO_FLOAT(priv->launch_position.x)*(1-amt));
   my = CLUTTER_FLOAT_TO_FIXED(
-                60*amt + 420*0.5f*amt +
+                HD_LAUNCHER_PAGE_HEIGHT*0.5f*amt +
                 CLUTTER_FIXED_TO_FLOAT(priv->launch_position.y)*(1-amt));
   /* size of actor */
   zx = CLUTTER_FLOAT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH*amt*0.5f);
-  zy = CLUTTER_FLOAT_TO_FIXED(420*amt*0.5f);
+  zy = CLUTTER_FLOAT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT*amt*0.5f);
 
   clutter_actor_set_sizeu(priv->launch_image, zx*2, zy*2);
   clutter_actor_set_positionu(priv->launch_image, mx-zx, my-zy);
 }
 
-static void
-hd_launcher_transition_completed(ClutterTimeline *timeline, gpointer data)
-{
-  HdLauncher *page = HD_LAUNCHER(data);
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (page);
-  if (priv->launch_image)
-  {
-    clutter_actor_destroy(priv->launch_image);
-    priv->launch_image = 0;
-  }
-}

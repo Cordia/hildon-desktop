@@ -1,3 +1,12 @@
+2008-12-15  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Switched back to using a fake image for the loading screen.
+
+	* data/Makefile.am:
+	* src/launcher/hd-launcher.c (hd_launcher_constructed,
+	  hd_launcher_transition_app_start, hd_launcher_transition_new_frame):
+	* data/blank-window.png: Updated to latest theme.
+
 2008-12-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Xmas workaround:
