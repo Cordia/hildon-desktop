@@ -334,7 +334,6 @@ hd_app_close_followers (HdApp *app)
     {
       MBWindowManagerClient *f = l->data;
 
-      //g_debug ("%s: Closing App client %s", __func__, mb_wm_client_get_name(f));
       mb_wm_client_deliver_delete (f);
       l = l->prev;
     }
