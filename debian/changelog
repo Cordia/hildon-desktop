@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.11-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.11-1) unstable; urgency=low
 
   * Increase version number of libmatchbox2 build dependency.
   * Hide launcher and switcher if they are shown when a new window is
