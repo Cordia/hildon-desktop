@@ -1,6 +1,18 @@
 hildon-desktop (1:2.2.11-1~unreleased) unstable; urgency=low
 
   * Increase version number of libmatchbox2 build dependency.
+  * Hide launcher and switcher if they are shown when a new window is
+    mapped. This enables using things like power menu in launcher and
+    switcher views.
+  * Marc: Changed the default loading screen to a rect created from the theme's
+    bg color. Also, remove it after the animation is complete.
+  * Adam: Make noise when a window is added to/removed from the switcher,
+    effectively, when an application is opened or closed.
+  * Adam: Recognize popup menus and such and add/remove from their
+    application's thumbnail in the switcher.
+  * Thomas: Partial checkin of progress indicator implementation.
+  * Jan Arne: Fix pointer grab/ungrab with Home edit menu.
+  * Marc: Correct hard-coded menu. Pre-started image viewer.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 11 Dec 2008 15:54:35 +0200
 
