@@ -10,6 +10,7 @@ X-Osso-Type=application/x-executable
 X-Osso-URI-Actions=xmpp;sip;chatto;sms;tel;
 X-Osso-User-Position=10
 X-Maemo-Category=Main
+X-Maemo-Prestarted=always
 
 [X-Osso-URI-Action Handler xmpp]
 Method=messaging_ui_interface_start_chat
