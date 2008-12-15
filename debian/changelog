@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.12-1~unreleased) unstable; urgency=low
+
+  * unreleased
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Dec 2008 15:52:29 +0200
+
 hildon-desktop (1:2.2.11-1) unstable; urgency=low
 
   * Increase version number of libmatchbox2 build dependency.
