@@ -195,7 +195,6 @@ back_button_release_handler (MBWindowManager   *wm,
   g_source_remove (bd->timeout_id);
   bd->timeout_id = 0;
 
-  /* TODO -- switch to previous window in group */
   c = button->decor->parent_client;
   mb_wm_client_deliver_delete (c);
   
