@@ -1,3 +1,9 @@
+2008-12-16  Tuomas Kuosmanen  <tuomas.kuosmanen@nokia.com>
+
+	* data/icons/48x48/back-button.png: fixed for demo
+	* data/icons/48x48/qgn_tswitcher_close.png: fixed for demo
+	* data/icons/48x48/qgn_tswitcher_back.png: fixed for demo
+
 2008-12-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.12
