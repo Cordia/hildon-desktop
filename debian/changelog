@@ -1,8 +1,30 @@
-hildon-desktop (1:2.2.12-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.12-1) unstable; urgency=low
 
-  * unreleased
+  Marc:
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Dec 2008 15:52:29 +0200
+  * Zoom out when jumping to the second level in task launcher.
+  * src/home/hd-switcher.c (switcher_mode, hd_switcher_constructed,
+    hd_switcher_launcher_cat_launched, hd_switcher_launcher_cat_hidden,
+    hd_switcher_zoom_in_complete):
+  * src/launcher/hd-launcher.c (CAT_LAUNCHED, CAT_HIDDEN,
+    hd_launcher_class_init, hd_launcher_back_button_clicked,
+    hd_launcher_category_tile_clicked): Added new signals for launching
+    subcategory and hiding it.
+
+  Kimmo:
+
+  * src/launcher/hd-launcher-page.c, src/launcher/hd-launcher.c:
+    Task Launcher animation adjustments from 1:2.2.10-1fix tag.
+  * src/home/hd-home-view.c (hd_home_view_refresh_bg): Remove debug to
+    enable speedier scrolling.
+
+  Jan Arne:
+        
+  * src/home/hd-home.c (hd_home_desktop_key_press, hd_home_init): Only
+    open dialpad if a number was pressed. Add code for the addressbook
+    live search.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 16 Dec 2008 10:07:01 +0200
 
 hildon-desktop (1:2.2.11-1) unstable; urgency=low
 
