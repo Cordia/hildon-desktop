@@ -1,3 +1,8 @@
+2008-12-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-comp-mgr.c:
+	Added fix for SIGSEGV apparently caused by libmatchbox changes
+
 2008-12-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Activated preloading for camera UI.

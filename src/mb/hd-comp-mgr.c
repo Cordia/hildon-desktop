@@ -907,7 +907,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
                 /* Hide the followers and replace the last one preceeding us
                  * with outselfves in the switcher. */
-                for (l = app->leader->followers; ; l = l->next)
+                for (l = app->leader->followers; l && l->next; l = l->next)
                   {
                     g_return_if_fail (l != NULL);
                     top = MB_WM_COMP_MGR_CLUTTER_CLIENT (MB_WM_CLIENT (l->data)->cm_client);
