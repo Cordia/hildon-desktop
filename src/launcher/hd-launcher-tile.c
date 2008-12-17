@@ -311,10 +311,21 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
                                &text_color);
   font_string = hd_gtk_style_get_font_string (HD_GTK_BUTTON_SINGLETON);
   priv->label = clutter_label_new_full (font_string, priv->text, &text_color);
-  clutter_label_set_line_wrap (CLUTTER_LABEL (priv->label), FALSE);
-  clutter_label_set_ellipsize (CLUTTER_LABEL (priv->label), PANGO_ELLIPSIZE_NONE);
-  clutter_label_set_alignment (CLUTTER_LABEL (priv->label), PANGO_ALIGN_CENTER);
+
+  /* FIXME: This is a huge work-around because clutter/pango do not
+   * support setting ellipsize to NONE and wrap to FALSE.
+   */
+  clutter_label_set_line_wrap (CLUTTER_LABEL (priv->label), TRUE);
+  clutter_label_set_ellipsize (CLUTTER_LABEL (priv->label),
+                               PANGO_ELLIPSIZE_NONE);
+  clutter_label_set_alignment (CLUTTER_LABEL (priv->label),
+                               PANGO_ALIGN_CENTER);
+  clutter_label_set_line_wrap_mode (CLUTTER_LABEL (priv->label),
+                                    PANGO_WRAP_CHAR);
   clutter_actor_set_parent (priv->label, CLUTTER_ACTOR (tile));
+  clutter_actor_set_clip (priv->label, 0, 0,
+              HD_LAUNCHER_TILE_WIDTH,
+              HD_LAUNCHER_TILE_HEIGHT - (64 + (HILDON_MARGIN_HALF * 2)));
 
   g_free (font_string);
 }
@@ -377,8 +388,6 @@ hd_launcher_tile_allocate (ClutterActor          *actor,
   HdLauncherTilePrivate *priv;
   ClutterActor *icon, *label;
   ClutterActorClass *parent_class;
-  ClutterUnit icon_width, icon_height;
-  ClutterUnit label_width;
 
   /* chain up to get the allocation stored */
   parent_class = CLUTTER_ACTOR_CLASS (hd_launcher_tile_parent_class);
@@ -388,12 +397,7 @@ hd_launcher_tile_allocate (ClutterActor          *actor,
   icon  = priv->icon;
   label = priv->label;
 
-  if (!icon || !label)
-    return;
-
-  label_width = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_TILE_WIDTH);
-  icon_height = icon_width = CLUTTER_UNITS_FROM_DEVICE (64);
-
+  if (icon)
   {
     guint x1, y1;
     ClutterActorBox icon_box;
@@ -408,6 +412,7 @@ hd_launcher_tile_allocate (ClutterActor          *actor,
     clutter_actor_allocate (icon, &icon_box, origin_changed);
   }
 
+  if (label)
   {
     ClutterActorBox label_box;
     ClutterUnit label_width;

@@ -1,3 +1,13 @@
+2008-12-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Fixes NB#96038
+	Pango doesn't do the correct thing when ellipsize is set to NONE and
+	wrap to FALSE, so we now clip HdLauncherTile's labels so they don't
+	go over their allocation.
+
+	* src/launcher/hd-launcher-tile.c (hd_launcher_tile_set_text,
+	  hd_launcher_tile_allocate):
+
 2008-12-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#95917
