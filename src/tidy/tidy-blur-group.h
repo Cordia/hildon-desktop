@@ -15,14 +15,14 @@ G_BEGIN_DECLS
 #define TIDY_BLUR_GROUP_GET_CLASS(obj)      (G_TYPE_INSTANCE_GET_CLASS ((obj), TIDY_TYPE_BLUR_GROUP, TidyBlurGroupClass))
 
 
-typedef struct _TidyBlurGroup         TidyBlurGroup; 
+typedef struct _TidyBlurGroup         TidyBlurGroup;
 typedef struct _TidyBlurGroupClass    TidyBlurGroupClass;
 typedef struct _TidyBlurGroupPrivate  TidyBlurGroupPrivate;
 
 struct _TidyBlurGroup
 {
   ClutterGroup          parent;
-  
+
   TidyBlurGroupPrivate  *priv;
 };
 
@@ -30,7 +30,7 @@ struct _TidyBlurGroupClass
 {
   /*< private >*/
   ClutterGroupClass parent_class;
-  
+
   void (*overridden_paint)(ClutterActor *actor);
 };
 
@@ -46,7 +46,7 @@ float tidy_blur_group_get_zoom(ClutterActor *blur_group);
 
 void tidy_blur_group_set_use_alpha(ClutterActor *blur_group, gboolean alpha);
 void tidy_blur_group_set_use_mirror(ClutterActor *blur_group, gboolean mirror);
-
+void tidy_blur_group_set_source_changed(ClutterActor *blur_group);
 
 
 G_END_DECLS

@@ -47,12 +47,12 @@ typedef struct _HdSwitcherPrivate HdSwitcherPrivate;
 
 struct _HdSwitcherClass
 {
-  ClutterGroupClass parent_class;
+  GObjectClass         parent_class;
 };
 
 struct _HdSwitcher
 {
-  ClutterGroup          parent;
+  GObject              parent;
 
   HdSwitcherPrivate    *priv;
 };
@@ -93,21 +93,12 @@ void hd_switcher_get_button_geometry (HdSwitcher      * switcher,
 
 ClutterActor *hd_switcher_get_task_navigator (HdSwitcher *switcher);
 
-gboolean hd_switcher_showing_switcher (HdSwitcher * switcher);
-gboolean hd_switcher_showing_either (HdSwitcher * switcher);
-
-void hd_switcher_deactivate (HdSwitcher * switcher);
-void hd_switcher_hide_launcher (HdSwitcher * switcher);
-
 void hd_switcher_get_control_area_size (HdSwitcher *switcher,
 					guint *control_width,
 					guint *control_height);
 
 void hd_switcher_show_status_area (HdSwitcher *switcher);
 void hd_switcher_hide_status_area (HdSwitcher *switcher);
-
-void hd_switcher_act_like_dead (HdSwitcher *switcher);
-void hd_switcher_revive (HdSwitcher *switcher);
 
 G_END_DECLS
 

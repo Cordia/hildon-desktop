@@ -56,13 +56,14 @@ struct _HdLauncherPageClass
   ClutterActorClass parent_class;
 };
 
-typedef enum 
+typedef enum
 {
   HD_LAUNCHER_PAGE_TRANSITION_IN = 0,
   HD_LAUNCHER_PAGE_TRANSITION_OUT,
+  HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK, /* out for topmost menu when the back is over it */
   HD_LAUNCHER_PAGE_TRANSITION_LAUNCH,
   HD_LAUNCHER_PAGE_TRANSITION_IN_SUB, /* in for sub-menu */
-  HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB, /* out for sub-menu */     
+  HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB, /* out for sub-menu */
   HD_LAUNCHER_PAGE_TRANSITION_BACK, /* back out as a new menu appears */
   HD_LAUNCHER_PAGE_TRANSITION_FORWARD, /* forwards after a new menu is removed */
 } HdLauncherPageTransition;
@@ -79,9 +80,9 @@ void hd_launcher_page_set_text      (HdLauncherPage *page,
                                       const gchar *text);
 
 void hd_launcher_page_add_tile (HdLauncherPage *page, HdLauncherTile* tile);
-void hd_launcher_page_transition(HdLauncherPage *page, 
+void hd_launcher_page_transition(HdLauncherPage *page,
                                  HdLauncherPageTransition trans_type);
-ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page);                                 
+ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page);
 
 /* Fixed sizes.
  * FIXME: These should come from getting the screen size

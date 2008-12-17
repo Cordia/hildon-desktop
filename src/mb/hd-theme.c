@@ -137,7 +137,7 @@ back_button_timeout (gpointer data)
       g_warning ("Custom button on a something other than App.");
       goto finalize;
     }
- 
+
   /*
    * We have to check if the button is still pressed. The user might released
    * the stylus outside the button.
@@ -189,7 +189,7 @@ back_button_release_handler (MBWindowManager   *wm,
   BackButtonData        *bd = userdata;
   MBWindowManagerClient *c;
 
-  if (!bd || bd->timeout_handled) 
+  if (!bd || bd->timeout_handled)
     return;
 
   g_source_remove (bd->timeout_id);
@@ -197,7 +197,7 @@ back_button_release_handler (MBWindowManager   *wm,
 
   c = button->decor->parent_client;
   mb_wm_client_deliver_delete (c);
-  
+
   mb_wm_object_unref (MB_WM_OBJECT(button));
 }
 
@@ -224,7 +224,7 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
       while (l)
 	{
 	  MBWMXmlButton * b = l->data;
-	
+
 	  /* Back button only for group followers */
 	  if (b->type == HdHomeThemeButtonBack && !is_leader &&
 	      MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeApp)
@@ -256,7 +256,7 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 						     decor,
 						     0);
 	    }
-	  else if (b->type != HdHomeThemeButtonBack && 
+	  else if (b->type != HdHomeThemeButtonBack &&
 	      b->type != MBWMDecorButtonClose)
 	    {
               g_debug("%s: other button", __FUNCTION__);
@@ -267,7 +267,7 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
 						     decor,
 	                        MB_WM_DECOR_BUTTON_NOHANDLERS);
 	    }
-	  else 
+	  else
 	    {
               g_debug("%s: no button", __FUNCTION__);
 	      button = NULL;
@@ -767,7 +767,7 @@ decordata_free (MBWMDecor * decor, void *data)
   free (dd);
 }
 
-#ifndef USE_PANGO
+#if !USE_PANGO
 static gboolean
 window_is_waiting (MBWindowManager *wm, Window w)
 {
@@ -1197,7 +1197,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
       int len = strlen (title);
       int is_secondary_dialog;
       int centering_padding = 0;
-#ifndef USE_PANGO
+#if !USE_PANGO
       gboolean is_waiting_window = window_is_waiting (theme->wm, client->window->xwindow);
 #endif
 
@@ -1289,7 +1289,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 
 	  XftTextExtentsUtf8 (xdpy,
 			  data->font,
-			  title, len,
+			  (const guchar*)title, len,
 			  &extents);
 
 	  if (is_secondary_dialog)
@@ -1313,7 +1313,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			west_width + centering_padding:
 			west_width + left_padding,
 			y,
-			title, len);
+			(const guchar*)title, len);
 #endif
 
       /* Unset the clipping rectangle */

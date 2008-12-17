@@ -35,6 +35,7 @@
 #include "hd-gtk-style.h"
 #include "hd-gtk-utils.h"
 #include "hd-home-applet.h"
+#include "hd-render-manager.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -66,7 +67,7 @@
 
 #define EDIT_BUTTON  "edit-button.png"
 
-#define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home" 
+#define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home"
 #define HD_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
 
 #define CALL_UI_DBUS_NAME "com.nokia.CallUI"
@@ -85,7 +86,6 @@ enum
 enum
 {
   SIGNAL_BACKGROUND_CLICKED,
-  SIGNAL_MODE_CHANGED,
   N_SIGNALS
 };
 
@@ -128,8 +128,6 @@ struct _HdHomePrivate
   gint                   xwidth;
   gint                   xheight;
 
-  HdHomeMode             mode;
-
   GList                 *pan_queue;
 
   gulong                 desktop_motion_cb;
@@ -144,7 +142,6 @@ struct _HdHomePrivate
 
   gint			 grab_count;
   gboolean               pan_handled         : 1;
-  gboolean               showing_edit_button : 1;
 
   Window                 desktop;
 
@@ -217,17 +214,6 @@ hd_home_class_init (HdHomeClass *klass)
                     1,
 		    CLUTTER_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
 
-  signals[SIGNAL_MODE_CHANGED] =
-      g_signal_new ("mode-changed",
-                    G_OBJECT_CLASS_TYPE (object_class),
-                    G_SIGNAL_RUN_FIRST,
-                    G_STRUCT_OFFSET (HdHomeClass, mode_changed),
-                    NULL,
-                    NULL,
-                    g_cclosure_marshal_VOID__INT,
-                    G_TYPE_NONE,
-                    1,
-		    G_TYPE_INT | G_SIGNAL_TYPE_STATIC_SCOPE);
 }
 
 static gboolean
@@ -235,8 +221,7 @@ hd_home_edit_button_clicked (ClutterActor *button,
 			     ClutterEvent *event,
 			     HdHome       *home)
 {
-  hd_home_hide_edit_button (home);
-  hd_home_set_mode (home, HD_HOME_MODE_EDIT);
+  hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
 
   return TRUE;
 }
@@ -246,10 +231,9 @@ hd_home_back_button_clicked (ClutterActor *button,
 			     ClutterEvent *event,
 			     HdHome       *home)
 {
-  HdHomePrivate *priv = home->priv;
-
-  if (priv->mode == HD_HOME_MODE_EDIT || priv->mode == HD_HOME_MODE_LAYOUT)
-    hd_home_set_mode (home, HD_HOME_MODE_NORMAL);
+  if (hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT ||
+      hd_render_manager_get_state()==HDRM_STATE_HOME_LAYOUT)
+    hd_render_manager_set_state(HDRM_STATE_HOME);
 
   return TRUE;
 }
@@ -270,11 +254,10 @@ hd_home_view_background_clicked (HdHomeView         *view,
 				 ClutterButtonEvent *event,
 				 HdHome             *home)
 {
-  HdHomePrivate *priv = home->priv;
+  g_debug ("hd_home_view_background_clicked, mode=%s\n",
+            hd_render_manager_get_state_str());
 
-  g_debug ("hd_home_view_background_clicked, mode=%d\n", priv->mode);
-
-  if (priv->mode != HD_HOME_MODE_EDIT)
+  if (hd_render_manager_get_state() != HDRM_STATE_HOME_EDIT)
     g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
 }
 
@@ -283,9 +266,7 @@ hd_home_view_applet_clicked (HdHomeView         *view,
 			     ClutterActor       *applet,
 			     HdHome             *home)
 {
-  HdHomePrivate *priv = home->priv;
-
-  if (priv->mode == HD_HOME_MODE_EDIT)
+  if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
     hd_home_show_applet_buttons (home, applet);
 }
 
@@ -345,6 +326,8 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
 
+  g_debug("%s:", __FUNCTION__);
+
   if (priv->desktop_motion_cb)
     mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
 					       MotionNotify,
@@ -353,7 +336,8 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
   priv->desktop_motion_cb = 0;
   priv->cumulative_x = 0;
 
-  if (!priv->pan_handled && priv->mode == HD_HOME_MODE_NORMAL)
+  if (!priv->pan_handled &&
+      hd_render_manager_get_state() == HDRM_STATE_HOME)
       hd_home_show_edit_button (home);
   else
     priv->pan_handled = FALSE;
@@ -436,7 +420,7 @@ hd_property_notify_message (XPropertyEvent *xev, void *userdata)
 
   if (xev->atom==hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_PROGRESS_INDICATOR))
     {
-      /* 
+      /*
        * The progress indicator should appear, or disappear.
        * We don't actually need to change the operator position
        * but this will cause the title to be redrawn, which
@@ -475,7 +459,7 @@ hd_home_desktop_client_message (XClientMessageEvent *xev, void *userdata)
   return True;
 }
 
-static void 
+static void
 hd_home_status_area_allocation_changed (
 		ClutterActor    *sa,
 		GParamSpec      *arg1,
@@ -523,7 +507,7 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
 static void
 hd_home_layout_dialog_ok_clicked (HdLayoutDialog *dialog, HdHome *home)
 {
-  hd_home_set_mode (home, HD_HOME_MODE_NORMAL);
+  hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
 }
 
 /* Called when a client message is sent to the root window. */
@@ -563,7 +547,7 @@ hd_home_constructed (GObject *object)
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
-  
+
   clutter_actor_set_name (CLUTTER_ACTOR(object), "HdHome");
 
   main_group = priv->main_group = clutter_group_new ();
@@ -575,14 +559,10 @@ hd_home_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (object), edit_group);
   clutter_actor_hide (edit_group);
 
-  /* TODO -- see if the control group could be added directly to our parent,
-   * so we would not have to move it about (it would mean to maintain it
-   * in the correct order on the actor stack, which might be more difficult
-   * than moving it).
-   */
+  /* add the control group so we would not have to move it about */
   priv->control_group = clutter_group_new ();
   clutter_actor_set_name (priv->control_group, "HdHome:control_group");
-  clutter_container_add_actor (CLUTTER_CONTAINER (object),
+  clutter_container_add_actor (hd_render_manager_get_front_group(),
 			       priv->control_group);
 
   for (i = 0; i < 4; ++i)
@@ -632,6 +612,10 @@ hd_home_constructed (GObject *object)
   g_signal_connect (priv->back_button, "button-release-event",
 		    G_CALLBACK (hd_home_back_button_clicked),
 		    object);
+  hd_render_manager_set_button(
+                    hd_render_manager_get(),
+                    HDRM_BUTTON_HOME_BACK,
+                    priv->back_button);
 
   priv->edit_button =
     clutter_texture_new_from_file (
@@ -646,11 +630,16 @@ hd_home_constructed (GObject *object)
   g_signal_connect (priv->edit_button, "button-release-event",
 		    G_CALLBACK (hd_home_edit_button_clicked),
 		    object);
+  hd_render_manager_set_button( hd_render_manager_get(),
+                                HDRM_BUTTON_EDIT,
+                                priv->edit_button);
 
   priv->operator = clutter_group_new ();
   clutter_actor_set_name(priv->operator, "HdHome:operator");
   clutter_actor_show (priv->operator);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
+			       priv->operator);
+  hd_render_manager_set_operator( hd_render_manager_get(),
 			       priv->operator);
 
   hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
@@ -733,15 +722,13 @@ hd_home_constructed (GObject *object)
 		    G_CALLBACK (hd_home_applet_close_button_clicked),
 		    object);
 
-  hd_home_set_mode (HD_HOME (object), HD_HOME_MODE_NORMAL);
-
   /*
    * Create an InputOnly desktop window; we have a custom desktop client that
    * that will automatically wrap it, ensuring it is located in the correct
    * place.
    */
   attr.event_mask = MBWMChildMask |
-    ButtonPressMask | ButtonReleaseMask | 
+    ButtonPressMask | ButtonReleaseMask |
     PointerMotionMask | ExposureMask |
     KeyPressMask;
 
@@ -800,7 +787,7 @@ hd_home_constructed (GObject *object)
 					  ClientMessage,
 					  (MBWMXEventFunc)
 					  root_window_client_message,
-					  object); 
+					  object);
 
   mb_wm_main_context_x_event_handler_add (wm->main_ctx,
 					  None,
@@ -859,7 +846,7 @@ hd_home_init (HdHome *self)
   if (!org_freedesktop_DBus_request_name (bus_proxy,
                                           HD_HOME_DBUS_NAME,
                                           DBUS_NAME_FLAG_DO_NOT_QUEUE,
-                                          &result, 
+                                          &result,
                                           &error))
     {
       g_warning ("Could not register name: %s", error->message);
@@ -954,7 +941,7 @@ hd_home_show_view (HdHome * home, guint view_index)
   HdHomePrivate   *priv = home->priv;
   HdCompMgr       *hmgr = HD_COMP_MGR (priv->comp_mgr);
   MBWindowManagerClient *desktop;
-  ClutterTimeline *timeline1, *timeline2;
+  ClutterTimeline *timeline1;
 
   if (view_index >= priv->n_views)
     {
@@ -966,23 +953,18 @@ hd_home_show_view (HdHome * home, guint view_index)
   priv->current_view = view_index;
   hd_home_store_current_desktop (home, view_index);
 
-  if (priv->mode == HD_HOME_MODE_NORMAL)
+  if (hd_render_manager_get_state() == HDRM_STATE_HOME)
     {
       timeline1 = clutter_effect_move (priv->move_template,
 				       CLUTTER_ACTOR (home),
 				       - view_index * priv->xwidth, 0,
 				       NULL, NULL);
-      timeline2 = clutter_effect_move (priv->move_template,
-				       priv->control_group,
-				       view_index * priv->xwidth, 0,
-				       NULL, NULL);
 
       clutter_timeline_start (timeline1);
-      clutter_timeline_start (timeline2);
     }
   else
     {
-      hd_home_set_mode (home, HD_HOME_MODE_NORMAL);
+      hd_render_manager_set_state(HDRM_STATE_HOME);
     }
 
   desktop = hd_comp_mgr_get_desktop_client (hmgr);
@@ -997,8 +979,8 @@ hd_home_grab_pointer (HdHome *home)
   HdHomePrivate *priv = home->priv;
   ClutterActor  *stage = clutter_stage_get_default();
   Window         clutter_window;
-  Display       *dpy = clutter_x11_get_default_display ();
-  gint           status;
+  //Display       *dpy = clutter_x11_get_default_display ();
+  gint           status = 0;
 
   clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
 
@@ -1012,7 +994,14 @@ hd_home_grab_pointer (HdHome *home)
 
   g_debug ("%s do real grab (count: %d)", __FUNCTION__, priv->grab_count + 1);
 
-  status = XGrabPointer (dpy,
+  /* NOTE: we do everything with hd_comp_mgr_setup_input_viewport now,
+   * as it seems to make way more sense. This does get called by DBus,
+   * so we might want to add some extra gadgetry to call hd_render_manager
+   * and put it in a special state. For now though we just go back to
+   * the 'home' state when we were in a full screen grab and an applet/menu
+   * appears - which is safer really.
+   */
+  /*status = XGrabPointer (dpy,
 			 clutter_window,
 			 False,
 			 ButtonPressMask   |
@@ -1022,7 +1011,7 @@ hd_home_grab_pointer (HdHome *home)
 			 GrabModeAsync,
 			 None,
 			 None,
-			 CurrentTime);
+			 CurrentTime);*/
 
   if (priv->grab_count != 0)
     g_warning ("We are issuing a grab when a grab is already in place. This\n"
@@ -1036,7 +1025,7 @@ void
 hd_home_ungrab_pointer (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
-  Display	*dpy = clutter_x11_get_default_display ();
+ // Display	*dpy = clutter_x11_get_default_display ();
 
   /* NB: X grabs can not be nested, but for our needs it is much easier
    * to manage things with nesting semantics */
@@ -1055,8 +1044,15 @@ hd_home_ungrab_pointer (HdHome *home)
     }
 
   g_debug ("%s do real ungrab (count: %d)", __FUNCTION__, priv->grab_count);
+  /* NOTE: we do everything with hd_comp_mgr_setup_input_viewport now,
+   * as it seems to make way more sense. This does get called by DBus,
+   * so we might want to add some extra gadgetry to call hd_render_manager
+   * and put it in a special state. For now though we just go back to
+   * the 'home' state when we were in a full screen grab and an applet/menu
+   * appears - which is safer really.
+   */
+  /*XUngrabPointer (dpy, CurrentTime);*/
 
-  XUngrabPointer (dpy, CurrentTime);
 
   /* NB: any return status is meaningless for an XUngrabPointer, it should
    * always == 1 (i.e. XUngrabPointer doesn't wait for a server response
@@ -1066,15 +1062,15 @@ hd_home_ungrab_pointer (HdHome *home)
   /* priv->grab_count = 0; */
 }
 
+/* FOR HDRM_STATE_HOME */
 static void
-hd_home_do_normal_layout (HdHome *home)
+_hd_home_do_normal_layout (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
   GList         *l = priv->views;
   gint           xwidth = priv->xwidth;
   gint           i = 0;
 
-  clutter_actor_hide (priv->back_button);
   clutter_actor_hide (priv->edit_group);
   clutter_actor_hide (priv->layout_dialog);
 
@@ -1098,21 +1094,16 @@ hd_home_do_normal_layout (HdHome *home)
 
   hd_home_hide_switches (home);
 
-  if (priv->grab_count > 0)
-    hd_home_ungrab_pointer (home);
 }
 
+/* FOR HDRM_STATE_HOME_EDIT */
 static void
-hd_home_do_edit_layout (HdHome *home)
+_hd_home_do_edit_layout (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
   gint x;
 
-  if (priv->mode == HD_HOME_MODE_EDIT)
-    return;
-
-  if (priv->mode != HD_HOME_MODE_NORMAL)
-    hd_home_do_normal_layout (home);
+  _hd_home_do_normal_layout (home);
 
   clutter_actor_hide (priv->layout_dialog);
 
@@ -1122,67 +1113,52 @@ hd_home_do_edit_layout (HdHome *home)
   x = priv->xwidth * priv->current_view;
 
   clutter_actor_set_position (priv->edit_group, x, 0);
-  clutter_actor_set_position (priv->control_group, x, 0);
   clutter_actor_show (priv->edit_group);
 
-  clutter_actor_show (priv->back_button);
-  clutter_actor_raise_top (priv->back_button);
-
-  priv->mode = HD_HOME_MODE_EDIT;
-
   clutter_actor_show (priv->grey_filter);
-  hd_home_grab_pointer (home);
 }
 
+/* FOR HDRM_STATE_HOME_LAYOUT */
 static void
-hd_home_do_layout_layout (HdHome * home)
+_hd_home_do_layout_layout (HdHome * home)
 {
   HdHomePrivate   *priv = home->priv;
 
-  hd_home_do_normal_layout (home);
+  _hd_home_do_normal_layout (home);
   clutter_actor_show (priv->layout_dialog);
-  hd_home_grab_pointer (home);
 }
 
 void
-hd_home_set_mode (HdHome *home, HdHomeMode mode)
+hd_home_update_layout (HdHome * home)
 {
-  HdHomePrivate   *priv = home->priv;
-  gboolean         change = FALSE;
-  switch (mode)
+  /* FIXME: ideally all this should be done by HdRenderManager */
+  HdHomePrivate *priv;
+  if (!HD_IS_HOME(home))
+    return;
+  priv = home->priv;
+
+  switch (hd_render_manager_get_state())
     {
-    case HD_HOME_MODE_NORMAL:
+    case HDRM_STATE_HOME:
+      _hd_home_do_normal_layout(home);
+      break;
+    case HDRM_STATE_HOME_EDIT:
+      _hd_home_do_edit_layout(home);
+      break;
+    case HDRM_STATE_HOME_LAYOUT:
+      _hd_home_do_layout_layout(home);
+      break;
     default:
-      hd_home_do_normal_layout (home);
-      break;
-
-    case HD_HOME_MODE_LAYOUT:
-      hd_home_do_layout_layout (home);
-      break;
-
-    case HD_HOME_MODE_EDIT:
-      hd_home_do_edit_layout (home);
-      break;
+      g_warning("%s: should only be called for HDRM_STATE_HOME.*",
+                __FUNCTION__);
     }
 
-  if  (priv->mode == mode)
-    change = TRUE;
-
-  priv->mode = mode;
-
-  g_signal_emit (home, signals[SIGNAL_MODE_CHANGED], 0, mode);
-}
-
-HdHomeMode
-hd_home_get_mode (HdHome *home)
-{
-  return home->priv->mode;
 }
 
 void
 hd_home_show_activate_views_dialog (HdHome *home)
 {
-  hd_home_set_mode (home, HD_HOME_MODE_LAYOUT);
+  hd_render_manager_set_state(HDRM_STATE_HOME_LAYOUT);
 }
 
 static void
@@ -1210,7 +1186,7 @@ hd_home_start_pan (HdHome *home)
   HdHomePrivate   *priv = home->priv;
   GList           *l = priv->pan_queue;
   gint             move_by;
-  ClutterTimeline *timeline1, *timeline2;
+  ClutterTimeline *timeline1;
 
   move_by = clutter_actor_get_x (CLUTTER_ACTOR (home));
 
@@ -1228,12 +1204,8 @@ hd_home_start_pan (HdHome *home)
 				   move_by, 0,
 				   (ClutterEffectCompleteFunc)
 				   hd_home_pan_stage_completed, NULL);
-  timeline2 = clutter_effect_move (priv->move_template,
-				   priv->control_group,
-				   -move_by, 0, NULL, NULL);
 
   clutter_timeline_start (timeline1);
-  clutter_timeline_start (timeline2);
 }
 
 static void
@@ -1242,7 +1214,7 @@ hd_home_pan_by (HdHome *home, gint move_by)
   HdHomePrivate   *priv = home->priv;
   gboolean         in_progress = FALSE;
 
-  if (priv->mode == HD_HOME_MODE_LAYOUT || !move_by)
+  if (hd_render_manager_get_state() == HDRM_STATE_HOME_LAYOUT || !move_by)
     return;
 
   if (priv->pan_queue)
@@ -1369,11 +1341,12 @@ void
 hd_home_remove_status_area (HdHome *home, ClutterActor *sa)
 {
   HdHomePrivate *priv = home->priv;
-  ClutterActor *switcher;
+  HdSwitcher *switcher;
 
   g_debug ("hd_home_remove_status_area, sa=%p\n", sa);
-  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
-  hd_switcher_remove_status_area (HD_SWITCHER (switcher), sa);
+  switcher = HD_SWITCHER(
+              hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
+  hd_switcher_remove_status_area (switcher, sa);
 
 /*  clutter_container_remove_actor (CLUTTER_CONTAINER (priv->control_group), sa); */
   clutter_actor_unparent (sa);
@@ -1384,32 +1357,29 @@ void
 hd_home_add_status_menu (HdHome *home, ClutterActor *sa)
 {
   HdHomePrivate *priv = home->priv;
-  ClutterActor *switcher, *stage;
+  HdSwitcher *switcher;
 
   g_debug ("hd_home_add_status_menu, sa=%p\n", sa);
 
-  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
-  hd_switcher_add_status_menu (HD_SWITCHER (switcher), sa);
+  switcher = HD_SWITCHER(
+                hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
+  hd_switcher_add_status_menu (switcher, sa);
 
-  clutter_actor_unparent (sa);
-  stage = clutter_stage_get_default();
-  clutter_container_add_actor (CLUTTER_CONTAINER (stage), sa);
-  
-  hd_comp_mgr_blur_home(HD_COMP_MGR (priv->comp_mgr), TRUE, 0);
+  clutter_actor_reparent(sa,
+        CLUTTER_ACTOR( hd_render_manager_get_front_group() ) );
 }
 
 void
 hd_home_remove_status_menu (HdHome *home, ClutterActor *sa)
 {
   HdHomePrivate *priv = home->priv;
-  ClutterActor *switcher;
+  HdSwitcher *switcher;
 
   g_debug ("hd_home_remove_status_menu, sa=%p\n", sa);
 
-  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
-  hd_switcher_remove_status_menu (HD_SWITCHER (switcher), sa);
-
-  hd_comp_mgr_blur_home(HD_COMP_MGR (priv->comp_mgr), FALSE, 0);
+  switcher = HD_SWITCHER(
+                hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
+  hd_switcher_remove_status_menu (switcher, sa);
   /* The removal animation will now take care of the actor at the
    * end of the animation...
    clutter_container_remove_actor (CLUTTER_CONTAINER (priv->control_group), sa);
@@ -1420,16 +1390,13 @@ void
 hd_home_add_status_area (HdHome *home, ClutterActor *sa)
 {
   HdHomePrivate *priv = home->priv;
-  ClutterActor *switcher;
+  HdSwitcher *switcher;
 
   g_debug ("hd_home_add_status_area, sa=%p\n", sa);
   /* FIXME: make a clone when FBOs work? */
-  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
-  hd_switcher_add_status_area (HD_SWITCHER (switcher), sa);
-
-/*  clutter_actor_unparent (sa);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group), sa);*/
-  clutter_actor_reparent (sa, switcher);
+  switcher = HD_SWITCHER(
+                hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
+  hd_switcher_add_status_area (switcher, sa);
 
   hd_home_fixup_operator_position (home);
 
@@ -1608,10 +1575,8 @@ hd_home_show_edit_button (HdHome *home)
   guint            button_width, button_height;
   ClutterTimeline *timeline;
   gint             x;
-  HdCompMgr       *comp_mgr = HD_COMP_MGR (priv->comp_mgr);
-  ClutterGeometry  geom[2];
 
-  if (priv->showing_edit_button)
+  if (hd_render_manager_get_visible(HDRM_BUTTON_EDIT))
     return;
 
   clutter_actor_get_size (priv->edit_button, &button_width, &button_height);
@@ -1619,11 +1584,15 @@ hd_home_show_edit_button (HdHome *home)
   x = priv->xwidth / 4 + priv->xwidth / 2;
 
   clutter_actor_set_position (priv->edit_button,
+                                x,
+                                0);
+  /* we must set the final position first so that the X input
+   * area can be set properly */
+  hd_render_manager_set_visible(HDRM_BUTTON_EDIT, TRUE);
+
+  clutter_actor_set_position (priv->edit_button,
 			      x,
 			      -button_height);
-
-  clutter_actor_show (priv->edit_button);
-  clutter_actor_raise_top (priv->edit_button);
 
   g_debug ("moving edit button from %d, %d to %d, 0", x, -button_height, x);
 
@@ -1632,15 +1601,6 @@ hd_home_show_edit_button (HdHome *home)
 				  x, 0,
 				  (ClutterEffectCompleteFunc)
 				  hd_home_edit_button_move_completed, home);
-
-  priv->showing_edit_button = TRUE;
-
-  /* Add the area of the edit button to the input viewport */
-  hd_switcher_get_button_geometry (HD_SWITCHER (hd_comp_mgr_get_switcher (comp_mgr)),
-                                   &geom[0]);
-  clutter_actor_get_geometry (priv->edit_button, &geom[1]);
-  geom[1].y = 0;
-  hd_comp_mgr_setup_input_viewport (comp_mgr, geom, 2);
 
   priv->edit_button_cb =
     g_timeout_add (HDH_EDIT_BUTTON_TIMEOUT, hd_home_edit_button_timeout, home);
@@ -1652,27 +1612,18 @@ void
 hd_home_hide_edit_button (HdHome *home)
 {
   HdHomePrivate   *priv = home->priv;
-  HdCompMgr       *comp_mgr = HD_COMP_MGR (priv->comp_mgr);
-  ClutterGeometry  geom;
+
+  if (!hd_render_manager_get_visible(HDRM_BUTTON_EDIT))
+      return;
 
   g_debug ("%s: Hiding button", __FUNCTION__);
 
-  clutter_actor_hide (priv->edit_button);
-  priv->showing_edit_button = FALSE;
-
+  hd_render_manager_set_visible(HDRM_BUTTON_EDIT, FALSE);
   if (priv->edit_button_cb)
     {
       g_source_remove (priv->edit_button_cb);
       priv->edit_button_cb = 0;
     }
-
-  if (hd_comp_mgr_get_showing_home (comp_mgr))
-  {
-    /* Remove the area of the edit button from the input viewport */
-    hd_switcher_get_button_geometry (
-                  HD_SWITCHER (hd_comp_mgr_get_switcher (comp_mgr)), &geom);
-    hd_comp_mgr_setup_input_viewport (comp_mgr, &geom, 1);
-  }
 }
 
 void
@@ -1780,10 +1731,11 @@ hd_home_fixup_operator_position (HdHome *home)
   guint          icon_width = 0, icon_height = 0;
   guint          op_width, op_height = 0;
   guint          label_width, label_height;
-  ClutterActor  *switcher;
+  HdSwitcher     *switcher;
   MBWindowManager *wm;
 
-  switcher = hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr));
+  switcher = HD_SWITCHER(
+                hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
 
   hd_switcher_get_control_area_size (HD_SWITCHER (switcher),
 				     &control_width, &control_height);

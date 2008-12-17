@@ -53,6 +53,7 @@
 #include "hd-task-navigator.h"
 #include "hd-scrollable-group.h"
 #include "hd-switcher.h"
+#include "hd-render-manager.h"
 
 /* Standard definitions {{{ */
 #undef  G_LOG_DOMAIN
@@ -759,20 +760,6 @@ check_and_scale (ClutterActor * actor, gdouble sx_new, gdouble sy_new)
 /* Clutter utilities }}} */
 
 /* Navigator utilities {{{ */
-/* Starts blurring/unblurring the home view smoothly. */
-static void
-make_background_blurred (gboolean blurred)
-{
-  HdCompMgr *cmgr;
-  HdSwitcher *switcher;
-
-  switcher = HD_SWITCHER (clutter_actor_get_parent (CLUTTER_ACTOR (Navigator)));
-  g_return_if_fail (switcher);
-  g_return_if_fail (HD_IS_SWITCHER (switcher));
-  g_object_get (G_OBJECT (switcher), "comp-mgr", &cmgr, NULL);
-  g_return_if_fail (cmgr);
-  hd_comp_mgr_blur_home (cmgr, blurred, blurred ? 1 : 0);
-}
 
 /* Tells whether we're in switcher view view. */
 gboolean
@@ -786,6 +773,13 @@ gboolean
 hd_task_navigator_is_empty (HdTaskNavigator * self)
 {
   return !Thumbnails->len && !Notifications->len;
+}
+
+/* Tells whether we have any applications */
+gboolean
+hd_task_navigator_has_apps (HdTaskNavigator * self)
+{
+  return Thumbnails->len;
 }
 
 /* Returns whether we can and will show @win in the navigator.
@@ -811,7 +805,6 @@ hd_task_navigator_enter (HdTaskNavigator * self)
   clutter_actor_set_position (Scroller, 0, 0);
   hd_scrollable_group_set_viewport_y (Navigator_area, 0);
   clutter_actor_show (Navigator);
-  make_background_blurred (TRUE);
 }
 
 /* Leaves the navigator without a single word.
@@ -832,7 +825,6 @@ hd_task_navigator_exit (HdTaskNavigator *self)
     }
 
   clutter_actor_hide (CLUTTER_ACTOR (self));
-  make_background_blurred (FALSE);
 }
 
 /*
@@ -1639,8 +1631,6 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
                       CLUTTER_ACTOR (self), win);
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)fun, win, funparam);
-
-  make_background_blurred (FALSE);
   return;
 
 damage_control:
@@ -1717,8 +1707,6 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   clutter_effect_fade(Zoom_effect, thumb->foreground, 255, NULL, NULL);
   clutter_effect_fade(Zoom_effect, thumb->title, 255, NULL, NULL);
   add_effect_closure (Zoom_effect_timeline, fun, win, funparam);
-
-  make_background_blurred (TRUE);
   return;
 
 damage_control:
@@ -2089,8 +2077,9 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
 }
 
 /* Remove @dialog from its application's thumbnail
- * and don't show it anymore. */
-void
+ * and don't show it anymore. Returns true if a
+ * dialog if left for this window... */
+gboolean
 hd_task_navigator_remove_dialog (HdTaskNavigator * self,
                                  ClutterActor * dialog)
 { g_debug (__FUNCTION__);
@@ -2098,13 +2087,14 @@ hd_task_navigator_remove_dialog (HdTaskNavigator * self,
   Thumbnail *thumb;
 
   if (!(thumb = find_dialog (&i, dialog, TRUE)))
-    return;
+    return 0;
 
   if (hd_task_navigator_is_active (self))
     clutter_actor_reparent(dialog, thumb->parent);
 
   g_object_unref (dialog);
   g_ptr_array_remove_index (thumb->dialogs, i);
+  return thumb->dialogs->len > 0;
 }
 
 /*
@@ -2432,6 +2422,8 @@ navigator_shown (ClutterActor * navigator, gpointer unused)
   clutter_stage_set_key_focus (CLUTTER_STAGE (clutter_stage_get_default ()),
                                navigator);
 
+  /* get the render manager to put all windows back */
+  hd_render_manager_return_windows();
   /* Take all application windows we know about into our care
    * because we responsible for showing them now. */
   for (i = 0; i < Thumbnails->len; i++)
@@ -2493,7 +2485,8 @@ new_effect (ClutterTimeline ** timelinep, guint duration)
    * animation to get its signals.
    */
   *timelinep = clutter_timeline_new_for_duration (duration);
-  effect = clutter_effect_template_new (*timelinep, CLUTTER_ALPHA_RAMP_INC);
+  effect = clutter_effect_template_new (*timelinep,
+                              CLUTTER_ALPHA_SMOOTHSTEP_INC);
   clutter_effect_template_set_timeline_clone (effect, FALSE);
 
   return effect;

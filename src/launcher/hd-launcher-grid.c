@@ -100,7 +100,7 @@ G_DEFINE_TYPE_WITH_CODE (HdLauncherGrid,
                                                 clutter_container_iface_init)
                          G_IMPLEMENT_INTERFACE (TIDY_TYPE_SCROLLABLE,
                                                 tidy_scrollable_iface_init));
-                                                
+
 static inline void
 hd_launcher_grid_refresh_h_adjustment (HdLauncherGrid *grid)
 {
@@ -478,7 +478,7 @@ hd_launcher_grid_paint (ClutterActor *actor)
 {
   HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (actor)->priv;
   GList *l;
-  
+
   if (!CLUTTER_ACTOR_IS_VISIBLE (actor))
     return;
 
@@ -705,22 +705,22 @@ hd_launcher_grid_clear (HdLauncherGrid *grid)
 static float sexy_overshoot(float x)
 {
   float smooth_ramp, converge;
-  smooth_ramp = 1.0f - cos(x*3.141592);   
+  smooth_ramp = 1.0f - cos(x*3.141592);
   converge = sin(0.5*3.141592*(1-x));
   return (smooth_ramp*1.1)*converge + (1-converge);
 }
 
 void
-hd_launcher_grid_transition(HdLauncherGrid *grid, 
+hd_launcher_grid_transition(HdLauncherGrid *grid,
                             HdLauncherPage *page,
                             HdLauncherPageTransition trans_type,
                             float amount)
 {
-  HdLauncherGridPrivate *priv;  
+  HdLauncherGridPrivate *priv;
   GList *l;
   ClutterVertex movement_centre = {0,0,0};
-  
-  switch (trans_type) 
+
+  switch (trans_type)
    {
      case HD_LAUNCHER_PAGE_TRANSITION_IN:
        movement_centre.x = 0;
@@ -733,7 +733,7 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
      default:
        break;
    }
-     
+
   g_return_if_fail (HD_IS_LAUNCHER_GRID (grid));
 
   priv = grid->priv;
@@ -741,7 +741,7 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
   l = priv->tiles;
   while (l)
     {
-      ClutterActor *child = l->data;      
+      ClutterActor *child = l->data;
       l = l->next;
       if (HD_IS_LAUNCHER_TILE(child))
       {
@@ -751,82 +751,72 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
         ClutterVertex pos = {0,0,0};
         float d, dx, dy;
         float tile_amt; /* amount depending on distance from pt */
-        float order_diff; 
+        float order_diff;
         float order_amt; /* amount as if ordered */
         ClutterUnit depth;
-        
+
         tile_icon = hd_launcher_tile_get_icon(tile);
         tile_label = hd_launcher_tile_get_label(tile);
-          
+
         clutter_actor_get_positionu(CLUTTER_ACTOR(tile), &pos.x, &pos.y);
         dx = CLUTTER_UNITS_TO_FLOAT(pos.x - movement_centre.x);
         dy = CLUTTER_UNITS_TO_FLOAT(pos.y - movement_centre.y);
         /* We always want d to be 0 <=d <= 1 */
         d = sqrt(dx*dx + dy*dy) / 1000.0f;
-        if (d>1) d=1; 
-        
-        tile_amt = amount*2 - d;        
+        if (d>1) d=1;
+
+        tile_amt = amount*2 - d;
         if (tile_amt<0) tile_amt = 0;
         if (tile_amt>1) tile_amt = 1;
-        
-        order_diff = (CLUTTER_UNITS_TO_FLOAT(pos.x) + 
+
+        order_diff = (CLUTTER_UNITS_TO_FLOAT(pos.x) +
                      (CLUTTER_UNITS_TO_FLOAT(pos.y)*5)) / (800 + 240*5);
         if (order_diff>1) order_diff = 1;
-        order_amt = amount*2 - order_diff;                     
+        order_amt = amount*2 - order_diff;
         if (order_amt<0) order_amt = 0;
-        if (order_amt>1) order_amt = 1;                     
-        
-        switch (trans_type) 
+        if (order_amt>1) order_amt = 1;
+
+        switch (trans_type)
           {
-            case HD_LAUNCHER_PAGE_TRANSITION_IN: 
+            case HD_LAUNCHER_PAGE_TRANSITION_IN:
             case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
-              {       
+              {
                 float label_amt = (order_amt*3)-1.5;
                 if (label_amt<0) label_amt=0;
                 if (label_amt>1) label_amt=1;
                 depth = CLUTTER_UNITS_FROM_FLOAT(
-                                150 - 150*sexy_overshoot(tile_amt));        
-                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);  
-                if (tile_icon)      
+                                150 - 150*sexy_overshoot(tile_amt));
+                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
+                if (tile_icon)
                   clutter_actor_set_opacity(tile_icon, (int)(tile_amt*255));
-                if (tile_label)      
+                if (tile_label)
                   clutter_actor_set_opacity(tile_label, (int)(label_amt*255));
                 break;
               }
             case HD_LAUNCHER_PAGE_TRANSITION_OUT:
             case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
-                depth = CLUTTER_UNITS_FROM_FLOAT(150*amount);        
-                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
-                if (tile_icon)      
+                depth = CLUTTER_UNITS_FROM_FLOAT(150*amount);
+                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
+                if (tile_icon)
                   clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*255));
-                if (tile_label)      
+                if (tile_label)
                   clutter_actor_set_opacity(tile_label, 255-(int)(amount*255));
                 break;
             case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
-                depth = CLUTTER_UNITS_FROM_FLOAT(-150*tile_amt);        
-                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
-                if (tile_icon)      
+                depth = CLUTTER_UNITS_FROM_FLOAT(-150*tile_amt);
+                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
+                if (tile_icon)
                   clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*255));
-                if (tile_label)      
+                if (tile_label)
                   clutter_actor_set_opacity(tile_label, 255-(int)(amount*255));
                 break;
             /* We do't do anything for these now because we just use blur on
-             * the whole group */      
+             * the whole group */
             case HD_LAUNCHER_PAGE_TRANSITION_BACK:
-               /* depth = CLUTTER_UNITS_FROM_FLOAT(-50*amount);        
-                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
-                clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*191));
-                clutter_actor_set_opacity(tile_label, 255 - (int)(amount*191));
-                */
-                break;
             case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
-                /*depth = CLUTTER_UNITS_FROM_FLOAT(-50*(1-amount));        
-                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);        
-                clutter_actor_set_opacity(tile_icon, 64 + (int)(amount*191));
-                clutter_actor_set_opacity(tile_label, 64 + (int)(amount*191));
-                */
+            case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
                 break;
-          } 
+          }
       }
-    }        
+    }
 }

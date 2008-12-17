@@ -29,6 +29,7 @@ HdTaskNavigator *hd_task_navigator_new       (void);
 
 gboolean hd_task_navigator_is_active  (HdTaskNavigator *self);
 gboolean hd_task_navigator_is_empty   (HdTaskNavigator *self);
+gboolean hd_task_navigator_has_apps   (HdTaskNavigator *self);
 gboolean hd_task_navigator_has_window (HdTaskNavigator * self,
                                        ClutterActor * win);
 
@@ -59,8 +60,8 @@ void hd_task_navigator_hibernate_window (HdTaskNavigator *self,
 void hd_task_navigator_add_dialog (HdTaskNavigator *self,
                                    ClutterActor *win,
                                    ClutterActor *dialog);
-void hd_task_navigator_remove_dialog (HdTaskNavigator *self,
-                                      ClutterActor *dialog);
+gboolean hd_task_navigator_remove_dialog (HdTaskNavigator *self,
+                                          ClutterActor *dialog);
 
 void hd_task_navigator_add_notification    (HdTaskNavigator *self,
                                             HdNote *hdnote);

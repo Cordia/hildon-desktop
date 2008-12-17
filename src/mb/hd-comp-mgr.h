@@ -82,9 +82,6 @@ struct HdCompMgrClass
 int hd_comp_mgr_class_type (void);
 
 void hd_comp_mgr_sync_stacking       (HdCompMgr *hmgr);
-void hd_comp_mgr_raise_home_actor    (HdCompMgr *hmgr);
-void hd_comp_mgr_lower_home_actor    (HdCompMgr *hmgr);
-void hd_comp_mgr_top_home            (HdCompMgr *hmgr);
 void hd_comp_mgr_close_app           (HdCompMgr                *hmgr,
                                       MBWMCompMgrClutterClient *cc,
                                       gboolean                  close_all);
@@ -107,14 +104,10 @@ void hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
 				     const gchar *app_service,
 				     const gchar *launch_param);
 
-void hd_comp_mgr_set_show_home (HdCompMgr *hmgr, gboolean show_home);
-
-gboolean hd_comp_mgr_get_showing_home (HdCompMgr *hmgr);
-
 Atom hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id);
 
 ClutterActor * hd_comp_mgr_get_home (HdCompMgr *hmgr);
-ClutterActor * hd_comp_mgr_get_switcher (HdCompMgr *hmgr);
+GObject* hd_comp_mgr_get_switcher (HdCompMgr *hmgr);
 
 gint hd_comp_mgr_get_current_home_view_id (HdCompMgr *hmgr);
 
@@ -125,14 +118,16 @@ gint hd_comp_mgr_request_home_applet_geometry (HdCompMgr  *hmgr,
 					       MBGeometry *geom);
 
 gint hd_comp_mgr_get_home_applet_layer_count (HdCompMgr *hmgr, gint view_id);
-void hd_comp_mgr_blur_home(HdCompMgr *hmgr, gboolean blur, int zoom_level);
-void hd_comp_mgr_unblur(HdCompMgr *hmgr);
 
 void hd_comp_mgr_dump_debug_info (const gchar *tag);
 
 void hd_comp_mgr_setup_input_viewport (HdCompMgr       *hmgr,
                                        ClutterGeometry *geom,
                                        int              count);
+void hd_comp_mgr_set_status_area_stacking(HdCompMgr *hmgr,
+                                          gboolean visible);
+void hd_comp_mgr_restack (MBWMCompMgr * mgr);
+void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running);
 
 G_END_DECLS
 

@@ -47,6 +47,8 @@
                             G_PARAM_STATIC_NAME | \
                             G_PARAM_STATIC_BLURB)
 
+#define HD_LAUNCHER_PAGE_SUB_OPACITY (0.33f)
+
 #define HD_LAUNCHER_PAGE_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_PAGE, HdLauncherPagePrivate))
 
 struct _HdLauncherPagePrivate
@@ -58,7 +60,7 @@ struct _HdLauncherPagePrivate
   ClutterActor *label;
   ClutterActor *scroller;
   ClutterActor *grid;
-  
+
   HdLauncherPageTransition transition_type;
   ClutterTimeline *transition;
 };
@@ -115,9 +117,9 @@ static void hd_launcher_page_hide (ClutterActor *actor);
 
 static void hd_launcher_page_tile_clicked (HdLauncherTile *tile,
                                            gpointer data);
-static void hd_launcher_page_new_frame(ClutterTimeline *timeline, 
-                                       gint frame_num, gpointer data);           
-static void hd_launcher_page_transition_end(ClutterTimeline *timeline, 
+static void hd_launcher_page_new_frame(ClutterTimeline *timeline,
+                                       gint frame_num, gpointer data);
+static void hd_launcher_page_transition_end(ClutterTimeline *timeline,
                                             gpointer data);
 
 static void
@@ -375,7 +377,7 @@ hd_launcher_page_finalize (GObject *gobject)
   clutter_actor_destroy (priv->label);
   clutter_actor_destroy (priv->icon);
   g_object_unref(priv->grid);
-  clutter_actor_destroy (priv->scroller);  
+  clutter_actor_destroy (priv->scroller);
 
   G_OBJECT_CLASS (hd_launcher_page_parent_class)->finalize (gobject);
 }
@@ -460,7 +462,7 @@ static void
 hd_launcher_page_paint (ClutterActor *actor)
 {
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (actor);
-  
+
   if (!CLUTTER_ACTOR_IS_VISIBLE (actor))
     return;
 
@@ -560,28 +562,28 @@ hd_launcher_page_tile_clicked (HdLauncherTile *tile, gpointer data)
 void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition trans_type)
 {
   HdLauncherPagePrivate *priv;
-  
+
   if (!HD_IS_LAUNCHER_PAGE(page))
-    return; 
-  
+    return;
+
   priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
-  
-  /* check for the case where we're hiding when already hidden */ 
+
+  /* check for the case where we're hiding when already hidden */
   if (!CLUTTER_ACTOR_IS_VISIBLE(page) &&
-      trans_type == HD_LAUNCHER_PAGE_TRANSITION_OUT) 
-    return;  
+      trans_type == HD_LAUNCHER_PAGE_TRANSITION_OUT)
+    return;
   /* check for the case where we're launching and then hiding, and just use
-   * the launching animation */ 
+   * the launching animation */
   if (clutter_timeline_is_playing(priv->transition) &&
       priv->transition_type == HD_LAUNCHER_PAGE_TRANSITION_LAUNCH &&
       trans_type == HD_LAUNCHER_PAGE_TRANSITION_OUT)
-    return;  
-  
-  priv->transition_type = trans_type;  
+    return;
+
+  priv->transition_type = trans_type;
   switch (priv->transition_type) {
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
          clutter_actor_show(CLUTTER_ACTOR(page));
-         hd_launcher_set_top_blur(0);
+         hd_launcher_set_top_blur(0, 1);
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
          clutter_actor_show(CLUTTER_ACTOR(page));
@@ -592,42 +594,43 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
          /* already shown */
-         break;         
+         break;
     case HD_LAUNCHER_PAGE_TRANSITION_BACK:
     case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
+    case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
          /* already shown */
-         break;         
+         break;
   }
-         
-  clutter_timeline_pause(priv->transition); 
+
+  clutter_timeline_pause(priv->transition);
   clutter_timeline_rewind(priv->transition);
-  clutter_timeline_start(priv->transition);      
-  
+  clutter_timeline_start(priv->transition);
+
   /* force a call to lay stuff out before it gets drawn properly */
   hd_launcher_page_new_frame(priv->transition, 0, page);
 }
 
 static void
-hd_launcher_page_new_frame(ClutterTimeline *timeline, 
+hd_launcher_page_new_frame(ClutterTimeline *timeline,
                           gint frame_num, gpointer data)
 {
   HdLauncherPage *page = HD_LAUNCHER_PAGE(data);
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
   gint frames;
   float amt;
-  
+
   if (!HD_IS_LAUNCHER_PAGE(data))
     return;
-    
+
   frames = clutter_timeline_get_n_frames(timeline);
   amt = frame_num / (float)frames;
-  
-  hd_launcher_grid_transition(HD_LAUNCHER_GRID(priv->grid), 
+
+  hd_launcher_grid_transition(HD_LAUNCHER_GRID(priv->grid),
                               page,
                               priv->transition_type,
                               amt);
-                              
-    switch (priv->transition_type) 
+
+    switch (priv->transition_type)
       {
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
         hd_launcher_set_back_arrow_opacity(amt);
@@ -640,52 +643,58 @@ hd_launcher_page_new_frame(ClutterTimeline *timeline,
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
     case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
         hd_launcher_set_back_arrow_opacity(1-amt);
-    case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:    
+    case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
         if (priv->icon)
           clutter_actor_set_opacity(priv->icon, 255-(int)(255*amt));
         if (priv->label)
           clutter_actor_set_opacity(priv->label, 255-(int)(255*amt));
         break;
     case HD_LAUNCHER_PAGE_TRANSITION_BACK:
-        hd_launcher_set_top_blur(amt);
-        break;         
+        hd_launcher_set_top_blur(amt,
+                    1-(HD_LAUNCHER_PAGE_SUB_OPACITY * amt));
+        break;
     case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
-        hd_launcher_set_top_blur(1-amt);         
-        break;  
-      }                              
+        hd_launcher_set_top_blur(1-amt,
+                    1-(HD_LAUNCHER_PAGE_SUB_OPACITY * (1-amt)));
+        break;
+    case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
+        hd_launcher_set_top_blur(1, 1-amt);
+        break;
+      }
 }
 
 static void
-hd_launcher_page_transition_end(ClutterTimeline *timeline, 
+hd_launcher_page_transition_end(ClutterTimeline *timeline,
                                 gpointer data)
 {
   HdLauncherPage *page = HD_LAUNCHER_PAGE(data);
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
-  
+
   if (!HD_IS_LAUNCHER_PAGE(data))
     return;
-    
+
   hd_launcher_grid_transition(HD_LAUNCHER_GRID(priv->grid),
-                              page, 
+                              page,
                               priv->transition_type,
-                              1.0f);        
-                              
+                              1.0f);
+
   switch (priv->transition_type) {
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
     case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
     case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
     case HD_LAUNCHER_PAGE_TRANSITION_BACK:
+    case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
          /* already shown */
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
-    case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:    
+    case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
          clutter_actor_hide(CLUTTER_ACTOR(page));
          hd_launcher_hide_final();
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
          clutter_actor_hide(CLUTTER_ACTOR(page));
-         break;         
-  }                              
+         break;
+  }
 }
 
 ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page)
@@ -693,13 +702,13 @@ ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page)
   HdLauncherPagePrivate *priv;
   ClutterActor *bar;
   TidyAdjustment *adjust;
- 
+
   if (!HD_IS_LAUNCHER_PAGE(page))
     return 0;
-    
+
   priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
-    
+
   bar = tidy_scroll_view_get_vscroll_bar (TIDY_SCROLL_VIEW(priv->scroller));
   adjust = tidy_scroll_bar_get_adjustment (TIDY_SCROLL_BAR(bar));
-  return tidy_adjustment_get_valuex( adjust );            
+  return tidy_adjustment_get_valuex( adjust );
 }

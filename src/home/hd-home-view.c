@@ -71,7 +71,6 @@ struct _HdHomeViewPrivate
 {
   MBWMCompMgrClutter       *comp_mgr;
   HdHome                   *home;
-
   ClutterActor             *background_container;
   ClutterActor             *applets_container;
 
@@ -95,10 +94,9 @@ struct _HdHomeViewPrivate
   guint                     id;
 
   guint                     capture_cb;
-  
   guint                     bg_image_notify;
   gboolean		    bg_image_skip_gconf;
-  
+
   GThread                  *bg_image_thread;
   guint                     bg_image_set_source;
   gint                      bg_image_dest_width;
@@ -134,7 +132,7 @@ hd_home_view_allocate (ClutterActor          *actor,
 {
   HdHomeView        *view = HD_HOME_VIEW (actor);
   HdHomeViewPrivate *priv = view->priv;
-  
+
   /* We've resized, refresh the background image to fit the new size */
   if ((CLUTTER_UNITS_TO_INT (box->x2 - box->x1) != priv->bg_image_dest_width) ||
       (CLUTTER_UNITS_TO_INT (box->y2 - box->y1) != priv->bg_image_dest_height))
@@ -155,7 +153,7 @@ hd_home_view_class_init (HdHomeViewClass *klass)
   g_type_class_add_private (klass, sizeof (HdHomeViewPrivate));
 
   actor_class->allocate      = hd_home_view_allocate;
-  
+
   object_class->dispose      = hd_home_view_dispose;
   object_class->finalize     = hd_home_view_finalize;
   object_class->set_property = hd_home_view_set_property;
@@ -303,7 +301,7 @@ hd_home_view_gconf_bgimage_notify (GConfClient *client,
 				   HdHomeView  *view)
 {
   GConfValue   *value;
-  
+
   value = gconf_entry_get_value (entry);
   if (value)
     {
@@ -443,7 +441,7 @@ get_bg_image_processed_name (HdHomeView *view, const gchar *filename)
 			     basename);
   g_free (basename);
   g_debug ("%s: '%s'", __FUNCTION__, tmpname);
-  
+
   return tmpname;
 }
 
@@ -456,7 +454,7 @@ bg_image_set_idle_cb (gpointer data)
   ClutterColor       clr = BACKGROUND_COLOR;
   ClutterActor      *actor = CLUTTER_ACTOR (self);
   GError            *error = NULL;
-  
+
   new_bg = clutter_texture_new_from_file (priv->processed_bg_image_file,
                                           &error);
 
@@ -464,7 +462,6 @@ bg_image_set_idle_cb (gpointer data)
     {
       g_warning ("Error loading background: %s", error->message);
       g_error_free (error);
-
       /* Add a black background */
       new_bg = clutter_rectangle_new_with_color (&clr);
       clutter_actor_set_size (new_bg, priv->xwidth, priv->xheight);
@@ -482,6 +479,10 @@ bg_image_set_idle_cb (gpointer data)
 
   /* Add new background to the background container */
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->background_container), new_bg);
+
+  /* Raise the texture above the solid color */
+  if (priv->background)
+    clutter_actor_raise (new_bg, priv->background);
 
  /* Remove the old background (color or image) */
   if (priv->background)
@@ -502,7 +503,7 @@ bg_image_set_idle_cb (gpointer data)
     priv->bg_image_skip_gconf = FALSE;
 
   priv->bg_image_set_source = 0;
-  
+
   return FALSE;
 }
 
@@ -514,18 +515,18 @@ process_bg_image_thread (gpointer data)
   HdHomeView	    *self   = HD_HOME_VIEW (data);
   HdHomeViewPrivate *priv   = self->priv;
 
-  pixbuf = gdk_pixbuf_new_from_file_at_scale (priv->background_image_file,
-                                              priv->bg_image_dest_width,
-                                              priv->bg_image_dest_height,
-                                              TRUE,
-                                              &error);
-  if (!pixbuf)
-    {
-      g_warning ("Error loading background: %s", error->message);
-      g_error_free (error);
-      error = NULL;
-    }
-  
+      pixbuf = gdk_pixbuf_new_from_file_at_scale (priv->background_image_file,
+						  priv->bg_image_dest_width,
+						  priv->bg_image_dest_height,
+						  TRUE,
+						  &error);
+      if (!pixbuf)
+	{
+	  g_warning ("Error loading background: %s", error->message);
+	  g_error_free (error);
+	  error = NULL;
+	}
+
   if (pixbuf)
     {
       if (!g_file_test (priv->processed_bg_image_file, G_FILE_TEST_EXISTS))
@@ -543,7 +544,7 @@ process_bg_image_thread (gpointer data)
     }
 
   priv->bg_image_set_source = g_idle_add (bg_image_set_idle_cb, self);
-  
+
   g_thread_exit (NULL);
   return NULL;
 }
@@ -565,14 +566,14 @@ hd_home_view_refresh_bg (HdHomeView  *self,
       g_thread_join (priv->bg_image_thread);
       priv->bg_image_thread = NULL;
     }
-  
+
   /* Remove image setting source */
   if (priv->bg_image_set_source)
     {
       g_source_remove (priv->bg_image_set_source);
       priv->bg_image_set_source = 0;
     }
-  
+
   /* Delete the cached, processed background */
   if (priv->processed_bg_image_file)
     {
@@ -595,22 +596,22 @@ hd_home_view_refresh_bg (HdHomeView  *self,
     {
       priv->processed_bg_image_file =
 	get_bg_image_processed_name (self, priv->background_image_file);
-      
+
       if (!g_file_test (priv->processed_bg_image_file, G_FILE_TEST_EXISTS))
 	{
 	  GError *error = NULL;
-	  
+
 	  /* Start background processing thread */
 	  priv->bg_image_dest_width =
 	    clutter_actor_get_width (CLUTTER_ACTOR (self));
 	  priv->bg_image_dest_height =
 	    clutter_actor_get_height (CLUTTER_ACTOR (self));
-	  
+
 	  priv->bg_image_thread = g_thread_create (process_bg_image_thread,
 						   self,
 						   TRUE,
 						   &error);
-	  
+
 	  if (!priv->bg_image_thread)
 	    {
 	      g_warning ("Error creating bg image thread: %s",
@@ -836,7 +837,7 @@ hd_home_view_applet_press (ClutterActor       *applet,
 
   modified = g_strdup_printf ("%ld", wm_applet->modified);
   modified_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/modified", wm_applet->applet_id);
-        
+
   gconf_client_set_string (client,
                            modified_key,
                            modified,
@@ -915,7 +916,7 @@ hd_home_view_applet_release (ClutterActor       *applet,
       position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", applet_id);
       position_value = g_slist_prepend (g_slist_prepend (NULL, GINT_TO_POINTER (y)),
                                         GINT_TO_POINTER (x));
-      gconf_client_set_list (gconf_client, position_key, 
+      gconf_client_set_list (gconf_client, position_key,
                              GCONF_VALUE_INT, position_value,
                              NULL);
 

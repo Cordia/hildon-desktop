@@ -1,3 +1,39 @@
+2008-12-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	reviewed by: <delete if not using a buddy>
+	patch by: <delete if not someone else's patch>
+
+	* data/desktop/maemoblocks.w50-desktop:
+	* data/desktop/osso_notes.w50-desktop:
+	* data/desktop/osso_rss_feed_reader.w50-desktop:
+	* data/desktop/osso_sketch.w50-desktop:
+	* src/hildon-desktop-views.schemas:
+	* src/home/Makefile.am:
+	* src/home/hd-home-view.c:
+	* src/home/hd-home.c:
+	* src/home/hd-home.h:
+	* src/home/hd-render-manager.c:
+	* src/home/hd-render-manager.h:
+	* src/home/hd-switcher.c:
+	* src/home/hd-switcher.h:
+	* src/home/hd-task-navigator.c:
+	* src/home/hd-task-navigator.h:
+	* src/launcher/hd-launcher-grid.c:
+	* src/launcher/hd-launcher-page.c:
+	* src/launcher/hd-launcher-page.h:
+	* src/launcher/hd-launcher.c:
+	* src/launcher/hd-launcher.h:
+	* src/mb/hd-app.c:
+	* src/mb/hd-applet-layout-manager.c:
+	* src/mb/hd-comp-mgr.c:
+	* src/mb/hd-comp-mgr.h:
+	* src/mb/hd-theme.c:
+	* src/tidy/tidy-blur-group.c:
+	* src/tidy/tidy-blur-group.h:
+	* src/util/Makefile.am:
+	* src/util/hd-transition.c:
+	* src/util/hd-transition.h:
+
 2008-12-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* home/hd-task-navigator.c: Workaround attempt of the pulseaudio crash.

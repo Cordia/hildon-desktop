@@ -45,6 +45,7 @@
 #include "hildon-desktop.h"
 #include "hd-launcher-page.h"
 #include "hd-gtk-utils.h"
+#include "hd-render-manager.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 #define HD_LAUNCHER_LAUNCH_IMAGE_BLANK \
@@ -218,6 +219,9 @@ static void hd_launcher_constructed (GObject *gobject)
   clutter_actor_set_name (priv->back_button, "hd_launcher back button");
   g_signal_connect (priv->back_button, "button-release-event",
                     G_CALLBACK (hd_launcher_back_button_clicked), gobject);
+  hd_render_manager_set_button( hd_render_manager_get(),
+                                HDRM_BUTTON_LAUNCHER_BACK,
+                                priv->back_button );
 
   /* App launch transition */
   priv->launch_image = 0;
@@ -264,7 +268,6 @@ hd_launcher_show (void)
   ClutterActor *top_page = g_datalist_get_data (&priv->pages,
                                                 HD_LAUNCHER_ITEM_TOP_CATEGORY);
   priv->active_page = top_page;
-
   clutter_actor_show (priv->group);
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
         HD_LAUNCHER_PAGE_TRANSITION_IN);
@@ -275,9 +278,21 @@ hd_launcher_hide (void)
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
 
-  hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
-        HD_LAUNCHER_PAGE_TRANSITION_OUT);
-  priv->active_page = NULL;
+  if (priv->active_page)
+    {
+      ClutterActor *top_page = g_datalist_get_data (&priv->pages,
+                                    HD_LAUNCHER_ITEM_TOP_CATEGORY);
+      /* if we're not at the top page, we must transition that out too */
+      if (priv->active_page != top_page)
+        {
+          hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
+              HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK);
+        }
+
+      hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
+          HD_LAUNCHER_PAGE_TRANSITION_OUT);
+      priv->active_page = NULL;
+    }
 }
 
 /* hide the launcher fully. Called from hd-launcher-page
@@ -349,7 +364,7 @@ ClutterActor *hd_launcher_get_group (void)
 
 /* sets blur amount for transitions involving blurring out the top view */
 void
-hd_launcher_set_top_blur (float amount)
+hd_launcher_set_top_blur (float amount, float opacity)
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
 
@@ -362,8 +377,7 @@ hd_launcher_set_top_blur (float amount)
   tidy_blur_group_set_zoom(priv->top_blur,
                         (15.0f + cos(amount*3.141592f)) / 16);
 
-  clutter_actor_set_opacity (CLUTTER_ACTOR (priv->top_blur),
-                             (int)(0xff - (0xff * 0.3 * amount)));
+  clutter_actor_set_opacity(priv->top_blur, (int)(255*opacity));
 }
 
 /* sets the opacity of the back button for a nice fade in */
@@ -391,7 +405,6 @@ hd_launcher_category_tile_clicked (HdLauncherTile *tile, gpointer data)
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(page),
         HD_LAUNCHER_PAGE_TRANSITION_IN_SUB);
   priv->active_page = page;
-
   g_signal_emit (hd_launcher_get (), launcher_signals[CAT_LAUNCHED],
                  0, NULL);
 }
@@ -567,10 +580,21 @@ hd_launcher_launch (HdLauncherApp *item)
   gboolean result = FALSE;
   const gchar *service = hd_launcher_app_get_service (item);
   const gchar *exec;
+  ClutterActor *top_page;
 
   /* do 'fall away' anim for the page*/
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
         HD_LAUNCHER_PAGE_TRANSITION_LAUNCH);
+  /* also do animation for the topmost pane if we had it... */
+  top_page = g_datalist_get_data (&priv->pages,
+                                   HD_LAUNCHER_ITEM_TOP_CATEGORY);
+  /* if we're not at the top page, we must transition that out too */
+  if (priv->active_page != top_page)
+    {
+      hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
+                HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK);
+    }
+
   /* do launch animation */
   hd_launcher_transition_app_start( item );
 
@@ -752,6 +776,11 @@ _hd_launcher_transition_clicked(ClutterActor *actor,
                                 gpointer user_data)
 {
   hd_launcher_window_created();
+  /* check to see if we had any apps, because we may want to change state... */
+  if (hd_render_manager_has_apps())
+    hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+  else
+    hd_render_manager_set_state(HDRM_STATE_HOME);
   /* redraw the stage so it is immediately removed */
   clutter_actor_queue_redraw( clutter_stage_get_default() );
   return TRUE;
@@ -784,11 +813,11 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
       priv->launch_image = clutter_texture_new_from_file(loading_path, 0);
       if (priv->launch_image)
         {
-          ClutterActor *parent = clutter_stage_get_default();
+          ClutterContainer *parent = hd_render_manager_get_front_group();
 
           clutter_actor_set_name(priv->launch_image,
                                  "HdLauncher:launch_image");
-          clutter_container_add_actor(CLUTTER_CONTAINER(parent),
+          clutter_container_add_actor(parent,
                                       priv->launch_image);
           clutter_actor_set_reactive ( priv->launch_image, TRUE );
           g_signal_connect (priv->launch_image, "button-release-event",
