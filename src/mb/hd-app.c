@@ -328,10 +328,14 @@ hd_app_get_prev_group_member (HdApp *app)
 MBWindowManagerClient*
 hd_app_close_followers (HdApp *app)
 {
-  HdApp *leader = app->leader;
-  GList *l = leader->followers;
+  GList *l;
+  HdApp *leader;
 
-  l = g_list_last (l);
+  g_return_val_if_fail (app != NULL, NULL);
+  leader = app->leader;
+  g_return_val_if_fail (leader != NULL, MB_WM_CLIENT (app));
+
+  l = g_list_last (leader->followers);
   while (l)
     {
       MBWindowManagerClient *f = l->data;

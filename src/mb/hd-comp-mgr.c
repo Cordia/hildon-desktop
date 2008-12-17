@@ -1153,13 +1153,14 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
     {
       MBWindowManagerClient * c = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
 
-      if (close_all && HD_IS_APP (c) && HD_APP (c)->secondary_window)
+      if (close_all && HD_IS_APP (c) && HD_APP (c)->secondary_window
+          && HD_APP (c)->leader)
         {
           c = MB_WM_CLIENT (HD_APP (c)->leader);
           hd_app_close_followers (HD_APP (c));
           mb_wm_client_deliver_delete (c);
         }
-      else
+      else /* Either primary or a secondary who's lost its leader. */
         mb_wm_client_deliver_delete (c);
     }
 }
