@@ -1,5 +1,9 @@
 2008-12-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* home/hd-task-navigator.c: Workaround attempt of the pulseaudio crash.
+
+2008-12-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* home/hd-task-navigator.c: Make it able to scroll again.
 
 2008-12-16  Tuomas Kuosmanen  <tuomas.kuosmanen@nokia.com>
