@@ -1,7 +1,6 @@
 2008-12-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
-	reviewed by: <delete if not using a buddy>
-	patch by: <delete if not someone else's patch>
+	Merged Gordon Williams' render-manager-refactor branch.
 
 	* data/desktop/maemoblocks.w50-desktop:
 	* data/desktop/osso_notes.w50-desktop:
