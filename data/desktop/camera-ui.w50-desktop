@@ -11,7 +11,7 @@ X-Window-Icon=tn-bookmarks-link
 X-HildonDesk-ShowInToolbar=true
 X-Osso-Service=com.nokia.cameraui
 X-Osso-Type=application/x-executable
-#X-Maemo-Prestarted=always
+X-Maemo-Prestarted=always
 X-Osso-User-Position=8
 X-Maemo-Category=Main
 

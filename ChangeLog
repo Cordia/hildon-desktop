@@ -1,5 +1,11 @@
 2008-12-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
+	Activated preloading for camera UI.
+
+	* data/desktop/camera-ui.w50-desktop:
+
+2008-12-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
 	Merged Gordon Williams' render-manager-refactor branch.
 
 	* data/desktop/maemoblocks.w50-desktop:
