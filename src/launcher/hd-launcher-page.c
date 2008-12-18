@@ -541,6 +541,7 @@ void
 hd_launcher_page_add_tile (HdLauncherPage *page, HdLauncherTile* tile)
 {
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
+  g_return_if_fail(HD_IS_LAUNCHER_PAGE(page));
 
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->grid),
                                CLUTTER_ACTOR (tile));

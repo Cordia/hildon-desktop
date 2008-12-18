@@ -1,5 +1,10 @@
 2008-12-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/launcher/hd-launcher-page.c:
+	Fix for SIGSEGV
+
+2008-12-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-render-manager.c
 	* src/home/hd-render-manager.h:
 	Removed un-needed grab/ungrab calls
