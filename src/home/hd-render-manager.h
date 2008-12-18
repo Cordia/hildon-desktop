@@ -76,8 +76,6 @@ typedef enum
   HDRM_STATE_UNDEFINED      = 0, /* just for startup - should never use this */
   HDRM_STATE_HOME           = 1 << 0, /* home frontmost */
   HDRM_STATE_HOME_EDIT      = 1 << 1, /* home frontmost, and edit mode */
-  HDRM_STATE_HOME_LAYOUT    = 1 << 2, /* home frontmost, and layout mode.
-                                         FIXME When is this used? */
   HDRM_STATE_APP            = 1 << 4, /* app frontmost */
   HDRM_STATE_APP_FULLSCREEN = 1 << 5, /* app frontmost and over everything */
   HDRM_STATE_TASK_NAV       = 1 << 6,
@@ -89,12 +87,11 @@ typedef enum
 
 #define STATE_NEED_DESKTOP(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
-                    HDRM_STATE_HOME_LAYOUT)
+                    HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
 
 #define STATE_NEED_GRAB(s) \
   STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
-                    HDRM_STATE_HOME_LAYOUT | HDRM_STATE_HOME_EDIT)
+                    HDRM_STATE_HOME_EDIT)
 
 #define STATE_NEED_TASK_NAV(s) \
   STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
@@ -103,12 +100,11 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_FULLSCREEN)
 
 #define STATE_SHOW_OPERATOR(s) \
-  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_HOME_LAYOUT)
+  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT)
 
 #define STATE_SHOW_STATUS_AREA(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_HOME_LAYOUT | HDRM_STATE_APP)
+                    HDRM_STATE_APP)
 
 GType hd_render_manager_get_type (void) G_GNUC_CONST;
 

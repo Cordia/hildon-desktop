@@ -31,7 +31,6 @@
 #include "hd-home-view.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
-#include "hd-layout-dialog.h"
 #include "hd-gtk-style.h"
 #include "hd-gtk-utils.h"
 #include "hd-home-applet.h"
@@ -106,8 +105,6 @@ struct _HdHomePrivate
   ClutterActor          *edit_button;
 
   ClutterActor          *applet_close_button;
-
-  ClutterActor          *layout_dialog;
 
   ClutterActor          *active_applet;
 
@@ -231,8 +228,7 @@ hd_home_back_button_clicked (ClutterActor *button,
 			     ClutterEvent *event,
 			     HdHome       *home)
 {
-  if (hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT ||
-      hd_render_manager_get_state()==HDRM_STATE_HOME_LAYOUT)
+  if (hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT)
     hd_render_manager_set_state(HDRM_STATE_HOME);
 
   return TRUE;
@@ -504,12 +500,6 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
   return TRUE;
 }
 
-static void
-hd_home_layout_dialog_ok_clicked (HdLayoutDialog *dialog, HdHome *home)
-{
-  hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
-}
-
 /* Called when a client message is sent to the root window. */
 static Bool
 root_window_client_message (XClientMessageEvent *event, HdHome *home)
@@ -681,18 +671,6 @@ hd_home_constructed (GObject *object)
 			       priv->right_switch);
   clutter_actor_hide (priv->right_switch);
 
-  priv->layout_dialog = g_object_new (HD_TYPE_LAYOUT_DIALOG,
-				      "comp-mgr", priv->comp_mgr,
-				      "home", object,
-				       NULL);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
-			       priv->layout_dialog);
-  clutter_actor_hide (priv->layout_dialog);
-  clutter_actor_set_reactive (priv->layout_dialog, TRUE);
-
-  g_signal_connect (priv->layout_dialog, "ok-clicked",
-		    G_CALLBACK (hd_home_layout_dialog_ok_clicked),
-		    object);
   /*
    * Construct the grey rectangle for dimming of desktop in edit mode
    * This one is added directly to the home, so it is always on the top
@@ -1072,7 +1050,6 @@ _hd_home_do_normal_layout (HdHome *home)
   gint           i = 0;
 
   clutter_actor_hide (priv->edit_group);
-  clutter_actor_hide (priv->layout_dialog);
 
   hd_home_hide_applet_buttons (home);
 
@@ -1105,8 +1082,6 @@ _hd_home_do_edit_layout (HdHome *home)
 
   _hd_home_do_normal_layout (home);
 
-  clutter_actor_hide (priv->layout_dialog);
-
   /*
    * Show the overlay edit_group and move it over the current view.
    */
@@ -1116,16 +1091,6 @@ _hd_home_do_edit_layout (HdHome *home)
   clutter_actor_show (priv->edit_group);
 
   clutter_actor_show (priv->grey_filter);
-}
-
-/* FOR HDRM_STATE_HOME_LAYOUT */
-static void
-_hd_home_do_layout_layout (HdHome * home)
-{
-  HdHomePrivate   *priv = home->priv;
-
-  _hd_home_do_normal_layout (home);
-  clutter_actor_show (priv->layout_dialog);
 }
 
 void
@@ -1145,20 +1110,11 @@ hd_home_update_layout (HdHome * home)
     case HDRM_STATE_HOME_EDIT:
       _hd_home_do_edit_layout(home);
       break;
-    case HDRM_STATE_HOME_LAYOUT:
-      _hd_home_do_layout_layout(home);
-      break;
     default:
       g_warning("%s: should only be called for HDRM_STATE_HOME.*",
                 __FUNCTION__);
     }
 
-}
-
-void
-hd_home_show_activate_views_dialog (HdHome *home)
-{
-  hd_render_manager_set_state(HDRM_STATE_HOME_LAYOUT);
 }
 
 static void
@@ -1214,7 +1170,7 @@ hd_home_pan_by (HdHome *home, gint move_by)
   HdHomePrivate   *priv = home->priv;
   gboolean         in_progress = FALSE;
 
-  if (hd_render_manager_get_state() == HDRM_STATE_HOME_LAYOUT || !move_by)
+  if (!move_by)
     return;
 
   if (priv->pan_queue)

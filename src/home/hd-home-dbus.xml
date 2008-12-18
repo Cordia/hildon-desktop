@@ -18,12 +18,6 @@
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
     </method>
 
-    <method name="ShowActivateViewsDialog">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_show_activate_views_dialog"/>
-
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-    </method>
-
     <method name="GetCurrentViewID">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_get_current_view_id"/>
 

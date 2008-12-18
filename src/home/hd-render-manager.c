@@ -471,15 +471,6 @@ void hd_render_manager_set_order (HdRenderManager *manager)
         hd_render_manager_set_blur(manager, HDRM_BLUR_NONE);
         hd_home_update_layout (priv->home);
         break;
-      case HDRM_STATE_HOME_LAYOUT:
-        visible_top_left = HDRM_BUTTON_NONE;
-        visible_top_right = HDRM_BUTTON_HOME_BACK;
-        clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
-        clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
-        clutter_actor_show(CLUTTER_ACTOR(priv->front));
-        hd_render_manager_set_blur(manager, HDRM_BLUR_NONE);
-        hd_home_update_layout (priv->home);
-        break;
       case HDRM_STATE_APP:
         visible_top_left = HDRM_BUTTON_TASK_NAV;
         visible_top_right = HDRM_BUTTON_NONE;
@@ -932,7 +923,6 @@ static const char *hd_render_manager_state_str(HDRMStateEnum state)
     case HDRM_STATE_UNDEFINED : return "HDRM_STATE_UNDEFINED";
     case HDRM_STATE_HOME : return "HDRM_STATE_HOME";
     case HDRM_STATE_HOME_EDIT : return "HDRM_STATE_HOME_EDIT";
-    case HDRM_STATE_HOME_LAYOUT : return "HDRM_STATE_HOME_LAYOUT";
     case HDRM_STATE_APP : return "HDRM_STATE_APP";
     case HDRM_STATE_APP_FULLSCREEN : return "HDRM_STATE_APP_FULLSCREEN";
     case HDRM_STATE_TASK_NAV : return "HDRM_STATE_TASK_NAV";

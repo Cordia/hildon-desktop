@@ -1,3 +1,19 @@
+2008-12-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-layout-dialog.c (deleted):
+	* src/home/hd-layout-dialog.h (deleted): There is now a gtk+ based
+	  Activate views dialog in hildon-home.
+
+	* src/home/Makefile.am: Remove hd-layout-dialog.[ch]
+
+	* src/home/hd-home-dbus.xml: Remove ShowActivateViews method from
+	  interface.
+
+	* src/home/hd-home.c:
+	* src/home/hd-render-manager.c:
+	* src/home/hd-render-manager.h: Remove layout mode used by the clutter
+	  based Activate views dialog.
+
 2008-12-18  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Removed fake w50 menu, now real .desktop files are read.
