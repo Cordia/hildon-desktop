@@ -1,3 +1,21 @@
+2008-12-18  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Removed fake w50 menu, now real .desktop files are read.
+	Added hard-coded ordering for applications in main category.
+	Added support for X-Text-Domain in .desktop files.
+
+	* data/desktop/Makefile.am: Removed .w50-desktop files.
+	* src/launcher/hd-launcher-item.c (hd_launcher_item_parse_keyfile,
+	  _hd_launcher_app_main_position, hd_launcher_item_new_from_keyfile):
+	* src/launcher/hd-launcher-item.h (HD_LAUNCHER_ITEM_TOP_CATEGORY,
+	  HD_APPLICATION_LAUNCHER): Hard-cde which apps and in which order they
+	  go in the main category.
+	* src/launcher/hd-launcher-tree.c (walk_visit_func): Don't load
+	.w50-desktop files.
+	* src/launcher/hd-launcher.c (hd_launcher_create_page,
+	  hd_launcher_lazy_traverse_tree): If .desktop file has X-Text-Domain,
+	  use it.
+
 2008-12-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c

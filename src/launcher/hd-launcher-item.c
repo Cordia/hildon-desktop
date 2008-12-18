@@ -326,6 +326,33 @@ hd_launcher_item_parse_keyfile (HdLauncherItem *item,
   return TRUE;
 }
 
+static guint
+_hd_launcher_app_main_position (const gchar *id)
+{
+  static GData *main_apps = NULL;
+  if (!main_apps)
+    {
+      g_datalist_init (&main_apps);
+
+      g_datalist_set_data (&main_apps, "browser", (gpointer)1);
+      g_datalist_set_data (&main_apps, "mediaplayer", (gpointer)2);
+      g_datalist_set_data (&main_apps, "calendar", (gpointer)3);
+      g_datalist_set_data (&main_apps, "image-viewer", (gpointer)4);
+      g_datalist_set_data (&main_apps, "osso-addressbook", (gpointer)5);
+      g_datalist_set_data (&main_apps, "rtcom-call-ui", (gpointer)6);
+      g_datalist_set_data (&main_apps, "nokia-maps", (gpointer)7);
+      g_datalist_set_data (&main_apps, "camera-ui", (gpointer)8);
+      g_datalist_set_data (&main_apps, "modest", (gpointer)9);
+      g_datalist_set_data (&main_apps, "rtcom-messaging-ui", (gpointer)10);
+      g_datalist_set_data (&main_apps, "worldclock", (gpointer)11);
+      g_datalist_set_data (&main_apps, "osso_calculator", (gpointer)12);
+      g_datalist_set_data (&main_apps, "hildon-application-manager", (gpointer)13);
+      g_datalist_set_data (&main_apps, "hildon-control-panel", (gpointer)14);
+    }
+
+  return (guint)g_datalist_get_data (&main_apps, id);
+}
+
 HdLauncherItem *
 hd_launcher_item_new_from_keyfile (const gchar *id,
                                    GKeyFile *key_file,
@@ -406,6 +433,17 @@ hd_launcher_item_new_from_keyfile (const gchar *id,
       g_object_unref (result);
       return NULL;
     }
+
+  /* FIXME: The list of apps in the main category is currently hard-coded
+   * until we have freedesktop menu support or equivalent.
+   */
+  guint main_pos = _hd_launcher_app_main_position (id);
+  if (main_pos) {
+    if (result->priv->category)
+      g_free (result->priv->category);
+    result->priv->category = g_strdup (HD_LAUNCHER_ITEM_TOP_CATEGORY);
+    result->priv->position = main_pos;
+  }
 
   return result;
 }

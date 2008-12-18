@@ -46,7 +46,7 @@ G_BEGIN_DECLS
 #define HD_DESKTOP_ENTRY_GROUP         "Desktop Entry"
 /* Standard categories */
 #define HD_LAUNCHER_ITEM_DEFAULT_CATEGORY "applications"
-#define HD_LAUNCHER_ITEM_TOP_CATEGORY     "Top"
+#define HD_LAUNCHER_ITEM_TOP_CATEGORY     "Main"
 
 typedef enum {
   HD_APPLICATION_LAUNCHER,

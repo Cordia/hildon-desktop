@@ -462,15 +462,25 @@ static void
 hd_launcher_create_page (HdLauncherItem *item, gpointer data)
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+  const gchar *domainname;
+  ClutterActor *newpage;
 
   if (hd_launcher_item_get_item_type (item) != HD_CATEGORY_LAUNCHER)
     return;
 
   g_debug ("%s - Creating new page for id: %s\n", __FUNCTION__,
            hd_launcher_item_get_id (item));
-  ClutterActor *newpage = hd_launcher_page_new(
-                              hd_launcher_item_get_icon_name (item),
-                              _(hd_launcher_item_get_name (item)));
+
+  domainname = hd_launcher_item_get_text_domain (item);
+  if (domainname)
+    newpage = hd_launcher_page_new(
+                 hd_launcher_item_get_icon_name (item),
+                 dgettext (domainname, hd_launcher_item_get_name (item)));
+  else
+    newpage = hd_launcher_page_new(
+                 hd_launcher_item_get_icon_name (item),
+                 _(hd_launcher_item_get_name (item)));
+
   clutter_actor_hide (newpage);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->group), newpage);
 
@@ -485,21 +495,28 @@ hd_launcher_lazy_traverse_tree (gpointer data)
   HdLauncherItem *item = tdata->items->data;
   HdLauncherTile *tile;
   HdLauncherPage *page;
+  const gchar *domainname;
 
   g_debug ("%s: Adding item name: %s, position: %d\n", __FUNCTION__,
            hd_launcher_item_get_name(item),
            hd_launcher_item_get_position (item));
 
-  tile = hd_launcher_tile_new (
-      hd_launcher_item_get_icon_name (item),
-      _(hd_launcher_item_get_name (item)));
+  domainname = hd_launcher_item_get_text_domain (item);
+  if (domainname)
+    tile = hd_launcher_tile_new (
+        hd_launcher_item_get_icon_name (item),
+        dgettext (domainname, hd_launcher_item_get_name (item)));
+  else
+    tile = hd_launcher_tile_new (
+        hd_launcher_item_get_icon_name (item),
+        _(hd_launcher_item_get_name (item)));
 
   /* Find in which page it goes */
   page = g_datalist_get_data (&priv->pages,
                               hd_launcher_item_get_category (item));
   if (!page)
-    /* Put it in the top level. */
-    page = g_datalist_get_data (&priv->pages, HD_LAUNCHER_ITEM_TOP_CATEGORY);
+    /* Put it in the default level. */
+    page = g_datalist_get_data (&priv->pages, HD_LAUNCHER_ITEM_DEFAULT_CATEGORY);
 
   g_debug ("%s: page: %p\n", __FUNCTION__, page);
   hd_launcher_page_add_tile (page, tile);

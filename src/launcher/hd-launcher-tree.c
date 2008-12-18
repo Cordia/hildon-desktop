@@ -240,7 +240,6 @@ walk_visit_func (const char        *f_path,
   const gchar *name;
   GError *error = NULL;
   gchar *full_path = NULL;
-  gchar *id = NULL;
   gboolean is_hidden;
   GKeyFile *key_file = NULL;
 
@@ -275,28 +274,7 @@ walk_visit_func (const char        *f_path,
 #endif /* HAVE_GNU_FTW */
 
   if (g_str_has_suffix (name, ".desktop"))
-    {
-      gchar *w50_id = g_strndup (name, strlen (name) - strlen (".desktop"));
-      /* If there's an equivalent .w50-desktop file, ignore this one. */
-      gchar *w50_name = g_strdup_printf ("%s.w50-desktop", w50_id);
-      gchar *w50_path =
-        g_build_filename (data->tree->priv->path, w50_name, NULL);
-
-      if (!g_file_test (w50_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_REGULAR))
-        {
-          /* .w50-desktop does not file exist. */
-          full_path = g_build_filename (data->tree->priv->path, name, NULL);
-          id = g_strndup (name, strlen (name) - strlen (".desktop"));
-        }
-      g_free (w50_id);
-      g_free (w50_name);
-      g_free (w50_path);
-    }
-  else if (g_str_has_suffix (name, ".w50-desktop"))
-    {
-      id = g_strndup (name, strlen (name) - strlen (".w50-desktop"));
-      full_path = g_build_filename (data->tree->priv->path, name, NULL);
-    }
+    full_path = g_build_filename (data->tree->priv->path, name, NULL);
 
   if (full_path)
     {
@@ -320,7 +298,7 @@ walk_visit_func (const char        *f_path,
   if (key_file) {
     WalkItem *item = g_new0 (WalkItem, 1);
     item->key_file = key_file;
-    item->id = id;
+    item->id = g_strndup (name, strlen (name) - strlen (".desktop"));
     data->files_list = g_list_prepend (data->files_list, item);
   }
 
