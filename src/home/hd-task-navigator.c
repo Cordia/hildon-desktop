@@ -2510,9 +2510,10 @@ hd_task_navigator_init (HdTaskNavigator * self)
   /* Actor hierarchy */
   Scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_actor_set_name (Scroller, "Scroller");
-  /* We make the scroller large so it isn't clipped by the clutter
+  clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
+  /* Set this so the small scroller isn't clipped by the clutter
    * visibility detection code. */
-  clutter_actor_set_size (Scroller, SCREEN_WIDTH*8, SCREEN_HEIGHT*1);
+  clutter_actor_set_visibility_detect(Scroller, FALSE);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), Scroller);
 
   /*

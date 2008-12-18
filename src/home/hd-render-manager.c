@@ -188,6 +188,7 @@ hd_render_manager_init (HdRenderManager *self)
   priv->home_blur = TIDY_BLUR_GROUP(tidy_blur_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->home_blur),
                          "HdRenderManager:home_blur");
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->home_blur), FALSE);
   tidy_blur_group_set_use_alpha(CLUTTER_ACTOR(priv->home_blur), FALSE);
   tidy_blur_group_set_use_mirror(CLUTTER_ACTOR(priv->home_blur), TRUE);
   clutter_actor_set_size(CLUTTER_ACTOR(priv->home_blur),
@@ -198,6 +199,7 @@ hd_render_manager_init (HdRenderManager *self)
   priv->task_nav_blur = TIDY_BLUR_GROUP(tidy_blur_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->task_nav_blur),
                          "HdRenderManager:task_nav_blur");
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->task_nav_blur), FALSE);
   tidy_blur_group_set_use_alpha(CLUTTER_ACTOR(priv->task_nav_blur), TRUE);
   tidy_blur_group_set_use_mirror(CLUTTER_ACTOR(priv->task_nav_blur), FALSE);
   clutter_actor_set_size(CLUTTER_ACTOR(priv->task_nav_blur),
@@ -208,12 +210,18 @@ hd_render_manager_init (HdRenderManager *self)
   priv->app_top = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->app_top),
                          "HdRenderManager:app_top");
+  clutter_actor_set_size(CLUTTER_ACTOR(priv->app_top),
+                           HDRM_WIDTH, HDRM_HEIGHT);
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->app_top), FALSE);
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->app_top));
 
   priv->front = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->front),
                          "HdRenderManager:front");
+  clutter_actor_set_size(CLUTTER_ACTOR(priv->front),
+                             HDRM_WIDTH, HDRM_HEIGHT);
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->front), FALSE);
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->front));
 

@@ -1,3 +1,16 @@
+2008-12-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c
+	* src/home/hd-task-navigator.c:
+	* src/home/hd-home-view.c:
+	Added calls to new clutter function actor_set_visibility_detect to
+	skip visibility detection on things that don't need it/break
+	with it
+	* src/mb/hd-comp-mgr.c:
+	Added code to add update handlers to TFP textures, and to update
+	only the area of the screen that needs updating. This requires a
+	new clutter.	
+
 2008-12-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Fixes NB#96038

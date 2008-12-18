@@ -703,6 +703,71 @@ hd_comp_mgr_get_client_transient_for (MBWindowManagerClient *c)
 }
 
 static void
+hd_comp_mgr_texture_update_area(ClutterActor* actor,
+                                int x, int y, int width, int height)
+{
+  ClutterFixed offsetx = 0, offsety = 0;
+  ClutterActor *parent, *it;
+
+  if (!CLUTTER_IS_ACTOR(actor) || !CLUTTER_ACTOR_IS_VISIBLE(actor))
+    return;
+
+  /* TFP textures are usually bundled into another group, and it is
+   * this group that sets visibility - so we must check it too */
+  parent = clutter_actor_get_parent(actor);
+  if (parent && !CLUTTER_ACTOR_IS_VISIBLE(parent))
+    return;
+
+  /* Assume no zoom/rotate is happening here as we have simple windows */
+  it = actor;
+  while (it && !CLUTTER_IS_STAGE(it))
+    {
+      ClutterFixed px,py;
+      clutter_actor_get_positionu(it, &px, &py);
+      offsetx += px;
+      offsety += py;
+      it = clutter_actor_get_parent(it);
+    }
+
+  {
+    ClutterActor *stage = clutter_actor_get_stage(actor);
+    ClutterGeometry area = {x + CLUTTER_FIXED_TO_INT(offsetx),
+                            y + CLUTTER_FIXED_TO_INT(offsety),
+                            width, height};
+
+    /*g_debug("%s: UPDATE %d, %d, %d, %d", __FUNCTION__,
+            area.x, area.y, area.width, area.height);*/
+
+    /* Queue a redraw, but without updating the whole area */
+    clutter_actor_queue_redraw_damage(stage);
+    clutter_stage_set_damaged_area(stage, area);
+  }
+}
+
+/* Hook onto and X11 texture pixmap children of this actor */
+static void
+hd_comp_mgr_hook_update_area(ClutterActor *actor)
+{
+  if (CLUTTER_IS_GROUP(actor))
+    {
+      gint i;
+      gint n = clutter_group_get_n_children(CLUTTER_GROUP(actor));
+
+      for (i=0;i<n;i++)
+        {
+          ClutterActor *child =
+              clutter_group_get_nth_child(CLUTTER_GROUP(actor), i);
+          if (CLUTTER_X11_IS_TEXTURE_PIXMAP(child))
+            {
+              g_signal_connect(G_OBJECT(child), "update-area",
+                             G_CALLBACK(hd_comp_mgr_texture_update_area), 0);
+              clutter_actor_set_allow_redraw(child, FALSE);
+            }
+        }
+    }
+}
+
+static void
 hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
   ClutterActor             * actor;
@@ -746,6 +811,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   g_object_set_data (G_OBJECT (actor),
 		     "HD-MBWMCompMgrClutterClient", cclient);
+
+  hd_comp_mgr_hook_update_area(actor);
 
   /* deactivate launcher and switcher in case of new window */
   if (STATE_ONE_OF(hd_render_manager_get_state(),
@@ -1050,7 +1117,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   MBWindowManagerClient    * highest_fs;
   HdTaskNavigator          *tn;
 
-  g_debug ("%s", __FUNCTION__);
+  /* g_debug ("%s", __FUNCTION__); */
 
   tn = HD_TASK_NAVIGATOR (
         hd_switcher_get_task_navigator (priv->switcher_group));
@@ -1077,7 +1144,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
       if (parent_klass->restack)
 	parent_klass->restack (mgr);
 
-      MBWindowManager *wm = mgr->wm;
+      /*MBWindowManager *wm = mgr->wm;
       MBWindowManagerClient *c = wm->stack_bottom;
       int i = 0;
       while (c)
@@ -1092,7 +1159,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
               (wm->desktop==c) ? "DESKTOP" : "");
           i++;
           c = c->stacked_above;
-        }
+        }*/
 
       hd_render_manager_restack();
     }

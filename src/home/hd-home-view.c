@@ -138,7 +138,7 @@ hd_home_view_allocate (ClutterActor          *actor,
       (CLUTTER_UNITS_TO_INT (box->y2 - box->y1) != priv->bg_image_dest_height))
     hd_home_view_refresh_bg (view,
                              priv->background_image_file);
-  
+
   CLUTTER_ACTOR_CLASS (hd_home_view_parent_class)->
     allocate (actor, box, absolute_origin_changed);
 }
@@ -330,12 +330,14 @@ hd_home_view_constructed (GObject *object)
 
   priv->background_container = clutter_group_new ();
   clutter_actor_set_name (priv->background_container, "HdHomeView::background-container");
+  clutter_actor_set_visibility_detect(priv->background_container, FALSE);
   clutter_actor_set_position (priv->background_container, 0, 0);
   clutter_actor_set_size (priv->background_container, priv->xwidth, priv->xheight);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->background_container);
 
   priv->applets_container = clutter_group_new ();
   clutter_actor_set_name (priv->applets_container, "HdHomeView::applets-container");
+  clutter_actor_set_visibility_detect(priv->applets_container, FALSE);
   clutter_actor_set_position (priv->applets_container, 0, 0);
   clutter_actor_set_size (priv->applets_container, priv->xwidth, priv->xheight);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->applets_container);
@@ -394,14 +396,14 @@ hd_home_view_dispose (GObject *object)
 
   /* Remove background image thread/source and delete processed image */
   hd_home_view_refresh_bg (self, NULL);
-  
+
   /* Remove gconf notifications */
   if (priv->bg_image_notify)
     {
       gconf_client_notify_remove (default_client, priv->bg_image_notify);
       priv->bg_image_notify = 0;
     }
-  
+
   /* Shutdown any applets associated with this view */
   while (l)
   {
@@ -432,7 +434,7 @@ get_bg_image_processed_name (HdHomeView *view, const gchar *filename)
 {
   gchar		    *basename, *tmpname;
   ClutterActor      *actor = CLUTTER_ACTOR (view);
-  
+
   basename = g_path_get_basename (filename);
   tmpname = g_strdup_printf ("%s/%dx%d-%s",
 			     g_get_tmp_dir (),
@@ -489,7 +491,7 @@ bg_image_set_idle_cb (gpointer data)
     clutter_actor_destroy (priv->background);
 
   priv->background = new_bg;
-  
+
   if (!priv->bg_image_skip_gconf)
     {
       gchar *gconf_path = GCONF_BACKGROUND_KEY (priv->id);
