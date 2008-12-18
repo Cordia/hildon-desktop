@@ -1,3 +1,12 @@
+2008-12-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h:
+	Removed un-needed grab/ungrab calls
+	* src/mb/hd-comp-mgr.c:
+	Added workaround for SystemUI windows changing state to STATE_APP
+	and blurring on startup.
+
 2008-12-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-render-manager.c (hd_render_manager_set_order): Do not

@@ -884,7 +884,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         hd_launcher_hide();
 
       if (STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
-        mb_wm_handle_show_desktop (wm, STATE_NEED_DESKTOP(state));
+        {
+          gboolean show = STATE_NEED_DESKTOP(state);
+          g_debug("%s: show_desktop %s",
+                  __FUNCTION__, show?"TRUE":"FALSE");
+
+          mb_wm_handle_show_desktop(MB_WM_COMP_MGR(priv->comp_mgr)->wm, show);
+        }
 
       if (STATE_SHOW_STATUS_AREA(state) != STATE_SHOW_STATUS_AREA(oldstate))
         hd_comp_mgr_set_status_area_stacking(priv->comp_mgr,
@@ -892,14 +898,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
       /* we always need to restack here */
       hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
-
-      if (STATE_NEED_GRAB(state) != STATE_NEED_GRAB(state))
-        {
-          if (STATE_NEED_GRAB(state))
-            hd_home_grab_pointer(priv->home);
-          else
-            hd_home_ungrab_pointer(priv->home);
-        }
 
       hd_render_manager_set_order(manager);
     }

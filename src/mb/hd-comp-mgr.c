@@ -66,6 +66,11 @@
 #define LOWMEM_PROC_USED       "/proc/sys/vm/lowmem_used_pages"
 #define LOWMEM_LAUNCH_THRESHOLD_DISTANCE 2500
 
+/* We need this because these things pop up on startup and then don't go away,
+ * leaving us with a needlessly blurred background */
+#define BLUR_FOR_WINDOW(c) (!(c)->window || \
+              !(g_str_equal((c)->window->name, "SystemUI root window")))
+
 static gchar * hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid);
 
 static gboolean hd_comp_mgr_memory_limits (guint *pages_used,
@@ -798,7 +803,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * the top application, so we need put the desktop back
    * in the correct order. */
   if (STATE_NEED_DESKTOP(hd_render_manager_get_state()))
-    mb_wm_handle_show_desktop(mgr->wm, TRUE);
+    {
+      mb_wm_handle_show_desktop(mgr->wm, TRUE);
+    }
 
   /*
    * If the actor is an appliation, add it also to the switcher
@@ -992,8 +999,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
               }
           }
         else if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar))
-          /* Taskbar == task switcher in our case.  Introduced for systemui. */
-          hd_switcher_add_window_actor (priv->switcher_group, actor);
+          {
+            /* Taskbar == task switcher in our case.
+             * Introduced for systemui. */
+            hd_switcher_add_window_actor (priv->switcher_group, actor);
+            /* and make sure we're in app mode as we'll want to show this
+             * new app */
+            if (!STATE_IS_APP(hd_render_manager_get_state()))
+                hd_render_manager_set_state(HDRM_STATE_APP);
+          }
       }
     }
 }
@@ -1050,7 +1064,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
           c_type == MBWMClientTypeMenu
           )
         {
-          hd_render_manager_set_blur_app(FALSE);
+          if (BLUR_FOR_WINDOW(c))
+            hd_render_manager_set_blur_app(FALSE);
         }
 
       if (c_type == HdWmClientTypeStatusMenu)
@@ -1063,7 +1078,9 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
       else if (c_type == MBWMClientTypeNote)
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (c_type == MBWMClientTypeApp)
-        hd_transition_close_app (hmgr, c);
+        {
+          hd_transition_close_app (hmgr, c);
+        }
 
       /* after the effect, restack */
       hd_comp_mgr_restack(mgr);
@@ -1079,7 +1096,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
           c_type == HdWmClientTypeAppMenu ||
           c_type == MBWMClientTypeMenu)
         {
-          hd_render_manager_set_blur_app(TRUE);
+          if (BLUR_FOR_WINDOW(c))
+            hd_render_manager_set_blur_app(TRUE);
         }
 
       if (c_type == HdWmClientTypeStatusMenu)
@@ -1101,9 +1119,6 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
           /* We're now showing this app, so remove our app
            * starting screen if we had one */
           hd_launcher_window_created();
-          /* and make sure w're in app mode */
-          if (!STATE_IS_APP(hd_render_manager_get_state()))
-              hd_render_manager_set_state(HDRM_STATE_APP);
         }
     }
 }

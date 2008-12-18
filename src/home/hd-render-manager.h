@@ -108,6 +108,8 @@ typedef enum
 
 GType hd_render_manager_get_type (void) G_GNUC_CONST;
 
+/* These following functions should only be used in one or two places for
+ * setup, or when something else changes state. */
 HdRenderManager *hd_render_manager_get (void);
 
 void hd_render_manager_set_comp_mgr (HdRenderManager *manager,
@@ -125,6 +127,7 @@ void hd_render_manager_set_operator (HdRenderManager *manager,
 void hd_render_manager_set_button (HdRenderManager *manager,
                                    HDRMButtonEnum button,
                                    ClutterActor *item);
+/* ----------------------------------------------------------------- */
 ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button);
 void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible);
 gboolean hd_render_manager_get_visible(HDRMButtonEnum button);
@@ -144,6 +147,8 @@ void hd_render_manager_restack(void);
 
 /* Sets whether any of the buttons will actually be set to do anything */
 void hd_render_manager_set_reactive(gboolean reactive);
+
+
 
 G_END_DECLS
 
