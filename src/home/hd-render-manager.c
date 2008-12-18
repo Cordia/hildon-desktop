@@ -533,7 +533,7 @@ void hd_render_manager_set_order (HdRenderManager *manager)
         clutter_actor_reparent(priv->status_area, CLUTTER_ACTOR(priv->front));
       clutter_actor_raise_top(priv->status_area);
     }
-  else
+  else if (priv->status_area)
       clutter_actor_hide(priv->status_area);
 
   /* Set button state */

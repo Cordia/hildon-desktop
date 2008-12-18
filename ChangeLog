@@ -1,5 +1,10 @@
 2008-12-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/home/hd-render-manager.c (hd_render_manager_set_order): Do not
+	  try to hide the status_area actor if it is not there.
+
+2008-12-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-layout-dialog.c (deleted):
 	* src/home/hd-layout-dialog.h (deleted): There is now a gtk+ based
 	  Activate views dialog in hildon-home.
