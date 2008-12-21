@@ -1,23 +1,31 @@
  TODO
 ======
 
-- Implement closing of dialogs when tapping outside of them.
-- Support for stackable windows
+- Task Switcher needs to maintain a list of application windows for
+  - the CURRENT_APP_WINDOW property (libmatchbox cannot know current
+    application --- focused window is not enough since it can be
+    a non-transient dialog box or something temporary [e.g. power menu])
+  - background killing: non-running (unmapped) applications are visible
+    in Task Switcher
+  - raising already running (or background killed) applications from
+    Task Launcher
+  - statistics collection (e.g. most used applications)
+- More support for stackable windows:
+  - multiple stacks --- is it working now?
+  - handle the stack index value (first mapped window might not be the root)
 - Implement progress indicator in application window and dialog title.
   Window property _HILDON_WM_WINDOW_PROGRESS_INDICATOR (int), values 0 (off)
   and 1 (on). Other values can be used in future if needed.
-- Implement notifications in Task Switcher.
-  - Grab the keyboard focus in task switcher view.
-  - Make the operator logo disappear in task switcher view.
-  - Show incoming event notification previews.
-
-  - Enter the switcher when an application is closed
-    and the switcher is not empty.
-  - Don't show incoming event notification previews
-    if the do not disturb flag is set.
-
-  - Remove status area handling from task switcher.
-  - Be more sensible differentiating clicks vs. scroll attempts.
+- Grab the keyboard focus in task switcher view.  Kimmo: What for?
+- Make the operator logo disappear in task switcher view.
+- Show incoming event notification previews.
+- Enter the switcher when an application is closed
+  and the switcher is not empty.
+- Don't show incoming event notification previews
+  if the do not disturb flag is set.
+- Remove status area handling from task switcher.
+- Be more sensible differentiating clicks vs. scroll attempts.
+  (It should be the same usability-wise as pannable areas.)
 - Implement portrait mode.
 - Implement support for speech bubbles in Contacts applets.
 - Add more error checks to matchbox code (e.g. check every CreateWindow)
