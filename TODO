@@ -10,10 +10,13 @@
     in Task Switcher
   - raising already running (or background killed) applications from
     Task Launcher
+  - Close Applications dialog needs to show a list of running applications
   - statistics collection (e.g. most used applications)
 - More support for stackable windows:
   - multiple stacks --- is it working now?
   - handle the stack index value (first mapped window might not be the root)
+- Implement Close Applications dialog, shown when the user wants to start
+  a new application but we don't have enough RAM.
 - Implement progress indicator in application window and dialog title.
   Window property _HILDON_WM_WINDOW_PROGRESS_INDICATOR (int), values 0 (off)
   and 1 (on). Other values can be used in future if needed.
