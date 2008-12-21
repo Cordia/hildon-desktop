@@ -12,6 +12,7 @@
     Task Launcher
   - Close Applications dialog needs to show a list of running applications
   - statistics collection (e.g. most used applications)
+  - Application with multiple window stacks is still a single application
 - More support for stackable windows:
   - multiple stacks --- is it working now?
   - handle the stack index value (first mapped window might not be the root)
