@@ -4,7 +4,8 @@
 - Task Switcher needs to maintain a list of application windows for
   - the CURRENT_APP_WINDOW property (libmatchbox cannot know current
     application --- focused window is not enough since it can be
-    a non-transient dialog box or something temporary [e.g. power menu])
+    a non-transient dialog box or something temporary [e.g. power menu];
+    also, current application might not even want keyboard focus)
   - background killing: non-running (unmapped) applications are visible
     in Task Switcher
   - raising already running (or background killed) applications from
