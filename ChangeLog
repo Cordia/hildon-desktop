@@ -1,3 +1,14 @@
+2008-12-22  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-comp-mgr.c:
+	Stopped partial updates happening in Task Navigator, because the
+	scaling breaks it.
+	* src/home/hd-task-navigator.c:
+	Disabled visibility detection on some more clutter actors
+	to stop flickering
+	* src/home/hd-render-manager.c:
+	Removed #define for visibility code as it works fine
+
 2008-12-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher-page.c:

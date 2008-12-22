@@ -723,6 +723,12 @@ hd_comp_mgr_texture_update_area(ClutterActor* actor,
   if (parent && !CLUTTER_ACTOR_IS_VISIBLE(parent))
     return;
 
+  /* We DON'T do this if we're in the task switcher, because it
+   * breaks all the scaling + has a scroller that's a nightmare
+   * to deal with */
+  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV)
+    return;
+
   /* Assume no zoom/rotate is happening here as we have simple windows */
   it = actor;
   while (it && !CLUTTER_IS_STAGE(it))

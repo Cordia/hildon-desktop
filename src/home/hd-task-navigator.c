@@ -2504,6 +2504,7 @@ hd_task_navigator_init (HdTaskNavigator * self)
 
   Navigator = CLUTTER_ACTOR (self);
   clutter_actor_set_reactive (Navigator, TRUE);
+  clutter_actor_set_visibility_detect(Navigator, FALSE);
   g_signal_connect (Navigator, "show", G_CALLBACK (navigator_shown),  NULL);
   g_signal_connect (Navigator, "hide", G_CALLBACK (navigator_hidden), NULL);
 
@@ -2525,6 +2526,7 @@ hd_task_navigator_init (HdTaskNavigator * self)
   Navigator_area = HD_SCROLLABLE_GROUP (hd_scrollable_group_new ());
   clutter_actor_set_name (CLUTTER_ACTOR (Navigator_area), "Navigator area");
   clutter_actor_set_reactive (CLUTTER_ACTOR (Navigator_area), TRUE);
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR (Navigator_area), FALSE);
   g_signal_connect (Navigator_area, "notify::has-clip",
                     G_CALLBACK (unclip), NULL);
   g_signal_connect_swapped (Navigator_area, "button-release-event",

@@ -68,8 +68,6 @@ typedef enum
 #define HDRM_HEIGHT 480
 #define HDRM_TOP 70
 
-#define VISIBILITY_CODE 1
-
 /* ------------------------------------------------------------------------- */
 
 /*
@@ -137,10 +135,8 @@ hd_render_manager_set_order (HdRenderManager *manager);
 
 static const char *
 hd_render_manager_state_str(HDRMStateEnum state);
-#if VISIBILITY_CODE
 static void
 hd_render_manager_set_visibilities(void);
-#endif // VISIBILITY_CODE
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    INIT     */
 /* ------------------------------------------------------------------------- */
@@ -1051,11 +1047,9 @@ void hd_render_manager_restack()
         }
     }
 
-#if VISIBILITY_CODE
   /* And for speed of rendering, work out what is visible and what
    * isn't, and hide anything that would be rendered over by another app */
   hd_render_manager_set_visibilities();
-#endif // VISIBILITY_CODE
 
   /* because swapping parents doesn't appear to fire a redraw */
   tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
@@ -1065,10 +1059,16 @@ void hd_render_manager_set_blur_app(gboolean blur)
 {
   HdRenderManager *manager = hd_render_manager_get();
   HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE(manager);
+  HDRMBlurEnum blur_flags;
 
   g_debug("%s: %s", __FUNCTION__, blur ? "BLUR":"UNBLUR");
 
-  hd_render_manager_set_blur(manager, blur ? HDRM_BLUR_HOME : HDRM_BLUR_NONE);
+  blur_flags = priv->current_blur;
+  if (blur)
+    blur_flags = blur_flags | HDRM_BLUR_HOME;
+  else
+    blur_flags = blur_flags & ~HDRM_BLUR_HOME;
+  hd_render_manager_set_blur(manager, blur_flags);
   /* calling this after a blur transition will force a restack after
    * it has ended */
   hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
@@ -1100,8 +1100,6 @@ void hd_render_manager_set_reactive(gboolean reactive)
       clutter_actor_set_reactive(button, reactive);
     }
 }
-
-#if VISIBILITY_CODE
 
 /* Work out if rect is visible after being clipped to avoid every
  * rect in blockers */
@@ -1169,11 +1167,15 @@ void hd_render_manager_set_visibilities()
                             hd_render_manager_append_geo_cb,
                             (gpointer)&blockers);
   /* Now check to see if the whole screen is covered, and if so
-   * don't even bother rendering blurring */
+   * don't bother rendering blurring */
   if (hd_render_manager_is_visible(blockers, fullscreen_geo))
-    clutter_actor_show(CLUTTER_ACTOR(priv->home_blur));
+    {
+      clutter_actor_show(CLUTTER_ACTOR(priv->home_blur));
+    }
   else
-    clutter_actor_hide(CLUTTER_ACTOR(priv->home_blur));
+    {
+      clutter_actor_hide(CLUTTER_ACTOR(priv->home_blur));
+    }
   /* Then work BACKWARDS through the other items, working out if they are
    * visible or not */
   n_elements = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
@@ -1201,4 +1203,3 @@ void hd_render_manager_set_visibilities()
     }
   g_list_free(blockers);
 }
-#endif // VISIBILITY_CODE
