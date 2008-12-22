@@ -913,16 +913,16 @@ void hd_render_manager_restack()
   gboolean past_desktop = FALSE;
 
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
-  c = wm->stack_bottom;
 
   /* Order and choose which window actors will be visible */
-  while (c)
+  for (c = wm->stack_bottom; c; c = c->stacked_above)
     {
       past_desktop |= (wm->desktop == c);
       /* If we're past the desktop then add us to the stuff that will be
        * visible */
 
-      if (c->cm_client && c->desktop>=0)
+      if (c->cm_client && c->desktop >= 0) /* FIXME: should check against
+					      current desktop? */
         {
           ClutterActor *actor = 0;
           ClutterActor *desktop = mb_wm_comp_mgr_clutter_get_nth_desktop(
@@ -931,12 +931,12 @@ void hd_render_manager_restack()
               MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
           if (actor)
             {
+              ClutterActor *parent = clutter_actor_get_parent(actor);
               if (past_desktop)
                 {
                   /* if we want to render this, add it */
-                  if (clutter_actor_get_parent(actor) == desktop ||
-                      clutter_actor_get_parent(actor) ==
-                                             CLUTTER_ACTOR(priv->app_top))
+                  if (parent == desktop ||
+		      parent == CLUTTER_ACTOR(priv->app_top))
                     clutter_actor_reparent(actor,
                                            CLUTTER_ACTOR(priv->home_blur));
                   clutter_actor_raise_top(actor);
@@ -944,21 +944,18 @@ void hd_render_manager_restack()
               else
                 {
                   /* else we put it back into the arena */
-                  if (clutter_actor_get_parent(actor) ==
-                                              CLUTTER_ACTOR(priv->home_blur) ||
-                      clutter_actor_get_parent(actor) ==
-                                              CLUTTER_ACTOR(priv->app_top))
+                  if (parent == CLUTTER_ACTOR(priv->home_blur) ||
+                      parent == CLUTTER_ACTOR(priv->app_top))
                     clutter_actor_reparent(actor, desktop);
                 }
             }
         }
-
-      c = c->stacked_above;
     }
 
   /* grab whatever is focused and bring it right to the front */
-  if (wm->focused_client &&
-      wm->focused_client->cm_client)
+  /* FIXME: why is this? Surely libmatchbox has already raised the focused
+   * client? Could this lead to different stacking here than in libmatchbox? */
+  if (wm->focused_client && wm->focused_client->cm_client)
     {
       ClutterActor              *actor;
       MBWMCompMgrClutterClient  *cclient =
