@@ -1,3 +1,9 @@
+2008-12-22  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-render-manager.c (on_timeline_blur_completed,
+	  hd_render_manager_set_blur): Remove wrong cast from Cluttertimeline to
+	  ClutterActor.
+
 2008-12-22  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/mb/hd-comp-mgr.c:
