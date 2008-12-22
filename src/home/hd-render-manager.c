@@ -994,7 +994,7 @@ void hd_render_manager_set_blur_app(gboolean blur)
     blur_flags = blur_flags | HDRM_BLUR_HOME;
   else
     blur_flags = blur_flags & ~HDRM_BLUR_HOME;
-  hd_render_manager_set_blur(manager, blur_flags);
+  hd_render_manager_set_blur(blur_flags);
   /* calling this after a blur transition will force a restack after
    * it has ended */
   hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
