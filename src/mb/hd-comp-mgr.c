@@ -359,8 +359,8 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   MBWindowManager      *wm = cmgr->wm;
   HdCompMgr            *hmgr = HD_COMP_MGR (obj);
   HdCompMgrPrivate     *priv;
+  HdTaskNavigator      *task_nav;
   ClutterActor         *stage;
-  HdSwitcher           *switcher;
   ClutterActor         *arena;
   gint                  i;
 
@@ -374,23 +374,11 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   stage = clutter_stage_get_default ();
 
-  priv->render_manager = hd_render_manager_get();
-  hd_render_manager_set_comp_mgr(priv->render_manager, hmgr);
-  clutter_actor_set_size (CLUTTER_ACTOR(priv->render_manager),
-                          wm->xdpy_width, wm->xdpy_height);
-  clutter_container_add_actor(CLUTTER_CONTAINER (stage),
-                              CLUTTER_ACTOR(priv->render_manager));
-
-  /* Add our launcher */
-  hd_render_manager_set_launcher(priv->render_manager,
-                                 hd_launcher_get_group());
-
   /*
    * Create the home group before the switcher, so the switcher can
    * connect it's signals to it.
    */
-  priv->home =
-    g_object_new (HD_TYPE_HOME, "comp-mgr", cmgr, NULL);
+  priv->home = g_object_new (HD_TYPE_HOME, "comp-mgr", cmgr, NULL);
 
   clutter_actor_set_reactive (priv->home, TRUE);
 
@@ -400,15 +388,26 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   clutter_actor_show (priv->home);
 
-  hd_render_manager_set_home (priv->render_manager, priv->home);
+  task_nav = hd_task_navigator_new ();
+
+  priv->render_manager = hd_render_manager_create(hmgr,
+		                                  hd_launcher_get(),
+		                                  hd_launcher_get_group(),
+		                                  HD_HOME(priv->home),
+						  task_nav);
+  clutter_actor_set_size (CLUTTER_ACTOR(priv->render_manager),
+                          wm->xdpy_width, wm->xdpy_height);
+  clutter_container_add_actor(CLUTTER_CONTAINER (stage),
+                              CLUTTER_ACTOR(priv->render_manager));
 
   /* NB -- home must be constructed before constructing the switcher;
-   * TODO -- see if we can refactor this, to make switcher home-agnostic
    */
-  priv->switcher_group = switcher = g_object_new (HD_TYPE_SWITCHER,
-						  "comp-mgr", cmgr,
-						  NULL);
+  priv->switcher_group = g_object_new (HD_TYPE_SWITCHER,
+				       "comp-mgr", cmgr,
+				       "task-nav", task_nav,
+				       NULL);
 
+  /* FIXME: shouldn't this be in render manager? */
   hd_home_fixup_operator_position (HD_HOME(priv->home));
 
   /* Take our comp-mgr-clutter's 'arena' and hide it for now. We
@@ -906,8 +905,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         {
           /* Notes need to be pulled out right infront of the blur group
            * manually, as they are not given focus */
-          clutter_actor_reparent(actor,
-                CLUTTER_ACTOR(hd_render_manager_get_front_group()));
+          hd_render_manager_add_to_front_group(actor);
         }
       return;
     }

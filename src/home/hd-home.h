@@ -87,6 +87,10 @@ void hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by);
 
 guint hd_home_get_current_view_id (HdHome *home);
 
+ClutterActor *hd_home_get_edit_button (HdHome *home);
+ClutterActor *hd_home_get_back_button (HdHome *home);
+ClutterActor *hd_home_get_operator (HdHome *home);
+
 HdHomeView * hd_home_get_current_view (HdHome *home);
 
 void hd_home_set_operator_label (HdHome *home, const char *text);

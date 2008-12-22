@@ -1,6 +1,9 @@
  TODO
 ======
 
+- Move more rendering logic to the render manager --- the logic is still
+  spread all over. The state and logic should be easily readable from one place.
+- Get rid of HdSwitcher, now that there is the render manager
 - Task Switcher needs to maintain a list of application windows for
   - the CURRENT_APP_WINDOW property (libmatchbox cannot know current
     application --- focused window is not enough since it can be

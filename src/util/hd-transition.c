@@ -378,6 +378,8 @@ hd_transition_fade(HdCompMgr                  *mgr,
   clutter_timeline_start (data->timeline);
 }
 
+static ClutterActor *particle_tex = NULL;
+
 void
 hd_transition_close_app (HdCompMgr                  *mgr,
                          MBWindowManagerClient      *c)
@@ -443,19 +445,24 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   /* reparent our actor so it will be visible when we switch views */
   clutter_actor_reparent(actor, CLUTTER_ACTOR(parent));
   clutter_actor_lower_bottom(actor);
-  /* we need to load some actors for this animation... */
-  data->particles[0] = clutter_texture_new_from_file (
+
+  if (!particle_tex)
+  {
+    /* we need to load some actors for this animation... */
+    particle_tex = clutter_texture_new_from_file (
            g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL), 0);
-  for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
+  }
+
+  for (i = 0; i < HDCM_UNMAP_PARTICLES; ++i)
     {
-      if (i>0 && data->particles[0])
+      if (particle_tex)
         data->particles[i] = clutter_clone_texture_new(
-                                CLUTTER_TEXTURE(data->particles[0]));
+			     		CLUTTER_TEXTURE(particle_tex));
       if (data->particles[i])
         {
           clutter_actor_set_anchor_point_from_gravity(data->particles[i],
-                                                CLUTTER_GRAVITY_CENTER);
-              clutter_container_add_actor(parent, data->particles[i]);
+                                                      CLUTTER_GRAVITY_CENTER);
+          clutter_container_add_actor(parent, data->particles[i]);
           clutter_actor_hide(data->particles[i]);
         }
     }

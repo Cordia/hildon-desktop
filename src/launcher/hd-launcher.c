@@ -219,9 +219,6 @@ static void hd_launcher_constructed (GObject *gobject)
   clutter_actor_set_name (priv->back_button, "hd_launcher back button");
   g_signal_connect (priv->back_button, "button-release-event",
                     G_CALLBACK (hd_launcher_back_button_clicked), gobject);
-  hd_render_manager_set_button( hd_render_manager_get(),
-                                HDRM_BUTTON_LAUNCHER_BACK,
-                                priv->back_button );
 
   /* App launch transition */
   priv->launch_image = 0;
@@ -235,6 +232,13 @@ static void hd_launcher_constructed (GObject *gobject)
 
   if (!hd_disable_threads())
     hd_launcher_tree_populate (priv->tree);
+}
+
+ClutterActor*
+hd_launcher_get_back_button (HdLauncher *l)
+{
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (l);
+  return priv->back_button;
 }
 
 static void

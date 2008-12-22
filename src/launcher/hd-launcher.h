@@ -64,6 +64,8 @@ GType hd_launcher_get_type (void) G_GNUC_CONST;
 HdLauncher   *hd_launcher_get (void);
 ClutterActor *hd_launcher_get_group (void);
 
+ClutterActor *hd_launcher_get_back_button (HdLauncher *launcher);
+
 void          hd_launcher_show (void);
 void          hd_launcher_hide (void);
 void          hd_launcher_hide_final (void);

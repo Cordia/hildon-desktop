@@ -1,7 +1,7 @@
 /*
  * This file is part of hildon-desktop
  *
- * Copyright (C) 2008 Nokia Corporation.
+ * Copyright (C) 2008 Nokia Corporation. All rights reserved.
  *
  * Author:  Gordon Williams <gordon.williams@collabora.co.uk>
  *
@@ -66,7 +66,6 @@ typedef enum
 
 #define HDRM_WIDTH 800
 #define HDRM_HEIGHT 480
-#define HDRM_TOP 70
 
 /* ------------------------------------------------------------------------- */
 
@@ -100,6 +99,7 @@ struct _HdRenderManagerPrivate {
   ClutterActor         *launcher;
   HdHome               *home;
   ClutterActor         *status_area;
+  ClutterActor         *status_menu;
   ClutterActor         *operator;
   ClutterActor         *button_task_nav;
   ClutterActor         *button_launcher;
@@ -126,12 +126,16 @@ static void
 on_timeline_blur_new_frame(ClutterTimeline *timeline,
                            gint frame_num, gpointer data);
 static void
+<<<<<<< .mine
+on_timeline_blur_completed(ClutterActor *timeline, gpointer data);
+=======
 on_timeline_blur_completed(ClutterTimeline *timeline, gpointer data);
+>>>>>>> .r33644
 /*static gboolean
 hd_render_manager_notify_modified (ClutterActor          *actor,
                                    ClutterActor          *child);*/
 static void
-hd_render_manager_set_order (HdRenderManager *manager);
+hd_render_manager_set_order(void);
 
 static const char *
 hd_render_manager_state_str(HDRMStateEnum state);
@@ -141,32 +145,65 @@ hd_render_manager_set_visibilities(void);
 /* -------------------------------------------------------------    INIT     */
 /* ------------------------------------------------------------------------- */
 
-HdRenderManager *hd_render_manager_get (void)
+HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
+                                           HdLauncher *launcher,
+                                           ClutterActor *launcher_group,
+                                           HdHome *home,
+                                           HdTaskNavigator *task_nav)
 {
-  if (G_UNLIKELY (!the_render_manager))
-    the_render_manager = HD_RENDER_MANAGER(g_object_ref (
+  HdRenderManagerPrivate *priv;
+
+  g_assert(the_render_manager == NULL);
+
+  the_render_manager = HD_RENDER_MANAGER(g_object_ref (
         g_object_new (HD_TYPE_RENDER_MANAGER, NULL)));
+  priv = the_render_manager->priv;
+
+  priv->comp_mgr = hdcompmgr;
+
+  priv->launcher = g_object_ref(launcher_group);
+  clutter_container_add_actor(CLUTTER_CONTAINER(the_render_manager),
+		              priv->launcher);
+  priv->button_launcher_back = g_object_ref(hd_launcher_get_back_button(launcher));
+
+  priv->home = g_object_ref(home);
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
+                              CLUTTER_ACTOR(priv->home));
+  priv->button_home_back = g_object_ref(hd_home_get_back_button(priv->home));
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->front),
+                              priv->button_home_back);
+  priv->button_edit = g_object_ref(hd_home_get_edit_button(priv->home));
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->front),
+                              priv->button_edit);
+  priv->operator = g_object_ref(hd_home_get_operator(priv->home));
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->front),
+                              priv->operator);
+
+  priv->task_nav = g_object_ref(task_nav);
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->task_nav_blur),
+                              CLUTTER_ACTOR(priv->task_nav));
+
   return the_render_manager;
 }
 
 static void
 hd_render_manager_finalize (GObject *gobject)
 {
-  /* TODO: unref objects */
+  HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE(gobject);
+  g_object_unref(priv->launcher);
+  g_object_unref(priv->home);
+  g_object_unref(priv->task_nav);
   G_OBJECT_CLASS (hd_render_manager_parent_class)->finalize (gobject);
 }
-
 
 static void
 hd_render_manager_class_init (HdRenderManagerClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
- // ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (HdRenderManagerPrivate));
 
   gobject_class->finalize = hd_render_manager_finalize;
- // actor_class->notify_modified = hd_render_manager_notify_modified;
 }
 
 static void
@@ -263,14 +300,10 @@ static void
 on_timeline_blur_new_frame(ClutterTimeline *timeline,
                            gint frame_num, gpointer data)
 {
-  HdRenderManager *rmgr;
   HdRenderManagerPrivate *priv;
   float amt;
 
-  if (!HD_IS_RENDER_MANAGER(data))
-    return;
-  rmgr = HD_RENDER_MANAGER(data);
-  priv = rmgr->priv;
+  priv = the_render_manager->priv;
 
   amt = (float)clutter_timeline_get_progress(timeline);
 
@@ -303,15 +336,13 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
 }
 
 static void
+<<<<<<< .mine
+on_timeline_blur_completed (ClutterActor *timeline, gpointer data)
+=======
 on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
+>>>>>>> .r33644
 {
-  HdRenderManager *rmgr;
-  HdRenderManagerPrivate *priv;
-
-  if (!HD_IS_RENDER_MANAGER(data))
-    return;
-  rmgr = HD_RENDER_MANAGER(data);
-  priv = rmgr->priv;
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
   hd_comp_mgr_set_effect_running(priv->comp_mgr, FALSE);
   hd_comp_mgr_sync_stacking(priv->comp_mgr);
@@ -322,46 +353,23 @@ on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
 /* ------------------------------------------------------------------------- */
 
 static
-gboolean hd_render_manager_initialised()
-{
-  HdRenderManagerPrivate *priv;
-
-  /* we're not even created yet */
-  if (!the_render_manager)
-    return FALSE;
-
-  /* check that all the items have been set */
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
-  return priv->comp_mgr
-    && priv->task_nav
-    && priv->launcher
-    && priv->home
-    && priv->operator
-    && priv->button_task_nav
-    && priv->button_launcher
-    && priv->button_menu
-    && priv->button_launcher_back
-    && priv->button_home_back
-    && priv->button_edit;
-}
-
-static
-void hd_render_manager_set_blur (HdRenderManager *manager, HDRMBlurEnum blur)
+void hd_render_manager_set_blur (HDRMBlurEnum blur)
 {
   HdRenderManagerPrivate *priv;
   float blur_amt = 1.0f;
   float zoom_amt = 1.0f;
 
-  if (!HD_IS_RENDER_MANAGER(manager))
-    return;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
+  priv = the_render_manager->priv;
 
   if (clutter_timeline_is_playing(priv->timeline_blur))
     {
       clutter_timeline_stop(priv->timeline_blur);
+<<<<<<< .mine
+      on_timeline_blur_completed(CLUTTER_ACTOR(priv->timeline_blur), NULL);
+=======
       on_timeline_blur_completed(priv->timeline_blur, manager);
+>>>>>>> .r33644
     }
-
 
   priv->current_blur = blur;
 
@@ -386,20 +394,21 @@ void hd_render_manager_set_blur (HdRenderManager *manager, HDRMBlurEnum blur)
 }
 
 static void
-hd_render_manager_set_input_viewport(HdRenderManager *manager)
+hd_render_manager_set_input_viewport()
 {
   ClutterGeometry geom[HDRM_BUTTON_COUNT];
   int geom_count = 0;
-  HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
-  gint i;
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
   if (!STATE_NEED_GRAB(priv->state))
     {
+      gint i;
       /* Now look at what buttons we have showing, and add each visible button X
        * to the X input viewport */
-      for (i=1;i<=HDRM_BUTTON_COUNT;i++)
+      for (i = 1; i <= HDRM_BUTTON_COUNT; i++)
         {
-          ClutterActor *button = hd_render_manager_get_button((HDRMButtonEnum)i);
+          ClutterActor *button;
+	  button = hd_render_manager_get_button((HDRMButtonEnum)i);
           if (CLUTTER_ACTOR_IS_VISIBLE(button))
             {
               clutter_actor_get_geometry (button, &geom[geom_count]);
@@ -421,21 +430,11 @@ hd_render_manager_set_input_viewport(HdRenderManager *manager)
 }
 
 static
-void hd_render_manager_set_order (HdRenderManager *manager)
+void hd_render_manager_set_order ()
 {
-  HdRenderManagerPrivate *priv;
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  if (!HD_IS_RENDER_MANAGER(manager))
-    return;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
-
-  if (!hd_render_manager_initialised())
-  {
-    g_debug("%s: !hd_render_manager_initialised()", __FUNCTION__);
-    return;
-  }
-
-  /* why would this get hidden? */
+  /* FIXME why would this get hidden? */
   clutter_actor_show(CLUTTER_ACTOR(priv->home));
 
   HDRMButtonEnum visible_top_left = HDRM_BUTTON_LAUNCHER;
@@ -455,7 +454,7 @@ void hd_render_manager_set_order (HdRenderManager *manager)
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         clutter_actor_show(CLUTTER_ACTOR(priv->front));
-        hd_render_manager_set_blur(manager, HDRM_BLUR_NONE);
+        hd_render_manager_set_blur(HDRM_BLUR_NONE);
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_HOME_EDIT:
@@ -464,7 +463,7 @@ void hd_render_manager_set_order (HdRenderManager *manager)
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         clutter_actor_show(CLUTTER_ACTOR(priv->front));
-        hd_render_manager_set_blur(manager, HDRM_BLUR_NONE);
+        hd_render_manager_set_blur(HDRM_BLUR_NONE);
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_APP:
@@ -473,7 +472,7 @@ void hd_render_manager_set_order (HdRenderManager *manager)
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_show(CLUTTER_ACTOR(priv->launcher));
         clutter_actor_show(CLUTTER_ACTOR(priv->front));
-        hd_render_manager_set_blur(manager, HDRM_BLUR_NONE);
+        hd_render_manager_set_blur(HDRM_BLUR_NONE);
         break;
       case HDRM_STATE_APP_FULLSCREEN:
         visible_top_left = HDRM_BUTTON_NONE;
@@ -481,7 +480,7 @@ void hd_render_manager_set_order (HdRenderManager *manager)
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         clutter_actor_hide(CLUTTER_ACTOR(priv->front));
-        hd_render_manager_set_blur(manager, HDRM_BLUR_NONE);
+        hd_render_manager_set_blur(HDRM_BLUR_NONE);
         break;
       case HDRM_STATE_TASK_NAV:
         visible_top_left = HDRM_BUTTON_LAUNCHER;
@@ -490,7 +489,7 @@ void hd_render_manager_set_order (HdRenderManager *manager)
         clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_show(CLUTTER_ACTOR(priv->front));
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->task_nav_blur));
-        hd_render_manager_set_blur(manager, HDRM_BLUR_HOME | HDRM_ZOOM_HOME);
+        hd_render_manager_set_blur(HDRM_BLUR_HOME | HDRM_ZOOM_HOME);
         break;
       case HDRM_STATE_LAUNCHER:
         visible_top_left = HDRM_BUTTON_NONE;
@@ -501,7 +500,7 @@ void hd_render_manager_set_order (HdRenderManager *manager)
         clutter_actor_show(CLUTTER_ACTOR(priv->front));
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->launcher));
-        hd_render_manager_set_blur(manager,
+        hd_render_manager_set_blur(
             HDRM_BLUR_HOME | HDRM_BLUR_TASK_NAV |
             HDRM_ZOOM_HOME  | HDRM_ZOOM_TASK_NAV );
         break;
@@ -580,114 +579,74 @@ void hd_render_manager_set_order (HdRenderManager *manager)
 
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport */
-  hd_render_manager_set_input_viewport(manager);
+  hd_render_manager_set_input_viewport();
 }
 
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    PUBLIC   */
 /* ------------------------------------------------------------------------- */
 
-void hd_render_manager_set_comp_mgr (HdRenderManager *manager,
-                                     HdCompMgr *comp_mgr)
+void hd_render_manager_add_to_front_group (ClutterActor *item)
 {
-  HdRenderManagerPrivate *priv;
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  if (!HD_IS_RENDER_MANAGER(manager))
-    return;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
-  g_assert(!priv->comp_mgr);
-  /* FIXME: Why can't we object_ref this??? */
-  priv->comp_mgr = comp_mgr;
+  clutter_actor_reparent(item, CLUTTER_ACTOR(priv->front));
 }
 
-void hd_render_manager_set_task_nav (HdRenderManager *manager,
-                                     ClutterActor *item)
+void hd_render_manager_set_status_area (ClutterActor *item)
 {
-  HdRenderManagerPrivate *priv;
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  if (!HD_IS_RENDER_MANAGER(manager))
-    return;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
-  g_assert(!priv->task_nav);
-  priv->task_nav = HD_TASK_NAVIGATOR(CLUTTER_ACTOR(g_object_ref(item)));
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->task_nav_blur),
-                                  CLUTTER_ACTOR(priv->task_nav));
-}
-
-void hd_render_manager_set_home (HdRenderManager *manager,
-                                 ClutterActor *item)
-{
-  HdRenderManagerPrivate *priv;
-
-  if (!HD_IS_RENDER_MANAGER(manager))
-    return;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
-  g_assert(!priv->home);
-  priv->home = HD_HOME(CLUTTER_ACTOR(g_object_ref(item)));
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
-                              CLUTTER_ACTOR(priv->home));
-}
-
-void hd_render_manager_set_launcher (HdRenderManager *manager,
-                                     ClutterActor *item)
-{
-  HdRenderManagerPrivate *priv;
-
-  if (!HD_IS_RENDER_MANAGER(manager))
-    return;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
-  g_assert(!priv->launcher);
-  priv->launcher = CLUTTER_ACTOR(g_object_ref(item));
-  clutter_container_add_actor(CLUTTER_CONTAINER(manager),
-                              CLUTTER_ACTOR(priv->launcher));
-}
-
-void hd_render_manager_set_status_area (HdRenderManager *manager,
-                                        ClutterActor *item)
-{
-  HdRenderManagerPrivate *priv;
-
-  if (!HD_IS_RENDER_MANAGER(manager))
-    return;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
   if (priv->status_area)
     {
       g_object_unref(priv->status_area);
     }
-  priv->status_area = CLUTTER_ACTOR(g_object_ref(item));
-  clutter_actor_reparent(CLUTTER_ACTOR(priv->status_area),
-                         CLUTTER_ACTOR(priv->front));
+
+  if (item)
+    {
+      priv->status_area = g_object_ref(item);
+      clutter_actor_reparent(priv->status_area, CLUTTER_ACTOR(priv->front));
+    }
+  else
+    priv->status_area = NULL;
 }
 
-void hd_render_manager_set_operator (HdRenderManager *manager,
-                                     ClutterActor *item)
+void hd_render_manager_set_status_menu (ClutterActor *item)
 {
-  HdRenderManagerPrivate *priv;
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  if (!HD_IS_RENDER_MANAGER(manager))
-    return;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
-  g_assert(!priv->operator);
-  priv->operator = CLUTTER_ACTOR(g_object_ref(item));
-  /*clutter_container_add_actor(CLUTTER_CONTAINER(priv->front),
-                              CLUTTER_ACTOR(priv->operator));*/
+  if (priv->status_menu)
+    {
+      g_object_unref(priv->status_menu);
+    }
+
+  if (item)
+    {
+      priv->status_menu = g_object_ref(item);
+      clutter_actor_reparent(priv->status_menu, CLUTTER_ACTOR(priv->front));
+    }
+  else
+    priv->status_menu = NULL;
 }
 
-void hd_render_manager_set_button (HdRenderManager *manager,
-                                   HDRMButtonEnum btn,
+void hd_render_manager_set_operator (ClutterActor *item)
+{
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  if (priv->operator)
+    {
+      g_object_unref(priv->operator);
+    }
+  priv->operator = CLUTTER_ACTOR(g_object_ref(item));
+}
+
+void hd_render_manager_set_button (HDRMButtonEnum btn,
                                    ClutterActor *item)
 {
-  HdRenderManagerPrivate *priv;
-
-  if (!HD_IS_RENDER_MANAGER(manager))
-    return;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
   switch (btn)
     {
-      case HDRM_BUTTON_NONE:
-        g_warning("%s: Invalid Enum", __FUNCTION__);
-        break;
       case HDRM_BUTTON_TASK_NAV:
         g_assert(!priv->button_task_nav);
         priv->button_task_nav = CLUTTER_ACTOR(g_object_ref(item));
@@ -701,17 +660,21 @@ void hd_render_manager_set_button (HdRenderManager *manager,
         priv->button_menu = CLUTTER_ACTOR(g_object_ref(item));
         break;
       case HDRM_BUTTON_HOME_BACK:
-        g_assert(!priv->button_home_back);
-        priv->button_home_back = CLUTTER_ACTOR(g_object_ref(item));
+        g_warning("%s: back button must be set at creation time!", __FUNCTION__);
+	g_assert(FALSE);
         break;
       case HDRM_BUTTON_LAUNCHER_BACK:
-        g_assert(!priv->button_launcher_back);
-        priv->button_launcher_back = CLUTTER_ACTOR(g_object_ref(item));
+        g_warning("%s: launcher back button must be set at creation time!",
+		  __FUNCTION__);
+	g_assert(FALSE);
         break;
       case HDRM_BUTTON_EDIT:
-        g_assert(!priv->button_edit);
-        priv->button_edit = CLUTTER_ACTOR(g_object_ref(item));
+        g_warning("%s: edit button must be set at creation time!", __FUNCTION__);
+	g_assert(FALSE);
         break;
+      default:
+        g_warning("%s: Invalid Enum %d", __FUNCTION__, btn);
+	g_assert(FALSE);
     }
   if (clutter_actor_get_parent(CLUTTER_ACTOR(item)))
     clutter_actor_reparent(CLUTTER_ACTOR(item), CLUTTER_ACTOR(priv->front));
@@ -722,14 +685,10 @@ void hd_render_manager_set_button (HdRenderManager *manager,
 
 ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button)
 {
-  HdRenderManagerPrivate *priv;
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
   switch (button)
     {
-      case HDRM_BUTTON_NONE:
-        g_warning("%s: Invalid Enum", __FUNCTION__);
-        return 0;
       case HDRM_BUTTON_TASK_NAV:
         return priv->button_task_nav;
       case HDRM_BUTTON_LAUNCHER:
@@ -742,14 +701,16 @@ ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button)
         return priv->button_launcher_back;
       case HDRM_BUTTON_EDIT:
         return priv->button_edit;
+      default:
+        g_warning("%s: Invalid Enum %d", __FUNCTION__, button);
+	g_assert(FALSE);
     }
   return 0;
 }
 
 void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible)
 {
-  HdRenderManager *manager = hd_render_manager_get();
-  HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
   switch (button)
   {
@@ -761,7 +722,7 @@ void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible)
       else
         clutter_actor_hide(priv->button_edit);
       /* we need this so we can set up the X input area */
-      hd_render_manager_set_input_viewport(manager);
+      hd_render_manager_set_input_viewport(the_render_manager);
       break;
     default:
       g_warning("%s: Not supposed to set visibility for %d",
@@ -771,8 +732,8 @@ void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible)
 
 gboolean hd_render_manager_get_visible(HDRMButtonEnum button)
 {
-  HdRenderManagerPrivate *priv;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
   switch (button)
   {
     case HDRM_BUTTON_EDIT:
@@ -786,36 +747,24 @@ gboolean hd_render_manager_get_visible(HDRMButtonEnum button)
 
 gboolean hd_render_manager_has_apps()
 {
-  HdRenderManagerPrivate *priv;
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
-
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
   return hd_task_navigator_has_apps(priv->task_nav);
 }
 
+/* FIXME: this should not be exposed */
 ClutterContainer *hd_render_manager_get_front_group(void)
 {
-  HdRenderManagerPrivate *priv;
-
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
   return CLUTTER_CONTAINER(priv->front);
 }
 
 void hd_render_manager_set_state(HDRMStateEnum state)
 {
-  HdRenderManager *manager;
   HdRenderManagerPrivate *priv;
   MBWMCompMgr          *cmgr;
   MBWindowManager      *wm;
 
-  if (!hd_render_manager_initialised())
-    {
-      g_warning("%s: hd_render_manager not initialised before call",
-                __FUNCTION__);
-      return;
-    }
-
-  manager = hd_render_manager_get();
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (manager);
+  priv = the_render_manager->priv;
   cmgr = MB_WM_COMP_MGR (priv->comp_mgr);
 
   g_debug("%s: STATE %s -> STATE %s", __FUNCTION__,
@@ -895,18 +844,14 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       /* we always need to restack here */
       hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
 
-      hd_render_manager_set_order(manager);
+      hd_render_manager_set_order();
     }
   priv->in_set_state = FALSE;
-
-  //hd_comp_mgr_dump_debug_info("");
 }
 
 HDRMStateEnum  hd_render_manager_get_state()
 {
-  HdRenderManagerPrivate *priv;
-
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
   return priv->state;
 }
 
@@ -927,36 +872,31 @@ static const char *hd_render_manager_state_str(HDRMStateEnum state)
 
 const char *hd_render_manager_get_state_str()
 {
-  HdRenderManagerPrivate *priv;
-
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
   return hd_render_manager_state_str(priv->state);
 }
 
 gboolean hd_render_manager_in_transition(void)
 {
-  HdRenderManagerPrivate *priv;
-
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
   return clutter_timeline_is_playing(priv->timeline_blur);
 }
 
 void hd_render_manager_return_windows()
 {
-  HdRenderManagerPrivate *priv;
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
   MBWindowManager *wm;
   MBWindowManagerClient *c;
 
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   c = wm->stack_bottom;
 
   /* Order and choose which window actors will be visible */
   while (c)
     {
-      if (c->cm_client && c->desktop>=0)
+      if (c->cm_client && c->desktop >= 0)
         {
-          ClutterActor *actor = 0;
+          ClutterActor *actor;
           ClutterActor *desktop = mb_wm_comp_mgr_clutter_get_nth_desktop(
               MB_WM_COMP_MGR_CLUTTER(priv->comp_mgr), c->desktop);
           actor = mb_wm_comp_mgr_clutter_client_get_actor(
@@ -979,12 +919,11 @@ void hd_render_manager_return_windows()
 /* Called to restack the windows in the way we use for rendering... */
 void hd_render_manager_restack()
 {
-  HdRenderManagerPrivate *priv;
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
   MBWindowManager *wm;
   MBWindowManagerClient *c;
   gboolean past_desktop = FALSE;
 
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   c = wm->stack_bottom;
 
@@ -1057,8 +996,7 @@ void hd_render_manager_restack()
 
 void hd_render_manager_set_blur_app(gboolean blur)
 {
-  HdRenderManager *manager = hd_render_manager_get();
-  HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE(manager);
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
   HDRMBlurEnum blur_flags;
 
   g_debug("%s: %s", __FUNCTION__, blur ? "BLUR":"UNBLUR");
@@ -1074,19 +1012,18 @@ void hd_render_manager_set_blur_app(gboolean blur)
   hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
 }
 
-/* This is called when in the launcher subview so that we can blur and
+/* This is called when we are in the launcher subview so that we can blur and
  * darken the background even more */
 void hd_render_manager_set_launcher_subview(gboolean subview)
 {
-  HdRenderManager *manager = hd_render_manager_get();
-  HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE(manager);
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
   g_debug("%s: %s", __FUNCTION__, subview ? "SUBVIEW":"MAIN");
 
   if (subview)
-    hd_render_manager_set_blur(manager, priv->current_blur | HDRM_BLUR_MORE);
+    hd_render_manager_set_blur(priv->current_blur | HDRM_BLUR_MORE);
   else
-    hd_render_manager_set_blur(manager, priv->current_blur & ~HDRM_BLUR_MORE);
+    hd_render_manager_set_blur(priv->current_blur & ~HDRM_BLUR_MORE);
 }
 
 /* Sets whether any of the buttons will actually be set to do anything */
@@ -1094,7 +1031,7 @@ void hd_render_manager_set_reactive(gboolean reactive)
 {
   gint i;
 
-  for (i=1;i<=HDRM_BUTTON_COUNT;i++)
+  for (i = 1; i <= HDRM_BUTTON_COUNT; ++i)
     {
       ClutterActor *button = hd_render_manager_get_button((HDRMButtonEnum)i);
       clutter_actor_set_reactive(button, reactive);
@@ -1161,7 +1098,8 @@ void hd_render_manager_set_visibilities()
   GList *it;
   gint i, n_elements;
   ClutterGeometry fullscreen_geo = {0, 0, HDRM_WIDTH, HDRM_HEIGHT};
-  priv = HD_RENDER_MANAGER_GET_PRIVATE (hd_render_manager_get());
+
+  priv = the_render_manager->priv;
   /* first append all the top elements... */
   clutter_container_foreach(CLUTTER_CONTAINER(priv->app_top),
                             hd_render_manager_append_geo_cb,

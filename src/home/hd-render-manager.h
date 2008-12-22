@@ -31,6 +31,9 @@
 
 #include <clutter/clutter.h>
 #include "hd-comp-mgr.h"
+#include "hd-task-navigator.h"
+#include "hd-home.h"
+#include "../launcher/hd-launcher.h"
 
 G_BEGIN_DECLS
 
@@ -108,24 +111,16 @@ typedef enum
 
 GType hd_render_manager_get_type (void) G_GNUC_CONST;
 
-/* These following functions should only be used in one or two places for
- * setup, or when something else changes state. */
-HdRenderManager *hd_render_manager_get (void);
+HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
+		                           HdLauncher *launcher,
+		                           ClutterActor *launcher_group,
+					   HdHome *home,
+					   HdTaskNavigator *task_nav);
 
-void hd_render_manager_set_comp_mgr (HdRenderManager *manager,
-                                     HdCompMgr *comp_mgr);
-void hd_render_manager_set_task_nav (HdRenderManager *manager,
-                                     ClutterActor *item);
-void hd_render_manager_set_home (HdRenderManager *manager,
-                                 ClutterActor *item);
-void hd_render_manager_set_launcher (HdRenderManager *manager,
-                                     ClutterActor *item);
-void hd_render_manager_set_status_area (HdRenderManager *manager,
-                                        ClutterActor *item);
-void hd_render_manager_set_operator (HdRenderManager *manager,
-                                     ClutterActor *item);
-void hd_render_manager_set_button (HdRenderManager *manager,
-                                   HDRMButtonEnum button,
+void hd_render_manager_set_status_area (ClutterActor *item);
+void hd_render_manager_set_status_menu (ClutterActor *item);
+void hd_render_manager_set_operator (ClutterActor *item);
+void hd_render_manager_set_button (HDRMButtonEnum button,
                                    ClutterActor *item);
 /* ----------------------------------------------------------------- */
 ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button);
@@ -134,6 +129,8 @@ gboolean hd_render_manager_get_visible(HDRMButtonEnum button);
 gboolean hd_render_manager_has_apps(void);
 
 ClutterContainer *hd_render_manager_get_front_group(void);
+
+void hd_render_manager_add_to_front_group(ClutterActor *a);
 
 void hd_render_manager_set_state (HDRMStateEnum state);
 HDRMStateEnum hd_render_manager_get_state(void);
@@ -147,8 +144,6 @@ void hd_render_manager_restack(void);
 
 /* Sets whether any of the buttons will actually be set to do anything */
 void hd_render_manager_set_reactive(gboolean reactive);
-
-
 
 G_END_DECLS
 

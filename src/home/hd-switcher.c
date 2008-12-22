@@ -57,6 +57,7 @@
 enum
 {
   PROP_COMP_MGR = 1,
+  PROP_TASK_NAV = 2
 };
 
 struct _HdSwitcherPrivate
@@ -65,7 +66,6 @@ struct _HdSwitcherPrivate
   ClutterActor         *status_menu;
 
   HdLauncher           *launcher;
-
   HdTaskNavigator      *task_nav;
 
   DBusGConnection      *connection;
@@ -150,6 +150,14 @@ hd_switcher_class_init (HdSwitcherClass *klass)
                                    PROP_COMP_MGR,
                                    pspec);
 
+  pspec = g_param_spec_pointer ("task-nav",
+				"Task Navigator",
+				"HdTaskNavigator Object",
+				G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
+
+  g_object_class_install_property (object_class,
+                                   PROP_TASK_NAV,
+                                   pspec);
 }
 
 static void
@@ -179,10 +187,6 @@ hd_switcher_constructed (GObject *object)
                             G_CALLBACK (hd_switcher_home_background_clicked),
                             object);
   priv->launcher = hd_launcher_get ();
-  /* Not needed any more...
-   * g_signal_connect (priv->launcher, "application-launched",
-                    G_CALLBACK (hd_switcher_hide_launcher_after_launch),
-                    object);*/
   g_signal_connect (priv->launcher, "launcher-hidden",
                     G_CALLBACK (launcher_back_button_clicked),
                     object);
@@ -204,16 +208,14 @@ hd_switcher_constructed (GObject *object)
   else
     {
       priv->hildon_home_proxy = dbus_g_proxy_new_for_name (priv->connection,
-                                                           "com.nokia.HildonHome",
-                                                           "/com/nokia/HildonHome",
-                                                           "com.nokia.HildonHome");
+                                	"com.nokia.HildonHome",
+                                        "/com/nokia/HildonHome",
+                                        "com.nokia.HildonHome");
     }
 
   /* Task Navigator Button */
   actor = hd_switcher_top_left_button_new (ICON_IMAGE_SWITCHER);
-  hd_render_manager_set_button( hd_render_manager_get(),
-                                HDRM_BUTTON_TASK_NAV,
-                                actor );
+  hd_render_manager_set_button (HDRM_BUTTON_TASK_NAV, actor);
   clutter_actor_set_position (actor, 0, 0);
   clutter_actor_set_reactive (actor, TRUE);
   g_signal_connect_swapped (actor, "button-release-event",
@@ -222,32 +224,26 @@ hd_switcher_constructed (GObject *object)
 
   /* Task Launcher Button */
   actor = hd_switcher_top_left_button_new (ICON_IMAGE_LAUNCHER);
-  hd_render_manager_set_button( hd_render_manager_get(),
-                                HDRM_BUTTON_LAUNCHER,
-                                actor );
+  hd_render_manager_set_button(HDRM_BUTTON_LAUNCHER, actor);
   clutter_actor_set_position (actor, 0, 0);
   clutter_actor_set_reactive (actor, TRUE);
   g_signal_connect_swapped (actor, "button-release-event",
                             G_CALLBACK (hd_switcher_clicked),
                             object);
 
-  clutter_actor_get_size (actor,
-			  &button_width, &button_height);
+  clutter_actor_get_size (actor, &button_width, &button_height);
 
   /* Home Menu Button */
-  actor =
-    clutter_texture_new_from_file (
-	g_build_filename (HD_DATADIR, BUTTON_IMAGE_MENU, NULL),
-	&error);
+  actor = clutter_texture_new_from_file (
+		g_build_filename (HD_DATADIR, BUTTON_IMAGE_MENU, NULL),
+	        &error);
   if (error)
     {
       g_error (error->message);
       actor = clutter_rectangle_new ();
       clutter_actor_set_size (actor, 200, 60);
     }
-  hd_render_manager_set_button( hd_render_manager_get(),
-                                HDRM_BUTTON_MENU,
-                                actor );
+  hd_render_manager_set_button(HDRM_BUTTON_MENU, actor);
   clutter_actor_set_position (actor, 0, 0);
   clutter_actor_set_reactive (actor, TRUE);
   g_signal_connect_swapped (actor, "button-release-event",
@@ -263,10 +259,6 @@ hd_switcher_init (HdSwitcher *self)
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
 					    HD_TYPE_SWITCHER,
 					    HdSwitcherPrivate);
-  /* Add our task navigator */
-  priv->task_nav = hd_task_navigator_new ();
-  hd_render_manager_set_task_nav (hd_render_manager_get(),
-                 CLUTTER_ACTOR (priv->task_nav));
 
   g_signal_connect_swapped (priv->task_nav, "thumbnail-clicked",
                             G_CALLBACK (hd_switcher_item_selected),
@@ -309,6 +301,9 @@ hd_switcher_set_property (GObject       *object,
     {
     case PROP_COMP_MGR:
       priv->comp_mgr = g_value_get_pointer (value);
+      break;
+    case PROP_TASK_NAV:
+      priv->task_nav = g_value_get_pointer (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -594,8 +589,7 @@ hd_switcher_add_status_area (HdSwitcher *switcher, ClutterActor *sa)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
-  hd_render_manager_set_status_area(
-      hd_render_manager_get(), sa);
+  hd_render_manager_set_status_area(sa);
   priv->status_area = sa;
 }
 
@@ -604,8 +598,7 @@ hd_switcher_remove_status_area (HdSwitcher *switcher, ClutterActor *sa)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
-  hd_render_manager_set_status_area(
-        hd_render_manager_get(), 0);
+  hd_render_manager_set_status_area(NULL);
   priv->status_area = NULL;
 }
 

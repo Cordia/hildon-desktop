@@ -1,3 +1,64 @@
+2008-12-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* TODO: updated, added new and removed old items.
+
+	* src/launcher/hd-launcher.[ch] (hd_launcher_get_back_button): New.
+	Needed to allow creating HdLauncher before the render manager.
+	(hd_launcher_constructed): Remove hd_render_manager_set_button call.
+	The render manager will use hd_launcher_get_back_button to get it.
+
+	* src/home/hd-render-manager.c: Decided to drop the HdRenderManager
+	argument from all functions (some had it, some not) because of the
+	singleton.
+	(hd_render_manager_get): Removed, we don't need multiple render managers.
+	(hd_render_manager_create): New. Added to create and initialise the
+	render manager. Here the manager is tied to other singletons, such as
+	HdTaskNavigator etc.
+	(hd_render_manager_finalize): Add the missing unrefs, which would
+	really belong to dispose handler, since dispose handler is meant for
+	removing of member objects.
+	(hd_render_manager_initialised): Removed. The singleton is now always
+	initialised at creation time (as far as possible).
+	(hd_render_manager_set_order): Remove unnecessary checking code.
+	(hd_render_manager_set_comp_mgr): Removed. Set at creation time.
+	(hd_render_manager_add_to_front_group): New. This is used for
+	reparenting to the front group. Ideally, _get_front_group should be
+	removed (hd-transition.c is the only one using it now) since it exposes
+	an internal object and encourages distribution of rendering logic.
+	(hd_render_manager_set_task_nav, hd_render_manager_set_home,
+	hd_render_manager_set_launcher): Removed. Set at creation time.
+	(hd_render_manager_set_status_area,
+	hd_render_manager_set_status_menu): New. Status Area and Menu are
+	dynamically added and removed.
+	(hd_render_manager_set_operator): Allow resetting of the operator
+	actor since the operator can change.
+
+	* src/home/hd-switcher.c: Add "task-nav" property to allow setting it
+	at creation time.
+	(hd_switcher_init): Do not create Task Navigator, it is now given to
+	us.
+	(hd_switcher_constructed): Remove hd_render_manager_get calls. White
+	space fixes.
+	(hd_switcher_add_status_area, hd_switcher_remove_status_area): Tell
+	the render manager, too.
+
+	* src/home/hd-home.c: Remove unused ClutterGroups main_group and
+	control_group.
+	(hd_home_constructed): Remove hd_render_manager_set_button calls. The
+	render manager will ask for the buttons later.
+	(hd_home_remove_status_area): Tell the render manager.
+	(hd_home_add_status_menu, hd_home_remove_status_menu): Tell the render
+	manager.
+	(hd_home_get_edit_button, hd_home_get_back_button,
+	hd_home_get_operator): New accessors for the render manager.
+
+	* src/util/hd-transition.c (hd_transition_close_app): Optimisation:
+	load the particle texture from file only once.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_init): Create Task Navigator here
+	instead of in HdSwitcher. Postpone creation of the render manager so
+	that other singletons can be passed to it as creation time arguments.
+
 2008-12-22  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/mb/hd-theme.c: now that we paint the decor here in h-d,
@@ -21,6 +82,7 @@
 	Removed #define for visibility code as it works fine
 
 >>>>>>> .r33643
+>>>>>>> .r33644
 2008-12-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher-page.c:

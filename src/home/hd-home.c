@@ -98,9 +98,7 @@ struct _HdHomePrivate
   ClutterEffectTemplate *zoom_template;
   ClutterEffectTemplate *edit_button_template;
 
-  ClutterActor          *main_group; /* Where the views + their buttons live */
   ClutterActor          *edit_group; /* An overlay group for edit mode */
-  ClutterActor          *control_group;
   ClutterActor          *back_button;
   ClutterActor          *edit_button;
 
@@ -521,7 +519,6 @@ hd_home_constructed (GObject *object)
 {
   HdHomePrivate   *priv = HD_HOME (object)->priv;
   ClutterActor    *view;
-  ClutterActor    *main_group;
   ClutterActor    *edit_group;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   gint             i;
@@ -540,20 +537,10 @@ hd_home_constructed (GObject *object)
 
   clutter_actor_set_name (CLUTTER_ACTOR(object), "HdHome");
 
-  main_group = priv->main_group = clutter_group_new ();
-  clutter_actor_set_name (main_group, "HdHome:main_group");
-  clutter_container_add_actor (CLUTTER_CONTAINER (object), main_group);
-
   edit_group = priv->edit_group = clutter_group_new ();
   clutter_actor_set_name (edit_group, "HdHome:edit_group");
   clutter_container_add_actor (CLUTTER_CONTAINER (object), edit_group);
   clutter_actor_hide (edit_group);
-
-  /* add the control group so we would not have to move it about */
-  priv->control_group = clutter_group_new ();
-  clutter_actor_set_name (priv->control_group, "HdHome:control_group");
-  clutter_container_add_actor (hd_render_manager_get_front_group(),
-			       priv->control_group);
 
   for (i = 0; i < 4; ++i)
     {
@@ -580,7 +567,7 @@ hd_home_constructed (GObject *object)
       priv->views = g_list_append (priv->views, view);
 
       clutter_actor_set_position (view, priv->xwidth * i, 0);
-      clutter_container_add_actor (CLUTTER_CONTAINER (main_group), view);
+      clutter_container_add_actor (CLUTTER_CONTAINER (object), view);
     }
 
   priv->n_views = i;
@@ -590,8 +577,6 @@ hd_home_constructed (GObject *object)
   priv->back_button =
     hd_gtk_icon_theme_load_icon (icon_theme, BACK_BUTTON, 48, 0);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
-			       priv->back_button);
   clutter_actor_hide (priv->back_button);
   clutter_actor_set_reactive (priv->back_button, TRUE);
 
@@ -602,35 +587,21 @@ hd_home_constructed (GObject *object)
   g_signal_connect (priv->back_button, "button-release-event",
 		    G_CALLBACK (hd_home_back_button_clicked),
 		    object);
-  hd_render_manager_set_button(
-                    hd_render_manager_get(),
-                    HDRM_BUTTON_HOME_BACK,
-                    priv->back_button);
 
-  priv->edit_button =
-    clutter_texture_new_from_file (
-	g_build_filename (HD_DATADIR, EDIT_BUTTON, NULL),
-	&error);
+  priv->edit_button = clutter_texture_new_from_file (
+			g_build_filename (HD_DATADIR, EDIT_BUTTON, NULL),
+	                &error);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
-			       priv->edit_button);
   clutter_actor_hide (priv->edit_button);
   clutter_actor_set_reactive (priv->edit_button, TRUE);
 
   g_signal_connect (priv->edit_button, "button-release-event",
 		    G_CALLBACK (hd_home_edit_button_clicked),
 		    object);
-  hd_render_manager_set_button( hd_render_manager_get(),
-                                HDRM_BUTTON_EDIT,
-                                priv->edit_button);
 
   priv->operator = clutter_group_new ();
   clutter_actor_set_name(priv->operator, "HdHome:operator");
   clutter_actor_show (priv->operator);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
-			       priv->operator);
-  hd_render_manager_set_operator( hd_render_manager_get(),
-			       priv->operator);
 
   hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
 			       GTK_STATE_NORMAL,
@@ -655,8 +626,6 @@ hd_home_constructed (GObject *object)
 
   clutter_actor_set_size (priv->left_switch, HDH_SWITCH_WIDTH, priv->xheight);
   clutter_actor_set_position (priv->left_switch, 0, 0);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
-			       priv->left_switch);
   clutter_actor_hide (priv->left_switch);
 
   priv->right_switch = clutter_rectangle_new ();
@@ -667,8 +636,6 @@ hd_home_constructed (GObject *object)
   clutter_actor_set_size (priv->right_switch, HDH_SWITCH_WIDTH, priv->xheight);
   clutter_actor_set_position (priv->right_switch,
 			      priv->xwidth - HDH_SWITCH_WIDTH, 0);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->control_group),
-			       priv->right_switch);
   clutter_actor_hide (priv->right_switch);
 
   /*
@@ -1304,9 +1271,10 @@ hd_home_remove_status_area (HdHome *home, ClutterActor *sa)
               hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
   hd_switcher_remove_status_area (switcher, sa);
 
-/*  clutter_container_remove_actor (CLUTTER_CONTAINER (priv->control_group), sa); */
   clutter_actor_unparent (sa);
   hd_home_fixup_operator_position (home);
+
+  hd_render_manager_set_status_area (NULL);
 }
 
 void
@@ -1321,8 +1289,7 @@ hd_home_add_status_menu (HdHome *home, ClutterActor *sa)
                 hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
   hd_switcher_add_status_menu (switcher, sa);
 
-  clutter_actor_reparent(sa,
-        CLUTTER_ACTOR( hd_render_manager_get_front_group() ) );
+  hd_render_manager_set_status_menu (sa);
 }
 
 void
@@ -1336,10 +1303,8 @@ hd_home_remove_status_menu (HdHome *home, ClutterActor *sa)
   switcher = HD_SWITCHER(
                 hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
   hd_switcher_remove_status_menu (switcher, sa);
-  /* The removal animation will now take care of the actor at the
-   * end of the animation...
-   clutter_container_remove_actor (CLUTTER_CONTAINER (priv->control_group), sa);
-   */
+
+  hd_render_manager_set_status_menu (NULL);
 }
 
 void
@@ -1349,9 +1314,7 @@ hd_home_add_status_area (HdHome *home, ClutterActor *sa)
   HdSwitcher *switcher;
 
   g_debug ("hd_home_add_status_area, sa=%p\n", sa);
-  /* FIXME: make a clone when FBOs work? */
-  switcher = HD_SWITCHER(
-                hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
+  switcher = HD_SWITCHER(hd_comp_mgr_get_switcher(HD_COMP_MGR(priv->comp_mgr)));
   hd_switcher_add_status_area (switcher, sa);
 
   hd_home_fixup_operator_position (home);
@@ -1625,6 +1588,27 @@ hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by)
     return;
 
   clutter_actor_move_by (priv->applet_close_button, x_by, y_by);
+}
+
+ClutterActor*
+hd_home_get_edit_button (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  return priv->edit_button;
+}
+
+ClutterActor*
+hd_home_get_back_button (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  return priv->back_button;
+}
+
+ClutterActor*
+hd_home_get_operator (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  return priv->operator;
 }
 
 guint
