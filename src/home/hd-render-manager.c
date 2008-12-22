@@ -126,11 +126,7 @@ static void
 on_timeline_blur_new_frame(ClutterTimeline *timeline,
                            gint frame_num, gpointer data);
 static void
-<<<<<<< .mine
-on_timeline_blur_completed(ClutterActor *timeline, gpointer data);
-=======
 on_timeline_blur_completed(ClutterTimeline *timeline, gpointer data);
->>>>>>> .r33644
 /*static gboolean
 hd_render_manager_notify_modified (ClutterActor          *actor,
                                    ClutterActor          *child);*/
@@ -336,11 +332,7 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
 }
 
 static void
-<<<<<<< .mine
-on_timeline_blur_completed (ClutterActor *timeline, gpointer data)
-=======
 on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
->>>>>>> .r33644
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
@@ -364,11 +356,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   if (clutter_timeline_is_playing(priv->timeline_blur))
     {
       clutter_timeline_stop(priv->timeline_blur);
-<<<<<<< .mine
-      on_timeline_blur_completed(CLUTTER_ACTOR(priv->timeline_blur), NULL);
-=======
-      on_timeline_blur_completed(priv->timeline_blur, manager);
->>>>>>> .r33644
+      on_timeline_blur_completed(priv->timeline_blur, NULL);
     }
 
   priv->current_blur = blur;
