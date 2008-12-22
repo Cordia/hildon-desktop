@@ -1,3 +1,9 @@
+2008-12-22  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Hide the task launcher when clicked on top. Fixes NB#96035
+
+	* src/launcher/hd-launcher.c (hd_launcher_constructed):
+
 2008-12-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* TODO: updated, added new and removed old items.
