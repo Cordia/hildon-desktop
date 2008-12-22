@@ -39,6 +39,8 @@ static MBWMDecor * hd_theme_create_decor (MBWMTheme             *theme,
 static void hd_theme_simple_paint_button (MBWMTheme *theme,
 					  MBWMDecorButton *button);
 
+static void hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor);
+
 static void
 hd_theme_simple_get_button_size (MBWMTheme             *theme,
 				 MBWMDecor             *decor,
@@ -272,6 +274,11 @@ construct_buttons (MBWMTheme *theme, MBWMDecor *decor, MBWMXmlDecor *d)
               g_debug("%s: no button", __FUNCTION__);
 	      button = NULL;
 	    }
+
+	  /*
+	   * Consider throwing an error here
+	   * if the button has w/h of 0x0
+	   */
 
 	  if (button)
 	    {
@@ -857,7 +864,6 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 	  data->gc_mask = XCreateGC (xdpy, data->shape_mask, 0, NULL);
 	}
 #endif
-
       data->xftdraw = XftDrawCreate (xdpy, data->xpix,
 				     DefaultVisual (xdpy, xscreen),
 				     DefaultColormap (xdpy, xscreen));
@@ -1201,9 +1207,9 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
       gboolean is_waiting_window = window_is_waiting (theme->wm, client->window->xwindow);
 #endif
 
-      // TODO: This doesn't need to be done with a separate
-      // attribute any more.
-      is_secondary_dialog = mb_window_is_secondary(theme->wm, client->window->xwindow);
+      HdApp *this_app = HD_APP (client);
+
+      is_secondary_dialog = this_app->secondary_window;
 
 #if USE_PANGO
       PangoFontMetrics * mtx;
@@ -1267,7 +1273,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			    &data->clr,
 			    data->font,
 			    glyphs,
-			    xoff + west_width + left_padding,
+			    xoff + west_width + centering_padding? centering_padding: left_padding,
 			    y);
 
 	  /* Advance position */
@@ -1296,7 +1302,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 	    centering_padding = (rec.width - extents.width) / 2;
 
 	  if (is_waiting_window) {
-
+	   
 	    // TODO:
 	    // here we load and display the image
 	    // /usr/share/icons/hicolor/32x32/hildon/widgets_progress_indicator_anim.png
@@ -1339,4 +1345,3 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 #endif
   XClearWindow (xdpy, decor->xwin);
 }
-

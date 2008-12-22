@@ -1,3 +1,8 @@
+2008-12-22  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/mb/hd-theme.c: now that we paint the decor here in h-d,
+	we can do without MB_SECONDARY.
+
 2008-12-22  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-render-manager.c (on_timeline_blur_completed,
@@ -15,6 +20,7 @@
 	* src/home/hd-render-manager.c:
 	Removed #define for visibility code as it works fine
 
+>>>>>>> .r33643
 2008-12-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher-page.c:
