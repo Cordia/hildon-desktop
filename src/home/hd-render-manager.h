@@ -90,7 +90,9 @@ typedef enum
 
 #define STATE_NEED_DESKTOP(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
+                    HDRM_STATE_LAUNCHER)
+/* Task Navigator doesn't need the desktop because it grabs all
+ * applications anyway */
 
 #define STATE_NEED_GRAB(s) \
   STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
@@ -144,6 +146,12 @@ void hd_render_manager_restack(void);
 
 /* Sets whether any of the buttons will actually be set to do anything */
 void hd_render_manager_set_reactive(gboolean reactive);
+
+/* This queues a redraw using a signal set to _CLEANUP. The plan is that this
+ * will be processed after all other signals (including the update_area
+ * signals), which will allow us to update the full area rather than doing
+ * multiple redraws (which flickers and takes ages) */
+void hd_render_manager_queue_delay_redraw(void);
 
 G_END_DECLS
 

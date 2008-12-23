@@ -1,5 +1,14 @@
 2008-12-23  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h
+	* src/mb/hd-comp-mgr.c:
+	Removed desktop grab for Task Launcher as it wasn't required.
+	Added code to use signals to queue redraws in order to avoid
+	multiple redraws when several different areas are damaged.
+
+2008-12-23  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-switcher.c:
 	Fixed the GLIB CRITICALs and general breakage of task navigator 
 	introduced by Kimmo's refactoring.

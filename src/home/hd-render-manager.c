@@ -67,6 +67,13 @@ typedef enum
 #define HDRM_WIDTH 800
 #define HDRM_HEIGHT 480
 
+enum
+{
+  DAMAGE_REDRAW,
+  LAST_SIGNAL
+};
+static guint signals[LAST_SIGNAL] = { 0, };
+
 /* ------------------------------------------------------------------------- */
 
 /*
@@ -119,9 +126,14 @@ struct _HdRenderManagerPrivate {
 
   gboolean            in_notify;
   gboolean            in_set_state;
+  gboolean            queued_redraw;
 };
 
 /* ------------------------------------------------------------------------- */
+static void
+hd_render_manager_damage_redraw_notify(void);
+static void
+hd_render_manager_paint_notify(void);
 static void
 on_timeline_blur_new_frame(ClutterTimeline *timeline,
                            gint frame_num, gpointer data);
@@ -200,6 +212,14 @@ hd_render_manager_class_init (HdRenderManagerClass *klass)
   g_type_class_add_private (klass, sizeof (HdRenderManagerPrivate));
 
   gobject_class->finalize = hd_render_manager_finalize;
+
+  signals[DAMAGE_REDRAW] =
+      g_signal_new ("damage-redraw",
+                    G_TYPE_FROM_CLASS (klass),
+                    G_SIGNAL_RUN_CLEANUP,
+                    0, NULL, NULL,
+                    g_cclosure_marshal_VOID__VOID,
+                    G_TYPE_NONE, 0);
 }
 
 static void
@@ -265,8 +285,16 @@ hd_render_manager_init (HdRenderManager *self)
   g_signal_connect (priv->timeline_blur, "completed",
                       G_CALLBACK (on_timeline_blur_completed), self);
 
+  g_signal_connect (self, "damage-redraw",
+                    G_CALLBACK (hd_render_manager_damage_redraw_notify),
+                    0);
+  g_signal_connect (self, "paint",
+                      G_CALLBACK (hd_render_manager_paint_notify),
+                      0);
+
   priv->in_notify = FALSE;
   priv->in_set_state = FALSE;
+  priv->queued_redraw = FALSE;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -343,6 +371,24 @@ on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    PRIVATE  */
 /* ------------------------------------------------------------------------- */
+
+/* called on a damage_redraw signal, this will queue the screen to be redrawn.
+ * We do this with signals so we can wait until all the update_area signals
+ * have already come in. */
+static
+void hd_render_manager_damage_redraw_notify()
+{
+  ClutterActor *stage = clutter_stage_get_default();
+  clutter_actor_queue_redraw_damage(stage);
+}
+
+static
+void hd_render_manager_paint_notify()
+{
+  if (!the_render_manager)
+    return;
+  the_render_manager->priv->queued_redraw = FALSE;
+}
 
 static
 void hd_render_manager_set_blur (HDRMBlurEnum blur)
@@ -1126,4 +1172,15 @@ void hd_render_manager_set_visibilities()
       it = it->next;
     }
   g_list_free(blockers);
+}
+
+void hd_render_manager_queue_delay_redraw()
+{
+  if (!the_render_manager)
+    return;
+  if (!the_render_manager->priv->queued_redraw)
+    {
+      g_signal_emit (the_render_manager, signals[DAMAGE_REDRAW], 0);
+      the_render_manager->priv->queued_redraw = TRUE;
+    }
 }

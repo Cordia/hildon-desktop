@@ -749,8 +749,8 @@ hd_comp_mgr_texture_update_area(ClutterActor* actor,
             area.x, area.y, area.width, area.height);*/
 
     /* Queue a redraw, but without updating the whole area */
-    clutter_actor_queue_redraw_damage(stage);
     clutter_stage_set_damaged_area(stage, area);
+    hd_render_manager_queue_delay_redraw();
   }
 }
 
