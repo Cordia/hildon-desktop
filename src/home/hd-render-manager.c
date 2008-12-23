@@ -839,8 +839,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
 HDRMStateEnum  hd_render_manager_get_state()
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
-  return priv->state;
+  if (!the_render_manager)
+    return HDRM_STATE_UNDEFINED;
+  return the_render_manager->priv->state;
 }
 
 static const char *hd_render_manager_state_str(HDRMStateEnum state)

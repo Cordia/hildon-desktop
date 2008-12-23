@@ -197,6 +197,24 @@ hd_switcher_constructed (GObject *object)
                     G_CALLBACK (hd_switcher_launcher_cat_hidden),
                     object);
 
+  /* Task navigator events */
+  g_signal_connect_swapped (priv->task_nav, "thumbnail-clicked",
+                            G_CALLBACK (hd_switcher_item_selected),
+                            object);
+  g_signal_connect_swapped (priv->task_nav, "thumbnail-closed",
+                            G_CALLBACK (hd_switcher_item_closed),
+                            object);
+  g_signal_connect_swapped (priv->task_nav, "notification-clicked",
+                            G_CALLBACK (hd_switcher_notification_clicked),
+                            object);
+  g_signal_connect_swapped (priv->task_nav, "notification-closed",
+                            G_CALLBACK (hd_switcher_notification_closed),
+                            object);
+  g_signal_connect_swapped (priv->task_nav, "background-clicked",
+                            G_CALLBACK (hd_switcher_group_background_clicked),
+                            object);
+
+
   /* Connect to D-Bus */
   priv->connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
   if (G_UNLIKELY (error))
@@ -259,22 +277,6 @@ hd_switcher_init (HdSwitcher *self)
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
 					    HD_TYPE_SWITCHER,
 					    HdSwitcherPrivate);
-
-  g_signal_connect_swapped (priv->task_nav, "thumbnail-clicked",
-                            G_CALLBACK (hd_switcher_item_selected),
-                            self);
-  g_signal_connect_swapped (priv->task_nav, "thumbnail-closed",
-                            G_CALLBACK (hd_switcher_item_closed),
-                            self);
-  g_signal_connect_swapped (priv->task_nav, "notification-clicked",
-                            G_CALLBACK (hd_switcher_notification_clicked),
-                            self);
-  g_signal_connect_swapped (priv->task_nav, "notification-closed",
-                            G_CALLBACK (hd_switcher_notification_closed),
-                            self);
-  g_signal_connect_swapped (priv->task_nav, "background-clicked",
-                            G_CALLBACK (hd_switcher_group_background_clicked),
-                            self);
 }
 
 static void

@@ -1,3 +1,12 @@
+2008-12-23  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-switcher.c:
+	Fixed the GLIB CRITICALs and general breakage of task navigator 
+	introduced by Kimmo's refactoring.
+	* src/home/hd-render-manager.c:
+	Added null-pointer check in case get_state is ever called 
+	before hd-render-manager is created.
+
 2008-12-22  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Hide the task launcher when clicked on top. Fixes NB#96035
@@ -87,8 +96,6 @@
 	* src/home/hd-render-manager.c:
 	Removed #define for visibility code as it works fine
 
->>>>>>> .r33643
->>>>>>> .r33644
 2008-12-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher-page.c:
