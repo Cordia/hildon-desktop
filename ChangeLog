@@ -1,3 +1,8 @@
+2008-12-24  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-comp-mgr.c:
+	Now skip area updates if an effect is in progress
+
 2008-12-23  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c

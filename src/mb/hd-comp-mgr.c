@@ -707,14 +707,20 @@ hd_comp_mgr_get_client_transient_for (MBWindowManagerClient *c)
 }
 
 static void
-hd_comp_mgr_texture_update_area(ClutterActor* actor,
-                                int x, int y, int width, int height)
+hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
+                                int x, int y, int width, int height,
+                                ClutterActor* actor)
 {
   ClutterFixed offsetx = 0, offsety = 0;
   ClutterActor *parent, *it;
+  HdCompMgrPrivate * priv;
 
-  if (!CLUTTER_IS_ACTOR(actor) || !CLUTTER_ACTOR_IS_VISIBLE(actor))
+  if (!CLUTTER_IS_ACTOR(actor) ||
+      !CLUTTER_ACTOR_IS_VISIBLE(actor) ||
+      hmgr == 0)
     return;
+
+  priv = hmgr->priv;
 
   /* TFP textures are usually bundled into another group, and it is
    * this group that sets visibility - so we must check it too */
@@ -724,9 +730,15 @@ hd_comp_mgr_texture_update_area(ClutterActor* actor,
 
   /* We DON'T do this if we're in the task switcher, because it
    * breaks all the scaling + has a scroller that's a nightmare
-   * to deal with */
-  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV)
+   * to deal with. Also skip if we're in some transition -
+   * instead just update normally */
+  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV ||
+      priv->unmap_effect_running)
+  {
+    ClutterActor *stage = clutter_stage_get_default();
+    clutter_actor_queue_redraw(stage);
     return;
+  }
 
   /* Assume no zoom/rotate is happening here as we have simple windows */
   it = actor;
@@ -756,7 +768,7 @@ hd_comp_mgr_texture_update_area(ClutterActor* actor,
 
 /* Hook onto and X11 texture pixmap children of this actor */
 static void
-hd_comp_mgr_hook_update_area(ClutterActor *actor)
+hd_comp_mgr_hook_update_area(HdCompMgr *hmgr, ClutterActor *actor)
 {
   if (CLUTTER_IS_GROUP(actor))
     {
@@ -769,8 +781,9 @@ hd_comp_mgr_hook_update_area(ClutterActor *actor)
               clutter_group_get_nth_child(CLUTTER_GROUP(actor), i);
           if (CLUTTER_X11_IS_TEXTURE_PIXMAP(child))
             {
-              g_signal_connect(G_OBJECT(child), "update-area",
-                             G_CALLBACK(hd_comp_mgr_texture_update_area), 0);
+              g_signal_connect_swapped(
+                      G_OBJECT(child), "update-area",
+                      G_CALLBACK(hd_comp_mgr_texture_update_area), hmgr);
               clutter_actor_set_allow_redraw(child, FALSE);
             }
         }
@@ -824,7 +837,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   g_object_set_data (G_OBJECT (actor),
 		     "HD-MBWMCompMgrClutterClient", cclient);
 
-  hd_comp_mgr_hook_update_area(actor);
+  hd_comp_mgr_hook_update_area(HD_COMP_MGR (mgr), actor);
 
   /* deactivate launcher and switcher in case of new window */
   if (STATE_ONE_OF(hd_render_manager_get_state(),
