@@ -1,8 +1,14 @@
-hildon-desktop (1:2.2.13-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.13-1) unstable; urgency=low
 
-  * unreleased
+  * Gordon/Marc: Merged Gordon Williams' render-manager-refactor branch.
+  * Gordon: Speed improvements (partial screen updates with new Clutter).
+  * Marc: Hide the task launcher when clicked on top. Fixes: NB#96035
+  * Marc: Fix overlapping labels in Task Launcher. Fixes: NB#96038
+  * Adam: Fix crash with stackable windows. Fixes: NB#95917
+  * Marc: Removed "xmas hacks".
+  * Kimmo: Some more refactoring & TODO updates.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 16 Dec 2008 10:14:44 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 29 Dec 2008 15:57:13 +0200
 
 hildon-desktop (1:2.2.12-1) unstable; urgency=low
 
