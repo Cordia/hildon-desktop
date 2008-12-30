@@ -37,6 +37,7 @@
 #include <math.h>
 
 #include <dbus/dbus.h>
+#include <dbus/dbus-glib.h>
 
 #include <clutter/clutter.h>
 #include <tidy/tidy-finger-scroll.h>
@@ -67,6 +68,8 @@ struct _HdLauncherPrivate
   ClutterVertex launch_position; /* where were we clicked? */
 
   HdLauncherTree *tree;
+
+  DBusGProxy *dbus_proxy;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -108,14 +111,18 @@ static void hd_launcher_transition_new_frame(ClutterTimeline *timeline,
 #define OSSO_BUS_ROOT          "com.nokia"
 #define OSSO_BUS_TOP           "top_application"
 #define PATH_NAME_LEN           255
+#define DBUS_NAMEOWNERCHANGED_SIGNAL_NAME "NameOwnerChanged"
 
 static void     hd_launcher_launch (HdLauncherApp *item);
-static gboolean hd_launcher_service_prestart (const gchar *service,
-                                              GError       **error);
-static gboolean hd_launcher_service_top (const gchar *service,
-                                         GError      **error);
+static gboolean hd_launcher_service_prestart (const gchar *service);
+static gboolean hd_launcher_service_top (const gchar *service);
 static gboolean hd_launcher_execute (const gchar *exec,
                                      GError **error);
+static void hd_launcher_dbus_name_owner_changed (DBusGProxy *proxy,
+                                          const char *name,
+                                          const char *old_owner,
+                                          const char *new_owner,
+                                          gpointer data);
 
 /* The HdLauncher singleton */
 static HdLauncher *the_launcher = NULL;
@@ -175,6 +182,31 @@ hd_launcher_init (HdLauncher *self)
 
   self->priv = priv = HD_LAUNCHER_GET_PRIVATE (self);
   g_datalist_init (&priv->pages);
+
+  DBusGConnection *connection;
+  connection = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
+  if (!connection)
+    {
+      g_debug ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
+      return;
+    }
+  priv->dbus_proxy = dbus_g_proxy_new_for_name (connection,
+                                                DBUS_SERVICE_DBUS,
+                                                DBUS_PATH_DBUS,
+                                                DBUS_INTERFACE_DBUS);
+  if (!priv->dbus_proxy)
+    {
+      g_debug ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
+      return;
+    }
+
+  dbus_g_proxy_add_signal (priv->dbus_proxy,
+      DBUS_NAMEOWNERCHANGED_SIGNAL_NAME,
+      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
+  dbus_g_proxy_connect_signal (priv->dbus_proxy,
+      DBUS_NAMEOWNERCHANGED_SIGNAL_NAME,
+      (GCallback)hd_launcher_dbus_name_owner_changed,
+      NULL, NULL);
 }
 
 static void hd_launcher_constructed (GObject *gobject)
@@ -537,7 +569,7 @@ hd_launcher_lazy_traverse_tree (gpointer data)
             HD_APP_PRESTART_ALWAYS)
         {
           hd_launcher_service_prestart (
-              hd_launcher_app_get_service(HD_LAUNCHER_APP(item)), NULL);
+              hd_launcher_app_get_service(HD_LAUNCHER_APP(item)));
         }
     }
 
@@ -616,7 +648,7 @@ hd_launcher_launch (HdLauncherApp *item)
 
   if (service)
     {
-      result = hd_launcher_service_top (service, NULL);
+      result = hd_launcher_service_top (service);
     }
   else
     {
@@ -635,7 +667,7 @@ hd_launcher_launch (HdLauncherApp *item)
 }
 
 static gboolean
-hd_launcher_service_prestart (const gchar *service, GError **error)
+hd_launcher_service_prestart (const gchar *service)
 {
   DBusError derror;
   DBusConnection *conn;
@@ -663,7 +695,7 @@ hd_launcher_service_prestart (const gchar *service, GError **error)
 }
 
 static gboolean
-hd_launcher_service_top (const gchar *service, GError **error)
+hd_launcher_service_top (const gchar *service)
 {
   gchar path[PATH_NAME_LEN];
   DBusMessage *msg = NULL;
@@ -905,3 +937,40 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
   clutter_actor_set_positionu(priv->launch_image, mx-zx, my-zy);
 }
 
+static void
+hd_launcher_dbus_name_owner_changed (DBusGProxy *proxy,
+                                     const char *name,
+                                     const char *old_owner,
+                                     const char *new_owner,
+                                     gpointer data)
+{
+  GList *items;
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+  g_debug ("%s, name: %s, old: %s, new: %s\n", __FUNCTION__,
+      name, old_owner, new_owner);
+
+  /* Check only disconnections. */
+  if (strcmp(new_owner, ""))
+    return;
+
+  /* Check if the service is one we want always on. */
+  items = hd_launcher_tree_get_items(priv->tree, NULL);
+  while (items)
+    {
+      HdLauncherItem *item = items->data;
+
+      if (hd_launcher_item_get_item_type (item) == HD_APPLICATION_LAUNCHER)
+        {
+          HdLauncherApp *app = HD_LAUNCHER_APP (item);
+
+          if (hd_launcher_app_get_prestart_mode (app)== HD_APP_PRESTART_ALWAYS &&
+              !g_strcmp0 (name, hd_launcher_app_get_service (app)))
+            {
+              hd_launcher_service_prestart (name);
+              break;
+            }
+        }
+
+      items = g_list_next (items);
+    }
+}

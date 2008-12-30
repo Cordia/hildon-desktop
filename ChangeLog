@@ -1,3 +1,14 @@
+2008-12-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Restart always-on dbus services if disconnected.
+
+	* src/launcher/hd-launcher.c (tree, dbus_proxy,
+	  DBUS_NAMEOWNERCHANGED_SIGNAL_NAME, hd_launcher_init,
+	  hd_launcher_lazy_traverse_tree, hd_launcher_launch,
+	  hd_launcher_service_prestart, hd_launcher_service_top,
+	  hd_launcher_transition_new_frame,
+	  hd_launcher_dbus_name_owner_changed):
+
 2008-12-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_init): Simplify creation of
