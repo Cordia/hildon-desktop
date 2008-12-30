@@ -1,3 +1,11 @@
+2008-12-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_init): Simplify creation of
+	the hibernation hash key: use pointer to the composite client, it is
+	unique and already known.
+	(hd_comp_mgr_client_get_window_role): Removed as unused.
+	(hd_comp_mgr_client_get_window_class): Removed as unused.
+
 2008-12-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.13

@@ -179,74 +179,21 @@ hd_comp_mgr_client_process_hibernation_prop (HdCompMgrClient * hc)
     XFree (hibernable);
 }
 
-static char *
-hd_comp_mgr_client_get_window_role (HdCompMgrClient * hc)
-{
-  MBWindowManagerClient  * wm_client = MB_WM_COMP_MGR_CLIENT (hc)->wm_client;
-  HdCompMgr              * hmgr = HD_COMP_MGR (wm_client->wmref->comp_mgr);
-  char                   * role = NULL;
-
-  role = hd_util_get_win_prop_data_and_validate
-                     (wm_client->wmref->xdpy,
-		      wm_client->window->xwindow,
-                      hmgr->priv->atoms[HD_ATOM_WM_WINDOW_ROLE],
-                      XA_STRING,
-                      8,
-                      0,
-                      NULL);
-
-  return role;
-}
-
-static gchar *
-hd_comp_mgr_client_get_window_class (HdCompMgrClient * hc)
-{
-  gchar * klass = NULL;
-  return klass;
-}
-
 static int
 hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
 {
   HdCompMgrClient        *client = HD_COMP_MGR_CLIENT (obj);
   HdCompMgrClientPrivate *priv;
   HdCompMgr              *hmgr;
-  char                   *role;
-  gchar                  *klass;
-  gchar                  *key = NULL;
   MBWindowManagerClient  *wm_client = MB_WM_COMP_MGR_CLIENT (obj)->wm_client;
 
   hmgr = HD_COMP_MGR (wm_client->wmref->comp_mgr);
 
   priv = client->priv = g_new0 (HdCompMgrClientPrivate, 1);
 
-  /*
-   * TODO -- if we need to query any more props, we should do that
-   * asynchronously.
-   */
   hd_comp_mgr_client_process_hibernation_prop (client);
 
-  klass = hd_comp_mgr_client_get_window_class (client);
-  role  = hd_comp_mgr_client_get_window_role (client);
-
-  if (role && klass)
-    key = g_strconcat (klass, "/", role, NULL);
-  else if (klass)
-    key = g_strdup (klass);
-  else if (role)
-    key = g_strdup (role);
-
-  if (key)
-    {
-      priv->hibernation_key = g_str_hash (key);
-      g_free (key);
-    }
-
-  g_free (klass);
-
-  if (role)
-    XFree (role);
-
+  priv->hibernation_key = (guint)wm_client;
   priv->service =
     hd_comp_mgr_service_from_xwindow (hmgr, wm_client->window->xwindow);
 
