@@ -191,6 +191,8 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
 
   priv = client->priv = g_new0 (HdCompMgrClientPrivate, 1);
 
+  /* TODO: does not make sense to do these for all window types, only
+   * for "main" application windows visible in the switcher */
   hd_comp_mgr_client_process_hibernation_prop (client);
 
   priv->hibernation_key = (guint)wm_client;
