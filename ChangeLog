@@ -1,3 +1,8 @@
+2008-12-30  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/mb/hd-theme.c: further movement towards progress indicator;
+	  displays correctly, but needs to be per-window not singleton.
+
 2008-12-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Restart always-on dbus services if disconnected.

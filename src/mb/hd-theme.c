@@ -774,7 +774,6 @@ decordata_free (MBWMDecor * decor, void *data)
   free (dd);
 }
 
-#if !USE_PANGO
 static gboolean
 window_is_waiting (MBWindowManager *wm, Window w)
 {
@@ -808,7 +807,53 @@ window_is_waiting (MBWindowManager *wm, Window w)
   else
     return 0;
 }
-#endif
+
+typedef struct _ProgressIndicatorData
+{
+   gint x_position;
+   Display *xdpy;
+   Picture source;
+   Drawable dest;
+} ProgressIndicatorData;
+
+static gboolean
+progress_indicator_cb (gpointer data)
+{
+  ProgressIndicatorData *pro = data;
+  static int wait_cycle = 0;
+
+  const int pages_in_cycle = 8;
+  const int page_width = 56;
+  const int page_height = 53;
+  XWindowAttributes attr;
+  XRenderPictFormat *format;
+  XRenderPictureAttributes pa;
+  const int source_x = 0;
+  const int source_y = 222;
+
+  XGetWindowAttributes( pro->xdpy, pro->dest, &attr );
+  format = XRenderFindVisualFormat( pro->xdpy, attr.visual );
+  pa.subwindow_mode = IncludeInferiors;
+
+  Picture target = XRenderCreatePicture (pro->xdpy, pro->dest, format,
+		  CPSubwindowMode, &pa );
+
+  wait_cycle = (wait_cycle+1) % pages_in_cycle;
+
+  XRenderComposite (pro->xdpy, PictOpOver,
+                    pro->source, None,
+		    target,
+		    source_x + page_width*wait_cycle, source_y,
+		    0, 0,
+		    pro->x_position, 0, /* always drawn at the top */
+		    page_width, page_height);
+  XSync(pro->xdpy, FALSE);
+
+  return TRUE;
+}
+
+/* TODO: This WILL be per window */
+static ProgressIndicatorData *progress_indicator_source = NULL;
 
 static void
 hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
@@ -1203,8 +1248,11 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
       int len = strlen (title);
       int is_secondary_dialog;
       int centering_padding = 0;
-#if !USE_PANGO
       gboolean is_waiting_window = window_is_waiting (theme->wm, client->window->xwindow);
+#if USE_PANGO
+      PangoRectangle font_extents;
+#else
+      XGlyphInfo font_extents;
 #endif
 
       HdApp *this_app = HD_APP (client);
@@ -1257,16 +1305,17 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 
 	  pango_shape (title, len, &item->analysis, glyphs);
 
-	  if (is_secondary_dialog)
+	  if (is_secondary_dialog || is_waiting_window)
 	    {
-	      PangoRectangle font_extents;
-
 	      pango_glyph_string_extents (glyphs,
 					  data->font,
 					  NULL,
-				  &font_extents);
+					  &font_extents);
+	      pango_extents_to_pixels (NULL, &font_extents);
 
-	      centering_padding = (rec.width - font_extents.width) / 2;
+	      if (is_secondary_dialog)
+                centering_padding = (rec.width - font_extents.width) / 2;
+	      
 	    }
 
 	  pango_xft_render (data->xftdraw,
@@ -1291,25 +1340,15 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 
       if (is_secondary_dialog || is_waiting_window)
 	{
-	  XGlyphInfo extents;
 
 	  XftTextExtentsUtf8 (xdpy,
 			  data->font,
 			  (const guchar*)title, len,
-			  &extents);
+			  &font_extents);
 
 	  if (is_secondary_dialog)
-	    centering_padding = (rec.width - extents.width) / 2;
+	    centering_padding = (rec.width - font_extents.width) / 2;
 
-	  if (is_waiting_window) {
-	   
-	    // TODO:
-	    // here we load and display the image
-	    // /usr/share/icons/hicolor/32x32/hildon/widgets_progress_indicator_anim.png
-	    // next to the title, given the
-	    // size calculated above.
-
-	  }
 	}
 
       XftDrawStringUtf8(data->xftdraw,
@@ -1321,6 +1360,33 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			y,
 			(const guchar*)title, len);
 #endif
+      
+      if (is_waiting_window)
+        {
+	   if (progress_indicator_source==NULL)
+	     {
+               progress_indicator_source = g_malloc (sizeof (ProgressIndicatorData));
+
+	       progress_indicator_source->x_position = west_width + centering_padding? centering_padding: left_padding + font_extents.width;
+	       progress_indicator_source->xdpy = xdpy;
+	       progress_indicator_source->source = p_theme->xpic;
+	       progress_indicator_source->dest = decor->xwin;
+
+	       //progress_indicator_cb (progress_indicator_source);
+
+	       g_timeout_add_seconds (1,
+			       progress_indicator_cb,
+			       progress_indicator_source);
+	    }
+        }
+      else
+        {
+          if (progress_indicator_source!=NULL)
+            {
+              g_source_remove_by_user_data (progress_indicator_source);
+              progress_indicator_source = NULL;
+	    }
+	}
 
       /* Unset the clipping rectangle */
       rec.width = decor->geom.width;
