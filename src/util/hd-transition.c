@@ -27,11 +27,13 @@
 
 #include <clutter/clutter.h>
 #include <math.h>
+#include <canberra.h>
 
 #include "hd-transition.h"
 #include "hd-comp-mgr.h"
 #include "hd-gtk-style.h"
 #include "hd-render-manager.h"
+#include "hildon-desktop.h"
 
 #include "hd-app.h"
 
@@ -468,4 +470,57 @@ hd_transition_close_app (HdCompMgr                  *mgr,
     }
   hd_comp_mgr_set_effect_running(mgr, TRUE);
   clutter_timeline_start (data->timeline);
+
+  hd_transition_play_sound ("/usr/share/sounds/ui-window_close.wav");
+}
+
+/* Tell play() now it's free to play. */
+static void
+play_finished (ca_context *ctx, uint32_t id, int error_code, void * is_playing)
+{
+  *(gboolean *)is_playing = FALSE;
+}
+
+/* Start playing @fname asynchronously. */
+void
+hd_transition_play_sound (const gchar * fname)
+{
+    static ca_context *ca;
+    static gboolean is_playing;
+    ca_proplist *pl;
+    int ret;
+
+    /* Canberra uses threads. */
+    if (hd_disable_threads())
+      return;
+
+    /* Canberra may not like it to play multiple sounds at a time
+     * with the same context.  This may be totally bogus, though. */
+    if (is_playing)
+      return;
+
+    /* Initialize the canberra context once. */
+    if (!ca)
+      {
+        if ((ret = ca_context_create (&ca)) != CA_SUCCESS)
+          {
+            g_warning("ca_context_create: %s", ca_strerror (ret));
+            return;
+          }
+        else if ((ret = ca_context_open (ca)) != CA_SUCCESS)
+          {
+            g_warning("ca_context_open: %s", ca_strerror (ret));
+            ca_context_destroy(ca);
+            ca = NULL;
+            return;
+          }
+      }
+
+    ca_proplist_create (&pl);
+    ca_proplist_sets (pl, CA_PROP_MEDIA_FILENAME, fname);
+    if ((ret = ca_context_play_full (ca, 0, pl, play_finished,
+                                     &is_playing)) != CA_SUCCESS)
+      g_warning("%s: %s", fname, ca_strerror (ret));
+    ca_proplist_destroy(pl);
+    is_playing = TRUE;
 }

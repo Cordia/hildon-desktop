@@ -45,5 +45,7 @@ void
 hd_transition_close_app (HdCompMgr                  *mgr,
                          MBWindowManagerClient      *c);
 
+void
+hd_transition_play_sound(const gchar           *fname);
 
 #endif /* __HD_TRANSITION_H__ */

@@ -40,7 +40,6 @@
 #include <clutter/clutter.h>
 #include <cogl/cogl.h>
 #include <tidy/tidy-finger-scroll.h>
-#include <canberra.h>
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
@@ -141,13 +140,8 @@
  *                                an image it is displayed in switcher mode
  *                                instead of its its thumbnail.  The file is
  *                                "%VIDEO_SCREENSHOT_DIR/<class_hint>".
- * %WINDOW_OPEN_NOISE, %WINDOW_CLOSE_NOISE:
- *                                What to play when a window is added toor
- *                                removed from the switcher.
  */
 #define VIDEO_SCREENSHOT_DIR            "/var/tmp/app-screenshots"
-#define WINDOW_OPEN_NOISE               "/usr/share/sounds/ui-window_open.wav"
-#define WINDOW_CLOSE_NOISE              "/usr/share/sounds/ui-window_close.wav"
 /* Standard definitions }}} */
 
 /* Type definitions {{{ */
@@ -313,7 +307,7 @@ static const gchar *Title_text_font  = "Anything but NULL";
 /* Private variables }}} */
 
 /* Program code */
-/* Graphics loading and noise making {{{ */
+/* Graphics loading {{{ */
 /* Returns the texture of an invisible (transparent) @width x @height box. */
 static ClutterTexture *
 empty_texture (guint width, guint height)
@@ -569,58 +563,7 @@ load_image_fit (char const * fname, guint aw, guint ah)
 
   return final;
 }
-
-/* Start playing @fname asynchronously. */
-/* Tell play() now it's free to play. */
-static void
-play_finished (ca_context *ctx, uint32_t id, int error_code, void *is_playing)
-{
-  *(gboolean *)is_playing = FALSE;
-}
-
-static void
-play (const gchar * fname)
-{
-    static ca_context *ca;
-    static gboolean is_playing;
-    ca_proplist *pl;
-    int ret;
-
-    /* Canberra uses threads. */
-    if (hd_disable_threads())
-      return;
-
-    /* Canberra may not like it to play multiple sounds at a time
-     * with the same context.  This may be totally bogus, though. */
-    if (is_playing)
-      return;
-
-    /* Initialize the canberra context once. */
-    if (!ca)
-      {
-        if ((ret = ca_context_create (&ca)) != CA_SUCCESS)
-          {
-            g_warning("ca_context_create: %s", ca_strerror (ret));
-            return;
-          }
-        else if ((ret = ca_context_open (ca)) != CA_SUCCESS)
-          {
-            g_warning("ca_context_open: %s", ca_strerror (ret));
-            ca_context_destroy(ca);
-            ca = NULL;
-            return;
-          }
-      }
-
-    ca_proplist_create (&pl);
-    ca_proplist_sets (pl, CA_PROP_MEDIA_FILENAME, fname);
-    if ((ret = ca_context_play_full (ca, 0, pl, play_finished,
-                                     &is_playing)) != CA_SUCCESS)
-      g_warning("%s: %s", fname, ca_strerror (ret));
-    ca_proplist_destroy(pl);
-    is_playing = TRUE;
-}
-/* Graphics loading and noise making }}} */
+/* Graphics loading }}} */
 
 /* Clutter utilities {{{ */
 /* add_effect_closure()'s #ClutterTimeline::completed handler. */
@@ -2032,7 +1975,6 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
 
   g_array_remove_index (Thumbnails, i);
   layout (newborn);
-  play (WINDOW_CLOSE_NOISE);
 
   /* Arrange for calling @fun(@funparam) if/when appripriate. */
   if (animation_in_progress (Fly_effect))
@@ -2073,7 +2015,6 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
     }
 
   layout (thumb.thwin);
-  play (WINDOW_OPEN_NOISE);
 }
 
 /* Remove @dialog from its application's thumbnail

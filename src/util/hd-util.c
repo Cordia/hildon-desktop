@@ -6,7 +6,6 @@
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
 
-
 void *
 hd_util_get_win_prop_data_and_validate (Display   *xdpy,
 					Window     xwin,

@@ -1,3 +1,15 @@
+2008-01-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c
+	* src/launcher/hd-launcher.c
+	* src/util/hd-transition.c
+	* src/util/hd-util.c
+	* src/util/hd-transition.h
+
+	Moved application started/closed noise making from the navigator
+	to the launcher (hd_launcher_transition_app_start()) and
+	hd_transition_close_app().
+
 2008-12-30  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/mb/hd-theme.c: further movement towards progress indicator;

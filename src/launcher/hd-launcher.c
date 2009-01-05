@@ -124,6 +124,11 @@ static void hd_launcher_dbus_name_owner_changed (DBusGProxy *proxy,
                                           const char *new_owner,
                                           gpointer data);
 
+/* We cannot #include "hd-transition.h" because it #include:s mb-wm.h,
+ * which wants to #define _GNU_SOURCE unconditionally, but we already
+ * have it in -D and they clash.  XXX */
+extern void hd_transition_play_sound(const gchar *fname);
+
 /* The HdLauncher singleton */
 static HdLauncher *the_launcher = NULL;
 
@@ -885,6 +890,8 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
 
       g_free(loading_path);
     }
+
+  hd_transition_play_sound ("/usr/share/sounds/ui-window_open.wav");
 }
 
 /* When a window has been created we want to be sure we've removed our
