@@ -40,8 +40,6 @@ static void hd_note_realize (MBWindowManagerClient *client);
 static Bool hd_note_request_geometry (MBWindowManagerClient *client,
 				      MBGeometry            *new_geometry,
 				      MBWMClientReqGeomType  flags);
-static void hd_note_stack            (MBWindowManagerClient *client,
-                                      int flags);
 
 /* Returns the value of a #MBWMCompMgr string property of @self or %NULL
  * if the client doesn't have such property or it can't be retrieved.
@@ -100,7 +98,6 @@ hd_note_class_init (MBWMObjectClass *klass)
   client->client_type  = MBWMClientTypeNote;
   client->realize      = hd_note_realize;
   client->geometry     = hd_note_request_geometry;
-  client->stack        = hd_note_stack;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdNote";
@@ -156,6 +153,11 @@ hd_note_init (MBWMObject *this, va_list vap)
 
   if (note->note_type == HdNoteTypeIncomingEvent)
     {
+      /* Stack it as low as possible to make it "disappear" from the screen.
+       * It will remain mapped, but the user cannot click it directly.
+       * (Contrary to the comments the desktop window is Mid, not Bottom.) */
+      client->stacking_layer = MBWMStackLayerBottom;
+
       /* Leave it up to the client to specify size; position doesn't matter. */
       hd_note_request_geometry (client, &client->window->geometry,
                                 MBWMClientReqGeomForced);
@@ -348,20 +350,6 @@ hd_note_request_geometry (MBWindowManagerClient *client,
     }
 
   return True; /* Geometry accepted */
-}
-
-static void
-hd_note_stack(MBWindowManagerClient *client, int flags)
-{
-  MBWindowManagerClientClass* parent_klass =
-    MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
-  
-  if (HD_NOTE (client)->note_type == HdNoteTypeIncomingEvent)
-    /* Ignore the request to make the window "disappear" from the screen.
-     * It will remain mapped, but the user cannot click it directly. */
-    return;
-  else if (parent_klass->stack)
-    parent_klass->stack (client, flags);
 }
 
 MBWindowManagerClient*
