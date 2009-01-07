@@ -1,3 +1,12 @@
+2008-01-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#96936
+
+	* src/home/hd-task-navigator.c:
+	  Restore the opacity of the thumbnail's title and foreground tile
+	  when we're about to enter the switcher without transition.
+	  Make sure they are transparent otherwise.
+
 2008-01-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#95641

@@ -180,9 +180,10 @@ typedef struct
    * -- @thwin:       @Navigator_area's thumbnail window and event responder.
    * -- @prison:      Clips, scales and positions @apwin.
    * -- @foreground:  Scaled decoration created from @Master_foreground
-   *                  covering the whole thumbnail.
+   *                  covering the whole thumbnail.  Faded when zooming.
    *
    * -- @title:       What to put in the thumbnail's title area.
+   *                  Faded in/out when zooming.
    * -- @title_icon:  If the title is a notification (@hdnote is set)
    *                  then its icon, otherwise %NULL.
    *                  Anchored in the middle.
@@ -1240,6 +1241,12 @@ claim_win (Thumbnail * thumb)
   /* Make sure @thumb->title is up-to-date. */
   if (!thumb->hdnote)
     reset_thumb_title (thumb);
+
+  /* Restore the opacity of the actors that have been faded out while zooming,
+   * so we won't have trouble if we happen to to need to enter the navigator
+   * directly. */
+  clutter_actor_set_opacity (thumb->foreground, 255);
+  clutter_actor_set_opacity (thumb->title,      255);
 }
 
 /* Stop managing @thumb's application window and give it back
@@ -1566,8 +1573,8 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
                        -xpos / xscale + thumb->inapwin->x,
                        -ypos / yscale + thumb->inapwin->y,
                        NULL, NULL);
-  clutter_effect_fade(Zoom_effect, thumb->foreground, 0, NULL, NULL);
-  clutter_effect_fade(Zoom_effect, thumb->title, 0, NULL, NULL);
+  clutter_effect_fade (Zoom_effect, thumb->foreground, 0, NULL, NULL);
+  clutter_effect_fade (Zoom_effect, thumb->title,      0, NULL, NULL);
 
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)zoom_in_complete,
@@ -1647,8 +1654,12 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   clutter_actor_set_position  (Scroller,  xscroller,  yscroller);
   clutter_effect_scale (Zoom_effect, Scroller, 1, 1, NULL, NULL);
   clutter_effect_move  (Zoom_effect, Scroller, 0, 0, NULL, NULL);
-  clutter_effect_fade(Zoom_effect, thumb->foreground, 255, NULL, NULL);
-  clutter_effect_fade(Zoom_effect, thumb->title, 255, NULL, NULL);
+
+  clutter_actor_set_opacity (thumb->foreground, 0);
+  clutter_actor_set_opacity (thumb->title,      0);
+  clutter_effect_fade (Zoom_effect, thumb->foreground, 255, NULL, NULL);
+  clutter_effect_fade (Zoom_effect, thumb->title,      255, NULL, NULL);
+
   add_effect_closure (Zoom_effect_timeline, fun, win, funparam);
   return;
 
@@ -2359,7 +2370,7 @@ navigator_shown (ClutterActor * navigator, gpointer unused)
 {
   guint i;
 
-  /* Grab the keybord focus for navigator_hit(). */
+  /* Grab the keybord focus for navigator_hit().  XXX Someone's removed it. */
   clutter_stage_set_key_focus (CLUTTER_STAGE (clutter_stage_get_default ()),
                                navigator);
 
