@@ -36,5 +36,5 @@
   (It should be the same usability-wise as pannable areas.)
 - Implement portrait mode.
 - Implement support for speech bubbles in Contacts applets.
-- Add more error checks to matchbox code (e.g. check every CreateWindow)
+- Allow an application (e.g. Rhapsody) to request Task Switcher mode with a message
 
