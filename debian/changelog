@@ -1,6 +1,6 @@
 hildon-desktop (1:2.2.14-1~unreleased) unstable; urgency=low
 
-  * Added theme-config to dependencies. Fixes: NB#97453
+  * Added theme-config to dependencies. Fixes: NB#97453, NB#95524
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  8 Jan 2009 17:29:03 +0200
 
