@@ -528,10 +528,14 @@ hd_launcher_lazy_traverse_tree (gpointer data)
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
   HdLauncherTraverseData *tdata = data;
-  HdLauncherItem *item = tdata->items->data;
+  HdLauncherItem *item;
   HdLauncherTile *tile;
   HdLauncherPage *page;
   const gchar *domainname;
+
+  if (!tdata->items)
+    return FALSE;
+  item = tdata->items->data;
 
   g_debug ("%s: Adding item name: %s, position: %d\n", __FUNCTION__,
            hd_launcher_item_get_name(item),

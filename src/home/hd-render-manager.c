@@ -92,6 +92,8 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       --> front             ---> button_task_nav
  *                              --> button_launcher
  *                              --> button_menu
+ *                              --> status_menu
+ *                              --> status_area
  */
 
 struct _HdRenderManagerPrivate {
@@ -549,13 +551,6 @@ void hd_render_manager_set_order ()
   if (STATE_SHOW_STATUS_AREA(priv->state) && priv->status_area)
     {
       clutter_actor_show(priv->status_area);
-      /* we shouldn't need what comes next. First off something is grabbing
-       * this from front - also it should be set to be high enough with
-       * hd_comp_mgr_set_status_area_stacking that it is ABOVE the window.
-       * But it's not right now, and this works great. */
-      if (clutter_actor_get_parent(priv->status_area) !=
-            CLUTTER_ACTOR(priv->front))
-        clutter_actor_reparent(priv->status_area, CLUTTER_ACTOR(priv->front));
       clutter_actor_raise_top(priv->status_area);
     }
   else if (priv->status_area)
@@ -606,6 +601,9 @@ void hd_render_manager_set_order ()
       g_warning("%s: Invalid button %d in top-right",
           __FUNCTION__, visible_top_right);
   }
+
+  if (priv->status_menu)
+    clutter_actor_raise_top(CLUTTER_ACTOR(priv->status_menu));
 
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport */
@@ -668,6 +666,7 @@ void hd_render_manager_set_status_menu (ClutterActor *item)
     {
       priv->status_menu = g_object_ref(item);
       clutter_actor_reparent(priv->status_menu, CLUTTER_ACTOR(priv->front));
+      clutter_actor_raise_top(CLUTTER_ACTOR(priv->status_menu));
     }
   else
     priv->status_menu = NULL;
@@ -949,8 +948,10 @@ void hd_render_manager_return_windows()
               MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
           if (actor)
             {
+              ClutterActor *parent = clutter_actor_get_parent(actor);
               /* else we put it back into the arena */
-              if (clutter_actor_get_parent(actor) != desktop)
+              if (parent == CLUTTER_ACTOR(priv->app_top) ||
+                  parent == CLUTTER_ACTOR(priv->home_blur))
                 clutter_actor_reparent(actor, desktop);
             }
         }
