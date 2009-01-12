@@ -1,8 +1,9 @@
-hildon-desktop (1:2.2.14-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.14-1) unstable; urgency=low
 
   * Added theme-config to dependencies. Fixes: NB#97453, NB#95524
+  * Adam's fix for the FKB issue. Fixes: NB#97083
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  8 Jan 2009 17:29:03 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 12 Jan 2009 17:19:28 +0200
 
 hildon-desktop (1:2.2.13-1) unstable; urgency=low
 
