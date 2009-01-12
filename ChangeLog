@@ -1,3 +1,12 @@
+2009-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#97083
+
+	* src/mb/hd-comp-mgr.c: hd_comp_mgr_restack():
+	  Determine and set _MB_CURRENT_APP_WINDOW every time we're
+	  restacking windows.  The current_app() logic is meant to be
+	  temporary until we understand better what "applications" are.
+
 2009-01-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-transition.c:
@@ -12,7 +21,7 @@
 	  in the blur group, instead of reparenting them to the arena
 	  and let them disappear forever when we go to tasw/talu mode.
 
-2009-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2008-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c:
 	  When a new window is mapped don't activate the desktop even if
