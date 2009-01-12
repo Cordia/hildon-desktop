@@ -1,11 +1,18 @@
-2008-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-01-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-transition.c:
+	  Make popup animation vary the anchor point to allow us to
+	  continue animation even when the window changes size halfway
+	  through.
+
+2009-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-render-manager.c:
 	  Recognize home applet actors and leave them wherever they are,
 	  in the blur group, instead of reparenting them to the arena
 	  and let them disappear forever when we go to tasw/talu mode.
 
-2008-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c:
 	  When a new window is mapped don't activate the desktop even if
@@ -19,7 +26,7 @@
 	This also prevents the last application to be shown in home view
 	state when some application maps a new dialog.
 
-2008-01-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-01-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#96936
 
@@ -28,7 +35,7 @@
 	  when we're about to enter the switcher without transition.
 	  Make sure they are transparent otherwise.
 
-2008-01-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-01-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#95641
 
@@ -37,7 +44,7 @@
 	  in case of HdNoteTypeIncomingEvent:s.  matchbox is in the belief
 	  that the first client of its type wants to stack itself higher.
 
-2008-01-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-01-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c
 	* src/launcher/hd-launcher.c

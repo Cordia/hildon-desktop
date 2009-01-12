@@ -128,9 +128,11 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
     }
   status_pos = status_low*(1-overshoot) + status_high*overshoot;
 
-  clutter_actor_set_positionu(actor,
+  /*clutter_actor_set_positionu(actor,
                              CLUTTER_INT_TO_FIXED(data->geo.x),
-                             CLUTTER_FLOAT_TO_FIXED(status_pos));
+                             CLUTTER_FLOAT_TO_FIXED(status_pos));*/
+  clutter_actor_set_anchor_pointu(actor, 0,
+      CLUTTER_INT_TO_FIXED(data->geo.y) - CLUTTER_FLOAT_TO_FIXED(status_pos));
   clutter_actor_set_opacity(actor, (int)(255*amt));
 
   /* use a slither of filler to fill in the gap where the menu
@@ -278,8 +280,6 @@ hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
   for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
     if (data->particles[i])
       clutter_actor_destroy(data->particles[i]);
-
-  hd_comp_mgr_sync_stacking (hmgr);
 
   g_free (data);
 };
