@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.15-1~unreleased) unstable; urgency=low
+
+  * unreleased
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 12 Jan 2009 17:32:58 +0200
+
 hildon-desktop (1:2.2.14-1) unstable; urgency=low
 
   * Added theme-config to dependencies. Fixes: NB#97453, NB#95524
