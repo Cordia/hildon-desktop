@@ -73,8 +73,8 @@
  * blurring anyway) */
 #define BLUR_FOR_WINDOW(c) ((!(c)->window || \
               !(g_str_equal((c)->window->name, "SystemUI root window"))) && \
-              !(c->frame_geometry.x==0 && c->frame_geometry.y==0 && \
-                c->frame_geometry.width==800 && c->frame_geometry.height==480))
+              !(c->frame_geometry.x==0 && c->frame_geometry.y<=56 && \
+                c->frame_geometry.width==800 && c->frame_geometry.height>=424))
 
 static gchar * hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid);
 
@@ -1059,8 +1059,9 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
           c_type == HdWmClientTypeAppMenu ||
           c_type == MBWMClientTypeMenu)
         {
-          if (BLUR_FOR_WINDOW(c))
-            hd_render_manager_set_blur_app(TRUE);
+          /* We have to be ready to set to no blur as we may get
+           * the VKB on top of a dialog that already added blurring. */
+          hd_render_manager_set_blur_app(BLUR_FOR_WINDOW(c));
         }
 
       if (c_type == HdWmClientTypeStatusMenu)

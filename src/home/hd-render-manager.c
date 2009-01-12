@@ -1056,8 +1056,6 @@ void hd_render_manager_restack()
               }
           }
       }
-
-    //hd_render_manager_set_blur_app(have_foreground);
   }
 
   /* And for speed of rendering, work out what is visible and what

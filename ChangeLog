@@ -1,4 +1,10 @@
 2009-01-12  Gordon Williams <gordon.williams@collabora.co.uk>
+	* src/home/hd-render-manager.c:
+	  remove unneeded commented lines
+	* src/mb/hd-comp-mgr.c:
+	  fixed possible VKB issues
+
+2009-01-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.h
 	* src/home/hd-switcher.c:	
