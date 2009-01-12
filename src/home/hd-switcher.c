@@ -498,6 +498,8 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
 
   priv->in_transition = FALSE;
   hd_render_manager_set_state(HDRM_STATE_APP);
+  /* Stop any transition to app mode we may have had */
+  hd_render_manager_stop_transition();
 
   if (!hd_comp_mgr_client_is_hibernating (hclient))
     {

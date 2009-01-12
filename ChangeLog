@@ -1,3 +1,20 @@
+2009-01-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.h
+	* src/home/hd-switcher.c:	
+	  Now stop blur transitions as soon as app is zoomed right in.
+	* src/home/hd-render-manager.c:
+	  Method to stop transitions early. 'front' now visible even for
+          fullscreen apps (for notifications in FS mode - eg. 'Max zoom 
+          reached'). Removed code that restacked the current focussed app,
+	  and now use matchbox order, pulling non-fullscreen dialogs out
+	  of the blur box.
+	* src/mb/hd-comp-mgr.c:
+	  Now return windows before stacking so they can be stacked properly,
+	  and don't blur background for fullscreen dialogs (VKB) as hdrm will 
+	  leave any fullscreen window in the blurbox.
+	* src/home/hd-task-navigator.c: spelling in comment.
+
 2009-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#97083

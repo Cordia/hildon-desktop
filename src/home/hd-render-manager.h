@@ -153,6 +153,9 @@ void hd_render_manager_set_reactive(gboolean reactive);
  * multiple redraws (which flickers and takes ages) */
 void hd_render_manager_queue_delay_redraw(void);
 
+/* This stops any current transition that render manager is doing */
+void hd_render_manager_stop_transition(void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */

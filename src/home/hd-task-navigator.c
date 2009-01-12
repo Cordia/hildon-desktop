@@ -1520,7 +1520,7 @@ zoom_in_complete (ClutterActor * navigator, ClutterActor * apwin)
 {
   const Thumbnail *thumb;
 
-  /* To minimuze confusion the navigator hides all application windows it
+  /* To minimize confusion the navigator hides all application windows it
    * knows about when it starts hiding.  Undo it for the one we have zoomed
    * inte, because it is expected to be shown. */
   clutter_actor_hide (navigator);

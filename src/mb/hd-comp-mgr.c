@@ -67,9 +67,14 @@
 #define LOWMEM_LAUNCH_THRESHOLD_DISTANCE 2500
 
 /* We need this because these things pop up on startup and then don't go away,
- * leaving us with a needlessly blurred background */
-#define BLUR_FOR_WINDOW(c) (!(c)->window || \
-              !(g_str_equal((c)->window->name, "SystemUI root window")))
+ * leaving us with a needlessly blurred background. We don't blur for
+ * fullscreen dialogs either because hdrm will put anything fullscreen
+ * into the blur box (and we don't want to waste cycles needlessly
+ * blurring anyway) */
+#define BLUR_FOR_WINDOW(c) ((!(c)->window || \
+              !(g_str_equal((c)->window->name, "SystemUI root window"))) && \
+              !(c->frame_geometry.x==0 && c->frame_geometry.y==0 && \
+                c->frame_geometry.width==800 && c->frame_geometry.height==480))
 
 static gchar * hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid);
 
@@ -1146,6 +1151,8 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
     }
   else
     {
+      hd_render_manager_return_windows();
+
       if (parent_klass->restack)
 	parent_klass->restack (mgr);
 
@@ -1201,6 +1208,8 @@ hd_comp_mgr_sync_stacking (HdCompMgr * hmgr)
       if (!priv->unmap_effect_running)
         {
           priv->stack_sync = FALSE;
+          g_debug("%s: Called, no effects running - restacking",
+                          __FUNCTION__);
           hd_comp_mgr_restack (MB_WM_COMP_MGR (hmgr));
         }
       else

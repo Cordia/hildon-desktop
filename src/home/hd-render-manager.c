@@ -67,6 +67,7 @@ typedef enum
 
 #define HDRM_WIDTH 800
 #define HDRM_HEIGHT 480
+#define HDRM_MARGIN 56 /* this is used for finding fullscreen apps */
 
 enum
 {
@@ -330,7 +331,7 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
 
   priv = the_render_manager->priv;
 
-  amt = (float)clutter_timeline_get_progress(timeline);
+  amt = frame_num / (float)clutter_timeline_get_n_frames(timeline);
 
   priv->home_blur_cur = priv->home_blur_a*(1-amt) +
                         priv->home_blur_b*amt;
@@ -366,7 +367,6 @@ on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
   hd_comp_mgr_set_effect_running(priv->comp_mgr, FALSE);
-  hd_comp_mgr_sync_stacking(priv->comp_mgr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -403,7 +403,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   if (clutter_timeline_is_playing(priv->timeline_blur))
     {
       clutter_timeline_stop(priv->timeline_blur);
-      on_timeline_blur_completed(priv->timeline_blur, NULL);
+      on_timeline_blur_completed(priv->timeline_blur, the_render_manager);
     }
 
   priv->current_blur = blur;
@@ -488,7 +488,6 @@ void hd_render_manager_set_order ()
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
-        clutter_actor_show(CLUTTER_ACTOR(priv->front));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         hd_home_update_layout (priv->home);
         break;
@@ -497,7 +496,6 @@ void hd_render_manager_set_order ()
         visible_top_right = HDRM_BUTTON_HOME_BACK;
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
-        clutter_actor_show(CLUTTER_ACTOR(priv->front));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         hd_home_update_layout (priv->home);
         break;
@@ -506,7 +504,6 @@ void hd_render_manager_set_order ()
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_show(CLUTTER_ACTOR(priv->launcher));
-        clutter_actor_show(CLUTTER_ACTOR(priv->front));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         break;
       case HDRM_STATE_APP_FULLSCREEN:
@@ -514,7 +511,6 @@ void hd_render_manager_set_order ()
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
-        clutter_actor_hide(CLUTTER_ACTOR(priv->front));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         break;
       case HDRM_STATE_TASK_NAV:
@@ -522,7 +518,6 @@ void hd_render_manager_set_order ()
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_blur));
-        clutter_actor_show(CLUTTER_ACTOR(priv->front));
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->task_nav_blur));
         hd_render_manager_set_blur(HDRM_BLUR_HOME | HDRM_ZOOM_HOME);
         break;
@@ -532,7 +527,6 @@ void hd_render_manager_set_order ()
 
         clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_show(CLUTTER_ACTOR(priv->launcher));
-        clutter_actor_show(CLUTTER_ACTOR(priv->front));
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(
@@ -543,6 +537,7 @@ void hd_render_manager_set_order ()
 
   clutter_actor_show(CLUTTER_ACTOR(priv->home_blur));
   clutter_actor_show(CLUTTER_ACTOR(priv->app_top));
+  clutter_actor_show(CLUTTER_ACTOR(priv->front));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->app_top));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->front));
 
@@ -620,6 +615,20 @@ void hd_render_manager_set_order ()
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    PUBLIC   */
 /* ------------------------------------------------------------------------- */
+
+void hd_render_manager_stop_transition()
+{
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  if (clutter_timeline_is_playing(priv->timeline_blur))
+    {
+      guint frames;
+      clutter_timeline_stop(priv->timeline_blur);
+      frames = clutter_timeline_get_n_frames(priv->timeline_blur);
+      on_timeline_blur_new_frame(priv->timeline_blur, frames, the_render_manager);
+      on_timeline_blur_completed(priv->timeline_blur, the_render_manager);
+    }
+}
 
 void hd_render_manager_add_to_front_group (ClutterActor *item)
 {
@@ -1001,24 +1010,55 @@ void hd_render_manager_restack()
         }
     }
 
-  /* grab whatever is focused and bring it right to the front */
-  /* FIXME: why is this? Surely libmatchbox has already raised the focused
-   * client? Could this lead to different stacking here than in libmatchbox? */
-  if (wm->focused_client && wm->focused_client->cm_client)
-    {
-      ClutterActor              *actor;
-      MBWMCompMgrClutterClient  *cclient =
-          MB_WM_COMP_MGR_CLUTTER_CLIENT(wm->focused_client->cm_client);
+  /* Now start at the top and put actors in the non-blurred group
+   * until we find one that fills the screen. If we didn't find
+   * any that filled the screen then add the window that does. */
+  {
+    gint i, n_elements;
+    gboolean have_foreground = FALSE;
 
-      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-      if (actor)
-        {
-          ClutterActor              *parent;
-          parent = clutter_actor_get_parent(actor);
-          if (parent == CLUTTER_ACTOR(priv->home_blur))
-            clutter_actor_reparent(actor, CLUTTER_ACTOR(priv->app_top));
-        }
-    }
+    n_elements = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
+    for (i=n_elements-1;i>=0;i--)
+      {
+        ClutterActor *child =
+          clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
+
+        ClutterGeometry geo;
+        gboolean fullscreen;
+
+        if (child != CLUTTER_ACTOR(priv->home))
+          {
+            clutter_actor_get_geometry(child, &geo);
+
+            fullscreen = geo.x==0 && geo.y<=HDRM_MARGIN &&
+                geo.width==HDRM_WIDTH && geo.height>=HDRM_HEIGHT-HDRM_MARGIN;
+
+            if (!fullscreen)
+              {
+                clutter_actor_reparent(child, CLUTTER_ACTOR(priv->app_top));
+                clutter_actor_lower_bottom(child);
+                clutter_actor_show(child); /* because it is in app-top, vis
+                                              check does not get applied */
+                have_foreground = TRUE;
+              }
+            else
+              {
+                /* if it is fullscreen and there was nothing in front,
+                 * add it to our front list */
+                if (!have_foreground)
+                  {
+                    clutter_actor_reparent(child, CLUTTER_ACTOR(priv->app_top));
+                    clutter_actor_lower_bottom(child);
+                    clutter_actor_show(child); /* because it is in app-top, vis
+                                                  check does not get applied */
+                  }
+                break;
+              }
+          }
+      }
+
+    //hd_render_manager_set_blur_app(have_foreground);
+  }
 
   /* And for speed of rendering, work out what is visible and what
    * isn't, and hide anything that would be rendered over by another app */
@@ -1186,3 +1226,4 @@ void hd_render_manager_queue_delay_redraw()
       the_render_manager->priv->queued_redraw = TRUE;
     }
 }
+
