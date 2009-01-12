@@ -1,5 +1,12 @@
 2008-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-render-manager.c:
+	  Recognize home applet actors and leave them wherever they are,
+	  in the blur group, instead of reparenting them to the arena
+	  and let them disappear forever when we go to tasw/talu mode.
+
+2008-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/mb/hd-comp-mgr.c:
 	  When a new window is mapped don't activate the desktop even if
 	  the current state NEED_DESKTOP(), as client activation causes

@@ -37,6 +37,7 @@
 #include "hd-launcher.h"
 #include "hd-task-navigator.h"
 #include "hd-transition.h"
+#include "hd-wm.h"
 
 #include <matchbox/core/mb-wm.h>
 
@@ -929,7 +930,8 @@ void hd_render_manager_return_windows()
   /* Order and choose which window actors will be visible */
   while (c)
     {
-      if (c->cm_client && c->desktop >= 0)
+      if (!(MB_WM_CLIENT_CLIENT_TYPE (c) & HdWmClientTypeHomeApplet)
+          && c->cm_client && c->desktop >= 0)
         {
           ClutterActor *actor;
           ClutterActor *desktop = mb_wm_comp_mgr_clutter_get_nth_desktop(
