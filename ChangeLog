@@ -1,4 +1,5 @@
 2009-01-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-render-manager.c:
 	  remove unneeded commented lines
 	* src/mb/hd-comp-mgr.c:
@@ -11,8 +12,8 @@
 	  Now stop blur transitions as soon as app is zoomed right in.
 	* src/home/hd-render-manager.c:
 	  Method to stop transitions early. 'front' now visible even for
-          fullscreen apps (for notifications in FS mode - eg. 'Max zoom 
-          reached'). Removed code that restacked the current focussed app,
+	  fullscreen apps (for notifications in FS mode - eg. 'Max zoom 
+	  reached'). Removed code that restacked the current focused app,
 	  and now use matchbox order, pulling non-fullscreen dialogs out
 	  of the blur box.
 	* src/mb/hd-comp-mgr.c:
