@@ -24,6 +24,7 @@
 #include "hd-desktop.h"
 #include "hd-comp-mgr.h"
 #include "hd-home-applet.h"
+#include "hd-render-manager.h"
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
 #include <gconf/gconf-client.h>
@@ -153,10 +154,16 @@ hd_desktop_request_geometry (MBWindowManagerClient *client,
 static MBWMStackLayerType
 hd_desktop_stacking_layer (MBWindowManagerClient *client)
 {
-  if (client->wmref->flags & MBWindowManagerFlagDesktop)
-    return MBWMStackLayerMid;
-
-  return MBWMStackLayerBottom;
+  if (STATE_NEED_DESKTOP(hd_render_manager_get_state()))
+    {
+      client->wmref->flags |= MBWindowManagerFlagDesktop;
+      return MBWMStackLayerMid;
+    }
+  else
+    {
+      client->wmref->flags &= ~MBWindowManagerFlagDesktop;
+      return MBWMStackLayerBottom;
+    }
 }
 
 static void

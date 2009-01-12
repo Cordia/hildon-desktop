@@ -766,14 +766,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (priv->home)
     hd_home_hide_edit_button (HD_HOME (priv->home));
 
-  /* For some reason adding an applet sets focus back to
-   * the top application, so we need put the desktop back
-   * in the correct order. */
-  if (STATE_NEED_DESKTOP(hd_render_manager_get_state()))
-    {
-      mb_wm_handle_show_desktop(mgr->wm, TRUE);
-    }
-
   /*
    * If the actor is an appliation, add it also to the switcher
    * If it is Home applet, add it to the home

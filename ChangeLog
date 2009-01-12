@@ -1,3 +1,17 @@
+2008-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c:
+	  When a new window is mapped don't activate the desktop even if
+	  the current state NEED_DESKTOP(), as client activation causes
+	  setting the _MB_WM_CURRENT_APP_WINDOW, which causes trouble
+	  with FKB.
+	* src/mb/hd-desktop.c:
+	  Make the desktop's stacking and the MBWindowManagerFlagDesktop
+	  dependant on the current state.
+
+	This also prevents the last application to be shown in home view
+	state when some application maps a new dialog.
+
 2008-01-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#96936
