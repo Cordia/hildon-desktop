@@ -1,6 +1,6 @@
-hildon-desktop (1:2.2.16-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.16-1) unstable; urgency=low
 
-  * unreleased
+  * Gordon's fix for not hiding Tasks button in Task Switcher view.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 13 Jan 2009 15:57:55 +0200
 
