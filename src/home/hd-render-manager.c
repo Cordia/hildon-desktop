@@ -456,7 +456,8 @@ hd_render_manager_set_input_viewport()
         {
           ClutterActor *button;
 	  button = hd_render_manager_get_button((HDRMButtonEnum)i);
-          if (CLUTTER_ACTOR_IS_VISIBLE(button))
+          if (CLUTTER_ACTOR_IS_VISIBLE(button) &&
+              CLUTTER_ACTOR_IS_VISIBLE(clutter_actor_get_parent(button)))
             {
               clutter_actor_get_geometry (button, &geom[geom_count]);
               geom_count++;
@@ -1282,6 +1283,7 @@ void hd_render_manager_set_visibilities()
                         clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
                       else
                         clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
+                      hd_render_manager_set_input_viewport();
                       break;
                     }
                 }

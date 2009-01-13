@@ -1,6 +1,12 @@
 2009-01-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c:
+	  Fixed problem where while buttons weren't visible in FKB, they
+	  could still be pressed
+
+2009-01-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c:
 	  Fixed status area + button problem over FKB by looking for
 	  fullscreen flag on windows above the status area window
 
