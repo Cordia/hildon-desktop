@@ -81,18 +81,19 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *
  * HDRM ---> home_blur         ---> home
  *       |                      --> apps (not app_top)
+ *       |                      --> blurred_front ---> button_task_nav
+ *       |                                         --> button_launcher
+ *       |                                         --> button_menu
+ *       |                                         --> status_area
  *       |
  *       --> task_nav_blur     ---> task_nav
  *       |
  *       --> launcher
  *       |
- *       --> app_top
+ *       --> app_top           ---> dialogs
  *       |
- *       --> front             ---> button_task_nav
- *                              --> button_launcher
- *                              --> button_menu
- *                              --> status_menu
- *                              --> status_area
+ *       --> front             ---> status_menu
+ *
  */
 
 struct _HdRenderManagerPrivate {
@@ -102,6 +103,7 @@ struct _HdRenderManagerPrivate {
   TidyBlurGroup *task_nav_blur;
   ClutterGroup  *app_top;
   ClutterGroup  *front;
+  ClutterGroup  *blur_front;
 
   /* external */
   HdCompMgr            *comp_mgr;
@@ -181,13 +183,13 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
                               CLUTTER_ACTOR(priv->home));
   priv->button_home_back = g_object_ref(hd_home_get_back_button(priv->home));
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->front),
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               priv->button_home_back);
   priv->button_edit = g_object_ref(hd_home_get_edit_button(priv->home));
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->front),
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               priv->button_edit);
   priv->operator = g_object_ref(hd_home_get_operator(priv->home));
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->front),
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               priv->operator);
 
   priv->task_nav = g_object_ref(task_nav);
@@ -276,6 +278,15 @@ hd_render_manager_init (HdRenderManager *self)
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->front), FALSE);
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->front));
+
+  priv->blur_front = CLUTTER_GROUP(clutter_group_new());
+  clutter_actor_set_name(CLUTTER_ACTOR(priv->blur_front),
+                         "HdRenderManager:blur_front");
+  clutter_actor_set_size(CLUTTER_ACTOR(priv->blur_front),
+                             HDRM_WIDTH, HDRM_HEIGHT);
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->blur_front), FALSE);
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
+                              CLUTTER_ACTOR(priv->blur_front));
 
   priv->home_blur_cur = priv->home_blur_a = priv->home_blur_b = 0;
   priv->task_nav_blur_cur = priv->task_nav_blur_a = priv->task_nav_blur_b = 0;
@@ -538,6 +549,7 @@ void hd_render_manager_set_order ()
 
   clutter_actor_show(CLUTTER_ACTOR(priv->home_blur));
   clutter_actor_show(CLUTTER_ACTOR(priv->app_top));
+  clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
   clutter_actor_show(CLUTTER_ACTOR(priv->front));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->app_top));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->front));
@@ -646,7 +658,7 @@ void hd_render_manager_set_status_area (ClutterActor *item)
   if (item)
     {
       priv->status_area = g_object_ref(item);
-      clutter_actor_reparent(priv->status_area, CLUTTER_ACTOR(priv->front));
+      clutter_actor_reparent(priv->status_area, CLUTTER_ACTOR(priv->blur_front));
     }
   else
     priv->status_area = NULL;
@@ -719,9 +731,9 @@ void hd_render_manager_set_button (HDRMButtonEnum btn,
 	g_assert(FALSE);
     }
   if (clutter_actor_get_parent(CLUTTER_ACTOR(item)))
-    clutter_actor_reparent(CLUTTER_ACTOR(item), CLUTTER_ACTOR(priv->front));
+    clutter_actor_reparent(CLUTTER_ACTOR(item), CLUTTER_ACTOR(priv->blur_front));
   else
-    clutter_container_add_actor(CLUTTER_CONTAINER(priv->front),
+    clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                                 CLUTTER_ACTOR(item));
 }
 
@@ -1026,7 +1038,8 @@ void hd_render_manager_restack()
           clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
 
 
-        if (child != CLUTTER_ACTOR(priv->home))
+        if (child != CLUTTER_ACTOR(priv->home) &&
+            child != CLUTTER_ACTOR(priv->blur_front))
           {
             ClutterGeometry geo;
 
@@ -1055,6 +1068,10 @@ void hd_render_manager_restack()
           }
       }
   }
+
+  /* And raise the blur_front to the top of the home_blur group so
+   * we still see everything */
+  clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
 
   /* And for speed of rendering, work out what is visible and what
    * isn't, and hide anything that would be rendered over by another app */
@@ -1191,15 +1208,18 @@ void hd_render_manager_set_visibilities()
     {
       ClutterActor *child =
         clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
-      ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
-      clutter_actor_get_geometry(child, geo);
-      /*TEST clutter_actor_set_opacity(child, 63);*/
-      if (hd_render_manager_is_visible(blockers, *geo))
-        clutter_actor_show(child);
-      else
-        clutter_actor_hide(child);
-      /* Add the geometry to our list of blockers and go to next... */
-      blockers = g_list_append(blockers, geo);
+      if (child != CLUTTER_ACTOR(priv->blur_front))
+        {
+          ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
+          clutter_actor_get_geometry(child, geo);
+          /*TEST clutter_actor_set_opacity(child, 63);*/
+          if (hd_render_manager_is_visible(blockers, *geo))
+            clutter_actor_show(child);
+          else
+            clutter_actor_hide(child);
+          /* Add the geometry to our list of blockers and go to next... */
+          blockers = g_list_append(blockers, geo);
+        }
     }
 
   /* now free blockers */

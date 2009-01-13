@@ -339,10 +339,8 @@ static ClutterActor *
 hd_switcher_top_left_button_new (const char *icon_name)
 {
   ClutterActor	  *top_left_button;
-  ClutterActor    *top_left_button_bg;
   ClutterActor    *top_left_button_icon;
   ClutterActor    *top_left_button_highlight;
-  ClutterColor     clr = {0x0, 0x0, 0x0, 0xff};
   ClutterGeometry  geom;
   GtkIconTheme	  *icon_theme;
   GError	  *error = NULL;
@@ -352,18 +350,22 @@ hd_switcher_top_left_button_new (const char *icon_name)
   top_left_button = clutter_group_new ();
   clutter_actor_set_name (top_left_button, icon_name);
 
-  top_left_button_bg = clutter_rectangle_new_with_color (&clr);
-
-  /* FIXME - This is a bit yukky, but to allow the button to appear
-   * rounded, the background is smaller than the size of the button
-   * so that the corner does not poke out of the rounded highlight
-   * texture. It assumes that the hightlight texture has full opacity
-   * along the bottom and right edges. */
-  clutter_actor_set_size (top_left_button_bg,
-			  TOP_LEFT_BUTTON_WIDTH - 1,
-			  TOP_LEFT_BUTTON_HEIGHT - 1);
-  clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
-			       top_left_button_bg);
+  top_left_button_highlight =
+      clutter_texture_new_from_file (
+        g_build_filename (HD_DATADIR, TOP_LEFT_BUTTON_HIGHLIGHT_TEXTURE, NULL),
+        &error);
+  if (error)
+    {
+      g_debug (error->message);
+      g_error_free (error);
+    }
+  else
+    {
+      clutter_actor_set_size (top_left_button_highlight,
+                              TOP_LEFT_BUTTON_WIDTH, TOP_LEFT_BUTTON_HEIGHT);
+      clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
+                                   top_left_button_highlight);
+    }
 
   top_left_button_icon =
     hd_gtk_icon_theme_load_icon (icon_theme, icon_name, 48, 0);
@@ -374,22 +376,7 @@ hd_switcher_top_left_button_new (const char *icon_name)
   clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
 			       top_left_button_icon);
 
-  top_left_button_highlight =
-    clutter_texture_new_from_file (
-      g_build_filename (HD_DATADIR, TOP_LEFT_BUTTON_HIGHLIGHT_TEXTURE, NULL),
-      &error);
-  if (error)
-    {
-      g_debug (error->message);
-      g_error_free (error);
-    }
-  else
-    {
-      clutter_actor_set_size (top_left_button_highlight,
-			      TOP_LEFT_BUTTON_WIDTH, TOP_LEFT_BUTTON_HEIGHT);
-      clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
-				   top_left_button_highlight);
-    }
+
 
   return top_left_button;
 }

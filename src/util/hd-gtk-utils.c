@@ -35,6 +35,8 @@ hd_gtk_icon_theme_load_icon (GtkIconTheme         *icon_theme,
   if (tmp_error != NULL)
     goto error;
 
+  /* FIXME: This creates a 24/32 bit colour image - NOT a 16 bit image.
+   * We need a new set_from_rgb_data in clutter like set_from_file_f */
   texture = clutter_texture_new();
   clutter_texture_set_from_rgb_data (
       CLUTTER_TEXTURE (texture),

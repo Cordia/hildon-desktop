@@ -1,3 +1,15 @@
+2009-01-13  Gordon Williams <gordon.williams@collabora.co.uk>
+	* src/home/hd-switcher.c
+	* data/launcher-button-highlight.png:
+	  Changed highlight method so we don't use transparancy and can get
+	  out full colour depth (bug 97591)
+	* src/util/hd-gtk-utils.c:
+	  Added fixme for a place where 32 bit textures are still created.
+	* src/home/hd-render-manager.c:
+	  Made status area and buttons be blurred when background is blurred,
+          by adding the blur_front group, which stayus in home_blur, but is
+          in front of apps.
+
 2009-01-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Further CURRENT_APP_WINDOW cleanups.
