@@ -549,7 +549,6 @@ void hd_render_manager_set_order ()
 
   clutter_actor_show(CLUTTER_ACTOR(priv->home_blur));
   clutter_actor_show(CLUTTER_ACTOR(priv->app_top));
-  clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
   clutter_actor_show(CLUTTER_ACTOR(priv->front));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->app_top));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->front));
@@ -1245,13 +1244,15 @@ void hd_render_manager_set_visibilities()
     }
   g_list_free(blockers);
   blockers = 0;
+
   /* now we have to find the status area, and see if it has something that
    * blocks it in front of it. If it does, make it (and any fake actor at
-   * its level) invisible.  */
-  if (FALSE/*priv->status_area*/)
+   * its level - blur_front level) invisible.  */
+  if (priv->status_area)
     {
       MBWindowManager *wm;
       MBWindowManagerClient *c;
+      gboolean fullscreen_before = FALSE;
 
       wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
 
@@ -1265,41 +1266,30 @@ void hd_render_manager_set_visibilities()
                   MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
               if (actor)
                 {
-                  ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
-                  clutter_actor_get_geometry(actor, geo);
                   if (actor != priv->status_area)
                     {
-                      /* if it's not status area, just add it to our
-                       * block list */
-                      blockers = g_list_append(blockers, geo);
+                      if (c->window)
+                        fullscreen_before |=
+                                    c->window->ewmh_state &
+                                    MBWMClientWindowEWMHStateFullscreen;
                     }
                   else
                     {
-                      /* if it is the status area, then see if it is visible
-                       * or not and show/hide the entire FRONT group
-                       * accordingy */
-                      if (hd_render_manager_is_visible(blockers, *geo))
-                        {
-                          clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
-                        }
+                      /* if it is the status area, then show/hide the entire
+                       * BLUR FRONT group depending on if it is covered
+                       * by a fullscreen window */
+                      if (!fullscreen_before)
+                        clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
                       else
-                        {
-                          clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
-                        }
+                        clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
                       break;
                     }
                 }
             }
         }
-      /* now free blockers */
-      it = g_list_first(blockers);
-      while (it)
-        {
-          g_free(it->data);
-          it = it->next;
-        }
-      g_list_free(blockers);
     }
+  else /* we have no window to check visibility with, so render anyway */
+    clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
 }
 
 void hd_render_manager_queue_delay_redraw()
