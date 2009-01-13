@@ -682,11 +682,10 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
   if (parent && !CLUTTER_ACTOR_IS_VISIBLE(parent))
     return;
 
-  /* We DON'T do this if we're in the task switcher, because it
-   * breaks all the scaling + has a scroller that's a nightmare
-   * to deal with. Also skip if we're in some transition -
+  /* Check we're not in a mode where it's a bad idea.
+   * Also skip if we're in some transition -
    * instead just update normally */
-  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV ||
+  if (!STATE_DO_PARTIAL_REDRAW(hd_render_manager_get_state()) ||
       priv->unmap_effect_running)
   {
     ClutterActor *stage = clutter_stage_get_default();
@@ -1021,7 +1020,6 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
   if (event == MBWMCompMgrClientEventUnmap)
     {
       if (c_type == MBWMClientTypeDialog ||
-          c_type == MBWMClientTypeNote ||
           c_type == HdWmClientTypeStatusMenu ||
           c_type == HdWmClientTypeAppMenu ||
           c_type == MBWMClientTypeMenu
@@ -1054,7 +1052,6 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
       hd_comp_mgr_restack(mgr);
 
       if (c_type == MBWMClientTypeDialog ||
-          c_type == MBWMClientTypeNote ||
           c_type == HdWmClientTypeStatusMenu ||
           c_type == HdWmClientTypeAppMenu ||
           c_type == MBWMClientTypeMenu)

@@ -1,5 +1,16 @@
 2009-01-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/home/hd-render-manager.h
+	* src/mb/hd-comp-mgr.c:
+	  Stopped Notes blurring the background
+	  Stopped update_area when in task launcher (eg. from applets) as it
+	  is hard to update the blur texture properly.
+
+	* src/tidy/tidy-blur-group.c:
+	  Added Pierre-Luc's modified blur shader that compiles under GL
+
+2009-01-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-render-manager.c:
 	  Fixed problem where while buttons weren't visible in FKB, they
 	  could still be pressed

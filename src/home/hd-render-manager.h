@@ -111,8 +111,19 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
                     HDRM_STATE_APP)
 
+/* Are we in a state where we should blur the buttons + status menu?
+ * Task Navigator + launcher zoom out, so are a bad idea. */
 #define STATE_BLUR_BUTTONS(s) \
-  (!STATE_ONE_OF((s), HDRM_STATE_TASK_NAV))
+  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
+
+/* Whether to update part of the screen or not.
+ * HDRM_STATE_TASK_NAV : Apps are scaled, and scroller is a nightmare
+ *                       to deal with.
+ * HDRM_STATE_LAUNCHER : Background is zoomed out, so our coordinates
+ *                       will be wrong. Also might be showing task switcher
+ *                       too! */
+#define STATE_DO_PARTIAL_REDRAW(s) \
+  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
 
 GType hd_render_manager_get_type (void) G_GNUC_CONST;
 

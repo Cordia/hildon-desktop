@@ -19,13 +19,13 @@
 #include <string.h>
 
 /* The OpenGL fragment shader used to do blur and desaturation.
- * We use 3 samples here arranged in a rough triangle*/
-const char *BLUR_FRAGMENT_SHADER =
+ * We use 3 samples here arranged in a rough triangle. We need
+ * 2 versions as GLES and GL use slightly different syntax */
 #if CLUTTER_COGL_HAS_GLES
+const char *BLUR_FRAGMENT_SHADER =
 "precision lowp float;\n"
 "varying lowp vec4      frag_color;\n"
 "varying mediump vec2      tex_coord;\n"
-#endif /* CLUTTER_COGL_HAS_GLES */
 "uniform lowp sampler2D tex;\n"
 "uniform mediump float blur;\n"
 "uniform lowp float saturation;\n"
@@ -33,18 +33,10 @@ const char *BLUR_FRAGMENT_SHADER =
 "  mediump vec2 diffa = vec2(0.0, -0.875 * blur); \n"
 "  mediump vec2 diffb = vec2(0.75*blur, 0.25*blur); \n"
 "  mediump vec2 diffc = vec2(-blur, 0.375*blur); \n"
-#if CLUTTER_COGL_HAS_GL
-"  mediump vec2 tex_coord = vec2(gl_TexCoord[0]); \n"
-#endif
 "  lowp vec4 color =  texture2D (tex, tex_coord+diffa)*0.333 + "
 " texture2D (tex, tex_coord+diffb)*0.333 + "
 "texture2D (tex, tex_coord+diffc)*0.333;\n"
-#if CLUTTER_COGL_HAS_GLES
 "  color = color * frag_color;\n"
-#endif /* CLUTTER_COGL_HAS_GLES */
-#if CLUTTER_COGL_HAS_GL
-"  color = color * gl_Color;\n"
-#endif /* CLUTTER_COGL_HAS_GL */
 // saturation
 "  lowp float lightness = (color.r+color.g+color.b)*0.333*(1.0-saturation); \n"
 "  gl_FragColor = vec4(\n"
@@ -53,6 +45,30 @@ const char *BLUR_FRAGMENT_SHADER =
 "                      color.b*saturation + lightness,\n"
 "                      color.a);\n"
 "}\n";
+#else
+const char *BLUR_FRAGMENT_SHADER =
+"uniform sampler2D tex;\n"
+"uniform float blur;\n"
+"uniform float saturation;\n"
+"void main () {\n"
+"  vec2 diffa = vec2(0.0, -0.875 * blur); \n"
+"  vec2 diffb = vec2(0.75*blur, 0.25*blur); \n"
+"  vec2 diffc = vec2(-blur, 0.375*blur); \n"
+"  vec2 tex_coord = vec2(gl_TexCoord[0]); \n"
+"  vec4 color =  texture2D (tex, tex_coord+diffa)*0.333 + "
+" texture2D (tex, tex_coord+diffb)*0.333 + "
+"texture2D (tex, tex_coord+diffc)*0.333;\n"
+"  color = color * gl_Color;\n"
+// saturation
+"  float lightness = (color.r+color.g+color.b)*0.333*(1.0-saturation); \n"
+"  gl_FragColor = vec4(\n"
+"                      color.r*saturation + lightness,\n"
+"                      color.g*saturation + lightness,\n"
+"                      color.b*saturation + lightness,\n"
+"                      color.a);\n"
+"}\n";
+#endif /* HAS_GLES */
+
 
 
 struct _TidyBlurGroupPrivate
