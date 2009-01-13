@@ -1,6 +1,7 @@
 2009-01-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c:
+	* src/home/hd-render-manager.h:
 	  Beginnings of status area over FKB fix, and fix for blurred launcher
 	  button inside task navigator.
 
