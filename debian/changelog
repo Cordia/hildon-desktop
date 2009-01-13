@@ -1,6 +1,7 @@
-hildon-desktop (1:2.2.15-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.15-1) unstable; urgency=low
 
-  * unreleased
+  * Gordon: fixes for flickering Status Area and Status Menu stacking.
+  * Adam: Further CURRENT_APP_WINDOW cleanups.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 12 Jan 2009 17:32:58 +0200
 
