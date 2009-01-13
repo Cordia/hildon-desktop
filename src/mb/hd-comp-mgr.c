@@ -66,15 +66,15 @@
 #define LOWMEM_PROC_USED       "/proc/sys/vm/lowmem_used_pages"
 #define LOWMEM_LAUNCH_THRESHOLD_DISTANCE 2500
 
-/* We need this because these things pop up on startup and then don't go away,
+/* We need to check whether @c neither is maximized nor is the systemui's
+ * because these things pop up on startup and then don't go away,
  * leaving us with a needlessly blurred background. We don't blur for
  * fullscreen dialogs either because hdrm will put anything fullscreen
  * into the blur box (and we don't want to waste cycles needlessly
  * blurring anyway) */
-#define BLUR_FOR_WINDOW(c) ((!(c)->window || \
-              !(g_str_equal((c)->window->name, "SystemUI root window"))) && \
-              !(c->frame_geometry.x==0 && c->frame_geometry.y<=56 && \
-                c->frame_geometry.width==800 && c->frame_geometry.height>=424))
+#define BLUR_FOR_WINDOW(c) \
+              ((!(c)->window || !g_str_equal((c)->window->name, "SystemUI root window")) \
+               && !HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->frame_geometry))
 
 static gchar * hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid);
 
@@ -1087,38 +1087,6 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
     }
 }
 
-/*
- * Returns the client that should be the _MB_CURRENT_APP_WINDOW,
- * according to window stacking.
- * TODO Update it when we have got smarter in recognizing
- * "applications".
- */
-static MBWindowManagerClient *
-current_app (MBWindowManager *wm)
-{
-  MBWindowManagerClient *c;
-
-  /* Select the topmost client that is either the desktop
-   * or a non-transient %HdApp; select it's leader if that
-   * happens to be in a stackable group. */
-  for (c = wm->stack_top; ; c = c->stacked_below)
-    {
-
-      /* Hmm, the desktop should always be in the stack, shouldn it? */
-      g_return_val_if_fail (c != NULL, wm->desktop);
-
-      if (MB_WM_CLIENT_CLIENT_TYPE (c) & MBWMClientTypeDesktop)
-        return c;
-      if (!HD_IS_APP (c))
-        continue;
-      if (c->transient_for)
-        continue;
-      if (!c->window)
-        continue;
-      return HD_APP (c)->leader ? MB_WM_CLIENT (HD_APP (c)->leader) : c;
-    }
-}
-
 void
 hd_comp_mgr_restack (MBWMCompMgr * mgr)
 {
@@ -1176,21 +1144,8 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
 
       /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed. */
       if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop)
-        {
-          static Window last;
-          MBWindowManagerClient *c;
-
-          c = current_app(mgr->wm);
-          if (c->window->xwindow != last)
-            {
-              last = c->window->xwindow;
-              XChangeProperty(mgr->wm->xdpy, mgr->wm->root_win->xwindow,
-                              mgr->wm->atoms[MBWM_ATOM_MB_CURRENT_APP_WINDOW],
-                              XA_WINDOW, 32, PropModeReplace,
-                              (unsigned char *)&last, 1);
-            }
-
-        }
+        hd_wm_update_current_app_property (mgr->wm,
+                                           hd_wm_get_current_app (mgr->wm)->window->xwindow);
 
         hd_render_manager_restack();
     }

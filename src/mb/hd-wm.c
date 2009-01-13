@@ -261,3 +261,51 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
     return True;
 }
 
+/* Returns the client that should be the _MB_CURRENT_APP_WINDOW,
+ * according to window stacking. */
+MBWindowManagerClient *
+hd_wm_get_current_app (MBWindowManager *wm)
+{
+  MBWindowManagerClient *c;
+
+  /* Select the topmost client that is either the desktop
+   * or a non-transient %HdApp; select it's leader if that
+   * happens to be in a stackable group. */
+  for (c = wm->stack_top; ; c = c->stacked_below)
+    {
+      /* Hmm, the desktop should always be in the stack, shouldn it? */
+      g_return_val_if_fail (c != NULL, wm->desktop);
+
+      if (MB_WM_CLIENT_CLIENT_TYPE (c) & MBWMClientTypeDesktop)
+        return c;
+      if (!HD_IS_APP (c))
+        continue;
+      if (c->transient_for)
+        continue;
+      if (!HD_COMP_MGR_CLIENT_IS_MAXIMIZED (c->frame_geometry))
+        /* Not covering the whole application area. */
+        continue;
+      if (!c->window)
+        continue;
+      if (c->window->name && !g_strncasecmp (c->window->name, "systemui", 8))
+        /* systemui is not an application. */
+        continue;
+      return HD_APP (c)->leader ? MB_WM_CLIENT (HD_APP (c)->leader) : c;
+    }
+}
+
+/* Set _MB_CURRENT_APP_WINDOW to @xid if it's changing. */
+void
+hd_wm_update_current_app_property (MBWindowManager *wm, Window xid)
+{
+  static Window last;
+
+  if (xid == last)
+    return;
+  last = xid;
+  XChangeProperty(wm->xdpy, wm->root_win->xwindow,
+                  wm->atoms[MBWM_ATOM_MB_CURRENT_APP_WINDOW],
+                  XA_WINDOW, 32, PropModeReplace,
+                  (unsigned char *)&xid, 1);
+  g_debug ("CURRENT_APP_WINDOW => 0x%lx", xid);
+}

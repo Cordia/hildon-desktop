@@ -60,8 +60,8 @@
 
 /* Measures (in pixels).  Unless indicated, none of them is tunable. */
 /* Common platform metrics */
-#define SCREEN_WIDTH                    800
-#define SCREEN_HEIGHT                   480
+#define SCREEN_WIDTH                    HD_COMP_MGR_SCREEN_WIDTH
+#define SCREEN_HEIGHT                   HD_COMP_MGR_SCREEN_HEIGHT
 #define MARGIN_DEFAULT                    8
 #define MARGIN_HALF                       4
 #define NORMAL_ICON_SIZE                 32

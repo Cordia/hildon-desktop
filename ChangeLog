@@ -1,3 +1,22 @@
+2009-01-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Further CURRENT_APP_WINDOW cleanups.
+
+	* src/mb/hd-comp-mgr.h:
+	  Introduced some common macros.
+	* src/home/hd-task-navigator.c:
+	  Updated to use them.
+	* src/home/hd-render-manager.c:
+	  Likewise.  Clear the CURRENT_APP_WINDOW property
+	  if entering the tasw or talu.
+	* src/mb/hd-comp-mgr.c:
+	  current_app() => hd_wm_get_current_app()
+	* src/mb/hd-wm.h
+	* src/mb/hd-wm.c:
+	  Added hd_wm_set_current_app_property() to centralize it.
+	  hd_wm_get_current_app() takes the client's geometry into account
+	  and no longer considers systemui-windows.
+
 2009-01-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher.c:

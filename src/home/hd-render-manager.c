@@ -65,9 +65,8 @@ typedef enum
 
 #define HDRM_BLUR_DURATION 250
 
-#define HDRM_WIDTH 800
-#define HDRM_HEIGHT 480
-#define HDRM_MARGIN 56 /* this is used for finding fullscreen apps */
+#define HDRM_WIDTH  HD_COMP_MGR_SCREEN_WIDTH
+#define HDRM_HEIGHT HD_COMP_MGR_SCREEN_HEIGHT
 
 enum
 {
@@ -862,6 +861,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             }
           else /* TODO can @mbclient be NULL at all? */
             hd_task_navigator_enter (priv->task_nav);
+
+          hd_wm_update_current_app_property (wm, 0);
         }
       if (STATE_NEED_TASK_NAV(oldstate) &&
           !STATE_NEED_TASK_NAV(state))
@@ -1024,17 +1025,13 @@ void hd_render_manager_restack()
         ClutterActor *child =
           clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
 
-        ClutterGeometry geo;
-        gboolean fullscreen;
 
         if (child != CLUTTER_ACTOR(priv->home))
           {
+            ClutterGeometry geo;
+
             clutter_actor_get_geometry(child, &geo);
-
-            fullscreen = geo.x==0 && geo.y<=HDRM_MARGIN &&
-                geo.width==HDRM_WIDTH && geo.height>=HDRM_HEIGHT-HDRM_MARGIN;
-
-            if (!fullscreen)
+            if (!HD_COMP_MGR_CLIENT_IS_MAXIMIZED(geo))
               {
                 clutter_actor_reparent(child, CLUTTER_ACTOR(priv->app_top));
                 clutter_actor_lower_bottom(child);

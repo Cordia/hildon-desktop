@@ -58,6 +58,10 @@ struct HdWmClass
 
 int hd_wm_class_type (void);
 
+MBWindowManagerClient * hd_wm_get_current_app (MBWindowManager *wm);
+void                    hd_wm_update_current_app_property (MBWindowManager *wm,
+                                                           Window xid);
+
 G_END_DECLS
 
 #endif /* __HD_WM_H__ */
