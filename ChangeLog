@@ -1,4 +1,11 @@
 2009-01-13  Gordon Williams <gordon.williams@collabora.co.uk>
+	* src/util/hd-gtk-utils.c:
+	  Added flag to force 16 bit textures when loaded from GTK (was 32 
+          bit previously)
+        * debian/control:
+	  Increase version requirement for clutter
+
+2009-01-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.h
 	* src/mb/hd-comp-mgr.c:
