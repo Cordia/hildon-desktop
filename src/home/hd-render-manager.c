@@ -616,6 +616,22 @@ void hd_render_manager_set_order ()
   if (priv->status_menu)
     clutter_actor_raise_top(CLUTTER_ACTOR(priv->status_menu));
 
+  if (STATE_BLUR_BUTTONS(priv->state))
+    {
+      /* raise the blur_front to the top of the home_blur group so
+       * we still see the apps */
+      clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
+                             CLUTTER_ACTOR(priv->home_blur));
+    }
+  else
+    {
+      /* raise the blur_front out of the blur group so we can still
+       * see it unblurred */
+      clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
+                             CLUTTER_ACTOR(priv->front));
+    }
+  clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
+
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport */
   hd_render_manager_set_input_viewport();
@@ -1069,8 +1085,6 @@ void hd_render_manager_restack()
       }
   }
 
-  /* And raise the blur_front to the top of the home_blur group so
-   * we still see everything */
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
 
   /* And for speed of rendering, work out what is visible and what
@@ -1230,6 +1244,62 @@ void hd_render_manager_set_visibilities()
       it = it->next;
     }
   g_list_free(blockers);
+  blockers = 0;
+  /* now we have to find the status area, and see if it has something that
+   * blocks it in front of it. If it does, make it (and any fake actor at
+   * its level) invisible.  */
+  if (FALSE/*priv->status_area*/)
+    {
+      MBWindowManager *wm;
+      MBWindowManagerClient *c;
+
+      wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+
+      /* Order and choose which window actors will be visible */
+      for (c = wm->stack_top; c; c = c->stacked_below)
+        {
+          if (c->cm_client && c->desktop >= 0) /* FIXME: should check against
+                                                  current desktop? */
+            {
+              ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor(
+                  MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
+              if (actor)
+                {
+                  ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
+                  clutter_actor_get_geometry(actor, geo);
+                  if (actor != priv->status_area)
+                    {
+                      /* if it's not status area, just add it to our
+                       * block list */
+                      blockers = g_list_append(blockers, geo);
+                    }
+                  else
+                    {
+                      /* if it is the status area, then see if it is visible
+                       * or not and show/hide the entire FRONT group
+                       * accordingy */
+                      if (hd_render_manager_is_visible(blockers, *geo))
+                        {
+                          clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
+                        }
+                      else
+                        {
+                          clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
+                        }
+                      break;
+                    }
+                }
+            }
+        }
+      /* now free blockers */
+      it = g_list_first(blockers);
+      while (it)
+        {
+          g_free(it->data);
+          it = it->next;
+        }
+      g_list_free(blockers);
+    }
 }
 
 void hd_render_manager_queue_delay_redraw()

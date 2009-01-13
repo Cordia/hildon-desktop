@@ -1,3 +1,9 @@
+2009-01-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c:
+	  Beginnings of status area over FKB fix, and fix for blurred launcher
+	  button inside task navigator.
+
 2009-01-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.15

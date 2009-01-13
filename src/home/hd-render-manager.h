@@ -111,6 +111,9 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
                     HDRM_STATE_APP)
 
+#define STATE_BLUR_BUTTONS(s) \
+  (!STATE_ONE_OF((s), HDRM_STATE_TASK_NAV))
+
 GType hd_render_manager_get_type (void) G_GNUC_CONST;
 
 HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
