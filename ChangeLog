@@ -1,5 +1,12 @@
 2009-01-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-render-manager.c:
+	  Don't leave the app view if the user clicks the place of the tasks
+	  button while a dialog is showing.  The buttons were unreactive but
+	  the current home view reacted and switched the state.
+
+2009-01-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/mb/hd-comp-mgr.c:
 	  Don't leave tasw when a new dialog is mapped, except if it's
 	  system modal.
