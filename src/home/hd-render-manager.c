@@ -40,6 +40,7 @@
 #include "hd-wm.h"
 
 #include <matchbox/core/mb-wm.h>
+#include <matchbox/theme-engines/mb-wm-theme.h>
 
 /* ------------------------------------------------------------------------- */
 
@@ -982,6 +983,7 @@ void hd_render_manager_return_windows()
               if (parent == CLUTTER_ACTOR(priv->app_top) ||
                   parent == CLUTTER_ACTOR(priv->home_blur))
                 clutter_actor_reparent(actor, desktop);
+              g_object_unref(actor);
             }
         }
 
@@ -1036,6 +1038,7 @@ void hd_render_manager_restack()
                       parent == CLUTTER_ACTOR(priv->app_top))
                     clutter_actor_reparent(actor, desktop);
                 }
+              g_object_unref(actor);
             }
         }
     }
@@ -1187,13 +1190,63 @@ hd_render_manager_is_visible(GList *blockers,
 }
 
 static
+MBWindowManagerClient*
+hd_render_manager_get_wm_client_from_actor(ClutterActor *actor)
+{
+  MBWindowManager *wm;
+  MBWindowManagerClient *c;
+
+  wm = MB_WM_COMP_MGR(the_render_manager->priv->comp_mgr)->wm;
+  /* Order and choose which window actors will be visible */
+  for (c = wm->stack_bottom; c; c = c->stacked_above)
+    if (c->cm_client) {
+      ClutterActor *cactor = mb_wm_comp_mgr_clutter_client_get_actor(
+                               MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
+      g_object_unref(cactor);
+      if (actor == cactor)
+        return c;
+    }
+  return 0;
+}
+
+static
+gboolean hd_render_manager_actor_opaque(ClutterActor *actor)
+{
+  MBWindowManager *wm;
+  MBWindowManagerClient *wm_client;
+
+  /* First off, try and find out from the actor if it is opaque or not */
+  if (CLUTTER_IS_GROUP(actor) &&
+      clutter_group_get_n_children(CLUTTER_GROUP(actor))==1)
+    {
+      ClutterActor *texture =
+                        clutter_group_get_nth_child(CLUTTER_GROUP(actor), 0);
+      if (CLUTTER_IS_TEXTURE(texture))
+        {
+          CoglHandle *tex = clutter_texture_get_cogl_texture(
+                              CLUTTER_TEXTURE(texture));
+          if (tex)
+            return (cogl_texture_get_format(tex) & COGL_A_BIT) == 0;
+        }
+    }
+  /* this is ugly and slow, but is hopefully just a fallback... */
+  wm = MB_WM_COMP_MGR(the_render_manager->priv->comp_mgr)->wm;
+  wm_client = hd_render_manager_get_wm_client_from_actor(actor);
+  return wm_client &&
+         !wm_client->is_argb32 &&
+         !mb_wm_theme_is_client_shaped(wm->theme, wm_client);
+}
+
+static
 void hd_render_manager_append_geo_cb(ClutterActor *actor, gpointer data)
 {
   GList **list = (GList**)data;
-  ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
-  clutter_actor_get_geometry(actor, geo);
-  /*TEST clutter_actor_set_opacity(actor, 127);*/
-  *list = g_list_append(*list, geo);
+  if (hd_render_manager_actor_opaque(actor))
+    {
+      ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
+      clutter_actor_get_geometry(actor, geo);
+      *list = g_list_append(*list, geo);
+    }
 }
 
 static
@@ -1237,7 +1290,8 @@ void hd_render_manager_set_visibilities()
           else
             clutter_actor_hide(child);
           /* Add the geometry to our list of blockers and go to next... */
-          blockers = g_list_append(blockers, geo);
+          if (hd_render_manager_actor_opaque(child))
+            blockers = g_list_append(blockers, geo);
         }
     }
 
@@ -1272,6 +1326,7 @@ void hd_render_manager_set_visibilities()
                   MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
               if (actor)
                 {
+                  g_object_unref(actor);
                   if (actor != priv->status_area)
                     {
                       if (c->window)

@@ -103,7 +103,7 @@ static void hd_launcher_application_tile_clicked (HdLauncherTile *tile,
                                                   gpointer data);
 static void hd_launcher_populate_tree_finished (HdLauncherTree *tree,
                                                 gpointer data);
-static void hd_launcher_transition_app_start (HdLauncherApp *item);
+static gboolean hd_launcher_transition_app_start (HdLauncherApp *item);
 static void hd_launcher_transition_new_frame(ClutterTimeline *timeline,
                                              gint frame_num, gpointer data);
 
@@ -638,22 +638,31 @@ hd_launcher_launch (HdLauncherApp *item)
   const gchar *service = hd_launcher_app_get_service (item);
   const gchar *exec;
   ClutterActor *top_page;
-
-  /* do 'fall away' anim for the page*/
-  hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
-        HD_LAUNCHER_PAGE_TRANSITION_LAUNCH);
-  /* also do animation for the topmost pane if we had it... */
-  top_page = g_datalist_get_data (&priv->pages,
-                                   HD_LAUNCHER_ITEM_TOP_CATEGORY);
-  /* if we're not at the top page, we must transition that out too */
-  if (priv->active_page != top_page)
-    {
-      hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
-                HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK);
-    }
+  gboolean launch_anim;
 
   /* do launch animation */
-  hd_launcher_transition_app_start( item );
+  launch_anim = hd_launcher_transition_app_start( item );
+
+  /* The launch animation is pretty quick and it means we don't see our nice
+   * task launcher fade out. The fade out changes blur levels which takes a
+   * lot of time, so don't actually do it unless we're sure the user will
+   * notice it's gone. It's much better to have a smooth launch anim.
+   */
+  if (!launch_anim)
+    {
+      /* do 'fall away' anim for the page*/
+      hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
+            HD_LAUNCHER_PAGE_TRANSITION_LAUNCH);
+      /* also do animation for the topmost pane if we had it... */
+      top_page = g_datalist_get_data (&priv->pages,
+                                       HD_LAUNCHER_ITEM_TOP_CATEGORY);
+      /* if we're not at the top page, we must transition that out too */
+      if (priv->active_page != top_page)
+        {
+          hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
+                    HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK);
+        }
+    }
 
   if (service)
     {
@@ -838,18 +847,22 @@ _hd_launcher_transition_clicked(ClutterActor *actor,
     hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
   else
     hd_render_manager_set_state(HDRM_STATE_HOME);
+  /* we don't want any animation this time as we want it to
+   * be instant. */
+  hd_render_manager_stop_transition();
   /* redraw the stage so it is immediately removed */
   clutter_actor_queue_redraw( clutter_stage_get_default() );
   return TRUE;
 }
 
 /* Does the transition for the application launch */
-static void
+static gboolean
 hd_launcher_transition_app_start (HdLauncherApp *item)
 {
   const gchar *loading_image;
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
+  gboolean launch_anim = FALSE;
 
   loading_image = hd_launcher_app_get_loading_image( item );
   /* We only do this is loading_image is NOT defined. If it is blank
@@ -886,6 +899,8 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
 
           clutter_timeline_rewind(priv->launch_transition);
           clutter_timeline_start(priv->launch_transition);
+
+          launch_anim = TRUE;
         }
       else
         g_debug("%s: Preload image file '%s' specified for '%s'"
@@ -896,6 +911,8 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
     }
 
   hd_transition_play_sound ("/usr/share/sounds/ui-window_open.wav");
+
+  return launch_anim;
 }
 
 /* When a window has been created we want to be sure we've removed our

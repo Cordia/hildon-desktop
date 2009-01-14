@@ -1,3 +1,14 @@
+2009-01-14  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher.c:
+	  Don't do any launcher transition when opening an application if 
+	  we're doing the app opening transition, as no-one will notice
+	  and we make the opening transition quicker.	  
+	* src/home/hd-render-manager.c:
+	  Added some g_object_unrefs that should have existed, and check to
+	  see if a window is definitely opaque before we set things below it
+          to be invisible
+
 2009-01-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-render-manager.c:
