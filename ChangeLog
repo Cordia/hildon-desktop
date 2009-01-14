@@ -1,3 +1,9 @@
+2009-01-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c:
+	  Don't leave tasw when a new dialog is mapped, except if it's
+	  system modal.
+
 2009-01-14  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/mb/Makefile.am: add hd-decor.*

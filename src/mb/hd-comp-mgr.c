@@ -789,7 +789,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                    HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
       && !(ctype == MBWMClientTypeNote
            && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
-      && ctype != HdWmClientTypeHomeApplet)
+      && !(ctype & (MBWMClientTypeDialog | HdWmClientTypeHomeApplet)))
   {
     hd_render_manager_set_state(HDRM_STATE_HOME);
   }
@@ -869,13 +869,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (ctype == MBWMClientTypeDialog)
     {
-      /* if this is a dialog and we're in a state that needed grab,
-       * go back to home as the dialog will need the grab. */
-      if (STATE_NEED_GRAB(hd_render_manager_get_state()))
-        hd_render_manager_set_state(HDRM_STATE_HOME);
-
       if (c->transient_for)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
+      else if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV)
+        hd_render_manager_set_state(HDRM_STATE_HOME);
       return;
     }
   else if (c->window->net_type == c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
