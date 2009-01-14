@@ -1,4 +1,13 @@
+2009-01-14  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/mb/Makefile.am: add hd-decor.*
+	* src/mb/hd-decor.[ch]: subclass of MBWMDecor which knows about progress
+          indicators
+	* src/mb/hd-theme.c: make progress indicator per decor rather than
+          global
+
 2009-01-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/util/hd-gtk-utils.c:
 	  Added flag to force 16 bit textures when loaded from GTK (was 32 
           bit previously)

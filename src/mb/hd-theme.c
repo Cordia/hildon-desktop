@@ -24,6 +24,7 @@
 #include "hd-theme.h"
 #include "hd-comp-mgr.h"
 #include "hd-app.h"
+#include "hd-decor.h"
 
 #include <matchbox/theme-engines/mb-wm-theme-png.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -340,7 +341,7 @@ hd_theme_create_decor (MBWMTheme             *theme,
 
       if (d)
 	{
-	  decor = mb_wm_decor_new (wm, type);
+	  decor = MB_WM_DECOR (hd_decor_new (wm, type));
 
 	  decor->absolute_packing =
 	    MB_WM_OBJECT_TYPE (theme) == HD_TYPE_THEME_SIMPLE ? False : True;
@@ -808,26 +809,26 @@ window_is_waiting (MBWindowManager *wm, Window w)
     return 0;
 }
 
-typedef struct _ProgressIndicatorData
+struct ProgressIndicatorData
 {
    gint x_position;
    Display *xdpy;
    Picture source;
    Drawable dest;
-} ProgressIndicatorData;
+   gint8 wait_cycle;
+};
 
 static gboolean
 progress_indicator_cb (gpointer data)
 {
-  ProgressIndicatorData *pro = data;
-  static int wait_cycle = 0;
-
-  const int pages_in_cycle = 8;
-  const int page_width = 56;
-  const int page_height = 53;
+  HdDecor *decor = data;
+  ProgressIndicatorData *pro = decor->progress;
   XWindowAttributes attr;
   XRenderPictFormat *format;
   XRenderPictureAttributes pa;
+  const int pages_in_cycle = 8;
+  const int page_width = 56;
+  const int page_height = 53;
   const int source_x = 0;
   const int source_y = 222;
 
@@ -838,26 +839,23 @@ progress_indicator_cb (gpointer data)
   Picture target = XRenderCreatePicture (pro->xdpy, pro->dest, format,
 		  CPSubwindowMode, &pa );
 
-  wait_cycle = (wait_cycle+1) % pages_in_cycle;
-
   XRenderComposite (pro->xdpy, PictOpOver,
                     pro->source, None,
 		    target,
-		    source_x + page_width*wait_cycle, source_y,
+		    source_x + page_width*pro->wait_cycle, source_y,
 		    0, 0,
 		    pro->x_position, 0, /* always drawn at the top */
 		    page_width, page_height);
   XSync(pro->xdpy, FALSE);
+  pro->wait_cycle = (pro->wait_cycle+1) % pages_in_cycle;
 
-  return TRUE;
+  return TRUE; /* we always want to go round again */
 }
-
-/* TODO: This WILL be per window */
-static ProgressIndicatorData *progress_indicator_source = NULL;
 
 static void
 hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 {
+  HdDecor                * hd_decor = HD_DECOR (decor);
   MBWMThemePng           * p_theme = MB_WM_THEME_PNG (theme);
   MBWindowManagerClient  * client = decor->parent_client;
   MBWMClientType           c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
@@ -996,7 +994,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 	  int width2 = decor->geom.width - width1;
 	  int x2     = d->x + d->width - width2;
 
-      XRenderComposite(xdpy, operator,
+	  XRenderComposite(xdpy, operator,
 			   p_theme->xpic,
 			   None,
 			   XftDrawPicture (data->xftdraw),
@@ -1363,31 +1361,26 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
       
       if (is_waiting_window)
         {
-	   if (progress_indicator_source==NULL)
+	   if (hd_decor->progress==NULL)
 	     {
-               progress_indicator_source = g_malloc (sizeof (ProgressIndicatorData));
+               hd_decor->progress = g_malloc (sizeof (ProgressIndicatorData));
 
-	       progress_indicator_source->x_position = west_width + centering_padding? centering_padding: left_padding + font_extents.width;
-	       progress_indicator_source->xdpy = xdpy;
-	       progress_indicator_source->source = p_theme->xpic;
-	       progress_indicator_source->dest = decor->xwin;
-
-	       //progress_indicator_cb (progress_indicator_source);
-
-	       g_timeout_add_seconds (1,
-			       progress_indicator_cb,
-			       progress_indicator_source);
+	       hd_decor->progress->x_position = west_width + centering_padding? centering_padding: left_padding + font_extents.width;
+	       hd_decor->progress->xdpy = xdpy;
+	       hd_decor->progress->source = p_theme->xpic;
+	       hd_decor->progress->dest = decor->xwin;
+	       hd_decor->progress->wait_cycle = 0;
+	       g_timeout_add (100,
+			      progress_indicator_cb,
+			      hd_decor);
 	    }
         }
       else
         {
-          if (progress_indicator_source!=NULL)
-            {
-              g_source_remove_by_user_data (progress_indicator_source);
-              progress_indicator_source = NULL;
-	    }
+          g_source_remove_by_user_data (hd_decor);
+	  hd_decor->progress = NULL;
 	}
-
+      
       /* Unset the clipping rectangle */
       rec.width = decor->geom.width;
       rec.height = decor->geom.height;
