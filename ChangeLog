@@ -1,3 +1,8 @@
+2009-01-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* data/desktop/applications.desktop: Change icon name to
+	general_applications.
+
 2009-01-15  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-blur-group.c:
