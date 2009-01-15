@@ -67,6 +67,9 @@ gboolean         hd_home_view_container_get_active         (HdHomeViewContainer 
 void             hd_home_view_container_set_offset         (HdHomeViewContainer *container,
                                                             ClutterUnit          offset);
 
+ClutterActor    *hd_home_view_container_get_previous_view  (HdHomeViewContainer *container);
+ClutterActor    *hd_home_view_container_get_next_view      (HdHomeViewContainer *container);
+
 void             hd_home_view_container_scroll_back        (HdHomeViewContainer *container);
 void             hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container);
 ClutterTimeline *hd_home_view_container_scroll_to_next     (HdHomeViewContainer *container);

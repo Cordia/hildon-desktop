@@ -566,6 +566,8 @@ hd_home_constructed (GObject *object)
 		    G_CALLBACK (hd_home_applet_close_button_clicked),
 		    object);
 
+  clutter_actor_lower_bottom (priv->view_container);
+
   /*
    * Create an InputOnly desktop window; we have a custom desktop client that
    * that will automatically wrap it, ensuring it is located in the correct
@@ -1225,8 +1227,11 @@ hd_home_show_switches (HdHome *home)
 
   clutter_actor_set_opacity (priv->left_switch, 0x7f);
   clutter_actor_set_opacity (priv->right_switch, 0x7f);
-  clutter_actor_show (priv->left_switch);
-  clutter_actor_show (priv->right_switch);
+
+  if (hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
+    clutter_actor_show (priv->left_switch);
+  if (hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
+    clutter_actor_show (priv->right_switch);
 }
 
 void

@@ -696,3 +696,34 @@ hd_home_view_container_set_reactive (HdHomeViewContainer *container,
     if (priv->active_views[i])
       clutter_actor_set_reactive (priv->views[i], reactive);
 }
+
+ClutterActor *
+hd_home_view_container_get_previous_view (HdHomeViewContainer *container)
+{
+  HdHomeViewContainerPrivate *priv;
+
+  g_return_val_if_fail (HD_IS_HOME_VIEW_CONTAINER (container), NULL);
+
+  priv = container->priv;
+
+  if (priv->previous_view != priv->current_view)
+    return priv->views[priv->previous_view];
+
+  return NULL;
+}
+
+ClutterActor *
+hd_home_view_container_get_next_view (HdHomeViewContainer *container)
+{
+  HdHomeViewContainerPrivate *priv;
+
+  g_return_val_if_fail (HD_IS_HOME_VIEW_CONTAINER (container), NULL);
+
+  priv = container->priv;
+
+  if (priv->next_view != priv->current_view)
+    return priv->views[priv->next_view];
+
+  return NULL;
+}
+

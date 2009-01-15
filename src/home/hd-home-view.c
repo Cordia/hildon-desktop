@@ -83,7 +83,7 @@ struct _HdHomeViewPrivate
   gint                      applet_motion_last_x;
   gint                      applet_motion_last_y;
 
-  gboolean                  applet_motion_handled : 1;
+  gboolean                  applet_motion_tap : 1;
 
   guint                     id;
 
@@ -666,22 +666,19 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   gint x, y;
   guint w, h;
 
+  g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y);
+
+  if (priv->applet_motion_tap)
+    {
+      if (ABS (priv->applet_motion_start_x - event->x) > 20 ||
+          ABS (priv->applet_motion_start_y - event->y) > 20)
+        priv->applet_motion_tap = FALSE;
+      else
+        return FALSE;
+    }
+
   hd_home_show_switches (priv->home);
   hd_home_hide_applet_buttons (priv->home);
-
-  g_debug ("Applet motion, %d,%d", event->x, event->y);
-
-  /*
-   * There is always a motion event just before a button release, so
-   * we set a flag to indicated if the pointer actually moved.
-   * NB: cannot just use the coords directly, as the final coords could
-   * be the same as the start coords, with some values between.
-   */
-  if (priv->applet_motion_start_x != event->x ||
-      priv->applet_motion_start_y != event->y)
-    {
-      priv->applet_motion_handled = TRUE;
-    }
 
   x = event->x - priv->applet_motion_last_x;
   y = event->y - priv->applet_motion_last_y;
@@ -737,6 +734,8 @@ hd_home_view_applet_press (ClutterActor       *applet,
   HdHomeApplet *wm_applet;
   MBWindowManagerClient *desktop_client;
 
+  g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y);
+
   desktop_client = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
   cclient = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
   wm_applet = (HdHomeApplet *) cclient->wm_client;
@@ -769,11 +768,11 @@ hd_home_view_applet_press (ClutterActor       *applet,
 
   mb_wm_client_stacking_mark_dirty (desktop_client);
 
-  priv->applet_motion_handled = FALSE;
   priv->applet_motion_start_x = event->x;
   priv->applet_motion_start_y = event->y;
   priv->applet_motion_last_x = event->x;
   priv->applet_motion_last_y = event->y;
+  priv->applet_motion_tap = TRUE;
 
   return FALSE;
 }
@@ -785,6 +784,8 @@ hd_home_view_applet_release (ClutterActor       *applet,
 {
   HdHomeViewPrivate *priv = view->priv;
   guint id;
+
+  g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y);
 
   /* Get all pointer events */
   clutter_ungrab_pointer ();
@@ -802,7 +803,7 @@ hd_home_view_applet_release (ClutterActor       *applet,
    * If this was a simple press/release, with no intervening pointer motion,
    * emit the applet-clicked signal.
    */
-  if (!priv->applet_motion_handled)
+  if (priv->applet_motion_tap)
     {
       if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
         hd_home_show_applet_buttons (priv->home, applet);
@@ -999,7 +1000,6 @@ hd_home_view_move_applet (HdHomeView   *old_view,
   g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb",
 		     GINT_TO_POINTER (id));
 
-  priv->applet_motion_handled = TRUE;
   priv->applet_motion_start_x = 0;
   priv->applet_motion_start_y = 0;
   priv->applet_motion_last_x = 0;

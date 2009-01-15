@@ -1,3 +1,20 @@
+2009-01-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view-container.c
+	  (hd_home_view_container_get_previous_view,
+	  hd_home_view_container_get_next_view): 
+	* src/home/hd-home-view-container.h: Add functions to get previous and
+	next views.
+
+	* src/home/hd-home-view.c (hd_home_view_applet_motion,
+	hd_home_view_applet_press, hd_home_view_applet_release): It is only a
+	move if moved more than 20 px else it is a tap. Fixes NB#96930.
+
+	* src/home/hd-home.c (hd_home_constructed, hd_home_show_switches):
+	Show switches only when next/previous view are available.
+
+	* debian/changelog: Update.
+
 2009-01-15  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c:

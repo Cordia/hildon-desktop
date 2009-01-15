@@ -2,6 +2,7 @@ hildon-desktop (1:2.2.17-1~unreleased) unstable; urgency=low
 
   * Rewrite Home View panning. Fixes: NB#93980, NB#92226, NB#94572, NB#94871,
     NB#96194, NB#96367, NB#96383, NB#96738
+  * Fix show close control on applet if it is a tap. Fixes NB#96930
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 13 Jan 2009 17:15:00 +0200
 
