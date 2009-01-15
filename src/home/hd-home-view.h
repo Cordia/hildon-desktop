@@ -76,8 +76,9 @@ void hd_home_view_move_applet (HdHomeView   *old_view, HdHomeView   *new_view,
 
 ClutterActor * hd_home_view_get_background (HdHomeView *view);
 
-
-GType hd_home_view_background_mode_get_type (void);
+gboolean hd_home_view_get_active (HdHomeView *view);
+void     hd_home_view_set_active (HdHomeView *view,
+                                  gboolean    active);
 
 G_END_DECLS
 

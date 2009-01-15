@@ -26,10 +26,13 @@
 #endif
 
 #include "hd-home-view.h"
+#include "hd-home-view-container.h"
 #include "hd-comp-mgr.h"
 #include "hd-home.h"
 #include "hd-util.h"
 #include "hd-home-applet.h"
+#include "hd-render-manager.h"
+
 #include "hildon-desktop.h"
 
 #include <clutter/clutter.h>
@@ -44,19 +47,8 @@
 #define BACKGROUND_COLOR {0, 0, 0, 0xff}
 
 #define GCONF_BACKGROUND_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/bg-image", i + 1)
-#define GCONF_ACTIVE_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/active", i + 1)
 
 #define MAX_VIEWS 4
-
-enum
-{
-  SIGNAL_THUMBNAIL_CLICKED,
-  SIGNAL_BACKGROUND_CLICKED,
-  SIGNAL_APPLET_CLICKED,
-  N_SIGNALS
-};
-
-static guint signals[N_SIGNALS];
 
 enum
 {
@@ -65,12 +57,15 @@ enum
   PROP_BACKGROUND_IMAGE,
   PROP_BACKGROUND_MODE,
   PROP_ID,
+  PROP_ACTIVE,
+  PROP_CONTAINER
 };
 
 struct _HdHomeViewPrivate
 {
   MBWMCompMgrClutter       *comp_mgr;
   HdHome                   *home;
+  HdHomeViewContainer      *view_container;
   ClutterActor             *background_container;
   ClutterActor             *applets_container;
 
@@ -88,7 +83,6 @@ struct _HdHomeViewPrivate
   gint                      applet_motion_last_x;
   gint                      applet_motion_last_y;
 
-  gboolean                  thumbnail_mode        : 1;
   gboolean                  applet_motion_handled : 1;
 
   guint                     id;
@@ -179,7 +173,7 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 			    "Numerical id for this view",
 			    0, MAX_VIEWS - 1,
 			    0,
-			    G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
+			    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
 
   g_object_class_install_property (object_class, PROP_ID, pspec);
 
@@ -191,42 +185,22 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 
   g_object_class_install_property (object_class, PROP_BACKGROUND_IMAGE, pspec);
 
-  signals[SIGNAL_THUMBNAIL_CLICKED] =
-      g_signal_new ("thumbnail-clicked",
-                    G_OBJECT_CLASS_TYPE (object_class),
-                    G_SIGNAL_RUN_FIRST,
-                    G_STRUCT_OFFSET (HdHomeViewClass, thumbnail_clicked),
-                    NULL,
-                    NULL,
-                    g_cclosure_marshal_VOID__BOXED,
-                    G_TYPE_NONE,
-                    1,
-		    CLUTTER_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
 
-  signals[SIGNAL_BACKGROUND_CLICKED] =
-      g_signal_new ("background-clicked",
-                    G_OBJECT_CLASS_TYPE (object_class),
-                    G_SIGNAL_RUN_FIRST,
-                    G_STRUCT_OFFSET (HdHomeViewClass, background_clicked),
-                    NULL,
-                    NULL,
-                    g_cclosure_marshal_VOID__BOXED,
-                    G_TYPE_NONE,
-                    1,
-		    CLUTTER_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
+  g_object_class_install_property (object_class,
+                                   PROP_ACTIVE,
+                                   g_param_spec_boolean ("active",
+                                                         "Active",
+                                                         "View is active",
+                                                         TRUE,
+                                                         G_PARAM_READABLE));
 
-  signals[SIGNAL_APPLET_CLICKED] =
-      g_signal_new ("applet-clicked",
-                    G_OBJECT_CLASS_TYPE (object_class),
-                    G_SIGNAL_RUN_FIRST,
-                    G_STRUCT_OFFSET (HdHomeViewClass, applet_clicked),
-                    NULL,
-                    NULL,
-                    g_cclosure_marshal_VOID__OBJECT,
-                    G_TYPE_NONE,
-                    1,
-		    CLUTTER_TYPE_ACTOR | G_SIGNAL_TYPE_STATIC_SCOPE);
-
+  g_object_class_install_property (object_class,
+                                   PROP_CONTAINER,
+                                   g_param_spec_object ("view-container",
+                                                        "View Container",
+                                                        "Views are embedded in that container",
+                                                        HD_TYPE_HOME_VIEW_CONTAINER,
+                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
 
 static gboolean
@@ -265,32 +239,9 @@ hd_home_view_background_release (ClutterActor *self,
       l = l->next;
     }
 
-  g_signal_emit (view, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
-  return TRUE;
-}
+  if (hd_render_manager_get_state() != HDRM_STATE_HOME_EDIT)
+    g_signal_emit_by_name (priv->home, "background-clicked", 0, event);
 
-static gboolean
-hd_home_view_captured_event (ClutterActor       *self,
-			     ClutterEvent       *event,
-			     HdHomeView         *view)
-{
-  HdHomeViewPrivate *priv = view->priv;
-
-  /*
-   * In thumbnail mode, we swallow all button presses and releases, and
-   * emit thumbnail-clicked on release.
-   */
-  if (!priv->thumbnail_mode ||
-      (event->type != CLUTTER_BUTTON_PRESS &&
-       event->type != CLUTTER_BUTTON_RELEASE))
-    {
-      return FALSE;
-    }
-
-  if (event->type == CLUTTER_BUTTON_RELEASE)
-    g_signal_emit (view, signals[SIGNAL_THUMBNAIL_CLICKED], 0, event);
-
-  /* Swallow it */
   return TRUE;
 }
 
@@ -359,19 +310,13 @@ hd_home_view_constructed (GObject *object)
   /* Register gconf notification for background image */
   gconf_path = GCONF_BACKGROUND_KEY (priv->id);
   g_debug("hd_home_view_constructed: gconf path for bg image: %s\n", gconf_path);
-  priv->bg_image_notify =
-    gconf_client_notify_add (default_client,
-			     gconf_path,
-			     (GConfClientNotifyFunc)
-			     hd_home_view_gconf_bgimage_notify,
-			     self,
-			     NULL, NULL);
+  priv->bg_image_notify = gconf_client_notify_add (default_client,
+                                                   gconf_path,
+                                                   (GConfClientNotifyFunc) hd_home_view_gconf_bgimage_notify,
+                                                   self,
+                                                   NULL, NULL);
   gconf_client_notify (default_client, gconf_path);
   g_free (gconf_path);
-
-  g_signal_connect (object, "captured-event",
-		    G_CALLBACK (hd_home_view_captured_event),
-		    object);
 
   g_signal_connect (object, "button-release-event",
 		    G_CALLBACK (hd_home_view_background_release),
@@ -517,17 +462,17 @@ process_bg_image_thread (gpointer data)
   HdHomeView	    *self   = HD_HOME_VIEW (data);
   HdHomeViewPrivate *priv   = self->priv;
 
-      pixbuf = gdk_pixbuf_new_from_file_at_scale (priv->background_image_file,
-						  priv->bg_image_dest_width,
-						  priv->bg_image_dest_height,
-						  TRUE,
-						  &error);
-      if (!pixbuf)
-	{
-	  g_warning ("Error loading background: %s", error->message);
-	  g_error_free (error);
-	  error = NULL;
-	}
+  pixbuf = gdk_pixbuf_new_from_file_at_scale (priv->background_image_file,
+                                              priv->bg_image_dest_width,
+                                              priv->bg_image_dest_height,
+                                              TRUE,
+                                              &error);
+  if (!pixbuf)
+    {
+      g_warning ("Error loading background: %s", error->message);
+      g_error_free (error);
+      error = NULL;
+    }
 
   if (pixbuf)
     {
@@ -653,6 +598,9 @@ hd_home_view_set_property (GObject       *object,
       hd_home_view_refresh_bg (self,
 			       g_value_get_string (value));
       break;
+    case PROP_CONTAINER:
+      priv->view_container = g_value_get_object (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -665,7 +613,8 @@ hd_home_view_get_property (GObject      *object,
 			   GValue       *value,
 			   GParamSpec   *pspec)
 {
-  HdHomeViewPrivate *priv = HD_HOME_VIEW (object)->priv;
+  HdHomeView *view = HD_HOME_VIEW (object);
+  HdHomeViewPrivate *priv = view->priv;
 
   switch (prop_id)
     {
@@ -681,6 +630,13 @@ hd_home_view_get_property (GObject      *object,
     case PROP_BACKGROUND_IMAGE:
       g_value_set_string (value, priv->background_image_file);
       break;
+    case PROP_ACTIVE:
+      g_value_set_boolean (value, hd_home_view_container_get_active (priv->view_container,
+                                                                     priv->id));
+      break;
+    case PROP_CONTAINER:
+      g_value_set_object (value, priv->view_container);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -691,44 +647,6 @@ void
 hd_home_view_set_background_image (HdHomeView *view, const gchar * path)
 {
   g_object_set (G_OBJECT (view), "background-image", path, NULL);
-}
-
-/*
- * The thumbnail mode is one in which the view acts as a single actor in
- * which button events are intercepted globally.
- */
-void
-hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on)
-{
-  HdHomeViewPrivate *priv = view->priv;
-
-  if (priv->thumbnail_mode && !on)
-    {
-      priv->thumbnail_mode = FALSE;
-
-      if (priv->capture_cb)
-	{
-	  g_signal_handler_disconnect (view, priv->capture_cb);
-	  priv->capture_cb = 0;
-	}
-    }
-  else if (!priv->thumbnail_mode && on)
-    {
-      priv->thumbnail_mode = TRUE;
-
-      if (priv->capture_cb)
-	{
-	  g_warning ("Capture handler already connected.");
-
-	  g_signal_handler_disconnect (view, priv->capture_cb);
-	  priv->capture_cb = 0;
-	}
-
-      priv->capture_cb =
-	g_signal_connect (view, "captured-event",
-			  G_CALLBACK (hd_home_view_captured_event),
-			  view);
-    }
 }
 
 guint
@@ -796,10 +714,12 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   /*
    * If the pointer entered the left/right switcher area, initiate pan.
    */
+  /* FIXME: Move only the applet.
   if (event->x < HDH_SWITCH_WIDTH)
     hd_home_pan_and_move_applet (priv->home, TRUE, applet);
   else if (event->x > priv->xwidth - HDH_SWITCH_WIDTH)
     hd_home_pan_and_move_applet (priv->home, FALSE, applet);
+    */
 
   return FALSE;
 }
@@ -883,7 +803,10 @@ hd_home_view_applet_release (ClutterActor       *applet,
    * emit the applet-clicked signal.
    */
   if (!priv->applet_motion_handled)
-    g_signal_emit (view, signals[SIGNAL_APPLET_CLICKED], 0, applet);
+    {
+      if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
+        hd_home_show_applet_buttons (priv->home, applet);
+    }
   else
     {
       /* Move the underlying window to match the actor's position */
@@ -1091,3 +1014,34 @@ hd_home_view_get_background (HdHomeView *view)
 
   return priv->background;
 }
+
+gboolean
+hd_home_view_get_active (HdHomeView *view)
+{
+  g_return_val_if_fail (HD_IS_HOME_VIEW (view), FALSE);
+ 
+  return hd_home_view_container_get_active (view->priv->view_container,
+                                            view->priv->id);
+}
+
+/*
+static void
+remove_applet_from_view (ClutterActor *applet,
+                         HdHomeView   *view)
+{
+}
+
+static void
+scroll_next_completed_cb (ClutterTimeline *timeline,
+                          HdHomeView      *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  clutter_actor_hide (CLUTTER_ACTOR (view));
+
+  clutter_container_foreach (CLUTTER_CONTAINER (priv->applets_container),
+                             CLUTTER_CALLBACK (remove_applet_from_view),
+                             view);
+ }
+ */
+

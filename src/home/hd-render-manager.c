@@ -1145,7 +1145,6 @@ void hd_render_manager_set_launcher_subview(gboolean subview)
 void hd_render_manager_set_reactive(gboolean reactive)
 {
   gint i;
-  GList *li;
 
   for (i = 1; i <= HDRM_BUTTON_COUNT; ++i)
     {
@@ -1153,9 +1152,7 @@ void hd_render_manager_set_reactive(gboolean reactive)
       clutter_actor_set_reactive(button, reactive);
     }
 
-  li = hd_home_get_active_views (the_render_manager->priv->home);
-  for (; li; li = li->next)
-    clutter_actor_set_reactive(li->data, reactive);
+  hd_home_set_reactive (the_render_manager->priv->home, reactive);
 }
 
 /* Work out if rect is visible after being clipped to avoid every

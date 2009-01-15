@@ -29,6 +29,7 @@
 #include "hd-home-glue.h"
 #include "hd-switcher.h"
 #include "hd-home-view.h"
+#include "hd-home-view-container.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
 #include "hd-gtk-style.h"
@@ -42,6 +43,7 @@
 #include <matchbox/core/mb-wm.h>
 
 #include <gconf/gconf-client.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-bindings.h>
@@ -76,6 +78,8 @@
 #define OSSO_ADDRESSBOOK_DBUS_NAME "com.nokia.osso_addressbook"
 #define OSSO_ADDRESSBOOK_DBUS_PATH "/com/nokia/osso_addressbook"
 #define OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND "search_append"
+
+#define MAX_VIEWS 4
 
 enum
 {
@@ -115,15 +119,12 @@ struct _HdHomePrivate
   ClutterActor          *left_switch;
   ClutterActor          *right_switch;
 
-  GList                 *views;
-  GList                 *all_views;
-  guint                  n_views;
+  ClutterActor          *view_container;
+
   guint                  current_view;
   guint                  current_desktop;
   gint                   xwidth;
   gint                   xheight;
-
-  GList                 *pan_queue;
 
   gulong                 desktop_motion_cb;
 
@@ -135,8 +136,7 @@ struct _HdHomePrivate
   gint                   initial_y;
   gint                   cumulative_x;
 
-  gint			 grab_count;
-  gboolean               pan_handled         : 1;
+  gboolean               moved_over_threshold : 1;
 
   Window                 desktop;
 
@@ -163,16 +163,7 @@ static void hd_home_get_property (GObject      *object,
 
 static void hd_home_constructed (GObject *object);
 
-static void hd_home_start_pan (HdHome *home);
-
-static void hd_home_pan_full (HdHome *home, gboolean left);
-
 static void hd_home_show_edit_button (HdHome *home);
-
-static void hd_home_store_n_views(HdHome *home);
-
-static void hd_home_store_current_desktop(HdHome *home, guint new_desktop);
-
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -232,81 +223,24 @@ hd_home_back_button_clicked (ClutterActor *button,
   return TRUE;
 }
 
-static void
-hd_home_view_thumbnail_clicked (HdHomeView         *view,
-				ClutterButtonEvent *ev,
-				HdHome             *home)
-{
-  HdHomePrivate *priv = home->priv;
-  gint           index = g_list_index (priv->views, view);
-
-  hd_home_show_view (home, index);
-}
-
-static void
-hd_home_view_background_clicked (HdHomeView         *view,
-				 ClutterButtonEvent *event,
-				 HdHome             *home)
-{
-  g_debug ("hd_home_view_background_clicked, mode=%s\n",
-            hd_render_manager_get_state_str());
-
-  if (hd_render_manager_get_state() != HDRM_STATE_HOME_EDIT)
-    g_signal_emit (home, signals[SIGNAL_BACKGROUND_CLICKED], 0, event);
-}
-
-static void
-hd_home_view_applet_clicked (HdHomeView         *view,
-			     ClutterActor       *applet,
-			     HdHome             *home)
-{
-  if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
-    hd_home_show_applet_buttons (home, applet);
-}
-
 static Bool
 hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
 {
   HdHome          *home = userdata;
   HdHomePrivate   *priv = home->priv;
-  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+//  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   gint by_x;
 
   by_x = xev->x - priv->last_x;
 
   priv->cumulative_x += by_x;
 
-  /*
-   * When the motion gets over the pan threshold, we do a full pan
-   * and disconnect the motion handler (next motion needs to be started
-   * with another gesture).
-   */
-  if (priv->cumulative_x > 0 && priv->cumulative_x > HDH_PAN_THRESHOLD)
-    {
-      if (priv->desktop_motion_cb)
-	mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
-						   MotionNotify,
-						   priv->desktop_motion_cb);
+  if (ABS (priv->cumulative_x) > HDH_PAN_THRESHOLD)
+    priv->moved_over_threshold = TRUE;
 
-      priv->desktop_motion_cb = 0;
-      priv->cumulative_x = 0;
-      priv->pan_handled = TRUE;
-
-      hd_home_pan_full (home, FALSE);
-    }
-  else if (priv->cumulative_x < 0 && priv->cumulative_x < -HDH_PAN_THRESHOLD)
-    {
-      if (priv->desktop_motion_cb)
-	mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
-						   MotionNotify,
-						   priv->desktop_motion_cb);
-
-      priv->desktop_motion_cb = 0;
-      priv->cumulative_x = 0;
-      priv->pan_handled = TRUE;
-
-      hd_home_pan_full (home, TRUE);
-    }
+  if (priv->moved_over_threshold)
+    hd_home_view_container_set_offset (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                  CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_x));
 
   priv->last_x = xev->x;
 
@@ -328,13 +262,26 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 					       priv->desktop_motion_cb);
 
   priv->desktop_motion_cb = 0;
-  priv->cumulative_x = 0;
 
-  if (!priv->pan_handled &&
-      hd_render_manager_get_state() == HDRM_STATE_HOME)
+  if (priv->moved_over_threshold)
+    {
+      if (ABS (priv->cumulative_x) > HDH_PAN_THRESHOLD)
+        {
+          if (priv->cumulative_x > 0)
+            hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container));
+          else
+            hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container));
+        }
+      else
+        hd_home_view_container_scroll_back (HD_HOME_VIEW_CONTAINER (priv->view_container));
+    }
+  else if (hd_render_manager_get_state() == HDRM_STATE_HOME)
+    {
       hd_home_show_edit_button (home);
-  else
-    priv->pan_handled = FALSE;
+    }
+
+  priv->cumulative_x = 0;
+  priv->moved_over_threshold = FALSE;
 
   return True;
 }
@@ -392,7 +339,6 @@ hd_home_desktop_press (XButtonEvent *xev, void *userdata)
   priv->initial_y = xev->y;
 
   priv->cumulative_x = 0;
-  priv->pan_handled = FALSE;
 
   priv->desktop_motion_cb =
     mb_wm_main_context_x_event_handler_add (wm->main_ctx,
@@ -421,33 +367,6 @@ hd_property_notify_message (XPropertyEvent *xev, void *userdata)
        * means we can display or remove the progress indicator.
        */
       hd_home_fixup_operator_position (home);
-    }
-
-  return True;
-}
-
-static Bool
-hd_home_desktop_client_message (XClientMessageEvent *xev, void *userdata)
-{
-  HdHome          *home = userdata;
-  HdHomePrivate   *priv = home->priv;
-  HdCompMgr       *hmgr = HD_COMP_MGR (priv->comp_mgr);
-  Atom             pan_atom;
-
-  pan_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_CLIENT_MESSAGE_PAN);
-
-  if (xev->message_type == pan_atom)
-    {
-      gboolean left = (gboolean) xev->data.l[0];
-
-      g_debug ("ClientMessage initiated pan.");
-
-      hd_home_pan_full (home, left);
-
-      /*
-       * Return false, this is our private protocol and no-one else's business.
-       */
-      return False;
     }
 
   return True;
@@ -502,14 +421,19 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
 static Bool
 root_window_client_message (XClientMessageEvent *event, HdHome *home)
 {
+#if 0
+  FIXME should we really support NET_CURRENT_DESKTOP?
+
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
 
   if (event->message_type == wm->atoms[MBWM_ATOM_NET_CURRENT_DESKTOP])
     {
       gint desktop = event->data.l[0];
-      hd_home_show_view (home, desktop);
+      hd_home_view_container_set_current_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                               desktop);
     }
+#endif
 
   return False;
 }
@@ -518,10 +442,8 @@ static void
 hd_home_constructed (GObject *object)
 {
   HdHomePrivate   *priv = HD_HOME (object)->priv;
-  ClutterActor    *view;
   ClutterActor    *edit_group;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-  gint             i;
   GError          *error = NULL;
   guint            button_width, button_height;
   ClutterColor     clr = {0,0,0,0xff};
@@ -542,37 +464,14 @@ hd_home_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (object), edit_group);
   clutter_actor_hide (edit_group);
 
-  for (i = 0; i < 4; ++i)
-    {
-      view = g_object_new (HD_TYPE_HOME_VIEW,
-			   "comp-mgr", priv->comp_mgr,
-			   "home",     object,
-			   "id",       i,
-			   NULL);
-
-      priv->all_views = g_list_append (priv->all_views, view);
-
-      g_signal_connect (view, "thumbnail-clicked",
-			G_CALLBACK (hd_home_view_thumbnail_clicked),
-			object);
-
-      g_signal_connect (view, "background-clicked",
-			G_CALLBACK (hd_home_view_background_clicked),
-			object);
-
-      g_signal_connect (view, "applet-clicked",
-			G_CALLBACK (hd_home_view_applet_clicked),
-			object);
-
-      priv->views = g_list_append (priv->views, view);
-
-      clutter_actor_set_position (view, priv->xwidth * i, 0);
-      clutter_container_add_actor (CLUTTER_CONTAINER (object), view);
-    }
-
-  priv->n_views = i;
-  hd_home_store_n_views (HD_HOME (object));
-  priv->current_desktop = 0;
+  priv->view_container = hd_home_view_container_new (HD_COMP_MGR (priv->comp_mgr),
+                                                CLUTTER_ACTOR (object));
+  clutter_actor_set_name (priv->view_container, "HdHome:view_container");
+  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->view_container);
+  clutter_actor_set_size (CLUTTER_ACTOR (priv->view_container),
+                          priv->xwidth,
+                          priv->xheight);
+  clutter_actor_show (priv->view_container);
 
   priv->back_button =
     hd_gtk_icon_theme_load_icon (icon_theme, BACK_BUTTON, 48, 0);
@@ -711,13 +610,6 @@ hd_home_constructed (GObject *object)
 					  ButtonRelease,
 					  (MBWMXEventFunc)
 					  hd_home_desktop_release,
-					  object);
-
-  mb_wm_main_context_x_event_handler_add (wm->main_ctx,
-					  None,
-					  ClientMessage,
-					  (MBWMXEventFunc)
-					  hd_home_desktop_client_message,
 					  object);
 
   mb_wm_main_context_x_event_handler_add (wm->main_ctx,
@@ -880,164 +772,17 @@ hd_home_get_property (GObject      *object,
     }
 }
 
-void
-hd_home_show_view (HdHome * home, guint view_index)
-{
-  HdHomePrivate   *priv = home->priv;
-  HdCompMgr       *hmgr = HD_COMP_MGR (priv->comp_mgr);
-  MBWindowManagerClient *desktop;
-  ClutterTimeline *timeline1;
-
-  if (view_index >= priv->n_views)
-    {
-      g_warning ("View %d requested, but desktop has only %d views.",
-		 view_index, priv->n_views);
-      return;
-    }
-
-  priv->current_view = view_index;
-  hd_home_store_current_desktop (home, view_index);
-
-  if (hd_render_manager_get_state() == HDRM_STATE_HOME)
-    {
-      timeline1 = clutter_effect_move (priv->move_template,
-				       CLUTTER_ACTOR (home),
-				       - view_index * priv->xwidth, 0,
-				       NULL, NULL);
-
-      clutter_timeline_start (timeline1);
-    }
-  else
-    {
-      hd_render_manager_set_state(HDRM_STATE_HOME);
-    }
-
-  desktop = hd_comp_mgr_get_desktop_client (hmgr);
-
-  if (desktop)
-    mb_wm_client_stacking_mark_dirty (desktop);
-}
-
-void
-hd_home_grab_pointer (HdHome *home)
-{
-  HdHomePrivate *priv = home->priv;
-  ClutterActor  *stage = clutter_stage_get_default();
-  Window         clutter_window;
-  //Display       *dpy = clutter_x11_get_default_display ();
-  gint           status = 0;
-
-  clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
-
-  g_debug ("%s count: %d", __FUNCTION__, priv->grab_count);
-
-  if (priv->grab_count < 0)
-    {
-      priv->grab_count++;
-      return;
-    }
-
-  g_debug ("%s do real grab (count: %d)", __FUNCTION__, priv->grab_count + 1);
-
-  /* NOTE: we do everything with hd_comp_mgr_setup_input_viewport now,
-   * as it seems to make way more sense. This does get called by DBus,
-   * so we might want to add some extra gadgetry to call hd_render_manager
-   * and put it in a special state. For now though we just go back to
-   * the 'home' state when we were in a full screen grab and an applet/menu
-   * appears - which is safer really.
-   */
-  /*status = XGrabPointer (dpy,
-			 clutter_window,
-			 False,
-			 ButtonPressMask   |
-			 ButtonReleaseMask |
-			 PointerMotionMask,
-			 GrabModeAsync,
-			 GrabModeAsync,
-			 None,
-			 None,
-			 CurrentTime);*/
-
-  if (priv->grab_count != 0)
-    g_warning ("We are issuing a grab when a grab is already in place. This\n"
-	       "will override the previous and that's possibly a mistake.\n");
-
-  g_debug ("Doing pointer grab on 0x%x (status %d and grab_count = %d)!!!",
-	   (unsigned int) clutter_window, status, priv->grab_count++);
-}
-
-void
-hd_home_ungrab_pointer (HdHome *home)
-{
-  HdHomePrivate *priv = home->priv;
- // Display	*dpy = clutter_x11_get_default_display ();
-
-  /* NB: X grabs can not be nested, but for our needs it is much easier
-   * to manage things with nesting semantics */
-
-  g_debug ("%s count: %d", __FUNCTION__, priv->grab_count);
-
-  if (--priv->grab_count > 0)
-    {
-      g_debug ("Skipping ungrab (grab_count = %d) !!!", priv->grab_count);
-      return;
-    }
-  if (priv->grab_count < 0)
-    {
-      g_debug ("Unbalanced ungrab!! (grub_count = %d) !!!", priv->grab_count);
-      g_debug ("(Will now be reset to zero)\n");
-    }
-
-  g_debug ("%s do real ungrab (count: %d)", __FUNCTION__, priv->grab_count);
-  /* NOTE: we do everything with hd_comp_mgr_setup_input_viewport now,
-   * as it seems to make way more sense. This does get called by DBus,
-   * so we might want to add some extra gadgetry to call hd_render_manager
-   * and put it in a special state. For now though we just go back to
-   * the 'home' state when we were in a full screen grab and an applet/menu
-   * appears - which is safer really.
-   */
-  /*XUngrabPointer (dpy, CurrentTime);*/
-
-
-  /* NB: any return status is meaningless for an XUngrabPointer, it should
-   * always == 1 (i.e. XUngrabPointer doesn't wait for a server response
-   * before returning) */
-  g_debug ("Doing pointer ungrab !!!");
-
-  /* priv->grab_count = 0; */
-}
-
 /* FOR HDRM_STATE_HOME */
 static void
 _hd_home_do_normal_layout (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
-  GList         *l = priv->views;
-  gint           xwidth = priv->xwidth;
-  gint           i = 0;
 
   clutter_actor_hide (priv->edit_group);
 
   hd_home_hide_applet_buttons (home);
 
-  while (l)
-    {
-      ClutterActor * view = l->data;
-
-      clutter_actor_set_position (view, i * xwidth, 0);
-      clutter_actor_set_scale (view, 1.0, 1.0);
-      clutter_actor_set_depth (view, 0);
-      hd_home_view_set_thumbnail_mode (HD_HOME_VIEW (view), FALSE);
-
-      ++i;
-      l = l->next;
-    }
-
-  clutter_actor_set_position (CLUTTER_ACTOR (home),
-			      -priv->current_view * xwidth, 0);
-
   hd_home_hide_switches (home);
-
 }
 
 /* FOR HDRM_STATE_HOME_EDIT */
@@ -1045,16 +790,10 @@ static void
 _hd_home_do_edit_layout (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
-  gint x;
 
   _hd_home_do_normal_layout (home);
 
-  /*
-   * Show the overlay edit_group and move it over the current view.
-   */
-  x = priv->xwidth * priv->current_view;
-
-  clutter_actor_set_position (priv->edit_group, x, 0);
+  clutter_actor_set_position (priv->edit_group, 0, 0);
   clutter_actor_show (priv->edit_group);
 
   clutter_actor_show (priv->grey_filter);
@@ -1082,182 +821,6 @@ hd_home_update_layout (HdHome * home)
                 __FUNCTION__);
     }
 
-}
-
-static void
-hd_home_pan_stage_completed (HdHome *home)
-{
-  HdHomePrivate *priv = home->priv;
-
-  if (priv->pan_queue)
-    hd_home_start_pan (home);
-  else
-    {
-      HdCompMgr *hmgr = HD_COMP_MGR (priv->comp_mgr);
-      MBWindowManagerClient *desktop;
-
-      desktop = hd_comp_mgr_get_desktop_client (hmgr);
-
-      if (desktop)
-	mb_wm_client_stacking_mark_dirty (desktop);
-    }
-}
-
-static void
-hd_home_start_pan (HdHome *home)
-{
-  HdHomePrivate   *priv = home->priv;
-  GList           *l = priv->pan_queue;
-  gint             move_by;
-  ClutterTimeline *timeline1;
-
-  move_by = clutter_actor_get_x (CLUTTER_ACTOR (home));
-
-  while (l)
-    {
-      move_by += GPOINTER_TO_INT (l->data);
-      l = l->next;
-    }
-
-  g_list_free (priv->pan_queue);
-  priv->pan_queue = NULL;
-
-  timeline1 = clutter_effect_move (priv->move_template,
-				   CLUTTER_ACTOR (home),
-				   move_by, 0,
-				   (ClutterEffectCompleteFunc)
-				   hd_home_pan_stage_completed, NULL);
-
-  clutter_timeline_start (timeline1);
-}
-
-static void
-hd_home_pan_by (HdHome *home, gint move_by)
-{
-  HdHomePrivate   *priv = home->priv;
-  gboolean         in_progress = FALSE;
-
-  if (!move_by)
-    return;
-
-  if (priv->pan_queue)
-    in_progress = TRUE;
-
-  priv->pan_queue = g_list_append (priv->pan_queue, GINT_TO_POINTER (move_by));
-
-  if (!in_progress)
-    {
-      hd_home_start_pan (home);
-    }
-}
-
-static void
-hd_home_pan_full (HdHome *home, gboolean left)
-{
-  HdHomePrivate  *priv = home->priv;
-  gint            by;
-  gint            xwidth;
-
-  if (priv->n_views < 2)
-    return;
-
-  /* Hide edit button */
-  hd_home_hide_edit_button (home);
-
-  by = xwidth = priv->xwidth;
-
-  /*
-   * Deal with view rollover.
-   */
-  if (left)
-    {
-      by *= -1;
-
-      if (priv->current_view == priv->n_views - 1)
-	{
-	  gint          i = 0;
-	  GList        *l = priv->views;
-	  ClutterActor *view = g_list_first (l)->data;
-
-	  l = g_list_remove (l, view);
-	  l = g_list_append (l, view);
-
-	  priv->views = l;
-
-	  while (l)
-	    {
-	      view = l->data;
-	      clutter_actor_set_position (view, i * xwidth, 0);
-	      ++i;
-	      l = l->next;
-	    }
-
-	  clutter_actor_set_position (CLUTTER_ACTOR (home),
-				      -(priv->n_views-2)*xwidth, 0);
-	}
-      else
-	{
-	  ++priv->current_view;
-	}
-
-      hd_home_store_current_desktop (home, (priv->current_desktop+1)%priv->n_views);
-    }
-  else
-    {
-      if (priv->current_view == 0)
-	{
-	  gint          i = 0;
-	  GList        *l = priv->views;
-	  ClutterActor *view = g_list_last (l)->data;
-
-	  l = g_list_remove (l, view);
-	  l = g_list_prepend (l, view);
-
-	  priv->views = l;
-
-	  while (l)
-	    {
-	      view = l->data;
-	      clutter_actor_set_position (view, i * xwidth, 0);
-	      ++i;
-	      l = l->next;
-	    }
-
-	  clutter_actor_set_position (CLUTTER_ACTOR (home), -xwidth, 0);
-	}
-      else
-	{
-	  --priv->current_view;
-	}
-
-      hd_home_store_current_desktop (home, (priv->current_desktop-1)%priv->n_views);
-    }
-
-  hd_home_pan_by (home, by);
-}
-
-void
-hd_home_pan_and_move_applet (HdHome       *home,
-			     gboolean      left,
-			     ClutterActor *applet)
-{
-  HdHomePrivate *priv = home->priv;
-  HdHomeView    *old_view;
-  HdHomeView    *new_view;
-
-  old_view = g_list_nth_data (priv->views, priv->current_view);
-
-  hd_home_pan_full (home, left);
-
-  new_view = g_list_nth_data (priv->views, priv->current_view);
-
-  hd_home_view_move_applet (old_view, new_view, applet);
-}
-
-static void
-hd_home_applet_destroyed (ClutterActor *original, ClutterActor *clone)
-{
-  clutter_actor_destroy (clone);
 }
 
 void
@@ -1329,7 +892,6 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
 {
   HdHomePrivate *priv = home->priv;
   gint view_id;
-  GList *l;
   GConfClient *client  = gconf_client_get_default ();
   gchar *view_key, *position_key;
   GConfValue *value;
@@ -1401,72 +963,33 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
 
   g_debug ("hd_home_add_applet (), view: %d", view_id);
 
-  for (l = priv->views; l; l = l->next)
+  if (view_id >= 0)
     {
-      HdHomeView * view = l->data;
-      gint         id = hd_home_view_get_view_id (view);
+      ClutterActor *view;
 
-      if (id == view_id || (view_id < 0 && id == 0))
-	{
-	  hd_home_view_add_applet (view, applet);
-	  break;
-	}
-      else if (view_id < 0)
-	{
-	  if (clutter_feature_available (CLUTTER_FEATURE_OFFSCREEN))
-	    {
-	      gpointer      client;
-	      ClutterActor *clone = clutter_texture_new_from_actor (applet);
-
-	      client = g_object_get_data (G_OBJECT (applet),
-					  "HD-MBWMCompMgrClutterClient");
-
-	      g_object_set_data (G_OBJECT (clone),
-				 "HD-MBWMCompMgrClutterClient", client);
-
-	      /*
-	       * Connect to the destroy signal, so we can destroy the clone
-	       * when the original is destroyed.
-	       */
-	      g_signal_connect (applet, "destroy",
-				G_CALLBACK (hd_home_applet_destroyed), clone);
-
-	      hd_home_view_add_applet (view, clone);
-	    }
-	  else
-	    {
-	      g_debug ("Sticky applets require FBO support in GL drivers.");
-	    }
-	}
+      view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                         view_id);
+      hd_home_view_add_applet (HD_HOME_VIEW (view), applet);
+    }
+  else
+    {
+      g_debug ("%s FIXME: implement sticky applets", __FUNCTION__);
     }
 }
-
 
 void
 hd_home_remove_applet (HdHome *home, ClutterActor *applet)
 {
   HdHomePrivate *priv = home->priv;
-  gint           view_id;
-  GList         *l;
+  guint view_id;
+  ClutterActor *view;
 
-  view_id =
-    GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet), "HD-view-id"));
+  view_id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (applet), "HD-view-id"));
 
-  l = priv->views;
+  view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                          view_id);
 
-  while (l)
-    {
-      HdHomeView * view = l->data;
-      gint         id = hd_home_view_get_view_id (view);
-
-      if (id == view_id || view_id < 0)
-	{
-	  hd_home_view_remove_applet (view, applet);
-	  break;
-	}
-
-      l = l->next;
-    }
+  hd_home_view_remove_applet (HD_HOME_VIEW (view), applet);
 
   if (applet == priv->active_applet)
     hd_home_hide_applet_buttons (home);
@@ -1615,19 +1138,8 @@ guint
 hd_home_get_current_view_id (HdHome *home)
 {
   HdHomePrivate   *priv = home->priv;
-  HdHomeView      *top;
 
-  top = g_list_nth_data (priv->views, priv->current_view);
-
-  return hd_home_view_get_view_id (top);
-}
-
-HdHomeView *
-hd_home_get_current_view (HdHome *home)
-{
-  HdHomePrivate   *priv = home->priv;
-
-  return (HdHomeView *)g_list_nth_data (priv->views, priv->current_view);
+  return hd_home_view_container_get_current_view (HD_HOME_VIEW_CONTAINER (priv->view_container));
 }
 
 void
@@ -1752,105 +1264,25 @@ hd_home_unhighlight_switches (HdHome *home)
   clutter_actor_set_opacity (priv->right_switch, 0x7f);
 }
 
-GList *
-hd_home_get_all_views (HdHome *home)
-{
-  HdHomePrivate *priv = home->priv;
-
-  return priv->all_views;
-}
-
-GList *
-hd_home_get_active_views (HdHome *home)
-{
-  HdHomePrivate *priv = home->priv;
-
-  return priv->views;
-}
-
-static void
-hd_home_activate_view (HdHome * home, guint id)
-{
-  g_debug ("%s: Activating view %d\n", __FUNCTION__, id);
-  HdHomePrivate *priv = home->priv;
-  ClutterActor  *view;
-  GList         *l;
-  gboolean       done = FALSE;
-
-  view = g_list_nth_data (priv->all_views, id);
-
-  l = g_list_find (priv->views, view);
-
-  if (l)
-    return;
-
-  l = priv->views;
-  while (l)
-    {
-      HdHomeView *v = l->data;
-      guint       i = hd_home_view_get_view_id (v);
-
-      if (i > id)
-	{
-	  priv->views = g_list_insert_before (priv->views, l, view);
-	  done = TRUE;
-	  break;
-	}
-
-      l = l->next;
-    }
-
-  if (!done)
-    priv->views = g_list_append (priv->views, view);
-
-  ++priv->n_views;
-  hd_home_store_n_views (home);
-
-  clutter_actor_show (view);
-}
-
-static void
-hd_home_deactivate_view (HdHome * home, guint id)
-{
-  g_debug ("%s: Deactivating view %d\n", __FUNCTION__, id);
-  HdHomePrivate *priv = home->priv;
-  ClutterActor  *view;
-  GList         *l;
-
-  view = g_list_nth_data (priv->all_views, id);
-
-  l = g_list_find (priv->views, view);
-
-  if (!l)
-    return;
-
-  priv->views = g_list_remove (priv->views, view);
-  --priv->n_views;
-  hd_home_store_n_views (home);
-
-  clutter_actor_hide (view);
-
-  if (priv->current_view == priv->n_views)
-    priv->current_view = 0;
-}
-
 void
-hd_home_set_view_status (HdHome * home, guint id, gboolean active)
+hd_home_set_reactive (HdHome   *home,
+                      gboolean  reactive)
 {
-  if (active)
-    hd_home_activate_view (home, id);
-  else
-    hd_home_deactivate_view (home, id);
+  g_return_if_fail (HD_IS_HOME (home));
+
+  hd_home_view_container_set_reactive (HD_HOME_VIEW_CONTAINER (home->priv->view_container),
+                                       reactive);
 }
 
+#if 0
 static void
 hd_home_store_n_views(HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-  long propvalue[1] = {priv->n_views, };
+  long propvalue[1] = {4, };
 
-  g_debug ("------- Number of desktops is now %d", priv->n_views);
+  g_debug ("------- Number of desktops is now %d", 4);
 
   XChangeProperty (wm->xdpy, wm->root_win->xwindow,
 		   wm->atoms[MBWM_ATOM_NET_NUMBER_OF_DESKTOPS],
@@ -1876,3 +1308,4 @@ hd_home_store_current_desktop(HdHome *home, guint new_desktop)
 		   (unsigned char *) propvalue,
 		   1);
 }
+#endif

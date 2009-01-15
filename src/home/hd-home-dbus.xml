@@ -6,18 +6,6 @@
                 
     <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="HdHome"/>
 
-    <method name="GrabPointer">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_grab_pointer"/>
-
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-    </method>
-
-    <method name="UngrabPointer">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_ungrab_pointer"/>
-
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-    </method>
-
     <method name="GetCurrentViewID">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_get_current_view_id"/>
 

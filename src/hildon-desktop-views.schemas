@@ -2,8 +2,8 @@
 <gconfschemafile>
   <schemalist>
     <schema>
-      <key>/schemas/apps/osso/hildon-desktop/views/currently-shown</key>
-      <applyto>/apps/osso/hildon-desktop/views/currently-shown</applyto>
+      <key>/schemas/apps/osso/hildon-desktop/views/current</key>
+      <applyto>/apps/osso/hildon-desktop/views/current</applyto>
       <owner>hildon-desktop</owner>
       <type>int</type>
       <default>1</default>
@@ -12,43 +12,14 @@
       </locale>
     </schema>
     <schema>
-      <key>/schemas/apps/osso/hildon-desktop/views/1/active</key>
-      <applyto>/apps/osso/hildon-desktop/views/1/active</applyto>
+      <key>/schemas/apps/osso/hildon-desktop/views/active</key>
+      <applyto>/apps/osso/hildon-desktop/views/active</applyto>
       <owner>hildon-desktop</owner>
-      <type>bool</type>
-      <default>true</default>
+      <type>list</type>
+      <list_type>int</list_type>
+      <default>[1, 2, 3]</default>
       <locale name="C">
-        <short>If Home view 1 is active</short>
-      </locale>
-    </schema>
-    <schema>
-      <key>/schemas/apps/osso/hildon-desktop/views/2/active</key>
-      <applyto>/apps/osso/hildon-desktop/views/2/active</applyto>
-      <owner>hildon-desktop</owner>
-      <type>bool</type>
-      <default>true</default>
-      <locale name="C">
-        <short>If Home view 2 is active</short>
-      </locale>
-    </schema>
-    <schema>
-      <key>/schemas/apps/osso/hildon-desktop/views/3/active</key>
-      <applyto>/apps/osso/hildon-desktop/views/3/active</applyto>
-      <owner>hildon-desktop</owner>
-      <type>bool</type>
-      <default>true</default>
-      <locale name="C">
-        <short>If Home view 3 is active</short>
-      </locale>
-    </schema>
-    <schema>
-      <key>/schemas/apps/osso/hildon-desktop/views/4/active</key>
-      <applyto>/apps/osso/hildon-desktop/views/4/active</applyto>
-      <owner>hildon-desktop</owner>
-      <type>bool</type>
-      <default>false</default>
-      <locale name="C">
-        <short>If Home view 4 is active</short>
+        <short>List of the active (enabled) Home views</short>
       </locale>
     </schema>
   </schemalist>

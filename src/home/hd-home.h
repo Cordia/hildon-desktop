@@ -64,7 +64,6 @@ struct _HdHome
 
 GType hd_home_get_type (void);
 
-void hd_home_show_view (HdHome * home, guint view_index);
 void hd_home_show_activate_views_dialog (HdHome *home);
 
 void hd_home_add_applet (HdHome *home, ClutterActor *applet);
@@ -74,10 +73,6 @@ void hd_home_add_status_menu (HdHome *home, ClutterActor *sa);
 void hd_home_remove_applet (HdHome *home, ClutterActor *applet);
 void hd_home_remove_status_area (HdHome *home, ClutterActor *sa);
 void hd_home_remove_status_menu (HdHome *home, ClutterActor *sa);
-
-void hd_home_grab_pointer (HdHome *home);
-
-void hd_home_ungrab_pointer (HdHome *home);
 
 void hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet);
 
@@ -90,8 +85,6 @@ guint hd_home_get_current_view_id (HdHome *home);
 ClutterActor *hd_home_get_edit_button (HdHome *home);
 ClutterActor *hd_home_get_back_button (HdHome *home);
 ClutterActor *hd_home_get_operator (HdHome *home);
-
-HdHomeView * hd_home_get_current_view (HdHome *home);
 
 void hd_home_set_operator_label (HdHome *home, const char *text);
 
@@ -107,18 +100,13 @@ void hd_home_highlight_switch (HdHome *home, gboolean left);
 
 void hd_home_unhighlight_switches (HdHome *home);
 
-void hd_home_pan_and_move_applet (HdHome *home, gboolean left, ClutterActor *applet);
-
-GList* hd_home_get_all_views (HdHome *home);
-
-GList* hd_home_get_active_views (HdHome *home);
-
-void hd_home_set_view_status (HdHome * home, guint id, gboolean active);
-
 void hd_home_hide_edit_button (HdHome *home);
 
 /* To be called from HdRenderManager on state change */
 void hd_home_update_layout (HdHome * home);
+
+void hd_home_set_reactive (HdHome   *home,
+                           gboolean  reactive);
 
 G_END_DECLS
 

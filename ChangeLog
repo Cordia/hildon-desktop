@@ -1,3 +1,30 @@
+2009-01-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Rewrite Home View panning. Fixes: NB#93980, NB#92226, NB#94572,
+	NB#94871, NB#96194, NB#96367, NB#96383, NB#96738
+
+	* src/hildon-desktop-views.schemas: Use list instead of ints to store
+	  active views in GConf.
+
+	* src/home/Makefile.am: Add hd-home-view-container.[ch]
+
+	* src/home/hd-home-dbus.xml: Remove methods from D-Bus interface
+	which are no longer used/available.
+
+	* src/home/hd-home-view-container.c:
+	* src/home/hd-home-view-container.h: Add a container for home views.
+
+	* src/home/hd-home-view.c:
+	* src/home/hd-home-view.h: Use new HdHomeViewContainer.
+
+	* src/home/hd-home.c:
+	* src/home/hd-home.h: Move Home View handling to HdHomeViewContainer.
+	  Remove unused code.
+
+	* src/home/hd-render-manager.c: Update for Home View changes.
+
+	* debian/changelog: Update.
+
 2009-01-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	We used to decide whether to blur the home when a new something
