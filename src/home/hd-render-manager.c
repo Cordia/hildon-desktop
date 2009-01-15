@@ -1059,7 +1059,6 @@ void hd_render_manager_restack()
    * any that filled the screen then add the window that does. */
   {
     gint i, n_elements;
-    gboolean have_foreground = FALSE;
 
     n_elements = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
     for (i=n_elements-1;i>=0;i--)
@@ -1080,19 +1079,9 @@ void hd_render_manager_restack()
                 clutter_actor_lower_bottom(child);
                 clutter_actor_show(child); /* because it is in app-top, vis
                                               check does not get applied */
-                have_foreground = TRUE;
               }
             else
               {
-                /* if it is fullscreen and there was nothing in front,
-                 * add it to our front list */
-                if (!have_foreground)
-                  {
-                    clutter_actor_reparent(child, CLUTTER_ACTOR(priv->app_top));
-                    clutter_actor_lower_bottom(child);
-                    clutter_actor_show(child); /* because it is in app-top, vis
-                                                  check does not get applied */
-                  }
                 break;
               }
           }
