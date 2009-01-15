@@ -224,6 +224,8 @@ hd_home_view_container_constructed (GObject *self)
   HdHomeViewContainer *container = HD_HOME_VIEW_CONTAINER (self);
   HdHomeViewContainerPrivate *priv = container->priv;
   guint i;
+  MBWindowManager *wm;
+  long propvalue[1];
   GError *error = NULL;
 
   if (G_OBJECT_CLASS (hd_home_view_container_parent_class)->constructed)
@@ -265,6 +267,16 @@ hd_home_view_container_constructed (GObject *self)
       g_warning ("Could not add notify to GConf key %s. %s", HD_GCONF_KEY_VIEWS_ACTIVE, error->message);
       error = (g_error_free (error), NULL);
     }
+
+  /* Set _NET_NUMBER_OF_DESKTOPS property */
+  wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  propvalue[0] = MAX_HOME_VIEWS;
+
+  XChangeProperty (wm->xdpy, wm->root_win->xwindow,
+		   wm->atoms[MBWM_ATOM_NET_NUMBER_OF_DESKTOPS],
+		   XA_CARDINAL, 32, PropModeReplace,
+		   (unsigned char *) propvalue,
+		   1);
 
   hd_home_view_container_update_views (container, TRUE);
 }
@@ -463,6 +475,8 @@ hd_home_view_container_set_current_view (HdHomeViewContainer *container,
 {
   HdHomeViewContainerPrivate *priv;
   guint previous_view, next_view;
+  MBWindowManager *wm;
+  long propvalue[1];
   GError *error = NULL;
 
   g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
@@ -488,7 +502,7 @@ hd_home_view_container_set_current_view (HdHomeViewContainer *container,
   /* Store current view in GConf */
   gconf_client_set_int (priv->gconf_client,
                         HD_GCONF_KEY_VIEWS_CURRENT,
-                        priv->current_view + 1,
+                        current_view + 1,
                         &error);
 
   if (error)
@@ -498,6 +512,16 @@ hd_home_view_container_set_current_view (HdHomeViewContainer *container,
                  error->message);
       error = (g_error_free (error), NULL);
     }
+
+  /* Set _NET_DESKTOP porperty to root window */
+  wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm; 
+  propvalue[0] = current_view;
+
+  XChangeProperty (wm->xdpy, wm->root_win->xwindow,
+		   wm->atoms[MBWM_ATOM_NET_CURRENT_DESKTOP],
+		   XA_CARDINAL, 32, PropModeReplace,
+		   (unsigned char *) propvalue,
+		   1);
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
 }

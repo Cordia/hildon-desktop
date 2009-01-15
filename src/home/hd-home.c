@@ -1274,38 +1274,3 @@ hd_home_set_reactive (HdHome   *home,
                                        reactive);
 }
 
-#if 0
-static void
-hd_home_store_n_views(HdHome *home)
-{
-  HdHomePrivate *priv = home->priv;
-  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-  long propvalue[1] = {4, };
-
-  g_debug ("------- Number of desktops is now %d", 4);
-
-  XChangeProperty (wm->xdpy, wm->root_win->xwindow,
-		   wm->atoms[MBWM_ATOM_NET_NUMBER_OF_DESKTOPS],
-		   XA_CARDINAL, 32, PropModeReplace,
-		   (unsigned char *) propvalue,
-		   1);
-}
-
-static void
-hd_home_store_current_desktop(HdHome *home, guint new_desktop)
-{
-  HdHomePrivate *priv = home->priv;
-  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-  long propvalue[1] = {new_desktop, };
-
-  priv->current_desktop = new_desktop;
-
-  g_debug ("------- Current desktop is now %d", new_desktop);
-
-  XChangeProperty (wm->xdpy, wm->root_win->xwindow,
-		   wm->atoms[MBWM_ATOM_NET_CURRENT_DESKTOP],
-		   XA_CARDINAL, 32, PropModeReplace,
-		   (unsigned char *) propvalue,
-		   1);
-}
-#endif
