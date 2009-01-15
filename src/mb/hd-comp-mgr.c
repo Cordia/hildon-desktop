@@ -1048,14 +1048,15 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
       /* before the effect, restack */
       hd_comp_mgr_restack(mgr);
 
-      if (c_type == MBWMClientTypeDialog ||
-          c_type == HdWmClientTypeStatusMenu ||
-          c_type == HdWmClientTypeAppMenu ||
-          c_type == MBWMClientTypeMenu)
+      /* We have to be ready to set to no blur as well as we may get
+       * the VKB on top of a dialog that already added blurring. */
+      if (c_type & (  MBWMClientTypeDialog  | MBWMClientTypeMenu
+                    | HdWmClientTypeAppMenu | HdWmClientTypeStatusMenu))
         {
-          /* We have to be ready to set to no blur as we may get
-           * the VKB on top of a dialog that already added blurring. */
-          hd_render_manager_set_blur_app(BLUR_FOR_WINDOW(c));
+          if (!BLUR_FOR_WINDOW (c))
+            hd_render_manager_set_blur_app(FALSE);
+          else
+            hd_render_manager_blur_if_you_need_to (c);
         }
 
       if (c_type == HdWmClientTypeStatusMenu)

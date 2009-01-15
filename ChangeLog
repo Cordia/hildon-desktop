@@ -1,3 +1,13 @@
+2009-01-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	We used to decide whether to blur the home when a new something
+	was mapped.  Try to be smarter and not to blur whenever e.g. a
+	dialog is mapped and we're in home view.
+
+	* src/home/hd-render-manager.c: hd_render_manager_set_order()
+	* src/home/hd-render-manager.h
+	* src/mb/hd-comp-mgr.c: hd_comp_mgr_effect()
+
 2009-01-14  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher.c:

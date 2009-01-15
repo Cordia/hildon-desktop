@@ -491,6 +491,8 @@ void hd_render_manager_set_order ()
 
   switch (priv->state)
     {
+      guint n;
+
       case HDRM_STATE_UNDEFINED:
         g_warning("%s: NEVER supposed to be in HDRM_STATE_UNDEFINED",
                   __FUNCTION__);
@@ -502,7 +504,16 @@ void hd_render_manager_set_order ()
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
-        hd_render_manager_set_blur(HDRM_BLUR_NONE);
+
+        /* Blur the home if there is anything in the front group
+         * other than blur_front, otherwise clear home blurring. */
+        n = clutter_group_get_n_children (priv->front);
+        if (n > 1 || (n == 1 && clutter_group_get_nth_child (priv->front, 0)
+                      != CLUTTER_ACTOR (priv->blur_front)))
+          hd_render_manager_set_blur(HDRM_BLUR_HOME);
+        else
+          hd_render_manager_set_blur(HDRM_BLUR_NONE);
+
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_HOME_EDIT:
@@ -1365,3 +1376,17 @@ void hd_render_manager_queue_delay_redraw()
     }
 }
 
+/* hd_render_manager_set_blur_app() if @c is either in @app_top
+ * (dialogs) or in @front (status menu). */
+void hd_render_manager_blur_if_you_need_to(MBWindowManagerClient *c)
+{
+  ClutterActor *actor, *parent;
+
+  actor = mb_wm_comp_mgr_clutter_client_get_actor(
+      MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
+  parent = clutter_actor_get_parent (actor);
+
+  if (parent == CLUTTER_ACTOR (the_render_manager->priv->app_top)
+      || parent == CLUTTER_ACTOR (the_render_manager->priv->front))
+    hd_render_manager_set_blur_app(TRUE);
+}

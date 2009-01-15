@@ -153,6 +153,7 @@ HDRMStateEnum hd_render_manager_get_state(void);
 const char *hd_render_manager_get_state_str(void);
 gboolean hd_render_manager_in_transition(void);
 void hd_render_manager_set_blur_app(gboolean blur);
+void hd_render_manager_blur_if_you_need_to(MBWindowManagerClient *c);
 void hd_render_manager_set_launcher_subview(gboolean subview);
 
 void hd_render_manager_return_windows(void);
