@@ -1,3 +1,9 @@
+2009-01-15  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/tidy/tidy-blur-group.c:
+	  Disabled pixel shader for blur in scratchbox as it doesn't seem to 
+	  work in Xephyr.
+
 2009-01-15  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Rewrite Home View panning. Fixes: NB#93980, NB#92226, NB#94572,

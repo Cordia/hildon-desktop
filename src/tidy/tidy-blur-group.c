@@ -448,7 +448,11 @@ tidy_blur_group_init (TidyBlurGroup *self)
   priv->blur_changed = TRUE;
   priv->source_changed = TRUE;
 
+#if CLUTTER_COGL_HAS_GLES
   priv->use_shader = cogl_features_available(COGL_FEATURE_SHADERS_GLSL);
+#else
+  priv->use_shader = FALSE; /* For now, as Xephyr hates us */
+#endif
   priv->tex_preblur = 0;
   priv->fbo_preblur = 0;
   priv->tex_postblur = 0;
