@@ -37,7 +37,7 @@
 #include "hd-applet-layout-manager.h"
 #include "hd-note.h"
 #include "hd-render-manager.h"
-#include "launcher/hd-launcher.h"
+#include "launcher/hd-app-mgr.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-window-manager.h>
@@ -76,15 +76,13 @@
               ((!(c)->window || ((c)->window->name && !g_str_equal((c)->window->name, "SystemUI root window"))) \
                && !HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->frame_geometry))
 
-static gchar * hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid);
-
-static gboolean hd_comp_mgr_memory_limits (guint *pages_used,
-					   guint *pages_available);
+HdLauncherApp *hd_comp_mgr_app_from_xwindow (HdCompMgr *hmgr, Window xid);
 
 struct HdCompMgrPrivate
 {
   MBWindowManagerClient *desktop;
   HdRenderManager       *render_manager;
+  HdAppMgr              *app_mgr;
 
   HdSwitcher            *switcher_group;
   ClutterActor          *home;
@@ -114,9 +112,9 @@ struct HdCompMgrPrivate
 
 struct HdCompMgrClientPrivate
 {
-  guint                 hibernation_key;
-  gchar                *service;
+  HdLauncherApp *app;
 
+  guint                 hibernation_key;
   gboolean              hibernating   : 1;
   gboolean              can_hibernate : 1;
 };
@@ -191,18 +189,19 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
   HdCompMgrClientPrivate *priv;
   HdCompMgr              *hmgr;
   MBWindowManagerClient  *wm_client = MB_WM_COMP_MGR_CLIENT (obj)->wm_client;
+  HdLauncherApp          *app;
 
   hmgr = HD_COMP_MGR (wm_client->wmref->comp_mgr);
 
   priv = client->priv = g_new0 (HdCompMgrClientPrivate, 1);
 
-  /* TODO: does not make sense to do these for all window types, only
-   * for "main" application windows visible in the switcher */
-  hd_comp_mgr_client_process_hibernation_prop (client);
-
-  priv->hibernation_key = (guint)wm_client;
-  priv->service =
-    hd_comp_mgr_service_from_xwindow (hmgr, wm_client->window->xwindow);
+  app = hd_comp_mgr_app_from_xwindow (hmgr, wm_client->window->xwindow);
+  if (app)
+    {
+      priv->app = g_object_ref (app);
+      hd_comp_mgr_client_process_hibernation_prop (client);
+      priv->hibernation_key = (guint)wm_client;
+    }
 
   return 1;
 }
@@ -212,7 +211,11 @@ hd_comp_mgr_client_destroy (MBWMObject* obj)
 {
   HdCompMgrClientPrivate *priv = HD_COMP_MGR_CLIENT (obj)->priv;
 
-  g_free (priv->service);
+  if (priv->app)
+    {
+      g_object_unref (priv->app);
+      priv->app = NULL;
+    }
 
   g_free (priv);
 }
@@ -246,6 +249,16 @@ hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient)
   HdCompMgrClientPrivate * priv = hclient->priv;
 
   return priv->hibernating;
+}
+
+ClutterActor *
+hd_comp_mgr_client_get_actor (HdCompMgrClient *hclient)
+{
+  MBWMCompMgrClutterClient *cclient;
+  cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (hclient);
+  if (cclient)
+    return mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+  return NULL;
 }
 
 static int  hd_comp_mgr_init (MBWMObject *obj, va_list vap);
@@ -373,6 +386,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
       clutter_actor_hide(arena);
     }
 
+  priv->app_mgr = hd_app_mgr_get ();
   /*
    * Create a hash table for hibernating windows.
    */
@@ -592,6 +606,11 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
           g_object_set_data (G_OBJECT (actor),
                              "HD-MBWMCompMgrClutterClient", NULL);
+
+          /* Tell the app which is the main client now. */
+          if (hclient->priv->app)
+            hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
+                HD_COMP_MGR_CLIENT (prev));
         }
       else
         /* We wasn't mapped in the first place. */;
@@ -939,6 +958,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       if (HD_IS_APP (app))
       {
+        /* Set this new client as the main client for the app. */
+        if (hclient->priv->app)
+          hd_launcher_app_set_comp_mgr_client (hclient->priv->app, hclient);
+
         if (app->secondary_window && app->leader)
           {
             ClutterActor *top_actor;
@@ -1262,7 +1285,7 @@ hd_comp_mgr_hibernate_client (HdCompMgr *hmgr,
 void
 hd_comp_mgr_wakeup_client (HdCompMgr *hmgr, HdCompMgrClient *hclient)
 {
-  hd_comp_mgr_launch_application (hmgr, hclient->priv->service, "RESTORE");
+  hd_app_mgr_wakeup (hclient->priv->app);
 }
 
 void
@@ -1301,69 +1324,14 @@ hd_comp_mgr_get_low_memory_state (HdCompMgr * hmgr)
   return priv->low_mem;
 }
 
-void
-hd_comp_mgr_launch_application (HdCompMgr   *hmgr,
-				const gchar *app_service,
-				const gchar *launch_param)
-{
-  gchar *service, *path, *tmp = NULL;
-  guint  pages_used = 0, pages_available = 0;
-
-  if (hd_comp_mgr_memory_limits (&pages_used, &pages_available))
-    {
-      /* 0 means the memory usage is unknown */
-      if (pages_available > 0 &&
-	  pages_available < LOWMEM_LAUNCH_THRESHOLD_DISTANCE)
-	{
-	  /*
-	   * TODO -- we probably should pop a dialog here asking the user to
-	   * kill some apps as the old TN used to do; check the current spec.
-	   */
-	  g_debug ("Not enough memory to start application [%s].",
-		   app_service);
-	  return;
-	}
-    }
-  else
-    g_warning ("Failed to read memory limits; using scratchbox ???");
-
-  /*
-   * NB -- interface is identical to service
-   */
-
-  /* If we have full service name we will use it*/
-  if (g_strrstr(app_service,"."))
-    {
-      service = g_strdup (app_service);
-      tmp = g_strdup (app_service);
-      path = g_strconcat ("/", g_strdelimit(tmp,".",'/'), NULL);
-    }
-  else /* use com.nokia prefix*/
-    {
-      service = g_strconcat (OSSO_BUS_ROOT, ".", app_service, NULL);
-      path = g_strconcat (OSSO_BUS_ROOT_PATH, "/", app_service, NULL);
-    }
-
-  hd_dbus_launch_service (hmgr->priv->dbus_connection,
-			  service,
-			  path,
-			  service,
-			  OSSO_BUS_TOP,
-			  launch_param);
-
-  g_free (service);
-  g_free (path);
-  g_free (tmp);
-}
-
-static gchar *
-hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid)
+HdLauncherApp *
+hd_comp_mgr_app_from_xwindow (HdCompMgr *hmgr, Window xid)
 {
   MBWindowManager  *wm;
 /*   HdCompMgrPrivate *priv = hmgr->priv; */
-  gchar            *service = NULL;
   XClassHint        class_hint;
   Status            status = 0;
+  HdLauncherApp    *app = NULL;
 
   wm = MB_WM_COMP_MGR (hmgr)->wm;
 
@@ -1376,14 +1344,8 @@ hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid)
   if (mb_wm_util_untrap_x_errors () || !status || !class_hint.res_name)
     goto out;
 
-  /*
-   * FIXME -- need to implement this bit once we have
-   * the desktop data store in place.
-   */
-#if 0
-  service = g_hash_table_lookup (apps,
-				(gconstpointer)class_hint.res_name);
-#endif
+  app = hd_app_mgr_match_window (class_hint.res_name,
+                                 class_hint.res_class);
 
  out:
   if (class_hint.res_class)
@@ -1392,48 +1354,7 @@ hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid)
   if (class_hint.res_name)
     XFree(class_hint.res_name);
 
-  if (service)
-    return g_strdup (service);
-
-  return NULL;
-}
-
-static gboolean
-hd_comp_mgr_memory_limits (guint *pages_used, guint *pages_available)
-{
-  guint    lowmem_allowed;
-  gboolean result;
-  FILE    *lowmem_allowed_f, *pages_used_f;
-
-  result = FALSE;
-
-  lowmem_allowed_f = fopen (LOWMEM_PROC_ALLOWED, "r");
-  pages_used_f     = fopen (LOWMEM_PROC_USED, "r");
-
-  if (lowmem_allowed_f && pages_used_f)
-    {
-      fscanf (lowmem_allowed_f, "%u", &lowmem_allowed);
-      fscanf (pages_used_f, "%u", pages_used);
-
-      if (*pages_used < lowmem_allowed)
-	*pages_available = lowmem_allowed - *pages_used;
-      else
-	*pages_available = 0;
-
-      result = TRUE;
-    }
-  else
-    {
-      g_warning ("Could not read lowmem page stats.");
-    }
-
-  if (lowmem_allowed_f)
-    fclose(lowmem_allowed_f);
-
-  if (pages_used_f)
-    fclose(pages_used_f);
-
-  return result;
+  return app;
 }
 
 Atom

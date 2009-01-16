@@ -43,6 +43,7 @@
 #define HD_DESKTOP_ENTRY_SERVICE        "X-Osso-Service"
 #define HD_DESKTOP_ENTRY_LOADING_IMAGE  "X-App-Loading-Image"
 #define HD_DESKTOP_ENTRY_PRESTART_MODE  "X-Maemo-Prestarted"
+#define HD_DESKTOP_ENTRY_WM_CLASS       "X-Maemo-Wm-Class"
 
 /* DBus names */
 #define OSSO_BUS_ROOT          "com.nokia"
@@ -55,8 +56,16 @@ struct _HdLauncherAppPrivate
   gchar *exec;
   gchar *service;
   gchar *loading_image;
+  gchar *wm_class;
 
   HdLauncherAppPrestartMode prestart_mode;
+
+  gboolean launched:1;
+  gboolean loading:1;
+  gboolean hibernating:1;
+
+  /* HdCompMgrClients for this app's main window. */
+  HdCompMgrClient *main_comp_mgr_client;
 };
 
 G_DEFINE_TYPE (HdLauncherApp, hd_launcher_app, HD_TYPE_LAUNCHER_ITEM);
@@ -73,6 +82,10 @@ hd_launcher_app_finalize (GObject *gobject)
   g_free (priv->exec);
   g_free (priv->service);
   g_free (priv->loading_image);
+  g_free (priv->wm_class);
+
+  if (priv->main_comp_mgr_client)
+    priv->main_comp_mgr_client = NULL;
 
   G_OBJECT_CLASS (hd_launcher_app_parent_class)->dispose (gobject);
 }
@@ -170,6 +183,11 @@ hd_launcher_app_parse_keyfile (HdLauncherItem *item,
                                            HD_DESKTOP_ENTRY_PRESTART_MODE,
                                            NULL));
 
+  priv->wm_class = g_key_file_get_string (key_file,
+                                          HD_DESKTOP_ENTRY_GROUP,
+                                          HD_DESKTOP_ENTRY_WM_CLASS,
+                                          NULL);
+
   return TRUE;
 }
 
@@ -197,10 +215,92 @@ hd_launcher_app_get_loading_image (HdLauncherApp *item)
   return item->priv->loading_image;
 }
 
+G_CONST_RETURN gchar *
+hd_launcher_app_get_wm_class (HdLauncherApp *item)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_APP (item), NULL);
+
+  return item->priv->wm_class;
+}
+
 HdLauncherAppPrestartMode
 hd_launcher_app_get_prestart_mode (HdLauncherApp *item)
 {
   g_return_val_if_fail (HD_IS_LAUNCHER_APP (item), HD_APP_PRESTART_NONE);
 
   return item->priv->prestart_mode;
+}
+
+gboolean
+hd_launcher_app_is_launched     (HdLauncherApp *app)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  return priv->launched;
+}
+
+void
+hd_launcher_app_set_launched    (HdLauncherApp *app, gboolean launched)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  g_debug ("%s: app %s launched set to %d.\n", __FUNCTION__,
+      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)), launched);
+  priv->launched = launched;
+}
+
+gboolean
+hd_launcher_app_is_loading      (HdLauncherApp *app)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  return priv->loading;
+}
+
+void
+hd_launcher_app_set_loading     (HdLauncherApp *app, gboolean loading)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  priv->loading = loading;
+}
+
+gboolean
+hd_launcher_app_is_hibernating  (HdLauncherApp *app)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  return priv->hibernating;
+}
+
+void
+hd_launcher_app_set_hibernating (HdLauncherApp *app, gboolean hibernating)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  priv->hibernating = hibernating;
+}
+
+HdCompMgrClient *
+hd_launcher_app_get_comp_mgr_client (HdLauncherApp *app)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  return priv->main_comp_mgr_client;
+}
+
+void
+hd_launcher_app_set_comp_mgr_client (HdLauncherApp *app,
+                                     HdCompMgrClient *client)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+
+  if (client)
+    {
+      /* We set launched to true because a window can appear even if
+       * it wasn't launched here. */
+      hd_launcher_app_set_launched (app, TRUE);
+    }
+  else
+    {
+      /* TODO: Does this really mean the app has been closed?
+       * If we ever keep a list of all the windows an app has, that'd be
+       * a better way of knowing.
+       */
+      hd_launcher_app_set_launched (app, FALSE);
+    }
+  priv->main_comp_mgr_client = client;
 }

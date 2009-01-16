@@ -10,6 +10,7 @@ INCLUDES = \
 	@HD_INCS@
 
 launcher_h = \
+	hd-app-mgr.h      \
 	hd-launcher-tree.h		\
 	hd-launcher-item.h		\
 	hd-launcher-cat.h		\
@@ -20,6 +21,7 @@ launcher_h = \
 	hd-launcher.h
 
 launcher_c = \
+	hd-app-mgr.c      \
 	hd-launcher-tree.c		\
 	hd-launcher-item.c		\
 	hd-launcher-cat.c		\

@@ -34,6 +34,8 @@
 #include <glib-object.h>
 #include <clutter/clutter-actor.h>
 
+#include "hd-launcher-tree.h"
+
 G_BEGIN_DECLS
 
 #define HD_TYPE_LAUNCHER            (hd_launcher_get_type ())
@@ -77,6 +79,7 @@ void          hd_launcher_window_created (void);
 void          hd_launcher_set_top_blur (float amount, float opacity);
 void          hd_launcher_set_back_arrow_opacity (float amount);
 
+HdLauncherTree *hd_launcher_get_tree (void);
 
 G_END_DECLS
 

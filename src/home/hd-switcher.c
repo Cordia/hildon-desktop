@@ -30,6 +30,7 @@
 #include "hd-switcher.h"
 #include "hd-task-navigator.h"
 #include "hd-launcher.h"
+#include "hd-launcher-app.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
 #include "hd-home.h"
@@ -124,6 +125,9 @@ static void hd_switcher_launcher_cat_launched (HdLauncher *launcher,
                                                HdSwitcher *switcher);
 static void hd_switcher_launcher_cat_hidden (HdLauncher *launcher,
                                              HdSwitcher *switcher);
+static void hd_switcher_relaunch_app (HdSwitcher *switcher,
+                                      HdLauncherApp *app,
+                                      gpointer data);
 
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, G_TYPE_OBJECT);
 
@@ -187,6 +191,9 @@ hd_switcher_constructed (GObject *object)
                             G_CALLBACK (hd_switcher_home_background_clicked),
                             object);
   priv->launcher = hd_launcher_get ();
+  g_signal_connect_swapped (priv->launcher, "application-relaunched",
+                    G_CALLBACK (hd_switcher_relaunch_app),
+                    object);
   g_signal_connect (priv->launcher, "launcher-hidden",
                     G_CALLBACK (launcher_back_button_clicked),
                     object);
@@ -459,6 +466,28 @@ hd_switcher_launcher_cat_hidden (HdLauncher *launcher,
                                  HdSwitcher *switcher)
 {
   hd_render_manager_set_launcher_subview(FALSE);
+}
+
+static void
+hd_switcher_relaunch_app (HdSwitcher *switcher,
+                          HdLauncherApp *app,
+                          gpointer data)
+{
+  ClutterActor *actor;
+  HdCompMgrClient *client = hd_launcher_app_get_comp_mgr_client (app);
+
+  /* First, go to the task switcher view. */
+  hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+
+  /* Get the actor for the window and act as if the user had selected it. */
+  actor = hd_comp_mgr_client_get_actor (client);
+  if (!actor)
+    {
+      g_debug ("%s: Weird! Trying to relaunch a non-existing app.\n",
+          __FUNCTION__);
+      return;
+    }
+  hd_switcher_item_selected (switcher, actor);
 }
 
 static void

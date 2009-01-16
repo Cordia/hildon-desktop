@@ -31,6 +31,7 @@
 #define __HD_LAUNCHER_APP_H__
 
 #include "hd-launcher-item.h"
+#include "mb/hd-comp-mgr.h"
 
 G_BEGIN_DECLS
 
@@ -62,6 +63,7 @@ GType           hd_launcher_app_get_type          (void) G_GNUC_CONST;
 G_CONST_RETURN gchar *hd_launcher_app_get_exec          (HdLauncherApp *item);
 G_CONST_RETURN gchar *hd_launcher_app_get_service       (HdLauncherApp *item);
 G_CONST_RETURN gchar *hd_launcher_app_get_loading_image (HdLauncherApp *item);
+G_CONST_RETURN gchar *hd_launcher_app_get_wm_class (HdLauncherApp *item);
 
 #define HD_APP_PRESTART_NONE_STRING     "none"
 #define HD_APP_PRESTART_USAGE_STRING    "usage"
@@ -72,8 +74,28 @@ typedef enum {
   HD_APP_PRESTART_ALWAYS = 2
 } HdLauncherAppPrestartMode;
 
-HdLauncherAppPrestartMode hd_launcher_app_get_prestart_mode (HdLauncherApp *item);
+HdLauncherAppPrestartMode  hd_launcher_app_get_prestart_mode (HdLauncherApp *item);
 
+/* TODO: Once we have integrated libgnome-menu, HdLauncherApp will contain
+ * only our maemo-specific data.
+ */
+
+gboolean hd_launcher_app_is_launched     (HdLauncherApp *app);
+void     hd_launcher_app_set_launched    (HdLauncherApp *app,
+                                          gboolean launched);
+gboolean hd_launcher_app_is_loading      (HdLauncherApp *app);
+void     hd_launcher_app_set_loading     (HdLauncherApp *app,
+                                          gboolean loading);
+gboolean hd_launcher_app_is_hibernating  (HdLauncherApp *app);
+void     hd_launcher_app_set_hibernating (HdLauncherApp *app,
+                                          gboolean hibernating);
+
+/* Returns the main window related to this application, if it has been
+ * launched.
+ */
+HdCompMgrClient *hd_launcher_app_get_comp_mgr_client (HdLauncherApp *app);
+void   hd_launcher_app_set_comp_mgr_client (HdLauncherApp *app,
+                                            HdCompMgrClient *client);
 G_END_DECLS
 
 #endif /* __HD_LAUNCHER_APP_H__ */

@@ -1,3 +1,58 @@
+2009-01-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Application and window matching.
+	This commit just adds the basic framework for the new HdAppMgr. Future
+	commits will add more functionality.
+	Fixes NB#89108
+
+	* src/home/hd-switcher.c (in_transition, hd_switcher_constructed,
+	  hd_switcher_relaunch_app, hd_switcher_zoom_in_complete): Go to the
+	  task switcher and zoom in on the relaunched app.
+	* src/launcher/Makefile.am: Add hd-app-mgr.[c,h]
+	* src/launcher/hd-app-mgr.c (I_, _HdAppMgrPrivate, tree, dbus_proxy,
+	  HD_APP_MGR_GET_PRIVATE, APP_LAUNCHED, APP_APPEARED, LAST_SIGNAL,
+	  app_mgr_signals, LOWMEM_PROC_ALLOWED, LOWMEM_PROC_USED,
+	  LOWMEM_LAUNCH_THRESHOLD_DISTANCE, OSSO_BUS_ROOT, OSSO_BUS_TOP,
+	  PATH_NAME_LEN, DBUS_NAMEOWNERCHANGED_SIGNAL_NAME, the_app_mgr,
+	  hd_app_mgr_get, hd_app_mgr_class_init, hd_app_mgr_init,
+	  hd_app_mgr_dispose, hd_app_mgr_launch, hd_app_mgr_relaunch,
+	  hd_app_mgr_prestart, hd_app_mgr_wakeup, OOM_DISABLE,
+	  _hd_app_mgr_child_setup, hd_app_mgr_execute, hd_app_mgr_service_top,
+	  hd_app_mgr_memory_available, hd_app_mgr_dbus_name_owner_changed,
+	  hd_app_mgr_match_window):
+	* src/launcher/hd-app-mgr.h (__HD_APP_MGR_H__, HD_TYPE_APP_MGR,
+	  HD_APP_MGR, HD_IS_APP_MGR, HD_APP_MGR_CLASS, HD_IS_APP_MGR_CLASS,
+	  HD_APP_MGR_GET_CLASS, HdAppMgr, HdAppMgrPrivate, HdAppMgrClass,
+	  _HdAppMgr, parent_instance, priv, _HdAppMgrClass, parent_class):
+	* src/launcher/hd-launcher-app.c (HD_DESKTOP_ENTRY_WM_CLASS, wm_class,
+	  prestart_mode, launched, loading, hibernating, main_comp_mgr_client,
+	  hd_launcher_app_finalize, hd_launcher_app_parse_keyfile,
+	  hd_launcher_app_get_loading_image, hd_launcher_app_get_wm_class,
+	  hd_launcher_app_get_prestart_mode, hd_launcher_app_is_launched,
+	  hd_launcher_app_set_launched, hd_launcher_app_is_loading,
+	  hd_launcher_app_set_loading, hd_launcher_app_is_hibernating,
+	  hd_launcher_app_set_hibernating, hd_launcher_app_get_comp_mgr_client,
+	  hd_launcher_app_set_comp_mgr_client): Added app lifecycle and window
+	  data. This API is not yet finalized.
+	* src/launcher/hd-launcher-app.h (__HD_LAUNCHER_APP_H__, parent_class,
+	  HdLauncherAppPrestartMode):
+	* src/launcher/hd-launcher.c (APP_RELAUNCHED, launcher_signals,
+	  hd_launcher_class_init, hd_launcher_application_tile_clicked,
+	  hd_launcher_lazy_traverse_tree, hd_launcher_transition_app_start,
+	  hd_launcher_transition_new_frame, hd_launcher_get_tree): Removed
+	  application management (which goes to HdAppMgr) and added support
+	  for re-launching apps.
+	* src/launcher/hd-launcher.h (__HD_LAUNCHER_H__, parent_class):
+	* src/mb/hd-comp-mgr.c (BLUR_FOR_WINDOW, HdCompMgrPrivate, desktop,
+	  render_manager, app_mgr, app, hibernation_key,
+	  hd_comp_mgr_client_init, hd_comp_mgr_client_destroy,
+	  hd_comp_mgr_client_is_hibernating, hd_comp_mgr_client_get_actor,
+	  hd_comp_mgr_init, hd_comp_mgr_unregister_client,
+	  hd_comp_mgr_map_notify, hd_comp_mgr_wakeup_client,
+	  hd_comp_mgr_get_low_memory_state, hd_comp_mgr_app_from_xwindow):
+	  Connect HdCompMgrClient to its app, if it can be found.
+	* src/mb/hd-comp-mgr.h (parent):
+
 2009-01-16  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher.h

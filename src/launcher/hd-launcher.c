@@ -25,16 +25,10 @@
 #include "config.h"
 #endif
 
-#include "hd-launcher.h"
-#include "hd-launcher-tree.h"
-#include "hd-launcher-app.h"
-
-#include <errno.h>
-#include <fcntl.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/resource.h>
 #include <math.h>
+
+#include "hd-launcher.h"
+#include "hd-launcher-app.h"
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -47,6 +41,7 @@
 #include "hd-launcher-page.h"
 #include "hd-gtk-utils.h"
 #include "hd-render-manager.h"
+#include "hd-app-mgr.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 #define HD_LAUNCHER_LAUNCH_IMAGE_BLANK \
@@ -68,8 +63,6 @@ struct _HdLauncherPrivate
   ClutterVertex launch_position; /* where were we clicked? */
 
   HdLauncherTree *tree;
-
-  DBusGProxy *dbus_proxy;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -79,6 +72,7 @@ struct _HdLauncherPrivate
 enum
 {
   APP_LAUNCHED,
+  APP_RELAUNCHED,
   CAT_LAUNCHED,
   CAT_HIDDEN,
   HIDDEN,
@@ -103,26 +97,10 @@ static void hd_launcher_application_tile_clicked (HdLauncherTile *tile,
                                                   gpointer data);
 static void hd_launcher_populate_tree_finished (HdLauncherTree *tree,
                                                 gpointer data);
-static gboolean hd_launcher_transition_app_start (HdLauncherApp *item);
+static gboolean hd_launcher_transition_app_start (HdLauncherTile *tile,
+                                                  HdLauncherApp *item);
 static void hd_launcher_transition_new_frame(ClutterTimeline *timeline,
                                              gint frame_num, gpointer data);
-
-/* DBus names */
-#define OSSO_BUS_ROOT          "com.nokia"
-#define OSSO_BUS_TOP           "top_application"
-#define PATH_NAME_LEN           255
-#define DBUS_NAMEOWNERCHANGED_SIGNAL_NAME "NameOwnerChanged"
-
-static void     hd_launcher_launch (HdLauncherApp *item);
-static gboolean hd_launcher_service_prestart (const gchar *service);
-static gboolean hd_launcher_service_top (const gchar *service);
-static gboolean hd_launcher_execute (const gchar *exec,
-                                     GError **error);
-static void hd_launcher_dbus_name_owner_changed (DBusGProxy *proxy,
-                                          const char *name,
-                                          const char *old_owner,
-                                          const char *new_owner,
-                                          gpointer data);
 
 /* We cannot #include "hd-transition.h" because it #include:s mb-wm.h,
  * which wants to #define _GNU_SOURCE unconditionally, but we already
@@ -155,8 +133,15 @@ hd_launcher_class_init (HdLauncherClass *klass)
                   HD_TYPE_LAUNCHER,
                   G_SIGNAL_RUN_FIRST,
                   0, NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0, NULL);
+                  g_cclosure_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
+  launcher_signals[APP_RELAUNCHED] =
+    g_signal_new (I_("application-relaunched"),
+                  HD_TYPE_LAUNCHER,
+                  G_SIGNAL_RUN_FIRST,
+                  0, NULL, NULL,
+                  g_cclosure_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
   launcher_signals[CAT_LAUNCHED] =
     g_signal_new (I_("category-launched"),
                   HD_TYPE_LAUNCHER,
@@ -187,31 +172,6 @@ hd_launcher_init (HdLauncher *self)
 
   self->priv = priv = HD_LAUNCHER_GET_PRIVATE (self);
   g_datalist_init (&priv->pages);
-
-  DBusGConnection *connection;
-  connection = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
-  if (!connection)
-    {
-      g_debug ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
-      return;
-    }
-  priv->dbus_proxy = dbus_g_proxy_new_for_name (connection,
-                                                DBUS_SERVICE_DBUS,
-                                                DBUS_PATH_DBUS,
-                                                DBUS_INTERFACE_DBUS);
-  if (!priv->dbus_proxy)
-    {
-      g_debug ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
-      return;
-    }
-
-  dbus_g_proxy_add_signal (priv->dbus_proxy,
-      DBUS_NAMEOWNERCHANGED_SIGNAL_NAME,
-      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
-  dbus_g_proxy_connect_signal (priv->dbus_proxy,
-      DBUS_NAMEOWNERCHANGED_SIGNAL_NAME,
-      (GCallback)hd_launcher_dbus_name_owner_changed,
-      NULL, NULL);
 }
 
 static void hd_launcher_constructed (GObject *gobject)
@@ -452,37 +412,39 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
   HdLauncherApp *app = HD_LAUNCHER_APP (data);
-  ClutterActor *icon;
+  ClutterActor *top_page;
 
-  /* default pos to centre of the screen */
-  priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
-  priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
-  /* work out where to expand the image from from the centre of the icon of
-   * the tile that was clicked on */
-  clutter_actor_get_positionu(CLUTTER_ACTOR(tile),
-            &priv->launch_position.x,
-            &priv->launch_position.y);
-  icon = hd_launcher_tile_get_icon(tile);
-  if (icon)
+  /* If the app has been already launched, send the relaunched signal
+   * and don't animate anything.
+   */
+  if (hd_launcher_app_is_launched (app))
     {
-      ClutterVertex offs, size;
-      clutter_actor_get_positionu(icon,
-            &offs.x,
-            &offs.y);
-      clutter_actor_get_sizeu(icon, &size.x, &size.y);
-      priv->launch_position.x += offs.x + size.x/2;
-      priv->launch_position.y += offs.y + size.y/2;
+      g_signal_emit (hd_launcher_get (), launcher_signals[APP_RELAUNCHED],
+                     0, data, NULL);
+      hd_app_mgr_relaunch (app);
+      return;
     }
-  /* append scroller movement */
-  priv->launch_position.y += CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_YMARGIN);
-  if (priv->active_page)
-    priv->launch_position.y -=
-        hd_launcher_page_get_scroll_y(HD_LAUNCHER_PAGE(priv->active_page));
-  /* all because the tidy- stuff breaks clutter's nice 'get absolute position'
-   * code... */
+  /* If there's no launch transition, do the 'fall away' transition.
+   */
+  else if (!hd_launcher_transition_app_start (tile, app))
+    {
+      hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
+            HD_LAUNCHER_PAGE_TRANSITION_LAUNCH);
+      /* also do animation for the topmost pane if we had it... */
+      top_page = g_datalist_get_data (&priv->pages,
+                                       HD_LAUNCHER_ITEM_TOP_CATEGORY);
+      /* if we're not at the top page, we must transition that out too */
+      if (priv->active_page != top_page)
+        {
+          hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
+                    HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK);
+        }
+    }
 
   /* then launch */
-  hd_launcher_launch (app);
+  g_signal_emit (hd_launcher_get (), launcher_signals[APP_LAUNCHED],
+                 0, data, NULL);
+  hd_app_mgr_launch (app);
 }
 
 /*
@@ -577,8 +539,7 @@ hd_launcher_lazy_traverse_tree (gpointer data)
       if (hd_launcher_app_get_prestart_mode (HD_LAUNCHER_APP (item)) ==
             HD_APP_PRESTART_ALWAYS)
         {
-          hd_launcher_service_prestart (
-              hd_launcher_app_get_service(HD_LAUNCHER_APP(item)));
+          hd_app_mgr_prestart (HD_LAUNCHER_APP(item));
         }
     }
 
@@ -628,212 +589,6 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
                                  hd_launcher_lazy_traverse_cleanup);
 }
 
-/* Application management */
-
-static void
-hd_launcher_launch (HdLauncherApp *item)
-{
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-  gboolean result = FALSE;
-  const gchar *service = hd_launcher_app_get_service (item);
-  const gchar *exec;
-  ClutterActor *top_page;
-  gboolean launch_anim;
-
-  /* do launch animation */
-  launch_anim = hd_launcher_transition_app_start( item );
-
-  /* The launch animation is pretty quick and it means we don't see our nice
-   * task launcher fade out. The fade out changes blur levels which takes a
-   * lot of time, so don't actually do it unless we're sure the user will
-   * notice it's gone. It's much better to have a smooth launch anim.
-   */
-  if (!launch_anim)
-    {
-      /* do 'fall away' anim for the page*/
-      hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
-            HD_LAUNCHER_PAGE_TRANSITION_LAUNCH);
-      /* also do animation for the topmost pane if we had it... */
-      top_page = g_datalist_get_data (&priv->pages,
-                                       HD_LAUNCHER_ITEM_TOP_CATEGORY);
-      /* if we're not at the top page, we must transition that out too */
-      if (priv->active_page != top_page)
-        {
-          hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
-                    HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK);
-        }
-    }
-
-  if (service)
-    {
-      result = hd_launcher_service_top (service);
-    }
-  else
-    {
-      exec = hd_launcher_app_get_exec (item);
-      if (exec)
-        {
-          result = hd_launcher_execute (exec, NULL);
-          return;
-        }
-    }
-
-  if (result)
-    g_signal_emit (hd_launcher_get (), launcher_signals[APP_LAUNCHED],
-        0, NULL);
-  return;
-}
-
-static gboolean
-hd_launcher_service_prestart (const gchar *service)
-{
-  DBusError derror;
-  DBusConnection *conn;
-  gboolean res;
-
-  g_debug ("%s: service=%s\n", __FUNCTION__, service);
-
-  dbus_error_init (&derror);
-  conn = dbus_bus_get (DBUS_BUS_SESSION, &derror);
-  if (dbus_error_is_set (&derror))
-  {
-    g_warning ("could not start: %s: %s", service, derror.message);
-    dbus_error_free (&derror);
-    return FALSE;
-  }
-
-  res = dbus_bus_start_service_by_name (conn, service, 0, NULL, &derror);
-  if (dbus_error_is_set (&derror))
-  {
-    g_warning ("could not start: %s: %s", service, derror.message);
-    dbus_error_free (&derror);
-  }
-
-  return res;
-}
-
-static gboolean
-hd_launcher_service_top (const gchar *service)
-{
-  gchar path[PATH_NAME_LEN];
-  DBusMessage *msg = NULL;
-  DBusError derror;
-  DBusConnection *conn;
-
-  gchar *tmp = g_strdelimit(g_strdup (service), ".", '/');
-  g_snprintf (path, PATH_NAME_LEN, "/%s", tmp);
-  g_free (tmp);
-
-  g_debug ("%s: service:%s path:%s interface:%s\n", __FUNCTION__,
-    service, path, service);
-
-  dbus_error_init (&derror);
-  conn = dbus_bus_get (DBUS_BUS_SESSION, &derror);
-  if (dbus_error_is_set (&derror))
-  {
-    g_warning ("could not start: %s: %s", service, derror.message);
-    dbus_error_free (&derror);
-    return FALSE;
-  }
-
-  msg = dbus_message_new_method_call (service, path, service, OSSO_BUS_TOP);
-  if (msg == NULL)
-  {
-    g_warning ("failed to create message");
-    return FALSE;
-  }
-
-  if (!dbus_connection_send (conn, msg, NULL))
-    {
-      dbus_message_unref (msg);
-      g_warning ("dbus_connection_send failed");
-      return FALSE;
-    }
-
-  dbus_message_unref (msg);
-  return TRUE;
-}
-
-#define OOM_DISABLE "0"
-
-static void
-_hd_launcher_child_setup(gpointer user_data)
-{
-  int priority;
-  int fd;
-
-  /* If the child process inherited desktop's high priority,
-   * give child default priority */
-  priority = getpriority (PRIO_PROCESS, 0);
-
-  if (!errno && priority < 0)
-  {
-    setpriority (PRIO_PROCESS, 0, 0);
-  }
-
-  /* Unprotect from OOM */
-  fd = open ("/proc/self/oom_adj", O_WRONLY);
-  if (fd >= 0)
-  {
-    write (fd, OOM_DISABLE, sizeof (OOM_DISABLE));
-    close (fd);
-  }
-}
-
-static gboolean
-hd_launcher_execute (const gchar *exec, GError **error)
-{
-  gboolean res = FALSE;
-  gchar *space = strchr (exec, ' ');
-  gchar *exec_cmd;
-  gint argc;
-  gchar **argv = NULL;
-  GPid child_pid;
-  GError *internal_error = NULL;
-
-  g_debug ("Executing `%s'", exec);
-
-  if (space)
-  {
-    gchar *cmd = g_strndup (exec, space - exec);
-    gchar *exc = g_find_program_in_path (cmd);
-
-    exec_cmd = g_strconcat (exc, space, NULL);
-
-    g_free (cmd);
-    g_free (exc);
-  }
-  else
-    exec_cmd = g_find_program_in_path (exec);
-
-  if (!g_shell_parse_argv (exec_cmd, &argc, &argv, &internal_error))
-  {
-    g_propagate_error (error, internal_error);
-
-    g_free (exec_cmd);
-    if (argv)
-      g_strfreev (argv);
-
-    return FALSE;
-  }
-
-  res = g_spawn_async (NULL,
-                       argv, NULL,
-                       0,
-                       _hd_launcher_child_setup, NULL,
-                       &child_pid,
-                       &internal_error);
-  if (internal_error)
-    g_propagate_error (error, internal_error);
-
-  g_free (exec_cmd);
-
-  if (argv)
-    g_strfreev (argv);
-
-  return res;
-}
-
 /* handle clicks to the fake launch image. If we've been up this long the
    app may have died and we just want to remove ourselves. */
 static gboolean
@@ -857,7 +612,7 @@ _hd_launcher_transition_clicked(ClutterActor *actor,
 
 /* Does the transition for the application launch */
 static gboolean
-hd_launcher_transition_app_start (HdLauncherApp *item)
+hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
 {
   const gchar *loading_image;
   HdLauncher *launcher = hd_launcher_get();
@@ -883,7 +638,35 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
       priv->launch_image = clutter_texture_new_from_file(loading_path, 0);
       if (priv->launch_image)
         {
+          ClutterActor *icon;
           ClutterContainer *parent = hd_render_manager_get_front_group();
+
+          /* default pos to centre of the screen */
+          priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
+          priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
+          /* work out where to expand the image from from the centre of the icon of
+           * the tile that was clicked on */
+          clutter_actor_get_positionu(CLUTTER_ACTOR(tile),
+                    &priv->launch_position.x,
+                    &priv->launch_position.y);
+          icon = hd_launcher_tile_get_icon(tile);
+          if (icon)
+            {
+              ClutterVertex offs, size;
+              clutter_actor_get_positionu(icon,
+                    &offs.x,
+                    &offs.y);
+              clutter_actor_get_sizeu(icon, &size.x, &size.y);
+              priv->launch_position.x += offs.x + size.x/2;
+              priv->launch_position.y += offs.y + size.y/2;
+            }
+          /* append scroller movement */
+          priv->launch_position.y += CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_YMARGIN);
+          if (priv->active_page)
+            priv->launch_position.y -=
+                hd_launcher_page_get_scroll_y(HD_LAUNCHER_PAGE(priv->active_page));
+          /* all because the tidy- stuff breaks clutter's nice 'get absolute position'
+           * code... */
 
           clutter_actor_set_name(priv->launch_image,
                                  "HdLauncher:launch_image");
@@ -965,6 +748,13 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
   clutter_actor_set_positionu(priv->launch_image, mx-zx, my-zy);
 }
 
+HdLauncherTree *
+hd_launcher_get_tree (void)
+{
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+  return priv->tree;
+}
+
 static void
 _hd_launcher_transition_stop_foreach(GQuark         key_id,
                                      gpointer       data,
@@ -982,42 +772,4 @@ hd_launcher_transition_stop(void)
   g_datalist_foreach(&priv->pages,
                      _hd_launcher_transition_stop_foreach,
                      (gpointer)0);
-}
-
-static void
-hd_launcher_dbus_name_owner_changed (DBusGProxy *proxy,
-                                     const char *name,
-                                     const char *old_owner,
-                                     const char *new_owner,
-                                     gpointer data)
-{
-  GList *items;
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-  g_debug ("%s, name: %s, old: %s, new: %s\n", __FUNCTION__,
-      name, old_owner, new_owner);
-
-  /* Check only disconnections. */
-  if (strcmp(new_owner, ""))
-    return;
-
-  /* Check if the service is one we want always on. */
-  items = hd_launcher_tree_get_items(priv->tree, NULL);
-  while (items)
-    {
-      HdLauncherItem *item = items->data;
-
-      if (hd_launcher_item_get_item_type (item) == HD_APPLICATION_LAUNCHER)
-        {
-          HdLauncherApp *app = HD_LAUNCHER_APP (item);
-
-          if (hd_launcher_app_get_prestart_mode (app)== HD_APP_PRESTART_ALWAYS &&
-              !g_strcmp0 (name, hd_launcher_app_get_service (app)))
-            {
-              hd_launcher_service_prestart (name);
-              break;
-            }
-        }
-
-      items = g_list_next (items);
-    }
 }
