@@ -687,16 +687,11 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
   /* TFP textures are usually bundled into another group, and it is
    * this group that sets visibility - so we must check it too */
   parent = clutter_actor_get_parent(actor);
-  if (parent)
+  while (parent && !CLUTTER_IS_STAGE(parent))
     {
-      ClutterActor *parent2;
       if (!CLUTTER_ACTOR_IS_VISIBLE(parent))
         return;
-      /* also check the parent above for cases like status area
-       * where we might be in another group that is hidden */
-      parent2 = clutter_actor_get_parent(parent);
-      if (parent2 && !CLUTTER_ACTOR_IS_VISIBLE(parent2))
-        return;
+      parent = clutter_actor_get_parent(parent);
     }
 
   /* Check we're not in a mode where it's a bad idea.
@@ -802,11 +797,17 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   hd_comp_mgr_hook_update_area(HD_COMP_MGR (mgr), actor);
 
   /* deactivate launcher and switcher in case of new window */
+  /* FIXME: When we get an app we'd just go to home and then straight
+   * to app - so I (gw) added MBWMClientTypeApp as an exception.
+   * What are we trying to switch to home for here?
+   */
   if (STATE_ONE_OF(hd_render_manager_get_state(),
                    HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
       && !(ctype == MBWMClientTypeNote
            && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
-      && !(ctype & (MBWMClientTypeDialog | HdWmClientTypeHomeApplet)))
+      && !(ctype & (MBWMClientTypeDialog |
+                    HdWmClientTypeHomeApplet |
+                    MBWMClientTypeApp)))
   {
     hd_render_manager_set_state(HDRM_STATE_HOME);
   }
@@ -979,10 +980,11 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
             /* Taskbar == task switcher in our case.
              * Introduced for systemui. */
             hd_switcher_add_window_actor (priv->switcher_group, actor);
-            /* and make sure we're in app mode as we'll want to show this
-             * new app */
+            /* and make sure we're in app mode and not transitioning as
+             * we'll want to show this new app right away*/
             if (!STATE_IS_APP(hd_render_manager_get_state()))
-                hd_render_manager_set_state(HDRM_STATE_APP);
+              hd_render_manager_set_state(HDRM_STATE_APP);
+            hd_render_manager_stop_transition();
           }
       }
     }

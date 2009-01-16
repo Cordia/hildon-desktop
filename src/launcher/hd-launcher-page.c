@@ -63,6 +63,10 @@ struct _HdLauncherPagePrivate
 
   HdLauncherPageTransition transition_type;
   ClutterTimeline *transition;
+  /* Timeline works by signals, so we get horrible flicker if we ask it if it
+   * is playing right after saying _start() - so we have a boolean to figure
+   * out for ourselves */
+  gboolean         transition_playing;
 };
 
 enum
@@ -202,6 +206,7 @@ hd_launcher_page_constructed (GObject *object)
                     G_CALLBACK (hd_launcher_page_new_frame), object);
   g_signal_connect (priv->transition, "completed",
                     G_CALLBACK (hd_launcher_page_transition_end), object);
+  priv->transition_playing = FALSE;
 }
 
 ClutterActor *
@@ -606,9 +611,29 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
   clutter_timeline_pause(priv->transition);
   clutter_timeline_rewind(priv->transition);
   clutter_timeline_start(priv->transition);
+  priv->transition_playing = TRUE;
 
   /* force a call to lay stuff out before it gets drawn properly */
   hd_launcher_page_new_frame(priv->transition, 0, page);
+}
+
+void hd_launcher_page_transition_stop(HdLauncherPage *page)
+{
+  HdLauncherPagePrivate *priv;
+
+  if (!HD_IS_LAUNCHER_PAGE(page))
+    return;
+
+  priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
+
+  if (priv->transition_playing)
+    {
+      gint frames;
+      /* force a call to lay stuff out as if the transition has ended */
+      frames = clutter_timeline_get_n_frames(priv->transition);
+      hd_launcher_page_new_frame(priv->transition, frames, page);
+      hd_launcher_page_transition_end(priv->transition, page);
+    }
 }
 
 static void
@@ -696,6 +721,8 @@ hd_launcher_page_transition_end(ClutterTimeline *timeline,
          clutter_actor_hide(CLUTTER_ACTOR(page));
          break;
   }
+
+  priv->transition_playing = FALSE;
 }
 
 ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page)

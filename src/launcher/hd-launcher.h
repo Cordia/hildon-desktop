@@ -69,6 +69,7 @@ ClutterActor *hd_launcher_get_back_button (HdLauncher *launcher);
 void          hd_launcher_show (void);
 void          hd_launcher_hide (void);
 void          hd_launcher_hide_final (void);
+void          hd_launcher_transition_stop(void);
 
 /* Called when an app window has been created */
 void          hd_launcher_window_created (void);

@@ -966,6 +966,25 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
 }
 
 static void
+_hd_launcher_transition_stop_foreach(GQuark         key_id,
+                                     gpointer       data,
+                                     gpointer       user_data)
+{
+  hd_launcher_page_transition_stop(HD_LAUNCHER_PAGE(data));
+}
+
+/* Stop any currently active transitions */
+void
+hd_launcher_transition_stop(void)
+{
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+
+  g_datalist_foreach(&priv->pages,
+                     _hd_launcher_transition_stop_foreach,
+                     (gpointer)0);
+}
+
+static void
 hd_launcher_dbus_name_owner_changed (DBusGProxy *proxy,
                                      const char *name,
                                      const char *old_owner,

@@ -1,4 +1,20 @@
-2009-01-15  Gordon Williams <gordon.williams@collabora.co.uk>
+2009-01-16  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher.h
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-page.h
+	* src/launcher/hd-launcher.c
+	* src/home/hd-render-manager.c:
+	  Added timeline_stop code to launcher, and added a gboolean for if
+	  timeline is playing - ClutterTimeline uses signals so if we check
+	  in the same code we do _play from it returns FALSE
+	* src/util/hd-transition.c:
+	  Made more sensibile transition time
+	* src/mb/hd-comp-mgr.c:
+	  Better visibility code
+	  Removing flickering on app start
+
+2009-01-16  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c:
 	  Fixed blurred home view caused by recent blurring changes

@@ -129,6 +129,10 @@ struct _HdRenderManagerPrivate {
   HDRMBlurEnum  current_blur;
 
   ClutterTimeline    *timeline_blur;
+  /* Timeline works by signals, so we get horrible flicker if we ask it if it
+   * is playing right after saying _start() - so we have a boolean to figure
+   * out for ourselves */
+  gboolean            timeline_playing;
 
   gboolean            in_notify;
   gboolean            in_set_state;
@@ -299,6 +303,7 @@ hd_render_manager_init (HdRenderManager *self)
                     G_CALLBACK (on_timeline_blur_new_frame), self);
   g_signal_connect (priv->timeline_blur, "completed",
                       G_CALLBACK (on_timeline_blur_completed), self);
+  priv->timeline_playing = FALSE;
 
   g_signal_connect (self, "damage-redraw",
                     G_CALLBACK (hd_render_manager_damage_redraw_notify),
@@ -379,6 +384,7 @@ on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
+  priv->timeline_playing = FALSE;
   hd_comp_mgr_set_effect_running(priv->comp_mgr, FALSE);
 }
 
@@ -413,7 +419,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 
   priv = the_render_manager->priv;
 
-  if (clutter_timeline_is_playing(priv->timeline_blur))
+  if (priv->timeline_playing)
     {
       clutter_timeline_stop(priv->timeline_blur);
       on_timeline_blur_completed(priv->timeline_blur, the_render_manager);
@@ -439,6 +445,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 
   hd_comp_mgr_set_effect_running(priv->comp_mgr, TRUE);
   clutter_timeline_start(priv->timeline_blur);
+  priv->timeline_playing = TRUE;
 }
 
 static void
@@ -646,7 +653,7 @@ void hd_render_manager_stop_transition()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  if (clutter_timeline_is_playing(priv->timeline_blur))
+  if (priv->timeline_playing)
     {
       guint frames;
       clutter_timeline_stop(priv->timeline_blur);
@@ -654,6 +661,8 @@ void hd_render_manager_stop_transition()
       on_timeline_blur_new_frame(priv->timeline_blur, frames, the_render_manager);
       on_timeline_blur_completed(priv->timeline_blur, the_render_manager);
     }
+
+  hd_launcher_transition_stop();
 }
 
 void hd_render_manager_add_to_front_group (ClutterActor *item)
