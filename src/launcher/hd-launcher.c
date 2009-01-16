@@ -316,14 +316,16 @@ hd_launcher_create_back_button (const char *icon_name)
       const gchar *fname = gtk_icon_info_get_filename(info);
       g_debug("create_back_button: using %s for %s\n", fname, icon_name);
       icon = clutter_texture_new_from_file(fname, NULL);
-      clutter_actor_set_size (icon, 112, 56);
+      clutter_actor_set_size (icon, HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH,
+                                    HD_COMP_MGR_TOP_RIGHT_BTN_HEIGHT);
 
       gtk_icon_info_free(info);
     }
   else
     g_debug("create_back_button: couldn't find icon %s\n", icon_name);
 
-  clutter_actor_set_position (icon, 800 - 112, 0);
+  clutter_actor_set_position (icon, HD_COMP_MGR_SCREEN_WIDTH -
+                                    HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH, 0);
 
   return icon;
 }

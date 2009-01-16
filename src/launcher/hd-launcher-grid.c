@@ -41,6 +41,7 @@
 #include <math.h>
 
 #include "hd-launcher-item.h"
+#include "hd-comp-mgr.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 
@@ -770,7 +771,9 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
         if (tile_amt>1) tile_amt = 1;
 
         order_diff = (CLUTTER_UNITS_TO_FLOAT(pos.x) +
-                     (CLUTTER_UNITS_TO_FLOAT(pos.y)*5)) / (800 + 240*5);
+                     (CLUTTER_UNITS_TO_FLOAT(pos.y)*5)) /
+                       (HD_COMP_MGR_SCREEN_WIDTH +
+                        HD_COMP_MGR_SCREEN_HEIGHT*5/2);
         if (order_diff>1) order_diff = 1;
         order_amt = amount*2 - order_diff;
         if (order_amt<0) order_amt = 0;

@@ -170,37 +170,47 @@ hd_note_init (MBWMObject *this, va_list vap)
 
   mb_wm_theme_get_decor_dimensions (wm->theme, client, &n, &s, &w, &e);
 
-  geom.x      = 0;
-  geom.width  = wm->xdpy_width;
-  geom.height = client->window->geometry.height + n + s;
-
-  if (note->note_type == HdNoteTypeInfo)
+  if (note->note_type == HdNoteTypeIncomingEventPreview)
     {
-      geom.y = (wm->xdpy_height - (client->window->geometry.height + n + s))/2;
-    }
-  else if (note->note_type == HdNoteTypeBanner)
-    {
-      /* FIXME -- need to get decor size from theme */
-      MBWMXmlClient *c;
-      MBWMXmlDecor  *d;
-      int            north = 0;
-
-      if (wm->theme &&
-	  (c = mb_wm_xml_client_find_by_type (wm->theme->xml_clients,
-					      MBWMClientTypeApp)))
-	{
-	  if ((d = mb_wm_xml_decor_find_by_type (c->decors,MBWMDecorTypeNorth)))
-	    north = d->height;
-	}
-
-      if (!north)
-	north = 40; /* Fallback value */
-
-      geom.y = north;
+      geom.x = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH + n;
+      geom.y = w;
+      geom.width = client->window->geometry.width + e + w;
+      geom.height = client->window->geometry.height + n + s;
     }
   else
     {
-      geom.y = wm->xdpy_height - (client->window->geometry.height + n + s);
+      geom.x      = 0;
+      geom.width  = wm->xdpy_width;
+      geom.height = client->window->geometry.height + n + s;
+
+      if (note->note_type == HdNoteTypeInfo)
+        {
+          geom.y = (wm->xdpy_height - (client->window->geometry.height + n + s))/2;
+        }
+      else if (note->note_type == HdNoteTypeBanner)
+        {
+          /* FIXME -- need to get decor size from theme */
+          MBWMXmlClient *c;
+          MBWMXmlDecor  *d;
+          int            north = 0;
+
+          if (wm->theme &&
+              (c = mb_wm_xml_client_find_by_type (wm->theme->xml_clients,
+                                                  MBWMClientTypeApp)))
+            {
+              if ((d = mb_wm_xml_decor_find_by_type (c->decors,MBWMDecorTypeNorth)))
+                north = d->height;
+            }
+
+          if (!north)
+            north = 40; /* Fallback value */
+
+          geom.y = north;
+        }
+      else
+        {
+          geom.y = wm->xdpy_height - (client->window->geometry.height + n + s);
+        }
     }
 
   hd_note_request_geometry (client, &geom, MBWMClientReqGeomForced);

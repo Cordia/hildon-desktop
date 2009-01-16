@@ -52,8 +52,7 @@
 #define BUTTON_IMAGE_MENU     "menu-button.png"
 
 #define TOP_LEFT_BUTTON_HIGHLIGHT_TEXTURE "launcher-button-highlight.png"
-#define TOP_LEFT_BUTTON_WIDTH	112
-#define TOP_LEFT_BUTTON_HEIGHT	56
+
 
 enum
 {
@@ -369,7 +368,8 @@ hd_switcher_top_left_button_new (const char *icon_name)
   else
     {
       clutter_actor_set_size (top_left_button_highlight,
-                              TOP_LEFT_BUTTON_WIDTH, TOP_LEFT_BUTTON_HEIGHT);
+                              HD_COMP_MGR_TOP_LEFT_BTN_WIDTH,
+                              HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT);
       clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
                                    top_left_button_highlight);
     }
@@ -377,9 +377,10 @@ hd_switcher_top_left_button_new (const char *icon_name)
   top_left_button_icon =
     hd_gtk_icon_theme_load_icon (icon_theme, icon_name, 48, 0);
   clutter_actor_get_geometry (top_left_button_icon, &geom);
-  clutter_actor_set_position (top_left_button_icon,
-			      (TOP_LEFT_BUTTON_WIDTH/2)-(geom.width/2),
-			      (TOP_LEFT_BUTTON_HEIGHT/2)-(geom.height/2));
+  clutter_actor_set_position (
+                      top_left_button_icon,
+                      (HD_COMP_MGR_TOP_LEFT_BTN_WIDTH/2)-(geom.width/2),
+                      (HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT/2)-(geom.height/2));
   clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
 			       top_left_button_icon);
 
@@ -792,24 +793,17 @@ hd_switcher_get_control_area_size (HdSwitcher *switcher,
 				   guint *control_height)
 {
   HdSwitcherPrivate *priv = switcher->priv;
-  guint              button_width, button_height;
   guint              status_width = 0, status_height = 0;
-
-  clutter_actor_get_size (
-        hd_render_manager_get_button(HDRM_BUTTON_LAUNCHER),
-			  &button_width, &button_height);
-  /* FIXME */
-  button_width = TOP_LEFT_BUTTON_WIDTH;
 
   if (priv->status_area)
     clutter_actor_get_size (priv->status_area,
 			    &status_width, &status_height);
 
   if (control_width)
-    *control_width = button_width + status_width;
+    *control_width = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH + status_width;
 
   if (control_height)
-    *control_height = button_height;
+    *control_height = HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT;
 }
 
 static void

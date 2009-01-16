@@ -4,7 +4,7 @@
  * Copyright (C) 2008 Nokia Corporation.
  *
  * Authors:  Tomas Frydrych <tf@o-hand.com>
- *           Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+ *           Kimmo Hï¿½mï¿½lï¿½inen <kimmo.hamalainen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -66,9 +66,9 @@ hd_status_menu_init (MBWMObject *this, va_list vap)
 
   client->stacking_layer = MBWMStackLayerTopMid;
 
-  geom.x      = (800 - 688) / 2;
+  geom.x      = (HD_COMP_MGR_SCREEN_WIDTH - HD_COMP_MGR_STATUS_MENU_WIDTH) / 2;
   geom.y      = 0;
-  geom.width  = 688;
+  geom.width  = HD_COMP_MGR_STATUS_MENU_WIDTH;
   geom.height = client->window->geometry.height;
 
   hd_status_menu_request_geometry (client, &geom, MBWMClientReqGeomForced);

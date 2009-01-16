@@ -26,11 +26,12 @@
 #endif
 
 #include "hd-applet-layout-manager.h"
+#include "hd-comp-mgr.h"
 
 #define HDALM_LAYER_X 0
 #define HDALM_LAYER_Y 64
-#define HDALM_LAYER_WIDTH 800
-#define HDALM_LAYER_HEIGHT (480-HDALM_LAYER_Y)
+#define HDALM_LAYER_WIDTH HD_COMP_MGR_SCREEN_WIDTH
+#define HDALM_LAYER_HEIGHT (HD_COMP_MGR_SCREEN_HEIGHT-HDALM_LAYER_Y)
 
 #define HDALM_APPLET_PADDING 20
 

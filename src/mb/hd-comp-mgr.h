@@ -39,6 +39,12 @@ G_BEGIN_DECLS
 
 /* The title bar height + HALF_MARGIN border. */
 #define HD_COMP_MGR_TOP_MARGIN         56
+/* task button width */
+#define HD_COMP_MGR_TOP_LEFT_BTN_WIDTH          112
+#define HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT         HD_COMP_MGR_TOP_MARGIN
+#define HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH         112
+#define HD_COMP_MGR_TOP_RIGHT_BTN_HEIGHT        HD_COMP_MGR_TOP_MARGIN
+#define HD_COMP_MGR_STATUS_MENU_WIDTH           688
 
 typedef struct HdCompMgrClientClass   HdCompMgrClientClass;
 typedef struct HdCompMgrClient        HdCompMgrClient;

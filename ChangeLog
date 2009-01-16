@@ -1,3 +1,21 @@
+2009-01-16  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-page.h
+	* src/launcher/hd-launcher-grid.c
+	* src/launcher/hd-launcher-grid.h
+	* src/launcher/hd-launcher.c
+	* src/home/hd-switcher.c
+	* src/mb/hd-applet-layout-manager.c
+	* src/mb/hd-status-menu.c
+	* src/mb/hd-comp-mgr.h
+	* src/mb/hd-status-area.c:
+	Moved hard-coded references to screen width, height and button sizes
+	to refer to the #defines in hd-comp-mgr
+	* src/mb/hd-note.c:
+	Made IncomingEventPreview notes keep their original size, and be
+	positioned at the top of the screen - as per UI Layout guide
+
 2009-01-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Application and window matching.

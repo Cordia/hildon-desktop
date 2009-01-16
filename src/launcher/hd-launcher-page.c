@@ -40,6 +40,7 @@
 #include "hd-launcher-grid.h"
 #include "hd-gtk-utils.h"
 #include "hd-gtk-style.h"
+#include "hd-comp-mgr.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 #define HD_PARAM_READWRITE (G_PARAM_READWRITE | \

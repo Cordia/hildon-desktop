@@ -4,7 +4,7 @@
  * Copyright (C) 2008 Nokia Corporation.
  *
  * Authors:  Tomas Frydrych <tf@o-hand.com>
- *           Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+ *           Kimmo Hï¿½mï¿½lï¿½inen <kimmo.hamalainen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -66,10 +66,10 @@ hd_status_area_init (MBWMObject *this, va_list vap)
 
   client->stacking_layer = MBWMStackLayerTopMid;
 
-  geom.x      = 112;
+  geom.x      = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
   geom.y      = 0;
   geom.width  = 112;
-  geom.height = 56;
+  geom.height = HD_COMP_MGR_TOP_MARGIN;
 
   hd_status_area_request_geometry (client, &geom, MBWMClientReqGeomForced);
 

@@ -67,14 +67,15 @@ ClutterActor *hd_launcher_grid_new      (void);
 void          hd_launcher_grid_clear    (HdLauncherGrid *grid);
 void          hd_launcher_grid_reset_v_adjustment (HdLauncherGrid *grid);
 
-void          hd_launcher_grid_transition(HdLauncherGrid *grid, 
+void          hd_launcher_grid_transition(HdLauncherGrid *grid,
                                           HdLauncherPage *page,
                                           HdLauncherPageTransition trans_type,
                                           float amount);
 
 /* Fixed sizes */
-#define HD_LAUNCHER_GRID_MIN_HEIGHT (410)
-#define HD_LAUNCHER_GRID_WIDTH  (800)
+#define HD_LAUNCHER_GRID_MIN_HEIGHT \
+                (HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN)
+#define HD_LAUNCHER_GRID_WIDTH  (HD_LAUNCHER_PAGE_WIDTH)
 
 G_END_DECLS
 

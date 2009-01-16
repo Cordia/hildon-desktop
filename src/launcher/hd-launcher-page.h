@@ -88,8 +88,8 @@ ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page);
 /* Fixed sizes.
  * FIXME: These should come from getting the screen size
  */
-#define HD_LAUNCHER_PAGE_WIDTH  (800)
-#define HD_LAUNCHER_PAGE_HEIGHT (480)
+#define HD_LAUNCHER_PAGE_WIDTH  (HD_COMP_MGR_SCREEN_WIDTH)
+#define HD_LAUNCHER_PAGE_HEIGHT (HD_COMP_MGR_SCREEN_HEIGHT)
 #define HD_LAUNCHER_PAGE_YMARGIN (70)
 
 G_END_DECLS
