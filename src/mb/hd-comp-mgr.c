@@ -73,7 +73,7 @@
  * into the blur box (and we don't want to waste cycles needlessly
  * blurring anyway) */
 #define BLUR_FOR_WINDOW(c) \
-              ((!(c)->window || !g_str_equal((c)->window->name, "SystemUI root window")) \
+              ((!(c)->window || ((c)->window->name && !g_str_equal((c)->window->name, "SystemUI root window"))) \
                && !HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->frame_geometry))
 
 static gchar * hd_comp_mgr_service_from_xwindow (HdCompMgr *hmgr, Window xid);

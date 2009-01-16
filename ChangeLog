@@ -1,3 +1,8 @@
+2009-01-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c: Patch from Laszlo to check for NULL in
+	BLUR_FOR_WINDOW macro. Fixes: NB#96990
+
 2009-01-15  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view-container.c
