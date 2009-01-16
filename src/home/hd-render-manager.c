@@ -491,8 +491,6 @@ void hd_render_manager_set_order ()
 
   switch (priv->state)
     {
-      guint n;
-
       case HDRM_STATE_UNDEFINED:
         g_warning("%s: NEVER supposed to be in HDRM_STATE_UNDEFINED",
                   __FUNCTION__);
@@ -504,16 +502,7 @@ void hd_render_manager_set_order ()
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
-
-        /* Blur the home if there is anything in the front group
-         * other than blur_front, otherwise clear home blurring. */
-        n = clutter_group_get_n_children (priv->front);
-        if (n > 1 || (n == 1 && clutter_group_get_nth_child (priv->front, 0)
-                      != CLUTTER_ACTOR (priv->blur_front)))
-          hd_render_manager_set_blur(HDRM_BLUR_HOME);
-        else
-          hd_render_manager_set_blur(HDRM_BLUR_NONE);
-
+        hd_render_manager_set_blur(HDRM_BLUR_NONE);
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_HOME_EDIT:
@@ -1148,9 +1137,10 @@ void hd_render_manager_set_reactive(gboolean reactive)
  * rect in blockers */
 static gboolean
 hd_render_manager_is_visible(GList *blockers,
-                             ClutterGeometry rect)
+                             const ClutterGeometry *rectx)
 {
   GList *bit;
+  ClutterGeometry rect = *rectx;
   /* clip for every block */
   bit = g_list_first(blockers);
   while (bit)
@@ -1163,7 +1153,7 @@ hd_render_manager_is_visible(GList *blockers,
           blocker.x <= rect.x+(blocker.width-rect.width))
         {
           if (blocker.height >= rect.height &&
-              blocker.y <= rect.y+(blocker.height-rect.height))
+              blocker.y <= rect.y-((gint)blocker.height-(gint)rect.height))
             {
               /* If rect fits inside blocker in the Y axis,
                * it is def. not visible */
@@ -1171,8 +1161,11 @@ hd_render_manager_is_visible(GList *blockers,
             }
           else if (rect.y < blocker.y)
             {
-              /* rect out the bottom, clip to the blocker */
-              rect.height = blocker.y - rect.y;
+              /* safety - if the blocker sits in the middle of us
+               * it makes 2 rects, so don't use it */
+              if (blocker.y+blocker.height >= rect.y+rect.height)
+                /* rect out the bottom, clip to the blocker */
+                rect.height = blocker.y - rect.y;
             }
           else
             { /* rect must be out the top, clip to the blocker */
@@ -1262,7 +1255,7 @@ void hd_render_manager_set_visibilities()
                             (gpointer)&blockers);
   /* Now check to see if the whole screen is covered, and if so
    * don't bother rendering blurring */
-  if (hd_render_manager_is_visible(blockers, fullscreen_geo))
+  if (hd_render_manager_is_visible(blockers, &fullscreen_geo))
     {
       clutter_actor_show(CLUTTER_ACTOR(priv->home_blur));
     }
@@ -1282,7 +1275,7 @@ void hd_render_manager_set_visibilities()
           ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
           clutter_actor_get_geometry(child, geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
-          if (hd_render_manager_is_visible(blockers, *geo))
+          if (hd_render_manager_is_visible(blockers, geo))
             clutter_actor_show(child);
           else
             clutter_actor_hide(child);

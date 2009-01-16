@@ -425,7 +425,7 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
                 KeyPressMask | KeyReleaseMask |
                 PointerMotionMask );
 
-  g_debug("%s: setting viewport", __FUNCTION__);
+  /*g_debug("%s: setting viewport", __FUNCTION__);*/
   if (count > 0)
     {
       XRectangle *rectangle = g_new (XRectangle, count);
@@ -436,8 +436,8 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
           rectangle[i].y      = geom[i].y;
           rectangle[i].width  = geom[i].width;
           rectangle[i].height = geom[i].height;
-          g_debug("%s: region %d, %d, %d, %d", __FUNCTION__,
-              geom[i].x, geom[i].y, geom[i].width, geom[i].height);
+          /*g_debug("%s: region %d, %d, %d, %d", __FUNCTION__,
+              geom[i].x, geom[i].y, geom[i].width, geom[i].height);*/
         }
       region = XFixesCreateRegion (wm->xdpy, rectangle, count);
       g_free (rectangle);
@@ -660,6 +660,14 @@ hd_comp_mgr_get_client_transient_for (MBWindowManagerClient *c)
     : NULL;
 }
 
+static gboolean
+hd_comp_mgr_is_client_screensaver (MBWindowManagerClient *c)
+{
+  /* FIXME: ugly. MBWM flag and change to systemui needed? */
+  return c && c->window && c->window->name &&
+         g_str_equal((c)->window->name, "systemui");
+}
+
 static void
 hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
                                 int x, int y, int width, int height,
@@ -679,8 +687,17 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
   /* TFP textures are usually bundled into another group, and it is
    * this group that sets visibility - so we must check it too */
   parent = clutter_actor_get_parent(actor);
-  if (parent && !CLUTTER_ACTOR_IS_VISIBLE(parent))
-    return;
+  if (parent)
+    {
+      ClutterActor *parent2;
+      if (!CLUTTER_ACTOR_IS_VISIBLE(parent))
+        return;
+      /* also check the parent above for cases like status area
+       * where we might be in another group that is hidden */
+      parent2 = clutter_actor_get_parent(parent);
+      if (parent2 && !CLUTTER_ACTOR_IS_VISIBLE(parent2))
+        return;
+    }
 
   /* Check we're not in a mode where it's a bad idea.
    * Also skip if we're in some transition -
@@ -1030,15 +1047,14 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (HD_IS_NOTE(c)  &&
                HD_NOTE(c)->note_type == HdNoteTypeIncomingEventPreview)
-        hd_transition_popup(hmgr, c, MBWMCompMgrClientEventUnmap);
+        hd_transition_notification(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (c_type == MBWMClientTypeDialog)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (c_type == MBWMClientTypeNote)
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (c_type == MBWMClientTypeApp)
-        {
+        if (!hd_comp_mgr_is_client_screensaver(c))
           hd_transition_close_app (hmgr, c);
-        }
 
       /* after the effect, restack */
       hd_comp_mgr_restack(mgr);
@@ -1065,20 +1081,21 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventMap);
       else if (HD_IS_NOTE(c) &&
                HD_NOTE(c)->note_type == HdNoteTypeIncomingEventPreview)
-        hd_transition_popup(hmgr, c, MBWMCompMgrClientEventMap);
+        hd_transition_notification(hmgr, c, MBWMCompMgrClientEventMap);
       else if (c_type == MBWMClientTypeNote)
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventMap);
       else if (c_type == MBWMClientTypeApp)
-        {
-          /* Look if it's a stackable window. */
-          HdApp *app = HD_APP (c);
-          if (app->secondary_window)
-            /* FIXME: Transitions. */
-            g_debug ("%s: Mapping secondary app window.\n", __FUNCTION__);
-          /* We're now showing this app, so remove our app
-           * starting screen if we had one */
-          hd_launcher_window_created();
-        }
+        if (!hd_comp_mgr_is_client_screensaver(c))
+          {
+            /* Look if it's a stackable window. */
+            HdApp *app = HD_APP (c);
+            if (app->secondary_window)
+              /* FIXME: Transitions. */
+              g_debug ("%s: Mapping secondary app window.\n", __FUNCTION__);
+            /* We're now showing this app, so remove our app
+             * starting screen if we had one */
+            hd_launcher_window_created();
+          }
     }
 }
 

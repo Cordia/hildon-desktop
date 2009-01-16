@@ -1,3 +1,17 @@
+2009-01-15  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c:
+	  Fixed blurred home view caused by recent blurring changes
+	  Fixed visibility detection code to fix black background issue
+	* src/util/hd-transition.c
+	* src/util/hd-transition.h:
+	  Transitions for notifications - not finished yet
+	* src/mb/hd-comp-mgr.c:
+	  Screensaver check to fix unmap animation + flicker
+	  Further visibility checks for update_area
+	  Calls to special transitions for notifications
+	  Removed some debug messages
+
 2009-01-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c: Patch from Laszlo to check for NULL in

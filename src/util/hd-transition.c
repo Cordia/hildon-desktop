@@ -41,6 +41,7 @@
 #define HDCM_BLUR_DURATION 300
 #define HDCM_POPUP_DURATION 250
 #define HDCM_FADE_DURATION 150
+#define HDCM_NOTIFICATION_DURATION 1000
 #define HDCM_UNMAP_PARTICLES 8
 #define HD_EFFECT_PARTICLE "white-particle.png"
 
@@ -55,6 +56,9 @@ typedef struct _HDEffectData
   /* Any extra particles if they are used for this effect */
   ClutterActor             *particles[HDCM_UNMAP_PARTICLES];
 } HDEffectData;
+
+
+static ClutterActor *particle_tex = NULL;
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -246,6 +250,33 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
       clutter_actor_hide( data->particles[i] );
 }
 
+static void
+on_notification_timeline_new_frame(ClutterTimeline *timeline,
+                                   gint frame_num, HDEffectData *data)
+{
+  float amt;
+  ClutterActor *actor;
+
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+  if (!CLUTTER_IS_ACTOR(actor))
+    return;
+
+  amt =  (float)clutter_timeline_get_progress(timeline);
+  if (data->event == MBWMCompMgrClientEventUnmap)
+    {
+      /* Closing Animation */
+      float scale = 1-amt;
+      clutter_actor_set_opacity(actor, (int)(255*(1-amt)));
+      clutter_actor_set_scale(actor, scale, scale);
+    }
+  else
+    {
+      /* Opening Animation */
+      float scale =  1 + (1-amt)*0.5f;
+      clutter_actor_set_opacity(actor, (int)(255*amt));
+      clutter_actor_set_scale(actor, scale, scale);
+    }
+}
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -380,8 +411,6 @@ hd_transition_fade(HdCompMgr                  *mgr,
   clutter_timeline_start (data->timeline);
 }
 
-static ClutterActor *particle_tex = NULL;
-
 void
 hd_transition_close_app (HdCompMgr                  *mgr,
                          MBWindowManagerClient      *c)
@@ -473,6 +502,49 @@ hd_transition_close_app (HdCompMgr                  *mgr,
 
   hd_transition_play_sound ("/usr/share/sounds/ui-window_close.wav");
 }
+
+void
+hd_transition_notification(HdCompMgr                  *mgr,
+                           MBWindowManagerClient      *c,
+                           MBWMCompMgrClientEvent     event)
+{
+  MBWMCompMgrClutterClient * cclient;
+  ClutterActor             * actor;
+  HDEffectData             * data;
+  ClutterGeometry            geo;
+
+  cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+  if (!actor)
+    return;
+  clutter_actor_get_geometry(actor, &geo);
+
+  /* Need to store also pointer to the manager, as by the time
+   * the effect finishes, the back pointer in the cm_client to
+   * MBWindowManagerClient is not longer valid/set.
+   */
+  data = g_new0 (HDEffectData, 1);
+  data->event = event;
+  data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+  data->hmgr = HD_COMP_MGR (mgr);
+  data->timeline = g_object_ref(
+            clutter_timeline_new_for_duration (HDCM_NOTIFICATION_DURATION) );
+  g_signal_connect (data->timeline, "new-frame",
+                        G_CALLBACK (on_notification_timeline_new_frame), data);
+  g_signal_connect (data->timeline, "completed",
+                        G_CALLBACK (hd_transition_completed), data);
+  data->geo = geo;
+
+  mb_wm_comp_mgr_clutter_client_set_flags (cclient,
+                              MBWMCompMgrClutterClientDontUpdate |
+                              MBWMCompMgrClutterClientEffectRunning);
+  hd_comp_mgr_set_effect_running(mgr, TRUE);
+
+  /* first call to stop flicker */
+  on_fade_timeline_new_frame(data->timeline, 0, data);
+  clutter_timeline_start (data->timeline);
+}
+
 
 /* Tell play() now it's free to play. */
 static void
