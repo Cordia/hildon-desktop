@@ -1,3 +1,12 @@
+2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view-container.c
+	  (hd_home_view_container_update_previous_and_next_view,
+	  hd_home_view_container_update_active_views, views_active_notify_func,
+	  hd_home_view_container_constructed,
+	  hd_home_view_container_set_current_view): Also update previous and
+	  next view when active views but not current view changed.
+
 2009-01-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home.c (hd_home_constructed): Add left and right switch

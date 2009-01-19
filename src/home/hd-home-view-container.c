@@ -79,8 +79,28 @@ enum
 G_DEFINE_TYPE (HdHomeViewContainer, hd_home_view_container, CLUTTER_TYPE_GROUP);
 
 static void
-hd_home_view_container_update_views (HdHomeViewContainer *self,
-                                     gboolean             constructed)
+hd_home_view_container_update_previous_and_next_view (HdHomeViewContainer *self)
+{
+  HdHomeViewContainerPrivate *priv = self->priv;
+  guint previous_view, next_view;
+
+  previous_view = next_view = priv->current_view;
+
+  do
+    previous_view = (previous_view + MAX_HOME_VIEWS - 1) % MAX_HOME_VIEWS;
+  while (previous_view != priv->current_view && !priv->active_views[previous_view]);
+
+  do
+    next_view = (next_view + 1) % MAX_HOME_VIEWS;
+  while (next_view != priv->current_view && !priv->active_views[next_view]);
+
+  priv->previous_view = previous_view;
+  priv->next_view = next_view;
+}
+
+static void
+hd_home_view_container_update_active_views (HdHomeViewContainer *self,
+                                            gboolean             constructed)
 {
   HdHomeViewContainerPrivate *priv = self->priv;
   GSList *list;
@@ -206,6 +226,10 @@ hd_home_view_container_update_views (HdHomeViewContainer *self,
         {
           hd_home_view_container_set_current_view (self, current_view);
         }
+      else
+        {
+          hd_home_view_container_update_previous_and_next_view (self);
+        }
     }
 }
 
@@ -215,8 +239,8 @@ views_active_notify_func (GConfClient *client,
                           GConfEntry  *entry,
                           gpointer     user_data)
 {
-  hd_home_view_container_update_views (HD_HOME_VIEW_CONTAINER (user_data),
-                                       FALSE);
+  hd_home_view_container_update_active_views (HD_HOME_VIEW_CONTAINER (user_data),
+                                              FALSE);
 }
 
 static void
@@ -279,7 +303,7 @@ hd_home_view_container_constructed (GObject *self)
 		   (unsigned char *) propvalue,
 		   1);
 
-  hd_home_view_container_update_views (container, TRUE);
+  hd_home_view_container_update_active_views (container, TRUE);
 }
 
 static void
@@ -475,7 +499,6 @@ hd_home_view_container_set_current_view (HdHomeViewContainer *container,
                                          guint                current_view)
 {
   HdHomeViewContainerPrivate *priv;
-  guint previous_view, next_view;
   MBWindowManager *wm;
   long propvalue[1];
   GError *error = NULL;
@@ -486,19 +509,9 @@ hd_home_view_container_set_current_view (HdHomeViewContainer *container,
   priv = container->priv;
 
   /* Determine previous and next views */
-  previous_view = next_view = current_view;
-
-  do
-    previous_view = (previous_view + MAX_HOME_VIEWS - 1) % MAX_HOME_VIEWS;
-  while (previous_view != current_view && !priv->active_views[previous_view]);
-
-  do
-    next_view = (next_view + 1) % MAX_HOME_VIEWS;
-  while (next_view != current_view && !priv->active_views[next_view]);
-
   priv->current_view = current_view;
-  priv->previous_view = previous_view;
-  priv->next_view = next_view;
+
+  hd_home_view_container_update_previous_and_next_view (container);
 
   /* Store current view in GConf */
   gconf_client_set_int (priv->gconf_client,
