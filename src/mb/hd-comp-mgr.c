@@ -633,25 +633,47 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeHomeApplet)
     {
-      ClutterActor  *applet;
-      MBGeometry     geom;
-      HdHomeApplet  *happlet = HD_HOME_APPLET (c);
-      gint           view_id = happlet->view_id;
-      gint           layer   = happlet->applet_layer;
+      ClutterActor *applet;
 
-      if (view_id < 0)
-	{
-	  /* FIXME -- handle sticky applets */
-	  view_id = 0;
-	}
-
+      /* FIXME: that is broken, move to HdHomeView.
       mb_wm_client_get_coverage (c, &geom);
       hd_applet_layout_manager_reclaim_geometry (priv->applet_manager[view_id],
 						 layer, &geom);
 
+      */
+
       applet = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
-      hd_home_remove_applet (HD_HOME (priv->home), applet);
+      if (applet)
+        {
+          ClutterActor *parent = clutter_actor_get_parent (applet);
+          while (parent)
+            {
+              g_debug ("Parent type: %s", parent ? G_OBJECT_TYPE_NAME (parent) : "NULL");
+
+              if (parent == priv->home)
+                {
+                  /* Global applet */
+                  /* FIXME: hd_home_unregister_global_applet (HD_HOME (priv->home)); */
+
+                  g_debug ("FIXME implement unregister global applet");
+
+                  break;
+                }
+              else if (HD_IS_HOME_VIEW (parent))
+                {
+                  g_debug ("Unregister applet");
+
+                  hd_home_view_unregister_applet (HD_HOME_VIEW (parent), applet);
+
+                  break;
+                }
+              
+              parent = clutter_actor_get_parent (parent);
+            }
+
+          g_object_unref (applet);
+        }
     }
   /* Dialogs and Notes (including notifications) have already been dealt
    * with in hd_comp_mgr_effect().  This is because by this time we don't

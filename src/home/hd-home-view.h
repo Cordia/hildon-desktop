@@ -68,11 +68,13 @@ guint hd_home_view_get_view_id (HdHomeView *view);
 
 void hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet);
 
+void hd_home_view_unregister_applet (HdHomeView *view, ClutterActor *applet);
 void hd_home_view_remove_applet (HdHomeView *view, ClutterActor *applet);
 
 void hd_home_view_move_applet (HdHomeView   *old_view, HdHomeView   *new_view,
 			       ClutterActor *applet);
 
+void hd_home_view_close_all_applets (HdHomeView *view);
 
 ClutterActor * hd_home_view_get_background (HdHomeView *view);
 

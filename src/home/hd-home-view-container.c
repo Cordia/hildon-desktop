@@ -196,6 +196,7 @@ hd_home_view_container_update_views (HdHomeViewContainer *self,
             {
               priv->active_views[i] = active_views[i];
               clutter_actor_hide (priv->views[i]);
+              hd_home_view_close_all_applets (HD_HOME_VIEW (priv->views[i]));
               g_object_notify (G_OBJECT (priv->views[i]), "active");
             }
         }

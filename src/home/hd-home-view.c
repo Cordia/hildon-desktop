@@ -76,7 +76,7 @@ struct _HdHomeViewPrivate
   gint                      xwidth;
   gint                      xheight;
 
-  GList                    *applets; /* MBWMCompMgrClutterClient list */
+  GHashTable               *applets;
 
   gint                      applet_motion_start_x;
   gint                      applet_motion_start_y;
@@ -116,6 +116,22 @@ static void hd_home_view_constructed (GObject *object);
 
 static void hd_home_view_refresh_bg (HdHomeView	 *self,
 				     const gchar *image);
+
+typedef struct _HdHomeViewAppletData HdHomeViewAppletData;
+
+struct _HdHomeViewAppletData
+{
+  ClutterActor *actor;
+
+  MBWMCompMgrClutterClient *cc;
+
+  guint press_cb;
+  guint release_cb;
+  guint motion_cb;
+};
+
+static HdHomeViewAppletData *applet_data_new  (ClutterActor *actor);
+static void                  applet_data_free (HdHomeViewAppletData *data);
 
 G_DEFINE_TYPE (HdHomeView, hd_home_view, CLUTTER_TYPE_GROUP);
 
@@ -209,34 +225,25 @@ hd_home_view_background_release (ClutterActor *self,
 				 HdHomeView   *view)
 {
   HdHomeViewPrivate *priv = view->priv;
-  GList         *l;
+  GHashTableIter iter;
+  gpointer value;
 
   g_debug ("Background release");
-
 
   /*
    * If the click started on an applet, we might have a motion callback
    * installed -- remove it.
    */
-  l = priv->applets;
-  while (l)
+  g_hash_table_iter_init (&iter, priv->applets);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
     {
-      guint id;
-      MBWMCompMgrClutterClient *cc = l->data;
-      ClutterActor * applet = mb_wm_comp_mgr_clutter_client_get_actor (cc);
+      HdHomeViewAppletData *data = value;
 
-      id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
-					       "HD-VIEW-motion-cb"));
-
-      if (id)
-	{
-	  g_signal_handler_disconnect (applet, id);
-	  g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb", NULL);
-	}
-
-      g_object_unref (applet);
-
-      l = l->next;
+      if (data->motion_cb)
+        {
+          g_signal_handler_disconnect (data->actor, data->motion_cb);
+          data->motion_cb = 0;
+        }
     }
 
   if (hd_render_manager_get_state() != HDRM_STATE_HOME_EDIT)
@@ -275,6 +282,10 @@ hd_home_view_constructed (GObject *object)
   MBWindowManager          *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   GConfClient              *default_client;
   gchar                    *gconf_path;
+
+  priv->applets = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+                                         NULL,
+                                         (GDestroyNotify) applet_data_free);
 
   priv->xwidth  = wm->xdpy_width;
   priv->xheight = wm->xdpy_height;
@@ -326,8 +337,8 @@ hd_home_view_constructed (GObject *object)
 static void
 hd_home_view_init (HdHomeView *self)
 {
-  self->priv =
-    G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME_VIEW, HdHomeViewPrivate);
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME_VIEW, HdHomeViewPrivate);
+
   clutter_actor_set_name(CLUTTER_ACTOR(self), "HdHomeView");
 }
 
@@ -336,7 +347,6 @@ hd_home_view_dispose (GObject *object)
 {
   HdHomeView         *self           = HD_HOME_VIEW (object);
   HdHomeViewPrivate  *priv	     = self->priv;
-  GList              *l		     = priv->applets;
   GConfClient        *default_client = gconf_client_get_default ();
 
   /* Remove background image thread/source and delete processed image */
@@ -349,18 +359,8 @@ hd_home_view_dispose (GObject *object)
       priv->bg_image_notify = 0;
     }
 
-  /* Shutdown any applets associated with this view */
-  while (l)
-  {
-    MBWMCompMgrClutterClient *cc = l->data;
-
-    hd_comp_mgr_close_client (HD_COMP_MGR (priv->comp_mgr), cc);
-
-    l = l->next;
-  }
-
-  g_list_free (priv->applets);
-  priv->applets = NULL;
+  if (priv->applets)
+    priv->applets = (g_hash_table_destroy (priv->applets), NULL);
 
   g_free (priv->background_image_file);
   priv->background_image_file = NULL;
@@ -870,14 +870,16 @@ static void
 hd_home_view_restack_applets (HdHomeView *view)
 {
   HdHomeViewPrivate *priv = view->priv;
-  GList             *a;
-  GSList            *sorted = NULL, *s;
+  GHashTableIter iter;
+  GSList *sorted = NULL, *s;
+  gpointer value;
 
-  for (a = priv->applets; a; a = a->next)
+  g_hash_table_iter_init (&iter, priv->applets);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
     {
-      MBWMCompMgrClient *cc = a->data;
+      HdHomeViewAppletData *data = value;
 
-      sorted = g_slist_insert_sorted (sorted, cc, cmp_applet_modified);
+      sorted = g_slist_insert_sorted (sorted, data->cc, cmp_applet_modified);
     }
 
   for (s = sorted; s; s = s->next)
@@ -893,8 +895,7 @@ void
 hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
 {
   HdHomeViewPrivate *priv = view->priv;
-  MBWMCompMgrClient *cc;
-  guint              id;
+  HdHomeViewAppletData *data;
 
   /*
    * Reparent the applet to ourselves; note that this automatically
@@ -903,56 +904,26 @@ hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
   clutter_actor_reparent (applet, priv->applets_container);
   clutter_actor_set_reactive (applet, TRUE);
 
-  id = g_signal_connect (applet, "button-release-event",
-			 G_CALLBACK (hd_home_view_applet_release),
-			 view);
+  data = applet_data_new (applet);
 
-  g_object_set_data (G_OBJECT (applet), "HD-VIEW-release-cb",
-		     GINT_TO_POINTER (id));
+  data->release_cb = g_signal_connect (applet, "button-release-event",
+                                       G_CALLBACK (hd_home_view_applet_release), view);
+  data->press_cb = g_signal_connect (applet, "button-press-event",
+                                     G_CALLBACK (hd_home_view_applet_press), view);
 
-  id = g_signal_connect (applet, "button-press-event",
-			 G_CALLBACK (hd_home_view_applet_press),
-			 view);
-
-  g_object_set_data (G_OBJECT (applet), "HD-VIEW-press-cb",
-		     GINT_TO_POINTER (id));
-
-  cc = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
-
-  priv->applets = g_list_prepend (priv->applets, cc);
+  g_hash_table_insert (priv->applets,
+                       applet,
+                       data);
 
   hd_home_view_restack_applets (view);
 }
 
 void
-hd_home_view_remove_applet (HdHomeView *view, ClutterActor *applet)
+hd_home_view_unregister_applet (HdHomeView *view, ClutterActor *applet)
 {
-  HdHomeViewPrivate        *priv = view->priv;
-  MBWMCompMgrClutterClient *cc;
-  guint                     id;
+  HdHomeViewPrivate *priv = view->priv;
 
-
-  cc = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
-
-  priv->applets = g_list_remove (priv->applets, cc);
-
-  id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
-					   "HD-VIEW-release-cb"));
-  g_object_set_data (G_OBJECT (applet), "HD-VIEW-release-cb", NULL);
-  g_signal_handler_disconnect (applet, id);
-
-  id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
-					   "HD-VIEW-press-cb"));
-  g_object_set_data (G_OBJECT (applet), "HD-VIEW-press-cb", NULL);
-  g_signal_handler_disconnect (applet, id);
-
-  id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
-					   "HD-VIEW-motion-cb"));
-  if (id)
-    {
-      g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb", NULL);
-      g_signal_handler_disconnect (applet, id);
-    }
+  g_hash_table_remove (priv->applets, applet);
 }
 
 void
@@ -964,7 +935,7 @@ hd_home_view_move_applet (HdHomeView   *old_view,
   gint x, y;
 /*   guint id; */
 
-  hd_home_view_remove_applet (old_view, applet);
+/*  hd_home_view_remove_applet (old_view, applet); */
 
   /*
    * Position the applet on the new view, so that it would look like it was
@@ -1024,13 +995,26 @@ hd_home_view_get_active (HdHomeView *view)
                                             view->priv->id);
 }
 
-/*
-static void
-remove_applet_from_view (ClutterActor *applet,
-                         HdHomeView   *view)
+void
+hd_home_view_close_all_applets (HdHomeView *view)
 {
-}
+  HdHomeViewPrivate *priv;
+  GHashTableIter iter;
+  gpointer key;
 
+  g_return_if_fail (HD_IS_HOME_VIEW (view));
+
+  priv = view->priv;
+
+  /* Iterate over all applets */
+  g_hash_table_iter_init (&iter, priv->applets);
+  while (g_hash_table_iter_next (&iter, &key, NULL))
+    {
+      hd_home_close_applet (priv->home, CLUTTER_ACTOR (key));
+    }
+ }
+
+/*
 static void
 scroll_next_completed_cb (ClutterTimeline *timeline,
                           HdHomeView      *view)
@@ -1045,3 +1029,34 @@ scroll_next_completed_cb (ClutterTimeline *timeline,
  }
  */
 
+static HdHomeViewAppletData *
+applet_data_new (ClutterActor *actor)
+{
+  HdHomeViewAppletData *data;
+
+  data = g_slice_new0 (HdHomeViewAppletData);
+
+  data->actor = actor;
+  data->cc = g_object_get_data (G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
+
+  return data;
+}
+
+static void
+applet_data_free (HdHomeViewAppletData *data)
+{
+  if (G_UNLIKELY (!data))
+    return;
+
+  if (data->press_cb)
+    data->press_cb = (g_signal_handler_disconnect (data->actor, data->press_cb), 0);
+  if (data->release_cb)
+    data->release_cb = (g_signal_handler_disconnect (data->actor, data->release_cb), 0);
+  if (data->motion_cb)
+    data->motion_cb = (g_signal_handler_disconnect (data->actor, data->motion_cb), 0);
+
+  data->actor = NULL;
+  data->cc = NULL;
+
+  g_slice_free (HdHomeViewAppletData, data);
+}

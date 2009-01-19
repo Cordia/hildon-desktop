@@ -109,6 +109,7 @@ struct _HdHomePrivate
   ClutterActor          *applet_close_button;
 
   ClutterActor          *active_applet;
+  guint                  active_applet_hide_id;
 
   ClutterActor          *grey_filter;
 
@@ -388,31 +389,15 @@ hd_home_applet_close_button_clicked (ClutterActor       *button,
 				     HdHome             *home)
 {
   HdHomePrivate *priv = home->priv;
-  HdCompMgr     *hmgr = HD_COMP_MGR (priv->comp_mgr);
-  MBWMCompMgrClutterClient *cc;
-  GConfClient   *client = gconf_client_get_default ();
-  gchar         *applet_id;
-  gchar         *applet_key;
-
 
   if (!priv->active_applet)
     {
-      g_warning ("No active applet to close !!!");
+      g_warning ("No active applet to close.");
+
       return FALSE;
     }
 
-  cc = g_object_get_data (G_OBJECT (priv->active_applet),
-			  "HD-MBWMCompMgrClutterClient");
-
-  /* Unset GConf configuration */
-  applet_id = g_object_get_data (G_OBJECT (priv->active_applet),
-                                 "HD-applet-id");
-
-  applet_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s", applet_id);
-  gconf_client_recursive_unset (client, applet_key, 0, NULL);
-  g_free (applet_key);
-
-  hd_comp_mgr_close_client (hmgr, cc);
+  hd_home_close_applet (home, priv->active_applet);
 
   return TRUE;
 }
@@ -980,21 +965,29 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
 }
 
 void
-hd_home_remove_applet (HdHome *home, ClutterActor *applet)
+hd_home_close_applet (HdHome *home, ClutterActor *applet)
 {
   HdHomePrivate *priv = home->priv;
-  guint view_id;
-  ClutterActor *view;
+  HdCompMgr *hmgr = HD_COMP_MGR (priv->comp_mgr);
+  MBWMCompMgrClutterClient *cc;
+  GConfClient *client = gconf_client_get_default ();
+  gchar *applet_id;
+  gchar *applet_key;
 
-  view_id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (applet), "HD-view-id"));
+  cc = g_object_get_data (G_OBJECT (applet),
+                          "HD-MBWMCompMgrClutterClient");
 
-  view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
-                                          view_id);
+  /* Unset GConf configuration */
+  applet_id = g_object_get_data (G_OBJECT (applet),
+                                 "HD-applet-id");
 
-  hd_home_view_remove_applet (HD_HOME_VIEW (view), applet);
+  applet_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s", applet_id);
+  gconf_client_recursive_unset (client, applet_key, 0, NULL);
+  g_free (applet_key);
 
-  if (applet == priv->active_applet)
-    hd_home_hide_applet_buttons (home);
+  hd_comp_mgr_close_client (hmgr, cc);
+
+  g_object_unref (client);
 }
 
 static void
@@ -1070,6 +1063,14 @@ hd_home_hide_edit_button (HdHome *home)
     }
 }
 
+static void
+hide_cb (ClutterActor *applet, HdHome *home)
+{
+  g_debug ("%s", __FUNCTION__);
+
+  hd_home_hide_applet_buttons (home);
+}
+
 void
 hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet)
 {
@@ -1092,6 +1093,9 @@ hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet)
   clutter_actor_show (priv->applet_close_button);
 
   priv->active_applet = applet;
+
+  priv->active_applet_hide_id = g_signal_connect (applet, "hide",
+                                                  G_CALLBACK (hide_cb), home);
 }
 
 void
@@ -1101,6 +1105,12 @@ hd_home_hide_applet_buttons (HdHome *home)
 
   clutter_actor_hide (priv->applet_close_button);
 
+  if (priv->active_applet_hide_id)
+    {
+      g_signal_handler_disconnect (priv->active_applet,
+                                   priv->active_applet_hide_id);
+      priv->active_applet_hide_id = 0;
+    }
   priv->active_applet = NULL;
 }
 
