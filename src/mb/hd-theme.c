@@ -867,11 +867,22 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
   const char		 * title;
   int			   x, y;
   int			   operator = PictOpSrc;
+  int                      titlebar_width;
+  int                      pack_end_x = mb_wm_decor_get_pack_end_x (decor);
 
   if (!((c = mb_wm_xml_client_find_by_type (theme->xml_clients, c_type)) &&
         (d = mb_wm_xml_decor_find_by_type (c->decors, decor->type))))
     return;
 
+  left_padding -= 8; /* fudge, not sure why it's necessary */
+  
+  titlebar_width = decor->geom.width - left_padding;
+
+#if 0
+  /* Uncomment this to make the titlebar make room for the buttons on the right */
+  titlebar_width -= (decor->geom.width - pack_end_x);
+#endif
+  
 #ifdef HAVE_XEXT
   shaped = theme->shaped && c->shaped && !mb_wm_client_is_argb32 (client);
 #endif
@@ -985,20 +996,20 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
   if (decor->type == MBWMDecorTypeNorth ||
       decor->type == MBWMDecorTypeSouth)
     {
-      if (decor->geom.width < d->width)
+      if (titlebar_width < d->width)
 	{
 	  /* The decor is smaller than the template, cut bit from the
 	   * midle
 	   */
-	  int width1 = decor->geom.width / 2;
-	  int width2 = decor->geom.width - width1;
+	  int width1 = titlebar_width / 2;
+	  int width2 = titlebar_width - width1;
 	  int x2     = d->x + d->width - width2;
 
 	  XRenderComposite(xdpy, operator,
 			   p_theme->xpic,
 			   None,
 			   XftDrawPicture (data->xftdraw),
-			   d->x, d->y, 0, 0, 0, 0,
+			   d->x, d->y, 0, 0, left_padding, 0,
 			   width1, d->height);
 
 	  XRenderComposite(xdpy, operator,
@@ -1006,7 +1017,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   None,
 			   XftDrawPicture (data->xftdraw),
 			   x2 , d->y, 0, 0,
-			   width1, 0,
+			   left_padding+width1, 0,
 			   width2, d->height);
 
 #ifdef HAVE_XEXT
@@ -1021,7 +1032,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 	    }
 #endif
 	}
-      else if (decor->geom.width == d->width)
+      else if (titlebar_width == d->width)
 	{
 	  /* Exact match */
 	  XRenderComposite(xdpy, operator,
@@ -1047,12 +1058,12 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 	   */
 	  int pad_offset = d->pad_offset;
 	  int pad_length = d->pad_length;
-	  int gap_length = decor->geom.width - d->width;
+	  int gap_length = titlebar_width - d->width;
 
 	  if (!pad_length)
 	    {
 	      pad_length =
-		decor->geom.width > 30 ? 10 : decor->geom.width / 4 + 1;
+		titlebar_width > 30 ? 10 : titlebar_width / 4 + 1;
 	      pad_offset = (d->width / 2) - (pad_length / 2);
 	    }
 
@@ -1124,7 +1135,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   None,
 			   XftDrawPicture (data->xftdraw),
 			   d->x, d->y, 0, 0,
-			   0, 0,
+			   left_padding, 0,
 			   d->width, height1);
 
 	  XRenderComposite(xdpy, operator,
@@ -1132,7 +1143,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   None,
 			   XftDrawPicture (data->xftdraw),
 			   d->x , y2, 0, 0,
-			   0, height1,
+			   left_padding, height1,
 			   d->width, height2);
 
 #ifdef HAVE_XEXT
@@ -1140,10 +1151,10 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 	    {
 	      XCopyArea (xdpy, p_theme->shape_mask, data->shape_mask,
 			 data->gc_mask,
-			 d->x, d->y, d->width, height1, 0, 0);
+			 d->x, d->y, d->width, height1, left_padding, 0);
 	      XCopyArea (xdpy, p_theme->shape_mask, data->shape_mask,
 			 data->gc_mask,
-			 d->x, y2, d->width, height2, 0, height1);
+			 d->x, y2, d->width, height2, left_padding, height1);
 	    }
 #endif
 	}
@@ -1155,7 +1166,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   None,
 			   XftDrawPicture (data->xftdraw),
 			   d->x, d->y, 0, 0,
-			   0, 0,
+			   left_padding, 0,
 			   d->width, d->height);
 
 #ifdef HAVE_XEXT
@@ -1163,7 +1174,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 	    {
 	      XCopyArea (xdpy, p_theme->shape_mask, data->shape_mask,
 			 data->gc_mask,
-			 d->x, d->y, d->width, d->height, 0, 0);
+			 d->x, d->y, d->width, d->height, left_padding, 0);
 	    }
 #endif
 	}
@@ -1187,7 +1198,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   p_theme->xpic,
 			   None,
 			   XftDrawPicture (data->xftdraw),
-			   d->x, d->y, 0, 0, 0, 0,
+			   d->x, d->y, 0, 0, left_padding, 0,
 			   d->width, pad_offset);
 
 	  /* TODO: can we do this as one scaled operation? */
@@ -1196,7 +1207,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			     p_theme->xpic,
 			     None,
 			     XftDrawPicture (data->xftdraw),
-			     d->x, d->y + pad_offset, 0, 0, 0, y,
+			     d->x, d->y + pad_offset, 0, 0, left_padding, y,
 			     d->width,
 			     pad_length);
 
@@ -1205,7 +1216,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   None,
 			   XftDrawPicture (data->xftdraw),
 			   d->x , d->y + pad_offset, 0, 0,
-			   0, pad_offset + gap_length,
+			   left_padding, pad_offset + gap_length,
 			   d->width, d->height - pad_offset);
 
 #ifdef HAVE_XEXT
@@ -1215,20 +1226,20 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			 data->gc_mask,
 			 d->x, d->y,
 			 d->width, pad_offset,
-			 0, 0);
+			 left_padding, 0);
 
 	      for (y = pad_offset; y < pad_offset + gap_length; y += pad_length)
 		XCopyArea (xdpy, p_theme->shape_mask, data->shape_mask,
 			   data->gc_mask,
 			   d->x, d->y + pad_offset,
 			   d->width, pad_length,
-			   0, y);
+			   left_padding, y);
 
 	      XCopyArea (xdpy, p_theme->shape_mask, data->shape_mask,
 			 data->gc_mask,
 			 d->x, d->y + pad_offset,
 			 d->width, d->height - pad_offset,
-			 0, pad_offset + gap_length);
+			 left_padding, pad_offset + gap_length);
 	    }
 #endif
 	}
@@ -1240,7 +1251,6 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
     {
       XRectangle rec;
 
-      int pack_end_x = mb_wm_decor_get_pack_end_x (decor);
       int west_width = mb_wm_client_frame_west_width (client);
       int y, ascent, descent;
       int len = strlen (title);
@@ -1279,7 +1289,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 
       rec.x = left_padding;
       rec.y = 0;
-      rec.width = pack_end_x - 2;
+      rec.width = pack_end_x - left_padding;
       rec.height = d->height;
 
       XftDrawSetClipRectangles (data->xftdraw, 0, 0, &rec, 1);
