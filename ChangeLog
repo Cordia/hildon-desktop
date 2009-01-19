@@ -1,5 +1,9 @@
 2009-01-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Update. NB#96219 is fixed, too.
+
+2009-01-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-home-view-container.c
 	  (hd_home_view_container_update_views): Close all applets from a
 	  deactivated view. Fixes: NB#95445, NB#94082
