@@ -291,32 +291,32 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 {
   HdHome *home = userdata;
   HdHomePrivate *priv = home->priv;
+  static XComposeStatus *compose_status = NULL;
 
   char buffer[10] = {0,};
 
-  XLookupString (xev, buffer, 10, NULL, NULL);
+  XLookupString (xev, buffer, 10, NULL, compose_status);
+
+  /* g_debug ("%s, key: %s, %x, %d", __FUNCTION__, buffer, buffer[0], g_ascii_isdigit (buffer[0])); */
 
   if (priv->call_ui_proxy && g_ascii_isdigit (buffer[0]))
     {
-      g_debug ("Call Dialpad via D-BUS. " CALL_UI_DBUS_NAME "." CALL_UI_DBUS_METHOD_SHOW_DIALPAD " (s: %s)", buffer);
+/*      g_debug ("Call Dialpad via D-BUS. " CALL_UI_DBUS_NAME "." CALL_UI_DBUS_METHOD_SHOW_DIALPAD " (s: %s)", buffer);*/
 
       dbus_g_proxy_call_no_reply (priv->call_ui_proxy, CALL_UI_DBUS_METHOD_SHOW_DIALPAD,
                                   G_TYPE_STRING, buffer,
                                   G_TYPE_INVALID);
-      return TRUE;
     }
   else if (priv->osso_addressbook_proxy && buffer[0])
     {
-      /* FIXME: NYI
-      g_debug ("Call via D-BUS. " OSSO_ADDRESSBOOK_DBUS_NAME "." OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND " (s: %s)", buffer);
+/*      g_debug ("Call via D-BUS. " OSSO_ADDRESSBOOK_DBUS_NAME "." OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND " (s: %s)", buffer); */
 
       dbus_g_proxy_call_no_reply (priv->osso_addressbook_proxy, OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND,
                                   G_TYPE_STRING, buffer,
                                   G_TYPE_INVALID);
-      return TRUE; */
     }
 
-  return FALSE;
+  return TRUE;
 }
 
 static Bool
