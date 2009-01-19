@@ -1,5 +1,12 @@
 2009-01-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/home/hd-home.c (hd_home_constructed): Add left and right switch
+	to edit group. Fixes: NB#98209.
+
+	* debian/changelog: Update.
+
+2009-01-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* debian/changelog: Update. NB#96219 is fixed, too.
 
 2009-01-19  Jan Arne Petersen  <jpetersen@openismus.com>

@@ -511,6 +511,7 @@ hd_home_constructed (GObject *object)
   clutter_actor_set_size (priv->left_switch, HDH_SWITCH_WIDTH, priv->xheight);
   clutter_actor_set_position (priv->left_switch, 0, 0);
   clutter_actor_hide (priv->left_switch);
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group), priv->left_switch);
 
   priv->right_switch = clutter_rectangle_new ();
   clutter_actor_set_name (priv->right_switch, "HdHome:right_switch");
@@ -521,6 +522,7 @@ hd_home_constructed (GObject *object)
   clutter_actor_set_position (priv->right_switch,
 			      priv->xwidth - HDH_SWITCH_WIDTH, 0);
   clutter_actor_hide (priv->right_switch);
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group), priv->right_switch);
 
   /*
    * Construct the grey rectangle for dimming of desktop in edit mode
