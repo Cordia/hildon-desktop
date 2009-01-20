@@ -1,5 +1,17 @@
 2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/home/hd-home-view.c (hd_home_view_applet_motion,
+	  hd_home_view_applet_release, hd_home_view_restack_applets,
+	  hd_home_view_move_applet): Implement proper moving of applets
+	  between views. Fixes NB#88327, NB#95452, NB#96802
+
+	* src/home/hd-home.c (hd_home_add_applet): Respect default value for
+	  GConf view key.
+
+	* debian/changelog: Update.
+
+2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-home-view.c (move_applet_left_timeout_cb,
 	  move_applet_right_timeout_cb, hd_home_view_applet_motion,
 	  hd_home_view_applet_press, hd_home_view_applet_release): Implement

@@ -732,11 +732,16 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   /* Update applet actor position */
   clutter_actor_set_position (applet, x, y);
 
+  /* Check if this is the only active Home view */
+  if (!hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)) || 
+      !hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
+    return FALSE;
+
   /*
    * If the "drag cursor" entered the left/right switcher area, start a timeout 
    * to highlight the switcher.
    */
-  if (event->x < HDH_SWITCH_WIDTH)
+   if (event->x < HDH_SWITCH_WIDTH)
     {
       if (!priv->move_applet_left && !priv->move_applet_left_timeout)
         priv->move_applet_left_timeout = g_timeout_add_seconds (1, (GSourceFunc) move_applet_left_timeout_cb, view);
@@ -859,51 +864,69 @@ hd_home_view_applet_release (ClutterActor       *applet,
     }
   else
     {
-      /* Move the underlying window to match the actor's position */
-      gint x, y;
-      guint w, h;
-      MBWMCompMgrClient *cclient;
-      MBWindowManagerClient *client;
-      MBGeometry geom;
-      GConfClient *gconf_client;
-      gchar *applet_id, *position_key;
-      GSList *position_value;
-
-      /* Remove edge highlighting timeouts */
+      /* Remove switching edges highlighting timeouts */
       if (priv->move_applet_left_timeout)
         priv->move_applet_left_timeout = (g_source_remove (priv->move_applet_left_timeout), 0);
       if (priv->move_applet_right_timeout)
         priv->move_applet_right_timeout = (g_source_remove (priv->move_applet_right_timeout), 0);
 
-      cclient = (MBWMCompMgrClient *) data->cc;
-      client = cclient->wm_client;
-
-      clutter_actor_get_position (applet, &x, &y);
-      clutter_actor_get_size (applet, &w, &h);
-
-      geom.x = x;
-      geom.y = y;
-      geom.width = w;
-      geom.height = h;
-
-      mb_wm_client_request_geometry (client, &geom,
-				     MBWMClientReqGeomIsViaUserAction);
-
-      gconf_client = gconf_client_get_default ();
-      applet_id = HD_HOME_APPLET (client)->applet_id;
-
-      position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", applet_id);
-      position_value = g_slist_prepend (g_slist_prepend (NULL, GINT_TO_POINTER (y)),
-                                        GINT_TO_POINTER (x));
-      gconf_client_set_list (gconf_client, position_key,
-                             GCONF_VALUE_INT, position_value,
-                             NULL);
-
-      g_object_unref (gconf_client);
-      g_free (position_key);
-      g_slist_free (position_value);
-
+      /* Hide switching edges */
       hd_home_hide_switching_edges (priv->home);
+
+      if (priv->move_applet_left || priv->move_applet_right)
+        {
+          /* Applet should be moved to another view */
+          ClutterActor *new_view;
+
+          if (priv->move_applet_left)
+            new_view = hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container));
+          else
+            new_view = hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container));
+
+          hd_home_view_move_applet (view, HD_HOME_VIEW (new_view), applet);
+        }
+      else
+        {
+          /* Applet should be moved in this view
+           * Move the underlying window to match the actor's position
+           */
+          gint x, y;
+          guint w, h;
+          MBWMCompMgrClient *cclient;
+          MBWindowManagerClient *client;
+          MBGeometry geom;
+          GConfClient *gconf_client;
+          gchar *applet_id, *position_key;
+          GSList *position_value;
+
+          cclient = (MBWMCompMgrClient *) data->cc;
+          client = cclient->wm_client;
+
+          clutter_actor_get_position (applet, &x, &y);
+          clutter_actor_get_size (applet, &w, &h);
+
+          geom.x = x;
+          geom.y = y;
+          geom.width = w;
+          geom.height = h;
+
+          mb_wm_client_request_geometry (client, &geom,
+                                         MBWMClientReqGeomIsViaUserAction);
+
+          gconf_client = gconf_client_get_default ();
+          applet_id = HD_HOME_APPLET (client)->applet_id;
+
+          position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", applet_id);
+          position_value = g_slist_prepend (g_slist_prepend (NULL, GINT_TO_POINTER (y)),
+                                            GINT_TO_POINTER (x));
+          gconf_client_set_list (gconf_client, position_key,
+                                 GCONF_VALUE_INT, position_value,
+                                 NULL);
+
+          g_object_unref (gconf_client);
+          g_free (position_key);
+          g_slist_free (position_value);
+        }
     }
 
   return TRUE;
@@ -927,6 +950,7 @@ hd_home_view_restack_applets (HdHomeView *view)
   GSList *sorted = NULL, *s;
   gpointer value;
 
+  /* Get a list of all applets sorted by modified time */
   g_hash_table_iter_init (&iter, priv->applets);
   while (g_hash_table_iter_next (&iter, NULL, &value))
     {
@@ -935,6 +959,7 @@ hd_home_view_restack_applets (HdHomeView *view)
       sorted = g_slist_insert_sorted (sorted, data->cc, cmp_applet_modified);
     }
 
+  /* Raise all applets in the order of the list */
   for (s = sorted; s; s = s->next)
     {
       MBWMCompMgrClutterClient *cc = s->data;
@@ -980,55 +1005,59 @@ hd_home_view_unregister_applet (HdHomeView *view, ClutterActor *applet)
 }
 
 void
-hd_home_view_move_applet (HdHomeView   *old_view,
+hd_home_view_move_applet (HdHomeView   *view,
 			  HdHomeView   *new_view,
 			  ClutterActor *applet)
 {
-  HdHomeViewPrivate *priv = new_view->priv;
-  gint x, y;
-/*   guint id; */
+  HdHomeViewPrivate *priv = view->priv;
+  HdHomeViewAppletData *data;
+  HdHomeApplet *wm_applet;
+  GConfClient *gconf_client;
+  gchar *position_key, *view_key;
+  GError *error = NULL;
+  MBWindowManagerClient *desktop_client;
 
-/*  hd_home_view_remove_applet (old_view, applet); */
+  data = g_hash_table_lookup (priv->applets, applet);
 
-  /*
-   * Position the applet on the new view, so that it would look like it was
-   * dragged across the view boundary
-   */
-  clutter_actor_get_position (applet, &x, &y);
+  /* Update view for WM window */
+  wm_applet = HD_HOME_APPLET (((MBWMCompMgrClient *) data->cc)->wm_client);
+  wm_applet->view_id = hd_home_view_get_view_id (new_view);
 
-  if (x < 0)
+  /* Reset position in GConf*/
+  gconf_client = gconf_client_get_default ();
+  position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", wm_applet->applet_id);
+  gconf_client_unset (gconf_client, position_key, &error);
+  if (G_UNLIKELY (error))
     {
-      /* Applet moved across left edge */
-      x = priv->xwidth + x;
+      g_warning ("Could not unset GConf key %s. %s", position_key, error->message);
+      error = (g_error_free (error), NULL);
     }
-  else
+  g_free (position_key);
+
+  /* Update view in GConf */
+  view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view", wm_applet->applet_id);
+  gconf_client_set_int (gconf_client,
+                        view_key,
+                        wm_applet->view_id + 1,
+                        &error);
+  if (G_UNLIKELY (error))
     {
-      x = - (priv->xwidth - x);
+      g_warning ("Could not set GConf key %s. %s", view_key, error->message);
+      error = (g_error_free (error), NULL);
     }
+  g_free (view_key);
 
-  clutter_actor_set_position (applet, x, y);
+  g_object_unref (gconf_client);
+  
+  /* Unregister from old view */
+  hd_home_view_unregister_applet (view, applet);
 
-  /*
-   * Add applet to the new view
-   */
+  /* Add applet to the new view */
   hd_home_view_add_applet (new_view, applet);
 
-#if 0
-  /*
-   * Now connect motion callback
-   */
-  id = g_signal_connect (applet, "motion-event",
-			 G_CALLBACK (hd_home_view_applet_motion),
-			 new_view);
-
-  g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb",
-		     GINT_TO_POINTER (id));
-
-  priv->applet_motion_start_x = 0;
-  priv->applet_motion_start_y = 0;
-  priv->applet_motion_last_x = 0;
-  priv->applet_motion_last_y = 0;
-#endif
+  /* Mark desktop for restacking (because the wm window was moved) */
+  desktop_client = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
+  mb_wm_client_stacking_mark_dirty (desktop_client);
 }
 
 ClutterActor *

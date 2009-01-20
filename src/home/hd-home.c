@@ -882,7 +882,6 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   gint view_id;
   GConfClient *client  = gconf_client_get_default ();
   gchar *view_key, *position_key;
-  GConfValue *value;
   GSList *position;
   MBGeometry geom;
   MBWMCompMgrClient *cclient;
@@ -894,12 +893,12 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view", wm_applet->applet_id);
   position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", wm_applet->applet_id);
 
-  value = gconf_client_get_without_default (client,
-                                            view_key,
-                                            NULL);
+  view_id = gconf_client_get_int (client,
+                                  view_key,
+                                  NULL);
 
-  if (value && value->type == GCONF_VALUE_INT)
-    view_id = gconf_value_get_int (value) - 1;
+  if (view_id > 0 && view_id <= MAX_VIEWS)
+    view_id--;
   else
     {
       view_id = hd_home_get_current_view_id (home);
@@ -909,9 +908,6 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
     }
 
   wm_applet->view_id = view_id;
-
-  if (value)
-    gconf_value_free (value);
 
   g_object_set_data (G_OBJECT (applet),
                      "HD-view-id", GINT_TO_POINTER (view_id));
