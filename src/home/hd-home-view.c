@@ -91,6 +91,12 @@ struct _HdHomeViewPrivate
 
   gboolean                  applet_motion_tap : 1;
 
+  gboolean                  move_applet_left : 1;
+  gboolean                  move_applet_right : 1;
+
+  guint                     move_applet_left_timeout;
+  guint                     move_applet_right_timeout;
+
   guint                     id;
 
   guint                     capture_cb;
@@ -664,6 +670,32 @@ hd_home_view_get_view_id (HdHomeView *view)
 }
 
 static gboolean
+move_applet_left_timeout_cb (HdHomeView *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  priv->move_applet_left_timeout = 0;
+  priv->move_applet_left = TRUE;
+
+  hd_home_highlight_switching_edges (priv->home, TRUE, FALSE);
+
+  return FALSE;
+}
+
+static gboolean
+move_applet_right_timeout_cb (HdHomeView *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  priv->move_applet_right_timeout = 0;
+  priv->move_applet_right = TRUE;
+
+  hd_home_highlight_switching_edges (priv->home, FALSE, TRUE);
+
+  return FALSE;
+}
+
+static gboolean
 hd_home_view_applet_motion (ClutterActor       *applet,
 			    ClutterMotionEvent *event,
 			    HdHomeView         *view)
@@ -682,7 +714,7 @@ hd_home_view_applet_motion (ClutterActor       *applet,
         return FALSE;
     }
 
-  hd_home_show_switches (priv->home);
+  hd_home_show_switching_edges (priv->home);
   hd_home_hide_applet_buttons (priv->home);
 
   /* New position of applet actor based on movement */
@@ -701,15 +733,34 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   clutter_actor_set_position (applet, x, y);
 
   /*
-   * If the "drag cursor" entered the left/right switcher area, highlight
-   * the switcher.
+   * If the "drag cursor" entered the left/right switcher area, start a timeout 
+   * to highlight the switcher.
    */
   if (event->x < HDH_SWITCH_WIDTH)
-    hd_home_highlight_switch (priv->home, TRUE);
-  else if (event->x > priv->xwidth - HDH_SWITCH_WIDTH)
-    hd_home_highlight_switch (priv->home, FALSE);
+    {
+      if (!priv->move_applet_left && !priv->move_applet_left_timeout)
+        priv->move_applet_left_timeout = g_timeout_add_seconds (1, (GSourceFunc) move_applet_left_timeout_cb, view);
+    }
   else
-    hd_home_unhighlight_switches (priv->home);
+    {
+      priv->move_applet_left = FALSE;
+      if (priv->move_applet_left_timeout)
+        priv->move_applet_left_timeout = (g_source_remove (priv->move_applet_left_timeout), 0);
+    }
+
+  if (event->x > priv->xwidth - HDH_SWITCH_WIDTH)
+    {
+      if (!priv->move_applet_right && !priv->move_applet_right_timeout)
+        priv->move_applet_right_timeout = g_timeout_add_seconds (1, (GSourceFunc) move_applet_right_timeout_cb, view);
+    }
+  else
+    {
+      priv->move_applet_right = FALSE;
+      if (priv->move_applet_right_timeout)
+        priv->move_applet_right_timeout = (g_source_remove (priv->move_applet_right_timeout), 0);
+    }
+
+  hd_home_highlight_switching_edges (priv->home, priv->move_applet_left, priv->move_applet_right);
 
   return FALSE;
 }
@@ -770,6 +821,9 @@ hd_home_view_applet_press (ClutterActor       *applet,
 
   priv->applet_motion_tap = TRUE;
 
+  priv->move_applet_left = FALSE;
+  priv->move_applet_right = FALSE;
+
   return FALSE;
 }
 
@@ -815,6 +869,12 @@ hd_home_view_applet_release (ClutterActor       *applet,
       gchar *applet_id, *position_key;
       GSList *position_value;
 
+      /* Remove edge highlighting timeouts */
+      if (priv->move_applet_left_timeout)
+        priv->move_applet_left_timeout = (g_source_remove (priv->move_applet_left_timeout), 0);
+      if (priv->move_applet_right_timeout)
+        priv->move_applet_right_timeout = (g_source_remove (priv->move_applet_right_timeout), 0);
+
       cclient = (MBWMCompMgrClient *) data->cc;
       client = cclient->wm_client;
 
@@ -843,7 +903,7 @@ hd_home_view_applet_release (ClutterActor       *applet,
       g_free (position_key);
       g_slist_free (position_value);
 
-      hd_home_hide_switches (priv->home);
+      hd_home_hide_switching_edges (priv->home);
     }
 
   return TRUE;

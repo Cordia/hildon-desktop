@@ -1,5 +1,17 @@
 2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/home/hd-home-view.c (move_applet_left_timeout_cb,
+	  move_applet_right_timeout_cb, hd_home_view_applet_motion,
+	  hd_home_view_applet_press, hd_home_view_applet_release): Implement
+	  switching edges highlighting like in the Home UI Spec.
+
+	* src/home/hd-home.c (_hd_home_do_normal_layout,
+	  hd_home_show_switching_edges, hd_home_hide_switching_edges,
+	  hd_home_highlight_switching_edges):
+	* src/home/hd-home.h: Rename switching edges functions.
+
+2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-home-view.c (hd_home_view_applet_motion,
 	  hd_home_view_applet_press, hd_home_view_applet_release): Does not
 	  allow applet to leave permitted area on drag in layout mode. Fixes

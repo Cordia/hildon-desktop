@@ -90,13 +90,9 @@ void hd_home_set_operator_icon (HdHome *home, const char *file);
 
 void hd_home_fixup_operator_position (HdHome *home);
 
-void hd_home_show_switches (HdHome *home);
-
-void hd_home_hide_switches (HdHome *home);
-
-void hd_home_highlight_switch (HdHome *home, gboolean left);
-
-void hd_home_unhighlight_switches (HdHome *home);
+void hd_home_show_switching_edges (HdHome *home);
+void hd_home_hide_switching_edges (HdHome *home);
+void hd_home_highlight_switching_edges (HdHome *home, gboolean left, gboolean right);
 
 void hd_home_hide_edit_button (HdHome *home);
 

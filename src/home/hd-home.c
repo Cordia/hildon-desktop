@@ -770,8 +770,7 @@ _hd_home_do_normal_layout (HdHome *home)
   clutter_actor_hide (priv->edit_group);
 
   hd_home_hide_applet_buttons (home);
-
-  hd_home_hide_switches (home);
+  hd_home_hide_switching_edges (home);
 }
 
 /* FOR HDRM_STATE_HOME_EDIT */
@@ -1231,7 +1230,7 @@ hd_home_fixup_operator_position (HdHome *home)
 }
 
 void
-hd_home_show_switches (HdHome *home)
+hd_home_show_switching_edges (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
 
@@ -1245,7 +1244,7 @@ hd_home_show_switches (HdHome *home)
 }
 
 void
-hd_home_hide_switches (HdHome *home)
+hd_home_hide_switching_edges (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
 
@@ -1254,29 +1253,12 @@ hd_home_hide_switches (HdHome *home)
 }
 
 void
-hd_home_highlight_switch (HdHome *home, gboolean left)
+hd_home_highlight_switching_edges (HdHome *home, gboolean left, gboolean right)
 {
   HdHomePrivate *priv = home->priv;
 
-  if (left)
-    {
-      clutter_actor_set_opacity (priv->left_switch, 0xff);
-      clutter_actor_set_opacity (priv->right_switch, 0x7f);
-    }
-  else
-    {
-      clutter_actor_set_opacity (priv->left_switch, 0x7f);
-      clutter_actor_set_opacity (priv->right_switch, 0xff);
-    }
-}
-
-void
-hd_home_unhighlight_switches (HdHome *home)
-{
-  HdHomePrivate *priv = home->priv;
-
-  clutter_actor_set_opacity (priv->left_switch, 0x7f);
-  clutter_actor_set_opacity (priv->right_switch, 0x7f);
+  clutter_actor_set_opacity (priv->left_switch, left ? 0xff : 0x7f);
+  clutter_actor_set_opacity (priv->right_switch, right ? 0xff : 0x7f);
 }
 
 void
