@@ -1,3 +1,7 @@
+2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Updated. NB#98719 is fixed.
+
 2009-01-20  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-task-navigator.c:
