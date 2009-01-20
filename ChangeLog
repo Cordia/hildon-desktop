@@ -1,5 +1,11 @@
 2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client,
+	  hd_comp_mgr_map_notify): Close the status menu if any window (except
+	  an applet) is mapped.
+
+2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-home-view.c (hd_home_view_applet_motion,
 	  hd_home_view_applet_release, hd_home_view_restack_applets,
 	  hd_home_view_move_applet): Implement proper moving of applets

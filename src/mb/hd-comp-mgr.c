@@ -101,6 +101,7 @@ struct HdCompMgrPrivate
   gint                   unmap_effect_running;
 
   MBWindowManagerClient *status_area_client;
+  MBWindowManagerClient *status_menu_client;
 
   /* Clients who need to block the Tasksk button. */
   GHashTable            *tasks_button_blockers;
@@ -630,6 +631,8 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       sa = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
       hd_home_remove_status_menu (HD_HOME (priv->home), sa);
+
+      priv->status_menu_client = NULL;
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeHomeApplet)
     {
@@ -875,6 +878,11 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       g_hash_table_insert (priv->tasks_button_blockers, c, GINT_TO_POINTER(1));
     }
 
+  /* Hide status menu if any window except an applet is mapped */
+  if (priv->status_menu_client &&
+      ctype != HdWmClientTypeHomeApplet)
+    mb_wm_client_deliver_delete (priv->status_menu_client);
+
   if (ctype == HdWmClientTypeHomeApplet)
     {
       HdHomeApplet * applet  = HD_HOME_APPLET (c);
@@ -896,6 +904,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   else if (ctype == HdWmClientTypeStatusMenu)
     {
       hd_home_add_status_menu (HD_HOME (priv->home), actor);
+
+      priv->status_menu_client = c;
       return;
     }
   else if (ctype == HdWmClientTypeAppMenu)
