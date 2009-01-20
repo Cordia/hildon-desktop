@@ -13,6 +13,7 @@ hildon-desktop (1:2.2.17-1~unreleased) unstable; urgency=low
   * Implement proper moving of applets between views. Fixes NB#88327,
     NB#95452, NB#96802
   * Fix calling from Home.
+  * Close the status menu if any window (except an applet) is mapped.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 13 Jan 2009 17:15:00 +0200
 
