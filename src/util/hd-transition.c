@@ -41,8 +41,12 @@
 #define HDCM_BLUR_DURATION 300
 #define HDCM_POPUP_DURATION 250
 #define HDCM_FADE_DURATION 150
-#define HDCM_NOTIFICATION_DURATION 200
+#define HDCM_NOTIFICATION_DURATION 500
+#define HDCM_SUBVIEW_DURATION 500
+
 #define HDCM_UNMAP_PARTICLES 8
+#define HDCM_NOTIFICATION_END_SIZE 32
+
 #define HD_EFFECT_PARTICLE "white-particle.png"
 
 typedef struct _HDEffectData
@@ -50,6 +54,8 @@ typedef struct _HDEffectData
   MBWMCompMgrClientEvent   event;
   ClutterTimeline          *timeline;
   MBWMCompMgrClutterClient *cclient;
+  /* In subview transitions, this is the ORIGINAL (non-subview) view */
+  MBWMCompMgrClutterClient *cclient2;
   HdCompMgr                *hmgr;
   /* original/expected position of application/menu */
   ClutterGeometry           geo;
@@ -256,25 +262,99 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
 {
   float amt;
   ClutterActor *actor;
+  guint width, height;
 
   actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
   if (!CLUTTER_IS_ACTOR(actor))
     return;
 
-  amt =  (float)clutter_timeline_get_progress(timeline);
+  clutter_actor_get_size(actor, &width, &height);
+
+  amt = frame_num / (float)clutter_timeline_get_n_frames(timeline);
+  amt = hd_transition_smooth_ramp( amt );
   if (data->event == MBWMCompMgrClientEventUnmap)
     {
-      /* Closing Animation */
-      float scale = 1-amt;
-      clutter_actor_set_opacity(actor, (int)(255*(1-amt)));
+      /* Closing Animation - we shrink down into the top-left button's area,
+       * then fade out.*/
+      float a1 = MIN(amt*2,1);
+      float a2 = MAX(amt*2-1,0);
+      /* We set anchor point so if the notification
+       * resizes/positions in flight, we're ok */
+      float min_scale = HDCM_NOTIFICATION_END_SIZE / (float)width;
+      float scale = (1-a1) + a1*min_scale;
+      float corner_x = a1*(HD_COMP_MGR_TOP_LEFT_BTN_WIDTH*0.5f/scale
+                           - width*0.5);
+      float corner_y = a1*(HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT*0.5f/scale
+                           - height*0.5);
+
+      clutter_actor_set_opacity(actor, (int)(255*(1-a2)));
       clutter_actor_set_scale(actor, scale, scale);
+      clutter_actor_set_anchor_pointu(actor,
+         CLUTTER_FLOAT_TO_FIXED( -corner_x ),
+         CLUTTER_FLOAT_TO_FIXED( -corner_y ) );
     }
   else
     {
-      /* Opening Animation */
+      /* Opening Animation - we fade in, and move in from the top-right
+       * edge of the screen in an arc */
       float scale =  1 + (1-amt)*0.5f;
+      float ang = amt * 3.141592f * 0.5f;
+      float corner_x = HD_COMP_MGR_SCREEN_WIDTH * 0.5f * cos(ang);
+      float corner_y = (sin(ang)-1) * height;
+      /* We set anchor point so if the notification
+       * resizes/positions in flight, we're ok */
       clutter_actor_set_opacity(actor, (int)(255*amt));
       clutter_actor_set_scale(actor, scale, scale);
+      clutter_actor_set_anchor_pointu(actor,
+               CLUTTER_FLOAT_TO_FIXED( -corner_x / scale ),
+               CLUTTER_FLOAT_TO_FIXED( -corner_y / scale ));
+    }
+}
+
+static void
+on_subview_timeline_new_frame(ClutterTimeline *timeline,
+                              gint frame_num, HDEffectData *data)
+{
+  float amt;
+  gint n_frames;
+  ClutterActor *subview_actor, *main_actor;
+
+  subview_actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+  main_actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient2);
+  if (!CLUTTER_IS_ACTOR(subview_actor) || !CLUTTER_IS_ACTOR(main_actor))
+    return;
+
+  n_frames = clutter_timeline_get_n_frames(timeline);
+  amt = frame_num / (float)n_frames;
+  amt = hd_transition_smooth_ramp( amt );
+  if (data->event == MBWMCompMgrClientEventUnmap)
+    amt = 1-amt;
+
+  {
+    float corner_x;
+    corner_x = (1-amt) * HD_COMP_MGR_SCREEN_WIDTH;
+    clutter_actor_set_anchor_pointu(subview_actor,
+       CLUTTER_FLOAT_TO_FIXED( -corner_x ),
+       CLUTTER_FLOAT_TO_FIXED( 0 ) );
+    clutter_actor_set_anchor_pointu(main_actor,
+       CLUTTER_FLOAT_TO_FIXED( -(corner_x - HD_COMP_MGR_SCREEN_WIDTH) ),
+       CLUTTER_FLOAT_TO_FIXED( 0 ) );
+
+    /* we have to show this actor, because it'll get hidden by the
+     * render manager visibility test if not. */
+    clutter_actor_show(main_actor);
+  }
+
+  /* if we're at the last frame, return our actors to the correct places) */
+  if (frame_num == n_frames)
+    {
+      clutter_actor_set_anchor_pointu(subview_actor, 0, 0);
+      clutter_actor_set_anchor_pointu(main_actor, 0, 0);
+      /* hide the correct actor - as we overrode the visibility test in hdrm */
+      if (data->event == MBWMCompMgrClientEventMap)
+        clutter_actor_hide(main_actor);
+      if (data->event == MBWMCompMgrClientEventUnmap)
+        clutter_actor_hide(subview_actor);
     }
 }
 
@@ -289,21 +369,33 @@ hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
   HdCompMgr *hmgr = HD_COMP_MGR (data->hmgr);
   ClutterActor *actor;
 
-  mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient,
+  if (data->cclient)
+    {
+      mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient,
                                         MBWMCompMgrClutterClientDontUpdate |
                                         MBWMCompMgrClutterClientEffectRunning);
-  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+      actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+
+      mb_wm_object_unref (MB_WM_OBJECT (data->cclient));
+
+      if (data->event == MBWMCompMgrClientEventUnmap && actor)
+        {
+          ClutterActor *parent = clutter_actor_get_parent(actor);
+          if (CLUTTER_IS_CONTAINER(parent))
+            clutter_container_remove_actor( CLUTTER_CONTAINER(parent), actor );
+        }
+    }
+
+  if (data->cclient2)
+    {
+      mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient2,
+                                        MBWMCompMgrClutterClientDontUpdate |
+                                        MBWMCompMgrClutterClientEffectRunning);
+      mb_wm_object_unref (MB_WM_OBJECT (data->cclient2));
+    }
 
 /*   dump_clutter_tree (CLUTTER_CONTAINER (clutter_stage_get_default()), 0); */
 
-  mb_wm_object_unref (MB_WM_OBJECT (data->cclient));
-
-  if (data->event == MBWMCompMgrClientEventUnmap && actor)
-    {
-      ClutterActor *parent = clutter_actor_get_parent(actor);
-      if (CLUTTER_IS_CONTAINER(parent))
-        clutter_container_remove_actor( CLUTTER_CONTAINER(parent), actor );
-    }
   g_object_unref ( timeline );
 
   hd_comp_mgr_set_effect_running(hmgr, FALSE);
@@ -375,15 +467,9 @@ hd_transition_fade(HdCompMgr                  *mgr,
                    MBWMCompMgrClientEvent     event)
 {
   MBWMCompMgrClutterClient * cclient;
-  ClutterActor             * actor;
   HDEffectData             * data;
-  ClutterGeometry            geo;
 
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
-  actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-  if (!actor)
-    return;
-  clutter_actor_get_geometry(actor, &geo);
 
   /* Need to store also pointer to the manager, as by the time
    * the effect finishes, the back pointer in the cm_client to
@@ -399,7 +485,6 @@ hd_transition_fade(HdCompMgr                  *mgr,
                         G_CALLBACK (on_fade_timeline_new_frame), data);
   g_signal_connect (data->timeline, "completed",
                         G_CALLBACK (hd_transition_completed), data);
-  data->geo = geo;
 
   mb_wm_comp_mgr_clutter_client_set_flags (cclient,
                               MBWMCompMgrClutterClientDontUpdate |
@@ -509,15 +594,9 @@ hd_transition_notification(HdCompMgr                  *mgr,
                            MBWMCompMgrClientEvent     event)
 {
   MBWMCompMgrClutterClient * cclient;
-  ClutterActor             * actor;
   HDEffectData             * data;
-  ClutterGeometry            geo;
 
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
-  actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-  if (!actor)
-    return;
-  clutter_actor_get_geometry(actor, &geo);
 
   /* Need to store also pointer to the manager, as by the time
    * the effect finishes, the back pointer in the cm_client to
@@ -533,7 +612,6 @@ hd_transition_notification(HdCompMgr                  *mgr,
                         G_CALLBACK (on_notification_timeline_new_frame), data);
   g_signal_connect (data->timeline, "completed",
                         G_CALLBACK (hd_transition_completed), data);
-  data->geo = geo;
 
   mb_wm_comp_mgr_clutter_client_set_flags (cclient,
                               MBWMCompMgrClutterClientDontUpdate |
@@ -541,7 +619,57 @@ hd_transition_notification(HdCompMgr                  *mgr,
   hd_comp_mgr_set_effect_running(mgr, TRUE);
 
   /* first call to stop flicker */
-  on_fade_timeline_new_frame(data->timeline, 0, data);
+  on_notification_timeline_new_frame(data->timeline, 0, data);
+  clutter_timeline_start (data->timeline);
+}
+
+void
+hd_transition_subview(HdCompMgr                  *mgr,
+                      MBWindowManagerClient      *subview,
+                      MBWindowManagerClient      *mainview,
+                      MBWMCompMgrClientEvent     event)
+{
+  MBWMCompMgrClutterClient * cclient_subview;
+  MBWMCompMgrClutterClient * cclient_mainview;
+  HDEffectData             * data;
+
+  if (!subview || !mainview)
+    return;
+  cclient_subview = MB_WM_COMP_MGR_CLUTTER_CLIENT (subview->cm_client);
+  cclient_mainview = MB_WM_COMP_MGR_CLUTTER_CLIENT (mainview->cm_client);
+
+  if ((mb_wm_comp_mgr_clutter_client_get_flags (cclient_subview) &
+      MBWMCompMgrClutterClientEffectRunning) ||
+      (mb_wm_comp_mgr_clutter_client_get_flags (cclient_mainview) &
+            MBWMCompMgrClutterClientEffectRunning))
+    return;
+
+  /* Need to store also pointer to the manager, as by the time
+   * the effect finishes, the back pointer in the cm_client to
+   * MBWindowManagerClient is not longer valid/set.
+   */
+  data = g_new0 (HDEffectData, 1);
+  data->event = event;
+  data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient_subview));
+  data->cclient2 = mb_wm_object_ref (MB_WM_OBJECT (cclient_mainview));
+  data->hmgr = HD_COMP_MGR (mgr);
+  data->timeline = g_object_ref(
+            clutter_timeline_new_for_duration (HDCM_SUBVIEW_DURATION) );
+  g_signal_connect (data->timeline, "new-frame",
+                        G_CALLBACK (on_subview_timeline_new_frame), data);
+  g_signal_connect (data->timeline, "completed",
+                        G_CALLBACK (hd_transition_completed), data);
+
+  mb_wm_comp_mgr_clutter_client_set_flags (cclient_subview,
+                              MBWMCompMgrClutterClientDontUpdate |
+                              MBWMCompMgrClutterClientEffectRunning);
+  mb_wm_comp_mgr_clutter_client_set_flags (cclient_mainview,
+                                MBWMCompMgrClutterClientDontUpdate |
+                                MBWMCompMgrClutterClientEffectRunning);
+  hd_comp_mgr_set_effect_running(mgr, TRUE);
+
+  /* first call to stop flicker */
+  on_subview_timeline_new_frame(data->timeline, 0, data);
   clutter_timeline_start (data->timeline);
 }
 

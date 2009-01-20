@@ -48,6 +48,11 @@ void
 hd_transition_notification(HdCompMgr                  *mgr,
                            MBWindowManagerClient      *c,
                            MBWMCompMgrClientEvent     event);
+void
+hd_transition_subview(HdCompMgr                  *mgr,
+                      MBWindowManagerClient      *subview,
+                      MBWindowManagerClient      *mainview,
+                      MBWMCompMgrClientEvent     event);
 
 void
 hd_transition_play_sound(const gchar           *fname);

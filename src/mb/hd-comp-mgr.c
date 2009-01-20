@@ -1111,7 +1111,18 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (c_type == MBWMClientTypeApp)
         if (!hd_comp_mgr_is_client_screensaver(c))
-          hd_transition_close_app (hmgr, c);
+          {
+            /* Look if it's a stackable window. */
+            HdApp *app = HD_APP (c);
+            if (app->secondary_window)
+              hd_transition_subview(hmgr, c,
+                                    MB_WM_CLIENT(app->leader),
+                                    MBWMCompMgrClientEventUnmap);
+            else
+              hd_transition_close_app (hmgr, c);
+          }
+
+
 
       /* after the effect, restack */
       hd_comp_mgr_restack(mgr);
@@ -1147,8 +1158,9 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
             /* Look if it's a stackable window. */
             HdApp *app = HD_APP (c);
             if (app->secondary_window)
-              /* FIXME: Transitions. */
-              g_debug ("%s: Mapping secondary app window.\n", __FUNCTION__);
+              hd_transition_subview(hmgr, c,
+                                    MB_WM_CLIENT(app->leader),
+                                    MBWMCompMgrClientEventMap);
             /* We're now showing this app, so remove our app
              * starting screen if we had one */
             hd_launcher_window_created();

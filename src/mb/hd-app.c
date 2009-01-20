@@ -142,6 +142,9 @@ hd_app_init (MBWMObject *this, va_list vap)
   Atom                   stackable_atom;
   Atom                   type;
 
+  /* Set this up as it appears to get corrupted sometimes */
+  app->leader = 0;
+
   stackable_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_STACKABLE_WINDOW);
 
   XGetWindowProperty (wm->xdpy, win->xwindow,

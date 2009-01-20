@@ -1,3 +1,19 @@
+2009-01-20  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-task-navigator.c:
+	  Support for app titles containing tags
+	* src/util/hd-transition.c
+	* src/util/hd-transition.h
+	* src/mb/hd-note.c
+	* src/mb/hd-comp-mgr.c:
+	  Addition of animations for notifications and secondary windows	
+	* src/mb/hd-app.c:
+	  Fix for broken pointers in hd-app::leader	
+	* src/mb/hd-decor.c
+	* src/mb/hd-decor.h
+	* src/mb/hd-theme.c:
+	  Fix for SIGSEGV caused by progress indicator
+
 2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client,

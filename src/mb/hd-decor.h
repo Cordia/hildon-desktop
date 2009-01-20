@@ -38,6 +38,7 @@ typedef struct ProgressIndicatorData  ProgressIndicatorData;
 #define HD_DECOR(c)       ((HdDecor*)(c))
 #define HD_DECOR_CLASS(c) ((HdDecorClass*)(c))
 #define HD_TYPE_DECOR     (hd_decor_class_type ())
+#define HD_IS_DECOR(obj)  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HD_TYPE_DECOR))
 
 struct HdDecorClass
 {
@@ -47,7 +48,7 @@ struct HdDecorClass
 struct HdDecor
 {
   MBWMDecor     parent;
-  
+
   ProgressIndicatorData *progress;
 };
 

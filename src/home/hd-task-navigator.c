@@ -1395,7 +1395,10 @@ set_thumb_title (Thumbnail * thumb, ClutterActor * title)
 static ClutterActor *
 thumb_title_text (const gchar *text)
 {
-  return clutter_label_new_full (Title_text_font, text, &Title_text_color);
+  ClutterActor *label =
+    clutter_label_new_full (Title_text_font, text, &Title_text_color);
+  clutter_label_set_use_markup(CLUTTER_LABEL(label), TRUE);
+  return label;
 }
 
 /*

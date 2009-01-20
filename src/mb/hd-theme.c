@@ -822,7 +822,7 @@ static gboolean
 progress_indicator_cb (gpointer data)
 {
   HdDecor *decor = data;
-  ProgressIndicatorData *pro = decor->progress;
+  ProgressIndicatorData *pro;
   XWindowAttributes attr;
   XRenderPictFormat *format;
   XRenderPictureAttributes pa;
@@ -831,6 +831,11 @@ progress_indicator_cb (gpointer data)
   const int page_height = 53;
   const int source_x = 0;
   const int source_y = 222;
+
+  if (!HD_IS_DECOR(data))
+    return FALSE;
+
+  pro = decor->progress;
 
   XGetWindowAttributes( pro->xdpy, pro->dest, &attr );
   format = XRenderFindVisualFormat( pro->xdpy, attr.visual );
@@ -875,14 +880,14 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
     return;
 
   left_padding -= 8; /* fudge, not sure why it's necessary */
-  
+
   titlebar_width = decor->geom.width - left_padding;
 
 #if 0
   /* Uncomment this to make the titlebar make room for the buttons on the right */
   titlebar_width -= (decor->geom.width - pack_end_x);
 #endif
-  
+
 #ifdef HAVE_XEXT
   shaped = theme->shaped && c->shaped && !mb_wm_client_is_argb32 (client);
 #endif
@@ -1323,7 +1328,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 
 	      if (is_secondary_dialog)
                 centering_padding = (rec.width - font_extents.width) / 2;
-	      
+
 	    }
 
 	  pango_xft_render (data->xftdraw,
@@ -1368,7 +1373,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			y,
 			(const guchar*)title, len);
 #endif
-      
+
       if (is_waiting_window)
         {
 	   if (hd_decor->progress==NULL)
@@ -1390,7 +1395,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
           g_source_remove_by_user_data (hd_decor);
 	  hd_decor->progress = NULL;
 	}
-      
+
       /* Unset the clipping rectangle */
       rec.width = decor->geom.width;
       rec.height = decor->geom.height;

@@ -38,6 +38,9 @@ hd_decor_class_init (MBWMObjectClass *klass)
 static void
 hd_decor_destroy (MBWMObject *obj)
 {
+  /* he have to do this because hd-theme often adds a callback for us and then
+   * doesn't remove it. */
+  g_source_remove_by_user_data (obj);
    /* nothing */
 }
 

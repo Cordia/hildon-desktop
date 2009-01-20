@@ -172,8 +172,8 @@ hd_note_init (MBWMObject *this, va_list vap)
 
   if (note->note_type == HdNoteTypeIncomingEventPreview)
     {
-      geom.x = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH + n;
-      geom.y = w;
+      geom.x = w;
+      geom.y = n;
       geom.width = client->window->geometry.width + e + w;
       geom.height = client->window->geometry.height + n + s;
     }
