@@ -1094,10 +1094,19 @@ hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet)
 			      y_a - h_b/2);
   clutter_actor_show (priv->applet_close_button);
 
-  priv->active_applet = applet;
+  if (priv->active_applet != applet)
+    {
+      if (priv->active_applet_hide_id)
+        {
+          g_signal_handler_disconnect (priv->active_applet,
+                                       priv->active_applet_hide_id);
+          priv->active_applet_hide_id = 0;
+        }
+      priv->active_applet = applet;
 
-  priv->active_applet_hide_id = g_signal_connect (applet, "hide",
-                                                  G_CALLBACK (hide_cb), home);
+      priv->active_applet_hide_id = g_signal_connect (applet, "hide",
+                                                      G_CALLBACK (hide_cb), home);
+    }
 }
 
 void
@@ -1114,17 +1123,6 @@ hd_home_hide_applet_buttons (HdHome *home)
       priv->active_applet_hide_id = 0;
     }
   priv->active_applet = NULL;
-}
-
-void
-hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by)
-{
-  HdHomePrivate   *priv = home->priv;
-
-  if (!priv->active_applet)
-    return;
-
-  clutter_actor_move_by (priv->applet_close_button, x_by, y_by);
 }
 
 ClutterActor*

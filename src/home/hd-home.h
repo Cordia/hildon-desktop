@@ -75,7 +75,6 @@ void hd_home_remove_status_menu (HdHome *home, ClutterActor *sa);
 
 void hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet);
 void hd_home_hide_applet_buttons (HdHome *home);
-void hd_home_move_applet_buttons (HdHome *home, gint x_by, gint y_by);
 
 void hd_home_close_applet (HdHome *home, ClutterActor *applet);
 

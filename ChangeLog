@@ -1,5 +1,19 @@
 2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/home/hd-home-view.c (hd_home_view_applet_motion,
+	  hd_home_view_applet_press, hd_home_view_applet_release): Does not
+	  allow applet to leave permitted area on drag in layout mode. Fixes
+	  NB#88390
+
+	* src/home/hd-home.c (hd_home_show_applet_buttons):
+	* src/home/hd-home.h: Allow to call hd_home_show_applet_buttons()
+	  multiple times with the same applet. Rewmove unused
+	  hd_home_move_applet_buttons().
+
+	* debian/changelog: Update.
+
+2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-home-view-container.c
 	  (hd_home_view_container_update_previous_and_next_view,
 	  hd_home_view_container_update_active_views, views_active_notify_func,

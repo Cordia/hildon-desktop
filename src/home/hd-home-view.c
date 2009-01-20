@@ -50,6 +50,12 @@
 
 #define MAX_VIEWS 4
 
+/* Maximal pixel movement for a tap (before it is a move) */
+#define MAX_TAP_DISTANCE 20
+
+#define APPLET_AREA_MIN_X 0
+#define APPLET_AREA_MIN_Y 56
+
 enum
 {
   PROP_COMP_MGR = 1,
@@ -80,8 +86,8 @@ struct _HdHomeViewPrivate
 
   gint                      applet_motion_start_x;
   gint                      applet_motion_start_y;
-  gint                      applet_motion_last_x;
-  gint                      applet_motion_last_y;
+  gint                      applet_motion_start_position_x;
+  gint                      applet_motion_start_position_y;
 
   gboolean                  applet_motion_tap : 1;
 
@@ -666,12 +672,11 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   gint x, y;
   guint w, h;
 
-  g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y);
-
+  /* Check if it is still a tap or already a move */
   if (priv->applet_motion_tap)
     {
-      if (ABS (priv->applet_motion_start_x - event->x) > 20 ||
-          ABS (priv->applet_motion_start_y - event->y) > 20)
+      if (ABS (priv->applet_motion_start_x - event->x) > MAX_TAP_DISTANCE ||
+          ABS (priv->applet_motion_start_y - event->y) > MAX_TAP_DISTANCE)
         priv->applet_motion_tap = FALSE;
       else
         return FALSE;
@@ -680,43 +685,31 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   hd_home_show_switches (priv->home);
   hd_home_hide_applet_buttons (priv->home);
 
-  x = event->x - priv->applet_motion_last_x;
-  y = event->y - priv->applet_motion_last_y;
+  /* New position of applet actor based on movement */
+  x = priv->applet_motion_start_position_x + event->x - priv->applet_motion_start_x;
+  y = priv->applet_motion_start_position_y + event->y - priv->applet_motion_start_y;
 
-  priv->applet_motion_last_x = event->x;
-  priv->applet_motion_last_y = event->y;
-
-  /*
-   * We only move the actor, not the applet per se, and only commit the motion
-   * on button release.
-   */
-  clutter_actor_move_by (applet, x, y);
-  hd_home_move_applet_buttons (priv->home, x, y);
-
-  clutter_actor_get_position (applet, &x, &y);
+  /* Get size of home view and applet actor */
   clutter_actor_get_size (applet, &w, &h);
 
+  /* Restrict new applet actor position to allowed values */
+  /* FIXME: the area right of the status area is currently not allowed */
+  x = MAX (MIN (x, priv->xwidth - ((gint) w)), APPLET_AREA_MIN_X);
+  y = MAX (MIN (y, priv->xheight - ((gint) h)), APPLET_AREA_MIN_Y);
+
+  /* Update applet actor position */
+  clutter_actor_set_position (applet, x, y);
+
   /*
-   * If the applet entered the left/right switcher area, highlight
+   * If the "drag cursor" entered the left/right switcher area, highlight
    * the switcher.
    */
-  if (x < HDH_SWITCH_WIDTH)
+  if (event->x < HDH_SWITCH_WIDTH)
     hd_home_highlight_switch (priv->home, TRUE);
-  else if (x + w > priv->xwidth - HDH_SWITCH_WIDTH)
+  else if (event->x > priv->xwidth - HDH_SWITCH_WIDTH)
     hd_home_highlight_switch (priv->home, FALSE);
   else
     hd_home_unhighlight_switches (priv->home);
-
-
-  /*
-   * If the pointer entered the left/right switcher area, initiate pan.
-   */
-  /* FIXME: Move only the applet.
-  if (event->x < HDH_SWITCH_WIDTH)
-    hd_home_pan_and_move_applet (priv->home, TRUE, applet);
-  else if (event->x > priv->xwidth - HDH_SWITCH_WIDTH)
-    hd_home_pan_and_move_applet (priv->home, FALSE, applet);
-    */
 
   return FALSE;
 }
@@ -729,26 +722,26 @@ hd_home_view_applet_press (ClutterActor       *applet,
   HdHomeViewPrivate *priv = view->priv;
   GConfClient *client = gconf_client_get_default ();
   gchar *modified_key, *modified;
-  guint id;
   MBWMCompMgrClient *cclient;
   HdHomeApplet *wm_applet;
   MBWindowManagerClient *desktop_client;
+  HdHomeViewAppletData *data;
 
   g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y);
-
-  desktop_client = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
-  cclient = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
-  wm_applet = (HdHomeApplet *) cclient->wm_client;
 
   /* Get all pointer events */
   clutter_grab_pointer (applet);
 
-  id = g_signal_connect (applet, "motion-event",
-			 G_CALLBACK (hd_home_view_applet_motion),
-			 view);
+  desktop_client = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
 
-  g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb",
-		     GINT_TO_POINTER (id));
+  data = g_hash_table_lookup (priv->applets, applet);
+
+  cclient = (MBWMCompMgrClient *) data->cc;
+  wm_applet = (HdHomeApplet *) cclient->wm_client;
+
+  data->motion_cb = g_signal_connect (applet, "motion-event",
+                                      G_CALLBACK (hd_home_view_applet_motion),
+                                      view);
 
   /* Raise the applet */
   clutter_actor_raise_top (applet);
@@ -770,8 +763,11 @@ hd_home_view_applet_press (ClutterActor       *applet,
 
   priv->applet_motion_start_x = event->x;
   priv->applet_motion_start_y = event->y;
-  priv->applet_motion_last_x = event->x;
-  priv->applet_motion_last_y = event->y;
+
+  clutter_actor_get_position (applet,
+                              &priv->applet_motion_start_position_x,
+                              &priv->applet_motion_start_position_y);
+
   priv->applet_motion_tap = TRUE;
 
   return FALSE;
@@ -783,20 +779,19 @@ hd_home_view_applet_release (ClutterActor       *applet,
 			     HdHomeView         *view)
 {
   HdHomeViewPrivate *priv = view->priv;
-  guint id;
+  HdHomeViewAppletData *data;
 
   g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y);
 
   /* Get all pointer events */
   clutter_ungrab_pointer ();
 
-  id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet),
-					   "HD-VIEW-motion-cb"));
+  data = g_hash_table_lookup (priv->applets, applet);
 
-  if (id)
+  if (data->motion_cb)
     {
-      g_signal_handler_disconnect (applet, id);
-      g_object_set_data (G_OBJECT (applet), "HD-VIEW-motion-cb", NULL);
+      g_signal_handler_disconnect (applet, data->motion_cb);
+      data->motion_cb = 0;
     }
 
   /*
@@ -813,16 +808,14 @@ hd_home_view_applet_release (ClutterActor       *applet,
       /* Move the underlying window to match the actor's position */
       gint x, y;
       guint w, h;
-      MBWindowManagerClient *client;
       MBWMCompMgrClient *cclient;
+      MBWindowManagerClient *client;
       MBGeometry geom;
       GConfClient *gconf_client;
       gchar *applet_id, *position_key;
       GSList *position_value;
 
-      cclient =
-	g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
-
+      cclient = (MBWMCompMgrClient *) data->cc;
       client = cclient->wm_client;
 
       clutter_actor_get_position (applet, &x, &y);
