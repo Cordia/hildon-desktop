@@ -152,7 +152,7 @@ hd_launcher_page_class_init (HdLauncherPageClass *klass)
   pspec = g_param_spec_string ("icon-name",
                                "Icon Name",
                                "Name of the category icon to display",
-                               "qgn_list_app_installer",
+                               HD_LAUNCHER_DEFAULT_ICON,
                                G_PARAM_CONSTRUCT | HD_PARAM_READWRITE);
   g_object_class_install_property (gobject_class, PROP_LAUNCHER_PAGE_ICON_NAME, pspec);
   pspec = g_param_spec_string ("text",

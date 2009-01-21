@@ -1,3 +1,12 @@
+2009-01-21  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Add a single define for the default icon, update it to spec.
+
+	* src/launcher/hd-launcher-item.c:
+	* src/launcher/hd-launcher-page.c:
+	* src/launcher/hd-launcher-tile.c:
+	* src/launcher/hd-launcher.h:
+
 2009-01-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c

@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include "hd-launcher.h"
 #include "hd-launcher-tile.h"
 
 #include <glib-object.h>
@@ -39,7 +40,7 @@
                             G_PARAM_STATIC_NICK | \
                             G_PARAM_STATIC_NAME | \
                             G_PARAM_STATIC_BLURB)
-#define HD_LAUNCHER_TILE_DEFAULT_ICON "qgn_list_app_installer"
+
 #define HD_LAUNCHER_TILE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TILE, HdLauncherTilePrivate))
 
 struct _HdLauncherTilePrivate
@@ -134,7 +135,7 @@ hd_launcher_tile_class_init (HdLauncherTileClass *klass)
   pspec = g_param_spec_string ("icon-name",
                                "Icon Name",
                                "Name of the icon to display",
-                               "qgn_list_app_installer",
+                               HD_LAUNCHER_DEFAULT_ICON,
                                G_PARAM_CONSTRUCT | HD_PARAM_READWRITE);
   g_object_class_install_property (gobject_class, PROP_LAUNCHER_TILE_ICON_NAME, pspec);
   pspec = g_param_spec_string ("text",
@@ -249,7 +250,7 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
     priv->icon_name = g_strdup (icon_name);
   else
     /* Set the default if none was passed. */
-    priv->icon_name = g_strdup (HD_LAUNCHER_TILE_DEFAULT_ICON);
+    priv->icon_name = g_strdup (HD_LAUNCHER_DEFAULT_ICON);
 
   /* Recreate the icon actor */
   if (priv->icon)
@@ -265,7 +266,7 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
     {
       /* Try to get the default icon. */
       g_free (priv->icon_name);
-      priv->icon_name = g_strdup (HD_LAUNCHER_TILE_DEFAULT_ICON);
+      priv->icon_name = g_strdup (HD_LAUNCHER_DEFAULT_ICON);
       info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name, size,
                                         GTK_ICON_LOOKUP_NO_SVG);
     }

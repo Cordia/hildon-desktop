@@ -38,6 +38,9 @@
 
 G_BEGIN_DECLS
 
+/* Common defines */
+#define HD_LAUNCHER_DEFAULT_ICON "tasklauch_default_application"
+
 #define HD_TYPE_LAUNCHER            (hd_launcher_get_type ())
 #define HD_LAUNCHER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), HD_TYPE_LAUNCHER, HdLauncher))
 #define HD_IS_LAUNCHER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HD_TYPE_LAUNCHER))

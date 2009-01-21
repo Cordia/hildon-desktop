@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include "hd-launcher.h"
 #include "hd-launcher-item.h"
 #include "hd-launcher-app.h"
 #include "hd-launcher-cat.h"
@@ -201,7 +202,7 @@ hd_launcher_item_class_init (HdLauncherItemClass *klass)
   pspec = g_param_spec_string ("icon-name",
                                "Icon Name",
                                "Name of the icon to display",
-                               "qgn_list_app_installer",
+                               HD_LAUNCHER_DEFAULT_ICON,
                                HD_PARAM_READ);
   g_object_class_install_property (gobject_class, PROP_LAUNCHER_ITEM_ICON_NAME, pspec);
 }
