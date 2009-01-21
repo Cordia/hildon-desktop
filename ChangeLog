@@ -1,3 +1,9 @@
+2009-01-21  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Localized applications.desktop.
+
+	* data/desktop/applications.desktop:
+
 2009-01-21  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Update. NB#98807 is fixed.
