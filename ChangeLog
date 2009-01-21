@@ -1,3 +1,13 @@
+2009-01-21  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h:
+	  Added HDRM_STATE_HOME_EDIT_DLG state for home edit dialogs
+	* src/mb/hd-comp-mgr.c:
+	  Added code to change to and from HDRM_STATE_HOME_EDIT_DLG
+	  at the correct times to allow us to return to the home edit
+	  mode.
+
 2009-01-21  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Localized applications.desktop.

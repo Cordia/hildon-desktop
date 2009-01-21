@@ -73,7 +73,7 @@
  * into the blur box (and we don't want to waste cycles needlessly
  * blurring anyway) */
 #define BLUR_FOR_WINDOW(c) \
-              ((!(c)->window || ((c)->window->name && !g_str_equal((c)->window->name, "SystemUI root window"))) \
+              (!hd_comp_mgr_ignore_window(c) \
                && !HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->frame_geometry))
 
 HdLauncherApp *hd_comp_mgr_app_from_xwindow (HdCompMgr *hmgr, Window xid);
@@ -712,6 +712,14 @@ hd_comp_mgr_is_client_screensaver (MBWindowManagerClient *c)
          g_str_equal((c)->window->name, "systemui");
 }
 
+/* strange windows that never go away and mess up our checks for visibility */
+static gboolean
+hd_comp_mgr_ignore_window (MBWindowManagerClient *c)
+{
+  return c && c->window && c->window->name &&
+         g_str_equal((c)->window->name, "SystemUI root window");
+}
+
 static void
 hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
                                 int x, int y, int width, int height,
@@ -849,6 +857,16 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 		     "HD-MBWMCompMgrClutterClient", cclient);
 
   hd_comp_mgr_hook_update_area(HD_COMP_MGR (mgr), actor);
+
+  /* if we are in home_edit mode and we have stuff that will get in
+   * our way and spoil our grab, move to home_edit_dlg so we can
+   * look the same but remove our grab. */
+  if ((hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT) &&
+      (ctype & (MBWMClientTypeDialog |
+                HdWmClientTypeAppMenu)))
+    {
+      hd_render_manager_set_state(HDRM_STATE_HOME_EDIT_DLG);
+    }
 
   /* deactivate launcher and switcher in case of new window */
   /* FIXME: When we get an app we'd just go to home and then straight
@@ -1064,6 +1082,28 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   MBWindowManagerClient    *transfor = 0;
 
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+
+  /* if we are in home_edit_dlg mode, check and see if there is stuff
+   * that would spoil our grab now - and if not, return to home_edit mode.
+   * TODO: could this code be modified to set blur correctly? */
+  if (hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT_DLG)
+    {
+      gboolean grab_spoil = FALSE;
+      MBWindowManagerClient *above = mgr->wm->desktop;
+      if (above) above = above->stacked_above;
+      while (above)
+        {
+          if (above != c &&
+              !hd_comp_mgr_ignore_window(above) &&
+              MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeHomeApplet &&
+              MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeStatusArea)
+            grab_spoil = TRUE;
+          above = above->stacked_above;
+        }
+      if (!grab_spoil)
+        hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
+    }
+
   if (HD_IS_NOTE (c) && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
     {
       hd_switcher_remove_notification (priv->switcher_group,

@@ -79,6 +79,10 @@ typedef enum
   HDRM_STATE_UNDEFINED      = 0, /* just for startup - should never use this */
   HDRM_STATE_HOME           = 1 << 0, /* home frontmost */
   HDRM_STATE_HOME_EDIT      = 1 << 1, /* home frontmost, and edit mode */
+  HDRM_STATE_HOME_EDIT_DLG  = 1 << 2, /* home frontmost (and looks like edit
+                                         mode) - but when the dialogs close we
+                                         want to return to HOME_EDIT state. This
+                                         has no grab so dialogs work. */
   HDRM_STATE_APP            = 1 << 4, /* app frontmost */
   HDRM_STATE_APP_FULLSCREEN = 1 << 5, /* app frontmost and over everything */
   HDRM_STATE_TASK_NAV       = 1 << 6,
@@ -90,7 +94,7 @@ typedef enum
 
 #define STATE_NEED_DESKTOP(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_LAUNCHER)
+                    HDRM_STATE_HOME_EDIT_DLG | HDRM_STATE_LAUNCHER)
 /* Task Navigator doesn't need the desktop because it grabs all
  * applications anyway */
 
@@ -105,11 +109,12 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_FULLSCREEN)
 
 #define STATE_SHOW_OPERATOR(s) \
-  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT)
+  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
+                    HDRM_STATE_HOME_EDIT_DLG)
 
 #define STATE_SHOW_STATUS_AREA(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_APP)
+                    HDRM_STATE_HOME_EDIT_DLG | HDRM_STATE_APP)
 
 /* Are we in a state where we should blur the buttons + status menu?
  * Task Navigator + launcher zoom out, so are a bad idea. */
