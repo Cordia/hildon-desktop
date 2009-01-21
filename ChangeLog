@@ -1,3 +1,7 @@
+2009-01-21  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Update. NB#98807 is fixed.
+
 2009-01-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-blur-group.c
