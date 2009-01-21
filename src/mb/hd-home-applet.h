@@ -44,6 +44,7 @@ struct HdHomeApplet
 
   char             *applet_id;
   time_t            modified;
+  unsigned int      settings;
 };
 
 struct HdHomeAppletClass

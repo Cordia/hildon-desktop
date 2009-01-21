@@ -94,6 +94,7 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
   char                  *applet_id;
   GConfClient           *gconf_client  = gconf_client_get_default ();
   char                  *modified_key, *modified;
+  int *settings;
 
   /* Get applet id */
   applet_id_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ID);
@@ -146,6 +147,26 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
     wm->atoms[MBWM_ATOM_NET_WM_ACTION_CLOSE],
     wm->atoms[MBWM_ATOM_NET_WM_ACTION_MOVE],
   };
+
+  /* Read settings property from applet window */
+  settings = hd_util_get_win_prop_data_and_validate (wm->xdpy,
+                                                     win->xwindow,
+                                                     hd_comp_mgr_get_atom (hmgr,
+                                                                           HD_ATOM_HILDON_APPLET_SETTINGS),
+                                                     XA_CARDINAL,
+                                                     32,
+                                                     1,
+                                                     &n_items);
+
+  if (settings)
+    {
+      applet->settings = 1;
+      XFree (settings);
+    }
+  else
+    {
+      applet->settings = 0;
+    }
 
   view_id_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_HOME_VIEW);
 

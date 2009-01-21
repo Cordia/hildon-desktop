@@ -1,3 +1,19 @@
+2009-01-21  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home.c (SETTINGS_BUTTON, applet_settings_button,
+	  hd_home_applet_close_button_clicked,
+	  hd_home_applet_settings_button_clicked, hd_home_constructed,
+	  hd_home_show_applet_buttons, hd_home_hide_applet_buttons): Add
+	  support for the settings button.
+
+	* src/mb/hd-atoms.c (hd_atoms_init):
+	* src/mb/hd-atoms.h (HD_ATOM_HILDON_APPLET_SETTINGS,
+	  HD_ATOM_HILDON_APPLET_SHOW_SETTINGS): Add new atoms.
+
+	* src/mb/hd-home-applet.c (hd_home_applet_init):
+	* src/mb/hd-home-applet.h (settings): Read settings property from
+	  applet window.
+
 2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Updated. NB#98719 is fixed.
