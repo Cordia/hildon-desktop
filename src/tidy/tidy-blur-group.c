@@ -186,24 +186,8 @@ tidy_blur_group_paint (ClutterActor *actor)
 
   /* If we are rendering normally then shortcut all this, and
    just render directly without the texture */
-  if (priv->blur==0 && priv->saturation==1 && priv->brightness==1)
+  if (!tidy_blur_group_source_buffered(actor))
     {
-    /* free our textures first to give us a bit
-     * more free memory */
-      /* if (priv->fbo_preblur) {
-         cogl_offscreen_unref(priv->fbo_preblur);
-         cogl_texture_unref(priv->tex_preblur);
-         priv->fbo_preblur = 0;
-         priv->tex_preblur = 0;
-       }
-       if (priv->fbo_postblur) {
-         cogl_offscreen_unref(priv->fbo_postblur);
-         cogl_texture_unref(priv->tex_postblur);
-         priv->fbo_postblur = 0;
-         priv->tex_postblur = 0;
-       }*/
-      /*priv->source_changed = TRUE;*/
-
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
       return;
     }
@@ -638,4 +622,21 @@ void tidy_blur_group_set_source_changed(ClutterActor *blur_group)
 
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
   priv->source_changed = TRUE;
+}
+
+/**
+ * tidy_blur_group_source_buffered:
+ *
+ * Return true if this blur group is currently buffering it's actors. Used
+ * when this actually needs to blur or desaturate its children
+ */
+gboolean tidy_blur_group_source_buffered(ClutterActor *blur_group)
+{
+  TidyBlurGroupPrivate *priv;
+
+  if (!TIDY_IS_BLUR_GROUP(blur_group))
+    return FALSE;
+
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
+  return !(priv->blur==0 && priv->saturation==1 && priv->brightness==1);
 }

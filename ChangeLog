@@ -1,3 +1,13 @@
+2009-01-21  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/tidy/tidy-blur-group.c
+	* src/tidy/tidy-blur-group.h:
+	  Added a convenience function to see if a blur group is actually 
+	  buffering the picture of it's children
+	* src/mb/hd-comp-mgr.c:
+	  Changes to do a full-screen update and kick the blur actor if an
+	  actor that is blurred needs update. Fix for 98298
+
 2009-01-21  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home.c (SETTINGS_BUTTON, applet_settings_button,

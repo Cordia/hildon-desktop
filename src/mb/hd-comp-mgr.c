@@ -671,7 +671,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
                   break;
                 }
-              
+
               parent = clutter_actor_get_parent (parent);
             }
 
@@ -720,6 +720,7 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
   ClutterFixed offsetx = 0, offsety = 0;
   ClutterActor *parent, *it;
   HdCompMgrPrivate * priv;
+  gboolean blur_update = FALSE;
 
   if (!CLUTTER_IS_ACTOR(actor) ||
       !CLUTTER_ACTOR_IS_VISIBLE(actor) ||
@@ -735,14 +736,23 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
     {
       if (!CLUTTER_ACTOR_IS_VISIBLE(parent))
         return;
+      /* if we're a child of a blur group, tell it that it has changed */
+      if (TIDY_IS_BLUR_GROUP(parent) &&
+          tidy_blur_group_source_buffered(parent))
+        {
+          tidy_blur_group_set_source_changed(parent);
+          blur_update = TRUE;
+        }
       parent = clutter_actor_get_parent(parent);
     }
 
   /* Check we're not in a mode where it's a bad idea.
-   * Also skip if we're in some transition -
-   * instead just update normally */
+   * Also skip if we're in some transition - instead just update normally
+   * We also must update fully if blurring, as we must update the whole
+   * blur testure. */
   if (!STATE_DO_PARTIAL_REDRAW(hd_render_manager_get_state()) ||
-      priv->unmap_effect_running)
+      priv->unmap_effect_running ||
+      blur_update)
   {
     ClutterActor *stage = clutter_stage_get_default();
     clutter_actor_queue_redraw(stage);
