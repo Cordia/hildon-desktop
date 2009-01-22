@@ -1,5 +1,17 @@
 2009-01-22  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hildon-desktop-cud.sh:
+	* src/hildon-desktop-rfs.sh: Add scripts to clear user data and reset
+	to factory settings. Fixes NB#98971
+
+	* debian/hildon-desktop.install:
+	* debian/rules:
+	* src/Makefile.am: Install cud and rfs scripts.
+
+	* debian/changelog: Update.
+
+2009-01-22  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* configure.ac: Remove libhildondesktop1 dependency. Add gnome-vfs
 	  dependency.
 

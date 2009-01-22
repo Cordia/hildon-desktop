@@ -19,4 +19,12 @@ schema_DATA = \
 	hildon-desktop.schemas \
 	hildon-desktop-views.schemas
 
+cuddir = ${sysconfdir}/osso-cud-scripts
+cud_SCRIPTS = \
+	hildon-desktop-cud.sh
+
+rfsdir = ${sysconfdir}/osso-rfs-scripts
+rfs_SCRIPTS = \
+	hildon-desktop-rfs.sh
+
 CLEANFILES = *~

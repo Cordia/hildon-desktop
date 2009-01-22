@@ -1,2 +1,4 @@
+debian/tmp/etc/osso-cud-scripts
+debian/tmp/etc/osso-rfs-scripts
 debian/tmp/usr/bin
 debian/tmp/usr/share
