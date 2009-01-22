@@ -80,15 +80,18 @@ HdLauncherAppPrestartMode  hd_launcher_app_get_prestart_mode (HdLauncherApp *ite
  * only our maemo-specific data.
  */
 
-gboolean hd_launcher_app_is_launched     (HdLauncherApp *app);
-void     hd_launcher_app_set_launched    (HdLauncherApp *app,
-                                          gboolean launched);
-gboolean hd_launcher_app_is_loading      (HdLauncherApp *app);
-void     hd_launcher_app_set_loading     (HdLauncherApp *app,
-                                          gboolean loading);
-gboolean hd_launcher_app_is_hibernating  (HdLauncherApp *app);
-void     hd_launcher_app_set_hibernating (HdLauncherApp *app,
-                                          gboolean hibernating);
+typedef enum {
+  HD_APP_STATE_INACTIVE = 0,
+  HD_APP_STATE_HIBERNATING,
+  HD_APP_STATE_PRESTARTED,
+  HD_APP_STATE_LOADING,
+  HD_APP_STATE_SHOWN
+} HdLauncherAppState;
+
+HdLauncherAppState hd_launcher_app_get_state (HdLauncherApp *app);
+void               hd_launcher_app_set_state (HdLauncherApp *app,
+                                              HdLauncherAppState state);
+gboolean hd_launcher_app_is_executing     (HdLauncherApp *app);
 
 /* Returns the main window related to this application, if it has been
  * launched.

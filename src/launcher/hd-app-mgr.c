@@ -57,7 +57,7 @@ struct _HdAppMgrPrivate
 enum
 {
   APP_LAUNCHED,
-  APP_APPEARED,
+  APP_SHOWN,
 
   LAST_SIGNAL
 };
@@ -118,7 +118,7 @@ hd_app_mgr_class_init (HdAppMgrClass *klass)
                   0, NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
-  app_mgr_signals[APP_APPEARED] =
+  app_mgr_signals[APP_SHOWN] =
     g_signal_new (I_("application-appeared"),
                   HD_TYPE_APP_MGR,
                   G_SIGNAL_RUN_FIRST,
@@ -138,7 +138,7 @@ hd_app_mgr_init (HdAppMgr *self)
   connection = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
   if (!connection)
     {
-      g_debug ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
+      g_warning ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
       return;
     }
   priv->dbus_proxy = dbus_g_proxy_new_for_name (connection,
@@ -147,7 +147,7 @@ hd_app_mgr_init (HdAppMgr *self)
                                                 DBUS_INTERFACE_DBUS);
   if (!priv->dbus_proxy)
     {
-      g_debug ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
+      g_warning ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
       return;
     }
 
@@ -218,15 +218,14 @@ hd_app_mgr_launch (HdLauncherApp *app)
 
   if (result)
     {
-      hd_launcher_app_set_launched (app, TRUE);
-      hd_launcher_app_set_loading (app, TRUE);
+      hd_launcher_app_set_state (app, HD_APP_STATE_LOADING);
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LAUNCHED],
           0, app, NULL);
     }
   return result;
 }
 
-/* Right now this just tells the app that it's been relaunched. */
+/* This just tells the app that it's been relaunched. */
 gboolean
 hd_app_mgr_relaunch (HdLauncherApp *app)
 {
@@ -249,11 +248,10 @@ hd_app_mgr_prestart (HdLauncherApp *app)
 
   if (!service)
     {
-      g_debug ("%s: Can't prestart an app without service.\n", __FUNCTION__);
+      g_warning ("%s: Can't prestart an app without service.\n", __FUNCTION__);
       return FALSE;
     }
 
-  g_debug ("%s: service=%s\n", __FUNCTION__, service);
   if (!hd_app_mgr_memory_available ())
     {
       /* TODO: Check memory limits before prestarting apps. */
@@ -278,6 +276,8 @@ hd_app_mgr_prestart (HdLauncherApp *app)
     dbus_error_free (&derror);
   }
 
+  if (res)
+    hd_launcher_app_set_state (app, HD_APP_STATE_PRESTARTED);
   return res;
 }
 
@@ -287,9 +287,13 @@ hd_app_mgr_wakeup   (HdLauncherApp *app)
   gboolean res = FALSE;
   const gchar *service = hd_launcher_app_get_service (app);
 
+  /* If the app is not hibernating, do nothing. */
+  if (hd_launcher_app_get_state (app) != HD_APP_STATE_HIBERNATING)
+    return TRUE;
+
   if (!service)
     {
-      g_debug ("%s: Can't wake up an app without service.\n", __FUNCTION__);
+      g_warning ("%s: Can't wake up an app without service.\n", __FUNCTION__);
       return FALSE;
     }
 
@@ -306,7 +310,7 @@ hd_app_mgr_wakeup   (HdLauncherApp *app)
 
   res = hd_app_mgr_service_top (service, "RESTORE");
   if (res)
-    hd_launcher_app_set_hibernating (app, FALSE);
+    hd_launcher_app_set_state (app, HD_APP_STATE_LOADING);
   return res;
 }
 
@@ -346,8 +350,6 @@ hd_app_mgr_execute (const gchar *exec)
   gchar **argv = NULL;
   GPid child_pid;
   GError *internal_error = NULL;
-
-  g_debug ("Executing `%s'", exec);
 
   if (space)
   {
@@ -398,9 +400,6 @@ hd_app_mgr_service_top (const gchar *service, const gchar *param)
   gchar *tmp = g_strdelimit(g_strdup (service), ".", '/');
   g_snprintf (path, PATH_NAME_LEN, "/%s", tmp);
   g_free (tmp);
-
-  g_debug ("%s: service:%s path:%s interface:%s\n", __FUNCTION__,
-    service, path, service);
 
   dbus_error_init (&derror);
   conn = dbus_bus_get (DBUS_BUS_SESSION, &derror);
@@ -504,7 +503,10 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
                 }
               else
                 {
-                  hd_launcher_app_set_launched (app, FALSE);
+                  /* The app must have been hibernated or closed. */
+                  if (hd_launcher_app_get_state (app) !=
+                      HD_APP_STATE_HIBERNATING)
+                    hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
                 }
               break;
             }
@@ -521,6 +523,14 @@ hd_app_mgr_match_window (const char *res_name,
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   GList *apps = hd_launcher_tree_get_items (priv->tree, NULL);
   HdLauncherApp *result = NULL;
+
+  if (!res_name && !res_class)
+    {
+      g_warning ("%s: Can't match windows with no WM_CLASS set.\n", __FUNCTION__);
+      return NULL;
+    }
+
+  g_debug ("%s: Matching name: %s and class: %s", __FUNCTION__, res_name, res_class);
 
   while (apps)
     {
@@ -569,14 +579,11 @@ hd_app_mgr_match_window (const char *res_name,
       g_debug ("%s: Matched window for %s\n", __FUNCTION__,
           hd_launcher_item_get_id (HD_LAUNCHER_ITEM (result)));
 
-      /* Mark it as launched in case it's been launched directly. */
-      hd_launcher_app_set_launched (result, TRUE);
-
-      /* Unmark it as loading as it's appeared. */
-      hd_launcher_app_set_loading (result, FALSE);
-
-      /* Signal that the app has appeared. */
-      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_APPEARED],
+      /* Signal that the app has appeared.
+       * TODO: I'd prefer to signal this when the window is mapped,
+       * but right now here's the only place HdAppMgr gets to know this.
+       */
+      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_SHOWN],
                      0, result, NULL);
     }
 

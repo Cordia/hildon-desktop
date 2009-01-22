@@ -1372,6 +1372,8 @@ hd_comp_mgr_hibernate_client (HdCompMgr *hmgr,
 					   MBWMCompMgrClutterClientDontUpdate);
 
   hc->priv->hibernating = TRUE;
+  if (hc->priv->app)
+    hd_launcher_app_set_state (hc->priv->app, HD_APP_STATE_HIBERNATING);
 
   mb_wm_client_deliver_delete (c->wm_client);
 }

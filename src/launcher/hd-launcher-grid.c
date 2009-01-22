@@ -395,11 +395,6 @@ hd_launcher_grid_get_preferred_height (ClutterActor *actor,
                          (n_rows > 0 ? priv->v_spacing * (n_rows - 1) : 0);
         *natural_height_p = CLUTTER_UNITS_FROM_DEVICE (MAX (natural_height,
                                 HD_LAUNCHER_GRID_MIN_HEIGHT));
-
-      g_debug("%s: n_rows %d, natural height %d, n_launchers %d",
-              __FUNCTION__, n_rows,
-              CLUTTER_UNITS_TO_DEVICE(*natural_height_p),
-              n_visible_launchers);
     }
 }
 

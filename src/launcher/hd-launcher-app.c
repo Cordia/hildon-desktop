@@ -60,9 +60,7 @@ struct _HdLauncherAppPrivate
 
   HdLauncherAppPrestartMode prestart_mode;
 
-  gboolean launched:1;
-  gboolean loading:1;
-  gboolean hibernating:1;
+  HdLauncherAppState state;
 
   /* HdCompMgrClients for this app's main window. */
   HdCompMgrClient *main_comp_mgr_client;
@@ -231,48 +229,26 @@ hd_launcher_app_get_prestart_mode (HdLauncherApp *item)
   return item->priv->prestart_mode;
 }
 
-gboolean
-hd_launcher_app_is_launched     (HdLauncherApp *app)
+HdLauncherAppState
+hd_launcher_app_get_state (HdLauncherApp *app)
 {
   HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  return priv->launched;
+  return priv->state;
 }
-
 void
-hd_launcher_app_set_launched    (HdLauncherApp *app, gboolean launched)
+hd_launcher_app_set_state (HdLauncherApp *app, HdLauncherAppState state)
 {
   HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  g_debug ("%s: app %s launched set to %d.\n", __FUNCTION__,
-      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)), launched);
-  priv->launched = launched;
-}
-
-gboolean
-hd_launcher_app_is_loading      (HdLauncherApp *app)
-{
-  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  return priv->loading;
-}
-
-void
-hd_launcher_app_set_loading     (HdLauncherApp *app, gboolean loading)
-{
-  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  priv->loading = loading;
+  g_debug ("%s: app %s state set to %d.\n", __FUNCTION__,
+      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)), state);
+  priv->state = state;
 }
 
 gboolean
-hd_launcher_app_is_hibernating  (HdLauncherApp *app)
+hd_launcher_app_is_executing (HdLauncherApp *app)
 {
-  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  return priv->hibernating;
-}
-
-void
-hd_launcher_app_set_hibernating (HdLauncherApp *app, gboolean hibernating)
-{
-  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  priv->hibernating = hibernating;
+  return (hd_launcher_app_get_state (app) == HD_APP_STATE_PRESTARTED ||
+          hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN);
 }
 
 HdCompMgrClient *
@@ -290,9 +266,7 @@ hd_launcher_app_set_comp_mgr_client (HdLauncherApp *app,
 
   if (client)
     {
-      /* We set launched to true because a window can appear even if
-       * it wasn't launched here. */
-      hd_launcher_app_set_launched (app, TRUE);
+      hd_launcher_app_set_state (app, HD_APP_STATE_SHOWN);
     }
   else
     {
@@ -300,7 +274,7 @@ hd_launcher_app_set_comp_mgr_client (HdLauncherApp *app,
        * If we ever keep a list of all the windows an app has, that'd be
        * a better way of knowing.
        */
-      hd_launcher_app_set_launched (app, FALSE);
+      hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
     }
   priv->main_comp_mgr_client = client;
 }

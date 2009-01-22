@@ -196,7 +196,6 @@ static void hd_launcher_constructed (GObject *gobject)
                                priv->top_blur);
 
   ClutterActor *top_page = hd_launcher_page_new (NULL, NULL);
-  g_debug ("%s: top_page: %p\n", __FUNCTION__, top_page);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->top_blur),
                                top_page);
   clutter_actor_hide (top_page);
@@ -314,7 +313,6 @@ hd_launcher_create_back_button (const char *icon_name)
   if (info != NULL)
     {
       const gchar *fname = gtk_icon_info_get_filename(info);
-      g_debug("create_back_button: using %s for %s\n", fname, icon_name);
       icon = clutter_texture_new_from_file(fname, NULL);
       clutter_actor_set_size (icon, HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH,
                                     HD_COMP_MGR_TOP_RIGHT_BTN_HEIGHT);
@@ -322,7 +320,7 @@ hd_launcher_create_back_button (const char *icon_name)
       gtk_icon_info_free(info);
     }
   else
-    g_debug("create_back_button: couldn't find icon %s\n", icon_name);
+    g_warning("create_back_button: couldn't find icon %s\n", icon_name);
 
   clutter_actor_set_position (icon, HD_COMP_MGR_SCREEN_WIDTH -
                                     HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH, 0);
@@ -342,7 +340,6 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
     g_signal_emit (data, launcher_signals[HIDDEN], 0);
   else
     {
-      g_debug ("%s: Going back\n", __FUNCTION__);
       hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
         HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB);
       hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
@@ -393,11 +390,6 @@ hd_launcher_category_tile_clicked (HdLauncherTile *tile, gpointer data)
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
   ClutterActor *page = CLUTTER_ACTOR (data);
 
-  g_debug ("%s: Tile clicked, text: %s\n", __FUNCTION__,
-      hd_launcher_tile_get_text (tile));
-  g_debug ("%s: Showing page: %s\n", __FUNCTION__,
-      hd_launcher_page_get_text (HD_LAUNCHER_PAGE (page)));
-
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
         HD_LAUNCHER_PAGE_TRANSITION_BACK);
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(page),
@@ -419,7 +411,7 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
   /* If the app has been already launched, send the relaunched signal
    * and don't animate anything.
    */
-  if (hd_launcher_app_is_launched (app))
+  if (hd_launcher_app_is_executing (app))
     {
       g_signal_emit (hd_launcher_get (), launcher_signals[APP_RELAUNCHED],
                      0, data, NULL);
@@ -468,9 +460,6 @@ hd_launcher_create_page (HdLauncherItem *item, gpointer data)
   if (hd_launcher_item_get_item_type (item) != HD_CATEGORY_LAUNCHER)
     return;
 
-  g_debug ("%s - Creating new page for id: %s\n", __FUNCTION__,
-           hd_launcher_item_get_id (item));
-
   domainname = hd_launcher_item_get_text_domain (item);
   if (domainname)
     newpage = hd_launcher_page_new(
@@ -501,10 +490,6 @@ hd_launcher_lazy_traverse_tree (gpointer data)
     return FALSE;
   item = tdata->items->data;
 
-  g_debug ("%s: Adding item name: %s, position: %d\n", __FUNCTION__,
-           hd_launcher_item_get_name(item),
-           hd_launcher_item_get_position (item));
-
   domainname = hd_launcher_item_get_text_domain (item);
   if (domainname)
     tile = hd_launcher_tile_new (
@@ -522,7 +507,6 @@ hd_launcher_lazy_traverse_tree (gpointer data)
     /* Put it in the default level. */
     page = g_datalist_get_data (&priv->pages, HD_LAUNCHER_ITEM_DEFAULT_CATEGORY);
 
-  g_debug ("%s: page: %p\n", __FUNCTION__, page);
   hd_launcher_page_add_tile (page, tile);
 
   if (hd_launcher_item_get_item_type(item) == HD_CATEGORY_LAUNCHER)
@@ -560,14 +544,6 @@ hd_launcher_lazy_traverse_cleanup (gpointer data)
   g_free (data);
 }
 
-#ifndef G_DEBUG_DISABLE
-static void
-_hd_launcher_show_pages (GQuark key, gpointer data, gpointer user_data)
-{
-  g_debug ("%s: %s -> %p\n", __FUNCTION__, g_quark_to_string (key), data);
-}
-#endif
-
 static void
 hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
 {
@@ -579,12 +555,7 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
    */
   g_list_foreach (tdata->items, (GFunc) hd_launcher_create_page, NULL);
 
-#ifndef G_DEBUG_DISABLE
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-  g_datalist_foreach (&priv->pages,
-      (GDataForeachFunc) _hd_launcher_show_pages, NULL);
-#endif
-
+  /* Then we add the tiles to them in a idle callback. */
   clutter_threads_add_idle_full (CLUTTER_PRIORITY_REDRAW + 20,
                                  hd_launcher_lazy_traverse_tree,
                                  tdata,
@@ -688,8 +659,8 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
           launch_anim = TRUE;
         }
       else
-        g_debug("%s: Preload image file '%s' specified for '%s'"
-                " couldn't be loaded",
+        g_warning("%s: Preload image file '%s' specified for '%s'"
+                  " couldn't be loaded",
                 __FUNCTION__, loading_path, hd_launcher_app_get_exec(item));
 
       g_free(loading_path);

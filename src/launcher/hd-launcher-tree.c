@@ -419,7 +419,6 @@ hd_launcher_tree_constructor (GType                  gtype,
                                        NULL);
                                        */
   tree->priv->path = g_strdup("/usr/share/applications/hildon");
-  g_debug("launcher desktop file folder: %s\n", tree->priv->path);
 
   if (!tree->priv->menu_path)
           /* KIMMO hack
@@ -429,7 +428,6 @@ hd_launcher_tree_constructor (GType                  gtype,
                                               NULL);
                                               */
     tree->priv->menu_path = g_strdup("/etc/xdg/menus/applications.menu");
-  g_debug("launcher menu desktop file folder: %s\n", tree->priv->menu_path);
 
   return retval;
 }

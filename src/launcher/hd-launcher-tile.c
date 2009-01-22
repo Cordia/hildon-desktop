@@ -272,7 +272,7 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
     }
   if (info == NULL)
     {
-      g_debug("%s: couldn't find icon %s\n", __FUNCTION__, priv->icon_name);
+      g_warning ("%s: couldn't find icon %s\n", __FUNCTION__, priv->icon_name);
       return;
     }
 
@@ -523,8 +523,6 @@ hd_launcher_tile_button_release (ClutterActor       *actor,
         return FALSE;
 
       priv->is_pressed = FALSE;
-
-      g_debug ("%s: released", __FUNCTION__);
 
       g_signal_emit (actor, launcher_tile_signals[CLICKED], 0);
 

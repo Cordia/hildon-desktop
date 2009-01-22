@@ -285,8 +285,6 @@ hd_launcher_page_set_icon_name (HdLauncherPage *page,
   if (!icon_name)
     return;
 
-  g_debug ("%s: icon_name: %s\n", __FUNCTION__, icon_name);
-
   priv->icon_name = g_strdup (icon_name);
 
   /* Recreate the icon actor */
@@ -304,7 +302,7 @@ hd_launcher_page_set_icon_name (HdLauncherPage *page,
       gtk_icon_info_free(info);
     }
   else
-    g_debug("%s: couldn't find icon %s\n", __FUNCTION__, priv->icon_name);
+    g_warning ("%s: couldn't find icon %s\n", __FUNCTION__, priv->icon_name);
 }
 
 void
@@ -328,8 +326,6 @@ hd_launcher_page_set_text (HdLauncherPage *page,
 
   if (!text)
     return;
-
-  g_debug ("%s: text: %s\n", __FUNCTION__, text);
 
   priv->text = g_strdup (text);
 
