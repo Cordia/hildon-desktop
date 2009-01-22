@@ -64,8 +64,8 @@ PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
 		       gtk+-2.0 dnl
 		       gconf-2.0 dnl
 		       hildon-1 dnl
-		       libhildondesktop-1 >= 2.1.6 dnl
 		       libcanberra dnl
+		       gnome-vfs-2.0 dnl
 		       xft])
 
 HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util'

@@ -31,11 +31,10 @@
 
 #include <stdio.h>
 
-#define THEME_RC_FILE ".osso/current-gtk-theme"
-#define THEME_DIR "/usr/share/themes/"
-#define BACKGROUNDS_DESKTOP_FILE "/usr/share/themes/default/backgrounds/theme_bg.desktop"
-#define BACKGROUNDS_DESKTOP_KEY_FILE "X-File%d"
-#define BACKGROUND_GCONF_KEY "/apps/osso/hildon-desktop/views/%d/bg-image"
+#define CURRENT_THEME_DIR "/etc/hildon/theme"
+#define BACKGROUNDS_DESKTOP_FILE CURRENT_THEME_DIR "/backgrounds/theme_bg.desktop"
+#define BACKGROUNDS_DESKTOP_KEY_FILE "X-File%u"
+#define BACKGROUND_GCONF_KEY "/apps/osso/hildon-desktop/views/%u/bg-image"
 #define MAX_BACKGROUNDS 4
 
 static void
@@ -50,10 +49,14 @@ static MBWMStackLayerType
 hd_desktop_stacking_layer (MBWindowManagerClient *client);
 
 static void
-hd_desktop_theme_change (MBWindowManagerClient *client);
+hd_desktop_stack (MBWindowManagerClient *client, int flags);
 
 static void
-hd_desktop_stack (MBWindowManagerClient *client, int flags);
+current_theme_changed (GnomeVFSMonitorHandle *handle,
+                       const gchar *monitor_uri,
+                       const gchar *info_uri,
+                       GnomeVFSMonitorEventType event_type,
+                       gpointer user_data);
 
 static void
 hd_desktop_class_init (MBWMObjectClass *klass)
@@ -68,7 +71,6 @@ hd_desktop_class_init (MBWMObjectClass *klass)
   client->geometry       = hd_desktop_request_geometry;
   client->stacking_layer = hd_desktop_stacking_layer;
   client->stack          = hd_desktop_stack;
-  client->theme_change   = hd_desktop_theme_change;
   client->realize        = hd_desktop_realize;
 
 #if MBWM_WANT_DEBUG
@@ -79,6 +81,15 @@ hd_desktop_class_init (MBWMObjectClass *klass)
 static void
 hd_desktop_destroy (MBWMObject *this)
 {
+  if (HD_DESKTOP (this)->current_theme_monitor)
+    {
+      GnomeVFSResult result;
+
+      result = gnome_vfs_monitor_cancel (HD_DESKTOP (this)->current_theme_monitor);
+      if (result != GNOME_VFS_OK)
+        g_warning ("Could not cancel current theme monitor. %s", gnome_vfs_result_to_string (result));
+      HD_DESKTOP (this)->current_theme_monitor = NULL;
+    }
 }
 
 static int
@@ -87,6 +98,7 @@ hd_desktop_init (MBWMObject *this, va_list vap)
   MBWindowManagerClient    *client = MB_WM_CLIENT (this);
   MBWindowManager          *wm = NULL;
   MBGeometry                geom;
+  GnomeVFSResult            result;
 
   wm = client->wmref;
 
@@ -108,6 +120,12 @@ hd_desktop_init (MBWMObject *this, va_list vap)
 
   hd_desktop_request_geometry (client, &geom,
 					 MBWMClientReqGeomForced);
+
+  result = gnome_vfs_monitor_add (&HD_DESKTOP (this)->current_theme_monitor,
+                                  CURRENT_THEME_DIR,
+                                  GNOME_VFS_MONITOR_FILE,
+                                  current_theme_changed,
+                                  NULL);
 
   return 1;
 }
@@ -167,69 +185,82 @@ hd_desktop_stacking_layer (MBWindowManagerClient *client)
 }
 
 static void
-hd_desktop_theme_change (MBWindowManagerClient *client)
+current_theme_changed (GnomeVFSMonitorHandle *handle,
+                       const gchar *monitor_uri,
+                       const gchar *info_uri,
+                       GnomeVFSMonitorEventType event_type,
+                       gpointer user_data)
 {
-  GKeyFile *backgrounds = NULL;
-  GError *error = NULL;
-  GConfClient *gconf_client = NULL;
-  guint i;
-
-  backgrounds = g_key_file_new ();
-  if (!g_key_file_load_from_file (backgrounds,
-                                  BACKGROUNDS_DESKTOP_FILE,
-                                  G_KEY_FILE_NONE,
-                                  &error))
+  /* 
+   * Change the backgrounds when the link to the new theme 
+   * is created
+   */
+  if (event_type == GNOME_VFS_MONITOR_EVENT_CREATED)
     {
-      g_warning ("Could not load default background definition desktop file. %s",
-                 error->message);
-      g_error_free (error);
-      goto cleanup;
-    }
+      GKeyFile *backgrounds = NULL;
+      GError *error = NULL;
+      GConfClient *gconf_client = NULL;
+      guint i;
 
-  gconf_client = gconf_client_get_default ();
-
-  for (i = 1; i <= MAX_BACKGROUNDS; i++)
-    {
-      gchar *desktop_key;
-      gchar *background_image;
-
-      /* The backgrounds are numbered from 1 to 4 in backgrounds/[theme].desktop */
-      desktop_key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE,
-                                     i);
-
-      background_image = g_key_file_get_string (backgrounds,
-                                                G_KEY_FILE_DESKTOP_GROUP,
-                                                desktop_key,
-                                                NULL);
-
-      if (background_image)
+      /* Load default theme background definition */
+      backgrounds = g_key_file_new ();
+      if (!g_key_file_load_from_file (backgrounds,
+                                      BACKGROUNDS_DESKTOP_FILE,
+                                      G_KEY_FILE_NONE,
+                                      &error))
         {
-          gchar *gconf_key;
-
-          gconf_key = g_strdup_printf (BACKGROUND_GCONF_KEY, i);
-
-          if (!gconf_client_set_string (gconf_client,
-                                        gconf_key,
-                                        background_image,
-                                        &error))
-            {
-              g_warning ("Could not set background image in GConf. %s", error->message);
-              g_error_free (error);
-              error = NULL;
-            }
-
-          g_free (gconf_key);
+          g_warning ("Could not load default background definition desktop file. %s",
+                     error->message);
+          g_error_free (error);
+          goto cleanup;
         }
 
-      g_free (desktop_key);
-      g_free (background_image);
-    }
+      gconf_client = gconf_client_get_default ();
+
+      /* Save new backgrounds to GConf */
+      for (i = 1; i <= MAX_BACKGROUNDS; i++)
+        {
+          gchar *desktop_key;
+          gchar *background_image;
+
+          /* The backgrounds are numbered from 1 to 4 in backgrounds/[theme].desktop */
+          desktop_key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE,
+                                         i);
+
+          background_image = g_key_file_get_string (backgrounds,
+                                                    G_KEY_FILE_DESKTOP_GROUP,
+                                                    desktop_key,
+                                                    NULL);
+
+          if (background_image)
+            {
+              gchar *gconf_key;
+
+              gconf_key = g_strdup_printf (BACKGROUND_GCONF_KEY, i);
+
+              if (!gconf_client_set_string (gconf_client,
+                                            gconf_key,
+                                            background_image,
+                                            &error))
+                {
+                  g_warning ("Could not set background image in GConf. %s", error->message);
+                  g_error_free (error);
+                  error = NULL;
+                }
+
+              g_free (gconf_key);
+            }
+
+          g_free (desktop_key);
+          g_free (background_image);
+        }
 
 cleanup:
-  if (backgrounds)
-    g_key_file_free (backgrounds);
-  if (gconf_client)
-    g_object_unref (gconf_client);
+      if (backgrounds)
+        g_key_file_free (backgrounds);
+      if (gconf_client)
+        g_object_unref (gconf_client);
+    }
 }
 
 static void

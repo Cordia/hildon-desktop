@@ -1,3 +1,15 @@
+2009-01-22  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* configure.ac: Remove libhildondesktop1 dependency. Add gnome-vfs
+	  dependency.
+
+	* debian/changelog: Update.
+
+	* src/mb/hd-desktop.c (hd_desktop_destroy, hd_desktop_init,
+	  current_theme_changed):
+	* src/mb/hd-desktop.h: Monitor /etc/hildon/theme for theme changes.
+	  Fixes NB#98196, NB#98302
+
 2009-01-21  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Add a single define for the default icon, update it to spec.

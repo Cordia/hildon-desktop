@@ -26,6 +26,8 @@
 
 #include <matchbox/core/mb-wm.h>
 
+#include <libgnomevfs/gnome-vfs.h>
+
 typedef struct HdDesktop      HdDesktop;
 typedef struct HdDesktopClass HdDesktopClass;
 
@@ -36,7 +38,9 @@ typedef struct HdDesktopClass HdDesktopClass;
 
 struct HdDesktop
 {
-  MBWMClientBase    parent;
+  MBWMClientBase parent;
+
+  GnomeVFSMonitorHandle *current_theme_monitor;
 };
 
 struct HdDesktopClass
