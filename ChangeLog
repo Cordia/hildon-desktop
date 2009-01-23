@@ -1,3 +1,11 @@
+2009-01-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-theme.c:
+	  Don't assume absolute decor placement if we're not using the
+	  simple hildon theme.  Since we're using the "hildon" engine now
+	  in theme.xml (as opposed to "hildon-simple") that caused the
+	  buttons to be fixed at (-1, -1), diregarding their packing.
+
 2009-01-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Patch from Laszlo:

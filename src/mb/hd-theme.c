@@ -343,9 +343,6 @@ hd_theme_create_decor (MBWMTheme             *theme,
 	{
 	  decor = MB_WM_DECOR (hd_decor_new (wm, type));
 
-	  decor->absolute_packing =
-	    MB_WM_OBJECT_TYPE (theme) == HD_TYPE_THEME_SIMPLE ? False : True;
-
 	  mb_wm_decor_attach (decor, client);
 	  construct_buttons (theme, decor, d);
 	}
