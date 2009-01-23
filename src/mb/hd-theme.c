@@ -874,14 +874,13 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
   int			   operator = PictOpSrc;
   int                      titlebar_width;
   int                      pack_end_x = mb_wm_decor_get_pack_end_x (decor);
+  unsigned int             l_padding = left_padding - 8; /* fudge, not sure why it's necessary */
 
   if (!((c = mb_wm_xml_client_find_by_type (theme->xml_clients, c_type)) &&
         (d = mb_wm_xml_decor_find_by_type (c->decors, decor->type))))
     return;
 
-  left_padding -= 8; /* fudge, not sure why it's necessary */
-
-  titlebar_width = decor->geom.width - left_padding;
+  titlebar_width = decor->geom.width - l_padding;
 
 #if 0
   /* Uncomment this to make the titlebar make room for the buttons on the right */
@@ -1014,7 +1013,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   p_theme->xpic,
 			   None,
 			   XftDrawPicture (data->xftdraw),
-			   d->x, d->y, 0, 0, left_padding, 0,
+			   d->x, d->y, 0, 0, l_padding, 0,
 			   width1, d->height);
 
 	  XRenderComposite(xdpy, operator,
@@ -1022,7 +1021,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   None,
 			   XftDrawPicture (data->xftdraw),
 			   x2 , d->y, 0, 0,
-			   left_padding+width1, 0,
+			   l_padding+width1, 0,
 			   width2, d->height);
 
 #ifdef HAVE_XEXT
@@ -1140,7 +1139,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   None,
 			   XftDrawPicture (data->xftdraw),
 			   d->x, d->y, 0, 0,
-			   left_padding, 0,
+			   l_padding, 0,
 			   d->width, height1);
 
 	  XRenderComposite(xdpy, operator,
@@ -1148,7 +1147,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   None,
 			   XftDrawPicture (data->xftdraw),
 			   d->x , y2, 0, 0,
-			   left_padding, height1,
+			   l_padding, height1,
 			   d->width, height2);
 
 #ifdef HAVE_XEXT
@@ -1156,10 +1155,10 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 	    {
 	      XCopyArea (xdpy, p_theme->shape_mask, data->shape_mask,
 			 data->gc_mask,
-			 d->x, d->y, d->width, height1, left_padding, 0);
+			 d->x, d->y, d->width, height1, l_padding, 0);
 	      XCopyArea (xdpy, p_theme->shape_mask, data->shape_mask,
 			 data->gc_mask,
-			 d->x, y2, d->width, height2, left_padding, height1);
+			 d->x, y2, d->width, height2, l_padding, height1);
 	    }
 #endif
 	}
@@ -1171,7 +1170,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   None,
 			   XftDrawPicture (data->xftdraw),
 			   d->x, d->y, 0, 0,
-			   left_padding, 0,
+			   l_padding, 0,
 			   d->width, d->height);
 
 #ifdef HAVE_XEXT
@@ -1179,7 +1178,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 	    {
 	      XCopyArea (xdpy, p_theme->shape_mask, data->shape_mask,
 			 data->gc_mask,
-			 d->x, d->y, d->width, d->height, left_padding, 0);
+			 d->x, d->y, d->width, d->height, l_padding, 0);
 	    }
 #endif
 	}
@@ -1203,7 +1202,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   p_theme->xpic,
 			   None,
 			   XftDrawPicture (data->xftdraw),
-			   d->x, d->y, 0, 0, left_padding, 0,
+			   d->x, d->y, 0, 0, l_padding, 0,
 			   d->width, pad_offset);
 
 	  /* TODO: can we do this as one scaled operation? */
@@ -1212,7 +1211,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			     p_theme->xpic,
 			     None,
 			     XftDrawPicture (data->xftdraw),
-			     d->x, d->y + pad_offset, 0, 0, left_padding, y,
+			     d->x, d->y + pad_offset, 0, 0, l_padding, y,
 			     d->width,
 			     pad_length);
 
@@ -1221,7 +1220,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			   None,
 			   XftDrawPicture (data->xftdraw),
 			   d->x , d->y + pad_offset, 0, 0,
-			   left_padding, pad_offset + gap_length,
+			   l_padding, pad_offset + gap_length,
 			   d->width, d->height - pad_offset);
 
 #ifdef HAVE_XEXT
@@ -1231,20 +1230,20 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			 data->gc_mask,
 			 d->x, d->y,
 			 d->width, pad_offset,
-			 left_padding, 0);
+			 l_padding, 0);
 
 	      for (y = pad_offset; y < pad_offset + gap_length; y += pad_length)
 		XCopyArea (xdpy, p_theme->shape_mask, data->shape_mask,
 			   data->gc_mask,
 			   d->x, d->y + pad_offset,
 			   d->width, pad_length,
-			   left_padding, y);
+			   l_padding, y);
 
 	      XCopyArea (xdpy, p_theme->shape_mask, data->shape_mask,
 			 data->gc_mask,
 			 d->x, d->y + pad_offset,
 			 d->width, d->height - pad_offset,
-			 left_padding, pad_offset + gap_length);
+			 l_padding, pad_offset + gap_length);
 	    }
 #endif
 	}
@@ -1292,9 +1291,9 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 
       y = (decor->geom.height - (ascent + descent)) / 2 + ascent;
 
-      rec.x = left_padding;
+      rec.x = l_padding;
       rec.y = 0;
-      rec.width = pack_end_x - left_padding;
+      rec.width = pack_end_x - l_padding;
       rec.height = d->height;
 
       XftDrawSetClipRectangles (data->xftdraw, 0, 0, &rec, 1);
@@ -1335,7 +1334,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			    &data->clr,
 			    data->font,
 			    glyphs,
-			    xoff + west_width + centering_padding? centering_padding: left_padding,
+			    xoff + west_width + centering_padding? centering_padding: l_padding,
 			    y);
 
 	  /* Advance position */
@@ -1369,7 +1368,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 			data->font,
 			centering_padding?
 			west_width + centering_padding:
-			west_width + left_padding,
+			west_width + l_padding,
 			y,
 			(const guchar*)title, len);
 #endif
@@ -1380,7 +1379,7 @@ hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 	     {
                hd_decor->progress = g_malloc (sizeof (ProgressIndicatorData));
 
-	       hd_decor->progress->x_position = west_width + centering_padding? centering_padding: left_padding + font_extents.width;
+	       hd_decor->progress->x_position = west_width + centering_padding? centering_padding: l_padding + font_extents.width;
 	       hd_decor->progress->xdpy = xdpy;
 	       hd_decor->progress->source = p_theme->xpic;
 	       hd_decor->progress->dest = decor->xwin;

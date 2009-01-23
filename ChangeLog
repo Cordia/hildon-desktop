@@ -1,3 +1,9 @@
+2009-01-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Patch from Laszlo:
+	* src/mb/hd-theme.c: Do not modify the global variable left_padding,
+	it leads to "crawling title". Fixes: NB#95155
+
 2009-01-22  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Update. NB#99030 is fixed, too.
