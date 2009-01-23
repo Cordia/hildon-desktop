@@ -49,6 +49,7 @@
 #include "hd-status-menu.h"
 #include "hd-app-menu.h"
 #include "hd-dialog.h"
+#include "hd-animation-actor.h"
 
 static int  hd_wm_init       (MBWMObject *object, va_list vap);
 static void hd_wm_destroy    (MBWMObject *object);
@@ -193,6 +194,12 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
     {
       g_debug ("### is notification ###");
       return hd_note_new (wm, win);
+    }
+  else if (win->net_type == hd_comp_mgr_get_atom (hmgr,
+                          HD_ATOM_HILDON_WM_WINDOW_TYPE_ANIMATION_ACTOR))
+    {
+      g_debug ("### is animation actor ###");
+      return hd_animation_actor_new (wm, win);
     }
   else if (wm_class)
     return wm_class->client_new (wm, win);

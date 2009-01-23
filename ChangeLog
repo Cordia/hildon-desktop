@@ -1,3 +1,10 @@
+2009-01-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/Makefile.am, src/mb/hd-animation-actor.[ch]: New files
+	to implement WM-assisted animations class hd-animation-actor.
+	* src/mb/hd-atoms.[ch]: Add new atoms for hd-animation-actor.
+	* src/mb/hd-wm.c: Detect hd-animation-actor.
+
 2009-01-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-theme.c:

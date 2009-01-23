@@ -36,6 +36,7 @@
 #include "hd-gtk-style.h"
 #include "hd-applet-layout-manager.h"
 #include "hd-note.h"
+#include "hd-animation-actor.h"
 #include "hd-render-manager.h"
 #include "launcher/hd-app-mgr.h"
 
@@ -934,6 +935,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       hd_home_add_status_menu (HD_HOME (priv->home), actor);
 
       priv->status_menu_client = c;
+      return;
+    }
+  else if (ctype == HdWmClientTypeAnimationActor)
+    {
       return;
     }
   else if (ctype == HdWmClientTypeAppMenu)

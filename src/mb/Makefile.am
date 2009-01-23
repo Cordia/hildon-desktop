@@ -13,6 +13,7 @@ mb_h =		hd-atoms.h			\
 		hd-home-applet.h		\
 		hd-theme.h			\
 		hd-decor.h			\
+		hd-animation-actor.h		\
 		hd-applet-layout-manager.h
 
 mb_c = 		hd-atoms.c			\
@@ -28,6 +29,7 @@ mb_c = 		hd-atoms.c			\
 		hd-home-applet.c		\
 		hd-theme.c			\
 		hd-decor.c			\
+		hd-animation-actor.c		\
 		hd-applet-layout-manager.c
 
 noinst_LIBRARIES = libmb.a
