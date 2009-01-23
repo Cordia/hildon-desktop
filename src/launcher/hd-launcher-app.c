@@ -64,6 +64,8 @@ struct _HdLauncherAppPrivate
 
   /* HdCompMgrClients for this app's main window. */
   HdCompMgrClient *main_comp_mgr_client;
+
+  GPid pid;
 };
 
 G_DEFINE_TYPE (HdLauncherApp, hd_launcher_app, HD_TYPE_LAUNCHER_ITEM);
@@ -277,4 +279,18 @@ hd_launcher_app_set_comp_mgr_client (HdLauncherApp *app,
       hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
     }
   priv->main_comp_mgr_client = client;
+}
+
+GPid
+hd_launcher_app_get_pid (HdLauncherApp *app)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  return priv->pid;
+}
+
+void
+hd_launcher_app_set_pid (HdLauncherApp *app, GPid pid)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  priv->pid = pid;
 }

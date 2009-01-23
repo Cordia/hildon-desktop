@@ -1,3 +1,12 @@
+2009-01-23  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Track application pids.
+
+	* src/launcher/hd-app-mgr.c: Set the correct pid when launching/waking
+	up apps.
+	* src/launcher/hd-launcher-app.c:
+	* src/launcher/hd-launcher-app.h: Added methods to get/set an app pid.
+
 2009-01-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/Makefile.am, src/mb/hd-animation-actor.[ch]: New files

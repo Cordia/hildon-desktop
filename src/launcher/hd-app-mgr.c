@@ -81,7 +81,7 @@ static void hd_app_mgr_dispose (GObject *gobject);
 
 static gboolean hd_app_mgr_service_top (const gchar *service,
                                         const gchar *param);
-static gboolean hd_app_mgr_execute (const gchar *exec);
+static gboolean hd_app_mgr_execute (const gchar *exec, GPid *pid);
 
 static gboolean hd_app_mgr_memory_available (void);
 
@@ -90,6 +90,8 @@ static void hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
                                                 const char *old_owner,
                                                 const char *new_owner,
                                                 gpointer data);
+
+static GPid _hd_app_mgr_get_service_pid (const gchar *service);
 
 /* The HdLauncher singleton */
 static HdAppMgr *the_app_mgr = NULL;
@@ -191,6 +193,7 @@ hd_app_mgr_launch (HdLauncherApp *app)
   gboolean result = FALSE;
   const gchar *service = hd_launcher_app_get_service (app);
   const gchar *exec;
+  GPid pid = 0;
 
   if (!hd_app_mgr_memory_available ())
     {
@@ -206,18 +209,21 @@ hd_app_mgr_launch (HdLauncherApp *app)
   if (service)
     {
       result = hd_app_mgr_service_top (service, NULL);
+      if (result)
+        pid = _hd_app_mgr_get_service_pid (service);
     }
   else
     {
       exec = hd_launcher_app_get_exec (app);
       if (exec)
         {
-          result = hd_app_mgr_execute (exec);
+          result = hd_app_mgr_execute (exec, &pid);
         }
     }
 
   if (result)
     {
+      hd_launcher_app_set_pid (app, pid);
       hd_launcher_app_set_state (app, HD_APP_STATE_LOADING);
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LAUNCHED],
           0, app, NULL);
@@ -277,7 +283,11 @@ hd_app_mgr_prestart (HdLauncherApp *app)
   }
 
   if (res)
-    hd_launcher_app_set_state (app, HD_APP_STATE_PRESTARTED);
+    {
+      hd_launcher_app_set_pid (app, _hd_app_mgr_get_service_pid (service));
+      hd_launcher_app_set_state (app, HD_APP_STATE_PRESTARTED);
+    }
+
   return res;
 }
 
@@ -309,8 +319,11 @@ hd_app_mgr_wakeup   (HdLauncherApp *app)
     }
 
   res = hd_app_mgr_service_top (service, "RESTORE");
-  if (res)
+  if (res) {
+    hd_launcher_app_set_pid (app, _hd_app_mgr_get_service_pid (service));
     hd_launcher_app_set_state (app, HD_APP_STATE_LOADING);
+  }
+
   return res;
 }
 
@@ -341,14 +354,13 @@ _hd_app_mgr_child_setup(gpointer user_data)
 }
 
 static gboolean
-hd_app_mgr_execute (const gchar *exec)
+hd_app_mgr_execute (const gchar *exec, GPid *pid)
 {
   gboolean res = FALSE;
   gchar *space = strchr (exec, ' ');
   gchar *exec_cmd;
   gint argc;
   gchar **argv = NULL;
-  GPid child_pid;
   GError *internal_error = NULL;
 
   if (space)
@@ -377,7 +389,7 @@ hd_app_mgr_execute (const gchar *exec)
                        argv, NULL,
                        0,
                        _hd_app_mgr_child_setup, NULL,
-                       &child_pid,
+                       pid,
                        &internal_error);
   if (internal_error)
 
@@ -514,6 +526,25 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
 
       items = g_list_next (items);
     }
+}
+
+static GPid
+_hd_app_mgr_get_service_pid (const gchar *service)
+{
+  GPid pid;
+  DBusGProxy *proxy = (HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get()))->dbus_proxy;
+
+  if (!dbus_g_proxy_call (proxy, "GetConnectionUnixProcessID", NULL,
+                          G_TYPE_STRING, service,
+                          G_TYPE_INVALID,
+                          G_TYPE_UINT, &pid,
+                          G_TYPE_INVALID))
+    {
+      g_debug ("%s: Couldn't get pid for %s\n", __FUNCTION__, service);
+      pid = 0;
+    }
+
+  return pid;
 }
 
 HdLauncherApp *

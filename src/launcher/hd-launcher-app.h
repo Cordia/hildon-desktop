@@ -99,6 +99,10 @@ gboolean hd_launcher_app_is_executing     (HdLauncherApp *app);
 HdCompMgrClient *hd_launcher_app_get_comp_mgr_client (HdLauncherApp *app);
 void   hd_launcher_app_set_comp_mgr_client (HdLauncherApp *app,
                                             HdCompMgrClient *client);
+
+GPid hd_launcher_app_get_pid (HdLauncherApp *app);
+void hd_launcher_app_set_pid (HdLauncherApp *app, GPid pid);
+
 G_END_DECLS
 
 #endif /* __HD_LAUNCHER_APP_H__ */
