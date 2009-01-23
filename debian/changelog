@@ -2,24 +2,25 @@ hildon-desktop (1:2.2.17-1~unreleased) unstable; urgency=low
 
   Jan Arne:
 
-  * Rewrite Home View panning. Fixes: NB#93980, NB#92226, NB#94572, NB#94871,
-    NB#96194, NB#96367, NB#96383, NB#96738
-  * Fix show close control on applet if it is a tap. Fixes NB#96930, NB#99030
+  * Rewrite Home View panning.
+    Fixes: NB#93980, NB#92226, NB#94572, NB#94871, NB#96194
+    Fixes: NB#96367, NB#96383, NB#96738
+  * Fix show close control on applet if it is a tap. Fixes: NB#96930, NB#99030
   * Close applets on deactivated home views. Fixes: NB#95445, NB#94082, NB#96219
   * Fix edges of the current home view is not displayed while moving an applet
     in layout mode. Fixes: NB#98209
   * Does not allow applet to leave permitted area on drag in layout mode.
-    Fixes NB#88390 
-  * Implement proper moving of applets between views. Fixes NB#88327,
-    NB#95452, NB#96802, NB#98807
+    Fixes: NB#88390 
+  * Implement proper moving of applets between views.
+    Fixes: NB#88327, NB#95452, NB#96802, NB#98807
   * Fix calling from Home.
   * Close the status menu if any window (except an applet) is mapped.
-  * Respect GConf default value for view key for applets. Fixes NB#98719
-  * Monitor /etc/hildon/theme for theme changes. Fixes NB#98196, NB#98302
-  * Add scripts to clear user data and reset to factory settings. Fixes
-    NB#98971
+  * Respect GConf default value for view key for applets. Fixes: NB#98719
+  * Monitor /etc/hildon/theme for theme changes. Fixes: NB#98196, NB#98302
+  * Add scripts to clear user data and reset to factory settings.
+    Fixes: NB#98971
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 13 Jan 2009 17:15:00 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 23 Jan 2009 10:38:20 +0200
 
 hildon-desktop (1:2.2.16-1) unstable; urgency=low
 
