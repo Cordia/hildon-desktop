@@ -1,6 +1,9 @@
 hildon-desktop (1:2.2.18-1~unreleased) unstable; urgency=low
 
-  * unreleased
+  Jan Arne:
+
+  * When a task is open, access the Home view by long pressing the Tasks
+    button. Fixes NB#88401
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 26 Jan 2009 10:14:25 +0200
 

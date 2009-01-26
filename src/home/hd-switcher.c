@@ -53,6 +53,7 @@
 
 #define TOP_LEFT_BUTTON_HIGHLIGHT_TEXTURE "launcher-button-highlight.png"
 
+#define LONG_PRESS_DUR 1
 
 enum
 {
@@ -78,6 +79,9 @@ struct _HdSwitcherPrivate
    * other.
    */
   gboolean in_transition;
+
+  gboolean long_press;
+  guint press_timeout;
 };
 
 static void hd_switcher_class_init (HdSwitcherClass *klass);
@@ -98,6 +102,8 @@ static void hd_switcher_get_property (GObject      *object,
 static void hd_switcher_constructed (GObject *object);
 
 static gboolean hd_switcher_clicked (HdSwitcher *switcher);
+static gboolean hd_switcher_press (HdSwitcher *switcher);
+static gboolean hd_switcher_leave (HdSwitcher *switcher);
 
 static ClutterActor * hd_switcher_top_left_button_new (const char *icon_name);
 
@@ -245,6 +251,12 @@ hd_switcher_constructed (GObject *object)
   g_signal_connect_swapped (actor, "button-release-event",
                             G_CALLBACK (hd_switcher_clicked),
                             object);
+  g_signal_connect_swapped (actor, "button-press-event",
+                            G_CALLBACK (hd_switcher_press),
+                            object);
+  g_signal_connect_swapped (actor, "leave-event",
+                            G_CALLBACK (hd_switcher_leave),
+                            object);
 
   /* Task Launcher Button */
   actor = hd_switcher_top_left_button_new (ICON_IMAGE_LAUNCHER);
@@ -253,6 +265,12 @@ hd_switcher_constructed (GObject *object)
   clutter_actor_set_reactive (actor, TRUE);
   g_signal_connect_swapped (actor, "button-release-event",
                             G_CALLBACK (hd_switcher_clicked),
+                            object);
+  g_signal_connect_swapped (actor, "button-press-event",
+                            G_CALLBACK (hd_switcher_press),
+                            object);
+  g_signal_connect_swapped (actor, "leave-event",
+                            G_CALLBACK (hd_switcher_leave),
                             object);
 
   clutter_actor_get_size (actor, &button_width, &button_height);
@@ -288,6 +306,14 @@ hd_switcher_init (HdSwitcher *self)
 static void
 hd_switcher_dispose (GObject *object)
 {
+  HdSwitcherPrivate *priv = HD_SWITCHER (object)->priv;
+
+  if (priv->press_timeout)
+    {
+      g_source_remove (priv->press_timeout);
+      priv->press_timeout = 0;
+    }
+
   G_OBJECT_CLASS (hd_switcher_parent_class)->dispose (object);
 }
 
@@ -416,6 +442,15 @@ hd_switcher_clicked (HdSwitcher *switcher)
   g_debug("entered hd_switcher_clicked: state=%d\n",
         hd_render_manager_get_state());
 
+  if (priv->long_press)
+    return TRUE;
+
+  if (priv->press_timeout)
+    {
+      g_source_remove (priv->press_timeout);
+      priv->press_timeout = 0;
+    }
+
   /* Hide Home edit button */
   hd_home_hide_edit_button (home);
 
@@ -451,6 +486,57 @@ hd_switcher_clicked (HdSwitcher *switcher)
   else if (hd_task_navigator_is_empty(priv->task_nav))
     hd_render_manager_set_state(HDRM_STATE_LAUNCHER);
   else hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+
+  return TRUE;
+}
+
+static gboolean
+press_timeout_cb (gpointer data)
+{
+  HdSwitcher *switcher = HD_SWITCHER (data);
+  HdSwitcherPrivate *priv = switcher->priv;
+
+  if (priv->press_timeout)
+    priv->press_timeout = 0;
+
+  priv->long_press = TRUE;
+
+  if (hd_render_manager_get_state () == HDRM_STATE_APP)
+    hd_render_manager_set_state (HDRM_STATE_HOME);
+
+  return FALSE;
+}
+
+static gboolean
+hd_switcher_press (HdSwitcher *switcher)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  if (priv->press_timeout)
+    g_source_remove (priv->press_timeout);
+
+  priv->long_press = FALSE;
+
+  if (hd_render_manager_get_state () == HDRM_STATE_APP)
+    {
+      priv->press_timeout = g_timeout_add_seconds (LONG_PRESS_DUR,
+                                                   press_timeout_cb,
+                                                   switcher);
+    }
+
+  return TRUE;
+}
+
+static gboolean
+hd_switcher_leave (HdSwitcher *switcher)
+{
+  HdSwitcherPrivate *priv = switcher->priv;
+
+  if (priv->press_timeout)
+    {
+      g_source_remove (priv->press_timeout);
+      priv->press_timeout = 0;
+    }
 
   return TRUE;
 }
