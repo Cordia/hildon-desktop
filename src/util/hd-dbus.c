@@ -7,7 +7,8 @@
  */
 #define APPKILLER_SIGNAL_INTERFACE "com.nokia.osso_app_killer"
 #define APPKILLER_SIGNAL_PATH      "/com/nokia/osso_app_killer"
-#define APPKILLER_SIGNAL_NAME      "exit"
+#define APPKILLER_EXIT_SIGNAL_NAME "exit"
+#define APPKILLER_KILL_SIGNAL_NAME "kill"
 
 #define LOWMEM_OFF_SIGNAL_PATH      "/com/nokia/ke_recv/user_lowmem_off"
 #define LOWMEM_OFF_SIGNAL_INTERFACE "com.nokia.ke_recv.user_lowmem_off"
@@ -23,9 +24,17 @@ hd_dbus_signal_handler (DBusConnection *conn, DBusMessage *msg, void *data)
 
   if (dbus_message_is_signal(msg,
 			     APPKILLER_SIGNAL_INTERFACE,
-			     APPKILLER_SIGNAL_NAME))
+			     APPKILLER_EXIT_SIGNAL_NAME))
     {
       hd_comp_mgr_hibernate_all (hmgr, FALSE);
+
+      return DBUS_HANDLER_RESULT_HANDLED;
+    }
+  else if (dbus_message_is_signal(msg,
+			     APPKILLER_SIGNAL_INTERFACE,
+			     APPKILLER_KILL_SIGNAL_NAME))
+    {
+      hd_comp_mgr_hibernate_all (hmgr, TRUE);
 
       return DBUS_HANDLER_RESULT_HANDLED;
     }

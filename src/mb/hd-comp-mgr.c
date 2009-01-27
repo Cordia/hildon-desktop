@@ -1392,20 +1392,23 @@ hd_comp_mgr_wakeup_client (HdCompMgr *hmgr, HdCompMgrClient *hclient)
 void
 hd_comp_mgr_hibernate_all (HdCompMgr *hmgr, gboolean force)
 {
-  MBWMCompMgr     * mgr = MB_WM_COMP_MGR (hmgr);
-  MBWindowManager * wm = mgr->wm;
+  GList *apps;
 
-  if (!mb_wm_stack_empty (wm))
+  apps = hd_launcher_tree_get_items (hd_launcher_get_tree(), NULL);
+  for (; apps; apps = apps->next)
     {
-      MBWindowManagerClient * c;
+      HdLauncherApp *app;
+      MBWMCompMgrClutterClient *cmgrcc;
+      
+      if (hd_launcher_item_get_item_type (apps->data) != HD_APPLICATION_LAUNCHER)
+        continue;
 
-      mb_wm_stack_enumerate (wm, c)
-	{
-	  MBWMCompMgrClutterClient * cc =
-	    MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+      app = HD_LAUNCHER_APP (apps->data);
+      if (hd_launcher_app_get_state (app) != HD_APP_STATE_SHOWN)
+        continue;
 
-	  hd_comp_mgr_hibernate_client (hmgr, cc, force);
-	}
+      cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (hd_launcher_app_get_comp_mgr_client (app));
+      hd_comp_mgr_hibernate_client (hmgr, cmgrcc, force);
     }
 }
 

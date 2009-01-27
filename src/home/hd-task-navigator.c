@@ -1678,8 +1678,15 @@ void
 hd_task_navigator_hibernate_window (HdTaskNavigator * self,
                                     ClutterActor * win)
 {
+#if 1
+  // XXX Just remove until it's implemented properly.
+  hd_task_navigator_remove_window(self, win, NULL, NULL);
+  return;
+#else
   Thumbnail *thumb;
 
+  // XXX Hibernated apps should be presented exactly as running ones.
+  // XXX The texture must be saved because the @win is gonna kiss byebye.
   if (!(thumb = find_by_apwin (win)))
     return;
   if (thumb->hibernation)
@@ -1693,6 +1700,7 @@ hd_task_navigator_hibernate_window (HdTaskNavigator * self,
                               THWIN_TITLE_AREA_HEIGHT / 2);
   clutter_container_add_actor (CLUTTER_CONTAINER (thumb->thwin),
                                thumb->hibernation);
+#endif
 }
 
 /* Tells us to show @new_win in place of @old_win, and forget about
@@ -1728,7 +1736,8 @@ static ClutterActor *add_notewin_from_hdnote (HdNote * hdnote);
 static gboolean tnote_matches_thumb (const TNote * tnote,
                                      const Thumbnail * thumb);
 
-/* Returns the window whose client's clutter client's texture is @win. */
+/* Returns the window whose client's clutter client's texture is @win.
+ * XXX Hibernation */
 static MBWMClientWindow *
 actor_to_client_window (ClutterActor * win)
 {

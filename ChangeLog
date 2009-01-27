@@ -1,3 +1,17 @@
+2009-01-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#92409 -- application killer signal
+
+	* src/util/hd-dbus.c:
+	  New signal com.nokia.osso_app_killer.kill to kill all known
+	  applications wheher they can hibernate or not.
+	* src/mb/hd-comp-mgr.c:
+	  Send WM_DELETE to HdAppMgr's SHOWN applications rather than
+	  all managed clients to save the life of hh, hsm and systemui.
+	* src/home/hd-task-navigator.c:
+	  Temporarily disabled the handling of hibernated applications
+	  until it's done properly.
+
 2009-01-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	When a task is open, access the Home view by long pressing the Tasks
