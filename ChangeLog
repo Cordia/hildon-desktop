@@ -1,3 +1,11 @@
+2009-01-28  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/hildon-desktop.install:
+	* src/Makefile.am:
+	* src/hildon-desktop.conf: Add backup configuration. Fixes NB#96920.
+
+	* debian/changelog: Update.
+
 2009-01-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#92409 -- application killer signal

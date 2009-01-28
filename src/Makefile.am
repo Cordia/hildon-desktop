@@ -27,4 +27,8 @@ rfsdir = ${sysconfdir}/osso-rfs-scripts
 rfs_SCRIPTS = \
 	hildon-desktop-rfs.sh
 
+backupconfdir = ${sysconfdir}/osso-backup/applications
+backupconf_DATA = \
+	hildon-desktop.conf
+
 CLEANFILES = *~
