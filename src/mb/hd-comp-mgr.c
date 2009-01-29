@@ -1370,17 +1370,23 @@ hd_comp_mgr_hibernate_client (HdCompMgr *hmgr,
   MBWMCompMgrClient * c  = MB_WM_COMP_MGR_CLIENT (cc);
   HdCompMgrClient   * hc = HD_COMP_MGR_CLIENT (cc);
 
+  g_return_if_fail(c->wm_client && c->wm_client->window);
   if (!force && !(hc->priv->can_hibernate))
     return;
 
   mb_wm_comp_mgr_clutter_client_set_flags (cc,
 					   MBWMCompMgrClutterClientDontUpdate);
 
-  hc->priv->hibernating = TRUE;
-  if (hc->priv->app)
-    hd_launcher_app_set_state (hc->priv->app, HD_APP_STATE_HIBERNATING);
+  if (!force)
+    {
+      hc->priv->hibernating = TRUE;
+      if (hc->priv->app)
+        hd_launcher_app_set_state (hc->priv->app, HD_APP_STATE_HIBERNATING);
+    }
+  else
+    /* Not really a hibernation but ordinary killing. */;
 
-  mb_wm_client_deliver_delete (c->wm_client);
+  kill(c->wm_client->window->pid, SIGTERM);
 }
 
 void

@@ -1,3 +1,10 @@
+2009-01-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-dbus.c:
+	  Removed com.nokia.osso_app_killer.kill.
+	* src/mb/hd-comp-mgr.c: hd_comp_mgr_hibernate_client()
+	  Don't WM_DELETE but SIGTERM the applications.
+
 2009-01-29  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-clutter-cache.h (Added)
