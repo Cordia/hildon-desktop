@@ -781,9 +781,11 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
 
   {
     ClutterActor *stage = clutter_actor_get_stage(actor);
-    ClutterGeometry area = {x + CLUTTER_FIXED_TO_INT(offsetx),
-                            y + CLUTTER_FIXED_TO_INT(offsety),
-                            width, height};
+    /* Update with a 1px border - clutter sometimes introduces a 1px error
+     * which leaves us with corruption */
+    ClutterGeometry area = {x + CLUTTER_FIXED_TO_INT(offsetx) - 1,
+                            y + CLUTTER_FIXED_TO_INT(offsety) - 1,
+                            width+2, height+2};
 
     /*g_debug("%s: UPDATE %d, %d, %d, %d", __FUNCTION__,
             area.x, area.y, area.width, area.height);*/
@@ -1405,7 +1407,7 @@ hd_comp_mgr_hibernate_all (HdCompMgr *hmgr, gboolean force)
     {
       HdLauncherApp *app;
       MBWMCompMgrClutterClient *cmgrcc;
-      
+
       if (hd_launcher_item_get_item_type (apps->data) != HD_APPLICATION_LAUNCHER)
         continue;
 

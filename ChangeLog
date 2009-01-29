@@ -1,5 +1,11 @@
 2009-01-29  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/mb/hd-comp-mgr.c:
+	Fix for 98336, 98577, 98393 - now update a 1px border around the
+	damaged area.
+
+2009-01-29  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/util/hd-transition.c:
 	Now unrefs objects that matchbox refs
 	Removed scroll-out part of subview transition for now (to get 
