@@ -1,6 +1,12 @@
 2009-01-29  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/mb/hd-comp-mgr.c:
+	Removed 1px border, added rounding. The fix will rely on the new
+	rounding changes to clutter.
+
+2009-01-29  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-comp-mgr.c:
 	Fix for 98336, 98577, 98393 - now update a 1px border around the
 	damaged area.
 

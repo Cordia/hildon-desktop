@@ -781,11 +781,10 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
 
   {
     ClutterActor *stage = clutter_actor_get_stage(actor);
-    /* Update with a 1px border - clutter sometimes introduces a 1px error
-     * which leaves us with corruption */
-    ClutterGeometry area = {x + CLUTTER_FIXED_TO_INT(offsetx) - 1,
-                            y + CLUTTER_FIXED_TO_INT(offsety) - 1,
-                            width+2, height+2};
+    /* CLUTTER_FIXED_TO_INT does no rounding, so add 0.5 here to help this */
+    ClutterGeometry area = {x + CLUTTER_FIXED_TO_INT(offsetx+CFX_HALF),
+                            y + CLUTTER_FIXED_TO_INT(offsety+CFX_HALF),
+                            width, height};
 
     /*g_debug("%s: UPDATE %d, %d, %d, %d", __FUNCTION__,
             area.x, area.y, area.width, area.height);*/
