@@ -1,3 +1,10 @@
+2009-01-29  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-transition.c:
+	Now unrefs objects that matchbox refs
+	Removed scroll-out part of subview transition for now (to get 
+	around Image Viewer unresponsiveness problems)
+
 2009-01-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-app.c (hd_app_init): Patch from Laszlo to set transiency

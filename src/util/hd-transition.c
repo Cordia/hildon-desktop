@@ -177,6 +177,9 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
             }
         }
     }
+
+  if (actor)
+    g_object_unref(actor);
 }
 
 static void
@@ -196,6 +199,9 @@ on_fade_timeline_new_frame(ClutterTimeline *timeline,
     amt = 1-amt;
 
   clutter_actor_set_opacity(actor, (int)(255*amt));
+
+  if (actor)
+    g_object_unref(actor);
 }
 
 static void
@@ -254,6 +260,9 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
       }
     else
       clutter_actor_hide( data->particles[i] );
+
+  if (actor)
+    g_object_unref(actor);
 }
 
 static void
@@ -309,6 +318,8 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
                CLUTTER_FLOAT_TO_FIXED( -corner_x / scale ),
                CLUTTER_FLOAT_TO_FIXED( -corner_y / scale ));
     }
+  if (actor)
+    g_object_unref(actor);
 }
 
 static void
@@ -317,12 +328,12 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
 {
   float amt;
   gint n_frames;
-  ClutterActor *subview_actor, *main_actor;
+  ClutterActor *subview_actor = 0, *main_actor = 0;
 
-  subview_actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
-  main_actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient2);
-  if (!CLUTTER_IS_ACTOR(subview_actor) || !CLUTTER_IS_ACTOR(main_actor))
-    return;
+  if (data->cclient)
+    subview_actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+  if (data->cclient2)
+    main_actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient2);
 
   n_frames = clutter_timeline_get_n_frames(timeline);
   amt = frame_num / (float)n_frames;
@@ -333,29 +344,43 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
   {
     float corner_x;
     corner_x = (1-amt) * HD_COMP_MGR_SCREEN_WIDTH;
-    clutter_actor_set_anchor_pointu(subview_actor,
-       CLUTTER_FLOAT_TO_FIXED( -corner_x ),
-       CLUTTER_FLOAT_TO_FIXED( 0 ) );
-    clutter_actor_set_anchor_pointu(main_actor,
-       CLUTTER_FLOAT_TO_FIXED( -(corner_x - HD_COMP_MGR_SCREEN_WIDTH) ),
-       CLUTTER_FLOAT_TO_FIXED( 0 ) );
-
-    /* we have to show this actor, because it'll get hidden by the
-     * render manager visibility test if not. */
-    clutter_actor_show(main_actor);
+    if (subview_actor)
+      clutter_actor_set_anchor_pointu(subview_actor,
+         CLUTTER_FLOAT_TO_FIXED( -corner_x ),
+         CLUTTER_FLOAT_TO_FIXED( 0 ) );
+    if (main_actor)
+      {
+        clutter_actor_set_anchor_pointu(main_actor,
+           CLUTTER_FLOAT_TO_FIXED( -(corner_x - HD_COMP_MGR_SCREEN_WIDTH) ),
+           CLUTTER_FLOAT_TO_FIXED( 0 ) );
+        /* we have to show this actor, because it'll get hidden by the
+         * render manager visibility test if not. */
+        /*clutter_actor_show(main_actor);*/
+      }
   }
 
   /* if we're at the last frame, return our actors to the correct places) */
   if (frame_num == n_frames)
     {
-      clutter_actor_set_anchor_pointu(subview_actor, 0, 0);
-      clutter_actor_set_anchor_pointu(main_actor, 0, 0);
-      /* hide the correct actor - as we overrode the visibility test in hdrm */
-      if (data->event == MBWMCompMgrClientEventMap)
-        clutter_actor_hide(main_actor);
-      if (data->event == MBWMCompMgrClientEventUnmap)
-        clutter_actor_hide(subview_actor);
+      if (subview_actor)
+        {
+          clutter_actor_set_anchor_pointu(subview_actor, 0, 0);
+    /*      if (data->event == MBWMCompMgrClientEventUnmap)
+            clutter_actor_hide(subview_actor);*/
+        }
+      if (main_actor)
+        {
+          clutter_actor_set_anchor_pointu(main_actor, 0, 0);
+          /* hide the correct actor - as we overrode the visibility test in hdrm */
+        /*  if (data->event == MBWMCompMgrClientEventMap)
+            clutter_actor_hide(main_actor);*/
+        }
     }
+
+  if (subview_actor)
+    g_object_unref(subview_actor);
+  if (main_actor)
+    g_object_unref(main_actor);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -635,6 +660,7 @@ hd_transition_subview(HdCompMgr                  *mgr,
 
   if (!subview || !mainview)
     return;
+
   cclient_subview = MB_WM_COMP_MGR_CLUTTER_CLIENT (subview->cm_client);
   cclient_mainview = MB_WM_COMP_MGR_CLUTTER_CLIENT (mainview->cm_client);
 
@@ -651,7 +677,7 @@ hd_transition_subview(HdCompMgr                  *mgr,
   data = g_new0 (HDEffectData, 1);
   data->event = event;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient_subview));
-  data->cclient2 = mb_wm_object_ref (MB_WM_OBJECT (cclient_mainview));
+  data->cclient2 = /*mb_wm_object_ref (MB_WM_OBJECT (cclient_mainview))*/0;
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline = g_object_ref(
             clutter_timeline_new_for_duration (HDCM_SUBVIEW_DURATION) );
@@ -663,9 +689,9 @@ hd_transition_subview(HdCompMgr                  *mgr,
   mb_wm_comp_mgr_clutter_client_set_flags (cclient_subview,
                               MBWMCompMgrClutterClientDontUpdate |
                               MBWMCompMgrClutterClientEffectRunning);
-  mb_wm_comp_mgr_clutter_client_set_flags (cclient_mainview,
+ /* mb_wm_comp_mgr_clutter_client_set_flags (cclient_mainview,
                                 MBWMCompMgrClutterClientDontUpdate |
-                                MBWMCompMgrClutterClientEffectRunning);
+                                MBWMCompMgrClutterClientEffectRunning);*/
   hd_comp_mgr_set_effect_running(mgr, TRUE);
 
   /* first call to stop flicker */
