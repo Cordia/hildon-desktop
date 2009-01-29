@@ -47,11 +47,7 @@
 
 #include <dbus/dbus-glib.h>
 
-#define ICON_IMAGE_SWITCHER "qgn_tswitcher_application"
-#define ICON_IMAGE_LAUNCHER "qgn_general_add"
 #define BUTTON_IMAGE_MENU     "menu-button.png"
-
-#define TOP_LEFT_BUTTON_HIGHLIGHT_TEXTURE "launcher-button-highlight.png"
 
 #define LONG_PRESS_DUR 1
 
@@ -101,11 +97,9 @@ static void hd_switcher_get_property (GObject      *object,
 
 static void hd_switcher_constructed (GObject *object);
 
-static gboolean hd_switcher_clicked (HdSwitcher *switcher);
+static void hd_switcher_clicked (HdSwitcher *switcher);
 static gboolean hd_switcher_press (HdSwitcher *switcher);
 static gboolean hd_switcher_leave (HdSwitcher *switcher);
-
-static ClutterActor * hd_switcher_top_left_button_new (const char *icon_name);
 
 static gboolean hd_switcher_menu_clicked (HdSwitcher *switcher);
 
@@ -187,14 +181,27 @@ hd_switcher_constructed (GObject *object)
 {
   GError            *error = NULL;
   HdSwitcherPrivate *priv = HD_SWITCHER (object)->priv;
-  guint              button_width, button_height;
   HdHome	    *home =
     HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
   ClutterActor      *actor;
 
+
+  g_signal_connect_swapped (hd_render_manager_get_title_bar(),
+                            "clicked-top-left",
+                            G_CALLBACK (hd_switcher_clicked),
+                            object);
+  g_signal_connect_swapped (hd_render_manager_get_title_bar(),
+                              "press-top-left",
+                              G_CALLBACK (hd_switcher_press),
+                              object);
+  g_signal_connect_swapped (hd_render_manager_get_title_bar(),
+                              "leave-top-left",
+                              G_CALLBACK (hd_switcher_leave),
+                              object);
   g_signal_connect_swapped (home, "background-clicked",
                             G_CALLBACK (hd_switcher_home_background_clicked),
                             object);
+  /* Task Launcher events */
   priv->launcher = hd_launcher_get ();
   g_signal_connect_swapped (priv->launcher, "application-relaunched",
                     G_CALLBACK (hd_switcher_relaunch_app),
@@ -227,6 +234,7 @@ hd_switcher_constructed (GObject *object)
                             object);
 
 
+
   /* Connect to D-Bus */
   priv->connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
   if (G_UNLIKELY (error))
@@ -242,38 +250,6 @@ hd_switcher_constructed (GObject *object)
                                         "/com/nokia/HildonHome",
                                         "com.nokia.HildonHome");
     }
-
-  /* Task Navigator Button */
-  actor = hd_switcher_top_left_button_new (ICON_IMAGE_SWITCHER);
-  hd_render_manager_set_button (HDRM_BUTTON_TASK_NAV, actor);
-  clutter_actor_set_position (actor, 0, 0);
-  clutter_actor_set_reactive (actor, TRUE);
-  g_signal_connect_swapped (actor, "button-release-event",
-                            G_CALLBACK (hd_switcher_clicked),
-                            object);
-  g_signal_connect_swapped (actor, "button-press-event",
-                            G_CALLBACK (hd_switcher_press),
-                            object);
-  g_signal_connect_swapped (actor, "leave-event",
-                            G_CALLBACK (hd_switcher_leave),
-                            object);
-
-  /* Task Launcher Button */
-  actor = hd_switcher_top_left_button_new (ICON_IMAGE_LAUNCHER);
-  hd_render_manager_set_button(HDRM_BUTTON_LAUNCHER, actor);
-  clutter_actor_set_position (actor, 0, 0);
-  clutter_actor_set_reactive (actor, TRUE);
-  g_signal_connect_swapped (actor, "button-release-event",
-                            G_CALLBACK (hd_switcher_clicked),
-                            object);
-  g_signal_connect_swapped (actor, "button-press-event",
-                            G_CALLBACK (hd_switcher_press),
-                            object);
-  g_signal_connect_swapped (actor, "leave-event",
-                            G_CALLBACK (hd_switcher_leave),
-                            object);
-
-  clutter_actor_get_size (actor, &button_width, &button_height);
 
   /* Home Menu Button */
   actor = clutter_texture_new_from_file (
@@ -364,57 +340,6 @@ hd_switcher_get_property (GObject      *object,
     }
 }
 
-/* I wonder if this utility function should go somewhere else. I think
- * conceptually the top left button isn't owned by the switcher, so
- * I think it would make sense. */
-static ClutterActor *
-hd_switcher_top_left_button_new (const char *icon_name)
-{
-  ClutterActor	  *top_left_button;
-  ClutterActor    *top_left_button_icon;
-  ClutterActor    *top_left_button_highlight;
-  ClutterGeometry  geom;
-  GtkIconTheme	  *icon_theme;
-  GError	  *error = NULL;
-
-  icon_theme = gtk_icon_theme_get_default ();
-
-  top_left_button = clutter_group_new ();
-  clutter_actor_set_name (top_left_button, icon_name);
-
-  top_left_button_highlight =
-      clutter_texture_new_from_file (
-        g_build_filename (HD_DATADIR, TOP_LEFT_BUTTON_HIGHLIGHT_TEXTURE, NULL),
-        &error);
-  if (error)
-    {
-      g_debug (error->message);
-      g_error_free (error);
-    }
-  else
-    {
-      clutter_actor_set_size (top_left_button_highlight,
-                              HD_COMP_MGR_TOP_LEFT_BTN_WIDTH,
-                              HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT);
-      clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
-                                   top_left_button_highlight);
-    }
-
-  top_left_button_icon =
-    hd_gtk_icon_theme_load_icon (icon_theme, icon_name, 48, 0);
-  clutter_actor_get_geometry (top_left_button_icon, &geom);
-  clutter_actor_set_position (
-                      top_left_button_icon,
-                      (HD_COMP_MGR_TOP_LEFT_BTN_WIDTH/2)-(geom.width/2),
-                      (HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT/2)-(geom.height/2));
-  clutter_container_add_actor (CLUTTER_CONTAINER (top_left_button),
-			       top_left_button_icon);
-
-
-
-  return top_left_button;
-}
-
 static gboolean
 hd_switcher_menu_clicked (HdSwitcher *switcher)
 {
@@ -432,7 +357,7 @@ hd_switcher_menu_clicked (HdSwitcher *switcher)
   return TRUE;
 }
 
-static gboolean
+static void
 hd_switcher_clicked (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
@@ -443,7 +368,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
         hd_render_manager_get_state());
 
   if (priv->long_press)
-    return TRUE;
+    return;
 
   if (priv->press_timeout)
     {
@@ -453,9 +378,6 @@ hd_switcher_clicked (HdSwitcher *switcher)
 
   /* Hide Home edit button */
   hd_home_hide_edit_button (home);
-
-  /* Hide the status area */
-  hd_switcher_hide_status_area (switcher);
 
   /*
    * We have the following scenarios:
@@ -482,12 +404,10 @@ hd_switcher_clicked (HdSwitcher *switcher)
     {
       g_debug("hd_switcher_clicked: show switcher, switcher=%p\n", switcher);
       hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
-            }
+    }
   else if (hd_task_navigator_is_empty(priv->task_nav))
     hd_render_manager_set_state(HDRM_STATE_LAUNCHER);
   else hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
-
-  return TRUE;
 }
 
 static gboolean
@@ -671,24 +591,6 @@ hd_switcher_remove_status_menu (HdSwitcher *switcher, ClutterActor *sa)
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
   priv->status_menu = NULL;
-}
-
-void
-hd_switcher_show_status_area (HdSwitcher *switcher)
-{
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-
-  if (priv->status_area)
-    clutter_actor_show (priv->status_area);
-}
-
-void
-hd_switcher_hide_status_area (HdSwitcher *switcher)
-{
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-
-  if (priv->status_area)
-    clutter_actor_hide (priv->status_area);
 }
 
 void

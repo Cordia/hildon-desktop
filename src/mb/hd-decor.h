@@ -24,16 +24,14 @@
 #ifndef _HAVE_HD_DECOR_H
 #define _HAVE_HD_DECOR_H
 
-#include <X11/Xft/Xft.h>
-#include <gtk/gtk.h>
-
 #include <matchbox/mb-wm-config.h>
 #include <matchbox/core/mb-window-manager.h>
 #include <matchbox/core/mb-wm-decor.h>
+#include <clutter/clutter.h>
+#include "tidy/tidy-sub-texture.h"
 
 typedef struct HdDecorClass   HdDecorClass;
 typedef struct HdDecor        HdDecor;
-typedef struct ProgressIndicatorData  ProgressIndicatorData;
 
 #define HD_DECOR(c)       ((HdDecor*)(c))
 #define HD_DECOR_CLASS(c) ((HdDecorClass*)(c))
@@ -49,12 +47,23 @@ struct HdDecor
 {
   MBWMDecor     parent;
 
-  ProgressIndicatorData *progress;
+
+  /* private? */
+  ClutterActor          *title_bar_actor;
+  ClutterActor          *title_actor;
+  ClutterActor          *progress_actor;
+  ClutterTimeline       *progress_timeline;
 };
 
 int hd_decor_class_type (void);
 
 HdDecor* hd_decor_new (MBWindowManager      *wm,
                        MBWMDecorType         type);
+
+ClutterActor *
+hd_decor_get_actor(HdDecor   *decor);
+
+void hd_decor_paint_decor(HdDecor   *decor,
+                          MBWMTheme *theme);
 
 #endif

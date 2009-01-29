@@ -34,6 +34,7 @@ source_h = \
 	$(top_srcdir)/src/tidy/tidy-scroll-view.h	\
 	$(top_srcdir)/src/tidy/tidy-stylable.h		\
 	$(top_srcdir)/src/tidy/tidy-style.h 		\
+	$(top_srcdir)/src/tidy/tidy-sub-texture.h 	\
 	$(top_srcdir)/src/tidy/tidy-types.h 		\
 	$(top_srcdir)/src/tidy/tidy-util.h 		\
 	$(NULL)
@@ -54,6 +55,7 @@ source_c = \
 	tidy-scroll-view.c \
 	tidy-stylable.c \
 	tidy-style.c \
+	tidy-sub-texture.c \
 	tidy-util.c \
 	$(NULL)
 

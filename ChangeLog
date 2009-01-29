@@ -1,3 +1,36 @@
+2009-01-29  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-clutter-cache.h (Added)
+	* src/home/hd-clutter-cache.c (Added)
+	* src/home/Makefile.am:
+	To allow textures (Eg. for buttons/title bars) to be cached
+	* src/home/hd-render-manager.c
+	* src/home/hd-switcher.c
+	* src/home/hd-render-manager.h
+	* src/home/hd-switcher.h
+	* src/home/hd-title-bar.h (Added)
+	* src/home/hd-title-bar.c: (Added)
+	Class to encapsulate things to go in top bar for h-d. Currently
+	the launcher/switcher buttons. Will handle animation of them +
+	theming shaped background for status area 
+	* src/tidy/tidy-sub-texture.c (Added)
+	* src/tidy/tidy-sub-texture.h (Added)
+	* src/tidy/Makefile.am:
+	Special clutter class to show only a small part of a bigger texture.
+	Used for theming with clutter.
+	* src/mb/hd-theme.c:
+	Removal of all rendering code. Added code that works with clutter to
+	hd-decor and hd-decor-button
+	* src/mb/hd-decor.c
+	* src/mb/hd-decor.h:
+	Addition to create the required decor using clutter, adding it to
+	the clutter group containing the texture (requires libmatchbox as
+	of 28-1-09)
+	* src/mb/hd-decor-button.c (Added)
+	* src/mb/hd-decor-button.h (Added)
+	* src/mb/Makefile.am:
+	Extension of MBWMDecorButton to create clutter buttons not X buttons
+
 2009-01-29  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hildon-desktop.conf: Update category.

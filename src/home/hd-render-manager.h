@@ -112,6 +112,10 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
                     HDRM_STATE_HOME_EDIT_DLG)
 
+/* Whether to show app title or not */
+#define STATE_SHOW_TITLE(s) \
+  STATE_ONE_OF((s), HDRM_STATE_APP)
+
 #define STATE_SHOW_STATUS_AREA(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
                     HDRM_STATE_HOME_EDIT_DLG | HDRM_STATE_APP)
@@ -145,6 +149,8 @@ void hd_render_manager_set_button (HDRMButtonEnum button,
                                    ClutterActor *item);
 /* ----------------------------------------------------------------- */
 ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button);
+ClutterActor *hd_render_manager_get_title_bar(void);
+ClutterActor *hd_render_manager_get_status_area(void);
 void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible);
 gboolean hd_render_manager_get_visible(HDRMButtonEnum button);
 gboolean hd_render_manager_has_apps(void);

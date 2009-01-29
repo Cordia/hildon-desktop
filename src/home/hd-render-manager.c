@@ -38,6 +38,7 @@
 #include "hd-task-navigator.h"
 #include "hd-transition.h"
 #include "hd-wm.h"
+#include "hd-title-bar.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/theme-engines/mb-wm-theme.h>
@@ -86,6 +87,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |                                         --> button_launcher
  *       |                                         --> button_menu
  *       |                                         --> status_area
+ *       |                                         --> title_bar
  *       |
  *       --> task_nav_blur     ---> task_nav
  *       |
@@ -105,6 +107,7 @@ struct _HdRenderManagerPrivate {
   ClutterGroup  *app_top;
   ClutterGroup  *front;
   ClutterGroup  *blur_front;
+  HdTitleBar    *title_bar;
 
   /* external */
   HdCompMgr            *comp_mgr;
@@ -167,7 +170,8 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
                                            HdLauncher *launcher,
                                            ClutterActor *launcher_group,
                                            HdHome *home,
-                                           HdTaskNavigator *task_nav)
+                                           HdTaskNavigator *task_nav
+                                           )
 {
   HdRenderManagerPrivate *priv;
 
@@ -201,6 +205,12 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->task_nav_blur),
                               CLUTTER_ACTOR(priv->task_nav));
 
+  priv->title_bar = g_object_ref(g_object_new(HD_TYPE_TITLE_BAR, NULL));
+  hd_title_bar_set_theme(priv->title_bar,
+                            MB_WM_COMP_MGR(priv->comp_mgr)->wm->theme);
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
+                              CLUTTER_ACTOR(priv->title_bar));
+
   return the_render_manager;
 }
 
@@ -211,6 +221,7 @@ hd_render_manager_finalize (GObject *gobject)
   g_object_unref(priv->launcher);
   g_object_unref(priv->home);
   g_object_unref(priv->task_nav);
+  g_object_unref(priv->title_bar);
   G_OBJECT_CLASS (hd_render_manager_parent_class)->finalize (gobject);
 }
 
@@ -293,6 +304,7 @@ hd_render_manager_init (HdRenderManager *self)
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
                               CLUTTER_ACTOR(priv->blur_front));
 
+  /* Animation stuff */
   priv->home_blur_cur = priv->home_blur_a = priv->home_blur_b = 0;
   priv->task_nav_blur_cur = priv->task_nav_blur_a = priv->task_nav_blur_b = 0;
   priv->home_zoom_cur = priv->home_zoom_a = priv->home_zoom_b = 1;
@@ -553,7 +565,7 @@ void hd_render_manager_set_order ()
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(
             HDRM_BLUR_HOME | HDRM_BLUR_TASK_NAV |
-            HDRM_ZOOM_HOME  | HDRM_ZOOM_TASK_NAV );
+            HDRM_ZOOM_HOME | HDRM_ZOOM_TASK_NAV );
         break;
     }
 
@@ -562,6 +574,8 @@ void hd_render_manager_set_order ()
   clutter_actor_show(CLUTTER_ACTOR(priv->front));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->app_top));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->front));
+
+  hd_title_bar_set_show(priv->title_bar, STATE_SHOW_TITLE(priv->state));
 
   if (STATE_SHOW_OPERATOR(priv->state))
     clutter_actor_show(priv->operator);
@@ -787,6 +801,16 @@ ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button)
 	g_assert(FALSE);
     }
   return 0;
+}
+
+ClutterActor *hd_render_manager_get_title_bar(void)
+{
+  return CLUTTER_ACTOR(the_render_manager->priv->title_bar);
+}
+
+ClutterActor *hd_render_manager_get_status_area(void)
+{
+  return CLUTTER_ACTOR(the_render_manager->priv->status_area);
 }
 
 void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible)
@@ -1196,6 +1220,8 @@ hd_render_manager_get_wm_client_from_actor(ClutterActor *actor)
 {
   MBWindowManager *wm;
   MBWindowManagerClient *c;
+
+  /* TODO: use g_object_get_data on actor - "MBWMCompMgrClutterClient" */
 
   wm = MB_WM_COMP_MGR(the_render_manager->priv->comp_mgr)->wm;
   /* Order and choose which window actors will be visible */

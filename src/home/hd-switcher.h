@@ -97,9 +97,6 @@ void hd_switcher_get_control_area_size (HdSwitcher *switcher,
 					guint *control_width,
 					guint *control_height);
 
-void hd_switcher_show_status_area (HdSwitcher *switcher);
-void hd_switcher_hide_status_area (HdSwitcher *switcher);
-
 G_END_DECLS
 
 #endif
