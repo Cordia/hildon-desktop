@@ -117,8 +117,7 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_APP)
 
 #define STATE_SHOW_STATUS_AREA(s) \
-  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_HOME_EDIT_DLG | HDRM_STATE_APP)
+  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_APP)
 
 /* Are we in a state where we should blur the buttons + status menu?
  * Task Navigator + launcher zoom out, so are a bad idea. */

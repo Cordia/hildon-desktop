@@ -1,3 +1,10 @@
+2009-01-29  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-render-manager.h (STATE_SHOW_STATUS_AREA): Do not show
+	status area in edit mode. Fixes NB#93642, NB#96951
+
+	* debian/changelog: Update.
+
 2009-01-29  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/mb/hd-comp-mgr.c:
