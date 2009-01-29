@@ -1,3 +1,7 @@
+2009-01-29  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hildon-desktop.conf: Update category.
+
 2009-01-28  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/hildon-desktop.install:
