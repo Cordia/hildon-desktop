@@ -3,7 +3,7 @@
  *
  * An OpenGL based 'interactive canvas' library.
  *
- * Authored By Matthew Allum  <mallum@openedhand.com>
+ * Authored By Gordon Williams <gordon.williams@collabora.co.uk>
  *
  * Copyright (C) 2006 OpenedHand
  *
