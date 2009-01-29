@@ -152,6 +152,31 @@ hd_app_init (MBWMObject *this, va_list vap)
 		      XA_STRING, &type, &format,
 		      &items, &left,
 		      &prop);
+  /*
+   * The HdApp can be a transient window in case of using stackable windows.
+   */
+  if (win->xwin_transient_for
+      && win->xwin_transient_for != win->xwindow
+      && win->xwin_transient_for != wm->root_win->xwindow)
+    {
+      MBWindowManagerClient *trans_parent;
+
+      trans_parent = mb_wm_managed_client_from_xwindow (wm, 
+		      win->xwin_transient_for);
+
+      if (trans_parent) 
+        {
+          mb_wm_client_add_transient (trans_parent, client);
+	  /*
+	   * The secondary window has te same stacking layer as the transient
+	   * parent.
+	   *
+	   * TODO: to set the stacking layer if the window has no transient
+	   * parent.
+	   */
+	  client->stacking_layer = trans_parent->stacking_layer;
+	}
+    }
 
   if (prop)
     {

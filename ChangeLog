@@ -1,3 +1,8 @@
+2009-01-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-app.c (hd_app_init): Patch from Laszlo to set transiency
+	of stackable windows. Fixes: NB#97313
+
 2009-01-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-dbus.c:
