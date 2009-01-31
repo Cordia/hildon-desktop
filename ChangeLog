@@ -1,3 +1,13 @@
+2009-01-31  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Some fixes to 'application not responding' dialog implementation.
+
+	* src/mb/hd-wm.c (hd_wm_client_responding): Show a Hildon banner when
+	client is responsive again.
+	(hd_wm_make_dialog): New function to create 'application not
+	responding' dialog.
+	(hd_wm_client_hang): Call hd_wm_make_dialog and handle the response.
+
 2009-01-29  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-render-manager.h (STATE_SHOW_STATUS_AREA): Do not show

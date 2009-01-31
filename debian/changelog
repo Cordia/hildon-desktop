@@ -9,6 +9,8 @@ hildon-desktop (1:2.2.18-1~unreleased) unstable; urgency=low
 
   Kimmo:
   * Depend on theme-config >= 0.7 because of /etc/hildon/theme link.
+  * Some fixes to the 'application not responding' dialog. Now it is actually
+    shown.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 26 Jan 2009 10:14:25 +0200
 

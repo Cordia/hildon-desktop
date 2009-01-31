@@ -43,6 +43,8 @@
 
 #include <glib/gi18n.h>
 
+#include <hildon/hildon.h>
+
 #include "hd-home-applet.h"
 #include "hd-note.h"
 #include "hd-status-area.h"
@@ -209,15 +211,26 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
 
 static Bool
 hd_wm_client_responding (MBWindowManager *wm,
-			 MBWindowManagerClient *c)
+			 MBWindowManagerClient *client)
 {
   HdWm *hdwm = HD_WM (wm);
+  char buf[200];
+  const char *name;
+  GtkWidget *banner;
+
+  g_debug ("%s: entered", __FUNCTION__);
+
+  /* TODO: get the localised name for application */
+  name = mb_wm_client_get_name (client);
+  snprintf (buf, 200, _("tana_ib_apkil_responded"),
+            name ? name : "NO NAME");
+  banner = hildon_banner_show_information (NULL, NULL, buf); 
+  /*
+  hildon_banner_set_timeout (HILDON_BANNER (banner), 9000);
+   */
 
   /* If we are currently telling the user that the client is not responding
    * then we force a cancelation of that dialog.
-   *
-   * TODO perhaps we should put up another dialog letting the user know that
-   * actually the client is now responsive?
    */
   if (hdwm->priv->hung_client_dialog)
     {
@@ -231,6 +244,31 @@ hd_wm_client_responding (MBWindowManager *wm,
   return True;
 }
 
+static GtkWidget*
+hd_wm_make_dialog (MBWindowManagerClient *client)
+{
+    char buf[200];
+    const char *name;
+    HildonNote *note;
+
+    /* TODO: get the localised name for application */
+    name = mb_wm_client_get_name (client);
+    snprintf (buf, 200, _("tana_nc_apkil_notresponding"),
+              name ? name : "NO NAME");
+    note = HILDON_NOTE (hildon_note_new_confirmation (NULL, buf));
+    /*
+    gtk_dialog_add_buttons (GTK_DIALOG (dialog),
+                          _("qgn_bd_apkil_ok"),
+                          GTK_RESPONSE_ACCEPT,
+                          _("qgn_bd_apkil_cancel"),
+                          GTK_RESPONSE_REJECT,
+                          NULL);
+    gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_REJECT);
+			  */
+
+    return (GtkWidget*)note;
+}
+
 static Bool hd_wm_client_hang (MBWindowManager *wm,
 			       MBWindowManagerClient *c)
 {
@@ -238,21 +276,8 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
   GtkWidget *dialog;
   gint	     response;
 
-  dialog =
-    gtk_message_dialog_new (NULL, /* parent */
-			    GTK_DIALOG_MODAL,
-			    GTK_MESSAGE_QUESTION,
-			    GTK_BUTTONS_NONE,
-			    _("qgn_nc_apkil_notresponding"),
-			    mb_wm_client_get_name (c));
-
-  gtk_dialog_add_buttons (GTK_DIALOG (dialog),
-                          _("qgn_bd_apkil_ok"),
-                          GTK_RESPONSE_ACCEPT,
-                          _("qgn_bd_apkil_cancel"),
-                          GTK_RESPONSE_REJECT,
-                          NULL);
-  gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_REJECT);
+  g_debug ("%s: entered", __FUNCTION__);
+  dialog = hd_wm_make_dialog (c);
 
   /* NB: Setting hdwm->priv->hung_client_dialog is an indication to
    * hd_wm_client_responding that the user has been presented the dialog
@@ -262,7 +287,8 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
   response = gtk_dialog_run (GTK_DIALOG (dialog));
   gtk_widget_destroy (dialog);
   hdwm->priv->hung_client_dialog = NULL;
-  if (response == GTK_RESPONSE_ACCEPT)
+
+  if (response == GTK_RESPONSE_OK)
     return False;
   else
     return True;
