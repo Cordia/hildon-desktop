@@ -214,26 +214,24 @@ hd_wm_client_responding (MBWindowManager *wm,
 			 MBWindowManagerClient *client)
 {
   HdWm *hdwm = HD_WM (wm);
-  char buf[200];
-  const char *name;
-  GtkWidget *banner;
 
   g_debug ("%s: entered", __FUNCTION__);
-
-  /* TODO: get the localised name for application */
-  name = mb_wm_client_get_name (client);
-  snprintf (buf, 200, _("tana_ib_apkil_responded"),
-            name ? name : "NO NAME");
-  banner = hildon_banner_show_information (NULL, NULL, buf); 
-  /*
-  hildon_banner_set_timeout (HILDON_BANNER (banner), 9000);
-   */
 
   /* If we are currently telling the user that the client is not responding
    * then we force a cancelation of that dialog.
    */
   if (hdwm->priv->hung_client_dialog)
     {
+      char buf[200];
+      const char *name;
+      GtkWidget *banner;
+
+      /* TODO: get the localised name for application */
+      name = mb_wm_client_get_name (client);
+      snprintf (buf, 200, _("tana_ib_apkil_responded"),
+	        name ? name : "NO NAME");
+      banner = hildon_banner_show_information (NULL, NULL, buf); 
+
       gtk_dialog_response (GTK_DIALOG (hdwm->priv->hung_client_dialog),
 			   GTK_RESPONSE_REJECT);
     }
