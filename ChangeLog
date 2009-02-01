@@ -1,3 +1,20 @@
+2009-02-01  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Add support for special operator applet. Fixes NB#93997
+
+	* src/home/hd-home.c (operator_applet, hd_home_constructed,
+	  hd_home_set_operator_applet, hd_home_fixup_operator_position):
+	* src/home/hd-home.h: Replace set_operator_icon and set_operator_label
+	function with a function to set the operator applet.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Set the operator
+	applet instead of adding the applet to a home view.
+
+	* src/mb/hd-home-applet.c (hd_home_applet_init): Do not store the
+	operator applet to GConf.
+
+	* debian/changelog: Update.
+
 2009-01-31  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Some fixes to 'application not responding' dialog implementation.

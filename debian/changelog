@@ -6,6 +6,7 @@ hildon-desktop (1:2.2.18-1~unreleased) unstable; urgency=low
     button. Fixes NB#88401
   * Add backup configuration. Fixes NB#96920
   * Do not show status area in edit mode. Fixes NB#93642, NB#96951
+  * Add support for special operator applet. Fixes NB#93997
 
   Kimmo:
   * Depend on theme-config >= 0.7 because of /etc/hildon/theme link.

@@ -30,6 +30,8 @@
 
 #include <gconf/gconf-client.h>
 
+#define OPERATOR_APPLET_ID "_HILDON_OPERATOR_APPLET"
+
 static Bool
 hd_home_applet_request_geometry (MBWindowManagerClient *client,
 				 MBGeometry            *new_geometry,
@@ -110,13 +112,24 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
 
   if (applet_id)
     {
-      printf ("#### applet id: %s ###\n", applet_id);
-      applet->applet_id = strdup (applet_id);
+      g_debug ("%s. Applet id: %s", __FUNCTION__, applet_id);
+      applet->applet_id = g_strdup (applet_id);
       XFree (applet_id);
     }
   else
     {
-      printf ("#### no applet id! ###\n");
+      g_warning ("%s. No applet id!", __FUNCTION__);
+    }
+
+  if (strcmp (OPERATOR_APPLET_ID, applet->applet_id) == 0)
+    {
+      /* Special case operator applet */
+      g_debug ("%s. operator applet", __FUNCTION__);
+
+      mb_wm_client_geometry_mark_dirty (client);
+      mb_wm_client_visibility_mark_dirty (client);
+
+      return 1;
     }
 
   modified_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/modified", applet->applet_id);

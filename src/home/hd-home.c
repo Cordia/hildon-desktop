@@ -116,8 +116,7 @@ struct _HdHomePrivate
   ClutterActor          *grey_filter;
 
   ClutterActor          *operator;
-  ClutterActor          *operator_icon;
-  ClutterActor          *operator_label;
+  ClutterActor          *operator_applet;
 
   ClutterActor          *left_switch;
   ClutterActor          *right_switch;
@@ -469,8 +468,6 @@ hd_home_constructed (GObject *object)
   guint            button_width, button_height;
   ClutterColor     clr = {0,0,0,0xff};
   XSetWindowAttributes attr;
-  ClutterColor     op_color = {0xff, 0xff, 0xff, 0xff};
-  char		  *font_string;
   GtkIconTheme	  *icon_theme;
 
   icon_theme = gtk_icon_theme_get_default ();
@@ -522,18 +519,8 @@ hd_home_constructed (GObject *object)
   priv->operator = clutter_group_new ();
   clutter_actor_set_name(priv->operator, "HdHome:operator");
   clutter_actor_show (priv->operator);
-
-  hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
-			       GTK_STATE_NORMAL,
-			       &op_color);
-  font_string = hd_gtk_style_get_font_string (HD_GTK_BUTTON_SINGLETON);
-  priv->operator_label = clutter_label_new_full (font_string, "Operator",
-						 &op_color);
-  g_free (font_string);
-
-  clutter_actor_show (priv->operator_label);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->operator),
-			       priv->operator_label);
+  clutter_actor_reparent (priv->operator, CLUTTER_ACTOR (object));
+  clutter_actor_raise (priv->operator, priv->view_container);
 
   priv->left_switch = clutter_rectangle_new ();
   clutter_actor_set_name (priv->left_switch, "HdHome:left_switch");
@@ -1214,32 +1201,19 @@ hd_home_get_current_view_id (HdHome *home)
 }
 
 void
-hd_home_set_operator_label (HdHome *home, const char *text)
+hd_home_set_operator_applet (HdHome *home, ClutterActor *operator_applet)
 {
   HdHomePrivate *priv = home->priv;
 
-  clutter_label_set_text (CLUTTER_LABEL (priv->operator_label), text);
-  hd_home_fixup_operator_position (home);
-}
+  if (priv->operator_applet)
+    clutter_actor_destroy (priv->operator_applet);
 
-void
-hd_home_set_operator_icon (HdHome *home, const char *file)
-{
-  HdHomePrivate *priv = home->priv;
-  ClutterActor  *icon = NULL;
+  priv->operator_applet = operator_applet;
 
-  if (priv->operator_icon)
-    clutter_actor_destroy (priv->operator_icon);
-
-  if (file)
-    icon = clutter_texture_new_from_file (file, NULL);
-
-  priv->operator_icon = icon;
-
-  if (icon)
+  if (operator_applet)
     {
-      clutter_actor_show (icon);
-      clutter_container_add_actor (CLUTTER_CONTAINER (priv->operator), icon);
+      clutter_actor_show (operator_applet);
+      clutter_actor_reparent (operator_applet, priv->operator);
     }
 
   hd_home_fixup_operator_position (home);
@@ -1251,9 +1225,7 @@ hd_home_fixup_operator_position (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
   guint          control_width, control_height;
-  guint          icon_width = 0, icon_height = 0;
   guint          op_width, op_height = 0;
-  guint          label_width, label_height;
   HdSwitcher     *switcher;
   MBWindowManager *wm;
 
@@ -1273,16 +1245,7 @@ hd_home_fixup_operator_position (HdHome *home)
   else
     g_debug ("Don't adjust position because there's no WM");
 
-  if (priv->operator_icon)
-    clutter_actor_get_size (priv->operator_icon, &icon_width, &icon_height);
-
-  clutter_actor_get_size (priv->operator_label, &label_width, &label_height);
-
   clutter_actor_get_size (priv->operator, &op_width, &op_height);
-
-  clutter_actor_set_position (priv->operator_label,
-			      icon_width + HDH_OPERATOR_PADDING,
-			      (op_height - label_height)/2);
 
   clutter_actor_set_position (priv->operator,
 			      control_width + HDH_OPERATOR_PADDING,

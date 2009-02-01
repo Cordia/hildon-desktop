@@ -67,6 +67,8 @@
 #define LOWMEM_PROC_USED       "/proc/sys/vm/lowmem_used_pages"
 #define LOWMEM_LAUNCH_THRESHOLD_DISTANCE 2500
 
+#define OPERATOR_APPLET_ID "_HILDON_OPERATOR_APPLET"
+
 /* We need to check whether @c neither is maximized nor is the systemui's
  * because these things pop up on startup and then don't go away,
  * leaving us with a needlessly blurred background. We don't blur for
@@ -918,10 +920,20 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       HdHomeApplet * applet  = HD_HOME_APPLET (c);
       char         * applet_id = applet->applet_id;
 
-      g_object_set_data_full (G_OBJECT (actor), "HD-applet-id",
-                              g_strdup (applet_id), (GDestroyNotify) g_free);
+      if (strcmp (OPERATOR_APPLET_ID, applet_id) != 0)
+        {
+          /* Normal applet */
+          g_object_set_data_full (G_OBJECT (actor), "HD-applet-id",
+                                  g_strdup (applet_id), (GDestroyNotify) g_free);
 
-      hd_home_add_applet (HD_HOME (priv->home), actor);
+          hd_home_add_applet (HD_HOME (priv->home), actor);
+        }
+      else
+        {
+          /* Special operator applet */
+
+          hd_home_set_operator_applet (HD_HOME (priv->home), actor);
+        }
       return;
     }
   else if (ctype == HdWmClientTypeStatusArea)
