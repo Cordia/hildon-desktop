@@ -1020,6 +1020,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         {
           priv->in_set_state = FALSE;
           hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+          return;
         }
 
       hd_render_manager_set_order();
