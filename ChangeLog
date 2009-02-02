@@ -2,6 +2,8 @@
 
 	* src/util/hd-transition.c (hd_transition_subview): Check if the views
 	have cm_clients at all before using them.
+	* src/mb/hd-app.c (hd_app_init): Read XA_INTEGER instead of XA_STRING
+	when reading the stackable window property.
 
 2009-02-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 

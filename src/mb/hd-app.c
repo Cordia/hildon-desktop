@@ -79,11 +79,11 @@ hd_app_init (MBWMObject *this, va_list vap)
   HdCompMgr             *hmgr = HD_COMP_MGR (wm->comp_mgr);
   Window                 win_group;
   HdApp                 *app = HD_APP (this);
-  unsigned char         *prop = NULL;
+  unsigned int          *prop = NULL;
   unsigned long          items, left;
   int                    format;
   Atom                   stackable_atom;
-  Atom                   type;
+  Atom                   actual_type;
 
   /* Set this up as it appears to get corrupted sometimes */
   app->leader = 0;
@@ -92,9 +92,9 @@ hd_app_init (MBWMObject *this, va_list vap)
 
   XGetWindowProperty (wm->xdpy, win->xwindow,
 		      stackable_atom, 0, 1, False,
-		      XA_STRING, &type, &format,
+		      XA_INTEGER, &actual_type, &format,
 		      &items, &left,
-		      &prop);
+		      (unsigned char**)&prop);
   /*
    * The HdApp can be a transient window in case of using stackable windows.
    */
@@ -121,7 +121,7 @@ hd_app_init (MBWMObject *this, va_list vap)
 	}
     }
 
-  if (prop)
+  if (actual_type == XA_INTEGER)
     {
       MBWindowManagerClient *c_tmp;
 
@@ -169,8 +169,6 @@ hd_app_init (MBWMObject *this, va_list vap)
             }
         }
 
-      XFree (prop);
-
       if (app->secondary_window)
         {
           HdApp *leader = app->leader;
@@ -184,6 +182,9 @@ hd_app_init (MBWMObject *this, va_list vap)
           app->leader = app;
         }
     }
+
+  if (prop)
+    XFree (prop);
 
   return 1;
 }
