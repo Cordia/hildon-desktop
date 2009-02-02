@@ -1,3 +1,9 @@
+2009-02-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-app.c (hd_app_stacking_layer):
+	  Take the fullscreenness of the transients into consideration
+	  when determining the stacking layer.
+
 2009-02-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/util/hd-transition.c (hd_transition_subview): Check if the views

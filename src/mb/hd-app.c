@@ -28,10 +28,14 @@
 static MBWMStackLayerType
 hd_app_stacking_layer(MBWindowManagerClient *client)
 {
+  MBWMList *li;
+
   if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
     return MBWMStackLayerTop;
-  else
-    return client->stacking_layer;
+  for (li = client->transients; li; li = li->next)
+    if (hd_app_stacking_layer(li->data) == MBWMStackLayerTop)
+      return MBWMStackLayerTop;
+  return client->stacking_layer;
 }
 
 static void
