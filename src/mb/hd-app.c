@@ -79,7 +79,7 @@ hd_app_init (MBWMObject *this, va_list vap)
   HdCompMgr             *hmgr = HD_COMP_MGR (wm->comp_mgr);
   Window                 win_group;
   HdApp                 *app = HD_APP (this);
-  unsigned int          *prop = NULL;
+  unsigned char         *prop = NULL;
   unsigned long          items, left;
   int                    format;
   Atom                   stackable_atom;
@@ -94,7 +94,7 @@ hd_app_init (MBWMObject *this, va_list vap)
 		      stackable_atom, 0, 1, False,
 		      XA_INTEGER, &actual_type, &format,
 		      &items, &left,
-		      (unsigned char**)&prop);
+		      &prop);
   /*
    * The HdApp can be a transient window in case of using stackable windows.
    */
