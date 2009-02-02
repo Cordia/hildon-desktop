@@ -658,7 +658,7 @@ hd_transition_subview(HdCompMgr                  *mgr,
   MBWMCompMgrClutterClient * cclient_mainview;
   HDEffectData             * data;
 
-  if (!subview || !mainview)
+  if (!subview || !subview->cm_client || !mainview || !mainview->cm_client)
     return;
 
   cclient_subview = MB_WM_COMP_MGR_CLUTTER_CLIENT (subview->cm_client);
