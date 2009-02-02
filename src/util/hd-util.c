@@ -3,8 +3,8 @@
 
 #include <matchbox/core/mb-wm.h>
 
-#include <clutter/clutter.h>
-#include <clutter/x11/clutter-x11.h>
+#include <X11/Xlib.h>
+#include <X11/extensions/Xrandr.h>
 
 void *
 hd_util_get_win_prop_data_and_validate (Display   *xdpy,
@@ -126,4 +126,61 @@ hd_util_is_client_system_modal (MBWindowManagerClient *c)
   return mb_wm_client_is_modal (c) &&
       !mb_wm_client_get_transient_for (c) &&
       mb_wm_get_modality_type (c->wmref) == MBWMModalitySystem;
+}
+
+/* Change the screen's orientation by rotating -90 degrees
+ * (portrait mode) or going back to landscape.
+ * Returns whether the orientation has actually changed. */
+gboolean
+hd_util_change_screen_orientation (MBWindowManager *wm,
+                                   gboolean goto_portrait)
+{
+  Status ret;
+  Time cfgtime;
+  SizeID sizeid;
+  Rotation current, want;
+  XRRScreenConfiguration *scrcfg;
+  static Rotation can;
+
+  if (goto_portrait)
+    {
+      g_debug ("Entering portrait mode");
+      want = RR_Rotate_270;
+    }
+  else
+    {
+      g_debug ("Leaving portrait mode");
+      want = RR_Rotate_0;
+    }
+
+  if (can == 0)
+    can = XRRRotations (wm->xdpy, 0, &current);
+
+  if (!(can & want))
+    {
+      g_warning ("Server is incapable (0x%.8X vs. 0x%.8X)", can, want);
+      return FALSE;
+    }
+
+  scrcfg = XRRGetScreenInfo(wm->xdpy, wm->root_win->xwindow);
+  XRRConfigTimes(scrcfg, &cfgtime);
+  sizeid = XRRConfigCurrentConfiguration(scrcfg, &current);
+  if (current == want)
+    {
+      g_warning ("Already in that mode");
+      return FALSE;
+    }
+
+  ret = XRRSetScreenConfig(wm->xdpy, scrcfg, wm->root_win->xwindow, sizeid,
+                           goto_portrait ? RR_Rotate_270 : RR_Rotate_0,
+                           cfgtime);
+  XRRFreeScreenConfigInfo(scrcfg);
+
+  if (ret != Success)
+    {
+      g_warning("XRRSetScreenConfig() failed: %d", ret);
+      return FALSE;
+    }
+  else
+    return TRUE;
 }

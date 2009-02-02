@@ -40,6 +40,9 @@
 #include "hd-launcher.h"
 #include "hd-launcher-tree.h"
 
+#undef  G_LOG_DOMAIN
+#define G_LOG_DOMAIN "hd-app-mgr"
+
 #define I_(str) (g_intern_static_string ((str)))
 
 struct _HdAppMgrPrivate
@@ -619,4 +622,33 @@ hd_app_mgr_match_window (const char *res_name,
     }
 
   return result;
+}
+
+void
+hd_app_mgr_dump_app_list (gboolean only_running)
+{
+  GList *apps;
+
+  g_debug ("List of launched applications:");
+  apps = hd_launcher_tree_get_items (hd_launcher_get_tree(), NULL);
+  for (; apps; apps = apps->next)
+    {
+      HdLauncherApp *app;
+
+      if (hd_launcher_item_get_item_type (apps->data) != HD_APPLICATION_LAUNCHER)
+        continue;
+
+      app = HD_LAUNCHER_APP (apps->data);
+      if (!only_running || hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN)
+        {
+          MBWMCompMgrClient *cmgrc;
+
+          cmgrc = MB_WM_COMP_MGR_CLIENT (hd_launcher_app_get_comp_mgr_client (app));
+          g_debug("app=%p, cmgrc=%p, mbwmc=%p, wm_class=%s, service=%s, state=%d",
+                  app, cmgrc, cmgrc ? cmgrc->wm_client : NULL,
+                  hd_launcher_app_get_wm_class (app),
+                  hd_launcher_app_get_service (app),
+                  hd_launcher_app_get_state (app));
+        }
+    }
 }

@@ -60,8 +60,8 @@
 
 /* Measures (in pixels).  Unless indicated, none of them is tunable. */
 /* Common platform metrics */
-#define SCREEN_WIDTH                    HD_COMP_MGR_SCREEN_WIDTH
-#define SCREEN_HEIGHT                   HD_COMP_MGR_SCREEN_HEIGHT
+#define SCREEN_WIDTH                    HD_COMP_MGR_LANDSCAPE_WIDTH
+#define SCREEN_HEIGHT                   HD_COMP_MGR_LANDSCAPE_HEIGHT
 #define MARGIN_DEFAULT                    8
 #define MARGIN_HALF                       4
 #define NORMAL_ICON_SIZE                 32
@@ -2432,6 +2432,32 @@ unclip (ClutterActor * actor, GParamSpec * prop, gpointer unused)
     clutter_actor_remove_clip (actor);
   return TRUE;
 }
+
+/* Called when the screen's dimensions have changed. */
+static void
+screen_size_changed (void)
+{
+  unsigned i;
+  Layout lout;
+  const Thumbnail *thumb;
+
+  /* Updated everything that is affected by screen size.  Since the switcher
+   * doesn't support portrait mode it is only significant when the WM started
+   * right into portrait mode and it's been switched back. */
+  clutter_actor_set_size(Scroller, HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_SCREEN_HEIGHT);
+  for (i = 0; i < Thumbnails->len; i++)
+    {
+      thumb = &g_array_index (Thumbnails, Thumbnail, i);
+      clutter_actor_set_clip (thumb->prison,
+                              thumb->inapwin->x,      thumb->inapwin->y,
+                              thumb->inapwin->width,  thumb->inapwin->height);
+      clutter_actor_set_anchor_point (thumb->prison,
+                                      thumb->inapwin->x, thumb->inapwin->y);
+    }
+
+  calc_layout (&lout);
+  layout_thumbs (&lout, NULL);
+}
 /* Callbacks }}} */
 
 /* Creates an effect template for @duration and also returns its timeline.
@@ -2510,6 +2536,11 @@ hd_task_navigator_init (HdTaskNavigator * self)
                               0, SCREEN_HEIGHT - NOTE_HEIGHT);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator_area),
                                Notification_area);
+
+  /* Make sure we're not broken if the WM is started in portrait mode. */
+  g_signal_connect(clutter_stage_get_default(),
+                   "notify::allocation", G_CALLBACK(screen_size_changed),
+                   NULL);
 
   /* Effect timelines */
   Fly_effect = new_effect (&Fly_effect_timeline,   FLY_EFFECT_DURATION);

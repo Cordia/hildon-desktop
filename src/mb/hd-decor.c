@@ -180,17 +180,15 @@ hd_decor_get_start_x(HdDecor *decor)
   MBWMDecor         *mb_decor = MB_WM_DECOR (decor);
   MBWindowManagerClient  *client = mb_decor->parent_client;
   MBWMClientType          c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
-  ClutterActor *status_area = hd_render_manager_get_status_area();
 
   /* because only apps are fullscreen and care about the status area */
   if (c_type != MBWMClientTypeApp)
     return 0;
 
-  gint buttons_width = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
-  if (status_area)
-    buttons_width += clutter_actor_get_width(status_area);
-
-  return buttons_width;
+  /* Use what is set by mb_adjust_dialog_title_position()
+   * minus the LEFT_GUTTER.  HDRM will see to that @left_padding
+   * is up to date. */
+  return left_padding - 8;
 }
 
 static void

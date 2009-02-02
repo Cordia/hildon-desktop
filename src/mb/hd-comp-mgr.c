@@ -108,6 +108,9 @@ struct HdCompMgrPrivate
 
   /* Clients who need to block the Tasksk button. */
   GHashTable            *tasks_button_blockers;
+
+  /* Track changes to the PORTRAIT properties. */
+  unsigned long          property_changed_cb_id;
 };
 
 /*
@@ -121,6 +124,11 @@ struct HdCompMgrClientPrivate
   guint                 hibernation_key;
   gboolean              hibernating   : 1;
   gboolean              can_hibernate : 1;
+
+  /* Current values of _HILDON_PORTRAIT_MODE_SUPPORT
+   * and _HILDON_PORTRAIT_MODE_REQUEST of the client. */
+  gboolean              portrait_supported : 1;
+  gboolean              portrait_requested : 1;
 };
 
 static MBWMCompMgrClient *
@@ -194,6 +202,7 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
   HdCompMgr              *hmgr;
   MBWindowManagerClient  *wm_client = MB_WM_COMP_MGR_CLIENT (obj)->wm_client;
   HdLauncherApp          *app;
+  guint32                *prop;
 
   hmgr = HD_COMP_MGR (wm_client->wmref->comp_mgr);
 
@@ -206,6 +215,35 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
       hd_comp_mgr_client_process_hibernation_prop (client);
       priv->hibernation_key = (guint)wm_client;
     }
+
+  /* Set portrait_* initially. */
+  prop = hd_util_get_win_prop_data_and_validate (
+                              wm_client->wmref->xdpy,
+                              wm_client->window->xwindow,
+                              hmgr->priv->atoms[HD_ATOM_WM_PORTRAIT_OK],
+                              XA_CARDINAL, 32, 1, NULL);
+  if (prop)
+    {
+      priv->portrait_supported = *prop;
+      XFree (prop);
+    }
+
+  prop = hd_util_get_win_prop_data_and_validate (
+                       wm_client->wmref->xdpy,
+                       wm_client->window->xwindow,
+                       hmgr->priv->atoms[HD_ATOM_WM_PORTRAIT_REQUESTED],
+                       XA_CARDINAL, 32, 1, NULL);
+  if (prop)
+    {
+      priv->portrait_requested = *prop;
+      XFree (prop);
+    }
+
+  if (priv->portrait_supported || priv->portrait_requested)
+    g_debug ("portrait properties of %p: supported=%u requested=%u",
+             wm_client,
+             priv->portrait_supported != 0,
+             priv->portrait_requested != 0);
 
   return 1;
 }
@@ -278,6 +316,7 @@ static void hd_comp_mgr_unmap_notify
 static void hd_comp_mgr_turn_on (MBWMCompMgr *mgr);
 static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c, MBWMCompMgrClientEvent event);
 static void hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor);
+static Bool hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr);
 
 int
 hd_comp_mgr_class_type ()
@@ -366,8 +405,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 		                                  hd_launcher_get_group(),
 		                                  HD_HOME(priv->home),
 						  task_nav);
-  clutter_actor_set_size (CLUTTER_ACTOR(priv->render_manager),
-                          wm->xdpy_width, wm->xdpy_height);
   clutter_container_add_actor(CLUTTER_CONTAINER (stage),
                               CLUTTER_ACTOR(priv->render_manager));
 
@@ -377,9 +414,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 				       "comp-mgr", cmgr,
 				       "task-nav", task_nav,
 				       NULL);
-
-  /* FIXME: shouldn't this be in render manager? */
-  hd_home_fixup_operator_position (HD_HOME(priv->home));
 
   /* Take our comp-mgr-clutter's 'arena' and hide it for now. We
    * don't want anything in it visible, as we'll take out what we want to
@@ -402,6 +436,11 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   priv->tasks_button_blockers = g_hash_table_new (NULL, NULL);
 
+  /* Be notified about all X window property changes around here. */
+  priv->property_changed_cb_id = mb_wm_main_context_x_event_handler_add (
+                   cmgr->wm->main_ctx, None, PropertyNotify,
+                   (MBWMXEventFunc)hd_comp_mgr_client_property_changed, cmgr);
+
   for (i = 0; i < 4; ++i)
     priv->applet_manager[i] = hd_applet_layout_manager_new ();
 
@@ -418,6 +457,77 @@ hd_comp_mgr_destroy (MBWMObject *obj)
   if (priv->hibernating_apps)
     g_hash_table_destroy (priv->hibernating_apps);
   g_object_unref( priv->render_manager );
+
+  mb_wm_main_context_x_event_handler_remove (
+                                     MB_WM_COMP_MGR (obj)->wm->main_ctx,
+                                     PropertyNotify,
+                                     priv->property_changed_cb_id);
+}
+
+/* Called on #PropertyNotify to handle changes to
+ * _HILDON_PORTRAIT_MODE_SUPPORT and _HILDON_PORTRAIT_MODE_REQUEST. */
+Bool
+hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
+{
+  static guint32 no[] = { 0 };
+  Atom pok, prq;
+  guint32 *value;
+  MBWindowManager *wm;
+  HdCompMgrClient *cc;
+  MBWindowManagerClient *c;
+
+  g_return_val_if_fail (event->type == PropertyNotify, True);
+
+  pok = hd_comp_mgr_get_atom (hmgr, HD_ATOM_WM_PORTRAIT_OK);
+  prq = hd_comp_mgr_get_atom (hmgr, HD_ATOM_WM_PORTRAIT_REQUESTED);
+
+  if (event->atom != pok && event->atom != prq)
+    return True;
+
+  /* Read the new property value. */
+  wm = MB_WM_COMP_MGR (hmgr)->wm;
+  value = event->state == PropertyNewValue
+    ? hd_util_get_win_prop_data_and_validate (wm->xdpy, event->window,
+                                              event->atom, XA_CARDINAL,
+                                              32, 1, NULL)
+    : no;
+  if (!value)
+    goto out0;
+  if (!(c = mb_wm_managed_client_from_xwindow (wm, event->window)))
+    goto out1;
+  if (!c->cm_client)
+    goto out1;
+  cc = HD_COMP_MGR_CLIENT (c->cm_client);
+
+  if (event->atom == pok)
+    cc->priv->portrait_supported = *value != 0;
+  else
+    cc->priv->portrait_requested = *value != 0;
+
+  if (cc->priv->portrait_requested && !cc->priv->portrait_supported)
+    /* Might be some temporary state. */
+    g_warning ("%p: portrait mode requested but not supported", c);
+  g_debug ("portrait property of %p changed: supported=%u requested=%u", c,
+           cc->priv->portrait_supported != 0,
+           cc->priv->portrait_requested != 0);
+
+  /* Switch HDRM state if we need to. */
+  if (hd_render_manager_get_state() == HDRM_STATE_APP_PORTRAIT)
+    { /* Portrait => landscape? */
+      if (!*value && !hd_comp_mgr_should_be_portrait (hmgr))
+        hd_render_manager_set_state(HDRM_STATE_APP);
+    }
+  else if (hd_render_manager_get_state() == HDRM_STATE_APP)
+    { /* Landscape => portrait? */
+      if (*value && hd_comp_mgr_should_be_portrait (hmgr))
+        hd_render_manager_set_state(HDRM_STATE_APP_PORTRAIT);
+    }
+
+out1:
+  if (value && value != no)
+    XFree (value);
+out0:
+  return False;
 }
 
 void
@@ -611,30 +721,22 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           g_object_set_data (G_OBJECT (actor),
                              "HD-MBWMCompMgrClutterClient", NULL);
 
-          /* Tell the app which is the main client now. */
+           /* Tell the app which the main client is now. */
           if (hclient->priv->app)
             hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
                 HD_COMP_MGR_CLIENT (prev));
         }
       else
-        /* We wasn't mapped in the first place. */;
+         /* We weren't mapped in the first place. */;
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea)
     {
-      ClutterActor  *sa;
-
-      sa = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-      hd_home_remove_status_area (HD_HOME (priv->home), sa);
-
+      hd_home_remove_status_area (HD_HOME (priv->home), actor);
       priv->status_area_client = NULL;
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusMenu)
     {
-      ClutterActor  *sa;
-
-      sa = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-      hd_home_remove_status_menu (HD_HOME (priv->home), sa);
-
+       hd_home_remove_status_menu (HD_HOME (priv->home), actor);
       priv->status_menu_client = NULL;
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeHomeApplet)
@@ -876,6 +978,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   /* FIXME: When we get an app we'd just go to home and then straight
    * to app - so I (gw) added MBWMClientTypeApp as an exception.
    * What are we trying to switch to home for here?
+   * madam: i think because of the power menu
    */
   if (STATE_ONE_OF(hd_render_manager_get_state(),
                    HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
@@ -939,14 +1042,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   else if (ctype == HdWmClientTypeStatusArea)
     {
       hd_home_add_status_area (HD_HOME (priv->home), actor);
-
       priv->status_area_client = c;
       return;
     }
   else if (ctype == HdWmClientTypeStatusMenu)
     {
       hd_home_add_status_menu (HD_HOME (priv->home), actor);
-
       priv->status_menu_client = c;
       return;
     }
@@ -960,6 +1061,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * go back to home as the dialog will need the grab. */
       if (STATE_NEED_GRAB(hd_render_manager_get_state()))
         hd_render_manager_set_state(HDRM_STATE_HOME);
+      return;
     }
   else if (ctype == MBWMClientTypeNote)
     {
@@ -1242,14 +1344,8 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   HdCompMgrPrivate         * priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClass         * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
-  MBWindowManagerClient    * highest_fs;
-  HdTaskNavigator          *tn;
 
   /* g_debug ("%s", __FUNCTION__); */
-
-  tn = HD_TASK_NAVIGATOR (
-        hd_switcher_get_task_navigator (priv->switcher_group));
-  highest_fs = mb_wm_stack_get_highest_full_screen (mgr->wm);
 
   /* Hide the Edit button if it is currently shown */
   if (priv->home)
@@ -1296,7 +1392,25 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
         hd_wm_update_current_app_property (mgr->wm,
                                            hd_wm_get_current_app (mgr->wm)->window->xwindow);
 
-        hd_render_manager_restack();
+      hd_render_manager_restack();
+
+      /* Now that HDRM has sorted out the visibilities see if we need to
+       * switch to/from portrait mode because of a new window. */
+      if (!hd_render_manager_is_changing_state ())
+        {
+          /* If we're switching state we're leaving either APP or PORTRAIT
+           * mode, none of which we want to interfere with. */
+          if (hd_render_manager_get_state () == HDRM_STATE_APP)
+            { /* Landscape -> portrait? */
+              if (hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
+                hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+            }
+          else if (hd_render_manager_get_state () == HDRM_STATE_APP_PORTRAIT)
+            { /* Portrait -> landscape? */
+              if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
+                hd_render_manager_set_state (HDRM_STATE_APP);
+            }
+        }
     }
 }
 
@@ -1447,6 +1561,39 @@ hd_comp_mgr_get_low_memory_state (HdCompMgr * hmgr)
   return priv->low_mem;
 }
 
+/* Does any visible client request portrait mode?
+ * Are all of them prepared for it? */
+gboolean
+hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
+{
+  gboolean any_requests;
+  MBWindowManager *wm;
+  MBWindowManagerClient *c;
+  HdCompMgrClient *cc;
+
+  any_requests = FALSE;
+  wm = MB_WM_COMP_MGR (hmgr)->wm;
+  for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
+    {
+      if (c == hmgr->priv->status_area_client)
+        /* It'll be blocked anyway. */
+        continue;
+      if (hd_comp_mgr_is_client_screensaver (c))
+        continue;
+      if (hd_comp_mgr_ignore_window (c))
+        continue;
+      if (!hd_render_manager_is_client_visible (c))
+        continue;
+
+      cc = HD_COMP_MGR_CLIENT (c->cm_client);
+      if (!cc->priv->portrait_supported)
+        return FALSE;
+      any_requests |= cc->priv->portrait_requested;
+    }
+
+  return any_requests;
+}
+
 HdLauncherApp *
 hd_comp_mgr_app_from_xwindow (HdCompMgr *hmgr, Window xid)
 {
@@ -1581,6 +1728,7 @@ dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
 {
   const gchar *name;
   MBWMCompMgrClient *cmgrc;
+  ClutterGeometry geo;
 
   if (!indent)
     indent = g_string_new ("");
@@ -1589,14 +1737,15 @@ dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
     name = clutter_label_get_text (CLUTTER_LABEL (actor));
   cmgrc = g_object_get_data(G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
 
+  clutter_actor_get_geometry (actor, &geo);
   g_debug ("actor[%u]: %s%p (type=%s, name=%s, win=0x%lx), "
-           "mapped: %d, realized: %d, reactive: %d",
+           "size: %ux%u%+d%+d, visible: %d, reactive: %d",
            indent->len, indent->str, actor,
            G_OBJECT_TYPE_NAME (actor), name,
            cmgrc && cmgrc->wm_client && cmgrc->wm_client->window
                ? cmgrc->wm_client->window->xwindow : 0,
-           CLUTTER_ACTOR_IS_MAPPED (actor)   != 0,
-           CLUTTER_ACTOR_IS_REALIZED (actor) != 0,
+           geo.width, geo.height, geo.x, geo.y,
+           CLUTTER_ACTOR_IS_VISIBLE (actor) != 0,
            CLUTTER_ACTOR_IS_REACTIVE (actor) != 0);
   if (CLUTTER_IS_CONTAINER (actor))
     {
@@ -1622,8 +1771,9 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
   g_debug ("Windows:");
   root = mb_wm_root_window_get (NULL);
   mb_wm_stack_enumerate_reverse (root->wm, mbwmc)
-    g_debug (" client=%p, type=%d, trfor=%p, win=0x%lx, group=0x%lx, name=%s",
-             mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc), mbwmc->transient_for,
+    g_debug (" client=%p, type=%d, trfor=%p, layer=%d, win=0x%lx, group=0x%lx, name=%s",
+             mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc),
+             mbwmc->transient_for, mbwmc->stacking_layer,
              mbwmc && mbwmc->window ? mbwmc->window->xwindow : 0,
              mbwmc && mbwmc->window ? mbwmc->window->xwin_group : 0,
              mbwmc && mbwmc->window ? mbwmc->window->name : "<unset>");
@@ -1641,6 +1791,7 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
     g_debug ("input focus reverts to %d", revert);
 
   dump_clutter_actor_tree (clutter_stage_get_default (), NULL);
+  hd_app_mgr_dump_app_list (TRUE);
 }
 
 void
@@ -1679,4 +1830,16 @@ void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running)
       if (priv->unmap_effect_running < 0)
         g_warning("%s: unmap_effect_running < 0", __FUNCTION__);
     }
+}
+
+guint
+hd_comp_mgr_get_current_screen_width (void)
+{
+  return mb_wm_root_window_get (NULL)->wm->xdpy_width;
+}
+
+guint
+hd_comp_mgr_get_current_screen_height(void)
+{
+  return mb_wm_root_window_get (NULL)->wm->xdpy_height;
 }

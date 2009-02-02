@@ -291,7 +291,6 @@ hd_home_view_constructed (GObject *object)
   ClutterColor              clr = BACKGROUND_COLOR;
   HdHomeView               *self = HD_HOME_VIEW (object);
   HdHomeViewPrivate        *priv = self->priv;
-  MBWindowManager          *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   GConfClient              *default_client;
   gchar                    *gconf_path;
 
@@ -299,8 +298,8 @@ hd_home_view_constructed (GObject *object)
                                          NULL,
                                          (GDestroyNotify) applet_data_free);
 
-  priv->xwidth  = wm->xdpy_width;
-  priv->xheight = wm->xdpy_height;
+  priv->xwidth  = HD_COMP_MGR_LANDSCAPE_WIDTH;
+  priv->xheight = HD_COMP_MGR_LANDSCAPE_HEIGHT;
 
   priv->background_container = clutter_group_new ();
   clutter_actor_set_name (priv->background_container, "HdHomeView::background-container");

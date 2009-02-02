@@ -43,6 +43,9 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
 
     "WM_WINDOW_ROLE",
 
+    "_HILDON_PORTRAIT_MODE_SUPPORT",
+    "_HILDON_PORTRAIT_MODE_REQUEST",
+
     "UTF8_STRING",
 
     "_HILDON_ANIMATION_CLIENT_MESSAGE_SHOW",

@@ -71,6 +71,8 @@ gboolean hd_app_mgr_wakeup   (HdLauncherApp *app);
 HdLauncherApp *hd_app_mgr_match_window (const char *res_name,
                                         const char *res_class);
 
+void hd_app_mgr_dump_app_list (gboolean only_running);
+
 G_END_DECLS
 
 #endif /* __HD_APP_MGR_H__ */

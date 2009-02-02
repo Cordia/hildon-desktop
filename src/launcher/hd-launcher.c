@@ -322,7 +322,7 @@ hd_launcher_create_back_button (const char *icon_name)
   else
     g_warning("create_back_button: couldn't find icon %s\n", icon_name);
 
-  clutter_actor_set_position (icon, HD_COMP_MGR_SCREEN_WIDTH -
+  clutter_actor_set_position (icon, HD_COMP_MGR_LANDSCAPE_WIDTH -
                                     HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH, 0);
 
   return icon;

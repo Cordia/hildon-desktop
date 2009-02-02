@@ -34,8 +34,10 @@
 G_BEGIN_DECLS
 
 /* Hardware display dimensions */
-#define HD_COMP_MGR_SCREEN_WIDTH      800
-#define HD_COMP_MGR_SCREEN_HEIGHT     480
+#define HD_COMP_MGR_LANDSCAPE_WIDTH   800
+#define HD_COMP_MGR_LANDSCAPE_HEIGHT  480
+#define HD_COMP_MGR_SCREEN_WIDTH      hd_comp_mgr_get_current_screen_width()
+#define HD_COMP_MGR_SCREEN_HEIGHT     hd_comp_mgr_get_current_screen_height()
 
 /* The title bar height + HALF_MARGIN border. */
 #define HD_COMP_MGR_TOP_MARGIN         56
@@ -45,6 +47,7 @@ G_BEGIN_DECLS
 #define HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH         112
 #define HD_COMP_MGR_TOP_RIGHT_BTN_HEIGHT        HD_COMP_MGR_TOP_MARGIN
 #define HD_COMP_MGR_STATUS_MENU_WIDTH           688
+#define HD_COMP_MGR_OPERATOR_PADDING            10 /* XXX match specs */
 
 typedef struct HdCompMgrClientClass   HdCompMgrClientClass;
 typedef struct HdCompMgrClient        HdCompMgrClient;
@@ -118,6 +121,8 @@ void hd_comp_mgr_set_low_memory_state (HdCompMgr * hmgr, gboolean on);
 
 gboolean hd_comp_mgr_get_low_memory_state (HdCompMgr * hmgr);
 
+gboolean hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr);
+
 Atom hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id);
 
 ClutterActor * hd_comp_mgr_get_home (HdCompMgr *hmgr);
@@ -142,6 +147,9 @@ void hd_comp_mgr_set_status_area_stacking(HdCompMgr *hmgr,
                                           gboolean visible);
 void hd_comp_mgr_restack (MBWMCompMgr * mgr);
 void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running);
+
+guint hd_comp_mgr_get_current_screen_width(void);
+guint hd_comp_mgr_get_current_screen_height(void);
 
 G_END_DECLS
 

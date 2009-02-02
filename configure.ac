@@ -60,6 +60,7 @@ PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
 		       x11 dnl
 		       xcomposite dnl
 		       xfixes dnl
+		       xrandr dnl
 		       libmatchbox2-0.1 dnl
 		       gtk+-2.0 dnl
 		       gconf-2.0 dnl

@@ -16,5 +16,7 @@ void * hd_util_get_win_prop_data_and_validate (Display   *xpdy,
 					       gint      *n_items_ret);
 unsigned long hd_util_modal_blocker_realize(MBWindowManagerClient *client);
 Bool hd_util_is_client_system_modal (MBWindowManagerClient *c);
+gboolean hd_util_change_screen_orientation (MBWindowManager *wm,
+                                            gboolean goto_portrait);
 
 #endif

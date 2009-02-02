@@ -24,6 +24,7 @@
 
 #include "hd-status-area.h"
 #include "hd-comp-mgr.h"
+#include "hd-render-manager.h"
 #include "hd-wm.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
@@ -66,7 +67,9 @@ hd_status_area_init (MBWMObject *this, va_list vap)
 
   client->stacking_layer = MBWMStackLayerTopMid;
 
-  geom.x      = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+  geom.x      =      hd_render_manager_get_visible (HDRM_BUTTON_TASK_NAV)
+                  || hd_render_manager_get_visible (HDRM_BUTTON_LAUNCHER)
+                ? HD_COMP_MGR_TOP_LEFT_BTN_WIDTH : 0;
   geom.y      = 0;
   geom.width  = 112;
   geom.height = HD_COMP_MGR_TOP_MARGIN;

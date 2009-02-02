@@ -62,7 +62,6 @@ GType hd_switcher_get_type (void);
 void hd_switcher_add_window_actor    (HdSwitcher   * switcher,
 				      ClutterActor * actor);
 void hd_switcher_add_status_area (HdSwitcher *switcher, ClutterActor *sa);
-void hd_switcher_add_status_menu (HdSwitcher *switcher, ClutterActor *sa);
 void hd_switcher_add_notification (HdSwitcher *switcher, HdNote *note);
 void hd_switcher_add_dialog_explicit (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
                                       ClutterActor *dialog, MBWindowManagerClient *transfor);
@@ -73,8 +72,6 @@ void hd_switcher_add_dialog (HdSwitcher *switcher,
 void hd_switcher_remove_window_actor (HdSwitcher   * switcher,
 				      ClutterActor * actor);
 void hd_switcher_remove_status_area (HdSwitcher   * switcher,
-				     ClutterActor * sa);
-void hd_switcher_remove_status_menu (HdSwitcher   * switcher,
 				     ClutterActor * sa);
 void hd_switcher_remove_notification (HdSwitcher * switcher,
                                       HdNote * note);
@@ -92,10 +89,6 @@ void hd_switcher_get_button_geometry (HdSwitcher      * switcher,
 				      ClutterGeometry * geom);
 
 ClutterActor *hd_switcher_get_task_navigator (HdSwitcher *switcher);
-
-void hd_switcher_get_control_area_size (HdSwitcher *switcher,
-					guint *control_width,
-					guint *control_height);
 
 G_END_DECLS
 

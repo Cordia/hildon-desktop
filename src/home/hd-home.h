@@ -86,8 +86,6 @@ ClutterActor *hd_home_get_operator (HdHome *home);
 
 void hd_home_set_operator_applet (HdHome *home, ClutterActor *operator);
 
-void hd_home_fixup_operator_position (HdHome *home);
-
 void hd_home_show_switching_edges (HdHome *home);
 void hd_home_hide_switching_edges (HdHome *home);
 void hd_home_highlight_switching_edges (HdHome *home, gboolean left, gboolean right);

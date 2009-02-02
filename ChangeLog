@@ -1,3 +1,76 @@
+2009-02-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Initial support for portrait mode.
+
+	* configure.ac:
+	* debian/control:
+	  Declared dependency on libxrandr-dev
+
+	* src/launcher/hd-app-mgr.h
+	* src/launcher/hd-app-mgr.c:
+	  New debugging function: hd_app_mgr_dump_app_list()
+	* src/mb/hd-atoms.h
+	* src/mb/hd-atoms.c:
+	  New atoms: _HILDON_PORTRAIT_MODE_REQUEST and _HILDON_PORTRAIT_MODE_SUPPORT.
+	* src/mb/hd-app.c:
+	  Removed the show(), hide() and focus() overrides that changed the state
+	  to APP_FULLSCREEN.  Instead override MBWindowManagerClient::stacking_layer.
+	* src/home/hd-switcher.h
+	* src/home/hd-switcher.c:
+	  Removed status area and menu handing and some interaction with home.
+	* src/home/hd-home.h
+	* src/home/hd-home.c:
+	  Removed status area allocation tracking.
+	* src/mb/hd-status-area.c:
+	  Take the visibility of the Tasks button into account when configuring
+	  the inital geometry of the client.
+	* src/mb/hd-dialog.c:
+	  Process all ->geometry() calls not only the ones changing the height
+	  of the dialog.
+	* src/home/hd-task-navigator.c:
+	  Don't break if the WM was started in portrait mode.
+
+	* src/launcher/hd-launcher-page.h
+	* src/launcher/hd-launcher-grid.c
+	* src/launcher/hd-launcher.c
+	* src/home/hd-home.c
+	* src/home/hd-home-view.c:
+	  Always assume landscape orientation.
+
+	* src/home/hd-render-manager.h
+	* src/home/hd-render-manager.c:
+	  hd_render_manager_set_input_viewport():
+	    Block the status area in portrait mode.
+	  hd_render_manager_set_order():
+	    Added HDRM_STATE_APP_PORTRAIT,
+	    recalculate the position of the oplogo, status area and app title,
+	    cleanups.
+	  hd_render_manager_get_visible():
+	    Allow querying the visibility of the tasks button.
+	  hd_render_manager_set_state():
+	    Placeholder added for the actual rotation.
+	    Be smart and if circumstances allow go to PORTRAIT if we'd go to APP.
+	  hd_render_manager_place_titlebar_elements():
+	    Aded for the status area, oplogo and the app title.
+	  hd_render_manager_is_visible():
+	    Reworked.
+	  hd_render_manager_init():
+	    Monitor the size of the stage and synchronize
+	    the private containers' size with it.
+
+	* src/mb/hd-comp-mgr.h:
+	  Made HD_COMP_MGR_SCREEN_WIDTH and HD_COMP_MGR_SCREEN_HEIGHT reflect
+	  the current screen dimensions.  Added HD_COMP_MGR_LANDSCAPE_* for
+	  the fixed values.
+	* src/mb/hd-comp-mgr.c:
+	  hd_comp_mgr_client_property_changed():
+	    Monitor the PORTRAIT properties of all clients.
+	  hd_comp_mgr_restack():
+	    Change to/from portrait mode if necessary because of a new/gone client.
+	  hd_comp_mgr_dump_debug_info():
+	    Include the stacking layer and actor size in the dump.
+	    Also print the list of known running applications.
+
 2009-02-01  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Add support for special operator applet. Fixes NB#93997

@@ -23,70 +23,15 @@
 
 #include "hd-app.h"
 #include "hd-comp-mgr.h"
-#include "hd-switcher.h"
-#include "hd-render-manager.h"
 
-static void
-hd_app_show (MBWindowManagerClient *client)
+/* Override client->stacking_layer if and only if we're fullscreen. */
+static MBWMStackLayerType
+hd_app_stacking_layer(MBWindowManagerClient *client)
 {
-  MBWindowManagerClientClass* parent_klass =
-    MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
-
-  if (parent_klass->show)
-    parent_klass->show(client);
-
-  if (STATE_IS_APP(hd_render_manager_get_state()))
-    {
-      /* Hide/show the switcher (the Tasks button in particular) depending on
-       * whether we're fullscreen or not. Only do this when we're already in
-       * app mode */
-      if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
-        hd_render_manager_set_state(HDRM_STATE_APP_FULLSCREEN);
-      else
-        hd_render_manager_set_state(HDRM_STATE_APP);
-    }
-}
-
-static void
-hd_app_hide (MBWindowManagerClient *client)
-{
-  MBWindowManagerClientClass* parent_klass =
-    MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
-
-  if (parent_klass->hide)
-    parent_klass->hide(client);
-
   if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
-    hd_render_manager_set_state(HDRM_STATE_HOME);
-}
-
-static Bool
-hd_app_focus (MBWindowManagerClient *client)
-{
-  ClutterActor *actor;
-  MBWMCompMgrClutterClient *cmgrcc;
-  MBWindowManagerClientClass* parent_klass =
-    MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
-
-  if (!parent_klass->focus (client))
-    return False;
-
-  /* Show our actor (hidden by the switcher) if we accept focus. */
-  cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
-  actor = mb_wm_comp_mgr_clutter_client_get_actor (cmgrcc);
-  if (actor && !CLUTTER_ACTOR_IS_VISIBLE (actor))
-    clutter_actor_show (actor);
-  if (STATE_IS_APP(hd_render_manager_get_state()))
-    {
-      /* Hide/show the switcher (the Tasks button in particular) depending on
-       * whether we're fullscreen or not. Only do this when we're already in
-       * app mode */
-      if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
-        hd_render_manager_set_state(HDRM_STATE_APP_FULLSCREEN);
-      else
-        hd_render_manager_set_state(HDRM_STATE_APP);
-    }
-  return True;
+    return MBWMStackLayerTop;
+  else
+    return client->stacking_layer;
 }
 
 static void
@@ -95,9 +40,7 @@ hd_app_class_init (MBWMObjectClass *klass)
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdApp";
 #endif
-  MB_WM_CLIENT_CLASS (klass)->show = hd_app_show;
-  MB_WM_CLIENT_CLASS (klass)->hide = hd_app_hide;
-  MB_WM_CLIENT_CLASS (klass)->focus = hd_app_focus;
+  MB_WM_CLIENT_CLASS (klass)->stacking_layer = hd_app_stacking_layer;
 }
 
 static void

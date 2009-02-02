@@ -57,7 +57,6 @@
 #define HDH_LAYOUT_Y_OFFSET 60
 
 /* FIXME -- match spec */
-#define HDH_OPERATOR_PADDING 10
 #define HDH_PAN_THRESHOLD 20
 
 #define CLOSE_BUTTON "qgn_home_close"
@@ -361,27 +360,13 @@ hd_property_notify_message (XPropertyEvent *xev, void *userdata)
   HdCompMgr     *hmgr = HD_COMP_MGR (priv->comp_mgr);
 
   if (xev->atom==hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_PROGRESS_INDICATOR))
-    {
-      /*
-       * The progress indicator should appear, or disappear.
-       * We don't actually need to change the operator position
-       * but this will cause the title to be redrawn, which
-       * means we can display or remove the progress indicator.
-       */
-      hd_home_fixup_operator_position (home);
+    { /* Redraw the title to display/remove the progress indicator. */
+      MBWindowManagerClient *top;
+      if ((top = mb_wm_get_visible_main_client(MB_WM_COMP_MGR (hmgr)->wm)) != NULL)
+        mb_wm_client_decor_mark_dirty (top);
     }
 
   return True;
-}
-
-static void
-hd_home_status_area_allocation_changed (
-		ClutterActor    *sa,
-		GParamSpec      *arg1,
-		HdHome          *home)
-{
-	g_debug ("The size of the status area has been changed.");
-	hd_home_fixup_operator_position (home);
 }
 
 static gboolean
@@ -472,8 +457,8 @@ hd_home_constructed (GObject *object)
 
   icon_theme = gtk_icon_theme_get_default ();
 
-  priv->xwidth  = wm->xdpy_width;
-  priv->xheight = wm->xdpy_height;
+  priv->xwidth  = HD_COMP_MGR_LANDSCAPE_WIDTH;
+  priv->xheight = HD_COMP_MGR_LANDSCAPE_HEIGHT;
 
   clutter_actor_set_name (CLUTTER_ACTOR(object), "HdHome");
 
@@ -850,16 +835,7 @@ hd_home_update_layout (HdHome * home)
 void
 hd_home_remove_status_area (HdHome *home, ClutterActor *sa)
 {
-  HdHomePrivate *priv = home->priv;
-  HdSwitcher *switcher;
-
   g_debug ("hd_home_remove_status_area, sa=%p\n", sa);
-  switcher = HD_SWITCHER(
-              hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
-  hd_switcher_remove_status_area (switcher, sa);
-
-  clutter_actor_unparent (sa);
-  hd_home_fixup_operator_position (home);
 
   hd_render_manager_set_status_area (NULL);
 }
@@ -867,14 +843,7 @@ hd_home_remove_status_area (HdHome *home, ClutterActor *sa)
 void
 hd_home_add_status_menu (HdHome *home, ClutterActor *sa)
 {
-  HdHomePrivate *priv = home->priv;
-  HdSwitcher *switcher;
-
   g_debug ("hd_home_add_status_menu, sa=%p\n", sa);
-
-  switcher = HD_SWITCHER(
-                hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
-  hd_switcher_add_status_menu (switcher, sa);
 
   hd_render_manager_set_status_menu (sa);
 }
@@ -882,14 +851,7 @@ hd_home_add_status_menu (HdHome *home, ClutterActor *sa)
 void
 hd_home_remove_status_menu (HdHome *home, ClutterActor *sa)
 {
-  HdHomePrivate *priv = home->priv;
-  HdSwitcher *switcher;
-
   g_debug ("hd_home_remove_status_menu, sa=%p\n", sa);
-
-  switcher = HD_SWITCHER(
-                hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
-  hd_switcher_remove_status_menu (switcher, sa);
 
   hd_render_manager_set_status_menu (NULL);
 }
@@ -897,18 +859,9 @@ hd_home_remove_status_menu (HdHome *home, ClutterActor *sa)
 void
 hd_home_add_status_area (HdHome *home, ClutterActor *sa)
 {
-  HdHomePrivate *priv = home->priv;
-  HdSwitcher *switcher;
-
   g_debug ("hd_home_add_status_area, sa=%p\n", sa);
-  switcher = HD_SWITCHER(hd_comp_mgr_get_switcher(HD_COMP_MGR(priv->comp_mgr)));
-  hd_switcher_add_status_area (switcher, sa);
 
-  hd_home_fixup_operator_position (home);
-
-  g_signal_connect (sa, "notify::allocation",
-                    G_CALLBACK (hd_home_status_area_allocation_changed),
-                    home);
+  hd_render_manager_set_status_area(sa);
 }
 
 void
@@ -1215,41 +1168,6 @@ hd_home_set_operator_applet (HdHome *home, ClutterActor *operator_applet)
       clutter_actor_show (operator_applet);
       clutter_actor_reparent (operator_applet, priv->operator);
     }
-
-  hd_home_fixup_operator_position (home);
-}
-
-
-void
-hd_home_fixup_operator_position (HdHome *home)
-{
-  HdHomePrivate *priv = home->priv;
-  guint          control_width, control_height;
-  guint          op_width, op_height = 0;
-  HdSwitcher     *switcher;
-  MBWindowManager *wm;
-
-  switcher = HD_SWITCHER(
-                hd_comp_mgr_get_switcher (HD_COMP_MGR (priv->comp_mgr)));
-
-  hd_switcher_get_control_area_size (HD_SWITCHER (switcher),
-				     &control_width, &control_height);
-
-  wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-  if (wm)
-    {
-      g_debug ("Adjust dialogue position of %p", wm);
-      mb_adjust_dialog_title_position (wm,
-				       control_width);
-    }
-  else
-    g_debug ("Don't adjust position because there's no WM");
-
-  clutter_actor_get_size (priv->operator, &op_width, &op_height);
-
-  clutter_actor_set_position (priv->operator,
-			      control_width + HDH_OPERATOR_PADDING,
-			      (control_height - op_height)/2);
 }
 
 void

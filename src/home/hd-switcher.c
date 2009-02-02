@@ -59,9 +59,6 @@ enum
 
 struct _HdSwitcherPrivate
 {
-  ClutterActor         *status_area;
-  ClutterActor         *status_menu;
-
   HdLauncher           *launcher;
   HdTaskNavigator      *task_nav;
 
@@ -361,8 +358,6 @@ static void
 hd_switcher_clicked (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-  HdHome	    *home =
-    HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
 
   g_debug("entered hd_switcher_clicked: state=%d\n",
         hd_render_manager_get_state());
@@ -375,9 +370,6 @@ hd_switcher_clicked (HdSwitcher *switcher)
       g_source_remove (priv->press_timeout);
       priv->press_timeout = 0;
     }
-
-  /* Hide Home edit button */
-  hd_home_hide_edit_button (home);
 
   /*
    * We have the following scenarios:
@@ -577,40 +569,6 @@ hd_switcher_add_window_actor (HdSwitcher * switcher, ClutterActor * actor)
   hd_task_navigator_add_window (priv->task_nav, actor);
 }
 
-void
-hd_switcher_add_status_menu (HdSwitcher *switcher, ClutterActor *sa)
-{
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-
-  priv->status_menu = sa;
-}
-
-void
-hd_switcher_remove_status_menu (HdSwitcher *switcher, ClutterActor *sa)
-{
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-
-  priv->status_menu = NULL;
-}
-
-void
-hd_switcher_add_status_area (HdSwitcher *switcher, ClutterActor *sa)
-{
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-
-  hd_render_manager_set_status_area(sa);
-  priv->status_area = sa;
-}
-
-void
-hd_switcher_remove_status_area (HdSwitcher *switcher, ClutterActor *sa)
-{
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-
-  hd_render_manager_set_status_area(NULL);
-  priv->status_area = NULL;
-}
-
 static gboolean
 hd_switcher_notification_clicked (HdSwitcher *switcher, HdNote *note)
 {
@@ -768,30 +726,6 @@ hd_switcher_get_task_navigator (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   return CLUTTER_ACTOR(priv->task_nav);
-}
-
-/**
- * This function will get the height of the task switcher and the width of the
- * task switcher plus the width of the status area (if the status area is
- * present).
- */
-void
-hd_switcher_get_control_area_size (HdSwitcher *switcher,
-				   guint *control_width,
-				   guint *control_height)
-{
-  HdSwitcherPrivate *priv = switcher->priv;
-  guint              status_width = 0, status_height = 0;
-
-  if (priv->status_area)
-    clutter_actor_get_size (priv->status_area,
-			    &status_width, &status_height);
-
-  if (control_width)
-    *control_width = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH + status_width;
-
-  if (control_height)
-    *control_height = HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT;
 }
 
 static void

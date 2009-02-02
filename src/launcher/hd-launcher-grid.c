@@ -767,8 +767,8 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
 
         order_diff = (CLUTTER_UNITS_TO_FLOAT(pos.x) +
                      (CLUTTER_UNITS_TO_FLOAT(pos.y)*5)) /
-                       (HD_COMP_MGR_SCREEN_WIDTH +
-                        HD_COMP_MGR_SCREEN_HEIGHT*5/2);
+                       (HD_COMP_MGR_LANDSCAPE_WIDTH +
+                        HD_COMP_MGR_LANDSCAPE_HEIGHT*5/2);
         if (order_diff>1) order_diff = 1;
         order_amt = amount*2 - order_diff;
         if (order_amt<0) order_amt = 0;

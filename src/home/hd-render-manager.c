@@ -38,6 +38,7 @@
 #include "hd-task-navigator.h"
 #include "hd-transition.h"
 #include "hd-wm.h"
+#include "hd-util.h"
 #include "hd-title-bar.h"
 
 #include <matchbox/core/mb-wm.h>
@@ -115,6 +116,7 @@ struct _HdRenderManagerPrivate {
   ClutterActor         *launcher;
   HdHome               *home;
   ClutterActor         *status_area;
+  MBWindowManagerClient *status_area_client;
   ClutterActor         *status_menu;
   ClutterActor         *operator;
   ClutterActor         *button_task_nav;
@@ -143,6 +145,9 @@ struct _HdRenderManagerPrivate {
 };
 
 /* ------------------------------------------------------------------------- */
+static void
+stage_allocation_changed(ClutterActor *actor, GParamSpec *unused,
+                         ClutterActor *stage);
 static void
 hd_render_manager_damage_redraw_notify(void);
 static void
@@ -197,7 +202,7 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   priv->button_edit = g_object_ref(hd_home_get_edit_button(priv->home));
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               priv->button_edit);
-  priv->operator = g_object_ref(hd_home_get_operator(priv->home));
+  hd_render_manager_set_operator(g_object_ref(hd_home_get_operator(priv->home)));
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               priv->operator);
 
@@ -206,6 +211,8 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
                               CLUTTER_ACTOR(priv->task_nav));
 
   priv->title_bar = g_object_ref(g_object_new(HD_TYPE_TITLE_BAR, NULL));
+  g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
+                           G_CALLBACK(stage_allocation_changed), priv->title_bar);
   hd_title_bar_set_theme(priv->title_bar,
                             MB_WM_COMP_MGR(priv->comp_mgr)->wm->theme);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
@@ -246,10 +253,15 @@ hd_render_manager_class_init (HdRenderManagerClass *klass)
 static void
 hd_render_manager_init (HdRenderManager *self)
 {
+  ClutterActor *stage;
   HdRenderManagerPrivate *priv;
+
+  stage = clutter_stage_get_default();
 
   self->priv = priv = HD_RENDER_MANAGER_GET_PRIVATE (self);
   clutter_actor_set_name(CLUTTER_ACTOR(self), "HdRenderManager");
+  g_signal_connect_swapped(stage, "notify::allocation",
+                           G_CALLBACK(stage_allocation_changed), self);
 
   priv->state = HDRM_STATE_UNDEFINED;
   priv->current_blur = HDRM_BLUR_NONE;
@@ -261,8 +273,8 @@ hd_render_manager_init (HdRenderManager *self)
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->home_blur), FALSE);
   tidy_blur_group_set_use_alpha(CLUTTER_ACTOR(priv->home_blur), FALSE);
   tidy_blur_group_set_use_mirror(CLUTTER_ACTOR(priv->home_blur), TRUE);
-  clutter_actor_set_size(CLUTTER_ACTOR(priv->home_blur),
-                         HDRM_WIDTH, HDRM_HEIGHT);
+  g_signal_connect_swapped(stage, "notify::allocation",
+                           G_CALLBACK(stage_allocation_changed), priv->home_blur);
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->home_blur));
 
@@ -272,16 +284,17 @@ hd_render_manager_init (HdRenderManager *self)
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->task_nav_blur), FALSE);
   tidy_blur_group_set_use_alpha(CLUTTER_ACTOR(priv->task_nav_blur), TRUE);
   tidy_blur_group_set_use_mirror(CLUTTER_ACTOR(priv->task_nav_blur), FALSE);
-  clutter_actor_set_size(CLUTTER_ACTOR(priv->task_nav_blur),
-                         HDRM_WIDTH, HDRM_HEIGHT);
+  clutter_actor_set_size (CLUTTER_ACTOR(priv->task_nav_blur),
+                          HD_COMP_MGR_LANDSCAPE_WIDTH,
+                          HD_COMP_MGR_LANDSCAPE_HEIGHT);
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->task_nav_blur));
 
   priv->app_top = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->app_top),
                          "HdRenderManager:app_top");
-  clutter_actor_set_size(CLUTTER_ACTOR(priv->app_top),
-                           HDRM_WIDTH, HDRM_HEIGHT);
+  g_signal_connect_swapped(stage, "notify::allocation",
+                           G_CALLBACK(stage_allocation_changed), priv->app_top);
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->app_top), FALSE);
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->app_top));
@@ -289,8 +302,8 @@ hd_render_manager_init (HdRenderManager *self)
   priv->front = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->front),
                          "HdRenderManager:front");
-  clutter_actor_set_size(CLUTTER_ACTOR(priv->front),
-                             HDRM_WIDTH, HDRM_HEIGHT);
+  g_signal_connect_swapped(stage, "notify::allocation",
+                           G_CALLBACK(stage_allocation_changed), priv->front);
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->front), FALSE);
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->front));
@@ -298,8 +311,8 @@ hd_render_manager_init (HdRenderManager *self)
   priv->blur_front = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->blur_front),
                          "HdRenderManager:blur_front");
-  clutter_actor_set_size(CLUTTER_ACTOR(priv->blur_front),
-                             HDRM_WIDTH, HDRM_HEIGHT);
+  g_signal_connect_swapped(stage, "notify::allocation",
+                           G_CALLBACK(stage_allocation_changed), priv->blur_front);
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->blur_front), FALSE);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
                               CLUTTER_ACTOR(priv->blur_front));
@@ -351,6 +364,17 @@ hd_render_manager_notify_modified (ClutterActor          *actor,
   priv->in_notify = FALSE;
   return TRUE;
 }*/
+
+/* Resize @actor to the current screen dimensions.
+ * Also can be used to set @actor's initial size. */
+static void
+stage_allocation_changed(ClutterActor *actor, GParamSpec *unused,
+                         ClutterActor *stage)
+{
+  clutter_actor_set_size(actor,
+                         HD_COMP_MGR_SCREEN_WIDTH,
+                         HD_COMP_MGR_SCREEN_HEIGHT);
+}
 
 static void
 on_timeline_blur_new_frame(ClutterTimeline *timeline,
@@ -463,7 +487,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 static void
 hd_render_manager_set_input_viewport()
 {
-  ClutterGeometry geom[HDRM_BUTTON_COUNT];
+  ClutterGeometry geom[HDRM_BUTTON_COUNT + 1];
   int geom_count = 0;
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
@@ -475,13 +499,29 @@ hd_render_manager_set_input_viewport()
       for (i = 1; i <= HDRM_BUTTON_COUNT; i++)
         {
           ClutterActor *button;
-	  button = hd_render_manager_get_button((HDRMButtonEnum)i);
+          button = hd_render_manager_get_button((HDRMButtonEnum)i);
           if (CLUTTER_ACTOR_IS_VISIBLE(button) &&
               CLUTTER_ACTOR_IS_VISIBLE(clutter_actor_get_parent(button)))
             {
               clutter_actor_get_geometry (button, &geom[geom_count]);
               geom_count++;
             }
+        }
+
+      /* Block status area?  If so refer to the client geometry,
+       * because we might be right after a place_titlebar_elements()
+       * which could just have moved it. */
+      if (priv->state == HDRM_STATE_APP_PORTRAIT && priv->status_area
+          && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area)
+          && CLUTTER_ACTOR_IS_VISIBLE (clutter_actor_get_parent
+                                       (priv->status_area)))
+        { g_assert(priv->status_area_client);
+          const MBGeometry *src = &priv->status_area_client->frame_geometry;
+          ClutterGeometry *dst = &geom[geom_count++];
+          dst->x = src->x;
+          dst->y = src->y;
+          dst->width  = src->width;
+          dst->height = src->height;
         }
     }
   else
@@ -502,10 +542,7 @@ void hd_render_manager_set_order ()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  /* FIXME why would this get hidden? */
-  clutter_actor_show(CLUTTER_ACTOR(priv->home));
-
-  HDRMButtonEnum visible_top_left = HDRM_BUTTON_LAUNCHER;
+  HDRMButtonEnum visible_top_left = HDRM_BUTTON_NONE;
   HDRMButtonEnum visible_top_right = HDRM_BUTTON_NONE;
 
   switch (priv->state)
@@ -521,6 +558,7 @@ void hd_render_manager_set_order ()
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
+        clutter_actor_show(CLUTTER_ACTOR(priv->home));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         hd_home_update_layout (priv->home);
         break;
@@ -528,6 +566,7 @@ void hd_render_manager_set_order ()
       case HDRM_STATE_HOME_EDIT_DLG:
         visible_top_left = HDRM_BUTTON_MENU;
         visible_top_right = HDRM_BUTTON_HOME_BACK;
+        clutter_actor_show(CLUTTER_ACTOR(priv->home));
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
@@ -536,8 +575,10 @@ void hd_render_manager_set_order ()
       case HDRM_STATE_APP:
         visible_top_left = HDRM_BUTTON_TASK_NAV;
         visible_top_right = HDRM_BUTTON_NONE;
+      case HDRM_STATE_APP_PORTRAIT:
+        clutter_actor_hide(CLUTTER_ACTOR(priv->home));
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
-        clutter_actor_show(CLUTTER_ACTOR(priv->launcher));
+        clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         break;
       case HDRM_STATE_APP_FULLSCREEN:
@@ -550,6 +591,7 @@ void hd_render_manager_set_order ()
       case HDRM_STATE_TASK_NAV:
         visible_top_left = HDRM_BUTTON_LAUNCHER;
         visible_top_right = HDRM_BUTTON_NONE;
+        clutter_actor_show(CLUTTER_ACTOR(priv->home));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->task_nav_blur));
@@ -558,7 +600,7 @@ void hd_render_manager_set_order ()
       case HDRM_STATE_LAUNCHER:
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_LAUNCHER_BACK;
-
+        clutter_actor_show(CLUTTER_ACTOR(priv->home));
         clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_show(CLUTTER_ACTOR(priv->launcher));
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->task_nav_blur));
@@ -655,6 +697,8 @@ void hd_render_manager_set_order ()
     }
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
 
+  hd_render_manager_place_titlebar_elements();
+
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport */
   hd_render_manager_set_input_viewport();
@@ -698,11 +742,23 @@ void hd_render_manager_set_status_area (ClutterActor *item)
 
   if (item)
     {
+      MBWMCompMgrClient *cc;
+
+      cc = g_object_get_data(G_OBJECT(item), "HD-MBWMCompMgrClutterClient");
+      priv->status_area_client = cc->wm_client;
       priv->status_area = g_object_ref(item);
       clutter_actor_reparent(priv->status_area, CLUTTER_ACTOR(priv->blur_front));
+      g_signal_connect(item, "notify::allocation",
+                       G_CALLBACK(hd_render_manager_place_titlebar_elements),
+                       NULL);
     }
   else
-    priv->status_area = NULL;
+    {
+      priv->status_area = NULL;
+      priv->status_area_client = NULL;
+    }
+
+  hd_render_manager_place_titlebar_elements();
 }
 
 void hd_render_manager_set_status_menu (ClutterActor *item)
@@ -729,9 +785,7 @@ void hd_render_manager_set_operator (ClutterActor *item)
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
   if (priv->operator)
-    {
-      g_object_unref(priv->operator);
-    }
+    g_object_unref(priv->operator);
   priv->operator = CLUTTER_ACTOR(g_object_ref(item));
 }
 
@@ -843,6 +897,10 @@ gboolean hd_render_manager_get_visible(HDRMButtonEnum button)
   {
     case HDRM_BUTTON_EDIT:
       return CLUTTER_ACTOR_IS_VISIBLE(priv->button_edit);
+    case HDRM_BUTTON_TASK_NAV:
+      return CLUTTER_ACTOR_IS_VISIBLE(priv->button_task_nav);
+    case HDRM_BUTTON_LAUNCHER:
+      return CLUTTER_ACTOR_IS_VISIBLE(priv->button_launcher);
     default:
       g_warning("%s: Not supposed to be asking for visibility of %d",
                 __FUNCTION__, button);
@@ -951,9 +1009,36 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       /* we always need to restack here */
       hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
 
+      /*
+       * Coming not from portrait mode going to APP state.
+       * Consider APP_PORTRAIT state instead.  Needs to check
+       * after restacking because should_be_portrait() needs
+       * visibilities to be sorted out.
+       */
+      if (oldstate != HDRM_STATE_APP_PORTRAIT && state == HDRM_STATE_APP
+          && hd_comp_mgr_should_be_portrait (priv->comp_mgr))
+        {
+          priv->in_set_state = FALSE;
+          hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+        }
+
       hd_render_manager_set_order();
+
+      /* Switch between portrait <=> landscape modes. */
+      if ((state == HDRM_STATE_APP_PORTRAIT || oldstate == HDRM_STATE_APP_PORTRAIT)
+          && hd_util_change_screen_orientation (wm, state == HDRM_STATE_APP_PORTRAIT))
+        {
+          tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
+          clutter_stage_queue_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
+        }
     }
   priv->in_set_state = FALSE;
+}
+
+/* Returns whether set_state() is in progress. */
+gboolean hd_render_manager_is_changing_state(void)
+{
+  return the_render_manager->priv->in_set_state;
 }
 
 HDRMStateEnum  hd_render_manager_get_state()
@@ -973,6 +1058,7 @@ static const char *hd_render_manager_state_str(HDRMStateEnum state)
     case HDRM_STATE_HOME_EDIT_DLG : return "HDRM_STATE_HOME_EDIT_DLG";
     case HDRM_STATE_APP : return "HDRM_STATE_APP";
     case HDRM_STATE_APP_FULLSCREEN : return "HDRM_STATE_APP_FULLSCREEN";
+    case HDRM_STATE_APP_PORTRAIT: return "HDRM_STATE_APP_PORTRAIT";
     case HDRM_STATE_TASK_NAV : return "HDRM_STATE_TASK_NAV";
     case HDRM_STATE_LAUNCHER : return "HDRM_STATE_LAUNCHER";
   }
@@ -1172,23 +1258,63 @@ void hd_render_manager_set_reactive(gboolean reactive)
  * rect in blockers */
 static gboolean
 hd_render_manager_is_visible(GList *blockers,
-                             const ClutterGeometry *rectx)
+                             ClutterGeometry rect)
 {
-  GList *bit;
-  ClutterGeometry rect = *rectx;
   /* clip for every block */
-  bit = g_list_first(blockers);
-  while (bit)
+  for (; blockers; blockers = blockers->next)
     {
-      ClutterGeometry blocker = *(ClutterGeometry*)bit->data;
+      ClutterGeometry blocker = *(ClutterGeometry*)blockers->data;
+      guint rect_b, blocker_b;
+
+      /* If rect does not fit inside blocker in the X axis... */
+      if (!(blocker.x <= rect.x &&
+            rect.x+rect.width <= blocker.x+blocker.width))
+        continue;
+
       /* Because most windows will go edge->edge, just do a very simplistic
        * clipping in the Y direction */
-      /* If rect fits inside blocker in the X axis... */
-      if (blocker.width >= rect.width &&
-          blocker.x <= rect.x+(blocker.width-rect.width))
+      rect_b    = rect.y + rect.height;
+      blocker_b = blocker.y + blocker.height;
+
+      if (rect.y < blocker.y)
+        { /* top of rect is above blocker */
+          if (rect_b < blocker.y)
+            /* rect is above blocker */
+            continue;
+          if (rect_b < blocker_b)
+            /* rect is half above blocker, clip the rest */
+            rect.height -= rect_b - blocker.y;
+          else
+            { /* rect is split into two pieces by blocker */
+              rect.height = blocker.y - rect.y;
+              if (hd_render_manager_is_visible(blockers, rect))
+                /* upper half is visible */
+                return TRUE;
+
+              /* continue with the lower half */
+              rect.y = blocker_b;
+              rect.height = rect_b - blocker_b;
+            }
+        }
+      else if (rect.y < blocker_b)
+        { /* top of rect is inside blocker */
+          if (rect_b < blocker_b)
+            /* rect is confined in blocker */
+            return FALSE;
+          else
+            { /* rect is half below blocker, clip the rest */
+              rect.height -= blocker_b - rect.y;
+              rect.y       = blocker_b;
+            }
+        }
+      else
+        /* rect is completely below blocker */;
+
+      if (blocker.x <= rect.x &&
+          rect.x+rect.width <= blocker.x+blocker.width)
         {
-          if (blocker.height >= rect.height &&
-              blocker.y <= rect.y-((gint)blocker.height-(gint)rect.height))
+          if (blocker.y <= rect.y &&
+              rect.y+rect.height <= blocker.y+blocker.height)
             {
               /* If rect fits inside blocker in the Y axis,
                * it is def. not visible */
@@ -1209,7 +1335,6 @@ hd_render_manager_is_visible(GList *blockers,
               rect.y = blocker.y + blocker.height;
             }
         }
-      bit = bit->next;
     }
   return TRUE;
 }
@@ -1272,7 +1397,7 @@ void hd_render_manager_append_geo_cb(ClutterActor *actor, gpointer data)
     {
       ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
       clutter_actor_get_geometry(actor, geo);
-      *list = g_list_append(*list, geo);
+      *list = g_list_prepend(*list, geo);
     }
 }
 
@@ -1292,7 +1417,7 @@ void hd_render_manager_set_visibilities()
                             (gpointer)&blockers);
   /* Now check to see if the whole screen is covered, and if so
    * don't bother rendering blurring */
-  if (hd_render_manager_is_visible(blockers, &fullscreen_geo))
+  if (hd_render_manager_is_visible(blockers, fullscreen_geo))
     {
       clutter_actor_show(CLUTTER_ACTOR(priv->home_blur));
     }
@@ -1309,8 +1434,8 @@ void hd_render_manager_set_visibilities()
         clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
       if (child != CLUTTER_ACTOR(priv->blur_front))
         {
-          ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
-          clutter_actor_get_geometry(child, geo);
+          ClutterGeometry geo;
+          clutter_actor_get_geometry(child, &geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
           if (hd_render_manager_is_visible(blockers, geo))
             clutter_actor_show(child);
@@ -1318,7 +1443,7 @@ void hd_render_manager_set_visibilities()
             clutter_actor_hide(child);
           /* Add the geometry to our list of blockers and go to next... */
           if (hd_render_manager_actor_opaque(child))
-            blockers = g_list_append(blockers, geo);
+            blockers = g_list_prepend(blockers, g_memdup(&geo, sizeof(geo)));
         }
     }
 
@@ -1405,4 +1530,77 @@ void hd_render_manager_blur_if_you_need_to(MBWindowManagerClient *c)
   if (parent == CLUTTER_ACTOR (the_render_manager->priv->app_top)
       || parent == CLUTTER_ACTOR (the_render_manager->priv->front))
     hd_render_manager_set_blur_app(TRUE);
+}
+
+/* Returns whether @c's actor is visible in clutter sense.  If so, then
+ * it most probably is visible to the user as well.  It is assumed that
+ * set_visibilities() have been sorted out for the current stacking. */
+gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c)
+{
+  ClutterActor *a;
+  MBWMCompMgrClutterClient *cc;
+
+  if (!(cc = MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client)))
+    return FALSE;
+  if (!(a  = mb_wm_comp_mgr_clutter_client_get_actor(cc)))
+    return FALSE;
+  g_object_unref(a);
+
+  /* It is necessary to check the parents because sometimes
+   * hd_render_manager_set_visibilities() hides the container
+   * altogether.  Stage is never visible. */
+  while (a != CLUTTER_ACTOR (the_render_manager))
+    {
+      g_return_val_if_fail (a != NULL, FALSE);
+      if (!CLUTTER_ACTOR_IS_VISIBLE(a))
+        return FALSE;
+      a = clutter_actor_get_parent(a);
+    }
+
+  return TRUE;
+}
+
+/* Place the status area, the operator logo and the title bar,
+ * depending on the visible visual elements. */
+void hd_render_manager_place_titlebar_elements (void)
+{
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  guint x;
+
+  /* 
+   * tasks button    state change
+   * status area     window mapped
+   * operator logo   dbus
+   * title padding   
+   */
+
+  x = 0;
+
+  if (CLUTTER_ACTOR_IS_VISIBLE(priv->button_task_nav)
+      || CLUTTER_ACTOR_IS_VISIBLE(priv->button_launcher))
+    x += HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+
+  if (priv->status_area && CLUTTER_ACTOR_IS_VISIBLE(priv->status_area))
+    {
+      g_assert(priv->status_area_client && priv->status_area_client->window);
+      if (priv->status_area_client->frame_geometry.x != x)
+        { /* Reposition the status area. */
+          MBWindowManagerClient *c = priv->status_area_client;
+          c->frame_geometry.x = c->window->geometry.x = x;
+          mb_wm_client_geometry_mark_dirty(c);
+          x += c->window->geometry.width;
+        }
+      else
+        x += priv->status_area_client->frame_geometry.width;
+    }
+
+  if (priv->operator && CLUTTER_ACTOR_IS_VISIBLE(priv->operator))
+    /* Don't update @x since operator and app title are not shown at once. */
+    clutter_actor_set_x(priv->operator, x + HD_COMP_MGR_OPERATOR_PADDING);
+
+  if (STATE_ONE_OF(priv->state, HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT))
+    { /* Otherwise we don't show a title. */
+      g_debug("application title at %u", x);
+      mb_adjust_dialog_title_position(MB_WM_COMP_MGR(priv->comp_mgr)->wm, x);
+    }
 }

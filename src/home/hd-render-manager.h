@@ -87,6 +87,7 @@ typedef enum
   HDRM_STATE_APP_FULLSCREEN = 1 << 5, /* app frontmost and over everything */
   HDRM_STATE_TASK_NAV       = 1 << 6,
   HDRM_STATE_LAUNCHER       = 1 << 7,
+  HDRM_STATE_APP_PORTRAIT   = 1 << 8,
 } HDRMStateEnum;
 
 /* Does the desktop need to be above apps? */
@@ -106,7 +107,8 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
 
 #define STATE_IS_APP(s) \
-  STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_FULLSCREEN)
+  STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_FULLSCREEN | \
+                    HDRM_STATE_APP_PORTRAIT)
 
 #define STATE_SHOW_OPERATOR(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
@@ -117,7 +119,8 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_APP)
 
 #define STATE_SHOW_STATUS_AREA(s) \
-  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_APP)
+  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_APP | \
+                    HDRM_STATE_APP_PORTRAIT)
 
 /* Are we in a state where we should blur the buttons + status menu?
  * Task Navigator + launcher zoom out, so are a bad idea. */
@@ -160,14 +163,17 @@ void hd_render_manager_add_to_front_group(ClutterActor *a);
 
 void hd_render_manager_set_state (HDRMStateEnum state);
 HDRMStateEnum hd_render_manager_get_state(void);
+gboolean hd_render_manager_is_changing_state(void);
 const char *hd_render_manager_get_state_str(void);
 gboolean hd_render_manager_in_transition(void);
 void hd_render_manager_set_blur_app(gboolean blur);
 void hd_render_manager_blur_if_you_need_to(MBWindowManagerClient *c);
+gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c);
 void hd_render_manager_set_launcher_subview(gboolean subview);
 
 void hd_render_manager_return_windows(void);
 void hd_render_manager_restack(void);
+void hd_render_manager_place_titlebar_elements (void);
 
 /* Sets whether any of the buttons will actually be set to do anything */
 void hd_render_manager_set_reactive(gboolean reactive);

@@ -113,7 +113,7 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
     return;
 
   pop_top = data->geo.y==0;
-  pop_bottom = data->geo.y+data->geo.height==480;
+  pop_bottom = data->geo.y+data->geo.height==HD_COMP_MGR_SCREEN_HEIGHT;
   amt =  (float)clutter_timeline_get_progress(timeline);
   /* reverse if we're removing this */
   if (data->event == MBWMCompMgrClientEventUnmap)

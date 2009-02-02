@@ -143,7 +143,8 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
 			    MBWMClientReqGeomType  flags)
 {
   const MBGeometry *geom;
-  Bool              change_size;
+  int north = 0, south = 0, west = 0, east = 0;
+  MBWindowManager *wm = client->wmref;
 
   /*
    * When we get an internal geometry request, like from the layout manager,
@@ -158,71 +159,61 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
   geom = (flags & MBWMClientReqGeomIsViaConfigureReq) ?
     &client->window->geometry : &client->frame_geometry;
 
-  change_size = (geom->height != new_geometry->height);
+  if (client->decor)
+    mb_wm_theme_get_decor_dimensions (wm->theme, client,
+                                      &north, &south, &west, &east);
 
-  if (change_size)
+  if (flags & MBWMClientReqGeomIsViaConfigureReq)
     {
-      int north = 0, south = 0, west = 0, east = 0;
-      MBWindowManager *wm = client->wmref;
+      /*
+       * Calculate the frame size from the window size
+       */
+      MBWM_DBG ("ConfigureRequest [%d,%d;%dx%d] -> [%d,%d;%dx%d]\n",
+                client->window->geometry.x,
+                client->window->geometry.y,
+                client->window->geometry.width,
+                client->window->geometry.height,
+                new_geometry->x,
+                new_geometry->y,
+                new_geometry->width,
+                new_geometry->height);
 
-      if (client->decor)
-	mb_wm_theme_get_decor_dimensions (wm->theme, client,
-					  &north, &south, &west, &east);
+      client->window->geometry.height = new_geometry->height;
+      client->frame_geometry.height
+        = client->window->geometry.height + (south + north);
 
-      if (flags & MBWMClientReqGeomIsViaConfigureReq)
-	{
-	  /*
-	   * Calculate the frame size from the window size
-	   */
-	  MBWM_DBG ("ConfigureRequest [%d,%d;%dx%d] -> [%d,%d;%dx%d]\n",
-		    client->window->geometry.x,
-		    client->window->geometry.y,
-		    client->window->geometry.width,
-		    client->window->geometry.height,
-		    new_geometry->x,
-		    new_geometry->y,
-		    new_geometry->width,
-		    new_geometry->height);
+      client->frame_geometry.y = wm->xdpy_height -
+        (client->frame_geometry.height);
+      client->window->geometry.y = client->frame_geometry.y + north;
 
-	  client->window->geometry.height = new_geometry->height;
-	  client->frame_geometry.height
-	    = client->window->geometry.height + (south + north);
+      client->frame_geometry.width = wm->xdpy_width;
+      client->window->geometry.width = wm->xdpy_width - (west + east);
 
-	  client->frame_geometry.y = wm->xdpy_height -
-	    (client->frame_geometry.height);
-	  client->window->geometry.y = client->frame_geometry.y + north;
-
-	  client->frame_geometry.width = wm->xdpy_width;
-	  client->window->geometry.width = wm->xdpy_width - (west + east);
-
-	  client->frame_geometry.x = 0;
-	  client->window->geometry.x = west;
-	}
-      else
-	{
-	  /*
-	   * Internal request, e.g., from layout manager; work out client
-	   * window size from the provided frame size.
-	   */
-	  client->frame_geometry.x      = 0;
-	  client->frame_geometry.width  = wm->xdpy_width;
-	  client->frame_geometry.height = new_geometry->height;
-	  client->frame_geometry.y      = wm->xdpy_height-new_geometry->height;
-
-	  client->window->geometry.x
-	    = client->frame_geometry.x + west;
-	  client->window->geometry.y
-	    = client->frame_geometry.y + north;
-	  client->window->geometry.width
-	    = client->frame_geometry.width - (west + east);
-	  client->window->geometry.height
-	    = client->frame_geometry.height - (south + north);
-	}
-
-      mb_wm_client_geometry_mark_dirty (client);
-
-      return True; /* Geometry accepted */
+      client->frame_geometry.x = 0;
+      client->window->geometry.x = west;
     }
+  else
+    {
+      /*
+       * Internal request, e.g., from layout manager; work out client
+       * window size from the provided frame size.
+       */
+      client->frame_geometry.x      = 0;
+      client->frame_geometry.width  = wm->xdpy_width;
+      client->frame_geometry.height = new_geometry->height;
+      client->frame_geometry.y      = wm->xdpy_height-new_geometry->height;
+
+      client->window->geometry.x
+        = client->frame_geometry.x + west;
+      client->window->geometry.y
+        = client->frame_geometry.y + north;
+      client->window->geometry.width
+        = client->frame_geometry.width - (west + east);
+      client->window->geometry.height
+        = client->frame_geometry.height - (south + north);
+    }
+
+  mb_wm_client_geometry_mark_dirty (client);
 
   return True; /* Geometry accepted */
 }
