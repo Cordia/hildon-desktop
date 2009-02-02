@@ -1,5 +1,14 @@
 2009-02-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* test/portrait-common.c
+	* test/test-portrait-dlg.c
+	* test/test-portrait-win.c:
+	  New test programs.
+	* test/test-portrait.c:
+	  Obsolete, removed.
+
+2009-02-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Initial support for portrait mode.
 
 	* configure.ac:
