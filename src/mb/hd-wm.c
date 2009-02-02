@@ -300,8 +300,7 @@ hd_wm_get_current_app (MBWindowManager *wm)
   MBWindowManagerClient *c;
 
   /* Select the topmost client that is either the desktop
-   * or a non-transient %HdApp; select it's leader if that
-   * happens to be in a stackable group. */
+   * or a %HdApp with full screen coverage. */
   for (c = wm->stack_top; ; c = c->stacked_below)
     {
       /* Hmm, the desktop should always be in the stack, shouldn it? */
@@ -311,8 +310,6 @@ hd_wm_get_current_app (MBWindowManager *wm)
         return c;
       if (!HD_IS_APP (c))
         continue;
-      if (c->transient_for)
-        continue;
       if (!HD_COMP_MGR_CLIENT_IS_MAXIMIZED (c->frame_geometry))
         /* Not covering the whole application area. */
         continue;
@@ -321,7 +318,7 @@ hd_wm_get_current_app (MBWindowManager *wm)
       if (c->window->name && !g_strncasecmp (c->window->name, "systemui", 8))
         /* systemui is not an application. */
         continue;
-      return HD_APP (c)->leader ? MB_WM_CLIENT (HD_APP (c)->leader) : c;
+      return c;
     }
 }
 
