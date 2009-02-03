@@ -1,5 +1,17 @@
 2009-02-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Added new D-BUS signal com.nokia.hildon_desktop.exit_app_view for RR
+	to be able to switch to task switching view.  The signal has no effect
+	if sent in non-application view.
+
+	* src/home/hd-switcher.h
+	* src/mb/hd-comp-mgr.c:
+	  Removed some obsoleted definitions and declarations.
+	* src/util/hd-dbus.c:
+	  Signal handler added.
+
+2009-02-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Made window hibernation and hibernated window selection
 	in switcher view usable.
 

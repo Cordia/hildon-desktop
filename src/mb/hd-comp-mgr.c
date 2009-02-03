@@ -57,15 +57,8 @@
 #include <signal.h>
 #include <math.h>
 
+/* TODO Is it a TODO? */
 #define HIBERNATION_TIMEMOUT 3000 /* as suggested by 31410#10 */
-
-#define OSSO_BUS_ROOT          "com.nokia"
-#define OSSO_BUS_ROOT_PATH     "/com/nokia"
-#define OSSO_BUS_TOP           "top_application"
-
-#define LOWMEM_PROC_ALLOWED    "/proc/sys/vm/lowmem_allowed_pages"
-#define LOWMEM_PROC_USED       "/proc/sys/vm/lowmem_used_pages"
-#define LOWMEM_LAUNCH_THRESHOLD_DISTANCE 2500
 
 #define OPERATOR_APPLET_ID "_HILDON_OPERATOR_APPLET"
 
