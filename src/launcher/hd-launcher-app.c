@@ -241,8 +241,6 @@ void
 hd_launcher_app_set_state (HdLauncherApp *app, HdLauncherAppState state)
 {
   HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  g_debug ("%s: app %s state set to %d.\n", __FUNCTION__,
-      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)), state);
   priv->state = state;
 }
 

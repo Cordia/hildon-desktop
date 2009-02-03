@@ -92,7 +92,6 @@ struct HdCompMgrPrivate
   HdAppletLayoutManager *applet_manager[4];
 
   gboolean               stack_sync      : 1;
-  gboolean               low_mem         : 1;
 
   gint                   unmap_effect_running;
 
@@ -1536,22 +1535,6 @@ hd_comp_mgr_hibernate_all (HdCompMgr *hmgr, gboolean force)
       cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (hd_launcher_app_get_comp_mgr_client (app));
       hd_comp_mgr_hibernate_client (hmgr, cmgrcc, force);
     }
-}
-
-void
-hd_comp_mgr_set_low_memory_state (HdCompMgr * hmgr, gboolean on)
-{
-  HdCompMgrPrivate * priv = hmgr->priv;
-
-  priv->low_mem = on;
-}
-
-gboolean
-hd_comp_mgr_get_low_memory_state (HdCompMgr * hmgr)
-{
-  HdCompMgrPrivate * priv = hmgr->priv;
-
-  return priv->low_mem;
 }
 
 /* Does any visible client request portrait mode?

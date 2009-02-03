@@ -1,3 +1,18 @@
+2009-02-03  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	New and improved HdAppMgr for NB#98239.
+
+	* src/home/hd-render-manager.c: Added a property 'state', now changes
+	in state can be tracked with a signal.
+	* src/home/hd-render-manager.h:
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-app-mgr.h:
+	* src/launcher/hd-launcher-app.c: Removed debugging output.
+	* src/launcher/hd-launcher.c: Moved prestarting to HdAppMgr.
+	* src/mb/hd-comp-mgr.c: Moved low memory management to HdAppMgr.
+	* src/mb/hd-comp-mgr.h:
+	* src/util/hd-dbus.c: Removed memory signals.
+
 2009-02-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Added new D-BUS signal com.nokia.hildon_desktop.exit_app_view for RR

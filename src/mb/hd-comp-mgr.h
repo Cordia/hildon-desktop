@@ -117,10 +117,6 @@ void hd_comp_mgr_hibernate_all       (HdCompMgr *hmgr, gboolean force);
 void hd_comp_mgr_wakeup_client       (HdCompMgr       *hmgr,
 				      HdCompMgrClient *hclient);
 
-void hd_comp_mgr_set_low_memory_state (HdCompMgr * hmgr, gboolean on);
-
-gboolean hd_comp_mgr_get_low_memory_state (HdCompMgr * hmgr);
-
 gboolean hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr);
 
 Atom hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id);

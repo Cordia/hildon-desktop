@@ -62,10 +62,15 @@ GType hd_app_mgr_get_type (void) G_GNUC_CONST;
 
 HdAppMgr   *hd_app_mgr_get (void);
 
-gboolean hd_app_mgr_launch   (HdLauncherApp *app);
-gboolean hd_app_mgr_relaunch   (HdLauncherApp *app);
-gboolean hd_app_mgr_prestart (HdLauncherApp *app);
-gboolean hd_app_mgr_wakeup   (HdLauncherApp *app);
+gboolean hd_app_mgr_launch       (HdLauncherApp *app);
+gboolean hd_app_mgr_relaunch     (HdLauncherApp *app);
+gboolean hd_app_mgr_wakeup       (HdLauncherApp *app);
+gboolean hd_app_mgr_kill         (HdLauncherApp *app);
+
+void hd_app_mgr_prestartable     (HdLauncherApp *app);
+void hd_app_mgr_not_prestartable (HdLauncherApp *app);
+void hd_app_mgr_hibernatable     (HdLauncherApp *app);
+void hd_app_mgr_not_hibernatable (HdLauncherApp *app);
 
 /* Window matching */
 HdLauncherApp *hd_app_mgr_match_window (const char *res_name,

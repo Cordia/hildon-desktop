@@ -45,6 +45,35 @@
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
 /* ------------------------------------------------------------------------- */
+#define I_(str) (g_intern_static_string ((str)))
+
+GType
+hd_render_manager_state_get_type (void)
+{
+  static GType gtype = 0;
+
+  if (G_UNLIKELY (gtype == 0))
+    {
+      static GEnumValue values[] = {
+        { HDRM_STATE_UNDEFINED,      "HDRM_STATE_UNDEFINED",      "Undefined" },
+        { HDRM_STATE_HOME,           "HDRM_STATE_HOME",           "Home" },
+        { HDRM_STATE_HOME_EDIT,      "HDRM_STATE_HOME_EDIT",      "Home edit" },
+        { HDRM_STATE_HOME_EDIT_DLG,  "HDRM_STATE_HOME_EDIT_DLG",  "Home edit dialog" },
+        { HDRM_STATE_APP,            "HDRM_STATE_APP",            "Application" },
+        { HDRM_STATE_APP_FULLSCREEN, "HDRM_STATE_APP_FULLSCREEN", "Application fullscreen" },
+        { HDRM_STATE_TASK_NAV,       "HDRM_STATE_TASK_NAV",       "Task switcher" },
+        { HDRM_STATE_LAUNCHER,       "HDRM_STATE_LAUNCHER",       "Task launcher" },
+        { 0, NULL, NULL }
+      };
+
+      gtype = g_enum_register_static (I_("HdRenderManagerStateType"), values);
+    }
+
+  return gtype;
+}
+/* ------------------------------------------------------------------------- */
+
+/* ------------------------------------------------------------------------- */
 
 G_DEFINE_TYPE (HdRenderManager, hd_render_manager, CLUTTER_TYPE_GROUP);
 #define HD_RENDER_MANAGER_GET_PRIVATE(obj) \
@@ -54,6 +83,12 @@ G_DEFINE_TYPE (HdRenderManager, hd_render_manager, CLUTTER_TYPE_GROUP);
 /* The HdRenderManager singleton */
 static HdRenderManager *the_render_manager = NULL;
 
+/* HdRenderManager properties */
+enum
+{
+  PROP_0,
+  PROP_STATE
+};
 /* ------------------------------------------------------------------------- */
 
 typedef enum
@@ -167,6 +202,18 @@ static const char *
 hd_render_manager_state_str(HDRMStateEnum state);
 static void
 hd_render_manager_set_visibilities(void);
+
+static void
+hd_render_manager_get_property (GObject    *object,
+                                guint       property_id,
+                                GValue     *value,
+                                GParamSpec *pspec);
+static void
+hd_render_manager_set_property (GObject      *gobject,
+                                guint         prop_id,
+                                const GValue *value,
+                                GParamSpec   *pspec);
+
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    INIT     */
 /* ------------------------------------------------------------------------- */
@@ -221,6 +268,12 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   return the_render_manager;
 }
 
+HdRenderManager *
+hd_render_manager_get (void)
+{
+  return the_render_manager;
+}
+
 static void
 hd_render_manager_finalize (GObject *gobject)
 {
@@ -236,9 +289,12 @@ static void
 hd_render_manager_class_init (HdRenderManagerClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  GParamSpec *pspec;
 
   g_type_class_add_private (klass, sizeof (HdRenderManagerPrivate));
 
+  gobject_class->get_property = hd_render_manager_get_property;
+  gobject_class->set_property = hd_render_manager_set_property;
   gobject_class->finalize = hd_render_manager_finalize;
 
   signals[DAMAGE_REDRAW] =
@@ -248,6 +304,17 @@ hd_render_manager_class_init (HdRenderManagerClass *klass)
                     0, NULL, NULL,
                     g_cclosure_marshal_VOID__VOID,
                     G_TYPE_NONE, 0);
+
+  pspec = g_param_spec_enum ("state",
+                             "State", "Render manager state",
+                             HD_TYPE_RENDER_MANAGER_STATE,
+                             HDRM_STATE_UNDEFINED,
+                             G_PARAM_READABLE    |
+                             G_PARAM_WRITABLE    |
+                             G_PARAM_STATIC_NICK |
+                             G_PARAM_STATIC_NAME |
+                             G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (gobject_class, PROP_STATE, pspec);
 }
 
 static void
@@ -1030,6 +1097,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         hd_util_change_screen_orientation (wm, TRUE);
       else if (oldstate == HDRM_STATE_APP_PORTRAIT)
         hd_util_change_screen_orientation (wm, FALSE);
+
+      /* Signal the state has changed. */
+      g_object_notify (G_OBJECT (the_render_manager), "state");
     }
   priv->in_set_state = FALSE;
 }
@@ -1068,6 +1138,42 @@ const char *hd_render_manager_get_state_str()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   return hd_render_manager_state_str(priv->state);
+}
+
+static void
+hd_render_manager_get_property (GObject    *object,
+                                guint       property_id,
+                                GValue     *value,
+                                GParamSpec *pspec)
+{
+  switch (property_id)
+    {
+    case PROP_STATE:
+      g_value_set_enum (value, hd_render_manager_get_state ());
+      break;
+    default:
+      /* We don't have any other property... */
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+hd_render_manager_set_property (GObject      *gobject,
+                                guint         prop_id,
+                                const GValue *value,
+                                GParamSpec   *pspec)
+{
+  switch (prop_id)
+    {
+    case PROP_STATE:
+      hd_render_manager_set_state (g_value_get_enum (value));
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop_id, pspec);
+      break;
+    }
 }
 
 gboolean hd_render_manager_in_transition(void)

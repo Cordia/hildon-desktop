@@ -521,12 +521,6 @@ hd_launcher_lazy_traverse_tree (gpointer data)
       g_signal_connect (tile, "clicked",
                         G_CALLBACK (hd_launcher_application_tile_clicked),
                         item);
-
-      if (hd_launcher_app_get_prestart_mode (HD_LAUNCHER_APP (item)) ==
-            HD_APP_PRESTART_ALWAYS)
-        {
-          hd_app_mgr_prestart (HD_LAUNCHER_APP(item));
-        }
     }
 
   if (tdata->items->next)

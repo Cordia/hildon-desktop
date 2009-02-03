@@ -37,6 +37,7 @@
 
 G_BEGIN_DECLS
 
+#define HD_TYPE_RENDER_MANAGER_STATE (hd_render_manager_state_get_type ())
 #define HD_TYPE_RENDER_MANAGER      (hd_render_manager_get_type ())
 #define HD_RENDER_MANAGER(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), HD_TYPE_RENDER_MANAGER, HdRenderManager))
 #define HD_IS_RENDER_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HD_TYPE_RENDER_MANAGER))
@@ -136,13 +137,15 @@ typedef enum
 #define STATE_DO_PARTIAL_REDRAW(s) \
   (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
 
-GType hd_render_manager_get_type (void) G_GNUC_CONST;
+GType hd_render_manager_state_get_type (void) G_GNUC_CONST;
+GType hd_render_manager_get_type       (void) G_GNUC_CONST;
 
 HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
 		                           HdLauncher *launcher,
 		                           ClutterActor *launcher_group,
 					   HdHome *home,
 					   HdTaskNavigator *task_nav);
+HdRenderManager *hd_render_manager_get (void);
 
 void hd_render_manager_set_status_area (ClutterActor *item);
 void hd_render_manager_set_status_menu (ClutterActor *item);
