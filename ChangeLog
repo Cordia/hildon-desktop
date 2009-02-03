@@ -1,3 +1,18 @@
+2009-02-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Made window hibernation and hibernated window selection
+	in switcher view usable.
+
+	* src/home/hd-task-navigator.c:
+	  Resurrect hd_task_navigator_hibernate_window().
+	  Removed support for hibernated window decoration.
+	* src/home/hd-switcher.c (hd_switcher_zoom_in_complete):
+	  Crashed when the selected thumbnail belonged to a now
+	  hibernated client.
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_service_top):
+	  Thinko correction: dbus_message_append_args() takes pointers
+	  to arguments, even if the argument is a pointer itself.
+
 2009-02-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.18

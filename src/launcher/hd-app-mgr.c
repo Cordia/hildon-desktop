@@ -436,7 +436,7 @@ hd_app_mgr_service_top (const gchar *service, const gchar *param)
   dbus_message_set_no_reply (msg, TRUE);
 
   if (param)
-    dbus_message_append_args (msg, DBUS_TYPE_STRING, param,
+    dbus_message_append_args (msg, DBUS_TYPE_STRING, &param,
                               DBUS_TYPE_INVALID);
 
   if (!dbus_connection_send (conn, msg, NULL))

@@ -23,7 +23,6 @@
  *    .title_icon             #ClutterTexture
  *    .title_text             #ClutterLabel
  *   .close                   #ClutterCloneTexture
- *   .hibernation             #ClutterCloneTexture
  *
  * TNote.notewin hierarchy:
  *   HdNote::actor            #ClutterActor
@@ -181,6 +180,8 @@ typedef struct
    * -- @prison:      Clips, scales and positions @apwin.
    * -- @foreground:  Scaled decoration created from @Master_foreground
    *                  covering the whole thumbnail.  Faded when zooming.
+   * -- @close:       The cross in the top-right corner created from
+   *                  @Master_close.  Anchored in the middle.
    *
    * -- @title:       What to put in the thumbnail's title area.
    *                  Faded in/out when zooming.
@@ -189,12 +190,12 @@ typedef struct
    *                  Anchored in the middle.
    * -- @title_text:  If the title is a notification then its summary,
    *                  otherwise %NULL.
-   *
-   * -- @close:       The cross in the top-right corner created from
-   *                  @Master_close.  Anchored in the middle.
-   * -- @hibernation: Decoration created from @Master_hibernated to
-   *                  indicate hibernated state or %NULL to not apply
-   *                  such decoration.  Anchored in the middle.
+   * -- @saved_title: What the application window's title was when it
+   *                  left for hibernation.  It's only use is to know
+   *                  what to reset the thumb title to if its notification
+   *                  is removed while the client is still hibernated.
+   *                  Cleared when the window actor is replaced, presumably
+   *                  because it's woken up.
    *
    * -- @apwin:       The pristine application window, not to be touched.
    *                  Hidden if we have a .video.  Its name is set to the
@@ -226,9 +227,9 @@ typedef struct
    * -- @hdnote_changed_cb_id:  The ID of the signal handler used to
    *                            track changes in .hdnote if set.
    */
-  ClutterActor                *thwin, *prison, *foreground;
+  ClutterActor                *thwin, *prison, *foreground, *close;
   ClutterActor                *title, *title_icon, *title_text;
-  ClutterActor                *close, *hibernation;
+  gchar                       *saved_title;
   ClutterActor                *parent, *apwin, *video;
   GPtrArray                   *dialogs;
   const MBGeometry            *inapwin;
@@ -290,9 +291,8 @@ static ClutterActor *Navigator, *Scroller, *Notification_area;
  */
 static GArray *Thumbnails, *Notifications;
 
-/* Common textures for %Thumbnail.foreground, .close and .hybernate. */
-static ClutterTexture *Master_close, *Master_hibernated;
-static ClutterTexture *Master_foreground;
+/* Common textures for %Thumbnail.foreground and .close. */
+static ClutterTexture *Master_close, *Master_foreground;
 
 /*
  * Effect templates and their corresponding timelines.
@@ -1409,9 +1409,20 @@ thumb_title_text (const gchar *text)
 static void
 reset_thumb_title (Thumbnail * thumb)
 {
+  const gchar *new_title;
   const MBWMClientWindow *mbwmcwin;
 
-  mbwmcwin = actor_to_client_window (thumb->apwin);
+  /* What to reset the title to? */
+  if (thumb->saved_title)
+    /* Client must be having its sweet dreams in hibernation. */
+    new_title = thumb->saved_title;
+  else if ((mbwmcwin = actor_to_client_window (thumb->apwin)) != NULL
+           && mbwmcwin->name)
+    /* Normal case. */
+    new_title = mbwmcwin->name;
+  else /* I'm tempted to say "wtf?" here. */
+    new_title = "";
+
   if (!thumb->title)
     { /* @thumb is being created */
       g_assert (thumb->hdnote == NULL);
@@ -1424,12 +1435,12 @@ reset_thumb_title (Thumbnail * thumb)
       thumb->hdnote = NULL;
       thumb->title_icon = thumb->title_text = NULL;
     }
-  else if (!strcmp (mbwmcwin->name,
+  else if (!strcmp (new_title,
                     clutter_label_get_text (CLUTTER_LABEL (thumb->title))))
     /* Called from claim_win() to refresh the title if it's changed. */
     return;
 
-  set_thumb_title (thumb, thumb_title_text (mbwmcwin->name));
+  set_thumb_title (thumb, thumb_title_text (new_title));
 }
 
 /* Called when Thumbnail.hdnote's summary or icon changes to update
@@ -1673,34 +1684,27 @@ damage_control:
 /* Zooming }}} */
 
 /* Misc window commands {{{ */
-/* Add hibernation decoration to @win.  TODO No API to un-hibernate. */
+/* Prepare for the client of @win being hibernated.
+ * Undone when @win is replaced by the woken-up client's new actor. */
 void
 hd_task_navigator_hibernate_window (HdTaskNavigator * self,
                                     ClutterActor * win)
 {
-#if 1
-  // XXX Just remove until it's implemented properly.
-  hd_task_navigator_remove_window(self, win, NULL, NULL);
-  return;
-#else
   Thumbnail *thumb;
+  const MBWMClientWindow *mbwmcwin;
 
-  // XXX Hibernated apps should be presented exactly as running ones.
-  // XXX The texture must be saved because the @win is gonna kiss byebye.
   if (!(thumb = find_by_apwin (win)))
     return;
-  if (thumb->hibernation)
-    return;
 
-  thumb->hibernation = clutter_clone_texture_new (Master_hibernated);
-  clutter_actor_set_anchor_point_from_gravity (thumb->hibernation,
-                                               CLUTTER_GRAVITY_CENTER);
-  clutter_actor_set_position (thumb->hibernation,
-                              THWIN_TITLE_AREA_LEFT_GAP / 2,
-                              THWIN_TITLE_AREA_HEIGHT / 2);
-  clutter_container_add_actor (CLUTTER_CONTAINER (thumb->thwin),
-                               thumb->hibernation);
-#endif
+  /* Hibernating clients twice is a nonsense. */
+  g_return_if_fail (!thumb->saved_title);
+
+  mbwmcwin = actor_to_client_window (thumb->apwin);
+  g_return_if_fail (mbwmcwin != NULL);
+
+  /* Save the window name for reset_thumb_title(). */
+  g_return_if_fail (mbwmcwin->name);
+  thumb->saved_title = g_strdup (mbwmcwin->name);
 }
 
 /* Tells us to show @new_win in place of @old_win, and forget about
@@ -1717,9 +1721,14 @@ hd_task_navigator_replace_window (HdTaskNavigator * self,
   if (old_win == new_win || !(thumb = find_by_apwin (old_win)))
     return;
 
+  /* Discard the window name we saved when @old_win was hibernated,
+   * refer to the new MBWMClientWindow from now on. */
+  g_free (thumb->saved_title);
+  thumb->saved_title = NULL;
+
   /* The title is reset from claim_win() if it's changed,
    * eg. if the window is replaced because of stacking.
-   * TODO Should we ditch .dialogs? */
+   * TODO Should we ditch .dialogs?  I guess we don't. */
   showing = hd_task_navigator_is_active (self);
   if (showing)
     release_win (thumb);
@@ -1736,16 +1745,20 @@ static ClutterActor *add_notewin_from_hdnote (HdNote * hdnote);
 static gboolean tnote_matches_thumb (const TNote * tnote,
                                      const Thumbnail * thumb);
 
-/* Returns the window whose client's clutter client's texture is @win.
- * XXX Hibernation */
+/* Returns the window whose client's clutter client's texture is @win. */
 static MBWMClientWindow *
 actor_to_client_window (ClutterActor * win)
 {
-  const MBWMCompMgrClutterClient *cmgrcc;
+  const MBWMCompMgrClient *cmgrc;
 
-  cmgrcc = g_object_get_data (G_OBJECT (win),
-                              "HD-MBWMCompMgrClutterClient");
-  return MB_WM_COMP_MGR_CLIENT (cmgrcc)->wm_client->window;
+  cmgrc = g_object_get_data (G_OBJECT (win),
+                             "HD-MBWMCompMgrClutterClient");
+
+  g_return_val_if_fail(cmgrc,                     NULL);
+  g_return_val_if_fail(cmgrc->wm_client,          NULL);
+  g_return_val_if_fail(cmgrc->wm_client->window,  NULL);
+
+  return cmgrc->wm_client->window;
 }
 
 /* #ClutterEffectCompleteFunc for hd_task_navigator_remove_window()
@@ -1978,6 +1991,8 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
 
   /* We don't need .class_hint even if we're doing the TV-turned-off
    * effect on @thumb. */
+  g_free(thumb->saved_title);
+  thumb->saved_title = NULL;
   if (thumb->class_hint)
     {
       XFree (thumb->class_hint);
@@ -2549,9 +2564,6 @@ hd_task_navigator_init (HdTaskNavigator * self)
   /* Master pieces */
   Master_close      = load_icon ("qgn_home_close",
                                  MIN (THWIN_CLOSE_WIDTH, THWIN_CLOSE_HEIGHT));
-  Master_hibernated = load_icon ("hibernation-icon",
-                                 MIN (THWIN_TITLE_AREA_LEFT_GAP,
-                                      THWIN_TITLE_AREA_HEIGHT));
 
   style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
                                      "task-switcher-thumbnail", NULL,

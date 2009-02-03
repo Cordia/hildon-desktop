@@ -493,34 +493,28 @@ static void
 hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-  MBWMCompMgrClient     *cclient;
-  MBWindowManagerClient *c;
-  MBWindowManager       *wm;
   HdCompMgrClient       *hclient;
 
   g_debug("hd_switcher_zoom_in_complete: switcher=%p actor=%p\n", switcher,
           actor);
 
-  cclient =
-    g_object_get_data (G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
+  hclient = g_object_get_data (G_OBJECT (actor),
+                               "HD-MBWMCompMgrClutterClient");
+  g_assert (hclient);
 
-  g_assert (cclient);
-
-  c = cclient->wm_client;
-
-  wm = c->wmref;
-  hclient = HD_COMP_MGR_CLIENT (c->cm_client);
-
+  /* Stop any transition to app mode we may have had */
   priv->in_transition = FALSE;
   hd_render_manager_set_state(HDRM_STATE_APP);
-  /* Stop any transition to app mode we may have had */
   hd_render_manager_stop_transition();
 
   if (!hd_comp_mgr_client_is_hibernating (hclient))
     {
+      MBWindowManagerClient *c;
+
+      c = MB_WM_COMP_MGR_CLIENT(hclient)->wm_client;
       g_debug("hd_switcher_zoom_in_complete: calling "
               "mb_wm_activate_client c=%p\n", c);
-      mb_wm_activate_client (wm, c);
+      mb_wm_activate_client (c->wmref, c);
     }
   else
     {
