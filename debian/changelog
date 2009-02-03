@@ -1,7 +1,6 @@
-hildon-desktop (1:2.2.18-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.18-1) unstable; urgency=low
 
   Jan Arne:
-
   * When a task is open, access the Home view by long pressing the Tasks
     button. Fixes NB#88401
   * Add backup configuration. Fixes NB#96920
@@ -13,7 +12,10 @@ hildon-desktop (1:2.2.18-1~unreleased) unstable; urgency=low
   * Some fixes to the 'application not responding' dialog. Now it is actually
     shown.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 26 Jan 2009 10:14:25 +0200
+  Adam:
+  * Initial portrait mode support.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 03 Feb 2009 10:08:50 +0200
 
 hildon-desktop (1:2.2.17-1) unstable; urgency=low
 
