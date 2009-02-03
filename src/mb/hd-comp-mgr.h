@@ -57,7 +57,7 @@ typedef struct HdCompMgrClientPrivate HdCompMgrClientPrivate;
 #define HD_COMP_MGR_CLIENT_CLASS(c) ((HdCompMgrClientClass*)(c))
 #define HD_TYPE_COMP_MGR_CLIENT     (hd_comp_mgr_client_class_type ())
 #define HD_COMP_MGR_CLIENT_IS_MAXIMIZED(geom)                       \
-        ((geom).x == 0 && (geom).width == HD_COMP_MGR_SCREEN_WIDTH  \
+        ((geom).x == 0 && (geom).width >= HD_COMP_MGR_SCREEN_WIDTH  \
          && (geom).y <= HD_COMP_MGR_TOP_MARGIN                      \
          && (geom).height >= (HD_COMP_MGR_SCREEN_HEIGHT             \
                               - HD_COMP_MGR_TOP_MARGIN))

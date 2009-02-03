@@ -1026,12 +1026,10 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       hd_render_manager_set_order();
 
       /* Switch between portrait <=> landscape modes. */
-      if ((state == HDRM_STATE_APP_PORTRAIT || oldstate == HDRM_STATE_APP_PORTRAIT)
-          && hd_util_change_screen_orientation (wm, state == HDRM_STATE_APP_PORTRAIT))
-        {
-          tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
-          clutter_stage_queue_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
-        }
+      if (state == HDRM_STATE_APP_PORTRAIT)
+        hd_util_change_screen_orientation (wm, TRUE);
+      else if (oldstate == HDRM_STATE_APP_PORTRAIT)
+        hd_util_change_screen_orientation (wm, FALSE);
     }
   priv->in_set_state = FALSE;
 }
@@ -1337,6 +1335,7 @@ hd_render_manager_is_visible(GList *blockers,
             }
         }
     }
+
   return TRUE;
 }
 

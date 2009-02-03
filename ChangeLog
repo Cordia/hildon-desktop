@@ -1,3 +1,14 @@
+2009-02-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.h:
+	  Allow clients/actors wider than SCREEN_WIDTH to be considered
+	  IS_MAXIMIZED.  Failing so the actor may be parented to app_top
+	  by mistake, causing the tasks button to disappear.
+	* src/home/hd-render-manager.c:
+	  Removed unnecessary full redraw requests when switching between
+	  landscale/portrait modes.
+	  
+
 2009-02-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#94308
