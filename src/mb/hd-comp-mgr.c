@@ -1074,6 +1074,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           clutter_container_remove_actor (CLUTTER_CONTAINER (parent), actor);
           hd_switcher_add_notification (priv->switcher_group,
                                         HD_NOTE (c));
+          hd_render_manager_update_tasks_button ();
         }
       else if (c->transient_for)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
@@ -1229,6 +1230,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       hd_switcher_remove_notification (priv->switcher_group,
                                        HD_NOTE (c));
+      hd_render_manager_update_tasks_button ();
       return;
     }
   else if (c_type == MBWMClientTypeNote || c_type == MBWMClientTypeDialog)

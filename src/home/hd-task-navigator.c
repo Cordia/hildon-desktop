@@ -397,7 +397,6 @@ load_icon (const gchar * iname, guint isize)
       g_warning ("gtk_icon_theme_load_icon(%s): %s", iname, err->message);
       return empty_texture (isize, isize);
     }
-  else
 
   /* Scale @texture down if it's larger than desired.
    * TODO Unused right now. */

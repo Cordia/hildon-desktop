@@ -1,5 +1,20 @@
 2009-02-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#98365
+
+	* src/home/hd-render-manager.h
+	* src/home/hd-render-manager.c:
+	  hd_render_manager_update_tasks_button() added to synchronize
+	  the content of the top-left button.
+	* src/mb/hd-comp-mgr.c:
+	  Make sure the top-left button is showing the tasw/talu icon
+	  as appropriate when an incoming event notification is mapped
+	  or unmapped.
+	* src/home/hd-task-navigator.c (load_icon):
+	  Typo fix.
+
+2009-02-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/launcher/hd-app-mgr.c (hd_app_mgr_prestart):
 	  New debugging feature: if the $HD_NOPRELOAD environment variable
 	  is set do not prestart applications at all.
