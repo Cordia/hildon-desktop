@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.19-1~unreleased) unstable; urgency=low
 
-  * unreleased
+  Jan Arne:
+  * Do not show notification previews if in switcher. Fixes: NB#99892.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue,  3 Feb 2009 10:27:50 +0200
 
@@ -8,10 +9,10 @@ hildon-desktop (1:2.2.18-1) unstable; urgency=low
 
   Jan Arne:
   * When a task is open, access the Home view by long pressing the Tasks
-    button. Fixes NB#88401
-  * Add backup configuration. Fixes NB#96920
-  * Do not show status area in edit mode. Fixes NB#93642, NB#96951
-  * Add support for special operator applet. Fixes NB#93997
+    button. Fixes: NB#88401
+  * Add backup configuration. Fixes: NB#96920
+  * Do not show status area in edit mode. Fixes: NB#93642, NB#96951
+  * Add support for special operator applet. Fixes: NB#93997
 
   Kimmo:
   * Depend on theme-config >= 0.7 because of /etc/hildon/theme link.

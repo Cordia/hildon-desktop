@@ -966,6 +966,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       hd_render_manager_set_state(HDRM_STATE_HOME_EDIT_DLG);
     }
 
+  /* discard notification previews if in switcher */
+  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV &&
+      HD_IS_NOTE(c) &&
+      HD_NOTE(c)->note_type == HdNoteTypeIncomingEventPreview)
+    {
+      mb_wm_client_deliver_delete (c);
+      return;
+    }
+
   /* deactivate launcher and switcher in case of new window */
   /* FIXME: When we get an app we'd just go to home and then straight
    * to app - so I (gw) added MBWMClientTypeApp as an exception.
