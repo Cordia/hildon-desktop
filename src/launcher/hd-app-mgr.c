@@ -569,6 +569,12 @@ hd_app_mgr_prestart (HdLauncherApp *app)
   gboolean res;
   const gchar *service = hd_launcher_app_get_service (app);
 
+#ifdef __i386__
+  if (g_getenv("HD_NOPRESTART"))
+    /* Prevent from application chit-chat on the console. */
+    return FALSE;
+#endif
+
   if (hd_launcher_app_is_executing (app))
     return TRUE;
 

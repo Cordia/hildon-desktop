@@ -1,3 +1,9 @@
+2009-02-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_prestart):
+	  New debugging feature: if the $HD_NOPRELOAD environment variable
+	  is set do not prestart applications at all.
+
 2009-02-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Do not show notification previews if in switcher. Fixes: NB#99892.
