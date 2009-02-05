@@ -1430,13 +1430,19 @@ hd_comp_mgr_sync_stacking (HdCompMgr * hmgr)
       if (!priv->unmap_effect_running)
         {
           priv->stack_sync = FALSE;
+          /*
           g_debug("%s: Called, no effects running - restacking",
                           __FUNCTION__);
+                          */
           hd_comp_mgr_restack (MB_WM_COMP_MGR (hmgr));
         }
       else
-        g_debug("%s: Called, but effects running = %d",
-                __FUNCTION__, priv->unmap_effect_running);
+        {
+                /*
+          g_debug("%s: Called, but effects running = %d",
+                  __FUNCTION__, priv->unmap_effect_running);
+                  */
+        }
     }
 }
 
