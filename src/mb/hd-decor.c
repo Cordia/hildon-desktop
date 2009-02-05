@@ -22,11 +22,12 @@
  */
 
 #include "hd-decor.h"
+#include "hd-theme.h"
 #include "hd-comp-mgr.h"
 #include "hd-app.h"
 
-#include "hd-render-manager.h"
 #include "hd-title-bar.h"
+#include "hd-render-manager.h"
 #include "hd-clutter-cache.h"
 #include "hd-decor-button.h"
 
@@ -61,7 +62,7 @@ hd_decor_init (MBWMObject *obj, va_list vap)
   HdDecor *d = HD_DECOR (obj);
 
   d->progress_timeline = 0;
-  d->progress_actor = 0;
+  d->progress_texture = 0;
   d->title_bar_actor = 0;
   d->title_actor = 0;
 
@@ -142,16 +143,21 @@ static void
 on_decor_progress_timeline_new_frame(ClutterTimeline *timeline,
                                      gint frame_num, HdDecor *decor)
 {
-  if (decor->progress_actor)
+  if (decor->progress_texture)
     {
-      float amt = (float)clutter_timeline_get_progress(timeline);
+      /* The progress animation is a series of frames packed
+       * into a texture - like a film strip
+       */
+      ClutterGeometry progress_region =
+         {HD_THEME_IMG_PROGRESS_SIZE*frame_num, 0,
+          HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE };
 
-      clutter_actor_set_rotation(
-          decor->progress_actor, CLUTTER_Z_AXIS,
-          amt*360, 0, 0, 0);
+      tidy_sub_texture_set_region(decor->progress_texture, &progress_region);
+
       /* FIXME: We really want to set this to queue damage with an area -
        * like we do for windows. Otherwise we end up updating the whole
        * screen for this. */
+      clutter_actor_queue_redraw(CLUTTER_ACTOR(decor->progress_texture));
     }
 }
 
@@ -200,10 +206,10 @@ hd_decor_remove_actors(HdDecor   *decor)
       g_object_unref(decor->progress_timeline);
       decor->progress_timeline = 0;
     }
-  if (decor->progress_actor)
+  if (decor->progress_texture)
     {
-      clutter_actor_destroy(decor->progress_actor);
-      decor->progress_actor = 0;
+      clutter_actor_destroy(CLUTTER_ACTOR(decor->progress_texture));
+      decor->progress_texture = 0;
     }
   if (decor->title_bar_actor)
     {
@@ -228,7 +234,7 @@ hd_decor_create_actors(HdDecor *decor)
   MBWMClientType          c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
   MBWMXmlClient     *c;
   MBWMXmlDecor      *d;
-  ClutterGeometry   geo, area;
+  ClutterGeometry   /*geo, */area;
   gint              x_start;
   gboolean          is_waiting;
 
@@ -244,19 +250,22 @@ hd_decor_create_actors(HdDecor *decor)
                                           client->window->xwindow);
   x_start = hd_decor_get_start_x(decor);
 
-  geo.x = d->x;
+  /*geo.x = d->x;
   geo.y = d->y;
   geo.width = d->width;
-  geo.height = d->height;
+  geo.height = d->height;*/
   area.x = 0;
   area.y = 0;
   area.width = mb_decor->geom.width;
   area.height = mb_decor->geom.height;
 
-  decor->title_bar_actor = hd_clutter_cache_get_sub_texture_for_area(
+/*  decor->title_bar_actor = hd_clutter_cache_get_sub_texture_for_area(
       client->wmref->theme->image_filename,
+      FALSE,
       &geo,
-      &area);
+      &area);*/
+  decor->title_bar_actor =
+    hd_clutter_cache_get_texture_for_area(HD_THEME_IMG_DIALOG_BAR, TRUE, &area);
   clutter_container_add_actor(CLUTTER_CONTAINER(actor), decor->title_bar_actor);
 
   /* add the title */
@@ -303,24 +312,36 @@ hd_decor_create_actors(HdDecor *decor)
     {
       /* Get the actor we're going to rotate and put it on the right-hand
        * side of the window*/
-      ClutterGeometry progress_geo = {672, 0, 60, 60};
-      decor->progress_actor = hd_clutter_cache_get_sub_texture(
-          client->wmref->theme->image_filename,
-          &progress_geo);
-      clutter_container_add_actor(CLUTTER_CONTAINER(actor),
-                                  decor->progress_actor);
-      clutter_actor_set_anchor_point_from_gravity(decor->progress_actor,
-                                                  CLUTTER_GRAVITY_CENTER);
-      clutter_actor_set_position(decor->progress_actor,
-          mb_decor->geom.width - (mb_decor->geom.height/2),
-          mb_decor->geom.height/2);
-      /* Get the timeline and set it running */
-      decor->progress_timeline = g_object_ref(
-          clutter_timeline_new(8, 5));
-      clutter_timeline_set_loop(decor->progress_timeline, TRUE);
-      g_signal_connect (decor->progress_timeline, "new-frame",
-                        G_CALLBACK (on_decor_progress_timeline_new_frame), decor);
-      clutter_timeline_start(decor->progress_timeline);
+      ClutterGeometry progress_geo =
+        {0, 0, HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE};
+      ClutterActor *tex = hd_clutter_cache_get_sub_texture(
+                                                      HD_THEME_IMG_PROGRESS,
+                                                      TRUE,
+                                                      &progress_geo);
+      if (TIDY_IS_SUB_TEXTURE(tex))
+        {
+          decor->progress_texture = TIDY_SUB_TEXTURE(tex);
+          clutter_container_add_actor(CLUTTER_CONTAINER(actor),
+                                      CLUTTER_ACTOR(decor->progress_texture));
+          clutter_actor_set_position(CLUTTER_ACTOR(decor->progress_texture),
+              mb_decor->geom.width - HD_THEME_IMG_PROGRESS_SIZE,
+              (mb_decor->geom.height - HD_THEME_IMG_PROGRESS_SIZE)/2);
+          clutter_actor_set_size(CLUTTER_ACTOR(decor->progress_texture),
+              HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE);
+          /* Get the timeline and set it running */
+          decor->progress_timeline = g_object_ref(
+              clutter_timeline_new(HD_THEME_IMG_PROGRESS_FRAMES, HD_THEME_IMG_PROGRESS_FPS));
+          clutter_timeline_set_loop(decor->progress_timeline, TRUE);
+          g_signal_connect (decor->progress_timeline, "new-frame",
+                            G_CALLBACK (on_decor_progress_timeline_new_frame), decor);
+          clutter_timeline_start(decor->progress_timeline);
+        }
+      else
+        {
+          /* We failed to load the texture, so just don't do the animation -
+           * but free the fake texture we were given */
+          clutter_actor_destroy(actor);
+        }
     }
 }
 
@@ -355,7 +376,7 @@ void hd_decor_paint_decor(HdDecor   *decor,
   while (l)
     {
       HdDecorButton * button = l->data;
-      hd_decor_button_sync_actors(button);
+      hd_decor_button_sync(button);
 
       l = l->next;
     }

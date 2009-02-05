@@ -51,11 +51,14 @@ struct _HdClutterCacheClass
 GType hd_clutter_cache_get_type (void) G_GNUC_CONST;
 
 /* Create a clutter clone texture from a texture in our cache.
- * This is created specially and is not owned by the cache
+ * This is created specially and is not owned by the cache.
+ * If from_theme is true, the filename will be appended to the current
+ * theme's path.
  */
 ClutterActor *
 hd_clutter_cache_get_texture(
-    const char *filename);
+    const char *filename,
+    gboolean from_theme);
 
 /* Create a smaller texture from a master texture, supply the geometry
  * in the master texture to use for this texture.
@@ -63,13 +66,22 @@ hd_clutter_cache_get_texture(
 ClutterActor *
 hd_clutter_cache_get_sub_texture(
     const char *filename,
+    gboolean from_theme,
     ClutterGeometry *geo);
+
+/* like hd_clutter_cache_get_texture, but divides up the texture
+ * and repositions it so it extends to fill the given area */
+ClutterActor *
+hd_clutter_cache_get_texture_for_area(const char *filename,
+                                          gboolean from_theme,
+                                          ClutterGeometry *area);
 
 /* like hd_clutter_cache_get_sub_texture, but divides up the texture
  * and repositions it so it extends to fill the given area.
  * This is created specially and is not owned by the cache. */
 ClutterActor *
 hd_clutter_cache_get_sub_texture_for_area(const char *filename,
+                                          gboolean from_theme,
                                           ClutterGeometry *geo,
                                           ClutterGeometry *area);
 

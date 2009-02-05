@@ -191,6 +191,10 @@ void hd_render_manager_queue_delay_redraw(void);
 /* This stops any current transition that render manager is doing */
 void hd_render_manager_stop_transition(void);
 
+/* Called by hd-task-navigator when its state changes, as when notifications
+ * arrive the button in the top-left may need to change */
+void hd_render_manager_update(void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */

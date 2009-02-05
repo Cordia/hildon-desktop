@@ -52,6 +52,7 @@
 #include "hd-scrollable-group.h"
 #include "hd-switcher.h"
 #include "hd-render-manager.h"
+#include "hd-title-bar.h"
 
 /* Standard definitions {{{ */
 #undef  G_LOG_DOMAIN
@@ -2019,6 +2020,10 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
                         fun, CLUTTER_ACTOR (self), funparam);
   else if (fun)
     fun (CLUTTER_ACTOR (self), funparam);
+
+  /* Update the state of buttons - this will help if
+   * we need to change the top-left icon */
+  hd_render_manager_update();
 }
 
 /*
@@ -2052,6 +2057,10 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
     }
 
   layout (thumb.thwin);
+
+  /* Update the state of buttons - this will help if
+   * we need to change the top-left icon */
+  hd_render_manager_update();
 }
 
 /* Remove @dialog from its application's thumbnail
@@ -2277,6 +2286,15 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
   /* The navigator layout/position may need to be changed. */
   remove_notewin (hdnote);
   layout (NULL);
+
+  /* stop the pulsing animation if we're out of notes */
+  if (Notifications->len == 0)
+    hd_title_bar_set_switcher_pulse(
+        HD_TITLE_BAR(hd_render_manager_get_title_bar()), FALSE);
+
+  /* Update the state of buttons - this will help if
+   * we need to change the top-left icon */
+  hd_render_manager_update();
 }
 
 /* Like add_notewin_from_hdnote().  Returns whether the thumbnail
@@ -2383,6 +2401,15 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
 
   if (add_notewin_from_tnote (&tnote))
     layout (tnote.notewin);
+
+  /* start the pulsing animation if we have notifications */
+  if (Notifications->len > 0)
+    hd_title_bar_set_switcher_pulse(
+        HD_TITLE_BAR(hd_render_manager_get_title_bar()), TRUE);
+
+  /* Update the state of buttons - this will help if
+   * we need to change the top-left icon */
+  hd_render_manager_update();
 }
 /* Add/remove notifications }}} */
 

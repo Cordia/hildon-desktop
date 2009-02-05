@@ -1,3 +1,32 @@
+2009-02-05  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	These changes require the new theme style, and depend on the 
+	symbolic link /etc/hildon/theme being set.
+
+	* src/home/hd-clutter-cache.h
+	* src/home/hd-clutter-cache.c:
+	Added ability to load a full texture, but still allow it to be 
+	stretched while keeping the ends intact.
+	* src/home/hd-render-manager.h
+	* src/home/hd-render-manager.c
+	* src/home/hd-task-navigator.c:
+	Allowed render manager to update button state in hd-title-bar,
+	and made task-navigator update the top-left button at the correct
+	time for new notifications.
+	* src/home/hd-title-bar.c
+	* src/home/hd-title-bar.h
+	* src/mb/hd-theme.h:
+	Added new themed toolbar and buttons - moved full-screen toolbar
+	into hd-title-bar. Added pulsing glow effect for when there are
+	notifications.	
+	* src/mb/hd-decor-button.h
+	* src/mb/hd-decor-button.c:
+	Moved rendering code to hd-title-bar, which handles all buttons
+	* src/mb/hd-decor.c
+	* src/mb/hd-decor.h:
+	Moved rendering of title to hd-title-bar for apps. Added progress
+	indicator using new themed graphics
+
 2009-02-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#98365

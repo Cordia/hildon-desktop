@@ -51,7 +51,7 @@ struct HdDecor
   /* private? */
   ClutterActor          *title_bar_actor;
   ClutterActor          *title_actor;
-  ClutterActor          *progress_actor;
+  TidySubTexture        *progress_texture;
   ClutterTimeline       *progress_timeline;
 };
 

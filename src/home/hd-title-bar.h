@@ -48,12 +48,42 @@ struct _HdTitleBarClass
   ClutterGroupClass parent;
 };
 
+typedef enum {
+  HDTB_VIS_NONE            = 0,
+  /* LEFT */
+  HDTB_VIS_BTN_LAUNCHER    = 1,
+  HDTB_VIS_BTN_SWITCHER    = 2,
+  HDTB_VIS_BTN_MENU        = 4, /* for home edit */
+  /* RIGHT */
+  HDTB_VIS_BTN_BACK        = 8,
+  HDTB_VIS_BTN_CLOSE       = 16,
+
+  HDTB_VIS_FULL_WIDTH      = 32,
+
+
+  HDTB_VIS_BTN_LEFT_MASK   = HDTB_VIS_BTN_LAUNCHER |
+                             HDTB_VIS_BTN_SWITCHER |
+                             HDTB_VIS_BTN_MENU,
+  HDTB_VIS_BTN_RIGHT_MASK  = HDTB_VIS_BTN_BACK |
+                             HDTB_VIS_BTN_CLOSE,
+} HdTitleBarVisEnum;
+
 GType hd_title_bar_get_type (void) G_GNUC_CONST;
 
-void
-hd_title_bar_set_theme(HdTitleBar *bar, MBWMTheme *theme);
-
+void hd_title_bar_set_state(HdTitleBar *bar,
+                            HdTitleBarVisEnum button);
+HdTitleBarVisEnum hd_title_bar_get_state(HdTitleBar *bar);
 void
 hd_title_bar_set_show(HdTitleBar *bar, gboolean show);
+void
+hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm);
+
+/* Whether to show pulsing animation for task switcher button
+ * (for when notifications arrive) or not */
+void
+hd_title_bar_set_switcher_pulse(HdTitleBar *bar, gboolean pulse);
+
+void
+hd_title_bar_right_pressed(HdTitleBar *bar, gboolean pressed);
 
 #endif

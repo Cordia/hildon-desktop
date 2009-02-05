@@ -62,13 +62,7 @@ HdDecorButton* hd_decor_button_new (MBWindowManager               *wm,
                                     MBWMDecorButtonFlags           flags);
 
 void
-hd_decor_button_sync_actors(HdDecorButton *button);
-
-void
-hd_decor_button_remove_actors(HdDecorButton *button);
-
-void
-hd_decor_button_create_actors(HdDecorButton *button);
+hd_decor_button_sync(HdDecorButton *button);
 
 
 #endif

@@ -46,6 +46,8 @@ G_DEFINE_TYPE (HdClutterCache, hd_clutter_cache, CLUTTER_TYPE_GROUP);
 
 static HdClutterCache *the_clutter_cache = 0;
 
+#define HD_CLUTTER_CACHE_THEME_PATH "/etc/hildon/theme/images/"
+
 /* ------------------------------------------------------------------------- */
 
 static void
@@ -90,14 +92,25 @@ static HdClutterCache *hd_get_clutter_cache()
 }
 
 static ClutterActor *
-hd_clutter_cache_get_real_texture(const char *filename)
+hd_clutter_cache_get_real_texture(const char *filename, gboolean from_theme)
 {
   HdClutterCache *cache = hd_get_clutter_cache();
   gint n_elements, i;
   ClutterActor *texture;
+  const char *filename_real = filename;
+  char *filename_alloc = 0;
 
   if (!cache)
     return 0;
+
+  if (from_theme)
+    {
+      filename_alloc = g_malloc(strlen(HD_CLUTTER_CACHE_THEME_PATH) +
+                               strlen(filename) + 1);
+      strcpy(filename_alloc, HD_CLUTTER_CACHE_THEME_PATH);
+      strcat(filename_alloc, filename);
+      filename_real = filename_alloc;
+    }
 
   n_elements = clutter_group_get_n_children(CLUTTER_GROUP(cache));
   for (i=0;i<n_elements;i++)
@@ -105,15 +118,19 @@ hd_clutter_cache_get_real_texture(const char *filename)
       ClutterActor *actor =
         clutter_group_get_nth_child(CLUTTER_GROUP(cache), i);
       const char *name = clutter_actor_get_name(actor);
-      if (name && g_str_equal(name, filename))
+      if (name && g_str_equal(name, filename_real))
         return actor;
     }
 
-  texture = clutter_texture_new_from_file(filename, 0);
+  texture = clutter_texture_new_from_file(filename_real, 0);
   if (!texture)
     return 0;
-  clutter_actor_set_name(texture, filename);
+  clutter_actor_set_name(texture, filename_real);
   clutter_container_add_actor(CLUTTER_CONTAINER(cache), texture);
+
+  if (filename_alloc)
+    g_free(filename_alloc);
+
   return texture;
 }
 
@@ -128,9 +145,10 @@ hd_clutter_cache_get_broken_texture()
 }
 
 ClutterActor *
-hd_clutter_cache_get_texture(const char *filename)
+hd_clutter_cache_get_texture(const char *filename, gboolean from_theme)
 {
-  ClutterActor *texture = hd_clutter_cache_get_real_texture(filename);
+  ClutterActor *texture = hd_clutter_cache_get_real_texture(filename,
+                                                            from_theme);
   if (!texture)
     texture = hd_clutter_cache_get_broken_texture();
   else
@@ -140,7 +158,9 @@ hd_clutter_cache_get_texture(const char *filename)
 }
 
 ClutterActor *
-hd_clutter_cache_get_sub_texture(const char *filename, ClutterGeometry *geo)
+hd_clutter_cache_get_sub_texture(const char *filename,
+                                 gboolean from_theme,
+                                 ClutterGeometry *geo)
 {
   ClutterActor *texture;
   TidySubTexture *tex;
@@ -148,7 +168,7 @@ hd_clutter_cache_get_sub_texture(const char *filename, ClutterGeometry *geo)
   if (!cache)
     return 0;
 
-  texture = hd_clutter_cache_get_real_texture(filename);
+  texture = hd_clutter_cache_get_real_texture(filename, from_theme);
   if (!texture)
     {
       texture = hd_clutter_cache_get_broken_texture(filename);
@@ -166,28 +186,37 @@ hd_clutter_cache_get_sub_texture(const char *filename, ClutterGeometry *geo)
   return CLUTTER_ACTOR(tex);
 }
 
+/* like hd_clutter_cache_get_texture, but divides up the texture
+ * and repositions it so it extends to fill the given area */
+ClutterActor *
+hd_clutter_cache_get_texture_for_area(const char *filename,
+                                          gboolean from_theme,
+                                          ClutterGeometry *area)
+{
+  ClutterGeometry geo = {0,0,0,0};
+  return hd_clutter_cache_get_sub_texture_for_area(
+      filename,
+      from_theme,
+      &geo,
+      area);
+}
+
 /* like hd_clutter_cache_get_sub_texture, but divides up the texture
  * and repositions it so it extends to fill the given area */
 ClutterActor *
 hd_clutter_cache_get_sub_texture_for_area(const char *filename,
-                                          ClutterGeometry *geo,
+                                          gboolean from_theme,
+                                          ClutterGeometry *geo_,
                                           ClutterGeometry *area)
 {
-  gboolean extend_x = area->width > geo->width;
-  gboolean extend_y = area->height > geo->height;
+  gboolean extend_x, extend_y;
   gint low_x, low_y, high_x, high_y;
   ClutterTexture *texture = 0;
   ClutterGroup *group = 0;
+  ClutterGeometry geo = *geo_;
 
-  /* no need to extend */
-  if (!extend_x && !extend_y)
-    {
-      ClutterActor *actor = hd_clutter_cache_get_sub_texture(filename, geo);
-      clutter_actor_set_position(actor, area->x, area->y);
-      return actor;
-    }
-
-  texture = CLUTTER_TEXTURE(hd_clutter_cache_get_real_texture(filename));
+  texture = CLUTTER_TEXTURE(hd_clutter_cache_get_real_texture(filename,
+                                                              from_theme));
   if (!texture)
     {
       ClutterActor *actor = hd_clutter_cache_get_broken_texture();
@@ -197,24 +226,51 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
       return actor;
     }
 
+  if (geo.width==0 || geo.height==0)
+    {
+      geo.x = 0;
+      geo.y = 0;
+      clutter_actor_get_size(CLUTTER_ACTOR(texture), &geo.width, &geo.height);
+    }
+
+  extend_x = area->width > geo.width;
+  extend_y = area->height > geo.height;
+
+  /* no need to extend */
+  if (!extend_x && !extend_y)
+    {
+      /* ignore the contents of 'texture' as it will be in our cache */
+      ClutterActor *actor =
+          hd_clutter_cache_get_sub_texture(filename, from_theme, &geo);
+      clutter_actor_set_position(actor, area->x, area->y);
+      return actor;
+    }
+
+
   group = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(group), filename);
-  low_x = geo->x + (geo->width/4);
-  low_y = geo->y + (geo->height/4);
-  high_x = geo->x + (3*geo->width/4);
-  high_y = geo->y + (3*geo->height/4);
+  low_x = geo.x + (geo.width/4);
+  low_y = geo.y + (geo.height/4);
+  high_x = geo.x + (3*geo.width/4);
+  high_y = geo.y + (3*geo.height/4);
 
-  if (extend_x && !extend_y)
+  if (extend_y)
+    g_warning("%s: Y and XY texture extensions not implemented yet",
+        __FUNCTION__);
+
+  /*if (extend_x && !extend_y)*/
+  /* ignore this as there's nothing we can do for it anyway until
+   * we implement proper extending... */
     {
       TidySubTexture *texa,*texb,*texc;
       ClutterGeometry geoa, geob, geoc;
 
-      geoa = geob = geoc = *geo;
-      geoa.width = low_x-geo->x;
+      geoa = geob = geoc = geo;
+      geoa.width = low_x - geo.x;
       geob.x = low_x;
       geob.width = high_x-low_x;
       geoc.x = high_x;
-      geoc.width = geo->x+geo->width - high_x;
+      geoc.width = geo.x+geo.width - high_x;
 
       texa = tidy_sub_texture_new(texture);
       tidy_sub_texture_set_region(texa, &geoa);
@@ -247,8 +303,6 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
       return CLUTTER_ACTOR(group);
     }
 
-  g_warning("%s: Y and XY texture extensions not implemented yet",
-      __FUNCTION__);
   /* FIXME: Do other kinds of extension */
   return CLUTTER_ACTOR(group);
 }

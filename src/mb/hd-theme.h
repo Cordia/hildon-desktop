@@ -28,6 +28,34 @@
 #include <matchbox/mb-wm-config.h>
 #include <matchbox/theme-engines/mb-wm-theme-png.h>
 
+/* ------------------------------------------------------------------------- */
+#define HD_THEME_IMG_TASK_LAUNCHER "wmTaskLauncherIcon.png"
+#define HD_THEME_IMG_TASK_SWITCHER "wmTaskSwitcherIcon.png"
+#define HD_THEME_IMG_TASK_LAUNCHER_PRESSED "wmTaskLauncherIconPressed.png"
+#define HD_THEME_IMG_TASK_SWITCHER_PRESSED "wmTaskSwitcherIconPressed.png"
+#define HD_THEME_IMG_TASK_SWITCHER_HIGHLIGHT "wmTaskSwitcherIconHighlight.png"
+#define HD_THEME_IMG_LEFT_ATTACHED "wmLeftButtonAttached.png"
+#define HD_THEME_IMG_LEFT_END "wmLeftButtonEnd.png"
+#define HD_THEME_IMG_LEFT_PRESSED "wmLeftButtonEndPressed.png"
+
+#define HD_THEME_IMG_RIGHT_END "wmRightButton.png"
+#define HD_THEME_IMG_RIGHT_PRESSED "wmRightButtonPressed.png"
+#define HD_THEME_IMG_BACK "wmBackIcon.png"
+#define HD_THEME_IMG_BACK_PRESSED "wmBackIconPressed.png"
+#define HD_THEME_IMG_CLOSE "wmCloseIcon.png"
+#define HD_THEME_IMG_CLOSE_PRESSED "wmCloseIconPressed.png"
+
+#define HD_THEME_IMG_TITLE_BAR "wmTitleBar.png"
+#define HD_THEME_IMG_DIALOG_BAR "wmDialog.png"
+
+#define HD_THEME_IMG_SEPARATOR "wmSeparator.png"
+
+#define HD_THEME_IMG_PROGRESS "wmProgressIndicator.png"
+#define HD_THEME_IMG_PROGRESS_SIZE 48 /* width/height of frame */
+#define HD_THEME_IMG_PROGRESS_FRAMES 8 /*frames in animation */
+#define HD_THEME_IMG_PROGRESS_FPS 5 /*frames per second */
+/* ------------------------------------------------------------------------- */
+
 typedef struct HdThemeClass   HdThemeClass;
 typedef struct HdTheme        HdTheme;
 typedef struct HdThemePrivate HdThemePrivate;

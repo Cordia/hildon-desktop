@@ -196,7 +196,7 @@ on_timeline_blur_completed(ClutterTimeline *timeline, gpointer data);
 hd_render_manager_notify_modified (ClutterActor          *actor,
                                    ClutterActor          *child);*/
 static void
-hd_render_manager_set_order(void);
+hd_render_manager_sync_clutter(void);
 
 static const char *
 hd_render_manager_state_str(HDRMStateEnum state);
@@ -260,8 +260,6 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   priv->title_bar = g_object_ref(g_object_new(HD_TYPE_TITLE_BAR, NULL));
   g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->title_bar);
-  hd_title_bar_set_theme(priv->title_bar,
-                            MB_WM_COMP_MGR(priv->comp_mgr)->wm->theme);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               CLUTTER_ACTOR(priv->title_bar));
 
@@ -427,7 +425,7 @@ hd_render_manager_notify_modified (ClutterActor          *actor,
     return FALSE;
 
   priv->in_notify = TRUE;
-  hd_render_manager_set_order(manager);
+  hd_render_manager_sync_clutter(manager);
   priv->in_notify = FALSE;
   return TRUE;
 }*/
@@ -567,7 +565,8 @@ hd_render_manager_set_input_viewport()
         {
           ClutterActor *button;
           button = hd_render_manager_get_button((HDRMButtonEnum)i);
-          if (CLUTTER_ACTOR_IS_VISIBLE(button) &&
+          if (button &&
+              CLUTTER_ACTOR_IS_VISIBLE(button) &&
               CLUTTER_ACTOR_IS_VISIBLE(clutter_actor_get_parent(button)))
             {
               clutter_actor_get_geometry (button, &geom[geom_count]);
@@ -605,12 +604,14 @@ hd_render_manager_set_input_viewport()
 }
 
 static
-void hd_render_manager_set_order ()
+void hd_render_manager_sync_clutter ()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
   HDRMButtonEnum visible_top_left = HDRM_BUTTON_NONE;
   HDRMButtonEnum visible_top_right = HDRM_BUTTON_NONE;
+  HdTitleBarVisEnum btn_state = hd_title_bar_get_state(priv->title_bar) &
+    ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH);
 
   switch (priv->state)
     {
@@ -699,6 +700,7 @@ void hd_render_manager_set_order ()
   else if (priv->status_area)
       clutter_actor_hide(priv->status_area);
 
+
   /* Set button state */
   switch (visible_top_left)
   {
@@ -711,16 +713,19 @@ void hd_render_manager_set_order ()
       clutter_actor_show(CLUTTER_ACTOR(priv->button_launcher));
       clutter_actor_hide(CLUTTER_ACTOR(priv->button_menu));
       clutter_actor_hide(CLUTTER_ACTOR(priv->button_task_nav));
+      btn_state |= HDTB_VIS_BTN_LAUNCHER;
       break;
     case HDRM_BUTTON_MENU:
       clutter_actor_hide(CLUTTER_ACTOR(priv->button_launcher));
       clutter_actor_show(CLUTTER_ACTOR(priv->button_menu));
       clutter_actor_hide(CLUTTER_ACTOR(priv->button_task_nav));
+      btn_state |= HDTB_VIS_BTN_MENU;
       break;
     case HDRM_BUTTON_TASK_NAV:
       clutter_actor_hide(CLUTTER_ACTOR(priv->button_launcher));
       clutter_actor_hide(CLUTTER_ACTOR(priv->button_menu));
       clutter_actor_show(CLUTTER_ACTOR(priv->button_task_nav));
+      btn_state |= HDTB_VIS_BTN_SWITCHER;
       break;
     default:
       g_warning("%s: Invalid button %d in top-left",
@@ -764,7 +769,11 @@ void hd_render_manager_set_order ()
     }
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
 
+  hd_title_bar_set_state(priv->title_bar, btn_state);
   hd_render_manager_place_titlebar_elements();
+
+  /* update our fixed title bar at the top of the screen */
+  hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
 
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport */
@@ -1110,7 +1119,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           return;
         }
 
-      hd_render_manager_set_order();
+      hd_render_manager_sync_clutter();
 
       /* Switch between portrait <=> landscape modes. */
       if (state == HDRM_STATE_APP_PORTRAIT)
@@ -1329,8 +1338,14 @@ void hd_render_manager_restack()
    * isn't, and hide anything that would be rendered over by another app */
   hd_render_manager_set_visibilities();
 
-  /* because swapping parents doesn't appear to fire a redraw */
+  /* because swapping parents doesn't appear to fire a redraw.
+   * TODO: It would be REALLY good to have a way to only redraw
+   * when something had changed in the blur group - as this is quite
+   * expensive */
   tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
+
+  /* update our fixed title bar at the top of the screen */
+  hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
 }
 
 void hd_render_manager_set_blur_app(gboolean blur)
@@ -1658,6 +1673,13 @@ void hd_render_manager_blur_if_you_need_to(MBWindowManagerClient *c)
     hd_render_manager_set_blur_app(TRUE);
 }
 
+/* Called by hd-task-navigator when its state changes, as when notifications
+ * arrive the button in the top-left may need to change */
+void hd_render_manager_update()
+{
+  hd_render_manager_sync_clutter();
+}
+
 /* Returns whether @c's actor is visible in clutter sense.  If so, then
  * it most probably is visible to the user as well.  It is assumed that
  * set_visibilities() have been sorted out for the current stacking. */
@@ -1693,11 +1715,11 @@ void hd_render_manager_place_titlebar_elements (void)
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   guint x;
 
-  /* 
+  /*
    * tasks button    state change
    * status area     window mapped
    * operator logo   dbus
-   * title padding   
+   * title padding
    */
 
   x = 0;
