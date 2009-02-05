@@ -297,8 +297,6 @@ hd_desktop_stack (MBWindowManagerClient *client,
   /* gint       i; */
   GSList    *applets = NULL, *a;
 
-  g_debug ("hd_desktop_stack");
-
   n_layers = hd_comp_mgr_get_home_applet_layer_count (hmgr, current_view);
 
   mb_wm_stack_move_top (client);
@@ -317,7 +315,8 @@ hd_desktop_stack (MBWindowManagerClient *client,
           if (applet->view_id == current_view)
             {
               /* Stack applet window if applet is visible on current view */
-              applets = g_slist_insert_sorted (applets, applet, cmp_applet_modified);
+              applets = g_slist_insert_sorted (applets, applet,
+                                               cmp_applet_modified);
             }
         }
     }
@@ -327,7 +326,10 @@ hd_desktop_stack (MBWindowManagerClient *client,
     {
       MBWindowManagerClient *c = a->data;
 
-      g_debug ("Stack applet, %s %ld", HD_HOME_APPLET (c)->applet_id, HD_HOME_APPLET (c)->modified);
+      /*
+      g_debug ("Stack applet, %s %ld", HD_HOME_APPLET (c)->applet_id,
+               HD_HOME_APPLET (c)->modified);
+               */
 
       mb_wm_client_stack (c, flags);
     }
