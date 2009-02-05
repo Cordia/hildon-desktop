@@ -600,7 +600,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
 
     clutter_actor_get_size(CLUTTER_ACTOR(priv->title), &w, &h);
     clutter_actor_set_position(CLUTTER_ACTOR(priv->title),
-                               (x_start+decor->geom.width-w)/2,
+                               x_start+HD_TITLE_BAR_TITLE_MARGIN,
                                (decor->geom.height-h)/2);
     clutter_actor_show(CLUTTER_ACTOR(priv->title));
   }

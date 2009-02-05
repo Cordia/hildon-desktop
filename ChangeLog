@@ -1,5 +1,10 @@
 2009-02-05  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/home/hd-title-bar.c:
+	Minor change to left-align application titles
+
+2009-02-05  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	These changes require the new theme style, and depend on the 
 	symbolic link /etc/hildon/theme being set.
 
