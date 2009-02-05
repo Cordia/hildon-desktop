@@ -1,3 +1,9 @@
+2009-02-05  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Respect HILDON_DESKTOP_APPS_PRESTART in scratchbox.
+
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_setup_prestart):
+
 2009-02-05  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-title-bar.c:

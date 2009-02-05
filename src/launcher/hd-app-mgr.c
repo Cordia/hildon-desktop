@@ -569,12 +569,6 @@ hd_app_mgr_prestart (HdLauncherApp *app)
   gboolean res;
   const gchar *service = hd_launcher_app_get_service (app);
 
-#ifdef __i386__
-  if (g_getenv("HD_NOPRESTART"))
-    /* Prevent from application chit-chat on the console. */
-    return FALSE;
-#endif
-
   if (hd_launcher_app_is_executing (app))
     return TRUE;
 
@@ -805,11 +799,19 @@ hd_app_mgr_setup_prestart (size_t low_pages,
                            size_t *prestart_required_pages)
 {
   gchar *prestart_env = NULL;
+
+  prestart_env = getenv (PRESTART_ENV_VAR);
+
   if (low_pages == NSIZE || nr_decay_pages == -1)
     {
       g_debug ("%s: No memory limits, assuming scratchbox.\n", __FUNCTION__);
       *prestart_required_pages = NSIZE;
-      return PRESTART_ALWAYS;
+      if (prestart_env && *prestart_env &&
+          g_strcmp0 (prestart_env, "no") &&
+          g_strcmp0 (prestart_env, "false"))
+        return PRESTART_ALWAYS;
+      else
+        return PRESTART_NEVER;
     }
 
   prestart_env = getenv (PRESTART_ENV_VAR);
