@@ -223,7 +223,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
   if (d)
     {
       MBWMList * l = d->buttons;
-      g_debug("%s: theme", __FUNCTION__);
+
       while (l)
 	{
 	  MBWMXmlButton * b = l->data;
@@ -234,7 +234,6 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 	    {
 	      BackButtonData *bd;
 
-              g_debug("%s: back button", __FUNCTION__);
 	      button = hd_decor_button_new(wm,
                                            b->type,
                                            b->packing,
@@ -252,7 +251,6 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 	  /* No close button for group followers */
 	  else if (b->type == MBWMDecorButtonClose && is_leader)
 	    {
-              g_debug("%s: close button", __FUNCTION__);
 	      button = hd_decor_button_new(wm,
                                            b->type,
                                            b->packing,
@@ -263,7 +261,6 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 	  else if (b->type != HdHomeThemeButtonBack &&
 	      b->type != MBWMDecorButtonClose)
 	    {
-              g_debug("%s: other button", __FUNCTION__);
               /* do not install press/release handler */
 	      button = hd_decor_button_new(wm,
                                            b->type,
@@ -274,7 +271,6 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 	    }
 	  else
 	    {
-              g_debug("%s: no button", __FUNCTION__);
 	      button = NULL;
 	    }
 
@@ -294,7 +290,6 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
     }
   else
     {
-      g_debug("%s: no theme, only close/back button", __FUNCTION__);
       if (is_leader)
 	{
 	  button = hd_decor_button_new(wm,
