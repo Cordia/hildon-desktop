@@ -1393,7 +1393,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
       /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed. */
       if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop)
         hd_wm_update_current_app_property (mgr->wm,
-                                           hd_wm_get_current_app (mgr->wm)->window->xwindow);
+                hd_wm_get_current_app (mgr->wm)->window->xwindow);
 
       hd_render_manager_restack();
 
@@ -1542,14 +1542,16 @@ hd_comp_mgr_hibernate_all (HdCompMgr *hmgr, gboolean force)
       HdLauncherApp *app;
       MBWMCompMgrClutterClient *cmgrcc;
 
-      if (hd_launcher_item_get_item_type (apps->data) != HD_APPLICATION_LAUNCHER)
+      if (hd_launcher_item_get_item_type (apps->data)
+          != HD_APPLICATION_LAUNCHER)
         continue;
 
       app = HD_LAUNCHER_APP (apps->data);
       if (hd_launcher_app_get_state (app) != HD_APP_STATE_SHOWN)
         continue;
 
-      cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (hd_launcher_app_get_comp_mgr_client (app));
+      cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (
+                        hd_launcher_app_get_comp_mgr_client (app));
       hd_comp_mgr_hibernate_client (hmgr, cmgrcc, force);
     }
 }
@@ -1591,7 +1593,6 @@ HdLauncherApp *
 hd_comp_mgr_app_from_xwindow (HdCompMgr *hmgr, Window xid)
 {
   MBWindowManager  *wm;
-/*   HdCompMgrPrivate *priv = hmgr->priv; */
   XClassHint        class_hint;
   Status            status = 0;
   HdLauncherApp    *app = NULL;
