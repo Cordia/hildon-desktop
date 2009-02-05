@@ -1710,7 +1710,8 @@ void hd_render_manager_place_titlebar_elements (void)
     {
       g_assert(priv->status_area_client && priv->status_area_client->window);
       if (priv->status_area_client->frame_geometry.x != x)
-        { /* Reposition the status area. */
+        {
+          /* Reposition the status area. */
           MBWindowManagerClient *c = priv->status_area_client;
           c->frame_geometry.x = c->window->geometry.x = x;
           mb_wm_client_geometry_mark_dirty(c);
@@ -1725,8 +1726,9 @@ void hd_render_manager_place_titlebar_elements (void)
     clutter_actor_set_x(priv->operator, x + HD_COMP_MGR_OPERATOR_PADDING);
 
   if (STATE_ONE_OF(priv->state, HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT))
-    { /* Otherwise we don't show a title. */
-      g_debug("application title at %u", x);
+    {
+      /* Otherwise we don't show a title. */
+      /* g_debug("application title at %u", x); */
       mb_adjust_dialog_title_position(MB_WM_COMP_MGR(priv->comp_mgr)->wm, x);
     }
 }
