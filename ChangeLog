@@ -1,3 +1,11 @@
+2009-02-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Added command line option `-r' not to worry if a window manager
+	is already running but try to take it over.
+
+	* src/main.c (main):
+	  Change the hidden root window name to "hildon-desktop".
+
 2009-02-05  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Respect HILDON_DESKTOP_APPS_PRESTART in scratchbox.

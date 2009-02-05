@@ -39,6 +39,7 @@
 #include "hildon-desktop.h"
 #include "hd-wm.h"
 #include "hd-theme.h"
+#include "hd-util.h"
 
 enum {
   KEY_ACTION_PAGE_NEXT,
@@ -121,6 +122,7 @@ clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
   return CLUTTER_X11_FILTER_CONTINUE;
 }
 
+/* Debugging aids */
 static gboolean
 dump_debug_info_when_idle (gpointer unused)
 {
@@ -136,13 +138,157 @@ dump_debug_info_sighand (int unused)
   signal(SIGUSR1, dump_debug_info_sighand);
 }
 
+/* Returns the pid of the currently running hildon-desktop process or -1. */
+static pid_t
+hd_already_running (Display *dpy)
+{
+  Window root;
+  char *wmname;
+  pid_t *wmpid, pid;
+  Window *wmwin, *wmwin2;
+  Atom xpcheck, xpname, xppid;
+
+  pid = -1;
+  root = DefaultRootWindow(dpy);
+
+  /* Read _NET_WM_PID of the _NET_SUPPORTING_WM_CHECK window. */
+  xpcheck = XInternAtom (dpy, "_NET_SUPPORTING_WM_CHECK", False);
+  wmwin = hd_util_get_win_prop_data_and_validate (dpy, root, xpcheck,
+                                                  XA_WINDOW, 32, 1, NULL);
+  if (!wmwin)
+    goto out0;
+
+  wmwin2 = hd_util_get_win_prop_data_and_validate (dpy, *wmwin, xpcheck,
+                                                   XA_WINDOW, 32, 1, NULL);
+  if (!wmwin2)
+    {
+      g_warning ("dangling _NET_SUPPORTING_WM_CHECK property on the root window");
+      goto out1;
+    }
+  else if (*wmwin != *wmwin2)
+    {
+      g_warning ("inconsistent _NET_SUPPORTING_WM_CHECK values");
+      goto out2;
+    }
+
+  xpname = XInternAtom (dpy, "_NET_WM_NAME", False);
+  wmname = hd_util_get_win_prop_data_and_validate (dpy, *wmwin, xpname,
+                                 XInternAtom (dpy, "UTF8_STRING", False),
+                                 8, 0, NULL);
+  if (!wmname)
+    {
+      g_warning ("_NET_SUPPORTING_WM_CHECK window has no _NET_WM_NAME");
+      goto out2;
+    }
+  if (strcmp(wmname, PACKAGE))
+    /* Not us. */
+    goto out3;
+
+  xppid = XInternAtom (dpy, "_NET_WM_PID", False);
+  wmpid = hd_util_get_win_prop_data_and_validate (dpy, *wmwin, xppid,
+                                                  XA_CARDINAL, 32, 1, NULL);
+  if (!wmpid)
+    {
+      g_critical ("our previous instance didn't set _NET_WM_PID");
+      goto out3;
+    }
+
+  pid = *wmpid;
+  XFree (wmpid);
+out3:
+  XFree (wmname);
+out2:
+  XFree (wmwin2);
+out1:
+  XFree (wmwin);
+out0:
+  return pid;
+}
+
+static gboolean
+get_program_file (const gchar *link, gchar *path, size_t spath)
+{
+  gint n;
+  gchar *p;
+
+  if ((n = readlink (link, path, spath-1)) < 0)
+    {
+      g_warning ("%s: %m", link);
+      return FALSE;
+    }
+
+  path[n] = '\0';
+  if ((p = strstr(path, " (deleted)")) != NULL)
+    *p = '\0';
+
+  return TRUE;
+}
+
+static gboolean
+same_file (const gchar *link1, const gchar *link2)
+{
+  char path1[128], path2[128];
+
+  if (!get_program_file (link1, path1, sizeof (path1)))
+    return FALSE;
+  if (!get_program_file (link2, path2, sizeof (path2)))
+    return FALSE;
+
+  return !strcmp(path1, path2);
+}
+
+static void
+relaunch (int unused)
+{
+  char me[128];
+  MBWMRootWindow *root;
+
+  g_warning ("Relaunching myself...");
+  if (!get_program_file ("/proc/self/exe", me, sizeof (me)))
+    return;
+
+  root = mb_wm_root_window_get (NULL);
+  g_return_if_fail (root && root->wm);
+  execv (me, root->wm->argv);
+  g_warning ("%s: %m", me);
+}
+
+static void
+try_to_relaunch (Display *dpy)
+{
+  pid_t mate;
+  gchar *matepath;
+
+  if ((mate = hd_already_running (dpy)) < 0)
+    return;
+
+  /* If our executable has overritten the other's ask it
+   * to relaunch itself rather than killing it.  It has
+   * the advantage of preserving file descriptor redirections. */
+  matepath = g_strdup_printf ("/proc/%d/exe", mate);
+  if (same_file (matepath, "/proc/self/exe"))
+    {
+      g_warning ("%d: reborn", mate);
+      kill (mate, SIGHUP);
+      exit (0);
+    }
+  else
+    {
+      g_warning("killing fellow hd %d", mate);
+      kill (mate, SIGTERM);
+      usleep (500000);
+    }
+  g_free (matepath);
+}
+
 int
 main (int argc, char **argv)
 {
   Display * dpy = NULL;
   MBWindowManager *wm;
 
-  signal(SIGUSR1, dump_debug_info_sighand);
+  signal (SIGUSR1, dump_debug_info_sighand);
+  signal (SIGHUP,  relaunch);
 
   /* 
   g_log_set_always_fatal (G_LOG_LEVEL_ERROR    |
@@ -179,12 +325,17 @@ main (int argc, char **argv)
   clutter_init (&argc, &argv);
   dpy = clutter_x11_get_default_display ();
 
+  /* Just before mb discovers there's a WM already and aborts
+   * see if it's hildon-desktop and take it over. */
+  if (argv[1] && !strcmp (argv[1], "-r"))
+    try_to_relaunch (dpy);
+
   wm = MB_WINDOW_MANAGER (mb_wm_object_new (HD_TYPE_WM,
 					    MBWMObjectPropArgc, argc,
 					    MBWMObjectPropArgv, argv,
 					    MBWMObjectPropDpy,  dpy,
 					    NULL));
-
+  mb_wm_rename_window (wm, wm->root_win->hidden_window, PACKAGE);
   mb_wm_init (wm);
 
   if (wm == NULL)
