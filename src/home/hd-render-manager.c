@@ -984,26 +984,6 @@ gboolean hd_render_manager_get_visible(HDRMButtonEnum button)
   return FALSE;
 }
 
-/* Synchronize what the top-left button should be showing. */
-void hd_render_manager_update_tasks_button(void)
-{
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
-
-  if (priv->state != HDRM_STATE_HOME)
-    return;
-
-  if (hd_task_navigator_is_empty (priv->task_nav))
-    {
-      clutter_actor_hide (priv->button_task_nav);
-      clutter_actor_show (priv->button_launcher);
-    }
-  else
-    {
-      clutter_actor_show (priv->button_task_nav);
-      clutter_actor_hide (priv->button_launcher);
-    }
-}
-
 gboolean hd_render_manager_has_apps()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;

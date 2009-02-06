@@ -40,6 +40,10 @@ typedef struct HdNoteClass HdNoteClass;
 #define HD_NOTE_CLASS(c) ((HdNoteClass*)(c))
 #define HD_TYPE_NOTE (hd_note_class_type ())
 #define HD_IS_NOTE(c) (MB_WM_OBJECT_TYPE(c)==HD_TYPE_NOTE)
+#define HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c) (HD_IS_NOTE(c) \
+             && HD_NOTE(c)->note_type == HdNoteTypeIncomingEventPreview)
+#define HD_IS_INCOMING_EVENT_NOTE(c) (HD_IS_NOTE(c) \
+             && HD_NOTE(c)->note_type == HdNoteTypeIncomingEvent)
 
 typedef enum _HdNoteType
 {

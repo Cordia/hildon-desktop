@@ -968,8 +968,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   /* discard notification previews if in switcher */
   if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV &&
-      HD_IS_NOTE(c) &&
-      HD_NOTE(c)->note_type == HdNoteTypeIncomingEventPreview)
+      HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
     {
       mb_wm_client_deliver_delete (c);
       return;
@@ -1074,7 +1073,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           clutter_container_remove_actor (CLUTTER_CONTAINER (parent), actor);
           hd_switcher_add_notification (priv->switcher_group,
                                         HD_NOTE (c));
-          hd_render_manager_update_tasks_button ();
         }
       else if (c->transient_for)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
@@ -1092,15 +1090,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
       else if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV)
         hd_render_manager_set_state(HDRM_STATE_HOME);
-      return;
-    }
-  else if (c->window->net_type == c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
-    {
-      MBWindowManagerClient *transfor;
-
-      if ((transfor = hd_comp_mgr_get_client_transient_for (c)) != NULL)
-          hd_switcher_add_dialog_explicit (HD_SWITCHER (priv->switcher_group),
-                                           c, actor, transfor);
       return;
     }
   else if (c->window->net_type == c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
@@ -1226,11 +1215,10 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
     }
 
-  if (HD_IS_NOTE (c) && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
+  if (HD_IS_INCOMING_EVENT_NOTE(c))
     {
       hd_switcher_remove_notification (priv->switcher_group,
                                        HD_NOTE (c));
-      hd_render_manager_update_tasks_button ();
       return;
     }
   else if (c_type == MBWMClientTypeNote || c_type == MBWMClientTypeDialog)
@@ -1275,8 +1263,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 
       if (c_type == HdWmClientTypeStatusMenu)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventUnmap);
-      else if (HD_IS_NOTE(c)  &&
-               HD_NOTE(c)->note_type == HdNoteTypeIncomingEventPreview)
+      else if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
         hd_transition_notification(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (c_type == MBWMClientTypeDialog)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventUnmap);
@@ -1320,9 +1307,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventMap);
       else if (c_type == MBWMClientTypeDialog)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventMap);
-      else if (HD_IS_NOTE(c) &&
-               HD_NOTE(c)->note_type == HdNoteTypeIncomingEventPreview)
-        hd_transition_notification(hmgr, c, MBWMCompMgrClientEventMap);
+      else if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
+        g_warning("hd_transition_notification(hmgr, c, MBWMCompMgrClientEventMap)");
       else if (c_type == MBWMClientTypeNote)
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventMap);
       else if (c_type == MBWMClientTypeApp)

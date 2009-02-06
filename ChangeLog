@@ -1,3 +1,18 @@
+2009-02-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Little cleanups.
+
+	* src/home/hd-render-manager.h
+	* src/home/hd-render-manager.c:
+	  Removed now superseded hd_render_manager_update_tasks_button().
+	* src/home/hd-task-navigator.c:
+	  Removed calls to clutter_stage_set_key_focus().
+	* src/mb/hd-note.h:
+	  Added HD_IS_INCOMING_EVENT_*_NOTE() as shortcuts to check the
+	  ::note_type at once.
+	* src/mb/hd-comp-mgr.c:
+	  Use them.
+
 2009-02-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Added command line option `-r' not to worry if a window manager

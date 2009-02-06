@@ -2107,12 +2107,9 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
 
   /* Claim @dialog now if we're active. */
   if (hd_task_navigator_is_active (self))
-    {
-      clutter_actor_reparent (dialog, thumb->prison);
-    }
+    clutter_actor_reparent (dialog, thumb->prison);
 
-  /* Insert @dialog at thumb->dialog[i].  glib doesn't have a function
-   * for insertion.  We'll burn in hell for this pointer arithmetic. */
+  /* Add @dialog to @thumb->dialogs. */
   if (!thumb->dialogs)
     thumb->dialogs = g_ptr_array_new ();
   g_ptr_array_add (thumb->dialogs, dialog);
@@ -2423,10 +2420,6 @@ navigator_shown (ClutterActor * navigator, gpointer unused)
 {
   guint i;
 
-  /* Grab the keybord focus for navigator_hit().  XXX Someone's removed it. */
-  clutter_stage_set_key_focus (CLUTTER_STAGE (clutter_stage_get_default ()),
-                               navigator);
-
   /* get the render manager to put all windows back */
   hd_render_manager_return_windows();
   /* Take all application windows we know about into our care
@@ -2444,8 +2437,6 @@ navigator_hidden (ClutterActor * navigator, gpointer unused)
   guint i;
 
   /* Undo navigator_show(). */
-  clutter_stage_set_key_focus (CLUTTER_STAGE (clutter_stage_get_default ()),
-                               NULL);
   for (i = 0; i < Thumbnails->len; i++)
     release_win (&g_array_index (Thumbnails, Thumbnail, i));
 

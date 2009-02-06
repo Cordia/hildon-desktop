@@ -158,7 +158,6 @@ ClutterActor *hd_render_manager_get_title_bar(void);
 ClutterActor *hd_render_manager_get_status_area(void);
 void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible);
 gboolean hd_render_manager_get_visible(HDRMButtonEnum button);
-void hd_render_manager_update_tasks_button(void);
 gboolean hd_render_manager_has_apps(void);
 
 ClutterContainer *hd_render_manager_get_front_group(void);
