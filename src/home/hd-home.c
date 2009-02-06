@@ -58,6 +58,7 @@
 
 /* FIXME -- match spec */
 #define HDH_PAN_THRESHOLD 20
+#define PAN_NEXT_PREVIOUS_PERCENTAGE 0.4
 
 #define CLOSE_BUTTON "qgn_home_close"
 #define SETTINGS_BUTTON "qgn_home_settings"
@@ -266,7 +267,7 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 
   if (priv->moved_over_threshold)
     {
-      if (ABS (priv->cumulative_x) > HDH_PAN_THRESHOLD)
+      if (ABS (priv->cumulative_x) >= PAN_NEXT_PREVIOUS_PERCENTAGE * priv->xwidth) /* */
         {
           if (priv->cumulative_x > 0)
             hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container));
