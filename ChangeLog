@@ -1,3 +1,16 @@
+2009-02-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-clutter-cache.c (hd_clutter_cache_class_init): Remove
+	g_type_class_add_private call for an empty struct, fixes Glib CRITICAL.
+	* src/mb/hd-app.h: Replace secondary_window with stack_index, which is
+	based on the value set by the HildonStackableWindow widget.
+	* src/util/hd-transition.c (hd_transition_close_app),
+	src/mb/hd-theme.c (construct_buttons),
+	src/mb/hd-app.c (hd_app_destroy, hd_app_init),
+	src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Use the new
+	stack_index member instead of secondary_window.
+	* src/mb/hd-comp-mgr.c: White-space and typo fixes. Added FIXMEs.
+
 2009-02-06  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home.c (PAN_NEXT_PREVIOUS_PERCENTAGE,

@@ -52,7 +52,7 @@ hd_app_destroy (MBWMObject *this)
 {
   HdApp *app = HD_APP (this);
 
-  if (app->secondary_window && app->leader)
+  if (app->stack_index > 0 && app->leader)
     {
       HdApp *leader = app->leader;
 
@@ -89,8 +89,7 @@ hd_app_init (MBWMObject *this, va_list vap)
   Atom                   stackable_atom;
   Atom                   actual_type;
 
-  /* Set this up as it appears to get corrupted sometimes */
-  app->leader = 0;
+  app->stack_index = -1;
 
   stackable_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_STACKABLE_WINDOW);
 
@@ -135,11 +134,15 @@ hd_app_init (MBWMObject *this, va_list vap)
        * window.
        */
       win_group = win->xwin_group;
+      app->stack_index = (int)*prop;
+      g_debug ("%s: HILDON STACKABLE WINDOW index %d", __func__,
+	       app->stack_index);
 
       mb_wm_stack_enumerate (wm, c_tmp)
         {
           if (c_tmp != client &&
-              (MB_WM_CLIENT_CLIENT_TYPE (c_tmp) == MBWMClientTypeApp) &&
+              MB_WM_CLIENT_CLIENT_TYPE (c_tmp) == MBWMClientTypeApp &&
+	      HD_APP (c_tmp)->stack_index >= 0 /* == stackable window */ &&
               c_tmp->window->xwin_group == win_group)
             {
               HdApp *h_tmp = HD_APP (c_tmp);
@@ -154,10 +157,9 @@ hd_app_init (MBWMObject *this, va_list vap)
 		    "a non-stackable window leader?");
 		break;
 	      } else {
-                app->secondary_window = TRUE;
                 app->leader = h_tmp->leader;
 	      }
-	      /* Flag it with an X property */
+	      /* Flag it with an X property. TODO: is this still used? */
               XChangeProperty (wm->xdpy, win->xwindow,
 			       wm->atoms[MBWM_ATOM_MB_SECONDARY],
 			       XA_CARDINAL, 32, PropModeReplace,
@@ -166,14 +168,14 @@ hd_app_init (MBWMObject *this, va_list vap)
 
               /*
                * This forces the decors to be redone, taking into account the
-               * secondary_window flag.
+               * stack index.
                */
               mb_wm_client_theme_change (client);
               break;
             }
         }
 
-      if (app->secondary_window)
+      if (app->stack_index > 0)
         {
           HdApp *leader = app->leader;
           leader->followers = g_list_append (leader->followers, this);
@@ -233,7 +235,7 @@ hd_app_get_next_group_member (HdApp *app)
 {
   HdApp *next = NULL;
 
-  if (app->secondary_window)
+  if (app->stack_index > 0)
     {
       HdApp *leader = app->leader;
       GList *l      = leader->followers;
@@ -267,7 +269,7 @@ hd_app_get_prev_group_member (HdApp *app)
 {
   HdApp *prev = NULL;
 
-  if (app->secondary_window)
+  if (app->stack_index > 0)
     {
       HdApp *leader = app->leader;
       GList *l      = leader->followers;

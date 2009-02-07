@@ -78,8 +78,6 @@ hd_clutter_cache_class_init (HdClutterCacheClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (HdClutterCachePrivate));
-
   gobject_class->dispose = hd_clutter_cache_dispose;
 }
 

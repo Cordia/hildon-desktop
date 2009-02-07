@@ -656,6 +656,9 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
+  /* FIXME: shouldn't this be in hd_comp_mgr_unmap_notify?
+   * hd_comp_mgr_unregister_client might not be called for all unmapped
+   * clients */
   if (g_hash_table_remove (priv->tasks_button_blockers, c)
       && g_hash_table_size (priv->tasks_button_blockers) == 0)
     { /* Last system modal dialog being unmapped, undo evil. */
@@ -681,6 +684,9 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   /*
    * If the actor is an application, remove it also to the switcher
    */
+  /* FIXME: shouldn't this be in hd_comp_mgr_unmap_notify?
+   * hd_comp_mgr_unregister_client might not be called for all unmapped
+   * clients */
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeApp)
     {
       HdApp *app = HD_APP(c);
@@ -688,22 +694,28 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       if (actor)
         {
-          /* handle hildon-stackable-window */
           if (HD_IS_APP (app))
             {
-              /* if we are secondary, there must be leader and probably even followers */
-              if (app->leader && app->secondary_window)
+              /* if we are secondary, there must be leader and probably
+	       * even followers */
+              if (app->leader && app->stack_index > 0)
                 {
-                  /* show the topmost follower and replace switcher actor for the stackable */
-                  prev = MB_WM_COMP_MGR_CLUTTER_CLIENT ((hd_app_get_prev_group_member(app))->cm_client);
+                  /* show the topmost follower and replace switcher actor
+		   * for the stackable */
+                  prev = MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			  (hd_app_get_prev_group_member(app))->cm_client);
 
-                  clutter_actor_show (mb_wm_comp_mgr_clutter_client_get_actor(prev));
+                  clutter_actor_show (
+		  	mb_wm_comp_mgr_clutter_client_get_actor(prev));
 
-                  hd_switcher_replace_window_actor (priv->switcher_group, actor,
-                                                    mb_wm_comp_mgr_clutter_client_get_actor(prev));
+                  hd_switcher_replace_window_actor (
+		        priv->switcher_group, actor,
+                  	mb_wm_comp_mgr_clutter_client_get_actor(prev));
                 }
-              else if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar))
-                /* We are the leader, just remove actor from switcher.
+              else if (!(c->window->ewmh_state &
+		         MBWMClientWindowEWMHStateSkipTaskbar))
+                /* We are the leader or a non-stackable window,
+		 * just remove the actor from the switcher.
                  * NOTE The test above breaks if the client changed
                  * the flag after it's been mapped. */
                 hd_switcher_remove_window_actor (priv->switcher_group,
@@ -716,10 +728,8 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
            /* Tell the app which the main client is now. */
           if (hclient->priv->app)
             hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
-                HD_COMP_MGR_CLIENT (prev));
+                                                 HD_COMP_MGR_CLIENT (prev));
         }
-      else
-         /* We weren't mapped in the first place. */;
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea)
     {
@@ -749,7 +759,8 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           ClutterActor *parent = clutter_actor_get_parent (applet);
           while (parent)
             {
-              g_debug ("Parent type: %s", parent ? G_OBJECT_TYPE_NAME (parent) : "NULL");
+              g_debug ("Parent type: %s", parent ?
+		       G_OBJECT_TYPE_NAME (parent) : "NULL");
 
               if (parent == priv->home)
                 {
@@ -1006,7 +1017,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       /*
        * Save the client's address and undo evil when the last of its
        * kind is unregistered.  We need to do this way because maps
-       * and unmaps arrive unreliable, for exampe we get not unmap
+       * and unmaps arrive unreliably, for example we don't get unmap
        * notification for VKB.  In other cases we may receive two
        * maps for the same client.
        */
@@ -1092,7 +1103,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         hd_render_manager_set_state(HDRM_STATE_HOME);
       return;
     }
-  else if (c->window->net_type == c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
+  else if (c->window->net_type ==
+	   c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
     {
       MBWindowManagerClient *transfor;
 
@@ -1133,29 +1145,31 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         if (hclient->priv->app)
           hd_launcher_app_set_comp_mgr_client (hclient->priv->app, hclient);
 
-        if (app->secondary_window && app->leader)
+        if (app->stack_index > 0 && app->leader)
           {
             ClutterActor *top_actor;
             MBWMCompMgrClutterClient *top;
 
-            if (!app->leader->followers->next)
+            if (app->stack_index == 1)
               { /* First secondary window, the top is the leader. */
-                top = MB_WM_COMP_MGR_CLUTTER_CLIENT (MB_WM_CLIENT (app->leader)->cm_client);
+                top = MB_WM_COMP_MGR_CLUTTER_CLIENT (
+		      	  MB_WM_CLIENT (app->leader)->cm_client);
                 top_actor = mb_wm_comp_mgr_clutter_client_get_actor (top);
                 hd_switcher_replace_window_actor (priv->switcher_group,
                                                   top_actor, actor);
                 clutter_actor_hide (top_actor);
               }
             else
-              { /* Subsequenct secondary, the top is the last of the followers. */
+              { /* Subsequent secondary, the top is the last of the followers */
                 GList *l;
 
                 /* Hide the followers and replace the last one preceeding us
-                 * with outselfves in the switcher. */
+                 * with ourselves in the switcher. */
                 for (l = app->leader->followers; l && l->next; l = l->next)
                   {
                     g_return_if_fail (l != NULL);
-                    top = MB_WM_COMP_MGR_CLUTTER_CLIENT (MB_WM_CLIENT (l->data)->cm_client);
+                    top = MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			      MB_WM_CLIENT (l->data)->cm_client);
                     top_actor = mb_wm_comp_mgr_clutter_client_get_actor (top);
                     clutter_actor_hide (top_actor);
                     g_return_if_fail(l->next != NULL);
@@ -1169,7 +1183,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                   }
               }
           }
-        else if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar))
+        else if (!(c->window->ewmh_state &
+		   MBWMClientWindowEWMHStateSkipTaskbar))
           {
             /* Taskbar == task switcher in our case.
              * Introduced for systemui. */
@@ -1274,7 +1289,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
           {
             /* Look if it's a stackable window. */
             HdApp *app = HD_APP (c);
-            if (app->secondary_window)
+            if (app->stack_index > 0)
               hd_transition_subview(hmgr, c,
                                     MB_WM_CLIENT(app->leader),
                                     MBWMCompMgrClientEventUnmap);
@@ -1316,7 +1331,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
           {
             /* Look if it's a stackable window. */
             HdApp *app = HD_APP (c);
-            if (app->secondary_window)
+            if (app->stack_index > 0)
               hd_transition_subview(hmgr, c,
                                     MB_WM_CLIENT(app->leader),
                                     MBWMCompMgrClientEventMap);
@@ -1466,7 +1481,7 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
     {
       MBWindowManagerClient * c = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
 
-      if (close_all && HD_IS_APP (c) && HD_APP (c)->secondary_window
+      if (close_all && HD_IS_APP (c) && HD_APP (c)->stack_index > 0
           && HD_APP (c)->leader)
         {
           c = MB_WM_CLIENT (HD_APP (c)->leader);

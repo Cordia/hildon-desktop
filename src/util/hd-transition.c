@@ -545,7 +545,7 @@ hd_transition_close_app (HdCompMgr                  *mgr,
 
   /* Don't do the unmap transition if it's a secondary. */
   app = HD_APP (c);
-  if (app->secondary_window)
+  if (app->stack_index > 0)
     {
       /* FIXME: Transitions. */
       g_debug ("%s: Unmapping secondary window.\n", __FUNCTION__);

@@ -39,9 +39,9 @@ struct HdApp
 {
   MBWMClientApp    parent;
 
-  gboolean     secondary_window;
   GList       *followers;
   HdApp       *leader;
+  int          stack_index;
 };
 
 struct HdAppClass

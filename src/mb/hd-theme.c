@@ -217,7 +217,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
     {
       HdApp *app = HD_APP (client);
 
-      is_leader = !app->secondary_window;
+      is_leader = (app->stack_index == 0);
     }
 
   if (d)
