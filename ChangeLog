@@ -13,6 +13,8 @@
 	* src/home/hd-render-manager.c (hd_render_manager_set_visible):
 	Don't call hd_render_manager_set_input_viewport with an argument,
 	it does not take any.
+	* src/mb/hd-desktop.c (hd_desktop_realize): Remove unnecessary
+	reparenting. (If it is needed, it should be done in libmatchbox side.)
 
 2009-02-06  Jan Arne Petersen  <jpetersen@openismus.com>
 

@@ -266,6 +266,7 @@ cleanup:
 static void
 hd_desktop_realize (MBWindowManagerClient *client)
 {
+#if 0  /* we don't seem to need this? */
   /*
    * Must reparent the window to our root, otherwise we restacking of
    * pre-existing windows might fail.
@@ -275,7 +276,7 @@ hd_desktop_realize (MBWindowManagerClient *client)
   XReparentWindow(client->wmref->xdpy, MB_WM_CLIENT_XWIN(client),
 		  client->wmref->root_win->xwindow, 0, 0);
 
-  return;
+#endif
 }
 
 static gint
