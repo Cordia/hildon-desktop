@@ -957,7 +957,7 @@ void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible)
       else
         clutter_actor_hide(priv->button_edit);
       /* we need this so we can set up the X input area */
-      hd_render_manager_set_input_viewport(the_render_manager);
+      hd_render_manager_set_input_viewport();
       break;
     default:
       g_warning("%s: Not supposed to set visibility for %d",

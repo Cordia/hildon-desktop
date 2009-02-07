@@ -10,6 +10,9 @@
 	src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Use the new
 	stack_index member instead of secondary_window.
 	* src/mb/hd-comp-mgr.c: White-space and typo fixes. Added FIXMEs.
+	* src/home/hd-render-manager.c (hd_render_manager_set_visible):
+	Don't call hd_render_manager_set_input_viewport with an argument,
+	it does not take any.
 
 2009-02-06  Jan Arne Petersen  <jpetersen@openismus.com>
 
