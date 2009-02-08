@@ -120,6 +120,8 @@ hd_app_init (MBWMObject *this, va_list vap)
 	   * TODO: to set the stacking layer if the window has no transient
 	   * parent.
 	   */
+	  /* FIXME: this is not the right place to set stacking layer,
+	   * hd_app_stacking_layer() should contain this. */
 	  client->stacking_layer = trans_parent->stacking_layer;
 	}
     }
@@ -127,64 +129,43 @@ hd_app_init (MBWMObject *this, va_list vap)
   if (actual_type == XA_INTEGER)
     {
       MBWindowManagerClient *c_tmp;
+      HdApp *old_leader = NULL;
 
-      /*
-       * Stackable hildon window; check if there is another app window with the
-       * same group leader; if there is not, then this is the primary group
-       * window.
-       */
       win_group = win->xwin_group;
       app->stack_index = (int)*prop;
-      g_debug ("%s: HILDON STACKABLE WINDOW index %d", __func__,
-	       app->stack_index);
+      g_debug ("%s: STACK INDEX %d", __func__, app->stack_index);
 
       mb_wm_stack_enumerate (wm, c_tmp)
+        if (c_tmp != client &&
+            MB_WM_CLIENT_CLIENT_TYPE (c_tmp) == MBWMClientTypeApp &&
+            HD_APP (c_tmp)->stack_index >= 0 /* == stackable window */ &&
+            c_tmp->window->xwin_group == win_group)
+          {
+            old_leader = HD_APP (c_tmp)->leader;
+            break;
+          }
+
+      if (app->stack_index > 0 && old_leader)
         {
-          if (c_tmp != client &&
-              MB_WM_CLIENT_CLIENT_TYPE (c_tmp) == MBWMClientTypeApp &&
-	      HD_APP (c_tmp)->stack_index >= 0 /* == stackable window */ &&
-              c_tmp->window->xwin_group == win_group)
-            {
-              HdApp *h_tmp = HD_APP (c_tmp);
-	      guint32 one = 1;
+          guint32 one = 1;
 
-	      /*
-	       * If the leader is a stackable window it has to be a valid leader
-	       * (if it is the first in the stack it is its own leader).
-	       */
-	      if (!h_tmp->leader) {
-		g_warning ("Trying to add a secondary stackable window to "
-		    "a non-stackable window leader?");
-		break;
-	      } else {
-                app->leader = h_tmp->leader;
-	      }
-	      /* Flag it with an X property. TODO: is this still used? */
-              XChangeProperty (wm->xdpy, win->xwindow,
-			       wm->atoms[MBWM_ATOM_MB_SECONDARY],
-			       XA_CARDINAL, 32, PropModeReplace,
-			       (unsigned char *) &one,
-			       1);
+	  app->leader = old_leader;
+          app->leader->followers = g_list_append (app->leader->followers,
+                                                  this);
 
-              /*
-               * This forces the decors to be redone, taking into account the
-               * stack index.
-               */
-              mb_wm_client_theme_change (client);
-              break;
-            }
+          /* Flag it with an X property. TODO: is this still used? */
+          XChangeProperty (wm->xdpy, win->xwindow,
+		           wm->atoms[MBWM_ATOM_MB_SECONDARY],
+			   XA_CARDINAL, 32, PropModeReplace,
+			   (unsigned char *) &one, 1);
+
+          /* This forces the decors to be redone, taking into account the
+           * stack index. */
+          mb_wm_client_theme_change (client);
         }
-
-      if (app->stack_index > 0)
+      else  /* we are the first window in the stack */
         {
-          HdApp *leader = app->leader;
-          leader->followers = g_list_append (leader->followers, this);
-        }
-      else
-        {
-          /*
-           * We set the leader field to ourselves.
-           */
+          /* We set the leader field to ourselves. */
           app->leader = app;
         }
     }

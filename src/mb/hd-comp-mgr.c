@@ -1147,7 +1147,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 	if (app->stack_index < 0 || !app->leader /* non-stackable */
 	    || !app->leader->followers ||        /* leader w/o secondarys */
 	    /* or a secondary window on top of the stack: */
-	    app->stack_index == g_list_length (app->leader->followers))
+	    app == g_list_last (app->leader->followers)->data)
           topmost = TRUE;
 	else
           topmost = FALSE;

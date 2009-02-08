@@ -3,7 +3,8 @@
 	* src/mb/hd-theme.c (construct_buttons): Use stack index instead of a
 	boolean to allow distinguishing non-stackables from secondary windows.
 	* src/mb/hd-app.c (hd_app_init): Add asserts to the end of the
-	function to enforce certain invariants for stackable windows.
+	function to enforce certain invariants for stackable windows. Make
+	stackable handling more robust.
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Prepare for the case
 	of replacing a stackable window in the middle of a window stack. This
 	is done by checking whether the mapped window is on top of the stack.
