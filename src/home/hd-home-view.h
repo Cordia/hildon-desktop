@@ -45,10 +45,6 @@ typedef struct _HdHomeViewPrivate HdHomeViewPrivate;
 struct _HdHomeViewClass
 {
   ClutterGroupClass parent_class;
-
-  void (*thumbnail_clicked)  (HdHomeView * view, ClutterButtonEvent * ev);
-  void (*background_clicked) (HdHomeView * view, ClutterButtonEvent * ev);
-  void (*applet_clicked)     (HdHomeView * view, ClutterActor *applet);
 };
 
 struct _HdHomeView
@@ -58,29 +54,24 @@ struct _HdHomeView
   HdHomeViewPrivate    *priv;
 };
 
-GType hd_home_view_get_type (void);
+GType    hd_home_view_get_type          (void);
 
-void hd_home_view_set_background_image (HdHomeView *view, const gchar * path);
+guint    hd_home_view_get_view_id       (HdHomeView   *view);
+gboolean hd_home_view_get_active        (HdHomeView   *view);
 
-void hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on);
+void     hd_home_view_add_applet        (HdHomeView   *view,
+                                         ClutterActor *applet);
+void     hd_home_view_unregister_applet (HdHomeView   *view,
+                                         ClutterActor *applet);
+void     hd_home_view_remove_applet     (HdHomeView   *view,
+                                         ClutterActor *applet);
+void     hd_home_view_close_all_applets (HdHomeView   *view);
 
-guint hd_home_view_get_view_id (HdHomeView *view);
+void     hd_home_view_move_applet       (HdHomeView   *old_view,
+                                         HdHomeView   *new_view,
+                                         ClutterActor *applet);
 
-void hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet);
-
-void hd_home_view_unregister_applet (HdHomeView *view, ClutterActor *applet);
-void hd_home_view_remove_applet (HdHomeView *view, ClutterActor *applet);
-
-void hd_home_view_move_applet (HdHomeView   *old_view, HdHomeView   *new_view,
-			       ClutterActor *applet);
-
-void hd_home_view_close_all_applets (HdHomeView *view);
-
-ClutterActor * hd_home_view_get_background (HdHomeView *view);
-
-gboolean hd_home_view_get_active (HdHomeView *view);
-void     hd_home_view_set_active (HdHomeView *view,
-                                  gboolean    active);
+void     hd_home_view_load_background   (HdHomeView   *view);
 
 G_END_DECLS
 

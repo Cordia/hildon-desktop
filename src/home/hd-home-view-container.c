@@ -29,6 +29,7 @@
 #include "hd-comp-mgr.h"
 
 #include <gconf/gconf-client.h>
+#include <libgnomevfs/gnome-vfs.h>
 
 #include <matchbox/core/mb-wm.h>
 
@@ -41,6 +42,8 @@
 #define HD_GCONF_KEY_VIEWS_CURRENT HD_GCONF_DIR_VIEWS "/current"
 
 #define SCROLL_DURATION 300
+
+#define BACKGROUNDS_DIR g_build_filename (g_get_home_dir (), ".backgrounds", NULL)
 
 struct _HdHomeViewContainerPrivate
 {
@@ -63,6 +66,8 @@ struct _HdHomeViewContainerPrivate
 
   /* GConf */
   GConfClient *gconf_client;
+ 
+  GnomeVFSMonitorHandle *backgrounds_dir_monitor;
 
   guint views_active_notify;
 };
@@ -99,16 +104,79 @@ hd_home_view_container_update_previous_and_next_view (HdHomeViewContainer *self)
 }
 
 static void
+backgrounds_dir_changed (GnomeVFSMonitorHandle    *handler,
+                         const gchar              *monitor_uri,
+                         const gchar              *info_uri,
+                         GnomeVFSMonitorEventType  event_type,
+                         HdHomeViewContainer      *view_container)
+{
+  HdHomeViewContainerPrivate *priv = view_container->priv;
+
+  if (event_type == GNOME_VFS_MONITOR_EVENT_CREATED ||
+      event_type == GNOME_VFS_MONITOR_EVENT_CHANGED)
+    {
+      gchar *filename, *basename;
+
+      g_debug ("%s. %s %s.",
+               __FUNCTION__,
+               info_uri,
+               event_type == GNOME_VFS_MONITOR_EVENT_CREATED ? "created" : "changed");
+
+      filename = g_filename_from_uri (info_uri, NULL, NULL);
+      basename = g_path_get_basename (filename);
+
+      if (g_str_has_prefix (basename, "background-") &&
+          g_str_has_suffix (basename, ".png"))
+        {
+          guint id;
+
+          id = atoi (basename + 11) - 1; /* id is from 0 .. MAX_HOME_VIEWS - 1 */
+
+          if (id >= 0 && id < MAX_HOME_VIEWS && priv->active_views[id])
+            {
+              g_debug ("%s. Reload background %s for view %u.", __FUNCTION__, info_uri, id + 1);
+              hd_home_view_load_background (HD_HOME_VIEW (priv->views[id]));
+            }
+        }
+
+      g_free (filename);
+      g_free (basename);
+    }
+}
+
+static void
 hd_home_view_container_update_active_views (HdHomeViewContainer *self,
                                             gboolean             constructed)
 {
   HdHomeViewContainerPrivate *priv = self->priv;
+  gchar *backgrounds_dir, *backgrounds_dir_uri;
+  GnomeVFSResult result;
   GSList *list;
   guint active_views[MAX_HOME_VIEWS] = { 0, };
   gboolean none_active = TRUE;
   guint i;
   guint current_view;
   GError *error = NULL;
+
+  /* Monitor ~/.backgrounds dir */
+  backgrounds_dir = BACKGROUNDS_DIR;
+  backgrounds_dir_uri = gnome_vfs_get_uri_from_local_path (backgrounds_dir);
+  result = gnome_vfs_monitor_add (&priv->backgrounds_dir_monitor,
+                                  backgrounds_dir_uri,
+                                  GNOME_VFS_MONITOR_DIRECTORY,
+                                  (GnomeVFSMonitorCallback) backgrounds_dir_changed,
+                                  self);
+
+  if (result == GNOME_VFS_OK)
+    g_debug ("%s. Started to monitor %s",
+             __FUNCTION__,
+             backgrounds_dir_uri);
+  else
+    g_warning ("Cannot monitor directory ~/.backgrounds for changed background files. %s",
+               gnome_vfs_result_to_string (result));
+
+  g_free (backgrounds_dir);
+  g_free (backgrounds_dir_uri);
 
   /* Read active views from GConf */
   list = gconf_client_get_list (priv->gconf_client,
@@ -197,6 +265,10 @@ hd_home_view_container_update_active_views (HdHomeViewContainer *self,
         }
 
       hd_home_view_container_set_current_view (self, current_view);
+
+      /* Load backgrounds for active views */
+      for (i = 0; i < MAX_HOME_VIEWS; i++)
+        hd_home_view_load_background (HD_HOME_VIEW (priv->views[i]));
     }
   else
     {
@@ -204,6 +276,7 @@ hd_home_view_container_update_active_views (HdHomeViewContainer *self,
         {
           if (active_views[i] && !priv->active_views[i])
             {
+              hd_home_view_load_background (HD_HOME_VIEW (priv->views[i]));
               priv->active_views[i] = active_views[i];
               clutter_actor_show (priv->views[i]);
               g_object_notify (G_OBJECT (priv->views[i]), "active");
@@ -313,6 +386,9 @@ hd_home_view_container_dispose (GObject *self)
 
   if (priv->home)
     priv->home = (g_object_unref (priv->home), NULL);
+
+  if (priv->backgrounds_dir_monitor)
+    priv->backgrounds_dir_monitor = (gnome_vfs_monitor_cancel (priv->backgrounds_dir_monitor), NULL);
 
   G_OBJECT_CLASS (hd_home_view_container_parent_class)->dispose (self);
 }
