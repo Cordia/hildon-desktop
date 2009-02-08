@@ -145,6 +145,12 @@ hd_app_init (MBWMObject *this, va_list vap)
             break;
           }
 
+      /* TODO: allow a secondary window to act as temporary leader (when it
+       * is the first one mapped) */
+      /* TODO: allow replacing a window in the middle of the stack */
+      /* NOTE: these require changes elsewhere as well because stack_index
+       * does not anymore tell about the real stack */
+
       if (app->stack_index > 0 && old_leader)
         {
           guint32 one = 1;
