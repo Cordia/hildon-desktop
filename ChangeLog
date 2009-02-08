@@ -1,3 +1,17 @@
+2009-02-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-theme.c (construct_buttons): Use stack index instead of a
+	boolean to fix HD restart issue.
+	* src/mb/hd-app.c (hd_app_init): Add asserts to the end of the
+	function to enforce certain invariants for stackable windows.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Prepare for the case
+	of replacing a stackable window in the middle of a window stack. This
+	is done by checking whether the mapped window is on top of the stack.
+	The HD restart case requires asking Task Navigator about its knowledge
+	of the stackable windows. Removed some g_return_if_fails and replaced
+	one with g_assert (silent ignoring of internal inconsistency is the
+	worst coding style).
+
 2009-02-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-clutter-cache.c (hd_clutter_cache_class_init): Remove

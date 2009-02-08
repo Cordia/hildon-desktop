@@ -210,14 +210,14 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
   MBWindowManagerClient *client = MB_WM_DECOR(decor)->parent_client;
   MBWindowManager       *wm     = client->wmref;
   HdDecorButton         *button = NULL;
-  gboolean               is_leader = TRUE;
+  int                    stack_i = -1;
 
 
   if (MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeApp)
     {
       HdApp *app = HD_APP (client);
 
-      is_leader = (app->stack_index == 0);
+      stack_i = app->stack_index;
     }
 
   if (d)
@@ -229,8 +229,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 	  MBWMXmlButton * b = l->data;
 
 	  /* Back button only for group followers */
-	  if (b->type == HdHomeThemeButtonBack && !is_leader &&
-	      MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeApp)
+	  if (b->type == HdHomeThemeButtonBack && stack_i > 0)
 	    {
 	      BackButtonData *bd;
 
@@ -249,7 +248,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 						back_button_data_destroy);
 	    }
 	  /* No close button for group followers */
-	  else if (b->type == MBWMDecorButtonClose && is_leader)
+	  else if (b->type == MBWMDecorButtonClose && stack_i <= 0)
 	    {
 	      button = hd_decor_button_new(wm,
                                            b->type,
@@ -290,7 +289,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
     }
   else
     {
-      if (is_leader)
+      if (stack_i == 0)
 	{
 	  button = hd_decor_button_new(wm,
                                        MBWMDecorButtonClose,

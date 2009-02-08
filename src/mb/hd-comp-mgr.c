@@ -1142,11 +1142,63 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       if (HD_IS_APP (app))
       {
+	gboolean topmost;
+
+	if (app->stack_index < 0 || !app->leader /* non-stackable */
+	    || !app->leader->followers ||        /* leader w/o secondarys */
+	    /* or a secondary window on top of the stack: */
+	    app->stack_index == g_list_length (app->leader->followers))
+          topmost = TRUE;
+	else
+          topmost = FALSE;
+
+	/* handle the restart case when the stack does not have any window
+	 * in the switcher yet */
+	if (app->stack_index >= 0 && !topmost)
+	  {
+	    HdTaskNavigator *tasknav;
+            MBWMCompMgrClutterClient *cclient;
+	    gboolean in_tasknav;
+
+	    tasknav = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (
+				         priv->switcher_group));
+	    cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+	    if (hd_task_navigator_has_window (tasknav,
+		mb_wm_comp_mgr_clutter_client_get_actor (cclient)))
+	      in_tasknav = TRUE;
+	    else
+	      in_tasknav = FALSE;
+
+	    if (!app->leader->followers && !in_tasknav)
+	      /* lonely leader */
+	      topmost = TRUE;
+	    else if (app->leader->followers && !in_tasknav)
+	      {
+                GList *l;
+		gboolean child_found = FALSE;
+
+                for (l = app->leader->followers; l; l = l->next)
+                  {
+                    cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			           MB_WM_CLIENT (l->data)->cm_client);
+		    if (hd_task_navigator_has_window (tasknav,
+                        mb_wm_comp_mgr_clutter_client_get_actor (cclient)))
+		      {
+		        child_found = TRUE;
+			break;
+		      }
+                  }
+
+		if (!child_found)
+	          topmost = TRUE;
+	      }
+	  }
+
         /* Set this new client as the main client for the app. */
-        if (hclient->priv->app)
+        if (hclient->priv->app && topmost)
           hd_launcher_app_set_comp_mgr_client (hclient->priv->app, hclient);
 
-        if (app->stack_index > 0 && app->leader)
+        if (app->stack_index > 0 && topmost)
           {
             ClutterActor *top_actor;
             MBWMCompMgrClutterClient *top;
@@ -1165,27 +1217,26 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                 GList *l;
 
                 /* Hide the followers and replace the last one preceeding us
-                 * with ourselves in the switcher. */
+                 * in the switcher. */
                 for (l = app->leader->followers; l && l->next; l = l->next)
                   {
-                    g_return_if_fail (l != NULL);
                     top = MB_WM_COMP_MGR_CLUTTER_CLIENT (
 			      MB_WM_CLIENT (l->data)->cm_client);
                     top_actor = mb_wm_comp_mgr_clutter_client_get_actor (top);
                     clutter_actor_hide (top_actor);
-                    g_return_if_fail(l->next != NULL);
+
                     if (l->next->data == app)
                       { /* We should be the last of the followers. */
                         hd_switcher_replace_window_actor (priv->switcher_group,
                                                           top_actor, actor);
-                        g_return_if_fail (!l->next->next);
+                        g_assert (!l->next->next);
                         break;
                       }
                   }
               }
           }
         else if (!(c->window->ewmh_state &
-		   MBWMClientWindowEWMHStateSkipTaskbar))
+		   MBWMClientWindowEWMHStateSkipTaskbar) && topmost)
           {
             /* Taskbar == task switcher in our case.
              * Introduced for systemui. */

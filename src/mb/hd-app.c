@@ -192,6 +192,12 @@ hd_app_init (MBWMObject *this, va_list vap)
   if (prop)
     XFree (prop);
 
+  /* all stackables have stack_index <= length of the followers list */
+  g_assert (!app->leader || !app->leader->followers ||
+            app->stack_index <= g_list_length (app->leader->followers));
+  /* all stackables have stack_index >= 0 */
+  g_assert (!app->leader || (app->leader && app->stack_index >= 0));
+
   return 1;
 }
 
