@@ -1020,6 +1020,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * and unmaps arrive unreliably, for example we don't get unmap
        * notification for VKB.  In other cases we may receive two
        * maps for the same client.
+       * FIXME: I'm sure the extra/missing maps and unmaps are our bugs... (KH)
        */
       g_hash_table_insert (priv->tasks_button_blockers, c, GINT_TO_POINTER(1));
     }
