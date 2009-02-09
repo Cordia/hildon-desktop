@@ -33,6 +33,12 @@ hd_transition_overshoot(float x);
 float
 hd_transition_smooth_ramp(float amt);
 
+/* For the animated progress indicator in the title bar */
+void
+on_decor_progress_timeline_new_frame(ClutterTimeline *timeline,
+                                     gint frame_num,
+                                     ClutterActor *progress_texture);
+
 void
 hd_transition_popup(HdCompMgr                  *mgr,
                     MBWindowManagerClient      *c,

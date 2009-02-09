@@ -28,7 +28,6 @@
 #include <matchbox/core/mb-window-manager.h>
 #include <matchbox/core/mb-wm-decor.h>
 #include <clutter/clutter.h>
-#include "tidy/tidy-sub-texture.h"
 
 typedef struct HdDecorClass   HdDecorClass;
 typedef struct HdDecor        HdDecor;
@@ -51,7 +50,7 @@ struct HdDecor
   /* private? */
   ClutterActor          *title_bar_actor;
   ClutterActor          *title_actor;
-  TidySubTexture        *progress_texture;
+  ClutterActor          *progress_texture;
   ClutterTimeline       *progress_timeline;
 };
 
@@ -65,5 +64,8 @@ hd_decor_get_actor(HdDecor   *decor);
 
 void hd_decor_paint_decor(HdDecor   *decor,
                           MBWMTheme *theme);
+
+gboolean
+hd_decor_window_is_waiting (MBWindowManager *wm, Window w);
 
 #endif

@@ -1,3 +1,15 @@
+2009-02-09  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-transition.c
+	* src/util/hd-transition.h:
+	Moved progress indicator animation code to save duplication
+	* src/home/hd-title-bar.c:
+	Added progress indicator animation code for main title bar
+	* src/mb/hd-decor.c
+	* src/mb/hd-decor.h:
+	Changed to use hd-transition for progress indicator, and allowed
+	hd-title-bar to use hd_decor_is_waiting
+
 2009-02-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/hildon-desktop.postinst:

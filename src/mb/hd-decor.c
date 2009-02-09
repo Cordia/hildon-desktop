@@ -30,6 +30,7 @@
 #include "hd-render-manager.h"
 #include "hd-clutter-cache.h"
 #include "hd-decor-button.h"
+#include "hd-transition.h"
 
 #include <matchbox/theme-engines/mb-wm-theme-png.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -104,7 +105,7 @@ hd_decor_class_type ()
   return type;
 }
 
-static gboolean
+gboolean
 hd_decor_window_is_waiting (MBWindowManager *wm, Window w)
 {
   HdCompMgr *hmgr = HD_COMP_MGR (wm->comp_mgr);
@@ -137,28 +138,6 @@ hd_decor_window_is_waiting (MBWindowManager *wm, Window w)
     }
   else
     return 0;
-}
-
-static void
-on_decor_progress_timeline_new_frame(ClutterTimeline *timeline,
-                                     gint frame_num, HdDecor *decor)
-{
-  if (decor->progress_texture)
-    {
-      /* The progress animation is a series of frames packed
-       * into a texture - like a film strip
-       */
-      ClutterGeometry progress_region =
-         {HD_THEME_IMG_PROGRESS_SIZE*frame_num, 0,
-          HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE };
-
-      tidy_sub_texture_set_region(decor->progress_texture, &progress_region);
-
-      /* FIXME: We really want to set this to queue damage with an area -
-       * like we do for windows. Otherwise we end up updating the whole
-       * screen for this. */
-      clutter_actor_queue_redraw(CLUTTER_ACTOR(decor->progress_texture));
-    }
 }
 
 static
@@ -314,34 +293,33 @@ hd_decor_create_actors(HdDecor *decor)
        * side of the window*/
       ClutterGeometry progress_geo =
         {0, 0, HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE};
-      ClutterActor *tex = hd_clutter_cache_get_sub_texture(
+      gint x;
+      decor->progress_texture = hd_clutter_cache_get_sub_texture(
                                                       HD_THEME_IMG_PROGRESS,
                                                       TRUE,
                                                       &progress_geo);
-      if (TIDY_IS_SUB_TEXTURE(tex))
+      if (decor->title_actor)
         {
-          decor->progress_texture = TIDY_SUB_TEXTURE(tex);
-          clutter_container_add_actor(CLUTTER_CONTAINER(actor),
-                                      CLUTTER_ACTOR(decor->progress_texture));
-          clutter_actor_set_position(CLUTTER_ACTOR(decor->progress_texture),
-              mb_decor->geom.width - HD_THEME_IMG_PROGRESS_SIZE,
-              (mb_decor->geom.height - HD_THEME_IMG_PROGRESS_SIZE)/2);
-          clutter_actor_set_size(CLUTTER_ACTOR(decor->progress_texture),
-              HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE);
-          /* Get the timeline and set it running */
-          decor->progress_timeline = g_object_ref(
-              clutter_timeline_new(HD_THEME_IMG_PROGRESS_FRAMES, HD_THEME_IMG_PROGRESS_FPS));
-          clutter_timeline_set_loop(decor->progress_timeline, TRUE);
-          g_signal_connect (decor->progress_timeline, "new-frame",
-                            G_CALLBACK (on_decor_progress_timeline_new_frame), decor);
-          clutter_timeline_start(decor->progress_timeline);
+          x = clutter_actor_get_x(CLUTTER_ACTOR(decor->title_actor)) +
+              clutter_actor_get_width(CLUTTER_ACTOR(decor->title_actor)) +
+              HD_DECOR_TITLE_MARGIN;
         }
-      else
-        {
-          /* We failed to load the texture, so just don't do the animation -
-           * but free the fake texture we were given */
-          clutter_actor_destroy(actor);
-        }
+      clutter_container_add_actor(CLUTTER_CONTAINER(actor),
+                                  decor->progress_texture);
+      clutter_actor_set_position(decor->progress_texture,
+          x,
+          (mb_decor->geom.height - HD_THEME_IMG_PROGRESS_SIZE)/2);
+      clutter_actor_set_size(decor->progress_texture,
+          HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE);
+      /* Get the timeline and set it running */
+      decor->progress_timeline = g_object_ref(
+          clutter_timeline_new(HD_THEME_IMG_PROGRESS_FRAMES,
+                               HD_THEME_IMG_PROGRESS_FPS));
+      clutter_timeline_set_loop(decor->progress_timeline, TRUE);
+      g_signal_connect (decor->progress_timeline, "new-frame",
+                        G_CALLBACK (on_decor_progress_timeline_new_frame),
+                        decor->progress_texture);
+      clutter_timeline_start(decor->progress_timeline);
     }
 }
 

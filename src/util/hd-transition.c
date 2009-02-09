@@ -34,6 +34,8 @@
 #include "hd-gtk-style.h"
 #include "hd-render-manager.h"
 #include "hildon-desktop.h"
+#include "hd-theme.h"
+#include "tidy/tidy-sub-texture.h"
 
 #include "hd-app.h"
 
@@ -95,6 +97,33 @@ hd_transition_smooth_ramp(float amt)
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
+
+/* For the animated progress indicator in the title bar */
+void
+on_decor_progress_timeline_new_frame(ClutterTimeline *timeline,
+                                     gint frame_num,
+                                     ClutterActor *progress_texture)
+{
+  if (TIDY_IS_SUB_TEXTURE(progress_texture) &&
+      CLUTTER_ACTOR_IS_VISIBLE(progress_texture))
+    {
+      /* The progress animation is a series of frames packed
+       * into a texture - like a film strip
+       */
+      ClutterGeometry progress_region =
+         {HD_THEME_IMG_PROGRESS_SIZE*frame_num, 0,
+          HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE };
+
+      tidy_sub_texture_set_region(
+          TIDY_SUB_TEXTURE(progress_texture),
+          &progress_region);
+
+      /* FIXME: We really want to set this to queue damage with an area -
+       * like we do for windows. Otherwise we end up updating the whole
+       * screen for this. */
+      clutter_actor_queue_redraw(progress_texture);
+    }
+}
 
 static void
 on_popup_timeline_new_frame(ClutterTimeline *timeline,

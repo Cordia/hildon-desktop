@@ -35,6 +35,7 @@
 #include "mb/hd-theme.h"
 #include "hd-render-manager.h"
 #include "hd-gtk-utils.h"
+#include "hd-transition.h"
 
 #include <matchbox/theme-engines/mb-wm-theme-png.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -137,6 +138,9 @@ struct _HdTitleBarPrivate
   ClutterLabel          *title;
   /* Pulsing animation for switcher */
   ClutterTimeline       *switcher_timeline;
+  /* progress indicator */
+  ClutterTimeline       *progress_timeline;
+  ClutterActor          *progress_texture;
 
   HdTitleBarVisEnum      state;
 };
@@ -252,6 +256,29 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_timeline_set_loop(priv->switcher_timeline, TRUE);
   g_signal_connect (priv->switcher_timeline, "new-frame",
                         G_CALLBACK (on_switcher_timeline_new_frame), bar);
+
+  /* Create progress indicator */
+  {
+    ClutterGeometry progress_geo =
+        {0, 0, HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE};
+    priv->progress_texture = hd_clutter_cache_get_sub_texture(
+                                                    HD_THEME_IMG_PROGRESS,
+                                                    TRUE,
+                                                    &progress_geo);
+    clutter_container_add_actor(CLUTTER_CONTAINER(bar),
+                                priv->progress_texture);
+    clutter_actor_set_size(priv->progress_texture,
+                HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE);
+    clutter_actor_hide(priv->progress_texture);
+    /* Create the timeline for animation */
+    priv->progress_timeline = g_object_ref(
+        clutter_timeline_new(HD_THEME_IMG_PROGRESS_FRAMES,
+                             HD_THEME_IMG_PROGRESS_FPS));
+    clutter_timeline_set_loop(priv->progress_timeline, TRUE);
+    g_signal_connect (priv->progress_timeline, "new-frame",
+                      G_CALLBACK (on_decor_progress_timeline_new_frame),
+                      priv->progress_texture);
+  }
 }
 
 static void
@@ -260,8 +287,13 @@ hd_title_bar_dispose (GObject *obj)
   HdTitleBarPrivate *priv = HD_TITLE_BAR(obj)->priv;
   gint i;
 
+  if (priv->progress_timeline)
+    clutter_timeline_stop(priv->progress_timeline);
   for (i=0;i<BTN_COUNT;i++)
     clutter_actor_destroy(priv->buttons[i]);
+  clutter_actor_destroy(priv->progress_texture);
+  g_object_unref(priv->progress_timeline);
+  /* TODO: unref others - or do we care as we are a singleton? */
 }
 
 static void
@@ -462,6 +494,9 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
     {
       gint left_width = 0;
 
+      clutter_actor_hide(priv->progress_texture);
+      clutter_timeline_stop(priv->progress_timeline);
+
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
         left_width = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
 
@@ -538,6 +573,8 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
   gboolean pressed = FALSE;
   MBWMList *l;
   HdTitleBarPrivate *priv;
+  gboolean is_waiting;
+
   if (!HD_IS_TITLE_BAR(bar))
     return;
   priv = bar->priv;
@@ -559,6 +596,9 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
       g_critical("%s: should only be called on MBWMClientTypeApp", __FUNCTION__);
       return;
     }
+
+  is_waiting = hd_decor_window_is_waiting(client->wmref,
+                                          client->window->xwindow);
 
   for (l = client->decor;l;l = l->next)
     {
@@ -601,11 +641,32 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
     clutter_actor_get_size(CLUTTER_ACTOR(priv->title), &w, &h);
     clutter_actor_set_position(CLUTTER_ACTOR(priv->title),
                                x_start+HD_TITLE_BAR_TITLE_MARGIN,
-                               (decor->geom.height-h)/2);
+                               (HD_COMP_MGR_TOP_MARGIN-h)/2);
     clutter_actor_show(CLUTTER_ACTOR(priv->title));
   }
   else
     clutter_actor_hide(CLUTTER_ACTOR(priv->title));
+
+  /* add progress indicator */
+  if (is_waiting)
+    {
+      gint x = 0;
+      clutter_actor_show(priv->progress_texture);
+      clutter_timeline_start(priv->progress_timeline);
+
+      x = clutter_actor_get_x(CLUTTER_ACTOR(priv->title)) +
+          clutter_actor_get_width(CLUTTER_ACTOR(priv->title)) +
+          HD_TITLE_BAR_TITLE_MARGIN;
+
+      clutter_actor_set_position(priv->progress_texture,
+                x,
+                (HD_COMP_MGR_TOP_MARGIN - HD_THEME_IMG_PROGRESS_SIZE)/2);
+    }
+  else
+    {
+      clutter_actor_hide(priv->progress_texture);
+      clutter_timeline_stop(priv->progress_timeline);
+    }
 
   /* Go through all buttons and set the ones visible that are required */
   state = hd_title_bar_get_state(bar) & (~HDTB_VIS_BTN_RIGHT_MASK);
