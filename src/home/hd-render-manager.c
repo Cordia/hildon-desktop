@@ -696,7 +696,7 @@ void hd_render_manager_sync_clutter ()
     clutter_actor_hide(priv->operator);
 
   if (STATE_SHOW_STATUS_AREA(priv->state) && priv->status_area
-      && !priv->has_fullscreen)
+      && (!priv->has_fullscreen || !STATE_IS_APP(priv->state)))
     {
       clutter_actor_show(priv->status_area);
       clutter_actor_raise_top(priv->status_area);
@@ -1600,36 +1600,30 @@ void hd_render_manager_set_visibilities()
         }
     }
 
-  /* Show/hide blur_front. */
-  if (!!priv->has_fullscreen == !!CLUTTER_ACTOR_IS_VISIBLE(priv->blur_front))
+  /* If we have a fullscreen something hide the blur_front
+   * and move SA out of the way.  BTW blur_front is implcitly
+   * shown by clutter when reparented. */
+  c = priv->status_area_client;
+  if (priv->has_fullscreen)
     {
-      MBWindowManagerClient *c = priv->status_area_client;
-
-      /* if it is the status area, then show/hide the entire
-       * BLUR FRONT group depending on if it is covered
-       * by a fullscreen window */
-      if (priv->has_fullscreen)
-        {
-          clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
-          if (c && c->frame_geometry.y >= 0)
-            { /* Move SA out of the way. */
-              c->frame_geometry.y   = -c->frame_geometry.height;
-              c->window->geometry.y = -c->window->geometry.height;
-              mb_wm_client_geometry_mark_dirty(c);
-              mb_wm_client_display_sync (c);
-            }
+      clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
+      if (c && c->frame_geometry.y >= 0)
+        { /* Move SA out of the way. */
+          c->frame_geometry.y   = -c->frame_geometry.height;
+          c->window->geometry.y = -c->window->geometry.height;
+          mb_wm_client_geometry_mark_dirty(c);
         }
-      else
-        {
-          clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
-          if (c && c->frame_geometry.y < 0)
-            { /* Restore the position of SA. */
-              c->frame_geometry.y = c->window->geometry.y = 0;
-              mb_wm_client_geometry_mark_dirty(c);
-            }
-        }
-      hd_render_manager_set_input_viewport();
     }
+  else
+    {
+      clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
+      if (c && c->frame_geometry.y < 0)
+        { /* Restore the position of SA. */
+          c->frame_geometry.y = c->window->geometry.y = 0;
+          mb_wm_client_geometry_mark_dirty(c);
+        }
+    }
+  hd_render_manager_set_input_viewport();
 }
 
 void hd_render_manager_queue_delay_redraw()

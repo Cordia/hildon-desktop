@@ -1,5 +1,14 @@
 2009-02-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	12:34 < kuzak> androide, I think there is a bug in your bug fix: if you kill fullscreen
+	               application (e.g. application manager), next time you go to Home,
+		       Status Area has vanished
+
+	* src/home/hd-render-manager.c (hd_render_manager_sync_clutter):
+	  Consider has_fullscreen only if STATE_IS_APP().
+
+2009-02-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Handle fullscreen without forcing clients into one layer or other.
 	NB#100720
 
