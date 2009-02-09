@@ -1841,24 +1841,6 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
   hd_app_mgr_dump_app_list (TRUE);
 }
 
-void
-hd_comp_mgr_set_status_area_stacking(HdCompMgr *hmgr, gboolean visible)
-{
-  HdCompMgrPrivate         * priv = hmgr->priv;
-
-  g_debug ("%s: %s", __FUNCTION__, visible ? "MID": "BOTTOM");
-
-  if (priv->status_area_client)
-    {
-      /* This needs to be TopMid to clear the desktop window that
-       * HdHome creates */
-      priv->status_area_client->stacking_layer =
-          visible ? MBWMStackLayerTopMid : MBWMStackLayerBottom;
-      /* and make sure we restack now... */
-      mb_wm_client_stacking_mark_dirty(priv->status_area_client);
-    }
-}
-
 void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running)
 {
   if (!HD_IS_COMP_MGR(hmgr))

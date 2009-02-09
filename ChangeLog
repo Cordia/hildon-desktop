@@ -1,3 +1,22 @@
+2009-02-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Handle fullscreen without forcing clients into one layer or other.
+	NB#100720
+
+	* src/mb/hd-app.c:
+	  Removed stacking_layer() override.
+	* src/mb/hd-comp-mgr.h
+	* src/mb/hd-comp-mgr.c:
+	  Removed hd_comp_mgr_set_status_area_stacking().
+	* src/mb/hd-status-area.c:
+	  Removed the LayoutPrefPositionFree layout hint to make it
+	  possible to move the client out of screen.  With this flag set
+	  the layout manager doesn't permit that.
+	* src/home/hd-render-manager.c (hd_render_manager_set_visibilities):
+	  Search the whole stack for fullscreen apps.  Introduced has_fullsreen.
+	  Rather than influencing its stacking layer move the status area
+	  at the same time front_blur is shown/hidden.
+
 2009-02-08  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Move cached background image creation to hildon-home. In

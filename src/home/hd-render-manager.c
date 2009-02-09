@@ -119,7 +119,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *
  * HDRM ---> home_blur         ---> home
  *       |                      --> apps (not app_top)
- *       |                      --> blurred_front ---> button_task_nav
+ *       |                      --> blur_front    ---> button_task_nav
  *       |                                         --> button_launcher
  *       |                                         --> button_menu
  *       |                                         --> status_area
@@ -177,6 +177,10 @@ struct _HdRenderManagerPrivate {
   gboolean            in_notify;
   gboolean            in_set_state;
   gboolean            queued_redraw;
+
+  /* has_fullscreen if and only if set_visibilities() finds a
+   * MBWMClientWindowEWMHStateFullscreen client in the client stack. */
+  gboolean            has_fullscreen;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -579,8 +583,7 @@ hd_render_manager_set_input_viewport()
        * which could just have moved it. */
       if (priv->state == HDRM_STATE_APP_PORTRAIT && priv->status_area
           && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area)
-          && CLUTTER_ACTOR_IS_VISIBLE (clutter_actor_get_parent
-                                       (priv->status_area)))
+          && CLUTTER_ACTOR_IS_VISIBLE (priv->blur_front))
         { g_assert(priv->status_area_client);
           const MBGeometry *src = &priv->status_area_client->frame_geometry;
           ClutterGeometry *dst = &geom[geom_count++];
@@ -692,7 +695,8 @@ void hd_render_manager_sync_clutter ()
   else
     clutter_actor_hide(priv->operator);
 
-  if (STATE_SHOW_STATUS_AREA(priv->state) && priv->status_area)
+  if (STATE_SHOW_STATUS_AREA(priv->state) && priv->status_area
+      && !priv->has_fullscreen)
     {
       clutter_actor_show(priv->status_area);
       clutter_actor_raise_top(priv->status_area);
@@ -1077,10 +1081,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
           mb_wm_handle_show_desktop(MB_WM_COMP_MGR(priv->comp_mgr)->wm, show);
         }
-
-      if (STATE_SHOW_STATUS_AREA(state) != STATE_SHOW_STATUS_AREA(oldstate))
-        hd_comp_mgr_set_status_area_stacking(priv->comp_mgr,
-                    STATE_SHOW_STATUS_AREA(state));
 
       /* we always need to restack here */
       hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
@@ -1530,6 +1530,8 @@ void hd_render_manager_set_visibilities()
   GList *it;
   gint i, n_elements;
   ClutterGeometry fullscreen_geo = {0, 0, HDRM_WIDTH, HDRM_HEIGHT};
+  MBWindowManager *wm;
+  MBWindowManagerClient *c;
 
   priv = the_render_manager->priv;
   /* first append all the top elements... */
@@ -1578,53 +1580,56 @@ void hd_render_manager_set_visibilities()
   g_list_free(blockers);
   blockers = 0;
 
-  /* now we have to find the status area, and see if it has something that
-   * blocks it in front of it. If it does, make it (and any fake actor at
-   * its level - blur_front level) invisible.  */
-  if (priv->status_area)
+  /* Do we have a fullscreen client visible? */
+  priv->has_fullscreen = FALSE;
+  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  for (c = wm->stack_top; c && !priv->has_fullscreen; c = c->stacked_below)
     {
-      MBWindowManager *wm;
-      MBWindowManagerClient *c;
-      gboolean fullscreen_before = FALSE;
-
-      wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
-
-      /* Order and choose which window actors will be visible */
-      for (c = wm->stack_top; c; c = c->stacked_below)
+      if (c->cm_client && c->desktop >= 0) /* FIXME: should check against
+                                              current desktop? */
         {
-          if (c->cm_client && c->desktop >= 0) /* FIXME: should check against
-                                                  current desktop? */
+          ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor(
+              MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
+          if (actor && CLUTTER_ACTOR_IS_VISIBLE(actor))
             {
-              ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor(
-                  MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
-              if (actor)
-                {
-                  g_object_unref(actor);
-                  if (actor != priv->status_area)
-                    {
-                      if (c->window)
-                        fullscreen_before |=
-                                    c->window->ewmh_state &
-                                    MBWMClientWindowEWMHStateFullscreen;
-                    }
-                  else
-                    {
-                      /* if it is the status area, then show/hide the entire
-                       * BLUR FRONT group depending on if it is covered
-                       * by a fullscreen window */
-                      if (!fullscreen_before)
-                        clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
-                      else
-                        clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
-                      hd_render_manager_set_input_viewport();
-                      break;
-                    }
-                }
+              g_object_unref(actor);
+              if (c->window)
+                priv->has_fullscreen |= c->window->ewmh_state &
+                  MBWMClientWindowEWMHStateFullscreen;
             }
         }
     }
-  else /* we have no window to check visibility with, so render anyway */
-    clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
+
+  /* Show/hide blur_front. */
+  if (!!priv->has_fullscreen == !!CLUTTER_ACTOR_IS_VISIBLE(priv->blur_front))
+    {
+      MBWindowManagerClient *c = priv->status_area_client;
+
+      /* if it is the status area, then show/hide the entire
+       * BLUR FRONT group depending on if it is covered
+       * by a fullscreen window */
+      if (priv->has_fullscreen)
+        {
+          clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
+          if (c && c->frame_geometry.y >= 0)
+            { /* Move SA out of the way. */
+              c->frame_geometry.y   = -c->frame_geometry.height;
+              c->window->geometry.y = -c->window->geometry.height;
+              mb_wm_client_geometry_mark_dirty(c);
+              mb_wm_client_display_sync (c);
+            }
+        }
+      else
+        {
+          clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
+          if (c && c->frame_geometry.y < 0)
+            { /* Restore the position of SA. */
+              c->frame_geometry.y = c->window->geometry.y = 0;
+              mb_wm_client_geometry_mark_dirty(c);
+            }
+        }
+      hd_render_manager_set_input_viewport();
+    }
 }
 
 void hd_render_manager_queue_delay_redraw()
@@ -1694,13 +1699,6 @@ void hd_render_manager_place_titlebar_elements (void)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   guint x;
-
-  /*
-   * tasks button    state change
-   * status area     window mapped
-   * operator logo   dbus
-   * title padding
-   */
 
   x = 0;
 

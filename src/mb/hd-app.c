@@ -24,27 +24,12 @@
 #include "hd-app.h"
 #include "hd-comp-mgr.h"
 
-/* Override client->stacking_layer if and only if we're fullscreen. */
-static MBWMStackLayerType
-hd_app_stacking_layer(MBWindowManagerClient *client)
-{
-  MBWMList *li;
-
-  if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
-    return MBWMStackLayerTop;
-  for (li = client->transients; li; li = li->next)
-    if (hd_app_stacking_layer(li->data) == MBWMStackLayerTop)
-      return MBWMStackLayerTop;
-  return client->stacking_layer;
-}
-
 static void
 hd_app_class_init (MBWMObjectClass *klass)
 {
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdApp";
 #endif
-  MB_WM_CLIENT_CLASS (klass)->stacking_layer = hd_app_stacking_layer;
 }
 
 static void

@@ -62,8 +62,7 @@ hd_status_area_init (MBWMObject *this, va_list vap)
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
   MBGeometry             geom;
 
-  mb_wm_client_set_layout_hints (client, LayoutPrefPositionFree |
-                                 LayoutPrefVisible);
+  mb_wm_client_set_layout_hints (client, LayoutPrefVisible);
 
   client->stacking_layer = MBWMStackLayerTopMid;
 
