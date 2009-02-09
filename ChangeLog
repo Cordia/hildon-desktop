@@ -2,6 +2,10 @@
 
 	* debian/changelog: Update.
 
+2009-02-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Update.
+
 2009-02-09  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-transition.c
