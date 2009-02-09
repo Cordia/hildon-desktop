@@ -1,3 +1,7 @@
+2009-02-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Update.
+
 2009-02-09  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-transition.c
@@ -15,7 +19,7 @@
 	* debian/hildon-desktop.postinst:
 	* src/Makefile.am:
 	* src/hildon-desktop.schemas (deleted): Remove default backgrounds
-	.schema.
+	.schema. Fixes: NB#101138.
 
 	* src/hildon-desktop-views.schemas: Update default active views.
 
