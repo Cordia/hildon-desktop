@@ -6,7 +6,6 @@ hildon-desktop (1:2.2.19-1~unreleased) unstable; urgency=low
   Kimmo:
   * Handle the stack index of stackable windows. Prepare for replacing of
     windows in the middle of the stack in the MapNotify handler.
-  * Depend on hildon-home because of Jan Arne's new background loading code.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue,  3 Feb 2009 10:27:50 +0200
 

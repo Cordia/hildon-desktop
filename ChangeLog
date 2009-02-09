@@ -17,31 +17,6 @@
 	  Rather than influencing its stacking layer move the status area
 	  at the same time front_blur is shown/hidden.
 
-2009-02-08  Jan Arne Petersen  <jpetersen@openismus.com>
-
-	Move cached background image creation to hildon-home. In
-	hildon-desktop there is just the ~/.backgrounds directory monitored
-	and the cached background image is loaded if the file was
-	created/changed.
-
-	* src/home/hd-home-view-container.c (backgrounds_dir_changed): Let the
-	  home view load the background image if the cached image was created
-	  or changed.
-	  (hd_home_view_container_update_active_views): Load the background
-	  image of all active views. Monitor the ~/.backgrounds dir.
-	  (hd_home_view_container_dispose): Cancel the ~/.backgrounds monitor.
-
-	* src/home/hd-home-view.c (hd_home_view_allocate,
-	  hd_home_view_constructed, hd_home_view_dispose,
-	  hd_home_view_finalize): Remove unused code.
-	  (load_background_idle): Load the cached background image from
-	  ~/.backgrounds.
-	  (hd_home_view_load_background): Init the idle cached background
-	  image loading.
-
-	* src/home/hd-home-view.h: Remove unused functions. Add
-	  hd_home_view_load_background.
-
 2009-02-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-theme.c (construct_buttons): Use stack index instead of a

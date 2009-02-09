@@ -8,7 +8,7 @@ Standards-Version: 3.8.0
 Package: hildon-desktop
 Section: x11
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, hildon-theme | hildon-theme-devel, hildon-icons | sdk-default-icons, gconf2, osso-af-startup, maemo-af-desktop-l10n-mr0 | maemo-af-desktop-l10n-mr, theme-config (>= 0.7), hildon-home
+Depends: ${shlibs:Depends}, ${misc:Depends}, hildon-theme | hildon-theme-devel, hildon-icons | sdk-default-icons, gconf2, osso-af-startup, maemo-af-desktop-l10n-mr0 | maemo-af-desktop-l10n-mr, theme-config (>= 0.7)
 #Conflicts: matchbox-window-manager
 Description: Hildon desktop for Fremantle
  Hildon desktop for Fremantle.
