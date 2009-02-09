@@ -47,6 +47,11 @@
 #define BACKGROUND_COLOR {0, 0, 0, 0xff}
 
 #define GCONF_BACKGROUND_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/bg-image", i + 1)
+#define CURRENT_THEME_DIR "/etc/hildon/theme"
+#define BACKGROUNDS_DESKTOP_FILE CURRENT_THEME_DIR "/backgrounds/theme_bg.desktop"
+#define DEFAULT_THEME_DIR "/usr/share/themes/default"
+#define BACKGROUNDS_DEFAULT_DESKTOP_FILE DEFAULT_THEME_DIR "/backgrounds/theme_bg.desktop"
+#define BACKGROUNDS_DESKTOP_KEY_FILE "X-File%u"
 
 #define MAX_VIEWS 4
 
@@ -270,19 +275,57 @@ hd_home_view_gconf_bgimage_notify (GConfClient *client,
 				   GConfEntry  *entry,
 				   HdHomeView  *view)
 {
-  GConfValue   *value;
+  HdHomeViewPrivate *priv = view->priv;
+  GConfValue *value;
+  gchar *image_string = NULL;
 
+  /* Try to get background image from GConf */
   value = gconf_entry_get_value (entry);
-  if (value)
+  if (value && value->type == GCONF_VALUE_STRING)
+    image_string = g_strdup (gconf_value_get_string (value));
+
+  /* Try to get background image from current theme */
+  if (!image_string)
     {
-      const gchar *image_string = gconf_value_get_string (value);
-      if (image_string)
-	{
-	  HdHomeViewPrivate *priv = view->priv;
-	  priv->bg_image_skip_gconf = TRUE;
-	  g_object_set (view, "background-image", image_string, NULL);
-	}
+      GKeyFile *keyfile = g_key_file_new ();
+      if (g_key_file_load_from_file (keyfile,
+                                     BACKGROUNDS_DESKTOP_FILE,
+                                     G_KEY_FILE_NONE,
+                                     NULL))
+        {
+          gchar *desktop_key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, priv->id + 1);
+          image_string = g_key_file_get_string (keyfile,
+                                                G_KEY_FILE_DESKTOP_GROUP,
+                                                desktop_key,
+                                                NULL);
+          g_free (desktop_key);
+        }
+      g_key_file_free (keyfile);
     }
+
+  /* Try to get background image from current theme */
+  if (!image_string)
+    {
+      GKeyFile *keyfile = g_key_file_new ();
+      if (g_key_file_load_from_file (keyfile,
+                                     BACKGROUNDS_DEFAULT_DESKTOP_FILE,
+                                     G_KEY_FILE_NONE,
+                                     NULL))
+        {
+          gchar *desktop_key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, priv->id + 1);
+          image_string = g_key_file_get_string (keyfile,
+                                                G_KEY_FILE_DESKTOP_GROUP,
+                                                desktop_key,
+                                                NULL);
+          g_free (desktop_key);
+        }
+      g_key_file_free (keyfile);
+    }
+
+  priv->bg_image_skip_gconf = TRUE;
+  g_object_set (view, "background-image", image_string, NULL);
+
+  g_free (image_string);
 }
 
 static void

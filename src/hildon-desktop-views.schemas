@@ -17,7 +17,7 @@
       <owner>hildon-desktop</owner>
       <type>list</type>
       <list_type>int</list_type>
-      <default>[1, 2, 3]</default>
+      <default>[1, 2]</default>
       <locale name="C">
         <short>List of the active (enabled) Home views</short>
       </locale>

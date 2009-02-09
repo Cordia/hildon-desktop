@@ -1,3 +1,15 @@
+2009-02-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/hildon-desktop.postinst:
+	* src/Makefile.am:
+	* src/hildon-desktop.schemas (deleted): Remove default backgrounds
+	.schema.
+
+	* src/hildon-desktop-views.schemas: Update default active views.
+
+	* src/home/hd-home-view.c (hd_home_view_gconf_bgimage_notify): Load
+	background images from theme if not available in GConf.
+
 2009-02-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	12:34 < kuzak> androide, I think there is a bug in your bug fix: if you kill fullscreen

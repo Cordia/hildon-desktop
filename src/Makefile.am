@@ -16,7 +16,6 @@ hildon_desktop_CFLAGS = -std=c99 -fgnu89-inline
 
 schemadir = ${datadir}/gconf/schemas
 schema_DATA = \ 
-	hildon-desktop.schemas \
 	hildon-desktop-views.schemas
 
 cuddir = ${sysconfdir}/osso-cud-scripts
