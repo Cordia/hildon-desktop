@@ -1,9 +1,10 @@
 #include <stdlib.h>
+#include <string.h>
 #include <gtk/gtk.h>
 
 #include "portrait-common.c"
 
-static void cb(GtkWidget *button, GtkWindow *win)
+static void boo_cb(GtkWidget *button, GtkWindow *win)
 {
   GtkWidget *dlg;
 
@@ -14,7 +15,15 @@ static void cb(GtkWidget *button, GtkWindow *win)
   gtk_widget_destroy(dlg);
 }
 
-static gboolean kolbi(gpointer entry)
+static void fos_cb(GtkToggleButton *self, GtkWindow *win)
+{
+  if (gtk_toggle_button_get_active(self))
+    gtk_window_fullscreen(win);
+  else
+    gtk_window_unfullscreen(win);
+}
+
+static gboolean idiot_cb(gpointer entry)
 {
   time_t now;
 
@@ -25,7 +34,7 @@ static gboolean kolbi(gpointer entry)
 
 int main(int argc, char const *argv[])
 {
-  GtkWidget *win, *vbox, *w;
+  GtkWidget *win, *vbox, *hbox, *w;
 
   gtk_init(NULL, NULL);
   win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -35,15 +44,21 @@ int main(int argc, char const *argv[])
 
   vbox = gtk_vbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(win), vbox);
-  gtk_container_add(GTK_CONTAINER(vbox), portrait());
+
+  hbox = portrait();
+  w = gtk_check_button_new();
+  g_signal_connect(w, "toggled", G_CALLBACK(fos_cb), win);
+  gtk_container_add(GTK_CONTAINER(hbox), gtk_label_new("Fos"));
+  gtk_container_add(GTK_CONTAINER(hbox), w);
+  gtk_container_add(GTK_CONTAINER(vbox), hbox);
 
   w = gtk_entry_new();
-  g_timeout_add(1000, kolbi, w);
+  g_timeout_add(1000, idiot_cb, w);
   gtk_container_add(GTK_CONTAINER(vbox), w);
 
   w = gtk_button_new_with_label("Boo");
   gtk_container_add(GTK_CONTAINER(vbox), w);
-  g_signal_connect(w, "clicked", G_CALLBACK(cb), win);
+  g_signal_connect(w, "clicked", G_CALLBACK(boo_cb), win);
 
   gtk_widget_show_all(win);
   gtk_main();

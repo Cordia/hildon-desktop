@@ -1,5 +1,10 @@
 2009-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* tests/test-portrait-win.c:
+	  Added the option to test fullscreen mode as well.
+
+2009-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/home/hd-render-manager.c (hd_render_manager_create):
 	  Resize HdHome when rotating the screen.  If we leave it 800x480
 	  all the times set_visibilities() won't believe that it's obscured
