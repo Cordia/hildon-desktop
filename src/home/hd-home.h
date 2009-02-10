@@ -33,7 +33,7 @@
 #include "hd-home-view.h"
 
 /* FIXME -- match spec */
-#define HDH_SWITCH_WIDTH 20
+#define HDH_SWITCH_WIDTH 40
 
 G_BEGIN_DECLS
 

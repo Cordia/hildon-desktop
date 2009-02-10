@@ -1,3 +1,8 @@
+2009-02-10  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home.h (HDH_SWITCH_WIDTH): Use Wider edges to move
+	applets between views.
+
 2009-02-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-app.c: comment out Laszlo's transiency setting code for
