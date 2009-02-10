@@ -293,7 +293,7 @@ hd_decor_create_actors(HdDecor *decor)
        * side of the window*/
       ClutterGeometry progress_geo =
         {0, 0, HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE};
-      gint x;
+      gint x = 0;
       decor->progress_texture = hd_clutter_cache_get_sub_texture(
                                                       HD_THEME_IMG_PROGRESS,
                                                       TRUE,
