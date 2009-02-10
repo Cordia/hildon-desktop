@@ -256,7 +256,7 @@ hd_decor_create_actors(HdDecor *decor)
         ClutterColor white = { 0xFF, 0xFF, 0xFF, 0xFF };
         char font_name[512];
         gint x;
-        guint w,h;
+        guint w = 0, h = 0;
         gboolean centre_title;
 
         centre_title = c_type != MBWMClientTypeApp;
@@ -278,11 +278,11 @@ hd_decor_create_actors(HdDecor *decor)
         clutter_label_set_text(bar_title, title);
 
         clutter_actor_get_size(CLUTTER_ACTOR(bar_title), &w, &h);
-        x = centre_title ? ((mb_decor->geom.width-w)/2) :
-                           (x_start+HD_DECOR_TITLE_MARGIN);
+        x = centre_title ? (mb_decor->geom.width - w) / 2 :
+                           x_start + HD_DECOR_TITLE_MARGIN;
         clutter_actor_set_position(CLUTTER_ACTOR(bar_title),
                                    x,
-                                   (mb_decor->geom.height-h)/2);
+                                   (mb_decor->geom.height - h) / 2);
       }
     }
 
