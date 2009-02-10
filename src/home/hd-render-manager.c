@@ -245,6 +245,8 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   priv->button_launcher_back = g_object_ref(hd_launcher_get_back_button(launcher));
 
   priv->home = g_object_ref(home);
+  g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
+                           G_CALLBACK(stage_allocation_changed), priv->home);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
                               CLUTTER_ACTOR(priv->home));
   priv->button_home_back = g_object_ref(hd_home_get_back_button(priv->home));

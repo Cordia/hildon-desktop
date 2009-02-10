@@ -1,3 +1,15 @@
+2009-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-render-manager.c (hd_render_manager_create):
+	  Resize HdHome when rotating the screen.  If we leave it 800x480
+	  all the times set_visibilities() won't believe that it's obscured
+	  in application view and leaves it visible.  Then any (= all)
+	  applets not supporting portait mode will cause us to rotate
+	  the screen back to landscape momentary when a new portrait-capable
+	  window is mapped in portrait mode.
+	* src/home/hd-home.c:
+	  Syntax hilighting correction.
+
 2009-02-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Update.

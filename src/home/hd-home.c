@@ -428,7 +428,7 @@ static Bool
 root_window_client_message (XClientMessageEvent *event, HdHome *home)
 {
 #if 0
-  FIXME should we really support NET_CURRENT_DESKTOP?
+  //  FIXME should we really support NET_CURRENT_DESKTOP?
 
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
