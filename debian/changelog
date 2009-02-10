@@ -8,6 +8,9 @@ hildon-desktop (1:2.2.19-1~unreleased) unstable; urgency=low
   * Handle the stack index of stackable windows. Prepare for replacing of
     windows in the middle of the stack in the MapNotify handler.
 
+  Adam:
+  * Fix the "dialog behind application window" bug. Fixes: NB#100720
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue,  3 Feb 2009 10:27:50 +0200
 
 hildon-desktop (1:2.2.18-1) unstable; urgency=low
