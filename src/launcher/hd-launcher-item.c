@@ -146,6 +146,7 @@ hd_launcher_item_get_property (GObject    *object,
     case PROP_LAUNCHER_ITEM_TYPE:
       g_value_set_enum (value,
           hd_launcher_item_get_item_type (item));
+      break;
 
     case PROP_LAUNCHER_ITEM_ID:
       g_value_set_string (value,

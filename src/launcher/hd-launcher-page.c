@@ -36,6 +36,7 @@
 #include <tidy/tidy-adjustment.h>
 #include <hildon/hildon-defines.h>
 
+#include "hildon-desktop.h"
 #include "hd-launcher.h"
 #include "hd-launcher-grid.h"
 #include "hd-gtk-utils.h"
@@ -61,6 +62,7 @@ struct _HdLauncherPagePrivate
   ClutterActor *label;
   ClutterActor *scroller;
   ClutterActor *grid;
+  ClutterActor *empty_label;
 
   HdLauncherPageTransition transition_type;
   ClutterTimeline *transition;
@@ -194,7 +196,26 @@ hd_launcher_page_init (HdLauncherPage *page)
 static void
 hd_launcher_page_constructed (GObject *object)
 {
+  ClutterColor text_color;
+  gchar *font_string;
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (object);
+
+  hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
+                               GTK_STATE_NORMAL,
+                               &text_color);
+  font_string = hd_gtk_style_get_font_string (HD_GTK_BUTTON_SINGLETON);
+  priv->empty_label = clutter_label_new_full(font_string,
+                                             _("tana_li_of_noapps"),
+                                             &text_color);
+  clutter_label_set_line_wrap (CLUTTER_LABEL (priv->empty_label), TRUE);
+  clutter_label_set_ellipsize (CLUTTER_LABEL (priv->empty_label),
+                               PANGO_ELLIPSIZE_NONE);
+  clutter_label_set_alignment (CLUTTER_LABEL (priv->empty_label),
+                               PANGO_ALIGN_CENTER);
+  clutter_label_set_line_wrap_mode (CLUTTER_LABEL (priv->empty_label),
+                                    PANGO_WRAP_WORD);
+  clutter_actor_set_parent (priv->empty_label, CLUTTER_ACTOR (object));
+  g_free (font_string);
 
   priv->scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_actor_set_parent (priv->scroller, CLUTTER_ACTOR (object));
@@ -452,12 +473,33 @@ hd_launcher_page_allocate (ClutterActor          *actor,
     clutter_actor_allocate (priv->label, &nbox, origin_changed);
   }
 
-  /* The scroller */
-  nbox.x1 = CLUTTER_UNITS_FROM_DEVICE (0);
-  nbox.y1 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_YMARGIN);
-  nbox.x2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_WIDTH);
-  nbox.y2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_HEIGHT);
-  clutter_actor_allocate (priv->scroller, &nbox, origin_changed);
+  if (priv->empty_label)
+    {
+      guint x1, y1;
+      ClutterUnit label_width, label_height;
+      clutter_actor_get_preferred_size(priv->empty_label,
+          NULL, NULL,
+          &label_width, &label_height);
+
+      x1 = (HD_LAUNCHER_PAGE_WIDTH - CLUTTER_UNITS_TO_DEVICE (label_width)) / 2;
+      y1 = ((HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN -
+              CLUTTER_UNITS_TO_DEVICE (label_height))/2) +
+            HD_LAUNCHER_PAGE_YMARGIN;
+      nbox.x1 = CLUTTER_UNITS_FROM_DEVICE (x1);
+      nbox.y1 = CLUTTER_UNITS_FROM_DEVICE (y1);
+      nbox.x2 = CLUTTER_UNITS_FROM_DEVICE (x1) + label_width;
+      nbox.y2 = CLUTTER_UNITS_FROM_DEVICE (y1) + label_height;
+      clutter_actor_allocate (priv->empty_label, &nbox, origin_changed);
+    }
+  else
+    {
+      /* The scroller */
+      nbox.x1 = CLUTTER_UNITS_FROM_DEVICE (0);
+      nbox.y1 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_YMARGIN);
+      nbox.x2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_WIDTH);
+      nbox.y2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_HEIGHT);
+      clutter_actor_allocate (priv->scroller, &nbox, origin_changed);
+    }
 }
 
 static void
@@ -474,7 +516,9 @@ hd_launcher_page_paint (ClutterActor *actor)
   if (priv->label && CLUTTER_ACTOR_IS_VISIBLE (priv->label))
     clutter_actor_paint (priv->label);
 
-  if (priv->scroller && CLUTTER_ACTOR_IS_VISIBLE (priv->scroller))
+  if (priv->empty_label && CLUTTER_ACTOR_IS_VISIBLE (priv->empty_label))
+    clutter_actor_paint (priv->empty_label);
+  else if (priv->scroller && CLUTTER_ACTOR_IS_VISIBLE (priv->scroller))
     clutter_actor_paint (priv->scroller);
 }
 
@@ -492,7 +536,9 @@ hd_launcher_page_pick (ClutterActor       *actor,
   if (priv->icon && CLUTTER_ACTOR_IS_VISIBLE (priv->icon))
     clutter_actor_paint (priv->icon);
 
-  if (priv->scroller && CLUTTER_ACTOR_IS_VISIBLE (priv->scroller))
+  if (priv->empty_label && CLUTTER_ACTOR_IS_VISIBLE (priv->empty_label))
+      clutter_actor_paint (priv->empty_label);
+  else if (priv->scroller && CLUTTER_ACTOR_IS_VISIBLE (priv->scroller))
     clutter_actor_paint (priv->scroller);
 }
 
@@ -510,7 +556,9 @@ hd_launcher_page_show (ClutterActor *actor)
   if (priv->grid)
     hd_launcher_grid_reset_v_adjustment (HD_LAUNCHER_GRID (priv->grid));
 
-  if (priv->scroller)
+  if (priv->empty_label)
+    clutter_actor_show (priv->empty_label);
+  else if (priv->scroller)
     clutter_actor_show (priv->scroller);
 
   CLUTTER_ACTOR_SET_FLAGS (actor, CLUTTER_ACTOR_MAPPED);
@@ -529,7 +577,9 @@ hd_launcher_page_hide (ClutterActor *actor)
   if (priv->label)
     clutter_actor_hide (priv->label);
 
-  if (priv->scroller)
+  if (priv->empty_label)
+      clutter_actor_hide (priv->empty_label);
+  else if (priv->scroller)
     clutter_actor_hide (priv->scroller);
 }
 
@@ -544,6 +594,12 @@ hd_launcher_page_add_tile (HdLauncherPage *page, HdLauncherTile* tile)
 {
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
   g_return_if_fail(HD_IS_LAUNCHER_PAGE(page));
+
+  if (priv->empty_label)
+    {
+      clutter_actor_destroy (priv->empty_label);
+      priv->empty_label = NULL;
+    }
 
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->grid),
                                CLUTTER_ACTOR (tile));

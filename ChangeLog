@@ -1,3 +1,11 @@
+2009-02-10  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Show an string in empty task launcher categories.
+	Fixes: NB#100588
+	
+	* src/launcher/hd-launcher-item.c: Added missing 'break'.
+	* src/launcher/hd-launcher-page.c:
+
 2009-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#98542, NB#95193
