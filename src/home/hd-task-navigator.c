@@ -723,7 +723,22 @@ hd_task_navigator_is_empty (HdTaskNavigator * self)
 gboolean
 hd_task_navigator_has_apps (HdTaskNavigator * self)
 {
-  return Thumbnails->len;
+  return Thumbnails->len > 0;
+}
+
+/* Tells whether we have any notification, either in the
+ * notification area or shown in the title area of some thumbnail. */
+gboolean
+hd_task_navigator_has_notifications (HdTaskNavigator * self)
+{
+  guint i;
+
+  if (Notifications->len > 0)
+    return TRUE;
+  for (i = 0; i < Thumbnails->len; i++)
+    if (g_array_index(Thumbnails, Thumbnail, i).hdnote)
+      return TRUE;
+  return FALSE;
 }
 
 /* Returns whether we can and will show @win in the navigator.
@@ -749,6 +764,9 @@ hd_task_navigator_enter (HdTaskNavigator * self)
   clutter_actor_set_position (Scroller, 0, 0);
   hd_scrollable_group_set_viewport_y (Navigator_area, 0);
   clutter_actor_show (Navigator);
+  hd_title_bar_set_switcher_pulse (
+                      HD_TITLE_BAR (hd_render_manager_get_title_bar ()),
+                      FALSE);
 }
 
 /* Leaves the navigator without a single word.
@@ -769,6 +787,9 @@ hd_task_navigator_exit (HdTaskNavigator *self)
     }
 
   clutter_actor_hide (CLUTTER_ACTOR (self));
+  hd_title_bar_set_switcher_pulse (
+                      HD_TITLE_BAR (hd_render_manager_get_title_bar ()),
+                      FALSE);
 }
 
 /*
@@ -2021,8 +2042,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
   else if (fun)
     fun (CLUTTER_ACTOR (self), funparam);
 
-  /* Update the state of buttons - this will help if
-   * we need to change the top-left icon */
+  /* Sync the Tasks button. */
   hd_render_manager_update();
 }
 
@@ -2058,8 +2078,7 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
 
   layout (thumb.thwin);
 
-  /* Update the state of buttons - this will help if
-   * we need to change the top-left icon */
+  /* Sync the Tasks button. */
   hd_render_manager_update();
 }
 
@@ -2276,7 +2295,7 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
       if (thumb->hdnote == hdnote)
         {
           reset_thumb_title (thumb);
-          return;
+          goto out;
         }
     }
 
@@ -2284,14 +2303,15 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
   remove_notewin (hdnote);
   layout (NULL);
 
-  /* stop the pulsing animation if we're out of notes */
-  if (Notifications->len == 0)
-    hd_title_bar_set_switcher_pulse(
-        HD_TITLE_BAR(hd_render_manager_get_title_bar()), FALSE);
-
-  /* Update the state of buttons - this will help if
-   * we need to change the top-left icon */
+  /* Sync the Tasks button, we might have just become empty. */
   hd_render_manager_update();
+
+out: /* Reset the highlighting if no more notifications left. */
+  /* stop the pulsing animation if we're out of notes */
+  if (!hd_task_navigator_has_notifications (self))
+    hd_title_bar_set_switcher_pulse (
+                      HD_TITLE_BAR (hd_render_manager_get_title_bar ()),
+                      FALSE);
 }
 
 /* Like add_notewin_from_hdnote().  Returns whether the thumbnail
@@ -2371,7 +2391,10 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
   TNote tnote;
   Thumbnail *thumb;
 
+  /* Ringring the notification in any case. */
   g_return_if_fail (hdnote != NULL);
+  hd_title_bar_set_switcher_pulse (
+               HD_TITLE_BAR (hd_render_manager_get_title_bar ()), TRUE);
 
   /* Is @hdnote's application in the switcher? */
   create_tnote (&tnote, hdnote);
@@ -2399,13 +2422,7 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
   if (add_notewin_from_tnote (&tnote))
     layout (tnote.notewin);
 
-  /* start the pulsing animation if we have notifications */
-  if (Notifications->len > 0)
-    hd_title_bar_set_switcher_pulse(
-        HD_TITLE_BAR(hd_render_manager_get_title_bar()), TRUE);
-
-  /* Update the state of buttons - this will help if
-   * we need to change the top-left icon */
+  /* Make sure the Tasks button points to the switcher now. */
   hd_render_manager_update();
 }
 /* Add/remove notifications }}} */

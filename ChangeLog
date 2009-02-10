@@ -1,3 +1,21 @@
+2009-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-title-bar.h (HDTB_VIS_BTN_SWITCHER_HIGHLIGHT):
+	  New internal top-left button state to signify that the the tasks
+	  button hilight shouldn't be cleared because there are unconfirmed
+	  notifications in tasw.
+	* src/home/hd-title-bar.c:
+	  hd_title_bar_set_state(): take advantage of the new state
+	  hd_title_bar_set_switcher_pulse():
+	    Stop pulsating after two cycles and leave the tasks button
+	    highlighted.  Continue the animation from that point unless
+	    the button was reset.
+	* src/home/hd-task-navigator.h (hd_task_navigator_has_notifications):
+	  New interface exported just in case.
+	* src/home/hd-task-navigator.c:
+	  Reset the top-left button animation at appropriate times.
+	  Signal all incoming event notifications, not only the first one.
+
 2009-02-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.19

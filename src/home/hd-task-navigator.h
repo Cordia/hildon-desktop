@@ -30,6 +30,7 @@ HdTaskNavigator *hd_task_navigator_new       (void);
 gboolean hd_task_navigator_is_active  (HdTaskNavigator *self);
 gboolean hd_task_navigator_is_empty   (HdTaskNavigator *self);
 gboolean hd_task_navigator_has_apps   (HdTaskNavigator *self);
+gboolean hd_task_navigator_has_notifications (HdTaskNavigator * self);
 gboolean hd_task_navigator_has_window (HdTaskNavigator * self,
                                        ClutterActor * win);
 

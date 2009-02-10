@@ -164,7 +164,10 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size);
 
 /* ------------------------------------------------------------------------- */
 
-#define HD_TITLE_BAR_SWITCHER_PULSE_DURATION 2000
+/* One pulse is breathe in or breathe out.  The animation takes two
+ * cycles (2 times two pulses) and we leave the button breathe held. */
+#define HD_TITLE_BAR_SWITCHER_PULSE_DURATION 1000
+#define HD_TITLE_BAR_SWITCHER_PULSE_NPULSES  5
 
 /* margin to left of the app title */
 #define HD_TITLE_BAR_TITLE_MARGIN 24
@@ -252,8 +255,8 @@ hd_title_bar_init (HdTitleBar *bar)
 
   /* Create timeline animation */
   priv->switcher_timeline =
-    clutter_timeline_new_for_duration(HD_TITLE_BAR_SWITCHER_PULSE_DURATION);
-  clutter_timeline_set_loop(priv->switcher_timeline, TRUE);
+    clutter_timeline_new_for_duration(HD_TITLE_BAR_SWITCHER_PULSE_DURATION
+                                      * HD_TITLE_BAR_SWITCHER_PULSE_NPULSES);
   g_signal_connect (priv->switcher_timeline, "new-frame",
                         G_CALLBACK (on_switcher_timeline_new_frame), bar);
 
@@ -343,7 +346,7 @@ void hd_title_bar_set_state(HdTitleBar *bar,
   if (!(button & HDTB_VIS_BTN_LEFT_MASK))
     clutter_actor_hide(priv->buttons[BTN_BG_LEFT_PRESSED]);
   if (!(button & HDTB_VIS_BTN_RIGHT_MASK))
-      clutter_actor_hide(priv->buttons[BTN_BG_RIGHT_PRESSED]);
+    clutter_actor_hide(priv->buttons[BTN_BG_RIGHT_PRESSED]);
 
 
   if (button & HDTB_VIS_BTN_LAUNCHER)
@@ -362,7 +365,9 @@ void hd_title_bar_set_state(HdTitleBar *bar,
     {
       clutter_actor_show(priv->buttons[BTN_SWITCHER]);
       clutter_actor_show(priv->buttons[BTN_SWITCHER_HIGHLIGHT]);
-      clutter_actor_set_opacity(priv->buttons[BTN_SWITCHER_HIGHLIGHT], 0);
+      if (!(button & HDTB_VIS_BTN_SWITCHER_HIGHLIGHT))
+        /* set_switcher_pulse() doesn't want it to be highlighted. */
+        clutter_actor_set_opacity(priv->buttons[BTN_SWITCHER_HIGHLIGHT], 0);
       clutter_actor_show(priv->btn_switcher);
     }
   else
@@ -722,14 +727,25 @@ hd_title_bar_set_switcher_pulse(HdTitleBar *bar, gboolean pulse)
     return;
   priv = bar->priv;
 
-  if (pulse)
-    {
-      clutter_timeline_start(priv->switcher_timeline);
-    }
-  else
-    {
+  if (!pulse)
+    { /* Stop animation and unhilight the tasks button. */
       clutter_timeline_stop(priv->switcher_timeline);
       clutter_actor_set_opacity(priv->buttons[BTN_SWITCHER_HIGHLIGHT], 0);
+      priv->state ^= ~HDTB_VIS_BTN_SWITCHER_HIGHLIGHT;
+    }
+  else if (!clutter_timeline_is_playing(priv->switcher_timeline))
+    { /* Be sure not to start overlapping animations. */
+      if (priv->state & HDTB_VIS_BTN_SWITCHER_HIGHLIGHT)
+        /* Continue the previous animation and skip the first
+         * breathe-in pulse. */
+        clutter_timeline_advance(priv->switcher_timeline,
+            clutter_timeline_get_n_frames(priv->switcher_timeline)
+            / HD_TITLE_BAR_SWITCHER_PULSE_NPULSES);
+      else
+        /* Make sure set_state() leaves is highlighted. */
+        priv->state |= HDTB_VIS_BTN_SWITCHER_HIGHLIGHT;
+
+      clutter_timeline_start(priv->switcher_timeline);
     }
 }
 
@@ -747,7 +763,8 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
     return;
   priv = bar->priv;
 
-  amt =  (float)clutter_timeline_get_progress(timeline);
+  amt =  (float)clutter_timeline_get_progress(timeline)
+              * HD_TITLE_BAR_SWITCHER_PULSE_NPULSES / 2;
   if (priv->state & HDTB_VIS_BTN_SWITCHER)
     {
       opacity = (gint)((1-cos(amt*2*3.141592))*127);
