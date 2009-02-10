@@ -1,7 +1,10 @@
 2009-02-10  Jan Arne Petersen  <jpetersen@openismus.com>
+	
+	Increase size of edges in layout mode to move applets between views.
+	Fixes: NB#96802
 
-	* src/home/hd-home.h (HDH_SWITCH_WIDTH): Use Wider edges to move
-	applets between views.
+	* src/home/hd-home.h (HDH_SWITCH_WIDTH): Double the width of the
+	edges.
 
 2009-02-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 

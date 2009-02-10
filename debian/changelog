@@ -3,6 +3,8 @@ hildon-desktop (1:2.2.19-1~unreleased) unstable; urgency=low
   Jan Arne:
   * Do not show notification previews if in switcher. Fixes: NB#99892.
   * Do not install default backgrounds .schema file. Fixes: NB#101138, NB#96457
+  * Increase size of edges in layout mode to move applets between views.
+    Fixes: NB#96802
 
   Kimmo:
   * Handle the stack index of stackable windows. Prepare for replacing of
