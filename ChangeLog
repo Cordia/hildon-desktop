@@ -1,5 +1,7 @@
 2009-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#98542, NB#95193
+
 	* src/home/hd-title-bar.h (HDTB_VIS_BTN_SWITCHER_HIGHLIGHT):
 	  New internal top-left button state to signify that the the tasks
 	  button hilight shouldn't be cleared because there are unconfirmed
