@@ -1,3 +1,8 @@
+2009-02-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-app.c: comment out Laszlo's transiency setting code for
+	now to fix the CallUI issue.
+
 2009-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* tests/test-portrait-win.c:

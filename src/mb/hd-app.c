@@ -83,6 +83,7 @@ hd_app_init (MBWMObject *this, va_list vap)
 		      XA_INTEGER, &actual_type, &format,
 		      &items, &left,
 		      &prop);
+#if 0  /* FIXME */
   /*
    * The HdApp can be a transient window in case of using stackable windows.
    */
@@ -110,6 +111,7 @@ hd_app_init (MBWMObject *this, va_list vap)
 	  client->stacking_layer = trans_parent->stacking_layer;
 	}
     }
+#endif
 
   if (actual_type == XA_INTEGER)
     {
