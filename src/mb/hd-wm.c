@@ -52,6 +52,7 @@
 #include "hd-app-menu.h"
 #include "hd-dialog.h"
 #include "hd-animation-actor.h"
+#include "hd-remote-texture.h"
 
 static int  hd_wm_init       (MBWMObject *object, va_list vap);
 static void hd_wm_destroy    (MBWMObject *object);
@@ -203,6 +204,12 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
       g_debug ("### is animation actor ###");
       return hd_animation_actor_new (wm, win);
     }
+  else if (win->net_type == hd_comp_mgr_get_atom (hmgr,
+                          HD_ATOM_HILDON_WM_WINDOW_TYPE_REMOTE_TEXTURE))
+      {
+        g_debug ("### is remote texture ###");
+        return hd_remote_texture_new (wm, win);
+      }
   else if (wm_class)
     return wm_class->client_new (wm, win);
 
@@ -230,7 +237,7 @@ hd_wm_client_responding (MBWindowManager *wm,
       name = mb_wm_client_get_name (client);
       snprintf (buf, 200, _("tana_ib_apkil_responded"),
 	        name ? name : "NO NAME");
-      banner = hildon_banner_show_information (NULL, NULL, buf); 
+      banner = hildon_banner_show_information (NULL, NULL, buf);
 
       gtk_dialog_response (GTK_DIALOG (hdwm->priv->hung_client_dialog),
 			   GTK_RESPONSE_REJECT);

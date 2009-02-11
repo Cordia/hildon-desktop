@@ -1,3 +1,23 @@
+2009-02-11  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-title-bar.c:
+	  Now don't error if no hd-decor, and instead remove the title bar
+	* src/tidy/tidy-mem-texture.c (Added)
+	* src/tidy/tidy-mem-texture.h (Added)
+	* src/tidy/Makefile.am:
+	  Added tiled texture that works from a memory area
+	* src/mb/hd-remote-texture.c (Added)
+	* src/mb/hd-remote-texture.h (Added)
+	* src/mb/Makefile.am:
+	  New Remote texture window type that handles rendering a shared
+	  memory area as a window.
+	* src/mb/hd-atoms.c
+	* src/mb/hd-atoms.h:
+	  New atoms for remote texture control via X
+	* src/mb/hd-wm.c
+	* src/mb/hd-wm.h:
+	  Added HdWmClientTypeRemoteTexture window type
+
 2009-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_effect):

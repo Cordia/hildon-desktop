@@ -29,6 +29,7 @@ source_h = \
 	$(top_srcdir)/src/tidy/tidy-finger-scroll.h	\
 	$(top_srcdir)/src/tidy/tidy-frame.h	\
 	$(top_srcdir)/src/tidy/tidy-interval.h		\
+	$(top_srcdir)/src/tidy/tidy-mem-texture.h	\
 	$(top_srcdir)/src/tidy/tidy-scroll-bar.h	\
 	$(top_srcdir)/src/tidy/tidy-scrollable.h	\
 	$(top_srcdir)/src/tidy/tidy-scroll-view.h	\
@@ -50,6 +51,7 @@ source_c = \
 	tidy-finger-scroll.c \
 	tidy-frame.c \
 	tidy-interval.c \
+	tidy-mem-texture.c \
 	tidy-scroll-bar.c \
 	tidy-scrollable.c \
 	tidy-scroll-view.c \

@@ -15,6 +15,7 @@ mb_h =		hd-atoms.h			\
 		hd-decor.h			\		
 		hd-decor-button.h		\		
 		hd-animation-actor.h		\
+		hd-remote-texture.h		\
 		hd-applet-layout-manager.h
 
 mb_c = 		hd-atoms.c			\
@@ -32,6 +33,7 @@ mb_c = 		hd-atoms.c			\
 		hd-decor.c			\		
 		hd-decor-button.c		\		
 		hd-animation-actor.c		\
+		hd-remote-texture.c		\
 		hd-applet-layout-manager.c
 
 noinst_LIBRARIES = libmb.a
