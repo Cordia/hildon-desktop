@@ -1,3 +1,10 @@
+hildon-desktop (1:2.2.20-1~unreleased) unstable; urgency=low
+
+  * Marc: Show an string in empty task launcher categories. Fixes: NB#100588
+  * Adam: Fixes: NB#98542, NB#95193
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Feb 2009 09:22:26 +0200
+
 hildon-desktop (1:2.2.19-1) unstable; urgency=low
 
   Jan Arne:
