@@ -1375,7 +1375,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
       else if (c_type == MBWMClientTypeDialog)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventMap);
       else if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
-        g_warning("hd_transition_notification(hmgr, c, MBWMCompMgrClientEventMap)");
+        hd_transition_notification(hmgr, c, MBWMCompMgrClientEventMap);
       else if (c_type == MBWMClientTypeNote)
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventMap);
       else if (c_type == MBWMClientTypeApp)

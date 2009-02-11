@@ -1,3 +1,9 @@
+2009-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_effect):
+	  Put back accidentally disabled slide-in transition
+	  of notification previews.
+
 2009-02-10  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Show an string in empty task launcher categories.
