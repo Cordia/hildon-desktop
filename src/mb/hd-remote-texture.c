@@ -42,6 +42,7 @@ static guint32 shm_atom;
 static guint32 damage_atom;
 static guint32 show_atom;
 static guint32 position_atom;
+static guint32 offset_atom;
 static guint32 scale_atom;
 static guint32 parent_atom;
 static guint32 ready_atom;
@@ -62,7 +63,6 @@ hd_remote_texture_client_message (XClientMessageEvent *xev, void *userdata)
 {
   HdRemoteTexture         *self = HD_REMOTE_TEXTURE (userdata);
   MBWindowManagerClient    *client = MB_WM_CLIENT (self);
-  gint i;
 
   if (!client->window)
   {
@@ -78,25 +78,6 @@ hd_remote_texture_client_message (XClientMessageEvent *xev, void *userdata)
       g_warning ("Stray client message: no actor!\n");
       return False;
   }
-
-  /* hacky: just ensure that our texture actor is sized + parented correctly,
-   * and that the EGL texture for this window is hidden. TODO ideally there
-   * would be a flag for libmatchbox to stop it creating the EGL texture
-   * for this. */
-  for (i=0;i<clutter_group_get_n_children(CLUTTER_GROUP(actor));i++)
-    {
-      ClutterActor *child = clutter_group_get_nth_child(CLUTTER_GROUP(actor), i);
-      if (child!=CLUTTER_ACTOR(self->texture) &&
-          CLUTTER_ACTOR_IS_VISIBLE(child))
-        clutter_actor_hide(child);
-    }
-
-  if (clutter_actor_get_parent(CLUTTER_ACTOR(self->texture)) != actor)
-    clutter_container_add_actor(CLUTTER_CONTAINER(actor),
-                                CLUTTER_ACTOR(self->texture));
-  clutter_actor_set_size(CLUTTER_ACTOR(self->texture),
-                         client->window->geometry.width,
-                         client->window->geometry.height);
 
   if (xev->message_type == shm_atom)
     {
@@ -143,13 +124,30 @@ hd_remote_texture_client_message (XClientMessageEvent *xev, void *userdata)
   }
   else if (xev->message_type == position_atom)
   {
-      ClutterFixed x = (ClutterFixed) xev->data.l[0];
-      ClutterFixed y = (ClutterFixed) xev->data.l[1];
+    gint x = (gint) xev->data.l[0];
+    gint y = (gint) xev->data.l[1];
+    gint width = (gint) xev->data.l[2];
+    gint height = (gint) xev->data.l[3];
 
-      CM_DEBUG ("RemoteTexture %p: position(x=%d, y=%d)\n",
-	       	self, x, y);
-      tidy_mem_texture_set_offset(self->texture, x, y);
+    CM_DEBUG ("AnimationActor %p: position(x=%d, y=%d, width=%d, height=%d)\n",
+               self, x, y, width, height);
+    clutter_actor_set_position (actor, x, y);
+    clutter_actor_set_size (actor, width, height);
+    clutter_actor_set_size (CLUTTER_ACTOR(self->texture), width, height);
+    clutter_actor_set_clip(CLUTTER_ACTOR(self->texture),
+                           0, 0,
+                           width, height);
   }
+  else if (xev->message_type == offset_atom)
+    {
+        ClutterFixed x = (ClutterFixed) xev->data.l[0];
+        ClutterFixed y = (ClutterFixed) xev->data.l[1];
+
+        CM_DEBUG ("RemoteTexture %p: position(x=%d, y=%d)\n",
+                  self, x, y);
+        tidy_mem_texture_set_offset(self->texture, x, y);
+    }
+
   else if (xev->message_type == scale_atom)
   {
       ClutterFixed x_scale = (ClutterFixed) xev->data.l[0];
@@ -203,6 +201,9 @@ hd_remote_texture_client_message (XClientMessageEvent *xev, void *userdata)
 	  if (parent)
 	      clutter_container_add_actor (CLUTTER_CONTAINER (parent),
 					   actor);
+
+          clutter_container_add_actor (CLUTTER_CONTAINER (actor),
+                                       CLUTTER_ACTOR(self->texture));
       }
 
       if (show)
@@ -235,7 +236,8 @@ hd_remote_texture_show (MBWindowManagerClient *client)
    * logic will be overriden. */
 
   mb_wm_comp_mgr_clutter_client_set_flags (cclient,
-                                           MBWMCompMgrClutterClientDontShow);
+                                           MBWMCompMgrClutterClientDontShow|
+                                           MBWMCompMgrClutterClientDontPosition);
 }
 
 // -------------------------------------------------------------
@@ -264,6 +266,8 @@ hd_remote_texture_realize (MBWindowManagerClient *client)
 	    (hmgr, HD_ATOM_HILDON_TEXTURE_CLIENT_MESSAGE_SHOW);
 	position_atom = hd_comp_mgr_get_atom
 	    (hmgr, HD_ATOM_HILDON_TEXTURE_CLIENT_MESSAGE_POSITION);
+	offset_atom = hd_comp_mgr_get_atom
+	    (hmgr, HD_ATOM_HILDON_TEXTURE_CLIENT_MESSAGE_OFFSET);
 	scale_atom = hd_comp_mgr_get_atom
 	    (hmgr, HD_ATOM_HILDON_TEXTURE_CLIENT_MESSAGE_SCALE);
 	parent_atom = hd_comp_mgr_get_atom
@@ -355,18 +359,34 @@ hd_remote_texture_init (MBWMObject *this, va_list vap)
 {
   HdRemoteTexture       *tex = HD_REMOTE_TEXTURE(this);
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
-  /*MBWMClientWindow      *win = client->window;*/
+  MBWMClientWindow      *win = client->window;
   MBWindowManager	*wm = client->wmref;
+  MBGeometry             geom;
 
   if (!wm)
       return 0;
 
   tex->texture = g_object_ref(tidy_mem_texture_new());
 
+  /* Animation actors are not reactive and, therefore, are input-transparent.
+   * Since they are going to be moved around using clutter calls, X will know
+   * nothing of their repositioning. It will, therefore, not dispatch any
+   * exposure or visibility events for the windows covered by animation actors.
+   * To avoid all this, position the animation actors outside of the screen
+   * viewable area. */
+
+  geom.x = wm->xdpy_width;
+  geom.y = wm->xdpy_height;
+  geom.width = win->geometry.width;
+  geom.height = win->geometry.height;
+
   mb_wm_client_set_layout_hints (client,
                                  LayoutPrefPositionFree|
                                  LayoutPrefMovable|
                                  LayoutPrefVisible);
+  hd_remote_texture_request_geometry (client,
+                                      &geom,
+                                      MBWMClientReqGeomForced);
 
   return 1;
 }
@@ -449,7 +469,15 @@ hd_remote_texture_set_shm(HdRemoteTexture *tex, key_t key,
       if (shmdt(tex->shm_addr) == -1)
         g_critical("%s: shmdt: %p is not the data segment start address "
                    "of a shared memory segment", __FUNCTION__, tex->shm_addr);
+      tex->shm_addr = 0;
+      tex->shm_key = 0;
+      tex->shm_width = 0;
+      tex->shm_height = 0;
+      tex->shm_bpp = 0;
     }
+
+  if (key == 0)
+    return;
 
   tex->shm_key = key;
   tex->shm_width = width;

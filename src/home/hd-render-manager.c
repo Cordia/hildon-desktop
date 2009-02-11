@@ -1228,8 +1228,17 @@ void hd_render_manager_restack()
   MBWindowManager *wm;
   MBWindowManagerClient *c;
   gboolean past_desktop = FALSE;
+  gboolean blur_changed = FALSE;
+  gint i;
+  GList *previous_home_blur = 0;
+
 
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  /* Add all actors currently in the home_blur group */
+
+  for (i=0;i<clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));i++)
+    previous_home_blur = g_list_prepend(previous_home_blur,
+        clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i));
 
   /* Order and choose which window actors will be visible */
   for (c = wm->stack_bottom; c; c = c->stacked_above)
@@ -1310,11 +1319,29 @@ void hd_render_manager_restack()
    * isn't, and hide anything that would be rendered over by another app */
   hd_render_manager_set_visibilities();
 
-  /* because swapping parents doesn't appear to fire a redraw.
-   * TODO: It would be REALLY good to have a way to only redraw
-   * when something had changed in the blur group - as this is quite
-   * expensive */
-  tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
+  /* now compare the contents of home_blur to see if the blur group has
+   * actually changed... */
+  if (g_list_length(previous_home_blur) ==
+      clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur)))
+    {
+      GList *it;
+      for (i = 0, it = g_list_last(previous_home_blur);
+           (i<clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur))) && it;
+           i++, it=it->prev)
+        if (CLUTTER_ACTOR(it->data) !=
+            clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i))
+          {
+            blur_changed = TRUE;
+            break;
+          }
+    }
+  else
+    blur_changed = TRUE;
+  g_list_free(previous_home_blur);
+
+  /* because swapping parents doesn't appear to fire a redraw */
+  if (blur_changed)
+    tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
 
   /* update our fixed title bar at the top of the screen */
   hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));

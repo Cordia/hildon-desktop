@@ -1,3 +1,15 @@
+2009-02-11  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c:
+	  Now check if home_blur has really changed, and only update if it
+	  has. This saves a ~150ms recalc of the blur texture
+	* src/mb/hd-atoms.c
+	* src/mb/hd-atoms.h
+	* src/mb/hd-remote-texture.c:
+	  Bugfixing and making remote-texture more like animation-actor
+	  (It couldn't be treated like a window and still behave the way
+          we needed it to)
+
 2009-02-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#96795
