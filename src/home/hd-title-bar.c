@@ -131,9 +131,6 @@ struct _HdTitleBarPrivate
   /* All the images we need for buttons */
   ClutterActor          *buttons[BTN_COUNT];
 
-  ClutterActor          *btn_launcher;
-  ClutterActor          *btn_switcher;
-
   ClutterActor          *title_bg;
   ClutterLabel          *title;
   /* Pulsing animation for switcher */
@@ -197,19 +194,6 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_actor_set_position(actor, 0, 0);
   clutter_actor_set_size(actor,
                     HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_TOP_MARGIN);
-  /* Task Navigator Button */
-  priv->btn_switcher = clutter_group_new();
-  clutter_actor_set_size(priv->btn_switcher,
-      HD_COMP_MGR_TOP_LEFT_BTN_WIDTH,
-      HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT);
-  hd_render_manager_set_button (HDRM_BUTTON_TASK_NAV, priv->btn_switcher);
-
-  /* Task Launcher Button */
-  priv->btn_launcher = clutter_group_new();
-  clutter_actor_set_size(priv->btn_launcher,
-        HD_COMP_MGR_TOP_LEFT_BTN_WIDTH,
-        HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT);
-  hd_render_manager_set_button(HDRM_BUTTON_LAUNCHER, priv->btn_launcher);
 
   /* Title background */
   priv->title_bg = hd_clutter_cache_get_texture(
@@ -244,7 +228,11 @@ hd_title_bar_init (HdTitleBar *bar)
   /* TODO: setup BTN_SWITCHER_HIGHLIGHT for adding here... */
 
   hd_title_bar_add_signals(bar, priv->buttons[BTN_SWITCHER]);
+  hd_render_manager_set_button (HDRM_BUTTON_TASK_NAV,
+                                priv->buttons[BTN_SWITCHER]);
   hd_title_bar_add_signals(bar, priv->buttons[BTN_LAUNCHER]);
+  hd_render_manager_set_button (HDRM_BUTTON_LAUNCHER,
+                                priv->buttons[BTN_LAUNCHER]);
 
   /* Create the title */
   priv->title = CLUTTER_LABEL(clutter_label_new());
@@ -352,13 +340,11 @@ void hd_title_bar_set_state(HdTitleBar *bar,
   if (button & HDTB_VIS_BTN_LAUNCHER)
     {
       clutter_actor_show(priv->buttons[BTN_LAUNCHER]);
-      clutter_actor_show(priv->btn_launcher);
     }
   else
     {
       clutter_actor_hide(priv->buttons[BTN_LAUNCHER]);
       clutter_actor_hide(priv->buttons[BTN_LAUNCHER_PRESSED]);
-      clutter_actor_hide(priv->btn_launcher);
     }
 
   if (button & HDTB_VIS_BTN_SWITCHER)
@@ -368,14 +354,12 @@ void hd_title_bar_set_state(HdTitleBar *bar,
       if (!(button & HDTB_VIS_BTN_SWITCHER_HIGHLIGHT))
         /* set_switcher_pulse() doesn't want it to be highlighted. */
         clutter_actor_set_opacity(priv->buttons[BTN_SWITCHER_HIGHLIGHT], 0);
-      clutter_actor_show(priv->btn_switcher);
     }
   else
     {
       clutter_actor_hide(priv->buttons[BTN_SWITCHER]);
       clutter_actor_hide(priv->buttons[BTN_SWITCHER_PRESSED]);
       clutter_actor_hide(priv->buttons[BTN_SWITCHER_HIGHLIGHT]);
-      clutter_actor_hide(priv->btn_switcher);
     }
 
   if (button & HDTB_VIS_BTN_BACK)

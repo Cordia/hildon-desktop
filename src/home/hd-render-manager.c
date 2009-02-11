@@ -119,9 +119,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *
  * HDRM ---> home_blur         ---> home
  *       |                      --> apps (not app_top)
- *       |                      --> blur_front    ---> button_task_nav
- *       |                                         --> button_launcher
- *       |                                         --> button_menu
+ *       |                      --> blur_front    ---> button_menu
  *       |                                         --> status_area
  *       |                                         --> title_bar
  *       |
@@ -711,26 +709,18 @@ void hd_render_manager_sync_clutter ()
   switch (visible_top_left)
   {
     case HDRM_BUTTON_NONE:
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_launcher));
       clutter_actor_hide(CLUTTER_ACTOR(priv->button_menu));
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_task_nav));
       break;
     case HDRM_BUTTON_LAUNCHER:
-      clutter_actor_show(CLUTTER_ACTOR(priv->button_launcher));
       clutter_actor_hide(CLUTTER_ACTOR(priv->button_menu));
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_task_nav));
       btn_state |= HDTB_VIS_BTN_LAUNCHER;
       break;
     case HDRM_BUTTON_MENU:
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_launcher));
       clutter_actor_show(CLUTTER_ACTOR(priv->button_menu));
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_task_nav));
       btn_state |= HDTB_VIS_BTN_MENU;
       break;
     case HDRM_BUTTON_TASK_NAV:
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_launcher));
       clutter_actor_hide(CLUTTER_ACTOR(priv->button_menu));
-      clutter_actor_show(CLUTTER_ACTOR(priv->button_task_nav));
       btn_state |= HDTB_VIS_BTN_SWITCHER;
       break;
     default:
@@ -881,11 +871,11 @@ void hd_render_manager_set_button (HDRMButtonEnum btn,
       case HDRM_BUTTON_TASK_NAV:
         g_assert(!priv->button_task_nav);
         priv->button_task_nav = CLUTTER_ACTOR(g_object_ref(item));
-        break;
+        return; /* Don't reparent, it's fine where it is. */
       case HDRM_BUTTON_LAUNCHER:
         g_assert(!priv->button_launcher);
         priv->button_launcher = CLUTTER_ACTOR(g_object_ref(item));
-        break;
+        return; /* Likewise */
       case HDRM_BUTTON_MENU:
         g_assert(!priv->button_menu);
         priv->button_menu = CLUTTER_ACTOR(g_object_ref(item));

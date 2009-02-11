@@ -1,3 +1,19 @@
+2009-02-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#96795
+
+	This is an old bug (tasks button accessible while sysmodal in front)
+	but reappeared with HdTitleBar.  HDRM made the wrong actors unreactive.
+
+	* src/home/hd-title-bar.c:
+	  Removed dummy HdTitleBar::btn_switcher and ::btn_launcher, which
+	  were taken over by buttons[BTN_SWITCHER] and buttons[BTN_LAUNCHER].
+	  Make HDRM use these latter actors.
+	* src/home/hd-render-manager.c:
+	  Don't change the visibility of HDRM_BUTTON_TASK_NAV and
+	  HDRM_BUTTON_LAUNCHER but leave it completely up to HdTitleBar.
+	  Don't reparent them either.
+
 2009-02-11  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Make application killing dialog look for the app's localized name.
@@ -32,7 +48,7 @@
 	* src/mb/hd-wm.h:
 	  Added HdWmClientTypeRemoteTexture window type
 
-2009-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-02-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_effect):
 	  Put back accidentally disabled slide-in transition
