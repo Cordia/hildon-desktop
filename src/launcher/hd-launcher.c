@@ -454,21 +454,14 @@ static void
 hd_launcher_create_page (HdLauncherItem *item, gpointer data)
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-  const gchar *domainname;
   ClutterActor *newpage;
 
   if (hd_launcher_item_get_item_type (item) != HD_CATEGORY_LAUNCHER)
     return;
 
-  domainname = hd_launcher_item_get_text_domain (item);
-  if (domainname)
-    newpage = hd_launcher_page_new(
-                 hd_launcher_item_get_icon_name (item),
-                 dgettext (domainname, hd_launcher_item_get_name (item)));
-  else
-    newpage = hd_launcher_page_new(
-                 hd_launcher_item_get_icon_name (item),
-                 _(hd_launcher_item_get_name (item)));
+  newpage = hd_launcher_page_new(
+                   hd_launcher_item_get_icon_name (item),
+                   hd_launcher_item_get_local_name (item));
 
   clutter_actor_hide (newpage);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->group), newpage);
@@ -484,21 +477,14 @@ hd_launcher_lazy_traverse_tree (gpointer data)
   HdLauncherItem *item;
   HdLauncherTile *tile;
   HdLauncherPage *page;
-  const gchar *domainname;
 
   if (!tdata->items)
     return FALSE;
   item = tdata->items->data;
 
-  domainname = hd_launcher_item_get_text_domain (item);
-  if (domainname)
-    tile = hd_launcher_tile_new (
-        hd_launcher_item_get_icon_name (item),
-        dgettext (domainname, hd_launcher_item_get_name (item)));
-  else
-    tile = hd_launcher_tile_new (
-        hd_launcher_item_get_icon_name (item),
-        _(hd_launcher_item_get_name (item)));
+  tile = hd_launcher_tile_new (
+      hd_launcher_item_get_icon_name (item),
+      hd_launcher_item_get_local_name (item));
 
   /* Find in which page it goes */
   page = g_datalist_get_data (&priv->pages,

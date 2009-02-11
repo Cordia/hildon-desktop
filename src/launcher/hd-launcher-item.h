@@ -83,6 +83,7 @@ HdLauncherItem *   hd_launcher_item_new_from_keyfile (const gchar *id,
 const gchar *      hd_launcher_item_get_id           (HdLauncherItem *item);
 HdLauncherItemType hd_launcher_item_get_item_type    (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_name         (HdLauncherItem *item);
+const gchar *      hd_launcher_item_get_local_name   (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_icon_name    (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_comment      (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_text_domain  (HdLauncherItem *item);

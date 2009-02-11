@@ -295,6 +295,15 @@ hd_comp_mgr_client_get_actor (HdCompMgrClient *hclient)
   return NULL;
 }
 
+const gchar *
+hd_comp_mgr_client_get_app_local_name (HdCompMgrClient *hclient)
+{
+  HdLauncherApp *app = hclient->priv->app;
+  if (app)
+    return hd_launcher_item_get_local_name (HD_LAUNCHER_ITEM (app));
+  return NULL;
+}
+
 static int  hd_comp_mgr_init (MBWMObject *obj, va_list vap);
 static void hd_comp_mgr_class_init (MBWMObjectClass *klass);
 static void hd_comp_mgr_destroy (MBWMObject *obj);

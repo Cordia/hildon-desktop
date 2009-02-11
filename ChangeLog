@@ -1,3 +1,17 @@
+2009-02-11  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Make application killing dialog look for the app's localized name.
+	NB#89600
+
+	* src/launcher/hd-launcher-item.c: Added method to get the localized name
+	for a HdLauncherItem.
+	* src/launcher/hd-launcher-item.h:
+	* src/launcher/hd-launcher.c: Get the localized name directly.
+	* src/mb/hd-comp-mgr.c: Added method to get the localized name of the app
+	if it's present.
+	* src/mb/hd-comp-mgr.h:
+	* src/mb/hd-wm.c: Use the app's localized name if it's known.
+
 2009-02-11  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-title-bar.c:

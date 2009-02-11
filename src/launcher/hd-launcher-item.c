@@ -25,6 +25,8 @@
 #include "config.h"
 #endif
 
+#include "hildon-desktop.h"
+
 #include "hd-launcher.h"
 #include "hd-launcher-item.h"
 #include "hd-launcher-app.h"
@@ -240,6 +242,16 @@ hd_launcher_item_get_name (HdLauncherItem *item)
   g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), NULL);
 
   return item->priv->name;
+}
+
+const gchar *
+hd_launcher_item_get_local_name (HdLauncherItem *item)
+{
+  const gchar *domainname = hd_launcher_item_get_text_domain(item);
+  if (domainname)
+    return dgettext (domainname, hd_launcher_item_get_name (item));
+  else
+    return gettext (hd_launcher_item_get_name (item));
 }
 
 const gchar *

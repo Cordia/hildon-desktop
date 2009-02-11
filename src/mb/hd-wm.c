@@ -45,6 +45,7 @@
 
 #include <hildon/hildon.h>
 
+#include "hd-comp-mgr.h"
 #include "hd-home-applet.h"
 #include "hd-note.h"
 #include "hd-status-area.h"
@@ -253,13 +254,17 @@ static GtkWidget*
 hd_wm_make_dialog (MBWindowManagerClient *client)
 {
     char buf[200];
-    const char *name;
+    const char *name = NULL;
     HildonNote *note;
 
-    /* TODO: get the localised name for application */
-    name = mb_wm_client_get_name (client);
+    HdCompMgrClient *hclient = HD_COMP_MGR_CLIENT (client->cm_client);
+    if (hclient)
+      name = hd_comp_mgr_client_get_app_local_name (hclient);
+    if (!name)
+      name = mb_wm_client_get_name (client);
     snprintf (buf, 200, _("tana_nc_apkil_notresponding"),
-              name ? name : "NO NAME");
+        name? name : "NO NAME");
+
     note = HILDON_NOTE (hildon_note_new_confirmation (NULL, buf));
     /*
     gtk_dialog_add_buttons (GTK_DIALOG (dialog),
