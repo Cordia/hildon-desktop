@@ -1,3 +1,9 @@
+2009-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-title-bar.c (hd_title_bar_set_switcher_pulse):
+	  Typo correction to not corrupt HdTitleBar::state when the last
+	  notification is closed.
+
 2009-02-11  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c:

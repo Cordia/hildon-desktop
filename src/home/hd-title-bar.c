@@ -713,7 +713,7 @@ hd_title_bar_set_switcher_pulse(HdTitleBar *bar, gboolean pulse)
     { /* Stop animation and unhilight the tasks button. */
       clutter_timeline_stop(priv->switcher_timeline);
       clutter_actor_set_opacity(priv->buttons[BTN_SWITCHER_HIGHLIGHT], 0);
-      priv->state ^= ~HDTB_VIS_BTN_SWITCHER_HIGHLIGHT;
+      priv->state &= ~HDTB_VIS_BTN_SWITCHER_HIGHLIGHT;
     }
   else if (!clutter_timeline_is_playing(priv->switcher_timeline))
     { /* Be sure not to start overlapping animations. */
