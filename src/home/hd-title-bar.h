@@ -85,6 +85,8 @@ void
 hd_title_bar_set_switcher_pulse(HdTitleBar *bar, gboolean pulse);
 
 void
+hd_title_bar_left_pressed(HdTitleBar *bar, gboolean pressed);
+void
 hd_title_bar_right_pressed(HdTitleBar *bar, gboolean pressed);
 
 #endif

@@ -45,10 +45,6 @@ struct HdDecorButtonClass
 struct HdDecorButton
 {
   MBWMDecorButton     parent;
-
-  MBWindowManager     *wm;
-  ClutterActor        *active;
-  ClutterActor        *inactive;
 };
 
 int hd_decor_button_class_type (void);

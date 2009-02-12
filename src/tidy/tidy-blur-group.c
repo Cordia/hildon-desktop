@@ -125,48 +125,6 @@ gboolean tidy_blur_group_notify_modified_real(ClutterActor          *actor,
   return TRUE;
 }
 
-static void _set_rect_tris(CoglTextureVertex *verts,
-                           ClutterFixed x1,
-                           ClutterFixed y1,
-                           ClutterFixed x2,
-                           ClutterFixed y2,
-                           ClutterFixed tx1,
-                           ClutterFixed ty1,
-                           ClutterFixed tx2,
-                           ClutterFixed ty2)
-{
-  gint i;
-  for (i=0;i<4;i++)
-    {
-      verts[i].color.red = 0xFF;
-      verts[i].color.green = 0xFF;
-      verts[i].color.blue = 0xFF;
-      verts[i].color.alpha = 0xFF;
-    }
-  verts[0].x = x1;
-  verts[0].y = y1;
-  verts[0].z = 0;
-  verts[0].tx = tx1;
-  verts[0].ty = ty1;
-  verts[1].x = x2;
-  verts[1].y = y1;
-  verts[1].z = 0;
-  verts[1].tx = tx2;
-  verts[1].ty = ty1;
-  verts[2].x = x2;
-  verts[2].y = y2;
-  verts[2].z = 0;
-  verts[2].tx = tx2;
-  verts[2].ty = ty2;
-  verts[3].x = x1;
-  verts[3].y = y2;
-  verts[3].z = 0;
-  verts[3].tx = tx1;
-  verts[3].ty = ty2;
-  verts[4] = verts[0];
-  verts[5] = verts[2];
-}
-
 /* An implementation for the ClutterGroup::paint() vfunc,
    painting all the child actors: */
 static void
@@ -235,7 +193,7 @@ tidy_blur_group_paint (ClutterActor *actor)
                 priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_4444 :
                                   COGL_PIXEL_FORMAT_RGB_565);
       /* set nearest texture filter - this just takes a single sample */
-      cogl_texture_set_filters(priv->tex_preblur, CGL_NEAREST, CGL_NEAREST);
+      /* cogl_texture_set_filters(priv->tex_preblur, CGL_NEAREST, CGL_NEAREST); */
       priv->fbo_preblur = cogl_offscreen_new_to_texture (priv->tex_preblur);
       priv->source_changed = TRUE;
     }
@@ -342,34 +300,75 @@ tidy_blur_group_paint (ClutterActor *actor)
       }
     else
       {
-        /* draw a 3x3 grid with the texture mirrored  */
-        CoglTextureVertex verts[6*9];
+        gint vignette_amt;
+        /* draw a 7x7 grid with 5x5 unmirrored, and the edges mirrored  */
+#define TILINGF 7
+#define TILING (TILINGF-2)
+
+        CoglTextureVertex verts[6*(TILINGF*TILINGF)];
+        CoglTextureVertex grid[(TILINGF+1)*(TILINGF+1)];
+        CoglTextureVertex *v = grid;
         gint x,y;
-        for (y=0;y<3;y++)
-          for (x=0;x<3;x++)
+
+        vignette_amt = (int)((1-priv->zoom)*2048);
+        if (vignette_amt<0) vignette_amt = 0;
+        if (vignette_amt>255) vignette_amt = 255;
+
+        /* work out grid points */
+        for (y=0;y<=TILINGF;y++)
+          for (x=0;x<=TILINGF;x++)
             {
-              ClutterFixed x1,x2,y1,y2;
-              gboolean flipx, flipy;
-              x1 = mx+(zx*(x*2-3));
-              y1 = my+(zy*(y*2-3));
-              x2 = mx+(zx*(x*2-1));
-              y2 = my+(zy*(y*2-1));
-              flipx = x!=1;
-              flipy = y!=1;
-              _set_rect_tris(
-                        &verts[(x+(y*3))*6],
-                        flipx ? x2 : x1,
-                        flipy ? y2 : y1,
-                        flipx ? x1 : x2,
-                        flipy ? y1 : y2,
-                        0,0,
-                        CFX_ONE,
-                        CFX_ONE);
+              ClutterFixed dx,dy,d;
+              v->x = mx+(zx*(x*2-(TILING+2))/TILING);
+              v->y = my+(zy*(y*2-(TILING+2))/TILING);
+              v->z = 0;
+              v->tx = (x-1) * CFX_ONE / TILING;
+              v->ty = (y-1) * CFX_ONE / TILING;
+              /* mirror edges */
+              if (v->tx < 0)
+                v->tx = -v->tx;
+              if (v->tx > CFX_ONE)
+                v->tx = CFX_ONE*2 - v->tx;
+              if (v->ty < 0)
+                v->ty = -v->ty;
+              if (v->ty > CFX_ONE)
+                v->ty = CFX_ONE*2 - v->ty;
+              /* colour - work out distance from centre (squared) */
+              dx = CFX_QDIV(v->x - mx, mx/2);
+              dy = CFX_QDIV(v->y - my, my/2);
+              d = CFX_QMUL(dx,dx) + CFX_MUL(dy,dy);
+              /* Colour value... */
+              gint c = (int)(priv->brightness*255) *
+                       (255 - CLUTTER_FIXED_TO_INT((d-CFX_ONE)*vignette_amt/6))
+                       / 256;
+              if (c<0) c=0;
+              if (c>255) c=255;
+              v->color.red = v->color.green = v->color.blue = c;
+              v->color.alpha = col.alpha;
+              /* next vertex */
+              v++;
             }
+
+        /* now work out actual vertices - join the grid points with
+         * 2 triangles to make a quad */
+        v = verts;
+        for (y=0;y<TILINGF;y++)
+          for (x=0;x<TILINGF;x++)
+            {
+              CoglTextureVertex *grid_pt = &grid[x + y*(TILINGF+1)];
+              v[0] = grid_pt[0]; /* tri 1 */
+              v[1] = grid_pt[1];
+              v[2] = grid_pt[1+(TILINGF+1)];
+              v[3] = grid_pt[0]; /* tri 2 */
+              v[4] = grid_pt[1+(TILINGF+1)];
+              v[5] = grid_pt[TILINGF+1];
+              v+=6;
+            }
+        /* render! */
         cogl_texture_triangles (priv->tex_postblur,
-                                6*9,
+                                6*(TILINGF*TILINGF),
                                 verts,
-                                FALSE);
+                                TRUE);
       }
   }
 

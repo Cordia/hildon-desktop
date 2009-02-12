@@ -194,11 +194,11 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
                            gint frame_num, gpointer data);
 static void
 on_timeline_blur_completed(ClutterTimeline *timeline, gpointer data);
-/*static gboolean
-hd_render_manager_notify_modified (ClutterActor          *actor,
-                                   ClutterActor          *child);*/
+
 static void
-hd_render_manager_sync_clutter(void);
+hd_render_manager_sync_clutter_before(void);
+static void
+hd_render_manager_sync_clutter_after(void);
 
 static const char *
 hd_render_manager_state_str(HDRMStateEnum state);
@@ -414,25 +414,6 @@ hd_render_manager_init (HdRenderManager *self)
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------  CALLBACK   */
 /* ------------------------------------------------------------------------- */
-/*
-static gboolean
-hd_render_manager_notify_modified (ClutterActor          *actor,
-                                   ClutterActor          *child)
-{
-  if (!HD_IS_RENDER_MANAGER(actor))
-    return TRUE;
-
-  HdRenderManager *manager = HD_RENDER_MANAGER(actor);
-  HdRenderManagerPrivate *priv = manager->priv;
-
-  if (priv->in_notify)
-    return FALSE;
-
-  priv->in_notify = TRUE;
-  hd_render_manager_sync_clutter(manager);
-  priv->in_notify = FALSE;
-  return TRUE;
-}*/
 
 /* Resize @actor to the current screen dimensions.
  * Also can be used to set @actor's initial size. */
@@ -491,6 +472,9 @@ on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
 
   priv->timeline_playing = FALSE;
   hd_comp_mgr_set_effect_running(priv->comp_mgr, FALSE);
+
+  /* to trigger a change after the transition */
+  hd_render_manager_sync_clutter_after();
 }
 
 /* ------------------------------------------------------------------------- */
@@ -606,8 +590,9 @@ hd_render_manager_set_input_viewport()
   hd_comp_mgr_setup_input_viewport(priv->comp_mgr, geom, geom_count);
 }
 
+/* The syncing with clutter that is done before a transition */
 static
-void hd_render_manager_sync_clutter ()
+void hd_render_manager_sync_clutter_before ()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
@@ -749,14 +734,7 @@ void hd_render_manager_sync_clutter ()
   if (priv->status_menu)
     clutter_actor_raise_top(CLUTTER_ACTOR(priv->status_menu));
 
-  if (STATE_BLUR_BUTTONS(priv->state))
-    {
-      /* raise the blur_front to the top of the home_blur group so
-       * we still see the apps */
-      clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
-                             CLUTTER_ACTOR(priv->home_blur));
-    }
-  else
+  if (!STATE_BLUR_BUTTONS(priv->state))
     {
       /* raise the blur_front out of the blur group so we can still
        * see it unblurred */
@@ -774,6 +752,25 @@ void hd_render_manager_sync_clutter ()
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport */
   hd_render_manager_set_input_viewport();
+}
+
+/* The syncing with clutter that is done after a transition ends */
+static
+void hd_render_manager_sync_clutter_after ()
+{
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  hd_title_bar_left_pressed(priv->title_bar, FALSE);
+
+  if (STATE_BLUR_BUTTONS(priv->state))
+    {
+      /* raise the blur_front to the top of the home_blur group so
+       * we still see the apps */
+      clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
+                             CLUTTER_ACTOR(priv->home_blur));
+    }
+
+
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1091,7 +1088,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           return;
         }
 
-      hd_render_manager_sync_clutter();
+      hd_render_manager_sync_clutter_before();
 
       /* Switch between portrait <=> landscape modes. */
       if (state == HDRM_STATE_APP_PORTRAIT)
@@ -1216,9 +1213,6 @@ void hd_render_manager_return_windows()
 
       c = c->stacked_above;
     }
-
-  /* because swapping parents doesn't appear to fire a redraw */
-  tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
 }
 
 /* Called to restack the windows in the way we use for rendering... */
@@ -1675,7 +1669,7 @@ void hd_render_manager_blur_if_you_need_to(MBWindowManagerClient *c)
  * arrive the button in the top-left may need to change */
 void hd_render_manager_update()
 {
-  hd_render_manager_sync_clutter();
+  hd_render_manager_sync_clutter_before();
 }
 
 /* Returns whether @c's actor is visible in clutter sense.  If so, then

@@ -1,3 +1,19 @@
+2009-02-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-title-bar.h
+	* src/home/hd-title-bar.c:
+	  Allowed left_pressed to be used from outside (bug 101522)
+	* src/home/hd-render-manager.c:
+	  Added sync_after function, to change clutter visibilities if they
+	  are needed to be done after a transition ends. Fixes bug with
+	  zoomed button.
+	* src/tidy/tidy-blur-group.c:
+	  Added vignette effect for when zooming out
+	* src/mb/hd-decor-button.c
+	* src/mb/hd-decor-button.h:
+	  Cleaned up and added handler for new matchbox press + release
+	  signals, to make right buttons highlight correctly.
+
 2009-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-title-bar.c (hd_title_bar_set_switcher_pulse):

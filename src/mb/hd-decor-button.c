@@ -26,11 +26,37 @@
 #include "hd-theme.h"
 #include "hd-render-manager.h"
 #include "../home/hd-title-bar.h"
-#include "hd-clutter-cache.h"
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-wm-util.h>
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
+
+
+static Bool
+hd_decor_button_press_handler (MBWMObject       *obj,
+                               int               mask,
+                               void             *userdata)
+{
+  MBWMDecorButton *mbbutton = MB_WM_DECOR_BUTTON(obj);
+  HdTitleBar *bar = HD_TITLE_BAR(hd_render_manager_get_title_bar());
+  if (bar)
+    hd_title_bar_right_pressed(bar,
+        mbbutton->state != MBWMDecorButtonStateInactive);
+  return True;
+}
+
+static Bool
+hd_decor_button_release_handler (MBWMObject       *obj,
+                                 int               mask,
+                                 void             *userdata)
+{
+  MBWMDecorButton *mbbutton = MB_WM_DECOR_BUTTON(obj);
+  HdTitleBar *bar = HD_TITLE_BAR(hd_render_manager_get_title_bar());
+  if (bar)
+    hd_title_bar_right_pressed(bar,
+        mbbutton->state != MBWMDecorButtonStateInactive);
+  return True;
+}
 
 static void
 hd_decor_button_class_init (MBWMObjectClass *klass)
@@ -49,31 +75,27 @@ hd_decor_button_destroy (MBWMObject *obj)
 static int
 hd_decor_button_init (MBWMObject *obj, va_list vap)
 {
-  HdDecorButton *d = HD_DECOR_BUTTON (obj);
   MBWMObjectProp               prop;
-
-  d->active = 0;
-  d->inactive = 0;
 
   prop = va_arg(vap, MBWMObjectProp);
   while (prop)
     {
       switch (prop)
         {
-        case MBWMObjectPropWm:
-          d->wm = va_arg(vap, MBWindowManager *);
-          break;
         default:
           MBWMO_PROP_EAT (vap, prop);
         }
       prop = va_arg(vap, MBWMObjectProp);
     }
 
-  if (!d->wm)
-    return 0;
+  mb_wm_object_signal_connect(obj, MBWMDecorButtonSignalPressed,
+      hd_decor_button_press_handler, 0);
+  mb_wm_object_signal_connect(obj, MBWMDecorButtonSignalReleased,
+      hd_decor_button_release_handler, 0);
 
   return 1;
 }
+
 
 HdDecorButton* hd_decor_button_new (MBWindowManager               *wm,
                                     MBWMDecorButtonType            type,
@@ -83,9 +105,10 @@ HdDecorButton* hd_decor_button_new (MBWindowManager               *wm,
                                     MBWMDecorButtonReleasedFunc    release,
                                     MBWMDecorButtonFlags           flags)
 {
-  MBWMObject *decorbutton;
+  HdDecorButton *decorbutton;
 
-  decorbutton = mb_wm_object_new (HD_TYPE_DECOR_BUTTON,
+  decorbutton = HD_DECOR_BUTTON(
+                  mb_wm_object_new (HD_TYPE_DECOR_BUTTON,
                             MBWMObjectPropWm,                      wm,
                             MBWMObjectPropDecorButtonType,         type,
                             MBWMObjectPropDecorButtonPack,         pack,
@@ -93,9 +116,9 @@ HdDecorButton* hd_decor_button_new (MBWindowManager               *wm,
                             MBWMObjectPropDecorButtonPressedFunc,  press,
                             MBWMObjectPropDecorButtonReleasedFunc, release,
                             MBWMObjectPropDecorButtonFlags,        flags,
-                            NULL);
+                            NULL));
 
-  return HD_DECOR_BUTTON(decorbutton);
+  return decorbutton;
 }
 
 int
@@ -128,24 +151,6 @@ hd_decor_button_sync(HdDecorButton *button)
   bar = HD_TITLE_BAR(hd_render_manager_get_title_bar());
   if (!bar)
     return;
-
-  /*if (mbbutton->decor &&
-      mbbutton->decor->parent_client &&
-      MB_WM_CLIENT_CLIENT_TYPE (mbbutton->decor->parent_client) ==
-        MBWMClientTypeApp)
-    {
-      HdTitleBarVisEnum state =
-        hd_title_bar_get_visibility(bar) & (~HDTB_VIS_BTN_RIGHT_MASK);
-
-      if (mbbutton->type == MBWMDecorButtonClose)
-        state |= HDTB_VIS_BTN_CLOSE;
-      if (mbbutton->type == HdHomeThemeButtonBack)
-        state |= HDTB_VIS_BTN_BACK;
-
-      hd_title_bar_set_visibility(bar, state);
-      hd_title_bar_right_pressed(bar,
-          mbbutton->state != MBWMDecorButtonStateInactive);
-    }*/
 
   hd_title_bar_right_pressed(bar,
       mbbutton->state != MBWMDecorButtonStateInactive);
