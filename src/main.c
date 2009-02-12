@@ -335,11 +335,11 @@ main (int argc, char **argv)
 					    MBWMObjectPropArgv, argv,
 					    MBWMObjectPropDpy,  dpy,
 					    NULL));
-  mb_wm_rename_window (wm, wm->root_win->hidden_window, PACKAGE);
-  mb_wm_init (wm);
-
   if (wm == NULL)
     mb_wm_util_fatal_error("OOM?");
+
+  mb_wm_rename_window (wm, wm->root_win->hidden_window, PACKAGE);
+  mb_wm_init (wm);
 
   mb_wm_keys_binding_add_with_spec (wm,
 				    "<alt>d",
