@@ -186,9 +186,7 @@ hd_launcher_page_class_init (HdLauncherPageClass *klass)
 static void
 hd_launcher_page_init (HdLauncherPage *page)
 {
-  HdLauncherPagePrivate *priv;
-
-  page->priv = priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
+  page->priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (page), FALSE);
 }
