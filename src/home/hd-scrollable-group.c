@@ -266,6 +266,7 @@ hd_scrollable_group_parent_changed (ClutterActor * actor,
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (actor);
   ClutterFixed width, height;
 
+  width = height = 0;
   /*
    * Set up our #TidyAdjustment:s according to our parent's size.
    * Since we're scrolling in the parent (a kind of #TidyScrollView)

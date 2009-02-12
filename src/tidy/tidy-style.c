@@ -462,8 +462,6 @@ tidy_style_set_effect_valist (TidyStyle   *style,
           break;
         }
 
-      param.name = g_strdup (pspec->name);
-
       g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (pspec));
 
       G_VALUE_COLLECT (&value, varargs, 0, &error);

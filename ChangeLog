@@ -1,3 +1,13 @@
+2009-02-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Coverity fixes:
+	* src/home/hd-scrollable-group.c (hd_scrollable_group_parent_changed):
+	Initialise width and height.
+	* src/tidy/tidy-frame.c (tidy_frame_remove_actor): Set the child NULL
+	after unreferencing it, not before.
+	* src/tidy/tidy-style.c (tidy_style_set_effect_valist): Remove unused
+	variable 'param.name'.
+
 2009-02-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-title-bar.h
@@ -30,7 +40,7 @@
 	* src/mb/hd-remote-texture.c:
 	  Bugfixing and making remote-texture more like animation-actor
 	  (It couldn't be treated like a window and still behave the way
-          we needed it to)
+	  we needed it to)
 
 2009-02-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
