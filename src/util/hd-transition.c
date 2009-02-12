@@ -745,8 +745,6 @@ hd_transition_play_sound (const gchar * fname)
     ca_proplist *pl;
     int ret;
 
-    return;
-
     /* Canberra uses threads. */
     if (hd_disable_threads())
       return;
