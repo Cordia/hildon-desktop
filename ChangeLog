@@ -1,3 +1,9 @@
+2009-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c:
+	  Reworked a bit to blink the tasks button when the text
+	  of a groupped notification changes.
+
 2009-02-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Coverity fixes:

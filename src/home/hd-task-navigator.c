@@ -173,6 +173,23 @@ typedef struct
   guint wthumb, hthumb;
 } Layout;
 
+/* Incoming event notification as shown in the @Notification_area. */
+typedef struct
+{
+  /*
+   * -- @hdnote:               The notification's client window, which
+   *                           has the texture to be shown.
+   * -- @destination:          Which application @hdnote belongs to;
+   *                           needs to be XFree()d.
+   * -- @notewin:              @Navigator_area's actor and event responder.
+   * -- @hdnote_changed_cb_id: %HdNoteSignalChanged callback id.
+   */
+  HdNote                      *hdnote;
+  gchar                       *destination;
+  ClutterActor                *notewin;
+  unsigned long                hdnote_changed_cb_id;
+} TNote;
+
 /* Provides access to the inner parts of a thumbnail. */
 typedef struct
 {
@@ -220,13 +237,10 @@ typedef struct
    * -- @video:       The downsampled texture of the image loaded from
    *                  .video_fname or %NULL.
    *
-   * -- @hdnote:                Notification of .apwin if it has one.
-   *                            This case .title reflects .hdnote's
-   *                            icon and summary.  A %HdNote added to
-   *                            the switcher is either in a %Thumbnail
-   *                            or in a %TNote, exclusively.
-   * -- @hdnote_changed_cb_id:  The ID of the signal handler used to
-   *                            track changes in .hdnote if set.
+   * -- @tnote:       Notification of .apwin if it has one.  This case
+   *                  .title reflects .hdnote's icon and summary.  A %TNote
+   *                  is always created for a notification and the strcture
+   *                  is added wather to a %Thumbnail or to @Notifications.
    */
   ClutterActor                *thwin, *prison, *foreground, *close;
   ClutterActor                *title, *title_icon, *title_text;
@@ -236,24 +250,8 @@ typedef struct
   const MBGeometry            *inapwin;
   gchar                       *class_hint, *video_fname;
   time_t                       video_mtime;
-  HdNote                      *hdnote;
-  unsigned long                hdnote_changed_cb_id;
+  TNote                       *tnote;
 } Thumbnail;
-
-/* Incoming event notification as shown in the @Notification_area. */
-typedef struct
-{
-  /*
-   * -- @hdnote:      The notification's client window, which has the
-   *                  texture to be shown.
-   * -- @destination: Which application @hdnote belongs to;
-   *                  needs to be XFree()d.
-   * -- @notewin:     @Navigator_area's actor and event responder.
-   */
-  HdNote                      *hdnote;
-  gchar                       *destination;
-  ClutterActor                *notewin;
-} TNote;
 
 /* Used by add_effect_closure() to store what to call when the effect
  * completes. */
@@ -736,7 +734,7 @@ hd_task_navigator_has_notifications (HdTaskNavigator * self)
   if (Notifications->len > 0)
     return TRUE;
   for (i = 0; i < Thumbnails->len; i++)
-    if (g_array_index(Thumbnails, Thumbnail, i).hdnote)
+    if (g_array_index(Thumbnails, Thumbnail, i).tnote)
       return TRUE;
   return FALSE;
 }
@@ -1260,7 +1258,7 @@ claim_win (Thumbnail * thumb)
     }
 
   /* Make sure @thumb->title is up-to-date. */
-  if (!thumb->hdnote)
+  if (!thumb->tnote)
     reset_thumb_title (thumb);
 
   /* Restore the opacity of the actors that have been faded out while zooming,
@@ -1380,6 +1378,7 @@ find_dialog (guint * idxp, ClutterActor * dialog, gboolean for_removal)
 /* Managing @Thumbnails }}} */
 
 /* Setting a thumbnail's title {{{ */
+static void free_tnote (const TNote *tnote);
 static MBWMClientWindow *actor_to_client_window (ClutterActor *win);
 
 /* Sets or replaces @thumb's title.  Its exact position is expected
@@ -1446,14 +1445,13 @@ reset_thumb_title (Thumbnail * thumb)
 
   if (!thumb->title)
     { /* @thumb is being created */
-      g_assert (thumb->hdnote == NULL);
+      g_assert (thumb->tnote == NULL);
     }
-  else if (thumb->hdnote)
-    { /* Reset the title being set_thumb_title_from_hdnote(). */
-      mb_wm_object_signal_disconnect (MB_WM_OBJECT (thumb->hdnote),
-                                      thumb->hdnote_changed_cb_id);
-      mb_wm_object_unref (MB_WM_OBJECT (thumb->hdnote));
-      thumb->hdnote = NULL;
+  else if (thumb->tnote)
+    { /* Reset the title being set_thumb_title_from_tnote(). */
+      free_tnote(thumb->tnote);
+      g_free(thumb->tnote);
+      thumb->tnote = NULL;
       thumb->title_icon = thumb->title_text = NULL;
     }
   else if (!strcmp (new_title,
@@ -1464,17 +1462,18 @@ reset_thumb_title (Thumbnail * thumb)
   set_thumb_title (thumb, thumb_title_text (new_title));
 }
 
-/* Called when Thumbnail.hdnote's summary or icon changes to update
- * @thumb->title, provided that that it is set from @hdnote. */
-static Bool
-title_note_changed (HdNote * hdnote, int unused, Thumbnail * thumb)
+/* Update @thumb->title, provided that that it is set from a %HdNote. */
+static void
+title_note_changed (Thumbnail * thumb)
 {
   gchar *icon, *summary;
 
+  g_assert (thumb->tnote != NULL);
+  g_assert (thumb->tnote->hdnote != NULL);
   g_assert (thumb->title_icon != NULL);
   g_assert (thumb->title_text != NULL);
 
-  if ((icon = hd_note_get_icon (hdnote)) != NULL)
+  if ((icon = hd_note_get_icon (thumb->tnote->hdnote)) != NULL)
     {
       clutter_container_remove_actor (CLUTTER_CONTAINER (thumb->title),
                                       thumb->title_icon);
@@ -1488,31 +1487,29 @@ title_note_changed (HdNote * hdnote, int unused, Thumbnail * thumb)
                                    thumb->title_icon);
       XFree (icon);
     }
-  if ((summary = hd_note_get_summary (hdnote)) != NULL)
+  if ((summary = hd_note_get_summary (thumb->tnote->hdnote)) != NULL)
     {
       clutter_label_set_text (CLUTTER_LABEL (thumb->title_text), summary);
       XFree (summary);
     }
-
-  return False;
 }
 
-/* Sets @thumb's title to @hdnote's icon and summary.  This is called
- * when a notification whose application is already running is added
- * to the switcher. */
+/* Sets @thumb's title to @tnote->hdnote's icon and summary.  This is called
+ * when a notification whose application is already running is added to the
+ * switcher. */
 static void
-set_thumb_title_from_hdnote (Thumbnail * thumb, HdNote * hdnote)
+set_thumb_title_from_tnote (Thumbnail * thumb, const TNote * tnote)
 {
   ClutterActor *title;
   gchar *summary, *icon;
 
-  g_assert (!thumb->hdnote);
+  g_assert (!thumb->tnote);
 
   /* It is not recoverable if we cannot get the @summary.
    * @icon is not that critical. */
-  if (!(summary = hd_note_get_summary (hdnote)))
+  if (!(summary = hd_note_get_summary (tnote->hdnote)))
     return;
-  icon = hd_note_get_icon (hdnote);
+  icon = hd_note_get_icon (tnote->hdnote);
 
   /* Center the @icon vertically in the title area. */
   thumb->title_icon = CLUTTER_ACTOR (load_icon (icon,
@@ -1534,12 +1531,8 @@ set_thumb_title_from_hdnote (Thumbnail * thumb, HdNote * hdnote)
                          thumb->title_icon, thumb->title_text, NULL);
   set_thumb_title (thumb, title);
 
-  /* Update @text when @hdnote changes. */
-  thumb->hdnote = mb_wm_object_ref (MB_WM_OBJECT (hdnote));
-  thumb->hdnote_changed_cb_id = mb_wm_object_signal_connect (
-                        MB_WM_OBJECT (hdnote), HdNoteSignalChanged,
-                        (MBWMObjectCallbackFunc)title_note_changed,
-                        thumb);
+  /* Steal the contents of @tnote. */
+  thumb->tnote = g_memdup (tnote, sizeof (*tnote));
 
   XFree (summary);
   if (icon)
@@ -1761,8 +1754,8 @@ hd_task_navigator_replace_window (HdTaskNavigator * self,
 /* Misc window commands }}} */
 
 /* Add/remove windows {{{ */
-static void remove_notewin (HdNote * hdnote);
-static ClutterActor *add_notewin_from_hdnote (HdNote * hdnote);
+static void remove_notewin (HdNote * hdnote, gboolean in_migration);
+static ClutterActor *add_notewin_from_tnote (TNote * tnote);
 static gboolean tnote_matches_thumb (const TNote * tnote,
                                      const Thumbnail * thumb);
 
@@ -1859,7 +1852,6 @@ static void
 create_thumb (Thumbnail * thumb, ClutterActor * apwin)
 {
   guint i;
-  const TNote *tnote;
   XClassHint xwinhint;
   const MBWMClientWindow *mbwmcwin;
 
@@ -1913,11 +1905,13 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
   /* Do we have a notification for @apwin? */
   for (i = 0; i < Notifications->len; i++)
     {
+      const TNote *tnote;
+
       tnote = &g_array_index (Notifications, TNote, i);
       if (tnote_matches_thumb (tnote, thumb))
         { /* Yes, steal it from the @Notification_area. */
-          set_thumb_title_from_hdnote (thumb, tnote->hdnote);
-          remove_notewin (thumb->hdnote);
+          set_thumb_title_from_tnote (thumb, tnote);
+          remove_notewin (tnote->hdnote, TRUE);
           break;
         }
     }
@@ -2023,13 +2017,11 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
 
   /* If @win had a notification, add it to @Notification_area. */
   newborn = NULL;
-  if (thumb->hdnote)
-    {
-      mb_wm_object_signal_disconnect (MB_WM_OBJECT (thumb->hdnote),
-                                      thumb->hdnote_changed_cb_id);
-      newborn = add_notewin_from_hdnote (thumb->hdnote);
-      mb_wm_object_unref (MB_WM_OBJECT (thumb->hdnote));
-      thumb->hdnote = NULL;
+  if (thumb->tnote)
+    { /* add_notewin_from_tnote() copies the contents of thumb->tnote. */
+      newborn = add_notewin_from_tnote (thumb->tnote);
+      g_free (thumb->tnote);
+      thumb->tnote = NULL;
     }
 
   g_array_remove_index (Thumbnails, i);
@@ -2136,19 +2128,45 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
 /* Add/remove windows }}} */
 
 /* Add/remove notifications {{{ */
+static Thumbnail *find_thumb_for_hdnote (HdNote *hdnote);
+
+/* HdNote::HdNoteSignalChanged signal handler. */
+static Bool
+tnote_changed (HdNote * hdnote, int unused1, void * unused2)
+{
+  Thumbnail *thumb;
+
+  if ((thumb = find_thumb_for_hdnote (hdnote)) != NULL)
+    title_note_changed (thumb);
+
+  hd_title_bar_set_switcher_pulse (
+                    HD_TITLE_BAR (hd_render_manager_get_title_bar ()),
+                    TRUE);
+
+  return False;
+}
+
 /* Prepares @tnote with @hdnote but doesn't allocate a notewin yet. */
 static void
 create_tnote (TNote * tnote, HdNote * hdnote)
 {
   memset (tnote, 0, sizeof (*tnote));
+
   tnote->hdnote = mb_wm_object_ref (MB_WM_OBJECT (hdnote));
   tnote->destination = hd_note_get_destination (hdnote);
+
+  /* Be notified when @hdnote's icon/summary changes. */
+  tnote->hdnote_changed_cb_id = mb_wm_object_signal_connect (
+                        MB_WM_OBJECT (hdnote), HdNoteSignalChanged,
+                        (MBWMObjectCallbackFunc)tnote_changed, NULL);
 }
 
 /* Releases what was allocated by create_tnote(). */
 static void
 free_tnote (const TNote * tnote)
 {
+  mb_wm_object_signal_disconnect (MB_WM_OBJECT (tnote->hdnote),
+                                  tnote->hdnote_changed_cb_id);
   mb_wm_object_unref (MB_WM_OBJECT (tnote->hdnote));
   if (tnote->destination)
     XFree (tnote->destination);
@@ -2161,6 +2179,23 @@ tnote_matches_thumb (const TNote * tnote, const Thumbnail * thumb)
 {
   return thumb->class_hint && tnote->destination
     && !strcmp (thumb->class_hint, tnote->destination);
+}
+
+/* Returns the %Thumbnail which shows @hdnote as its title, or %NULL. */
+static Thumbnail *
+find_thumb_for_hdnote (HdNote * hdnote)
+{
+  guint i;
+  Thumbnail *thumb;
+
+  for (i = 0; i < Thumbnails->len; i++)
+    {
+      thumb = &g_array_index (Thumbnails, Thumbnail, i);
+      if (thumb->tnote && thumb->tnote->hdnote == hdnote)
+        return thumb;
+    }
+
+  return NULL;
 }
 
 /* Returns the #ClutterActor of the texture of @hdnote. */
@@ -2222,11 +2257,14 @@ create_notewin (HdNote * hdnote)
   return notewin;
 }
 
-/* Removes @hdnote's notewin from the @Notification_area and updates
+/*
+ * Removes @hdnote's notewin from the @Notification_area and updates
  * the remaining notewin:s layout.  The caller is responsible for
- * updateing the layout(). */
+ * updateing the layout().  If @hdnote is @in_migration no resources
+ * related to its %TNote are released.
+ */
 static void
-remove_notewin (HdNote * hdnote)
+remove_notewin (HdNote * hdnote, gboolean in_migration)
 {
   guint i, row;
   const TNote *tnote;
@@ -2251,7 +2289,8 @@ remove_notewin (HdNote * hdnote)
           clutter_container_remove_actor (
                                   CLUTTER_CONTAINER (Notification_area),
                                   tnote->notewin);
-          free_tnote (tnote);
+          if (!in_migration)
+            free_tnote (tnote);
           g_array_remove_index (Notifications, i);
           break;
         }
@@ -2283,40 +2322,34 @@ void
 hd_task_navigator_remove_notification (HdTaskNavigator * self,
                                        HdNote * hdnote)
 { g_debug (__FUNCTION__);
-  guint i;
   Thumbnail *thumb;
 
   g_return_if_fail (hdnote != NULL);
 
   /* Is @hdnote in a thumbnail's title area? */
-  for (i = 0; i < Thumbnails->len; i++)
-    {
-      thumb = &g_array_index (Thumbnails, Thumbnail, i);
-      if (thumb->hdnote == hdnote)
-        {
-          reset_thumb_title (thumb);
-          goto out;
-        }
+  if (!(thumb = find_thumb_for_hdnote (hdnote)))
+    { /* No, it must be in %Notifications. */
+      /* The navigator layout/position may need to be changed. */
+      remove_notewin (hdnote, FALSE);
+      layout (NULL);
+
+      /* Sync the Tasks button, we might have just become empty. */
+      hd_render_manager_update();
     }
+  else
+    reset_thumb_title (thumb);
 
-  /* The navigator layout/position may need to be changed. */
-  remove_notewin (hdnote);
-  layout (NULL);
-
-  /* Sync the Tasks button, we might have just become empty. */
-  hd_render_manager_update();
-
-out: /* Reset the highlighting if no more notifications left. */
-  /* stop the pulsing animation if we're out of notes */
+  /* Reset the highlighting if no more notifications left. */
   if (!hd_task_navigator_has_notifications (self))
     hd_title_bar_set_switcher_pulse (
                       HD_TITLE_BAR (hd_render_manager_get_title_bar ()),
                       FALSE);
 }
 
-/* Like add_notewin_from_hdnote().  Returns whether the thumbnail
- * layout() should be updated. */
-static gboolean
+/* Creates a notewin for a @tnote and adds it to the @Notification_area,
+ * updating the layout of the existing notewins if necessary.  Returns
+ * an actor you need to update the navigator layout() with, or %NULL. */
+static ClutterActor *
 add_notewin_from_tnote (TNote * tnote)
 {
   tnote->notewin = create_notewin (tnote->hdnote);
@@ -2331,7 +2364,7 @@ add_notewin_from_tnote (TNote * tnote)
        * is updated by layout(). */
       clutter_actor_set_position (tnote->notewin,
                                   NOTE_MARGIN + NOTE_WIDTH, 0);
-      return TRUE;
+      return tnote->notewin;
     }
   else if (Notifications->len % 2)
     { /* Third, fifth, sevent, ... notification. */
@@ -2347,7 +2380,7 @@ add_notewin_from_tnote (TNote * tnote)
 
       /* If we're adding the second+ notification we needn't update
        * the navigator layout because then it doesn't change. */
-      return FALSE;
+      return NULL;
     }
   else
     { /* Second, fourth, sixth, ... notification. */
@@ -2364,21 +2397,8 @@ add_notewin_from_tnote (TNote * tnote)
                 NOTE_MARGIN, clutter_actor_get_y (last->notewin)))
         show_when_complete (tnote->notewin);
 
-      return FALSE;
+      return NULL;
     }
-}
-
-/* Creates a notewin for @hdnote and adds it to the @Notification_area,
- * updating the layout of the existing notewins if necessary.  Returns
- * an actor you need to update the navigator layout() with, or %NULL. */
-static ClutterActor *
-add_notewin_from_hdnote (HdNote * hdnote)
-{
-  TNote tnote;
-
-  create_tnote (&tnote, hdnote);
-  return add_notewin_from_tnote (&tnote)
-    ? tnote.notewin : NULL;
 }
 
 /* Show a notification in the navigator, either in the @Notification_area
@@ -2403,18 +2423,18 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
       thumb = &g_array_index (Thumbnails, Thumbnail, i);
       if (tnote_matches_thumb (&tnote, thumb))
         {
-          if (thumb->hdnote)
+          if (thumb->tnote)
             {
               /* hildon-home should have replaced the summary of the existing
-               * @thumb->hdnote instead; the easy way out is adding the new
-               * one to the @Notification_area. */
+               * %HdNote instead; the easy way out is adding the new one to the
+               * @Notification_area. */
               g_critical ("%s: attempt to add more than one notification "
                           "to `%s'", __FUNCTION__, thumb->class_hint);
               break;
             }
 
-          free_tnote (&tnote);
-          set_thumb_title_from_hdnote (thumb, hdnote);
+          /* We must not free_tnote() because @thumb needs its contents. */
+          set_thumb_title_from_tnote (thumb, &tnote);
           return;
         }
     }
