@@ -158,9 +158,7 @@ hd_launcher_tile_class_init (HdLauncherTileClass *klass)
 static void
 hd_launcher_tile_init (HdLauncherTile *tile)
 {
-  HdLauncherTilePrivate *priv;
-
-  tile->priv = priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
+  tile->priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (tile), TRUE);
 }
