@@ -7,3 +7,7 @@ DEB_DH_INSTALLINIT_ARGS := --no-start -- start 51 2 3 4 . stop 20 0 1 5 6 .
 
 makebuilddir/hildon-desktop::
 	./autogen.sh --prefix=/usr --sysconfdir=/etc
+
+binary-install/hildon-desktop::
+	dh_installxsession -u 'post 01'
+

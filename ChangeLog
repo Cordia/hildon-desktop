@@ -1,3 +1,11 @@
+2009-02-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Added an xsession script for hildon-desktop. NB#101224
+
+	* debian/control:
+	* debian/hildon-desktop.xsession:
+	* debian/rules:
+
 2009-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c:
