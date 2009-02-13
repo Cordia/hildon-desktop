@@ -2,6 +2,16 @@
 
 	* src/mb/hd-dialog.c (hd_dialog_init): Support undecorated dialogs by
 	not adding decor geometry to their size. Fixes: NB#101816
+2009-02-13  Gordon Williams <gordon.williams@collabora.co.uk>
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h:
+	Added hd_render_manager_update_blur_state, which intelligently checks
+	if a view should be blurred or not.
+	* src/mb/hd-comp-mgr.c
+	* src/mb/hd-comp-mgr.h:
+	Changes to use hd_render_manager_update_blur_state
+	Changes to stop HD_COMP_MGR_CLIENT_IS_MAXIMIZED accidentally classing
+	the 'crash' dialog as a fullscreen client and blurring it
 
 2009-02-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 

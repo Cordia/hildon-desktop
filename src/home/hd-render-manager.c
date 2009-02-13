@@ -1290,19 +1290,27 @@ void hd_render_manager_restack()
             child != CLUTTER_ACTOR(priv->blur_front))
           {
             ClutterGeometry geo;
+            gboolean maximized;
 
             clutter_actor_get_geometry(child, &geo);
-            if (!HD_COMP_MGR_CLIENT_IS_MAXIMIZED(geo))
+            maximized = HD_COMP_MGR_CLIENT_IS_MAXIMIZED(geo);
+            /* Maximized stuff should never be blurred (unless there
+             * is nothing else) */
+            if (!maximized)
               {
                 clutter_actor_reparent(child, CLUTTER_ACTOR(priv->app_top));
                 clutter_actor_lower_bottom(child);
                 clutter_actor_show(child); /* because it is in app-top, vis
                                               check does not get applied */
               }
-            else
-              {
-                break;
-              }
+            /* If this is maximized, or in dialog's position, don't
+             * blur anything after */
+            if (maximized || (
+                geo.width == HD_COMP_MGR_SCREEN_WIDTH &&
+                geo.y + geo.height == HD_COMP_MGR_SCREEN_HEIGHT
+                ))
+              break;
+
           }
       }
   }
@@ -1341,12 +1349,36 @@ void hd_render_manager_restack()
   hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
 }
 
-void hd_render_manager_set_blur_app(gboolean blur)
+void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   HDRMBlurEnum blur_flags;
+  MBWindowManager *wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  MBWindowManagerClient *c;
+  gboolean blur = FALSE;
 
-  g_debug("%s: %s", __FUNCTION__, blur ? "BLUR":"UNBLUR");
+  /* Now look through the MBWM stack and see if we need to blur or not.
+   * This happens when we have a dialog/menu in front of the main app */
+  for (c=wm->stack_top;c;c=c->stacked_below)
+    {
+      int c_type = MB_WM_CLIENT_CLIENT_TYPE(c);
+      if (hd_comp_mgr_ignore_window(c) || c==ignore)
+        continue;
+      if (c_type == MBWMClientTypeApp ||
+          c_type == MBWMClientTypeDesktop)
+        break;
+      if (c_type == MBWMClientTypeDialog ||
+          c_type == MBWMClientTypeMenu ||
+          c_type == HdWmClientTypeStatusMenu)
+        {
+          g_debug("%s: Blurring caused by window type %d, name '%s'",
+              __FUNCTION__, c_type, c->name?c->name:"(null)");
+          blur=TRUE;
+          break;
+        }
+    }
+
+  if (!blur)
 
   blur_flags = priv->current_blur;
   if (blur)
@@ -1648,21 +1680,6 @@ void hd_render_manager_queue_delay_redraw()
       g_signal_emit (the_render_manager, signals[DAMAGE_REDRAW], 0);
       the_render_manager->priv->queued_redraw = TRUE;
     }
-}
-
-/* hd_render_manager_set_blur_app() if @c is either in @app_top
- * (dialogs) or in @front (status menu). */
-void hd_render_manager_blur_if_you_need_to(MBWindowManagerClient *c)
-{
-  ClutterActor *actor, *parent;
-
-  actor = mb_wm_comp_mgr_clutter_client_get_actor(
-      MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
-  parent = clutter_actor_get_parent (actor);
-
-  if (parent == CLUTTER_ACTOR (the_render_manager->priv->app_top)
-      || parent == CLUTTER_ACTOR (the_render_manager->priv->front))
-    hd_render_manager_set_blur_app(TRUE);
 }
 
 /* Called by hd-task-navigator when its state changes, as when notifications

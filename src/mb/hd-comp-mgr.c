@@ -665,16 +665,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
-  /* FIXME: shouldn't this be in hd_comp_mgr_unmap_notify?
-   * hd_comp_mgr_unregister_client might not be called for all unmapped
-   * clients */
-  if (g_hash_table_remove (priv->tasks_button_blockers, c)
-      && g_hash_table_size (priv->tasks_button_blockers) == 0)
-    { /* Last system modal dialog being unmapped, undo evil. */
-      hd_render_manager_set_reactive(TRUE);
-      hd_render_manager_set_blur_app(FALSE);
-    }
-
   if (hclient->priv->hibernating)
     {
       /*
@@ -840,7 +830,7 @@ hd_comp_mgr_is_client_screensaver (MBWindowManagerClient *c)
 }
 
 /* strange windows that never go away and mess up our checks for visibility */
-static gboolean
+gboolean
 hd_comp_mgr_ignore_window (MBWindowManagerClient *c)
 {
   return c && c->window && c->window->name &&
@@ -1334,14 +1324,6 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
   /*HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;*/
   if (event == MBWMCompMgrClientEventUnmap)
     {
-      if ((c_type & (  MBWMClientTypeDialog  | MBWMClientTypeMenu
-                    | HdWmClientTypeAppMenu | HdWmClientTypeStatusMenu))
-          || HD_IS_INFO_NOTE (c) || HD_IS_CONFIRMATION_NOTE (c))
-        {
-          if (BLUR_FOR_WINDOW(c))
-            hd_render_manager_set_blur_app(FALSE);
-        }
-
       if (c_type == HdWmClientTypeStatusMenu)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
@@ -1373,18 +1355,6 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
       /* before the effect, restack */
       hd_comp_mgr_restack(mgr);
 
-      /* We have to be ready to set to no blur as well as we may get
-       * the VKB on top of a dialog that already added blurring. */
-      if ((c_type & (  MBWMClientTypeDialog  | MBWMClientTypeMenu
-                    | HdWmClientTypeAppMenu | HdWmClientTypeStatusMenu))
-          || HD_IS_INFO_NOTE (c) || HD_IS_CONFIRMATION_NOTE (c))
-        {
-          if (!BLUR_FOR_WINDOW (c))
-            hd_render_manager_set_blur_app(FALSE);
-          else
-            hd_render_manager_blur_if_you_need_to (c);
-        }
-
       if (c_type == HdWmClientTypeStatusMenu)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventMap);
       else if (c_type == MBWMClientTypeDialog)
@@ -1407,6 +1377,11 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
             hd_launcher_window_created();
           }
     }
+
+  /* ignore this window when we set blur state if we're unmapping
+   * - because it will be just about to disappear */
+  hd_render_manager_update_blur_state(
+      (event == MBWMCompMgrClientEventUnmap) ? c : NULL);
 }
 
 void
