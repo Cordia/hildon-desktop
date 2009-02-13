@@ -1,6 +1,6 @@
 hildon-desktop (1:2.2.21-1~unreleased) unstable; urgency=low
 
-  * Support undecorated dialogs also size-wise.
+  * Support undecorated dialogs also size-wise. Fixes: NB#101816
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 13 Feb 2009 16:52:55 +0200
 

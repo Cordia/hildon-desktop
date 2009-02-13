@@ -1,7 +1,7 @@
 2009-02-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-dialog.c (hd_dialog_init): Support undecorated dialogs by
-	not adding decor geometry to their size. (Partly fixes NB#101816)
+	not adding decor geometry to their size. Fixes: NB#101816
 
 2009-02-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
