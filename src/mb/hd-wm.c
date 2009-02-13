@@ -307,7 +307,7 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
 /* Returns the client that should be the _MB_CURRENT_APP_WINDOW,
  * according to window stacking. */
 MBWindowManagerClient *
-hd_wm_get_current_app (MBWindowManager *wm)
+hd_wm_detemine_current_app (MBWindowManager *wm)
 {
   MBWindowManagerClient *c;
 
@@ -334,18 +334,26 @@ hd_wm_get_current_app (MBWindowManager *wm)
     }
 }
 
-/* Set _MB_CURRENT_APP_WINDOW to @xid if it's changing. */
-void
-hd_wm_update_current_app_property (MBWindowManager *wm, Window xid)
+/*
+ * If @wm is %NULL return the XID of the foreground %HdApp client
+ * in application view.  If we are not in application view this
+ * should be 0x00000000, or the XID of the desktop window in home
+ * view.  Itherwise set the set the _MB_CURRENT_APP_WINDOW
+ * property of the wm root window to @xid if it's changing.
+ */
+Window
+hd_wm_current_app_is (MBWindowManager *wm, Window xid)
 {
   static Window last;
 
-  if (xid == last)
-    return;
+  if (!wm || xid == last)
+    return last;
+
   last = xid;
   XChangeProperty(wm->xdpy, wm->root_win->xwindow,
                   wm->atoms[MBWM_ATOM_MB_CURRENT_APP_WINDOW],
                   XA_WINDOW, 32, PropModeReplace,
                   (unsigned char *)&xid, 1);
   g_debug ("CURRENT_APP_WINDOW => 0x%lx", xid);
+  return last;
 }

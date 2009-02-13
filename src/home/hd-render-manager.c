@@ -1052,7 +1052,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           else /* TODO can @mbclient be NULL at all? */
             hd_task_navigator_enter (priv->task_nav);
 
-          hd_wm_update_current_app_property (wm, 0);
+          hd_wm_current_app_is (wm, 0);
         }
       if (STATE_NEED_TASK_NAV(oldstate) &&
           !STATE_NEED_TASK_NAV(state))

@@ -723,12 +723,22 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                 }
               else if (!(c->window->ewmh_state &
 		         MBWMClientWindowEWMHStateSkipTaskbar))
-                /* We are the leader or a non-stackable window,
-		 * just remove the actor from the switcher.
-                 * NOTE The test above breaks if the client changed
-                 * the flag after it's been mapped. */
-                hd_switcher_remove_window_actor (priv->switcher_group,
-                                                 actor);
+                {
+                  /* We are the leader or a non-stackable window,
+                   * just remove the actor from the switcher.
+                   * NOTE The test above breaks if the client changed
+                   * the flag after it's been mapped. */
+                  hd_switcher_remove_window_actor (priv->switcher_group,
+                                                   actor);
+
+                  if (!c->window)
+                    g_critical("unregister_client(): c->window == NULL");
+                  else if (c->window->xwindow == hd_wm_current_app_is (NULL, 0))
+                    /* We are in APP state and foreground application closed. */
+                    hd_render_manager_set_state (hd_render_manager_has_apps ()
+                                                 ? HDRM_STATE_TASK_NAV
+                                                 : HDRM_STATE_HOME);
+                }
             }
 
           g_object_set_data (G_OBJECT (actor),
@@ -1454,8 +1464,8 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
 
       /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed. */
       if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop)
-        hd_wm_update_current_app_property (mgr->wm,
-                hd_wm_get_current_app (mgr->wm)->window->xwindow);
+        hd_wm_current_app_is (mgr->wm,
+                 hd_wm_detemine_current_app (mgr->wm)->window->xwindow);
 
       hd_render_manager_restack();
 

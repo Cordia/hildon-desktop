@@ -687,13 +687,11 @@ hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor)
   hd_task_navigator_remove_window (priv->task_nav, actor,
                                    hd_switcher_window_actor_removed,
                                    switcher);
-  if (STATE_IS_APP(hd_render_manager_get_state()))
-    {
-      if (hd_task_navigator_is_empty(priv->task_nav))
-        hd_render_manager_set_state(HDRM_STATE_HOME);
-      else
-        hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
-    }
+
+  /* Go to HOME iff we are showing and just become empty. */
+  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV
+      && hd_task_navigator_is_empty(priv->task_nav))
+    hd_render_manager_set_state(HDRM_STATE_HOME);
 }
 
 void
