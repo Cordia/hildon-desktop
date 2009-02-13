@@ -9,5 +9,5 @@ makebuilddir/hildon-desktop::
 	./autogen.sh --prefix=/usr --sysconfdir=/etc
 
 binary-install/hildon-desktop::
-	dh_installxsession -u 'post 01'
+	dh_installxsession -u 'post 05'
 

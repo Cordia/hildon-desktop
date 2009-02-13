@@ -1,3 +1,9 @@
+2009-02-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Set correct xsession script number to 05 as NB#101224 says.
+
+	* debian/rules:
+
 2009-02-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-home.c:
