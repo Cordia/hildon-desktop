@@ -78,6 +78,8 @@ void
 hd_title_bar_set_show(HdTitleBar *bar, gboolean show);
 void
 hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm);
+gboolean
+hd_title_bar_is_title_bar_decor(HdTitleBar *bar, MBWMDecor *decor);
 
 /* Whether to show pulsing animation for task switcher button
  * (for when notifications arrive) or not */

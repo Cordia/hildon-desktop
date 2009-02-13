@@ -38,8 +38,6 @@ static MBWMDecor * hd_theme_create_decor (MBWMTheme             *theme,
 					  MBWindowManagerClient *client,
 					  MBWMDecorType          type);
 
-static void hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor);
-
 static void
 hd_theme_simple_get_button_size (MBWMTheme             *theme,
 				 MBWMDecor             *decor,
@@ -49,6 +47,8 @@ hd_theme_simple_get_button_size (MBWMTheme             *theme,
 
 static void
 hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor);
+static void
+hd_theme_paint_decor_button (MBWMTheme *theme, MBWMDecorButton *decor);
 
 static void
 hd_theme_class_init (MBWMObjectClass *klass)
@@ -57,7 +57,7 @@ hd_theme_class_init (MBWMObjectClass *klass)
 
   t_class->create_decor = hd_theme_create_decor;
   t_class->paint_decor  = hd_theme_paint_decor;
-  t_class->paint_button = 0;
+  t_class->paint_button = hd_theme_paint_decor_button;
   t_class->button_size  = hd_theme_simple_get_button_size;
 
 #if MBWM_WANT_DEBUG
@@ -572,7 +572,11 @@ hd_theme_simple_get_button_size (MBWMTheme             *theme,
 static void
 hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor)
 {
-  HdDecor                * hd_decor = HD_DECOR (decor);
+  hd_decor_sync( HD_DECOR (decor) );
+}
 
-  hd_decor_paint_decor(hd_decor, theme);
+static void
+hd_theme_paint_decor_button (MBWMTheme *theme, MBWMDecorButton *decor)
+{
+  hd_decor_button_sync( HD_DECOR_BUTTON(decor) );
 }

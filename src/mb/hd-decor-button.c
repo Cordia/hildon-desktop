@@ -31,33 +31,6 @@
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 
-
-static Bool
-hd_decor_button_press_handler (MBWMObject       *obj,
-                               int               mask,
-                               void             *userdata)
-{
-  MBWMDecorButton *mbbutton = MB_WM_DECOR_BUTTON(obj);
-  HdTitleBar *bar = HD_TITLE_BAR(hd_render_manager_get_title_bar());
-  if (bar)
-    hd_title_bar_right_pressed(bar,
-        mbbutton->state != MBWMDecorButtonStateInactive);
-  return True;
-}
-
-static Bool
-hd_decor_button_release_handler (MBWMObject       *obj,
-                                 int               mask,
-                                 void             *userdata)
-{
-  MBWMDecorButton *mbbutton = MB_WM_DECOR_BUTTON(obj);
-  HdTitleBar *bar = HD_TITLE_BAR(hd_render_manager_get_title_bar());
-  if (bar)
-    hd_title_bar_right_pressed(bar,
-        mbbutton->state != MBWMDecorButtonStateInactive);
-  return True;
-}
-
 static void
 hd_decor_button_class_init (MBWMObjectClass *klass)
 {
@@ -87,11 +60,6 @@ hd_decor_button_init (MBWMObject *obj, va_list vap)
         }
       prop = va_arg(vap, MBWMObjectProp);
     }
-
-  mb_wm_object_signal_connect(obj, MBWMDecorButtonSignalPressed,
-      hd_decor_button_press_handler, 0);
-  mb_wm_object_signal_connect(obj, MBWMDecorButtonSignalReleased,
-      hd_decor_button_release_handler, 0);
 
   return 1;
 }

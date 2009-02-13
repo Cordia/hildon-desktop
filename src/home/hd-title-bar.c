@@ -700,6 +700,15 @@ hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm)
   hd_title_bar_set_window(bar, client);
 }
 
+/* Is the given decor one we should consider for a title bar? */
+gboolean
+hd_title_bar_is_title_bar_decor(HdTitleBar *bar, MBWMDecor *decor)
+{
+  return (decor->type == MBWMDecorTypeNorth) &&
+         decor->parent_client &&
+         (MB_WM_CLIENT_CLIENT_TYPE(decor->parent_client) == MBWMClientTypeApp);
+}
+
 void
 hd_title_bar_set_switcher_pulse(HdTitleBar *bar, gboolean pulse)
 {

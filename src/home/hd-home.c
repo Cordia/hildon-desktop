@@ -363,8 +363,19 @@ hd_property_notify_message (XPropertyEvent *xev, void *userdata)
   if (xev->atom==hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_PROGRESS_INDICATOR))
     { /* Redraw the title to display/remove the progress indicator. */
       MBWindowManagerClient *top;
+      /* previous mb_wm_client_decor_mark_dirty didn't actually cause a redraw,
+       * so mark the decor itself dirty */
       if ((top = mb_wm_get_visible_main_client(MB_WM_COMP_MGR (hmgr)->wm)) != NULL)
-        mb_wm_client_decor_mark_dirty (top);
+        {
+          MBWMList *l = top->decor;
+          while (l)
+            {
+              MBWMDecor *decor = l->data;
+              if (decor->type == MBWMDecorTypeNorth)
+                mb_wm_decor_mark_dirty (decor);
+              l = l->next;
+            }
+        }
     }
 
   return True;

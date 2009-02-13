@@ -59,11 +59,7 @@ int hd_decor_class_type (void);
 HdDecor* hd_decor_new (MBWindowManager      *wm,
                        MBWMDecorType         type);
 
-ClutterActor *
-hd_decor_get_actor(HdDecor   *decor);
-
-void hd_decor_paint_decor(HdDecor   *decor,
-                          MBWMTheme *theme);
+void hd_decor_sync(HdDecor   *decor);
 
 gboolean
 hd_decor_window_is_waiting (MBWindowManager *wm, Window w);

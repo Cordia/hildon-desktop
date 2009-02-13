@@ -29,7 +29,6 @@
 #include "hd-title-bar.h"
 #include "hd-render-manager.h"
 #include "hd-clutter-cache.h"
-#include "hd-decor-button.h"
 #include "hd-transition.h"
 
 #include <matchbox/theme-engines/mb-wm-theme-png.h>
@@ -149,7 +148,7 @@ MBWindowManagerClient *hd_decor_get_client(HdDecor   *decor)
   return MB_WM_DECOR(decor)->parent_client;
 }
 
-ClutterActor *
+static ClutterActor *
 hd_decor_get_actor(HdDecor   *decor)
 {
   MBWindowManagerClient* client = hd_decor_get_client(decor);
@@ -229,20 +228,11 @@ hd_decor_create_actors(HdDecor *decor)
                                           client->window->xwindow);
   x_start = hd_decor_get_start_x(decor);
 
-  /*geo.x = d->x;
-  geo.y = d->y;
-  geo.width = d->width;
-  geo.height = d->height;*/
   area.x = 0;
   area.y = 0;
   area.width = mb_decor->geom.width;
   area.height = mb_decor->geom.height;
 
-/*  decor->title_bar_actor = hd_clutter_cache_get_sub_texture_for_area(
-      client->wmref->theme->image_filename,
-      FALSE,
-      &geo,
-      &area);*/
   decor->title_bar_actor =
     hd_clutter_cache_get_texture_for_area(HD_THEME_IMG_DIALOG_BAR, TRUE, &area);
   clutter_container_add_actor(CLUTTER_CONTAINER(actor), decor->title_bar_actor);
@@ -323,39 +313,37 @@ hd_decor_create_actors(HdDecor *decor)
     }
 }
 
-void hd_decor_paint_decor(HdDecor   *decor,
-                          MBWMTheme *theme)
+void hd_decor_sync(HdDecor *decor)
 {
+  MBWMDecor *mbdecor = MB_WM_DECOR(decor);
   MBWindowManagerClient  *client = MB_WM_DECOR(decor)->parent_client;
-  ClutterActor *actor = hd_decor_get_actor(decor);
+  MBWMTheme *theme;
+  ClutterActor *actor;
   ClutterGeometry geom;
-  gboolean fullscreen = FALSE;
-  MBWMList *l;
+  HdTitleBar *bar;
 
+  if (!client || !client->wmref) return;
+
+  bar = HD_TITLE_BAR(hd_render_manager_get_title_bar());
+  if (bar && hd_title_bar_is_title_bar_decor(bar, mbdecor))
+    hd_title_bar_update(bar, client->wmref->comp_mgr);
+
+  theme = client->wmref->theme;
+
+  actor = hd_decor_get_actor(decor);
   if (!actor) return;
   clutter_actor_get_geometry(actor, &geom);
 
-  if (client && mb_wm_client_window_is_state_set (
-        client->window, MBWMClientWindowEWMHStateFullscreen))
-    fullscreen = TRUE;
-
+  /* TODO: We probably want to try and adjust the current actors
+   * rather than removing them and recreating them. */
   hd_decor_remove_actors(decor);
   if (MB_WM_DECOR(decor)->geom.width > 0 &&
       MB_WM_DECOR(decor)->geom.height > 0 &&
-      !fullscreen)
+      (MB_WM_CLIENT_CLIENT_TYPE(client) != MBWMClientTypeApp))
     {
       /* For dialogs, etc. We need to fill our clutter group with
        * all the actors needed to draw it. */
       hd_decor_create_actors(decor);
     }
-
-  /* Handle the buttons */
-  l = MB_WM_DECOR(decor)->buttons;
-  while (l)
-    {
-      HdDecorButton * button = l->data;
-      hd_decor_button_sync(button);
-
-      l = l->next;
-    }
 }
+

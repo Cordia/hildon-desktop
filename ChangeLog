@@ -1,3 +1,20 @@
+2009-02-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-home.c:
+	  Fixed broken notify for progress indicator - didn't mark the decor
+	  as dirty so it never got redrawn.
+	* src/mb/hd-decor-button.c:
+	  Removed previous press/release notifies, as now works fine when called
+	  from hd-theme
+	* src/home/hd-title-bar.c
+	* src/home/hd-title-bar.h
+	* src/mb/hd-theme.c
+	* src/mb/hd-decor.c
+	* src/mb/hd-decor.h:
+	  Added button paint handler, and make sure buttons and title bars are
+	  synced when repainted. Also added call to hd-title-bar from hd-decor
+	  to update it if the relevant decor is synced.
+
 2009-02-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#100952
