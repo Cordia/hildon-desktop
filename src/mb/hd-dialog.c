@@ -66,7 +66,6 @@ hd_dialog_init (MBWMObject *this, va_list vap)
 {
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
   MBGeometry             geom;
-  int                    n, s, w, e;
   MBWindowManager       *wm = client->wmref;
 
   /*
@@ -84,12 +83,25 @@ hd_dialog_init (MBWMObject *this, va_list vap)
    * geometry from the layout manager -- we have to set the initial geometry
    * here.
    */
-  mb_wm_theme_get_decor_dimensions (wm->theme, client, &n, &s, &w, &e);
+  if (client->window->undecorated)
+    {
+      geom.x      = 0;
+      geom.width  = wm->xdpy_width;
+      geom.height = client->window->geometry.height;
+      geom.y      = wm->xdpy_height - geom.height;
+    }
+  else
+    {
+      int n, s, w, e;
 
-  geom.x      = 0;
-  geom.width  = wm->xdpy_width;
-  geom.height = client->window->geometry.height + n + s;
-  geom.y      = wm->xdpy_height - geom.height;
+      n = s = w = e = 0;
+      mb_wm_theme_get_decor_dimensions (wm->theme, client, &n, &s, &w, &e);
+
+      geom.x      = 0;
+      geom.width  = wm->xdpy_width;
+      geom.height = client->window->geometry.height + n + s;
+      geom.y      = wm->xdpy_height - geom.height;
+    }
 
   /*
    * Our request geometry function only makes actual change if the height
