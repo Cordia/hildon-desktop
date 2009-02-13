@@ -1004,22 +1004,18 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       return;
     }
 
-  /* deactivate launcher and switcher in case of new window */
-  /* FIXME: When we get an app we'd just go to home and then straight
-   * to app - so I (gw) added MBWMClientTypeApp as an exception.
-   * What are we trying to switch to home for here?
-   * madam: i think because of the power menu
+  /*
+   * Leave switcher/launcher for home if we're mapping a system-modal
+   * dialog, information note or confirmation note.  We need to leave now,
+   * before we disable hdrm reactivity, because changing state after that
+   * restores that.
    */
-  if (STATE_ONE_OF(hd_render_manager_get_state(),
-                   HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
-      && !(ctype == MBWMClientTypeNote
-           && HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
-      && !(ctype & (MBWMClientTypeDialog |
-                    HdWmClientTypeHomeApplet |
-                    MBWMClientTypeApp)))
-  {
-    hd_render_manager_set_state(HDRM_STATE_HOME);
-  }
+  if (!c->transient_for)
+    if (ctype == MBWMClientTypeDialog
+        || HD_IS_INFO_NOTE (c) || HD_IS_CONFIRMATION_NOTE (c))
+      if (STATE_ONE_OF(hd_render_manager_get_state(),
+                       HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
+        hd_render_manager_set_state(HDRM_STATE_HOME);
 
   /* Do evil.  Do we need to block the Tasks button? */
   if ((ctype == MBWMClientTypeDialog ||
@@ -1077,7 +1073,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       return;
     }
   else if (ctype == HdWmClientTypeStatusMenu)
-    {
+    { /* Either status menu OR power menu. */
+      if (STATE_ONE_OF(hd_render_manager_get_state(),
+                       HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
+        hd_render_manager_set_state(HDRM_STATE_HOME);
       hd_home_add_status_menu (HD_HOME (priv->home), actor);
       priv->status_menu_client = c;
       return;
@@ -1119,8 +1118,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       if (c->transient_for)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
-      else if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV)
-        hd_render_manager_set_state(HDRM_STATE_HOME);
       return;
     }
   else if (c->window->net_type ==
@@ -1337,11 +1334,9 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
   /*HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;*/
   if (event == MBWMCompMgrClientEventUnmap)
     {
-      if (c_type == MBWMClientTypeDialog ||
-          c_type == HdWmClientTypeStatusMenu ||
-          c_type == HdWmClientTypeAppMenu ||
-          c_type == MBWMClientTypeMenu
-          )
+      if ((c_type & (  MBWMClientTypeDialog  | MBWMClientTypeMenu
+                    | HdWmClientTypeAppMenu | HdWmClientTypeStatusMenu))
+          || HD_IS_INFO_NOTE (c) || HD_IS_CONFIRMATION_NOTE (c))
         {
           if (BLUR_FOR_WINDOW(c))
             hd_render_manager_set_blur_app(FALSE);
@@ -1380,8 +1375,9 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 
       /* We have to be ready to set to no blur as well as we may get
        * the VKB on top of a dialog that already added blurring. */
-      if (c_type & (  MBWMClientTypeDialog  | MBWMClientTypeMenu
+      if ((c_type & (  MBWMClientTypeDialog  | MBWMClientTypeMenu
                     | HdWmClientTypeAppMenu | HdWmClientTypeStatusMenu))
+          || HD_IS_INFO_NOTE (c) || HD_IS_CONFIRMATION_NOTE (c))
         {
           if (!BLUR_FOR_WINDOW (c))
             hd_render_manager_set_blur_app(FALSE);
