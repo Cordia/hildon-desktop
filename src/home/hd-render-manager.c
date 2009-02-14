@@ -1378,9 +1378,8 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
         }
     }
 
-  if (!blur)
-
   blur_flags = priv->current_blur;
+
   if (blur)
     blur_flags = blur_flags | HDRM_BLUR_HOME;
   else
