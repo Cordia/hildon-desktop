@@ -364,7 +364,9 @@ pixbuf2texture (GdkPixbuf *pixbuf, gboolean fallback)
     {
       g_warning ("clutter_texture_set_from_rgb_data: %s", err->message);
       g_object_unref (texture);
+#ifndef G_DISABLE_CHECKS
 damage_control:
+#endif
       texture = fallback
         ? empty_texture (gdk_pixbuf_get_width (pixbuf),
                          gdk_pixbuf_get_height (pixbuf))
