@@ -60,7 +60,7 @@ struct HdWmClass
 
 int hd_wm_class_type (void);
 
-MBWindowManagerClient * hd_wm_detemine_current_app (MBWindowManager *wm);
+MBWindowManagerClient * hd_wm_determine_current_app (MBWindowManager *wm);
 Window                  hd_wm_current_app_is (MBWindowManager *wm,
                                               Window xid);
 

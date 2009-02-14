@@ -1436,7 +1436,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
       /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed. */
       if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop)
         hd_wm_current_app_is (mgr->wm,
-                 hd_wm_detemine_current_app (mgr->wm)->window->xwindow);
+                 hd_wm_determine_current_app (mgr->wm)->window->xwindow);
 
       hd_render_manager_restack();
 

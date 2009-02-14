@@ -307,7 +307,7 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
 /* Returns the client that should be the _MB_CURRENT_APP_WINDOW,
  * according to window stacking. */
 MBWindowManagerClient *
-hd_wm_detemine_current_app (MBWindowManager *wm)
+hd_wm_determine_current_app (MBWindowManager *wm)
 {
   MBWindowManagerClient *c;
 
