@@ -1,3 +1,5 @@
+ FIXME: Adam fixed the Marbles startup in r35324, but now it's again broken!!
+
 2009-02-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-dialog.c (hd_dialog_init): Support undecorated dialogs by
