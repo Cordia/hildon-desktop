@@ -68,8 +68,7 @@ typedef enum
   HDRM_BUTTON_TASK_NAV,
   HDRM_BUTTON_LAUNCHER,
   HDRM_BUTTON_MENU,
-  HDRM_BUTTON_HOME_BACK, /* top-right back button shown in home edit view */
-  HDRM_BUTTON_LAUNCHER_BACK, /* top-right back button shown in launcher view*/
+  HDRM_BUTTON_BACK, /* top-right back button */
   HDRM_BUTTON_EDIT, /* pop-down edit */
   HDRM_BUTTON_COUNT = HDRM_BUTTON_EDIT,
 } HDRMButtonEnum;
@@ -123,9 +122,15 @@ typedef enum
                     HDRM_STATE_APP_PORTRAIT)
 
 /* Are we in a state where we should blur the buttons + status menu?
- * Task Navigator + launcher zoom out, so are a bad idea. */
+ * Task Navigator + launcher zoom out, so are a bad idea. for HOME_EDIT
+ * We want to blur stuff, but not our buttons/applets... */
 #define STATE_BLUR_BUTTONS(s) \
-  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
+  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
+                      HDRM_STATE_HOME_EDIT))
+
+/* States to move the home applets out to the front in */
+#define STATE_HOME_FRONT(s) \
+  (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT))
 
 /* Whether to update part of the screen or not.
  * HDRM_STATE_TASK_NAV : Apps are scaled, and scroller is a nightmare

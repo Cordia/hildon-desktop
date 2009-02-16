@@ -104,7 +104,6 @@ struct _HdHomePrivate
   ClutterEffectTemplate *edit_button_template;
 
   ClutterActor          *edit_group; /* An overlay group for edit mode */
-  ClutterActor          *back_button;
   ClutterActor          *edit_button;
 
   ClutterActor          *applet_close_button;
@@ -113,8 +112,6 @@ struct _HdHomePrivate
   ClutterActor          *active_applet;
   guint                  active_applet_hide_id;
 
-  ClutterActor          *grey_filter;
-
   ClutterActor          *operator;
   ClutterActor          *operator_applet;
 
@@ -122,6 +119,9 @@ struct _HdHomePrivate
   ClutterActor          *right_switch;
 
   ClutterActor          *view_container;
+
+  /* container that sits infront of blurred home */
+  ClutterGroup          *front;
 
   guint                  current_view;
   guint                  current_desktop;
@@ -214,7 +214,7 @@ hd_home_edit_button_clicked (ClutterActor *button,
   return TRUE;
 }
 
-static gboolean
+gboolean
 hd_home_back_button_clicked (ClutterActor *button,
 			     ClutterEvent *event,
 			     HdHome       *home)
@@ -222,7 +222,7 @@ hd_home_back_button_clicked (ClutterActor *button,
   if (hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT)
     hd_render_manager_set_state(HDRM_STATE_HOME);
 
-  return TRUE;
+  return FALSE;
 }
 
 static Bool
@@ -462,7 +462,6 @@ hd_home_constructed (GObject *object)
   ClutterActor    *edit_group;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   GError          *error = NULL;
-  guint            button_width, button_height;
   ClutterColor     clr = {0,0,0,0xff};
   XSetWindowAttributes attr;
   GtkIconTheme	  *icon_theme;
@@ -474,9 +473,14 @@ hd_home_constructed (GObject *object)
 
   clutter_actor_set_name (CLUTTER_ACTOR(object), "HdHome");
 
+  priv->front = CLUTTER_GROUP(clutter_group_new());
+  clutter_actor_set_name (CLUTTER_ACTOR(priv->front), "HdHome:front");
+  clutter_container_add_actor (CLUTTER_CONTAINER (object),
+                               CLUTTER_ACTOR(priv->front));
+
   edit_group = priv->edit_group = clutter_group_new ();
   clutter_actor_set_name (edit_group, "HdHome:edit_group");
-  clutter_container_add_actor (CLUTTER_CONTAINER (object), edit_group);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->front), edit_group);
   clutter_actor_hide (edit_group);
 
   priv->view_container = hd_home_view_container_new (HD_COMP_MGR (priv->comp_mgr),
@@ -487,20 +491,6 @@ hd_home_constructed (GObject *object)
                           priv->xwidth,
                           priv->xheight);
   clutter_actor_show (priv->view_container);
-
-  priv->back_button =
-    hd_gtk_icon_theme_load_icon (icon_theme, BACK_BUTTON, 48, 0);
-
-  clutter_actor_hide (priv->back_button);
-  clutter_actor_set_reactive (priv->back_button, TRUE);
-
-  clutter_actor_get_size (priv->back_button, &button_width, &button_height);
-  clutter_actor_set_position (priv->back_button,
-			      priv->xwidth - button_width - 5, 5);
-
-  g_signal_connect (priv->back_button, "button-release-event",
-		    G_CALLBACK (hd_home_back_button_clicked),
-		    object);
 
   priv->edit_button = clutter_texture_new_from_file (
 			g_build_filename (HD_DATADIR, EDIT_BUTTON, NULL),
@@ -543,23 +533,6 @@ hd_home_constructed (GObject *object)
 			      priv->xwidth - HDH_SWITCH_WIDTH, 0);
   clutter_actor_hide (priv->right_switch);
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group), priv->right_switch);
-
-  /*
-   * Construct the grey rectangle for dimming of desktop in edit mode
-   * This one is added directly to the home, so it is always on the top
-   * all the other stuff in the main_group.
-   */
-  clr.alpha = 0x77;
-  clr.red   = 0x77;
-  clr.green = 0x77;
-  clr.blue  = 0x77;
-
-  priv->grey_filter = clutter_rectangle_new_with_color (&clr);
-  clutter_actor_set_name (priv->grey_filter, "HdHome:grey_filter");
-
-  clutter_actor_set_size (priv->grey_filter, priv->xwidth, priv->xheight);
-  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
-			       priv->grey_filter);
 
   /* Applet buttons in layout mode */
   priv->applet_close_button = hd_gtk_icon_theme_load_icon (icon_theme, CLOSE_BUTTON, 48, 0);
@@ -816,8 +789,6 @@ _hd_home_do_edit_layout (HdHome *home)
 
   clutter_actor_set_position (priv->edit_group, 0, 0);
   clutter_actor_show (priv->edit_group);
-
-  clutter_actor_show (priv->grey_filter);
 }
 
 void
@@ -1144,17 +1115,17 @@ hd_home_get_edit_button (HdHome *home)
 }
 
 ClutterActor*
-hd_home_get_back_button (HdHome *home)
-{
-  HdHomePrivate *priv = home->priv;
-  return priv->back_button;
-}
-
-ClutterActor*
 hd_home_get_operator (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
   return priv->operator;
+}
+
+ClutterActor*
+hd_home_get_front (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  return CLUTTER_ACTOR(priv->front);
 }
 
 guint

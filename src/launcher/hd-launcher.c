@@ -51,7 +51,6 @@ struct _HdLauncherPrivate
 {
   ClutterActor *group;
 
-  ClutterActor *back_button;
   GData *pages;
   ClutterActor *active_page;
   ClutterActor *top_blur; /* blurring applied to top page when in sub page */
@@ -87,10 +86,6 @@ G_DEFINE_TYPE (HdLauncher, hd_launcher, G_TYPE_OBJECT);
 /* Forward declarations */
 static void hd_launcher_constructed (GObject *gobject);
 static void hd_launcher_dispose (GObject *gobject);
-static ClutterActor *hd_launcher_create_back_button (const char *icon_name);
-static void hd_launcher_back_button_clicked (ClutterActor *,
-                                             ClutterEvent *,
-                                             gpointer data);
 static void hd_launcher_category_tile_clicked (HdLauncherTile *tile,
                                                gpointer data);
 static void hd_launcher_application_tile_clicked (HdLauncherTile *tile,
@@ -202,15 +197,6 @@ static void hd_launcher_constructed (GObject *gobject)
   priv->active_page = NULL;
   g_datalist_set_data (&priv->pages, HD_LAUNCHER_ITEM_TOP_CATEGORY, top_page);
 
-  /* back button */
-  priv->back_button = hd_launcher_create_back_button ("qgn_tswitcher_back");
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->group),
-                               priv->back_button);
-  clutter_actor_set_reactive (priv->back_button, TRUE);
-  clutter_actor_set_name (priv->back_button, "hd_launcher back button");
-  g_signal_connect (priv->back_button, "button-release-event",
-                    G_CALLBACK (hd_launcher_back_button_clicked), gobject);
-
   /* App launch transition */
   priv->launch_image = 0;
   priv->launch_transition = g_object_ref (
@@ -223,13 +209,6 @@ static void hd_launcher_constructed (GObject *gobject)
 
   if (!hd_disable_threads())
     hd_launcher_tree_populate (priv->tree);
-}
-
-ClutterActor*
-hd_launcher_get_back_button (HdLauncher *l)
-{
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (l);
-  return priv->back_button;
 }
 
 static void
@@ -300,35 +279,8 @@ hd_launcher_hide_final (void)
   clutter_actor_hide (priv->group);
 }
 
-static ClutterActor *
-hd_launcher_create_back_button (const char *icon_name)
-{
-  ClutterActor *icon = NULL;
-  GtkIconTheme *icon_theme;
-  GtkIconInfo *info;
 
-  icon_theme = gtk_icon_theme_get_default ();
-  info = gtk_icon_theme_lookup_icon(icon_theme, icon_name, 48,
-                                    GTK_ICON_LOOKUP_NO_SVG);
-  if (info != NULL)
-    {
-      const gchar *fname = gtk_icon_info_get_filename(info);
-      icon = clutter_texture_new_from_file(fname, NULL);
-      clutter_actor_set_size (icon, HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH,
-                                    HD_COMP_MGR_TOP_RIGHT_BTN_HEIGHT);
-
-      gtk_icon_info_free(info);
-    }
-  else
-    g_warning("create_back_button: couldn't find icon %s\n", icon_name);
-
-  clutter_actor_set_position (icon, HD_COMP_MGR_LANDSCAPE_WIDTH -
-                                    HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH, 0);
-
-  return icon;
-}
-
-static void
+gboolean
 hd_launcher_back_button_clicked (ClutterActor *actor,
                                  ClutterEvent *event,
                                  gpointer data)
@@ -336,6 +288,10 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
   ClutterActor *top_page = g_datalist_get_data (&priv->pages,
                                                 HD_LAUNCHER_ITEM_TOP_CATEGORY);
+
+  if (hd_render_manager_get_state() != HDRM_STATE_LAUNCHER)
+    return FALSE;
+
   if (priv->active_page == top_page)
     g_signal_emit (data, launcher_signals[HIDDEN], 0);
   else
@@ -348,6 +304,8 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
       g_signal_emit (hd_launcher_get (), launcher_signals[CAT_HIDDEN],
                      0, NULL);
     }
+
+  return FALSE;
 }
 
 ClutterActor *hd_launcher_get_group (void)
@@ -373,15 +331,6 @@ hd_launcher_set_top_blur (float amount, float opacity)
                         (15.0f + cos(amount*3.141592f)) / 16);
 
   clutter_actor_set_opacity(priv->top_blur, (int)(255*opacity));
-}
-
-/* sets the opacity of the back button for a nice fade in */
-void
-hd_launcher_set_back_arrow_opacity(float amount)
-{
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-
-  clutter_actor_set_opacity(priv->back_button, (int)(255*amount));
 }
 
 static void

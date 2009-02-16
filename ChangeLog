@@ -1,3 +1,24 @@
+2009-02-16  Gordon Williams <gordon.williams@collabora.co.uk>
+	
+	NB#99127 - Home Edit Background not blurred
+	* src/launcher/hd-launcher.h
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher.c:
+	Remove back arrow and use HdTitleBar's back button instead	  
+	* src/home/hd-title-bar.c:	
+	button highlighting for right-hand buttons
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h:
+	Use HdTitleBar back button instead of launcher/edit back buttons,
+	and ignore back button for input viewport if in app mode.	
+	* src/home/hd-home.h
+	* src/home/hd-home.c
+	* src/home/hd-home-view.c
+	* src/home/hd-home-view.h:
+	Remove back arrow and use HdTitleBar's back button instead.
+	Add applets_container to new 'front' group, which can be pulled
+	in front of home blurring for edit mode.
+
 2009-02-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Regression fixes.
@@ -30,7 +51,7 @@
 	* src/home/hd-render-manager.c
 	* src/home/hd-render-manager.h:
 	Added hd_render_manager_update_blur_state, which intelligently checks
-	if a view should be blurred or not.
+	if a view should be blurred or not. NB#100590
 	* src/mb/hd-comp-mgr.c
 	* src/mb/hd-comp-mgr.h:
 	Changes to use hd_render_manager_update_blur_state

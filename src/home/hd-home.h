@@ -81,8 +81,8 @@ void hd_home_close_applet (HdHome *home, ClutterActor *applet);
 guint hd_home_get_current_view_id (HdHome *home);
 
 ClutterActor *hd_home_get_edit_button (HdHome *home);
-ClutterActor *hd_home_get_back_button (HdHome *home);
 ClutterActor *hd_home_get_operator (HdHome *home);
+ClutterActor *hd_home_get_front (HdHome *home);
 
 void hd_home_set_operator_applet (HdHome *home, ClutterActor *operator);
 
@@ -97,6 +97,12 @@ void hd_home_update_layout (HdHome * home);
 
 void hd_home_set_reactive (HdHome   *home,
                            gboolean  reactive);
+
+/* Added as signal in hd-render-manager */
+gboolean
+hd_home_back_button_clicked (ClutterActor *button,
+                             ClutterEvent *event,
+                             HdHome       *home);
 
 G_END_DECLS
 

@@ -133,6 +133,10 @@ static void hd_home_view_constructed (GObject *object);
 
 static void hd_home_view_refresh_bg (HdHomeView	 *self,
 				     const gchar *image);
+static void
+hd_home_view_allocation_changed (HdHomeView    *home_view,
+                                 GParamSpec *pspec,
+                                 gpointer    user_data);
 
 typedef struct _HdHomeViewAppletData HdHomeViewAppletData;
 
@@ -344,6 +348,7 @@ hd_home_view_constructed (GObject *object)
   priv->xwidth  = HD_COMP_MGR_LANDSCAPE_WIDTH;
   priv->xheight = HD_COMP_MGR_LANDSCAPE_HEIGHT;
 
+
   priv->background_container = clutter_group_new ();
   clutter_actor_set_name (priv->background_container, "HdHomeView::background-container");
   clutter_actor_set_visibility_detect(priv->background_container, FALSE);
@@ -356,10 +361,8 @@ hd_home_view_constructed (GObject *object)
   clutter_actor_set_visibility_detect(priv->applets_container, FALSE);
   clutter_actor_set_position (priv->applets_container, 0, 0);
   clutter_actor_set_size (priv->applets_container, priv->xwidth, priv->xheight);
-  clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->applets_container);
-
-  /* Raise applets container over background container */
-  clutter_actor_raise (priv->applets_container, priv->background_container);
+  clutter_container_add_actor (CLUTTER_CONTAINER (hd_home_get_front(priv->home)),
+                               priv->applets_container);
 
   /* By default the background is a black rectangle */
   priv->background = clutter_rectangle_new_with_color (&clr);
@@ -386,6 +389,11 @@ hd_home_view_constructed (GObject *object)
   g_signal_connect (object, "button-release-event",
 		    G_CALLBACK (hd_home_view_background_release),
 		    object);
+
+  g_signal_connect (object, "notify::allocation",
+                    G_CALLBACK (hd_home_view_allocation_changed),
+                    object);
+
 }
 
 static void
@@ -775,12 +783,12 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   clutter_actor_set_position (applet, x, y);
 
   /* Check if this is the only active Home view */
-  if (!hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)) || 
+  if (!hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)) ||
       !hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
     return FALSE;
 
   /*
-   * If the "drag cursor" entered the left/right switcher area, start a timeout 
+   * If the "drag cursor" entered the left/right switcher area, start a timeout
    * to highlight the switcher.
    */
    if (event->x < HDH_SWITCH_WIDTH)
@@ -1090,7 +1098,7 @@ hd_home_view_move_applet (HdHomeView   *view,
   g_free (view_key);
 
   g_object_unref (gconf_client);
-  
+
   /* Unregister from old view */
   hd_home_view_unregister_applet (view, applet);
 
@@ -1110,11 +1118,19 @@ hd_home_view_get_background (HdHomeView *view)
   return priv->background;
 }
 
+ClutterActor *
+hd_home_view_get_applets_container (HdHomeView *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  return priv->applets_container;
+}
+
 gboolean
 hd_home_view_get_active (HdHomeView *view)
 {
   g_return_val_if_fail (HD_IS_HOME_VIEW (view), FALSE);
- 
+
   return hd_home_view_container_get_active (view->priv->view_container,
                                             view->priv->id);
 }
@@ -1183,4 +1199,19 @@ applet_data_free (HdHomeViewAppletData *data)
   data->cc = NULL;
 
   g_slice_free (HdHomeViewAppletData, data);
+}
+
+
+static void
+hd_home_view_allocation_changed (HdHomeView    *view,
+                               GParamSpec *pspec,
+                               gpointer    user_data)
+{
+  HdHomeViewPrivate *priv = view->priv;
+  ClutterGeometry geom;
+
+  /* We need to update the position of the applets container,
+   * as it is not a child of ours */
+  clutter_actor_get_allocation_geometry (CLUTTER_ACTOR(view), &geom);
+  clutter_actor_set_position(priv->applets_container, geom.x, geom.y);
 }

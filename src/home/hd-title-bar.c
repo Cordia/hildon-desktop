@@ -152,7 +152,9 @@ G_DEFINE_TYPE (HdTitleBar, hd_title_bar, CLUTTER_TYPE_GROUP);
                 HD_TYPE_TITLE_BAR, HdTitleBarPrivate))
 
 static void
-hd_title_bar_add_signals(HdTitleBar *bar, ClutterActor *actor);
+hd_title_bar_add_left_signals(HdTitleBar *bar, ClutterActor *actor);
+static void
+hd_title_bar_add_right_signals(HdTitleBar *bar, ClutterActor *actor);
 static void
 on_switcher_timeline_new_frame(ClutterTimeline *timeline,
                                gint frame_num, HdTitleBar *bar);
@@ -227,12 +229,15 @@ hd_title_bar_init (HdTitleBar *bar)
 
   /* TODO: setup BTN_SWITCHER_HIGHLIGHT for adding here... */
 
-  hd_title_bar_add_signals(bar, priv->buttons[BTN_SWITCHER]);
+  hd_title_bar_add_left_signals(bar, priv->buttons[BTN_SWITCHER]);
   hd_render_manager_set_button (HDRM_BUTTON_TASK_NAV,
                                 priv->buttons[BTN_SWITCHER]);
-  hd_title_bar_add_signals(bar, priv->buttons[BTN_LAUNCHER]);
+  hd_title_bar_add_left_signals(bar, priv->buttons[BTN_LAUNCHER]);
   hd_render_manager_set_button (HDRM_BUTTON_LAUNCHER,
                                 priv->buttons[BTN_LAUNCHER]);
+  hd_title_bar_add_right_signals(bar, priv->buttons[BTN_BACK]);
+  hd_render_manager_set_button (HDRM_BUTTON_BACK,
+                                priv->buttons[BTN_BACK]);
 
   /* Create the title */
   priv->title = CLUTTER_LABEL(clutter_label_new());
@@ -595,8 +600,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
       /* we have nothing, make sure we're back to normal */
       clutter_actor_hide(CLUTTER_ACTOR(priv->title));
       hd_title_bar_set_state(bar,
-          hd_title_bar_get_state(bar) &
-            (~(HDTB_VIS_BTN_RIGHT_MASK|HDTB_VIS_FULL_WIDTH)));
+          hd_title_bar_get_state(bar) & (~HDTB_VIS_FULL_WIDTH));
       return;
     }
 
@@ -786,7 +790,23 @@ hd_title_bar_top_left_leave (HdTitleBar *bar)
 }
 
 static void
-hd_title_bar_add_signals(HdTitleBar *bar, ClutterActor *actor)
+hd_title_bar_top_right_press (HdTitleBar *bar)
+{
+  hd_title_bar_right_pressed(bar, TRUE);
+
+  g_signal_emit (bar, signals[PRESS_TOP_LEFT], 0);
+}
+
+static void
+hd_title_bar_top_right_leave (HdTitleBar *bar)
+{
+  hd_title_bar_right_pressed(bar, FALSE);
+
+  g_signal_emit (bar, signals[LEAVE_TOP_LEFT], 0);
+}
+
+static void
+hd_title_bar_add_left_signals(HdTitleBar *bar, ClutterActor *actor)
 {
   clutter_actor_set_reactive(actor, TRUE);
   g_signal_connect_swapped (actor, "button-release-event",
@@ -797,5 +817,17 @@ hd_title_bar_add_signals(HdTitleBar *bar, ClutterActor *actor)
                             bar);
   g_signal_connect_swapped (actor, "leave-event",
                             G_CALLBACK (hd_title_bar_top_left_leave),
+                            bar);
+}
+
+static void
+hd_title_bar_add_right_signals(HdTitleBar *bar, ClutterActor *actor)
+{
+  clutter_actor_set_reactive(actor, TRUE);
+  g_signal_connect_swapped (actor, "button-press-event",
+                            G_CALLBACK (hd_title_bar_top_right_press),
+                            bar);
+  g_signal_connect_swapped (actor, "leave-event",
+                            G_CALLBACK (hd_title_bar_top_right_leave),
                             bar);
 }

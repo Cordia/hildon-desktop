@@ -69,8 +69,6 @@ GType hd_launcher_get_type (void) G_GNUC_CONST;
 HdLauncher   *hd_launcher_get (void);
 ClutterActor *hd_launcher_get_group (void);
 
-ClutterActor *hd_launcher_get_back_button (HdLauncher *launcher);
-
 void          hd_launcher_show (void);
 void          hd_launcher_hide (void);
 void          hd_launcher_hide_final (void);
@@ -80,9 +78,14 @@ void          hd_launcher_transition_stop(void);
 void          hd_launcher_window_created (void);
 /* to be used by hd-launcher-page only */
 void          hd_launcher_set_top_blur (float amount, float opacity);
-void          hd_launcher_set_back_arrow_opacity (float amount);
 
 HdLauncherTree *hd_launcher_get_tree (void);
+
+/* Added as signal in hd-render-manager */
+gboolean
+hd_launcher_back_button_clicked (ClutterActor *actor,
+                                 ClutterEvent *event,
+                                 gpointer data);
 
 G_END_DECLS
 

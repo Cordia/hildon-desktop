@@ -99,6 +99,7 @@ typedef enum
   HDRM_ZOOM_HOME = 4,
   HDRM_ZOOM_TASK_NAV = 8,
   HDRM_BLUR_MORE = 16,
+  HDRM_BLUR_BACKGROUND = 32, /* like BLUR_HOME, but for dialogs, etc */
 } HDRMBlurEnum;
 
 #define HDRM_BLUR_DURATION 250
@@ -118,10 +119,12 @@ static guint signals[LAST_SIGNAL] = { 0, };
 /*
  *
  * HDRM ---> home_blur         ---> home
+ *       |                                         --> home_get_front (!STATE_HOME_FRONT)
  *       |                      --> apps (not app_top)
  *       |                      --> blur_front    ---> button_menu
  *       |                                         --> status_area
  *       |                                         --> title_bar
+ *       |                                         --> home_get_front (STATE_HOME_FRONT)
  *       |
  *       --> task_nav_blur     ---> task_nav
  *       |
@@ -155,8 +158,7 @@ struct _HdRenderManagerPrivate {
   ClutterActor         *button_task_nav;
   ClutterActor         *button_launcher;
   ClutterActor         *button_menu;
-  ClutterActor         *button_home_back;
-  ClutterActor         *button_launcher_back;
+  ClutterActor         *button_back;
   ClutterActor         *button_edit;
 
   /* these are current, from + to variables for doing the blurring animations */
@@ -240,16 +242,12 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   priv->launcher = g_object_ref(launcher_group);
   clutter_container_add_actor(CLUTTER_CONTAINER(the_render_manager),
 		              priv->launcher);
-  priv->button_launcher_back = g_object_ref(hd_launcher_get_back_button(launcher));
 
   priv->home = g_object_ref(home);
   g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->home);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
                               CLUTTER_ACTOR(priv->home));
-  priv->button_home_back = g_object_ref(hd_home_get_back_button(priv->home));
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
-                              priv->button_home_back);
   priv->button_edit = g_object_ref(hd_home_get_edit_button(priv->home));
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               priv->button_edit);
@@ -266,6 +264,15 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
                            G_CALLBACK(stage_allocation_changed), priv->title_bar);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               CLUTTER_ACTOR(priv->title_bar));
+
+  g_signal_connect (priv->button_back,
+                    "button-release-event",
+                    G_CALLBACK (hd_launcher_back_button_clicked),
+                    hd_launcher_get());
+  g_signal_connect (hd_render_manager_get_button(HDRM_BUTTON_BACK),
+                    "button-release-event",
+                    G_CALLBACK (hd_home_back_button_clicked),
+                    home);
 
   return the_render_manager;
 }
@@ -505,6 +512,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   HdRenderManagerPrivate *priv;
   float blur_amt = 1.0f;
   float zoom_amt = 1.0f;
+  gboolean blur_home;
 
   priv = the_render_manager->priv;
 
@@ -527,7 +535,8 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
       zoom_amt = 2.0f;
     }
 
-  priv->home_blur_b = (blur & HDRM_BLUR_HOME) ? blur_amt : 0;
+  blur_home = blur & (HDRM_BLUR_BACKGROUND | HDRM_BLUR_HOME);
+  priv->home_blur_b = blur_home ? blur_amt : 0;
   priv->task_nav_blur_b = (blur & HDRM_BLUR_TASK_NAV) ? blur_amt : 0;
   priv->home_zoom_b = (blur & HDRM_ZOOM_HOME) ? zoom_amt : 0;
   priv->task_nav_zoom_b = (blur & HDRM_ZOOM_TASK_NAV) ? zoom_amt : 0;
@@ -543,19 +552,23 @@ hd_render_manager_set_input_viewport()
   ClutterGeometry geom[HDRM_BUTTON_COUNT + 1];
   int geom_count = 0;
   HdRenderManagerPrivate *priv = the_render_manager->priv;
+  gboolean app_mode = STATE_IS_APP(priv->state);
 
   if (!STATE_NEED_GRAB(priv->state))
     {
       gint i;
       /* Now look at what buttons we have showing, and add each visible button X
-       * to the X input viewport */
+       * to the X input viewport. We unfortunately have to ignore
+       * HDRM_BUTTON_BACK in app mode, because matchbox wants to pick them up
+       * from X */
       for (i = 1; i <= HDRM_BUTTON_COUNT; i++)
         {
           ClutterActor *button;
           button = hd_render_manager_get_button((HDRMButtonEnum)i);
           if (button &&
               CLUTTER_ACTOR_IS_VISIBLE(button) &&
-              CLUTTER_ACTOR_IS_VISIBLE(clutter_actor_get_parent(button)))
+              CLUTTER_ACTOR_IS_VISIBLE(clutter_actor_get_parent(button)) &&
+              (i!=HDRM_BUTTON_BACK || !app_mode))
             {
               clutter_actor_get_geometry (button, &geom[geom_count]);
               geom_count++;
@@ -599,7 +612,7 @@ void hd_render_manager_sync_clutter_before ()
   HDRMButtonEnum visible_top_left = HDRM_BUTTON_NONE;
   HDRMButtonEnum visible_top_right = HDRM_BUTTON_NONE;
   HdTitleBarVisEnum btn_state = hd_title_bar_get_state(priv->title_bar) &
-    ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH);
+    ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH | HDTB_VIS_BTN_RIGHT_MASK);
 
   switch (priv->state)
     {
@@ -621,11 +634,11 @@ void hd_render_manager_sync_clutter_before ()
       case HDRM_STATE_HOME_EDIT:
       case HDRM_STATE_HOME_EDIT_DLG:
         visible_top_left = HDRM_BUTTON_MENU;
-        visible_top_right = HDRM_BUTTON_HOME_BACK;
+        visible_top_right = HDRM_BUTTON_BACK;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
-        hd_render_manager_set_blur(HDRM_BLUR_NONE);
+        hd_render_manager_set_blur(HDRM_BLUR_HOME);
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_APP:
@@ -655,7 +668,7 @@ void hd_render_manager_sync_clutter_before ()
         break;
       case HDRM_STATE_LAUNCHER:
         visible_top_left = HDRM_BUTTON_NONE;
-        visible_top_right = HDRM_BUTTON_LAUNCHER_BACK;
+        visible_top_right = HDRM_BUTTON_BACK;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_show(CLUTTER_ACTOR(priv->launcher));
@@ -715,16 +728,9 @@ void hd_render_manager_sync_clutter_before ()
   switch (visible_top_right)
   {
     case HDRM_BUTTON_NONE:
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_home_back));
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_launcher_back));
       break;
-    case HDRM_BUTTON_HOME_BACK:
-      clutter_actor_show(CLUTTER_ACTOR(priv->button_home_back));
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_launcher_back));
-      break;
-    case HDRM_BUTTON_LAUNCHER_BACK:
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_home_back));
-      clutter_actor_show(CLUTTER_ACTOR(priv->button_launcher_back));
+    case HDRM_BUTTON_BACK:
+      btn_state |= HDTB_VIS_BTN_BACK;
       break;
     default:
       g_warning("%s: Invalid button %d in top-right",
@@ -742,6 +748,20 @@ void hd_render_manager_sync_clutter_before ()
                              CLUTTER_ACTOR(priv->front));
     }
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
+
+  if (STATE_HOME_FRONT(priv->state))
+    {
+      clutter_actor_reparent(
+          hd_home_get_front(priv->home),
+          CLUTTER_ACTOR(priv->blur_front));
+      clutter_actor_lower_bottom(hd_home_get_front(priv->home));
+    }
+  else
+    {
+      clutter_actor_reparent(
+          hd_home_get_front(priv->home),
+          CLUTTER_ACTOR(priv->home));
+    }
 
   hd_title_bar_set_state(priv->title_bar, btn_state);
   hd_render_manager_place_titlebar_elements();
@@ -769,8 +789,6 @@ void hd_render_manager_sync_clutter_after ()
       clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
                              CLUTTER_ACTOR(priv->home_blur));
     }
-
-
 }
 
 /* ------------------------------------------------------------------------- */
@@ -862,29 +880,28 @@ void hd_render_manager_set_button (HDRMButtonEnum btn,
                                    ClutterActor *item)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
+  gboolean reparent = TRUE;
 
   switch (btn)
     {
       case HDRM_BUTTON_TASK_NAV:
         g_assert(!priv->button_task_nav);
         priv->button_task_nav = CLUTTER_ACTOR(g_object_ref(item));
+        reparent = FALSE;
         return; /* Don't reparent, it's fine where it is. */
       case HDRM_BUTTON_LAUNCHER:
         g_assert(!priv->button_launcher);
         priv->button_launcher = CLUTTER_ACTOR(g_object_ref(item));
+        reparent = FALSE;
         return; /* Likewise */
       case HDRM_BUTTON_MENU:
         g_assert(!priv->button_menu);
         priv->button_menu = CLUTTER_ACTOR(g_object_ref(item));
         break;
-      case HDRM_BUTTON_HOME_BACK:
-        g_warning("%s: back button must be set at creation time!", __FUNCTION__);
-	g_assert(FALSE);
-        break;
-      case HDRM_BUTTON_LAUNCHER_BACK:
-        g_warning("%s: launcher back button must be set at creation time!",
-		  __FUNCTION__);
-	g_assert(FALSE);
+      case HDRM_BUTTON_BACK:
+        g_assert(!priv->button_back);
+        priv->button_back = CLUTTER_ACTOR(g_object_ref(item));
+        reparent = FALSE;
         break;
       case HDRM_BUTTON_EDIT:
         g_warning("%s: edit button must be set at creation time!", __FUNCTION__);
@@ -894,11 +911,15 @@ void hd_render_manager_set_button (HDRMButtonEnum btn,
         g_warning("%s: Invalid Enum %d", __FUNCTION__, btn);
 	g_assert(FALSE);
     }
-  if (clutter_actor_get_parent(CLUTTER_ACTOR(item)))
-    clutter_actor_reparent(CLUTTER_ACTOR(item), CLUTTER_ACTOR(priv->blur_front));
-  else
-    clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
-                                CLUTTER_ACTOR(item));
+  if (reparent)
+    {
+      if (clutter_actor_get_parent(CLUTTER_ACTOR(item)))
+        clutter_actor_reparent(CLUTTER_ACTOR(item),
+                               CLUTTER_ACTOR(priv->blur_front));
+      else
+        clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
+                                    CLUTTER_ACTOR(item));
+    }
 }
 
 ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button)
@@ -913,10 +934,8 @@ ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button)
         return priv->button_launcher;
       case HDRM_BUTTON_MENU:
         return priv->button_menu;
-      case HDRM_BUTTON_HOME_BACK:
-        return priv->button_home_back;
-      case HDRM_BUTTON_LAUNCHER_BACK:
-        return priv->button_launcher_back;
+      case HDRM_BUTTON_BACK:
+        return priv->button_back;
       case HDRM_BUTTON_EDIT:
         return priv->button_edit;
       default:
@@ -1382,9 +1401,9 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
   blur_flags = priv->current_blur;
 
   if (blur)
-    blur_flags = blur_flags | HDRM_BLUR_HOME;
+    blur_flags = blur_flags | HDRM_BLUR_BACKGROUND;
   else
-    blur_flags = blur_flags & ~HDRM_BLUR_HOME;
+    blur_flags = blur_flags & ~HDRM_BLUR_BACKGROUND;
   hd_render_manager_set_blur(blur_flags);
   /* calling this after a blur transition will force a restack after
    * it has ended */

@@ -710,7 +710,6 @@ hd_launcher_page_new_frame(ClutterTimeline *timeline,
     switch (priv->transition_type)
       {
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
-        hd_launcher_set_back_arrow_opacity(amt);
     case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
         if (priv->icon)
           clutter_actor_set_opacity(priv->icon, (int)(255*amt));
@@ -719,7 +718,6 @@ hd_launcher_page_new_frame(ClutterTimeline *timeline,
         break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
     case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
-        hd_launcher_set_back_arrow_opacity(1-amt);
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
         if (priv->icon)
           clutter_actor_set_opacity(priv->icon, 255-(int)(255*amt));
