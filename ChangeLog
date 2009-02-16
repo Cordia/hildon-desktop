@@ -1,4 +1,10 @@
+
  FIXME: Adam fixed the Marbles startup in r35324, but now it's again broken!!
+
+2009-02-16  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	*  src/home/hd-clutter-cache.c:
+	Support for XY texture expansion
 
 2009-02-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 

@@ -256,10 +256,71 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
     g_warning("%s: Y and XY texture extensions not implemented yet",
         __FUNCTION__);
 
-  /*if (extend_x && !extend_y)*/
-  /* ignore this as there's nothing we can do for it anyway until
-   * we implement proper extending... */
+  if (extend_y)
     {
+      /* Extend X and Y - so a 3x3 set of textures */
+      gint x,y;
+
+      for (y=0;y<3;y++)
+        for (x=0;x<3;x++)
+          {
+            TidySubTexture *tex;
+            ClutterGeometry geot, pos;
+            if (x==0)
+              {
+                geot.x = 0;
+                geot.width = low_x;
+                pos.x = area->x;
+                pos.width = geot.width;
+              }
+            else if (x==1)
+              {
+                geot.x = low_x;
+                geot.width = high_x - low_x;
+                pos.x = area->x+low_x;
+                pos.width = (high_x-low_x) + area->width - geo.width;
+              }
+            else
+              {
+                geot.x = high_x;
+                geot.width = geo.width - high_x;
+                pos.x = area->x + area->width - geot.width;
+                pos.width = geot.width;
+              }
+            if (y==0)
+              {
+                geot.y = 0;
+                geot.height = low_y;
+                pos.y = area->y;
+                pos.height = geot.height;
+              }
+            else if (y==1)
+              {
+                geot.y = low_y;
+                geot.height = high_y - low_y;
+                pos.y = area->y+low_y;
+                pos.height = (high_y-low_y) + area->height - geo.height;
+              }
+            else
+              {
+                geot.y = high_y;
+                geot.height = geo.height - high_y;
+                pos.y = area->y + area->height - geot.height;
+                pos.height = geot.height;
+              }
+
+            tex = tidy_sub_texture_new(texture);
+            tidy_sub_texture_set_region(tex, &geot);
+            clutter_actor_set_position(CLUTTER_ACTOR(tex), pos.x, pos.y);
+            clutter_actor_set_size(CLUTTER_ACTOR(tex), pos.width, pos.height);
+            clutter_container_add_actor(
+                      CLUTTER_CONTAINER(group),
+                      CLUTTER_ACTOR(tex));
+          }
+    }
+  else
+    {
+      /* extend just X - so a 3x1 row of texture elements */
       TidySubTexture *texa,*texb,*texc;
       ClutterGeometry geoa, geob, geoc;
 
