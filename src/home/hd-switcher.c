@@ -29,6 +29,7 @@
 
 #include "hd-switcher.h"
 #include "hd-task-navigator.h"
+#include "hd-app-mgr.h"
 #include "hd-launcher.h"
 #include "hd-launcher-app.h"
 #include "hd-comp-mgr.h"
@@ -200,9 +201,6 @@ hd_switcher_constructed (GObject *object)
                             object);
   /* Task Launcher events */
   priv->launcher = hd_launcher_get ();
-  g_signal_connect_swapped (priv->launcher, "application-relaunched",
-                    G_CALLBACK (hd_switcher_relaunch_app),
-                    object);
   g_signal_connect (priv->launcher, "launcher-hidden",
                     G_CALLBACK (launcher_back_button_clicked),
                     object);
@@ -211,6 +209,10 @@ hd_switcher_constructed (GObject *object)
                     object);
   g_signal_connect (priv->launcher, "category-hidden",
                     G_CALLBACK (hd_switcher_launcher_cat_hidden),
+                    object);
+  /* App manager events. */
+  g_signal_connect_swapped (hd_app_mgr_get (), "application-relaunched",
+                    G_CALLBACK (hd_switcher_relaunch_app),
                     object);
 
   /* Task navigator events */

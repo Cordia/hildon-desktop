@@ -67,6 +67,8 @@ gboolean hd_app_mgr_relaunch     (HdLauncherApp *app);
 gboolean hd_app_mgr_wakeup       (HdLauncherApp *app);
 gboolean hd_app_mgr_kill         (HdLauncherApp *app);
 
+gboolean hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id);
+
 void hd_app_mgr_prestartable     (HdLauncherApp *app);
 void hd_app_mgr_not_prestartable (HdLauncherApp *app);
 void hd_app_mgr_hibernatable     (HdLauncherApp *app);

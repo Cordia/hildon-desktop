@@ -611,3 +611,22 @@ hd_launcher_tree_remove_item (HdLauncherTree *tree,
 {
 }
 
+static gint
+_compare_item_id (gconstpointer a, gconstpointer b)
+{
+  return g_strcmp0(hd_launcher_item_get_id(HD_LAUNCHER_ITEM (a)),
+                   (const gchar *)b);
+}
+
+HdLauncherItem *
+hd_launcher_tree_find_item (HdLauncherTree *tree, const gchar *id)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_TREE (tree), NULL);
+  HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (tree);
+
+  GList *res = g_list_find_custom (priv->items_list, id,
+                                   (GCompareFunc)_compare_item_id);
+  if (res)
+    return res->data;
+  return NULL;
+}

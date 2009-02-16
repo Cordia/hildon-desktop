@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/com/nokia/HildonDesktop/AppMgr">
+
+  <interface name="com.nokia.HildonDesktop.AppMgr">
+                
+    <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="HdAppMgr"/>
+
+    <method name="LaunchApplication">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_app_mgr_dbus_launch_app"/>
+
+      <arg type="s" name="application" direction="in" />
+    </method>
+  </interface>
+</node>

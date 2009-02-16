@@ -1,3 +1,17 @@
+2009-02-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Added D-Bus interface to remotely launch applications.
+	For NB#100519
+
+	* src/home/hd-switcher.c: Receive relaunched signal from HdAppMgr.
+	* src/launcher/Makefile.am:
+	* src/launcher/hd-app-mgr-dbus.xml: Inteface definition for HdAppMgr.
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-app-mgr.h:
+	* src/launcher/hd-launcher-tree.c: Added method to find an item by id.
+	* src/launcher/hd-launcher-tree.h:
+	* src/mb/hd-comp-mgr.c: Create the HdAppMgr before HdSwitcher.
+
 2009-02-16  Gordon Williams <gordon.williams@collabora.co.uk>
 	
 	NB#99127 - Home Edit Background not blurred

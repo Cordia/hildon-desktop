@@ -55,6 +55,8 @@ void            hd_launcher_tree_insert_item (HdLauncherTree *tree,
                                               HdLauncherItem *item);
 void            hd_launcher_tree_remove_item (HdLauncherTree *tree,
                                               HdLauncherItem *item);
+HdLauncherItem *hd_launcher_tree_find_item (HdLauncherTree *tree,
+                                            const gchar *id);
 
 G_END_DECLS
 

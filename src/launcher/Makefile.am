@@ -1,4 +1,3 @@
-
 INCLUDES = \
 	-I. \
 	-I.. \
@@ -8,6 +7,14 @@ INCLUDES = \
 	-DDATADIR=\""$(datadir)"\" \
 	-DSYSCONFDIR=\""$(sysconfdir)"\" \
 	@HD_INCS@
+
+BUILT_SOURCES =	\
+	hd-app-mgr-glue.h
+
+hd-app-mgr-glue.h: hd-app-mgr-dbus.xml
+	$(DBUS_BINDING_TOOL) --prefix=hd_app_mgr --mode=glib-server $< > xgen-$(@F) \
+	&& ( cmp -s xgen-$(@F) $@ || cp xgen-$(@F) $@ )                              \
+	&& rm -f xgen-$(@F)
 
 launcher_h = \
 	hd-app-mgr.h      \
@@ -33,10 +40,12 @@ launcher_c = \
 
 noinst_LTLIBRARIES = liblauncher.la
 
-liblauncher_la_SOURCES = $(launcher_h) $(launcher_c)
+liblauncher_la_SOURCES = $(launcher_h) $(launcher_c) $(BUILT_SOURCES)
 liblauncher_la_CFLAGS =  $(HD_CFLAGS)
 liblauncher_la_LIBADD = $(HD_LIBS) \
                         $(top_builddir)/src/util/libutil.la \
                         $(top_builddir)/src/tidy/libtidy.la
+
+EXTRA_DIST = hd-app-mgr-dbus.xml
 
 CLEANFILES = *~

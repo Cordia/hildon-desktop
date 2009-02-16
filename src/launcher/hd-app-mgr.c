@@ -26,6 +26,7 @@
 #endif
 
 #include "hd-app-mgr.h"
+#include "hd-app-mgr-glue.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -37,6 +38,7 @@
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-bindings.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include "hd-launcher.h"
 #include "hd-launcher-tree.h"
@@ -108,6 +110,7 @@ struct _HdAppMgrPrivate
 enum
 {
   APP_LAUNCHED,
+  APP_RELAUNCHED,
   APP_SHOWN,
 
   LAST_SIGNAL
@@ -138,6 +141,8 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define OSSO_BUS_TOP           "top_application"
 #define PATH_NAME_LEN           255
 #define DBUS_NAMEOWNERCHANGED_SIGNAL_NAME "NameOwnerChanged"
+#define HD_APP_MGR_DBUS_PATH   "/com/nokia/HildonDesktop/AppMgr"
+#define HD_APP_MGR_DBUS_NAME   "com.nokia.HildonDesktop.AppMgr"
 
 #define LOWMEM_ON_SIGNAL_INTERFACE  "com.nokia.ke_recv.lowmem_on"
 #define LOWMEM_ON_SIGNAL_PATH       "/com/nokia/ke_recv/lowmem_on"
@@ -233,6 +238,13 @@ hd_app_mgr_class_init (HdAppMgrClass *klass)
                   0, NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
+  app_mgr_signals[APP_RELAUNCHED] =
+    g_signal_new (I_("application-relaunched"),
+                  HD_TYPE_APP_MGR,
+                  G_SIGNAL_RUN_FIRST,
+                  0, NULL, NULL,
+                  g_cclosure_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
   app_mgr_signals[APP_SHOWN] =
     g_signal_new (I_("application-appeared"),
                   HD_TYPE_APP_MGR,
@@ -240,6 +252,10 @@ hd_app_mgr_class_init (HdAppMgrClass *klass)
                   0, NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
+
+  /* Bind D-Bus info. */
+  dbus_g_object_type_install_info (HD_TYPE_APP_MGR,
+                                   &dbus_glib_hd_app_mgr_object_info);
 }
 
 /* TODO: Extend to use, in addition to an interface, a path and a signal
@@ -292,6 +308,7 @@ hd_app_mgr_init (HdAppMgr *self)
   connection = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
   if (connection)
     {
+      /* Connect to NameOwnerChanged to track closing applications. */
       priv->dbus_proxy = dbus_g_proxy_new_for_name (connection,
                                                     DBUS_SERVICE_DBUS,
                                                     DBUS_PATH_DBUS,
@@ -305,6 +322,23 @@ hd_app_mgr_init (HdAppMgr *self)
               DBUS_NAMEOWNERCHANGED_SIGNAL_NAME,
               (GCallback)hd_app_mgr_dbus_name_owner_changed,
               NULL, NULL);
+
+          /* Serve the AppMgr interface. */
+          guint result;
+          if (!org_freedesktop_DBus_request_name (priv->dbus_proxy,
+                                                  HD_APP_MGR_DBUS_NAME,
+                                                  DBUS_NAME_FLAG_DO_NOT_QUEUE,
+                                                  &result,
+                                                  NULL))
+              {
+                g_warning ("%s: Could not register name.\n", __FUNCTION__);
+              }
+          else
+            {
+              dbus_g_connection_register_g_object (connection,
+                                                   HD_APP_MGR_DBUS_PATH,
+                                                   G_OBJECT (self));
+            }
         }
       else
         g_warning ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
@@ -500,17 +534,22 @@ hd_app_mgr_launch (HdLauncherApp *app)
   return result;
 }
 
-/* This just tells the app that it's been relaunched. */
 gboolean
 hd_app_mgr_relaunch (HdLauncherApp *app)
 {
+  gboolean result = TRUE;
   const gchar *service = hd_launcher_app_get_service (app);
 
   if (service)
-    return hd_app_mgr_service_top (service, NULL);
+    {
+      result = hd_app_mgr_service_top (service, NULL);
+      if (result)
+        g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_RELAUNCHED],
+            0, app, NULL);
+    }
 
   /* If it's a plain old app, nothing to do. */
-  return TRUE;
+  return result;
 }
 
 gboolean
@@ -1020,6 +1059,27 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
 
       items = g_list_next (items);
     }
+}
+
+gboolean
+hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
+  HdLauncherItem *item = hd_launcher_tree_find_item (priv->tree, id);
+  HdLauncherApp *app = NULL;
+
+  if (!item)
+    return FALSE;
+  if (hd_launcher_item_get_item_type (item) != HD_APPLICATION_LAUNCHER)
+    return FALSE;
+
+  app = HD_LAUNCHER_APP (item);
+
+  /* TODO: Deal with hibernated apps. */
+  if (hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN)
+    return hd_app_mgr_relaunch (app);
+
+  return hd_app_mgr_launch (app);
 }
 
 static DBusHandlerResult

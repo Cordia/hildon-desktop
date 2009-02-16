@@ -385,6 +385,8 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   stage = clutter_stage_get_default ();
 
+  priv->app_mgr = hd_app_mgr_get ();
+
   /*
    * Create the home group before the switcher, so the switcher can
    * connect it's signals to it.
@@ -425,7 +427,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
       clutter_actor_hide(arena);
     }
 
-  priv->app_mgr = hd_app_mgr_get ();
   /*
    * Create a hash table for hibernating windows.
    */
