@@ -1,5 +1,9 @@
+2009-02-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
- FIXME: Adam fixed the Marbles startup in r35324, but now it's again broken!!
+	* src/home/hd-render-manager.h (STATE_SHOW_OPERATOR): Do not show the
+	operator applet in edit mode. Fixes: NB#100746
+
+	* debian/changelog: Update.
 
 2009-02-16  Gordon Williams <gordon.williams@collabora.co.uk>
 

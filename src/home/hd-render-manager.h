@@ -112,8 +112,7 @@ typedef enum
                     HDRM_STATE_APP_PORTRAIT)
 
 #define STATE_SHOW_OPERATOR(s) \
-  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_HOME_EDIT_DLG)
+  STATE_ONE_OF((s), HDRM_STATE_HOME)
 
 /* Whether to show app title or not */
 #define STATE_SHOW_TITLE(s) \
