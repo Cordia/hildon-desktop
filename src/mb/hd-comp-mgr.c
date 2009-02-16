@@ -665,6 +665,18 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
+  /* FIXME: shouldn't this be in hd_comp_mgr_unmap_notify?
+   * hd_comp_mgr_unregister_client might not be called for all unmapped
+   * clients */
+  if (g_hash_table_remove (priv->tasks_button_blockers, c)
+      && g_hash_table_size (priv->tasks_button_blockers) == 0)
+    { /* Last system modal dialog being unmapped, undo evil. */
+      hd_render_manager_set_reactive(TRUE);
+    }
+
+  /*
+   * If the actor is an application, remove it also to the switcher
+   */
   if (hclient->priv->hibernating)
     {
       /*
@@ -680,12 +692,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       hd_switcher_hibernate_window_actor (priv->switcher_group,
 					  actor);
     }
-  /*
-   * If the actor is an application, remove it also to the switcher
-   */
-  /* FIXME: shouldn't this be in hd_comp_mgr_unmap_notify?
-   * hd_comp_mgr_unregister_client might not be called for all unmapped
-   * clients */
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeApp)
     {
       HdApp *app = HD_APP(c);

@@ -1,3 +1,13 @@
+2009-02-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Regression fixes.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client):
+	  Restored workaround to make HDRM reactive again when the latest
+	  known system-modal dialog is gone,
+	* src/home/hd-render-manager.c (hd_render_manager_update_blur_state):
+	  Blur/unblur home when a confirmation note is mapped/unmapped.
+
 2009-02-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-render-manager.h (STATE_SHOW_OPERATOR): Do not show the

@@ -1369,7 +1369,8 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
         break;
       if (c_type == MBWMClientTypeDialog ||
           c_type == MBWMClientTypeMenu ||
-          c_type == HdWmClientTypeStatusMenu)
+          c_type == HdWmClientTypeStatusMenu ||
+          HD_IS_CONFIRMATION_NOTE (c))
         {
           g_debug("%s: Blurring caused by window type %d, name '%s'",
               __FUNCTION__, c_type, c->name?c->name:"(null)");
