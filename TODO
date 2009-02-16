@@ -24,17 +24,10 @@
 - Implement progress indicator in application window and dialog title.
   Window property _HILDON_WM_WINDOW_PROGRESS_INDICATOR (int), values 0 (off)
   and 1 (on). Other values can be used in future if needed.
-- Grab the keyboard focus in task switcher view.  Kimmo: What for?
-- Make the operator logo disappear in task switcher view.
-- Show incoming event notification previews.
-- Enter the switcher when an application is closed
-  and the switcher is not empty.
+- Take away input focus when leaving application view
+  Kimmo: What for?
 - Don't show incoming event notification previews
   if the do not disturb flag is set.
-- Remove status area handling from task switcher.
 - Be more sensible differentiating clicks vs. scroll attempts.
   (It should be the same usability-wise as pannable areas.)
-- Implement portrait mode.
 - Implement support for speech bubbles in Contacts applets.
-- Allow an application (e.g. Rhapsody) to request Task Switcher mode with a message
-
