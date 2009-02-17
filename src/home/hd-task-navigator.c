@@ -54,6 +54,11 @@
 #include "hd-render-manager.h"
 #include "hd-title-bar.h"
 
+#ifdef g_return_if_fail
+#undef g_return_if_fail
+#endif
+#define g_return_if_fail(X) if (!(X)) return
+
 /* Standard definitions {{{ */
 #undef  G_LOG_DOMAIN
 #define G_LOG_DOMAIN "hd-task-navigator"
@@ -1770,9 +1775,8 @@ actor_to_client_window (ClutterActor * win)
   cmgrc = g_object_get_data (G_OBJECT (win),
                              "HD-MBWMCompMgrClutterClient");
 
-  g_return_val_if_fail(cmgrc,                     NULL);
-  g_return_val_if_fail(cmgrc->wm_client,          NULL);
-  g_return_val_if_fail(cmgrc->wm_client->window,  NULL);
+  if (!cmgrc || !cmgrc->wm_client || !cmgrc->wm_client->window)
+    return NULL;
 
   return cmgrc->wm_client->window;
 }
