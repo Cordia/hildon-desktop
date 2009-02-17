@@ -646,7 +646,7 @@ hd_comp_mgr_register_client (MBWMCompMgr           * mgr,
       priv->desktop = c;
       return;
     }
-
+  
   if (parent_klass->register_client)
     parent_klass->register_client (mgr, c);
 }
@@ -962,6 +962,23 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
     return;
 
+  /* discard notification previews if in switcher */
+  if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
+    {
+      MBWindowManagerClient *current_app = hd_wm_determine_current_app (mgr->wm);
+
+      if ((current_app && current_app->window &&
+           mb_wm_client_window_is_state_set (current_app->window,
+                                             MBWMClientWindowEWMHStateFullscreen)) ||
+          STATE_DISCARD_PREVIEW_NOTE (hd_render_manager_get_state()))
+        {
+          g_debug ("%s. Discard notification", __FUNCTION__);
+          mb_wm_client_hide (c);
+          mb_wm_client_deliver_delete (c);
+          return;
+        }
+    }
+
   if (parent_klass->map_notify)
     parent_klass->map_notify (mgr, c);
 
@@ -991,14 +1008,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                 HdWmClientTypeAppMenu)))
     {
       hd_render_manager_set_state(HDRM_STATE_HOME_EDIT_DLG);
-    }
-
-  /* discard notification previews if in switcher */
-  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV &&
-      HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
-    {
-      mb_wm_client_deliver_delete (c);
-      return;
     }
 
   /*

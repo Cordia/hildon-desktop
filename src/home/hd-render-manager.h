@@ -141,6 +141,9 @@ typedef enum
 #define STATE_DO_PARTIAL_REDRAW(s) \
   (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
 
+#define STATE_DISCARD_PREVIEW_NOTE(s) \
+  (STATE_ONE_OF((s), HDRM_STATE_TASK_NAV))
+
 GType hd_render_manager_state_get_type (void) G_GNUC_CONST;
 GType hd_render_manager_get_type       (void) G_GNUC_CONST;
 
