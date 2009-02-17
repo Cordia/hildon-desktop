@@ -41,6 +41,10 @@
 #include "hd-theme.h"
 #include "hd-util.h"
 
+#ifndef DISABLE_A11Y
+#include "hildon-desktop-a11y.h"
+#endif
+
 enum {
   KEY_ACTION_PAGE_NEXT,
   KEY_ACTION_PAGE_PREV,
@@ -323,6 +327,11 @@ main (int argc, char **argv)
    * assumptions about the number of benign UnmapNotifies the window
    * manager will see when reparenting "client" windows. */
   clutter_init (&argc, &argv);
+
+#ifndef DISABLE_A11Y
+  hildon_desktop_a11y_init ();
+#endif
+
   dpy = clutter_x11_get_default_display ();
 
   /* Just before mb discovers there's a WM already and aborts

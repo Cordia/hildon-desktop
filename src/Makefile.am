@@ -1,4 +1,4 @@
-SUBDIRS = mb tidy util launcher home
+SUBDIRS = mb tidy util launcher home $(A11Y_DIR)
 
 INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
@@ -11,7 +11,7 @@ bin_PROGRAMS = hildon-desktop
 
 hildon_desktop_SOURCES = main.c hildon-desktop.h
 
-hildon_desktop_LDADD = $(MY_LIBS) $(HD_LIBS)
+hildon_desktop_LDADD = $(MY_LIBS) $(HD_LIBS) $(HDA_LIBS) $(A11Y_LA)
 hildon_desktop_CFLAGS = -std=c99 -fgnu89-inline
 
 schemadir = ${datadir}/gconf/schemas
