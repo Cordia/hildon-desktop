@@ -1,3 +1,8 @@
+2009-02-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* hd-comp-mgr.c: Added check in restack to detect apps above the
+	desktop and switch to app mode.
+
 2009-02-17  Alejandro Pinheiro <apinheiro@igalia.com>
 
 	* configure.ac

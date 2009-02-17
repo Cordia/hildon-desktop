@@ -1442,8 +1442,17 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
 
       /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed. */
       if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop)
-        hd_wm_current_app_is (mgr->wm,
-                 hd_wm_determine_current_app (mgr->wm)->window->xwindow);
+        {
+          MBWindowManagerClient *current_client;
+          current_client = hd_wm_determine_current_app (mgr->wm);
+          hd_wm_current_app_is (mgr->wm, current_client->window->xwindow);
+          /* If we have an app as the current client and we're not in
+           * app mode - enter app mode. */
+          if (!(MB_WM_CLIENT_CLIENT_TYPE(current_client) &
+                                         MBWMClientTypeDesktop) &&
+              !STATE_IS_APP(hd_render_manager_get_state()))
+            hd_render_manager_set_state(HDRM_STATE_APP);
+        }
 
       hd_render_manager_restack();
 
