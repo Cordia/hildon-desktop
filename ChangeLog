@@ -1,5 +1,10 @@
 2009-02-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/home/hd-task-navigator.c: Modified g_return_if_fail check
+	to normal 'if' and comment (return_if_fail does nothing now)
+
+2009-02-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* hd-comp-mgr.c: Added check in restack to detect apps above the
 	desktop and switch to app mode.
 

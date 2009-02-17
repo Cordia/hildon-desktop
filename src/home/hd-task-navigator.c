@@ -1947,16 +1947,24 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
                                  gpointer funparam)
 { g_debug (__FUNCTION__);
   guint i;
-  Thumbnail *thumb;
+  Thumbnail *thumb = 0;
   ClutterActor *newborn;
 
   /* Find @thumb for @win. */
-  for (i = 0; ; i++)
+  for (i = 0; i < Thumbnails->len; i++)
     {
-      g_return_if_fail (i < Thumbnails->len);
-      thumb = &g_array_index (Thumbnails, Thumbnail, i);
-      if (thumb->apwin == win)
-        break;
+      Thumbnail *t = &g_array_index (Thumbnails, Thumbnail, i);
+      if (t->apwin == win)
+        {
+          thumb = t;
+          break;
+        }
+    }
+
+  if (!thumb)
+    {
+      g_warning("%s: Window actor %p not found", __FUNCTION__, win);
+      return;
     }
 
   /* If we're active let's do the TV-turned-off effect on @thumb.
@@ -1984,7 +1992,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
       clutter_actor_move_anchor_point_from_gravity (thumb->thwin,
                                                     CLUTTER_GRAVITY_CENTER);
 
-      /* At the end of effect deallocate @thumb which we just duplicated,
+      /* At the nd of effect deallocate @thumb which we just duplicated,
        * and release @cmgrcc. */
       clutter_effect_scale (Fly_effect, thumb->thwin, 1, 0, NULL, NULL);
       add_effect_closure (Fly_effect_timeline,
@@ -2273,9 +2281,8 @@ remove_notewin (HdNote * hdnote, gboolean in_migration)
 
   /* Find the row in which it is. */
   row = 0;
-  for (i = 0; ; i++)
+  for (i = 0; i < Notifications->len; i++)
     {
-      g_return_if_fail (i < Notifications->len);
       tnote = &g_array_index (Notifications, TNote, i);
       if (tnote->hdnote == hdnote)
         {
@@ -2298,6 +2305,12 @@ remove_notewin (HdNote * hdnote, gboolean in_migration)
         }
       else if (i % 2)
         row++;
+    }
+
+  if (i == Notifications->len)
+    {
+      g_warning("%s: Notification window %p not found", __FUNCTION__, hdnote);
+      return;
     }
 
   /* Starting from that row relocate the remaining notifications. */
