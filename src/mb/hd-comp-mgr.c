@@ -385,8 +385,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   stage = clutter_stage_get_default ();
 
-  priv->app_mgr = hd_app_mgr_get ();
-
   /*
    * Create the home group before the switcher, so the switcher can
    * connect it's signals to it.
@@ -410,6 +408,9 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 						  task_nav);
   clutter_container_add_actor(CLUTTER_CONTAINER (stage),
                               CLUTTER_ACTOR(priv->render_manager));
+
+  /* App manager must be created before switcher, but after render manager */
+  priv->app_mgr = hd_app_mgr_get ();
 
   /* NB -- home must be constructed before constructing the switcher;
    */

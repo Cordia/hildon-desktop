@@ -1,3 +1,12 @@
+2009-02-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-comp-mgr.c:
+	  Moved initialisation of hd-app-manager to allow it to add a signal
+	  to hd-render-manager
+	* src/home/hd-render-manager.c:
+	  Modified calls to avoid clutter warnings when actors had/didn't have
+	  parents
+
 2009-02-17  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-render-manager.h (STATE_DISCARD_PREVIEW_NOTE):

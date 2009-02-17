@@ -252,8 +252,7 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               priv->button_edit);
   hd_render_manager_set_operator(g_object_ref(hd_home_get_operator(priv->home)));
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
-                              priv->operator);
+  clutter_actor_reparent(priv->operator, CLUTTER_ACTOR(priv->blur_front));
 
   priv->task_nav = g_object_ref(task_nav);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->task_nav_blur),
@@ -1276,9 +1275,11 @@ void hd_render_manager_restack()
                   /* if we want to render this, add it */
                   if (parent == desktop ||
 		      parent == CLUTTER_ACTOR(priv->app_top))
-                    clutter_actor_reparent(actor,
-                                           CLUTTER_ACTOR(priv->home_blur));
-                  clutter_actor_raise_top(actor);
+                    {
+                      clutter_actor_reparent(actor,
+                          CLUTTER_ACTOR(priv->home_blur));
+                      clutter_actor_raise_top(actor);
+                    }
                 }
               else
                 {
