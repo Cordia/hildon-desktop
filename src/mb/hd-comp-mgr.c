@@ -533,11 +533,53 @@ out0:
   return False;
 }
 
+/* Creates a region for anything of a type in client_mask which is
+ * above the desktop - we can use this to mask off buttons by notifications,
+ * etc.
+ */
+static XserverRegion
+hd_comp_mgr_get_foreground_region(HdCompMgr *hmgr, MBWMClientType client_mask)
+{
+  XRectangle *rectangle;
+  XserverRegion region;
+  guint      i = 0, count = 0;
+  MBWindowManagerClient *fg_client;
+  MBWindowManager *wm = MB_WM_COMP_MGR(hmgr)->wm;
+
+  fg_client = wm->desktop ? wm->desktop->stacked_above : 0;
+  while (fg_client)
+    {
+      if (MB_WM_CLIENT_CLIENT_TYPE(fg_client) & client_mask)
+        count++;
+      fg_client = fg_client->stacked_above;
+    }
+
+  rectangle = g_new (XRectangle, count);
+  fg_client = wm->desktop ? wm->desktop->stacked_above : 0;
+  while (fg_client)
+    {
+      if (MB_WM_CLIENT_CLIENT_TYPE(fg_client) & client_mask)
+        {
+          MBGeometry geo = fg_client->window->geometry;
+          rectangle[i].x      = geo.x;
+          rectangle[i].y      = geo.y;
+          rectangle[i].width  = geo.width;
+          rectangle[i].height = geo.height;
+        }
+
+      fg_client = fg_client->stacked_above;
+    }
+
+  region = XFixesCreateRegion (wm->xdpy, rectangle, count);
+  g_free (rectangle);
+  return region;
+}
+
 void
 hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
                                   int count)
 {
-  XserverRegion      region;
+  XserverRegion      region, subtract;
   Window             overlay;
   Window             clutter_window;
   MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
@@ -575,6 +617,12 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
     }
   else
     region = XFixesCreateRegion (wm->xdpy, NULL, 0);
+
+  /* we must subtract the regions for any dialogs + notifications
+   * from this input mask... */
+  subtract = hd_comp_mgr_get_foreground_region(hmgr,
+      MBWMClientTypeNote | MBWMClientTypeDialog);
+  XFixesSubtractRegion (wm->xdpy, region, region, subtract);
 
   XFixesSetWindowShapeRegion (xdpy,
                               overlay,
@@ -614,6 +662,7 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
                               region);
 
   XFixesDestroyRegion (xdpy, region);
+  XFixesDestroyRegion (xdpy, subtract);
 }
 
 static void
@@ -647,7 +696,7 @@ hd_comp_mgr_register_client (MBWMCompMgr           * mgr,
       priv->desktop = c;
       return;
     }
-  
+
   if (parent_klass->register_client)
     parent_klass->register_client (mgr, c);
 }

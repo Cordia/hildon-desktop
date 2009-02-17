@@ -1,6 +1,12 @@
 2009-02-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/mb/hd-comp-mgr.c:
+	  Now remove any notifications and dialogs that are in front of the
+	  desktop from the input mask area for the buttons. NB#101613
+
+2009-02-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-comp-mgr.c:
 	  Moved initialisation of hd-app-manager to allow it to add a signal
 	  to hd-render-manager
 	* src/home/hd-render-manager.c:
