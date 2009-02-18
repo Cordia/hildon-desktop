@@ -1,3 +1,7 @@
+2009-02-18  Alejandro Pinheiro <apinheiro@igalia.com>
+
+	* src/a11y/launcher/hda-launcher-grid.c: simplified after CAIL changes
+	
 2009-02-18  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/home/hd-render-manager.c: Don't add HD buttons to the input
