@@ -91,7 +91,6 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
   int                   *view_id;
   Atom                   view_id_atom;
   int                    n_items;
-  MBWindowManagerClient *desktop = wm->desktop;
   Atom                   applet_id_atom, utf8_atom;
   char                  *applet_id;
   GConfClient           *gconf_client  = gconf_client_get_default ();
@@ -218,21 +217,8 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
       mb_wm_theme_create_decor (wm->theme, client, MBWMDecorTypeEast);
     }
 
-  if (desktop)
-    {
-      printf ("#### making transient to desktop ###\n");
-
-      mb_wm_client_add_transient (desktop, client);
-      client->stacking_layer = 0;  /* We stack with whatever transient too */
-    }
-  else
-    {
-      printf ("#### no desktop present ####\n");
-
-     client->stacking_layer = MBWMStackLayerBottomMid;
-    }
-
   client->desktop = 0;
+  client->stacking_layer = 0;  /* We stack with desktop */
 
   mb_wm_client_geometry_mark_dirty (client);
   mb_wm_client_visibility_mark_dirty (client);

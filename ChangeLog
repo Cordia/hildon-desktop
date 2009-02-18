@@ -1,3 +1,24 @@
+2009-02-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Applet stacking fixes.  Remedies the "applet is not activated when clicked"
+	and "invisible applet is activated when clicking on an empty desktop"
+	(aka. rodarvus-symptom) problems.
+
+	* src/mb/hd-desktop.c (hd_desktop_stack):
+	  Don't look at who is transient to the desktop but ask the active
+	  home view for the list of applets.
+	* src/mb/hd-home-applet.c:
+	  Don't attempt to make applets transient to the desktop.
+	* src/home/hd-home.c
+	* src/home/hd-home.h
+	* src/home/hd-home-view.h
+	* src/home/hd-home-view.c:
+	  Utility functions added.
+	* src/home/hd-home-view-container.c:
+	  Force restacking when the desktop-changing transition is complete.
+	  This is because merely making the stacking dirty may not take
+	  effect until the next X event.
+
 2009-02-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-app.c (hd_app_init): Re-enable patch from Laszlo to set

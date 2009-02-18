@@ -279,69 +279,34 @@ hd_desktop_realize (MBWindowManagerClient *client)
 #endif
 }
 
-static gint
-cmp_applet_modified (gconstpointer a,
-                     gconstpointer b)
-{
-  return HD_HOME_APPLET (a)->modified - HD_HOME_APPLET (b)->modified;
-}
-
 static void
 hd_desktop_stack (MBWindowManagerClient *client,
 		  int                    flags)
 {
   /* Stack to highest/lowest possible position in stack */
-  MBWMList  *l, *l_start;
   HdCompMgr *hmgr = HD_COMP_MGR (client->wmref->comp_mgr);
-  gint       current_view = hd_comp_mgr_get_current_home_view_id (hmgr);
-  gint       n_layers;
-  /* gint       i; */
   GSList    *applets = NULL, *a;
-
-  n_layers = hd_comp_mgr_get_home_applet_layer_count (hmgr, current_view);
+  MBWMList  *l_start, *l;
 
   mb_wm_stack_move_top (client);
 
-  l_start = mb_wm_client_get_transients (client);
-
-  /* Sort all applets according to their modified time */
-  for (l = l_start; l; l = l->next)
-    {
-      MBWindowManagerClient *c = l->data;
-
-      if (HD_IS_HOME_APPLET (c))
-        {
-          HdHomeApplet *applet = HD_HOME_APPLET (c);
-
-          if (applet->view_id == current_view)
-            {
-              /* Stack applet window if applet is visible on current view */
-              applets = g_slist_insert_sorted (applets, applet,
-                                               cmp_applet_modified);
-            }
-        }
-    }
+  /* This is pathetic. */
+  applets = hd_home_view_get_all_applets (HD_HOME_VIEW (hd_home_get_current_view (HD_HOME (hd_comp_mgr_get_home (hmgr)))));
 
   /* Now stack all applets */
   for (a = applets; a; a = a->next)
-    {
-      MBWindowManagerClient *c = a->data;
-
-      /*
-      g_debug ("Stack applet, %s %ld", HD_HOME_APPLET (c)->applet_id,
-               HD_HOME_APPLET (c)->modified);
-               */
-
-      mb_wm_client_stack (c, flags);
-    }
-
+    mb_wm_client_stack (MB_WM_COMP_MGR_CLIENT (a->data)->wm_client, flags);
   g_slist_free (applets);
 
 #if 0
+  /* This is pathetic too. */
+
   /*
    * First, we stack all applets (and their transients) according to their
    * stacking layer.
    */
+  gint n_layers = hd_comp_mgr_get_home_applet_layer_count (hmgr, current_view);
+  gint       current_view = hd_comp_mgr_get_current_home_view_id (hmgr);
   for (i = 0; i < n_layers; ++i)
     {
       l = l_start;
@@ -367,20 +332,13 @@ hd_desktop_stack (MBWindowManagerClient *client,
     }
 #endif
 
-  /*
-   * Now we stack any other clients.
-   */
-  l = l_start;
-
-  while (l)
+  /* Now we stack any other clients. */
+  l_start = mb_wm_client_get_transients (client);
+  for (l = l_start; l ; l = l->next)
     {
-      MBWindowManagerClient *c = l->data;
-      if (!HD_IS_HOME_APPLET (c))
-	mb_wm_client_stack (c, flags);
-
-      l = l->next;
+      g_assert (!HD_IS_HOME_APPLET (l->data));
+      mb_wm_client_stack (l->data, flags);
     }
-
   mb_wm_util_list_free (l_start);
 }
 

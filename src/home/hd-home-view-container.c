@@ -612,7 +612,11 @@ scroll_back_completed_cb (ClutterTimeline     *timeline,
   desktop = hd_comp_mgr_get_desktop_client (hmgr);
 
   if (desktop)
-    mb_wm_client_stacking_mark_dirty (desktop);
+    { /* Synchronize here, we may not come from clutter_x11_event_filter()
+       * at all. */
+      mb_wm_client_stacking_mark_dirty (desktop);
+      mb_wm_sync (MB_WM_COMP_MGR (hmgr)->wm);
+    }
 }
 
 void

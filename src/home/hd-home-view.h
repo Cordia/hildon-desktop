@@ -67,6 +67,7 @@ void hd_home_view_set_thumbnail_mode (HdHomeView * view, gboolean on);
 guint hd_home_view_get_view_id (HdHomeView *view);
 
 void hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet);
+GSList *hd_home_view_get_all_applets (HdHomeView *view);
 
 void hd_home_view_unregister_applet (HdHomeView *view, ClutterActor *applet);
 void hd_home_view_remove_applet (HdHomeView *view, ClutterActor *applet);

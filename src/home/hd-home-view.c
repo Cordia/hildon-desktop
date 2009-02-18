@@ -992,24 +992,33 @@ cmp_applet_modified (gconstpointer a,
   return HD_HOME_APPLET (cc_a->wm_client)->modified - HD_HOME_APPLET (cc_b->wm_client)->modified;
 }
 
+/* Return the list of CompMgrClients of the applets this homeview
+ * manages sorted by their last modification time.   It's up to you
+ * to free the list. */
+GSList *
+hd_home_view_get_all_applets (HdHomeView *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+  GSList *sorted;
+  GHashTableIter iter;
+  HdHomeViewAppletData *value;
+
+  /* Get a list of all applets sorted by modified time */
+  sorted = NULL;
+  g_hash_table_iter_init (&iter, priv->applets);
+  while (g_hash_table_iter_next (&iter, NULL, (gpointer *)&value))
+    sorted = g_slist_insert_sorted (sorted, value->cc, cmp_applet_modified);
+  return sorted;
+}
+
 static void
 hd_home_view_restack_applets (HdHomeView *view)
 {
-  HdHomeViewPrivate *priv = view->priv;
-  GHashTableIter iter;
   GSList *sorted = NULL, *s;
-  gpointer value;
 
-  /* Get a list of all applets sorted by modified time */
-  g_hash_table_iter_init (&iter, priv->applets);
-  while (g_hash_table_iter_next (&iter, NULL, &value))
-    {
-      HdHomeViewAppletData *data = value;
-
-      sorted = g_slist_insert_sorted (sorted, data->cc, cmp_applet_modified);
-    }
-
-  /* Raise all applets in the order of the list */
+  /* Get a list of all applets sorted by modified time
+   * and raise them in the order of the list. */
+  sorted = hd_home_view_get_all_applets (view);
   for (s = sorted; s; s = s->next)
     {
       MBWMCompMgrClutterClient *cc = s->data;
@@ -1017,6 +1026,7 @@ hd_home_view_restack_applets (HdHomeView *view)
 
       clutter_actor_raise_top (actor);
     }
+  g_slist_free (sorted);
 }
 
 void

@@ -1170,6 +1170,15 @@ hd_home_get_current_view_id (HdHome *home)
   return hd_home_view_container_get_current_view (HD_HOME_VIEW_CONTAINER (priv->view_container));
 }
 
+ClutterActor *
+hd_home_get_current_view (HdHome *home)
+{
+  HdHomePrivate   *priv = home->priv;
+
+  return hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                          hd_home_get_current_view_id (home));
+}
+
 void
 hd_home_set_operator_applet (HdHome *home, ClutterActor *operator_applet)
 {

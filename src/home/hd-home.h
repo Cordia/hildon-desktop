@@ -79,6 +79,7 @@ void hd_home_hide_applet_buttons (HdHome *home);
 void hd_home_close_applet (HdHome *home, ClutterActor *applet);
 
 guint hd_home_get_current_view_id (HdHome *home);
+ClutterActor *hd_home_get_current_view (HdHome *home);
 
 ClutterActor *hd_home_get_edit_button (HdHome *home);
 ClutterActor *hd_home_get_operator (HdHome *home);
