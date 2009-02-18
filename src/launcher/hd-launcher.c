@@ -360,7 +360,7 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
   /* If the app has been already launched, send the relaunched signal
    * and don't animate anything.
    */
-  if (hd_launcher_app_is_executing (app))
+  if (hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN)
     {
       g_signal_emit (hd_launcher_get (), launcher_signals[APP_RELAUNCHED],
                      0, data, NULL);

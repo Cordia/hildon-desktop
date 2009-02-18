@@ -1,3 +1,11 @@
+2009-02-18  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Asynchronous application prestarting.
+
+	* src/launcher/hd-app-mgr.c: Changed prestarting code to use async dbus calls.
+	Also, small misc fixes.
+	* src/launcher/hd-launcher.c: Do not consider prestarted apps as launched.
+
 2009-02-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Regression fix, debugging features.

@@ -179,9 +179,11 @@ static void hd_app_mgr_add_to_queue (HdAppMgrQueue queue,
                                      HdLauncherApp *app);
 static void hd_app_mgr_remove_from_queue (HdAppMgrQueue queue,
                                           HdLauncherApp *app);
+#if 0
 static void hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
                                    HdAppMgrQueue queue_to,
                                    HdLauncherApp *app);
+#endif
 
 static size_t   hd_app_mgr_read_lowmem (const gchar *filename);
 static HdAppMgrPrestartMode
@@ -209,7 +211,7 @@ static DBusHandlerResult hd_app_mgr_signal_handler (DBusConnection *conn,
                                                     DBusMessage *msg,
                                                     void *data);
 
-static GPid _hd_app_mgr_get_service_pid (const gchar *service);
+static void hd_app_mgr_get_app_pid (HdLauncherApp *app);
 
 /* The HdLauncher singleton */
 static HdAppMgr *the_app_mgr = NULL;
@@ -267,9 +269,7 @@ hd_app_mgr_add_signal_match (DBusGProxy *proxy, const gchar *interface)
   gboolean result;
   gchar *arg;
   arg = g_strdup_printf("type='signal', interface='%s'", interface);
-  result = dbus_g_proxy_call (proxy, "AddMatch", NULL,
-      G_TYPE_STRING, arg, G_TYPE_INVALID,
-      G_TYPE_INVALID);
+  result = org_freedesktop_DBus_add_match (proxy, arg, NULL);
   g_free (arg);
   return result;
 }
@@ -443,6 +443,8 @@ hd_app_mgr_remove_from_queue (HdAppMgrQueue queue, HdLauncherApp *app)
     }
 }
 
+/* NOTE: This function is not yet used. */
+#if 0
 static void
 hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
                        HdAppMgrQueue queue_to,
@@ -462,6 +464,7 @@ hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
   else
     hd_app_mgr_add_to_queue (queue_to, app);
 }
+#endif
 
 void hd_app_mgr_prestartable (HdLauncherApp *app)
 {
@@ -508,7 +511,7 @@ hd_app_mgr_launch (HdLauncherApp *app)
     {
       result = hd_app_mgr_service_top (service, NULL);
       if (result)
-        pid = _hd_app_mgr_get_service_pid (service);
+        hd_app_mgr_get_app_pid (app);
 
       /* As the app has been manually launched, stop considering it
        * for prestarting.
@@ -600,12 +603,36 @@ hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
   hd_app_mgr_state_check ();
 }
 
+static void
+_hd_app_mgr_prestart_cb (DBusGProxy *proxy, guint result,
+                        GError *error, gpointer data)
+{
+  HdLauncherApp *app = HD_LAUNCHER_APP (data);
+
+  if (error || !result)
+    {
+      g_warning ("%s: Couldn't prestart service %s, error: %s\n",
+          __FUNCTION__, hd_launcher_app_get_service (app),
+          error ? error->message : "no result");
+      /* Move the app to the back of the queue, so it doesn't stop
+       * other apps from being prestarted.
+       * TODO: Check number of times this has been tried and stop after
+       * a while.
+       */
+      hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
+    }
+  else
+    {
+      hd_launcher_app_set_state (app, HD_APP_STATE_PRESTARTED);
+      hd_app_mgr_add_to_queue (QUEUE_PRESTARTED, app);
+      hd_app_mgr_get_app_pid (app);
+    }
+}
+
 gboolean
 hd_app_mgr_prestart (HdLauncherApp *app)
 {
-  DBusError derror;
-  DBusConnection *conn;
-  gboolean res;
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   const gchar *service = hd_launcher_app_get_service (app);
 
   if (hd_launcher_app_is_executing (app))
@@ -617,40 +644,14 @@ hd_app_mgr_prestart (HdLauncherApp *app)
       return FALSE;
     }
 
-  dbus_error_init (&derror);
-  conn = dbus_bus_get (DBUS_BUS_SESSION, &derror);
-  if (dbus_error_is_set (&derror))
-  {
-    g_warning ("could not start: %s: %s", service, derror.message);
-    dbus_error_free (&derror);
-    return FALSE;
-  }
+  hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
 
-  res = dbus_bus_start_service_by_name (conn, service, 0, NULL, &derror);
-  if (dbus_error_is_set (&derror))
-  {
-    g_warning ("could not start: %s: %s", service, derror.message);
-    dbus_error_free (&derror);
-  }
+  org_freedesktop_DBus_start_service_by_name_async (priv->dbus_proxy,
+      service, 0,
+      _hd_app_mgr_prestart_cb, (gpointer)app);
 
-  if (res)
-    {
-      hd_app_mgr_move_queue(QUEUE_PRESTARTABLE, QUEUE_PRESTARTED, app);
-      hd_launcher_app_set_pid (app, _hd_app_mgr_get_service_pid (service));
-      hd_launcher_app_set_state (app, HD_APP_STATE_PRESTARTED);
-    }
-  else
-    {
-      /* Move the app to the back of the queue, so it doesn't stop
-       * other apps from being prestarted.
-       * TODO: Check number of times this has been tried and stop after
-       * a while.
-       */
-      hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
-      hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
-    }
-
-  return res;
+  /* We always return true because we don't know the result at this point. */
+  return TRUE;
 }
 
 gboolean
@@ -683,7 +684,7 @@ hd_app_mgr_wakeup   (HdLauncherApp *app)
   res = hd_app_mgr_service_top (service, "RESTORE");
   if (res) {
     hd_app_mgr_remove_from_queue (QUEUE_HIBERNATED, app);
-    hd_launcher_app_set_pid (app, _hd_app_mgr_get_service_pid (service));
+    hd_app_mgr_get_app_pid (app);
     hd_launcher_app_set_state (app, HD_APP_STATE_LOADING);
   }
 
@@ -838,25 +839,24 @@ hd_app_mgr_setup_prestart (size_t low_pages,
                            size_t *prestart_required_pages)
 {
   gchar *prestart_env = NULL;
+  HdAppMgrPrestartMode result = PRESTART_NEVER;
+  *prestart_required_pages = NSIZE;
 
   prestart_env = getenv (PRESTART_ENV_VAR);
 
-  if (low_pages == NSIZE || nr_decay_pages == -1)
+  if (!prestart_env ||
+      !*prestart_env ||
+      !g_strcmp0 (prestart_env, "no") ||
+      !g_strcmp0 (prestart_env, "false"))
     {
-      g_debug ("%s: No memory limits, assuming scratchbox.\n", __FUNCTION__);
-      *prestart_required_pages = NSIZE;
-      if (prestart_env && *prestart_env &&
-          g_strcmp0 (prestart_env, "no") &&
-          g_strcmp0 (prestart_env, "false"))
-        return PRESTART_ALWAYS;
-      else
-        return PRESTART_NEVER;
+      result = PRESTART_NEVER;
     }
-
-  prestart_env = getenv (PRESTART_ENV_VAR);
-  if (prestart_env && *prestart_env &&
-      g_strcmp0 (prestart_env, "no") &&
-      g_strcmp0 (prestart_env, "false"))
+  else if (low_pages == NSIZE || nr_decay_pages == NSIZE)
+    {
+      *prestart_required_pages = NSIZE;
+      result = PRESTART_ALWAYS;
+    }
+  else
     {
       size_t reserved = (size_t)strtol (prestart_env, NULL, 10);
       if (reserved == 0)
@@ -864,12 +864,10 @@ hd_app_mgr_setup_prestart (size_t low_pages,
                 low_pages + hd_app_mgr_read_lowmem (LOWMEM_PROC_NR_DECAY);
       else
         *prestart_required_pages = low_pages + reserved;
-      return PRESTART_AUTO;
+      result = PRESTART_AUTO;
     }
 
-  /* If not set, or set to 'no' or 'false', never prestart. */
-  *prestart_required_pages = NSIZE;
-  return PRESTART_NEVER;
+  return result;
 }
 
 static void
@@ -877,7 +875,7 @@ hd_app_mgr_setup_launch (size_t high_pages,
                          size_t nr_decay_pages,
                          size_t *launch_required_pages)
 {
-  if (high_pages == NSIZE || nr_decay_pages == -1)
+  if (high_pages == NSIZE || nr_decay_pages == NSIZE)
     {
       g_debug ("%s: No memory limits, assuming scratchbox.\n", __FUNCTION__);
       *launch_required_pages = NSIZE;
@@ -1023,6 +1021,8 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
   GList *items;
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
 
+  g_debug ("%s: name: %s old: %s new: %s\n", __FUNCTION__, name, old_owner, new_owner);
+
   /* Check only disconnections. */
   if (strcmp(new_owner, ""))
     return;
@@ -1119,23 +1119,37 @@ hd_app_mgr_signal_handler (DBusConnection *conn,
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
-static GPid
-_hd_app_mgr_get_service_pid (const gchar *service)
+static void
+_hd_app_mgr_get_app_pid_cb (DBusGProxy *proxy, guint pid,
+    GError *error, gpointer data)
 {
-  GPid pid;
-  DBusGProxy *proxy = (HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get()))->dbus_proxy;
+  HdLauncherApp *app = HD_LAUNCHER_APP (data);
 
-  if (!dbus_g_proxy_call (proxy, "GetConnectionUnixProcessID", NULL,
-                          G_TYPE_STRING, service,
-                          G_TYPE_INVALID,
-                          G_TYPE_UINT, &pid,
-                          G_TYPE_INVALID))
+  if (error)
     {
-      g_warning ("%s: Couldn't get pid for %s\n", __FUNCTION__, service);
-      pid = 0;
+      g_warning ("%s: Couldn't get pid for app %s\n", __FUNCTION__,
+          hd_launcher_app_get_service (app));
+      return;
     }
 
-  return pid;
+  hd_launcher_app_set_pid (app, pid);
+}
+
+static void
+hd_app_mgr_get_app_pid (HdLauncherApp *app)
+{
+  DBusGProxy *proxy = (HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get()))->dbus_proxy;
+  const gchar *service = hd_launcher_app_get_service (app);
+
+  if (!service)
+    {
+      g_warning ("%s: Can't get the pid for a non-dbus app.\n", __FUNCTION__);
+      hd_launcher_app_set_pid (app, 0);
+    }
+
+  org_freedesktop_DBus_get_connection_unix_process_id_async (proxy,
+      service,
+      _hd_app_mgr_get_app_pid_cb, (gpointer)app);
 }
 
 HdLauncherApp *
