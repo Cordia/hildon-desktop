@@ -1,3 +1,8 @@
+2009-02-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-wm.c: Applied Laslo Pere's patch for bug #95018 (switch
+	  to app mode when application is activated). Also fixes #99100
+
 2009-02-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/mb/hd-comp-mgr.c:

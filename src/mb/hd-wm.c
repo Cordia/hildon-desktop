@@ -29,6 +29,7 @@
 
 #include "hd-wm.h"
 #include "hd-comp-mgr.h"
+#include "hd-render-manager.h"
 #include "hd-desktop.h"
 #include "hd-app.h"
 
@@ -65,6 +66,10 @@ static Bool hd_wm_client_responding (MBWindowManager *wm,
 				     MBWindowManagerClient *c);
 static Bool hd_wm_client_hang (MBWindowManager *wm,
 			       MBWindowManagerClient *c);
+
+static Bool hd_wm_client_activate (
+		MBWindowManager * wm, 
+		MBWindowManagerClient *c);
 
 struct HdWmPrivate
 {
@@ -115,6 +120,7 @@ hd_wm_class_init (MBWMObjectClass *klass)
 
   wm_class->client_responding = hd_wm_client_responding;
   wm_class->client_hang	      = hd_wm_client_hang;
+  wm_class->client_activate   = hd_wm_client_activate;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdWm";
@@ -303,6 +309,30 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
   else
     return True;
 }
+
+
+static Bool 
+hd_wm_client_activate (
+		MBWindowManager * wm, 
+		MBWindowManagerClient *c)
+{
+  MBWindowManagerClass *wm_class = 
+    MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
+
+  /*
+   * When activating the client we hide the task switcher.
+   */
+  if (c == wm->desktop) 
+    hd_render_manager_set_state (HDRM_STATE_HOME);
+  else if (mb_wm_client_window_is_state_set (c->window,
+			  MBWMClientWindowEWMHStateFullscreen))
+    hd_render_manager_set_state (HDRM_STATE_APP_FULLSCREEN);
+  else
+    hd_render_manager_set_state (HDRM_STATE_APP);
+	
+  return wm_class->client_activate (wm, c);
+}
+
 
 /* Returns the client that should be the _MB_CURRENT_APP_WINDOW,
  * according to window stacking. */
