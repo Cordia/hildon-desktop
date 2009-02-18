@@ -1510,6 +1510,11 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
               hd_switcher_replace_window_actor (priv->switcher_group,
                                               old_actor, actor);
               clutter_actor_hide (old_actor);
+              /* and make sure we're in app mode and not transitioning as
+               * we'll want to show this new app right away*/
+              if (!STATE_IS_APP(hd_render_manager_get_state()))
+                hd_render_manager_set_state(HDRM_STATE_APP);
+              hd_render_manager_stop_transition();
               /* This forces the decors to be redone, taking into account the
                * stack index. */
               mb_wm_client_theme_change (c);
@@ -1519,6 +1524,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 	  {
 	    g_debug ("%s: ADD ACTOR %p", __func__, actor);
             hd_switcher_add_window_actor (priv->switcher_group, actor);
+            /* and make sure we're in app mode and not transitioning as
+             * we'll want to show this new app right away*/
+            if (!STATE_IS_APP(hd_render_manager_get_state()))
+              hd_render_manager_set_state(HDRM_STATE_APP);
             hd_render_manager_stop_transition();
             /* This forces the decors to be redone, taking into account the
              * stack index. */
