@@ -1,11 +1,39 @@
+2009-02-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Implement full stackable window handling.
+
+	* src/util/hd-transition.c (hd_transition_close_app): Check that the
+	secondary window is not a temporary leader.
+	* src/mb/hd-theme.c (construct_buttons): Handle the case that the
+	window is a secondary acting as leader.
+	* src/mb/hd-app.c (hd_app_destroy): Remove content from this function.
+	It is now done at the unmapping handler.
+	(hd_app_init): Move stackable-related code to MapNotify handler
+	because mapping time is what counts, not creation.
+	* (hd_app_close_followers): Remove g_return_val_if_fail checks and
+	replace the while loop with a for loop.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client): Code to handle
+	tricky cases, like unmapping of windows from middle of the stackable
+	window stack. Make sure task navigator has the right actor in all
+	cases.
+	(hd_comp_mgr_handle_stackable): New function, containing code from
+	hd_app_init and some more to aid in the task of keeping the actor in
+	task navigator up-to-date.
+	(hd_comp_mgr_map_notify): Changes to keep task navigator up-to-date
+	with the stackable window stack.
+	(hd_comp_mgr_effect): Handle the case of secondary window acting as
+	the leader.
+	(hd_comp_mgr_close_app): Send delete event to the window only if it is
+	the leader, otherwise hd_app_close_followers already sent it.
+
 2009-02-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Regression fix.
 
 	* src/mb/hd-wm.c (hd_wm_client_activate):
 	  Don't leave the current state if the activated client is not a HdApp.
-	  This is because in switcher view programs are free to create dialogs etc.
-	  and we don't want to leave the view in this case.
+	  This is because in switcher view programs are free to create dialogs
+	  etc. and we don't want to leave the view in this case.
 
 2009-02-18  Alejandro Pinheiro <apinheiro@igalia.com>
 

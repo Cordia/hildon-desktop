@@ -759,25 +759,64 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         {
           if (HD_IS_APP (app))
             {
+	      gboolean topmost;
+
+	      if (app->stack_index < 0 || !app->leader /* non-stackable */
+		  /* leader without secondarys: */
+	          || (!app->leader->followers && app->leader == app) ||
+	          /* or a secondary window on top of the stack: */
+	          app == g_list_last (app->leader->followers)->data)
+	        topmost = 1;
+	      else
+	        topmost = 0;
+
               /* if we are secondary, there must be leader and probably
 	       * even followers */
-              if (app->leader && app->stack_index > 0)
+              if (app->leader && app->stack_index > 0 && app->leader != app)
                 {
+                  g_debug ("%s: %p is STACKABLE SECONDARY", __func__, app);
                   /* show the topmost follower and replace switcher actor
 		   * for the stackable */
-                  prev = MB_WM_COMP_MGR_CLUTTER_CLIENT (
-			  (hd_app_get_prev_group_member(app))->cm_client);
 
-                  clutter_actor_show (
-		  	mb_wm_comp_mgr_clutter_client_get_actor(prev));
+		  /* remove this window from the followers list */
+		  app->leader->followers
+		  	= g_list_remove (app->leader->followers, app);
 
-                  hd_switcher_replace_window_actor (
+		  if (app->leader->followers)
+		    prev = MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			     MB_WM_CLIENT (
+		               g_list_last (app->leader->followers)->data)
+			                     ->cm_client);
+		  else
+		    prev = MB_WM_COMP_MGR_CLUTTER_CLIENT (
+		             MB_WM_CLIENT (app->leader)->cm_client);
+
+		  if (topmost) /* if we were on top, update the switcher */
+		  {
+                    clutter_actor_show (
+		  	mb_wm_comp_mgr_clutter_client_get_actor (prev));
+		    g_debug ("%s: REPLACE ACTOR %p WITH %p", __func__, actor,
+			     mb_wm_comp_mgr_clutter_client_get_actor (prev));
+                    hd_switcher_replace_window_actor (
 		        priv->switcher_group, actor,
-                  	mb_wm_comp_mgr_clutter_client_get_actor(prev));
+                  	mb_wm_comp_mgr_clutter_client_get_actor (prev));
+
+                    /* Tell the app which the main client is now. */
+                    if (hclient->priv->app)
+		    {
+                      hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
+                                                  HD_COMP_MGR_CLIENT (prev));
+		    }
+		  }
                 }
               else if (!(c->window->ewmh_state &
-		         MBWMClientWindowEWMHStateSkipTaskbar))
+		         MBWMClientWindowEWMHStateSkipTaskbar) &&
+		       (app->stack_index < 0 ||
+		       (app->leader == app && !app->followers)))
                 {
+                  g_debug ("%p: NON-STACKABLE OR FOLLOWERLESS LEADER"
+			   " (index %d), REMOVE ACTOR %p",
+		           __func__, app->stack_index, actor);
                   /* We are the leader or a non-stackable window,
                    * just remove the actor from the switcher.
                    * NOTE The test above breaks if the client changed
@@ -785,23 +824,44 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                   hd_switcher_remove_window_actor (priv->switcher_group,
                                                    actor);
 
-                  if (!c->window)
-                    g_critical("unregister_client(): c->window == NULL");
-                  else if (c->window->xwindow == hd_wm_current_app_is (NULL, 0))
+                  if (c->window->xwindow == hd_wm_current_app_is (NULL, 0))
                     /* We are in APP state and foreground application closed. */
                     hd_render_manager_set_state (hd_render_manager_has_apps ()
                                                  ? HDRM_STATE_TASK_NAV
                                                  : HDRM_STATE_HOME);
+
+                  /* This app is finished. */
+                  if (hclient->priv->app)
+                    hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
+                                                         NULL);
                 }
+	      else if (app->leader == app && app->followers)
+	        {
+                  GList *l;
+		  HdApp *new_leader;
+                  g_debug ("%s: STACKABLE LEADER %p (index %d) WITH CHILDREN",
+			   __func__, app, app->stack_index);
+
+                  prev = MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			   hd_app_get_prev_group_member(app)->cm_client);
+		  new_leader = HD_APP (app->followers->data);
+                  for (l = app->followers; l; l = l->next)
+                  {
+		    /* bottommost secondary is the new leader */
+	            HD_APP (l->data)->leader = new_leader;
+		  }
+		  /* set the new leader's followers list */
+		  new_leader->followers = g_list_remove (app->followers,
+	                                                 new_leader);
+                  /* The topmost child is the new main client. */
+                  if (hclient->priv->app)
+                    hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
+			                           HD_COMP_MGR_CLIENT (prev));
+		}
             }
 
           g_object_set_data (G_OBJECT (actor),
                              "HD-MBWMCompMgrClutterClient", NULL);
-
-           /* Tell the app which the main client is now. */
-          if (hclient->priv->app)
-            hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
-                                                 HD_COMP_MGR_CLIENT (prev));
         }
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea)
@@ -997,6 +1057,196 @@ hd_comp_mgr_hook_update_area(HdCompMgr *hmgr, ClutterActor *actor)
             }
         }
     }
+}
+
+/* returns HdApp of client that was replaced, or NULL */
+static void
+hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
+		              HdApp **replaced, HdApp **add_to_tn)
+{
+  MBWindowManager       *wm = client->wmref;
+  MBWMClientWindow      *win = client->window;
+  HdCompMgr             *hmgr = HD_COMP_MGR (wm->comp_mgr);
+  HdApp                 *app = HD_APP (client);
+  Window                 win_group;
+  unsigned char         *prop = NULL;
+  unsigned long          items, left;
+  int			 format;
+  Atom                   stack_atom, actual_type;
+
+  app->stack_index = -1;  /* initially a non-stackable */
+
+  stack_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_STACKABLE_WINDOW);
+
+  XGetWindowProperty (wm->xdpy, win->xwindow,
+                      stack_atom, 0, 1, False,
+                      XA_INTEGER, &actual_type, &format,
+                      &items, &left,
+                      &prop);
+
+  if (actual_type == XA_INTEGER)
+    {
+      MBWindowManagerClient *c_tmp;
+      HdApp *old_leader = NULL;
+      HdApp *last_follower = NULL;
+
+      win_group = win->xwin_group;
+      app->stack_index = (int)*prop;
+      g_debug ("%s: STACK INDEX %d", __func__, app->stack_index);
+
+      mb_wm_stack_enumerate (wm, c_tmp)
+        if (c_tmp != client &&
+            MB_WM_CLIENT_CLIENT_TYPE (c_tmp) == MBWMClientTypeApp &&
+            HD_APP (c_tmp)->stack_index >= 0 /* == stackable window */ &&
+            c_tmp->window->xwin_group == win_group)
+          {
+            old_leader = HD_APP (c_tmp)->leader;
+            break;
+          }
+
+      if (old_leader && old_leader->followers)
+        last_follower = HD_APP (g_list_last (old_leader->followers)->data);
+
+      if (app->stack_index > 0 && old_leader &&
+	  (!last_follower || last_follower->stack_index < app->stack_index))
+        {
+          g_debug ("%s: %p is NEW SECONDARY OF THE STACK", __FUNCTION__, app);
+          app->leader = old_leader;
+
+          app->leader->followers = g_list_append (old_leader->followers,
+                                                  client);
+	  if (last_follower)
+	    *replaced = last_follower;
+	  else
+	    *replaced = old_leader;
+        }
+      else if (old_leader && app->stack_index <= old_leader->stack_index)
+        {
+          GList *l;
+
+          app->leader = app;
+          for (l = old_leader->followers; l; l = l->next)
+          {
+            HD_APP (l->data)->leader = app;
+          }
+
+          if (old_leader->stack_index == app->stack_index)
+          {
+            /* drop the old leader from the stack if we replace it */
+            g_debug ("%s: DROPPING OLD LEADER %p OUT OF THE STACK", __func__,
+		     app);
+            app->followers = old_leader->followers;
+            old_leader->followers = NULL;
+            old_leader->leader = NULL;
+            old_leader->stack_index = -1; /* mark it non-stackable */
+	    *replaced = old_leader;
+          }
+          else
+          {
+            /* the new leader is now a follower */
+            g_debug ("%s: OLD LEADER %p IS NOW A FOLLOWER", __func__, app);
+            app->followers = g_list_prepend (old_leader->followers,
+                                             old_leader);
+            old_leader->followers = NULL;
+            old_leader->leader = app;
+          }
+        }
+      else if (old_leader && app->stack_index > old_leader->stack_index)
+
+        {
+          GList *flink;
+          HdApp *f = NULL;
+
+          app->leader = old_leader;
+          /* find the follower that the new window replaces or follows */
+          for (flink = old_leader->followers; flink; flink = flink->next)
+          {
+            f = flink->data;
+            if (f->stack_index >= app->stack_index)
+	    {
+	      if (flink->prev &&
+	          HD_APP (flink->prev->data)->stack_index == app->stack_index)
+	      {
+	        f = flink->prev->data;
+		flink = flink->prev;
+	      }
+              break;
+	    }
+          }
+	  if (!f && old_leader->followers &&
+	      HD_APP (old_leader->followers->data)->stack_index
+	                                             == app->stack_index)
+	  {
+	    f = old_leader->followers->data;
+	    flink = old_leader->followers;
+	  }
+
+          if (!f)
+          {
+            g_debug ("%s: %p is FIRST FOLLOWER OF THE STACK", __func__, app);
+            old_leader->followers = g_list_append (old_leader->followers, app);
+	    *add_to_tn = app;
+          }
+          else if (f->stack_index == app->stack_index)
+          {
+	    if (f != app)
+	    {
+              g_debug ("%s: %p REPLACES A FOLLOWER OF THE STACK",
+		       __func__, app);
+              old_leader->followers
+                = g_list_insert_before (old_leader->followers, flink, app);
+              old_leader->followers
+                = g_list_remove_link (old_leader->followers, flink);
+              g_list_free (flink);
+              /* drop the replaced follower from the stack */
+              f->leader = NULL;
+              f->stack_index = -1; /* mark it non-stackable */
+	    }
+	    else
+	      g_debug ("%s: %p is the SAME CLIENT", __FUNCTION__, app);
+	    *replaced = f;
+          }
+          else if (f->stack_index > app->stack_index)
+          {
+            g_debug ("%s: %p PRECEEDS (index %d) A FOLLOWER (with index %d)"
+	             " OF THE STACK", __func__, app, app->stack_index,
+		     f->stack_index);
+            old_leader->followers
+                = g_list_insert_before (old_leader->followers, flink, app);
+          }
+	  else  /* f->stack_index < app->stack_index */
+	  {
+            if (flink->next)
+	    {
+              g_debug ("%s: %p PRECEEDS (index %d) A FOLLOWER (with index %d)"
+	             " OF THE STACK", __func__, app, app->stack_index,
+		     HD_APP (flink->next->data)->stack_index);
+              old_leader->followers
+                 = g_list_insert_before (old_leader->followers, flink->next,
+				         app);
+	    }
+	    else
+	    {
+              g_debug ("%s: %p FOLLOWS LAST FOLLOWER OF THE STACK", __func__,
+		       app);
+              old_leader->followers = g_list_append (old_leader->followers,
+                                                     app);
+	      *add_to_tn = app;
+	    }
+	  }
+        }
+      else  /* we are the first window in the stack */
+        {
+          g_debug ("%s: %p is FIRST WINDOW OF THE STACK", __FUNCTION__, app);
+          app->leader = app;
+        }
+    }
+
+  if (prop)
+    XFree (prop);
+
+  /* all stackables have stack_index >= 0 */
+  g_assert (!app->leader || (app->leader && app->stack_index >= 0));
 }
 
 static void
@@ -1217,22 +1467,22 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else
     {
-      HdApp *app = HD_APP(c);
+      int topmost;
+      HdApp *app = HD_APP (c), *to_replace = NULL, *add_to_tn = NULL;
 
-      if (HD_IS_APP (app))
-      {
-	gboolean topmost;
+      hd_comp_mgr_handle_stackable (c, &to_replace, &add_to_tn);
 
-	if (app->stack_index < 0 || !app->leader /* non-stackable */
-	    || !app->leader->followers ||        /* leader w/o secondarys */
-	    /* or a secondary window on top of the stack: */
-	    app == g_list_last (app->leader->followers)->data)
-          topmost = TRUE;
-	else
-          topmost = FALSE;
+      if (app->stack_index < 0 || !app->leader /* non-stackable */
+          /* leader without followers: */
+          || (!app->leader->followers && app->leader == app) ||
+	  /* or a secondary window on top of the stack: */
+	  app == g_list_last (app->leader->followers)->data)
+        topmost = 1;
+      else
+        topmost = 0;
 
-	/* handle the restart case when the stack does not have any window
-	 * in the switcher yet */
+      /* handle the restart case when the stack does not have any window
+       * in the switcher yet */
 	if (app->stack_index >= 0 && !topmost)
 	  {
 	    HdTaskNavigator *tasknav;
@@ -1277,56 +1527,52 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         if (hclient->priv->app && topmost)
           hd_launcher_app_set_comp_mgr_client (hclient->priv->app, hclient);
 
-        if (app->stack_index > 0 && topmost)
+	if (to_replace && topmost)
+	  {
+            ClutterActor *old_actor;
+            old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
+			MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			  MB_WM_CLIENT (to_replace)->cm_client));
+	    if (old_actor != actor)
+	    {
+	      g_debug ("%s: REPLACE ACTOR %p WITH %p", __func__, old_actor,
+	             actor);
+              hd_switcher_replace_window_actor (priv->switcher_group,
+                                              old_actor, actor);
+              clutter_actor_hide (old_actor);
+              /* This forces the decors to be redone, taking into account the
+               * stack index. */
+              mb_wm_client_theme_change (c);
+	    }
+	  }
+	else if (add_to_tn)
+	  {
+	    g_debug ("%s: ADD ACTOR %p", __func__, actor);
+            hd_switcher_add_window_actor (priv->switcher_group, actor);
+            /* This forces the decors to be redone, taking into account the
+             * stack index. */
+            mb_wm_client_theme_change (c);
+	  }
+
+        if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar)
+	    && !to_replace && !add_to_tn && topmost)
           {
-            ClutterActor *top_actor;
-            MBWMCompMgrClutterClient *top;
-
-            if (app->stack_index == 1)
-              { /* First secondary window, the top is the leader. */
-                top = MB_WM_COMP_MGR_CLUTTER_CLIENT (
-		      	  MB_WM_CLIENT (app->leader)->cm_client);
-                top_actor = mb_wm_comp_mgr_clutter_client_get_actor (top);
-                hd_switcher_replace_window_actor (priv->switcher_group,
-                                                  top_actor, actor);
-                clutter_actor_hide (top_actor);
-              }
-            else
-              { /* Subsequent secondary, the top is the last of the followers */
-                GList *l;
-
-                /* Hide the followers and replace the last one preceeding us
-                 * in the switcher. */
-                for (l = app->leader->followers; l && l->next; l = l->next)
-                  {
-                    top = MB_WM_COMP_MGR_CLUTTER_CLIENT (
-			      MB_WM_CLIENT (l->data)->cm_client);
-                    top_actor = mb_wm_comp_mgr_clutter_client_get_actor (top);
-                    clutter_actor_hide (top_actor);
-
-                    if (l->next->data == app)
-                      { /* We should be the last of the followers. */
-                        hd_switcher_replace_window_actor (priv->switcher_group,
-                                                          top_actor, actor);
-                        g_assert (!l->next->next);
-                        break;
-                      }
-                  }
-              }
-          }
-        else if (!(c->window->ewmh_state &
-		   MBWMClientWindowEWMHStateSkipTaskbar) && topmost)
-          {
-            /* Taskbar == task switcher in our case.
-             * Introduced for systemui. */
+		  /*
+	    printf("non-stackable, stackable leader, "
+	           "or secondary acting as leader\n");
+		   */
+	    g_debug ("%s: ADD CLUTTER ACTOR %p", __func__, actor);
             hd_switcher_add_window_actor (priv->switcher_group, actor);
             /* and make sure we're in app mode and not transitioning as
              * we'll want to show this new app right away*/
             if (!STATE_IS_APP(hd_render_manager_get_state()))
               hd_render_manager_set_state(HDRM_STATE_APP);
             hd_render_manager_stop_transition();
+
+            /* This forces the decors to be redone, taking into account the
+             * stack index (if any). */
+            mb_wm_client_theme_change (c);
           }
-      }
     }
 }
 
@@ -1369,7 +1615,8 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (c_type == MBWMClientTypeNote || c_type == MBWMClientTypeDialog)
     transfor = c->transient_for;
-  else if (c->window->net_type == c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
+  else if (c->window->net_type ==
+	   c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
     transfor = hd_comp_mgr_get_client_transient_for (c);
   else
     return;
@@ -1410,7 +1657,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
           {
             /* Look if it's a stackable window. */
             HdApp *app = HD_APP (c);
-            if (app->stack_index > 0)
+            if (app->stack_index > 0 && app->leader != app)
               hd_transition_subview(hmgr, c,
                                     MB_WM_CLIENT(app->leader),
                                     MBWMCompMgrClientEventUnmap);
@@ -1605,12 +1852,13 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
     {
       MBWindowManagerClient * c = MB_WM_COMP_MGR_CLIENT (cc)->wm_client;
 
-      if (close_all && HD_IS_APP (c) && HD_APP (c)->stack_index > 0
-          && HD_APP (c)->leader)
+      if (close_all && HD_IS_APP (c) && HD_APP (c)->leader)
         {
           c = MB_WM_CLIENT (HD_APP (c)->leader);
           hd_app_close_followers (HD_APP (c));
-          mb_wm_client_deliver_delete (c);
+	  if (HD_APP (c)->leader == HD_APP (c))
+	    /* send delete to the leader */
+            mb_wm_client_deliver_delete (c);
         }
       else /* Either primary or a secondary who's lost its leader. */
         mb_wm_client_deliver_delete (c);

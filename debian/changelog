@@ -5,6 +5,7 @@ hildon-desktop (1:2.2.21-1~unreleased) unstable; urgency=low
   * Disable operator applet in edit mode. Fixes: NB#100746
   * Discard previews if there is an fullscreen application is shown. Fixes:
     NB#97230
+  * Implement full stackable window handling.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 13 Feb 2009 16:52:55 +0200
 

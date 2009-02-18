@@ -574,10 +574,10 @@ hd_transition_close_app (HdCompMgr                  *mgr,
 
   /* Don't do the unmap transition if it's a secondary. */
   app = HD_APP (c);
-  if (app->stack_index > 0)
+  if (app->stack_index > 0 && app->leader != app)
     {
       /* FIXME: Transitions. */
-      g_debug ("%s: Unmapping secondary window.\n", __FUNCTION__);
+      g_debug ("%s: Skip non-leading secondary window.", __FUNCTION__);
       return;
     }
 
