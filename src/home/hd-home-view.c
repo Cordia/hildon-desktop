@@ -1039,6 +1039,8 @@ hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
   data->press_cb = g_signal_connect (applet, "button-press-event",
                                      G_CALLBACK (hd_home_view_applet_press), view);
 
+  g_object_set_data (G_OBJECT (applet), "HD-HomeView", view);
+
   g_hash_table_insert (priv->applets,
                        applet,
                        data);

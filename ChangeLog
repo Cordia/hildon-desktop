@@ -1,5 +1,13 @@
 2009-02-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/home/hd-home-view.c (hd_home_view_add_applet): Set the view to
+	the applet data.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client): Get the view
+	from the applet data instead of iterating the hierarchy. Fix crash.
+
+2009-02-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/home/hd-home.c (hd_home_create_edit_button, hd_home_constructed,
 	  hd_home_show_edit_button): 
 	* src/mb/hd-theme.h: Replace the edit button with a themed version

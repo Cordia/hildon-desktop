@@ -876,45 +876,15 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeHomeApplet)
     {
-      ClutterActor *applet;
+      ClutterActor *applet = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
-      /* FIXME: that is broken, move to HdHomeView.
-      mb_wm_client_get_coverage (c, &geom);
-      hd_applet_layout_manager_reclaim_geometry (priv->applet_manager[view_id],
-						 layer, &geom);
-
-      */
-
-      applet = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-
+      /* Unregister applet from HomeView */
       if (applet)
         {
-          ClutterActor *parent = clutter_actor_get_parent (applet);
-          while (parent)
-            {
-              g_debug ("Parent type: %s", parent ?
-		       G_OBJECT_TYPE_NAME (parent) : "NULL");
+          HdHomeView * view = g_object_get_data (G_OBJECT (applet), "HD-HomeView");
 
-              if (parent == priv->home)
-                {
-                  /* Global applet */
-                  /* FIXME: hd_home_unregister_global_applet (HD_HOME (priv->home)); */
-
-                  g_debug ("FIXME implement unregister global applet");
-
-                  break;
-                }
-              else if (HD_IS_HOME_VIEW (parent))
-                {
-                  g_debug ("Unregister applet");
-
-                  hd_home_view_unregister_applet (HD_HOME_VIEW (parent), applet);
-
-                  break;
-                }
-
-              parent = clutter_actor_get_parent (parent);
-            }
+          if (HD_IS_HOME_VIEW (view))
+            hd_home_view_unregister_applet (view, applet);
 
           g_object_unref (applet);
         }
