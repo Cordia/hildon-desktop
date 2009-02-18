@@ -1,3 +1,9 @@
+2009-02-18  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/home/hd-render-manager.c: Don't add HD buttons to the input
+        list if they're not reactive.  In other words, clicking an HD
+        button while a system modal dialogue is up will close the dialogue.
+
 2009-02-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Implement full stackable window handling.

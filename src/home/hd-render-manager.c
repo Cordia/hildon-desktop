@@ -567,6 +567,7 @@ hd_render_manager_set_input_viewport()
           if (button &&
               CLUTTER_ACTOR_IS_VISIBLE(button) &&
               CLUTTER_ACTOR_IS_VISIBLE(clutter_actor_get_parent(button)) &&
+              CLUTTER_ACTOR_IS_REACTIVE(button) &&
               (i!=HDRM_BUTTON_BACK || !app_mode))
             {
               clutter_actor_get_geometry (button, &geom[geom_count]);
