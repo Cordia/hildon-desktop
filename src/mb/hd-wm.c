@@ -324,10 +324,7 @@ hd_wm_client_activate (
    */
   if (c == wm->desktop) 
     hd_render_manager_set_state (HDRM_STATE_HOME);
-  else if (mb_wm_client_window_is_state_set (c->window,
-			  MBWMClientWindowEWMHStateFullscreen))
-    hd_render_manager_set_state (HDRM_STATE_APP_FULLSCREEN);
-  else
+  else if (HD_IS_APP (c))
     hd_render_manager_set_state (HDRM_STATE_APP);
 	
   return wm_class->client_activate (wm, c);

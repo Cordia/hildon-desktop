@@ -1,3 +1,12 @@
+2009-02-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Regression fix.
+
+	* src/mb/hd-wm.c (hd_wm_client_activate):
+	  Don't leave the current state if the activated client is not a HdApp.
+	  This is because in switcher view programs are free to create dialogs etc.
+	  and we don't want to leave the view in this case.
+
 2009-02-18  Alejandro Pinheiro <apinheiro@igalia.com>
 
 	* src/a11y/launcher/hda-launcher-grid.c
