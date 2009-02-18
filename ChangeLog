@@ -1,3 +1,12 @@
+2009-02-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home.c (hd_home_create_edit_button, hd_home_constructed,
+	  hd_home_show_edit_button): 
+	* src/mb/hd-theme.h: Replace the edit button with a themed version
+	  without any text. Fixes: NB#90289, NB#101918
+
+	* debian/changelog: Update.
+
 2009-02-18  Alejandro Pinheiro <apinheiro@igalia.com>
 
 	* src/a11y/launcher/hda-launcher-grid.c: simplified after CAIL changes

@@ -36,6 +36,8 @@
 #include "hd-gtk-utils.h"
 #include "hd-home-applet.h"
 #include "hd-render-manager.h"
+#include "hd-clutter-cache.h"
+#include "hd-theme.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -455,13 +457,48 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
   return False;
 }
 
+static ClutterActor *
+hd_home_create_edit_button (void)
+{
+  ClutterActor *edit_button;
+  ClutterActor *bg_left, *bg_center, *bg_right, *icon;
+  ClutterGeometry geom = { 0, };
+
+  edit_button = clutter_group_new ();
+
+  /* Load textures */
+  bg_left = hd_clutter_cache_get_texture (HD_THEME_IMG_BUTTON_LEFT_HALF, TRUE);
+  bg_right = hd_clutter_cache_get_texture (HD_THEME_IMG_BUTTON_RIGHT_HALF, TRUE);
+  icon = hd_clutter_cache_get_texture (HD_THEME_IMG_EDIT_ICON, TRUE);
+
+  /* Cut out the half of the texture */
+  geom.width = clutter_actor_get_width (icon) / 2;
+  geom.height = clutter_actor_get_height (icon);
+  bg_center = hd_clutter_cache_get_sub_texture (HD_THEME_IMG_LEFT_ATTACHED, TRUE, &geom);
+
+  /* Add textures to edit button */
+  clutter_container_add (CLUTTER_CONTAINER (edit_button),
+                         bg_left, bg_center, bg_right, icon, NULL);
+
+  /* Layout textures */
+  clutter_actor_set_position (bg_left, 0, 0);
+  clutter_actor_set_position (bg_center, clutter_actor_get_width (bg_left), 0);
+  clutter_actor_set_position (bg_right, clutter_actor_get_width (bg_left) + clutter_actor_get_width (bg_center), 0);
+
+  /* Icon is centered on top the button */
+  clutter_actor_set_position (icon,
+                              (clutter_actor_get_width (edit_button) - clutter_actor_get_width (icon)) / 2,
+                              0);
+
+  return edit_button;
+}
+
 static void
 hd_home_constructed (GObject *object)
 {
   HdHomePrivate   *priv = HD_HOME (object)->priv;
   ClutterActor    *edit_group;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-  GError          *error = NULL;
   ClutterColor     clr = {0,0,0,0xff};
   XSetWindowAttributes attr;
   GtkIconTheme	  *icon_theme;
@@ -492,10 +529,7 @@ hd_home_constructed (GObject *object)
                           priv->xheight);
   clutter_actor_show (priv->view_container);
 
-  priv->edit_button = clutter_texture_new_from_file (
-			g_build_filename (HD_DATADIR, EDIT_BUTTON, NULL),
-	                &error);
-
+  priv->edit_button = hd_home_create_edit_button ();
   clutter_actor_hide (priv->edit_button);
   clutter_actor_set_reactive (priv->edit_button, TRUE);
 
@@ -987,7 +1021,7 @@ hd_home_show_edit_button (HdHome *home)
 
   clutter_actor_get_size (priv->edit_button, &button_width, &button_height);
 
-  x = priv->xwidth / 4 + priv->xwidth / 2;
+  x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
 
   clutter_actor_set_position (priv->edit_button,
                                 x,

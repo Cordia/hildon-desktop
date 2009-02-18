@@ -54,6 +54,12 @@
 #define HD_THEME_IMG_PROGRESS_SIZE 48 /* width/height of frame */
 #define HD_THEME_IMG_PROGRESS_FRAMES 8 /*frames in animation */
 #define HD_THEME_IMG_PROGRESS_FPS 5 /*frames per second */
+
+/* Edit Button */
+#define HD_THEME_IMG_EDIT_ICON "wmEditIcon.png"
+#define HD_THEME_IMG_BUTTON_LEFT_HALF "wmButtonLeftHalf.png"
+#define HD_THEME_IMG_BUTTON_RIGHT_HALF "wmButtonRightHalf.png"
+
 /* ------------------------------------------------------------------------- */
 
 typedef struct HdThemeClass   HdThemeClass;
