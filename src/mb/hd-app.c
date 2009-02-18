@@ -40,7 +40,6 @@ hd_app_destroy (MBWMObject *this)
 static int
 hd_app_init (MBWMObject *this, va_list vap)
 {
-#if 0  /* FIXME */
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
   MBWindowManager       *wm = client->wmref;
   MBWMClientWindow      *win = client->window;
@@ -72,7 +71,6 @@ hd_app_init (MBWMObject *this, va_list vap)
 	  client->stacking_layer = trans_parent->stacking_layer;
 	}
     }
-#endif
 
   return 1;
 }
