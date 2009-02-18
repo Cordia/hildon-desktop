@@ -23,27 +23,19 @@
 
 #include <cail/cail.h>
 
-#include "launcher/hd-launcher-page.h"
-#include "launcher/hd-launcher-grid.h"
-#include "launcher/hd-launcher-tile.h"
+#include "home/hd-home.h"
 
 #include "hda-factory.h"
-#include "hda-launcher-page.h"
-#include "hda-launcher-grid.h"
-#include "hda-launcher-tile.h"
 
-#include "hda-launcher.h"
+#include "hda-home-init.h"
+#include "hda-home.h"
 
 /* factories initialization*/
-HDA_ACCESSIBLE_FACTORY (HDA_TYPE_LAUNCHER_PAGE, hda_launcher_page, hda_launcher_page_new)
-HDA_ACCESSIBLE_FACTORY (HDA_TYPE_LAUNCHER_GRID, hda_launcher_grid, hda_launcher_grid_new)
-HDA_ACCESSIBLE_FACTORY (HDA_TYPE_LAUNCHER_TILE, hda_launcher_tile, hda_launcher_tile_new)
+HDA_ACCESSIBLE_FACTORY (HDA_TYPE_HOME, hda_home, hda_home_new)
 
 void
-hda_launcher_accessibility_init (void)
+hda_home_accessibility_init (void)
 {
-  HDA_ACTOR_SET_FACTORY (HD_TYPE_LAUNCHER_PAGE, hda_launcher_page);
-  HDA_ACTOR_SET_FACTORY (HD_TYPE_LAUNCHER_GRID, hda_launcher_grid);
-  HDA_ACTOR_SET_FACTORY (HD_TYPE_LAUNCHER_TILE, hda_launcher_tile);
+  HDA_ACTOR_SET_FACTORY (HD_TYPE_HOME, hda_home);
 }
 

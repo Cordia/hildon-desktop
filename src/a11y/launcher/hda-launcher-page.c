@@ -30,7 +30,7 @@
  * In particular it exposes the #HdLauncherGrid object inside.
  */
 
-#include "cail/cail-actor.h"
+#include <cail/cail-actor.h>
 
 #include "launcher/hd-launcher-page.h"
 #include "hda-launcher-page.h"
@@ -124,7 +124,7 @@ hda_launcher_page_ref_child                     (AtkObject *obj,
 
   g_return_val_if_fail (HDA_IS_LAUNCHER_PAGE (obj), NULL);
 
-  page = CAIL_ACTOR (obj)->actor;
+  page = CLUTTER_ACTOR (atk_gobject_accessible_get_object (ATK_GOBJECT_ACCESSIBLE (obj)));
   if (page == NULL) /* State is defunct */
     {
       return NULL;

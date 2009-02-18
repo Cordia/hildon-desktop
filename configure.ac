@@ -126,6 +126,7 @@ src/tidy/Makefile
 src/util/Makefile
 src/a11y/Makefile
 src/a11y/launcher/Makefile
+src/a11y/home/Makefile
 data/Makefile
 data/icons/Makefile
 data/icons/48x48/Makefile

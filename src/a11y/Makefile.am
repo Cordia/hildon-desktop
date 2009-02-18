@@ -1,8 +1,9 @@
-SUBDIRS = launcher
+SUBDIRS = launcher home
 
 INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
-MY_LIBS =	$(top_builddir)/src/a11y/launcher/libhdalauncher.la
+MY_LIBS =	$(top_builddir)/src/a11y/launcher/libhdalauncher.la \
+		$(top_builddir)/src/a11y/home/libhdahome.la
 
 
 a11y_h =	hildon-desktop-a11y.h \

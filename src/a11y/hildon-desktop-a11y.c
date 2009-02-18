@@ -24,9 +24,11 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 
+#include <cail/cail.h>
+
 #include "hildon-desktop-a11y.h"
-#include "cail/cail.h"
 #include "launcher/hda-launcher.h"
+#include "home/hda-home-init.h"
 
 static gboolean
 _a11y_invoke_module                    (const char   *libname,
@@ -108,6 +110,7 @@ hildon_desktop_a11y_init (void)
 
   /* Init the concrete steps */
   hda_launcher_accessibility_init ();
+  hda_home_accessibility_init ();
 
   /* atk-bridge */
   _a11y_invoke_module ("libatk-bridge", TRUE);

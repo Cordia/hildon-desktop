@@ -1,3 +1,18 @@
+2009-02-18  Alejandro Pinheiro <apinheiro@igalia.com>
+
+	* src/a11y/launcher/hda-launcher-grid.c
+	* src/a11y/launcher/hda-launcher-page.c
+	* src/a11y/launcher/hda-launcher-tile.c
+	Changes required after some CAIL API changes
+
+	* src/a11y/Makefile.am
+	* src/a11y/hildon-desktop-a11y.c
+	* configure.ac
+	* src/a11y/home: new directory
+	* src/a11y/home/hda-home.[ch]: new files
+	* src/a11y/home/hda-home-init.[ch]: new files
+	Added a11y support for HdHome object (HdaHome)
+
 2009-02-18  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Asynchronous application prestarting.

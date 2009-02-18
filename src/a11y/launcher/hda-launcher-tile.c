@@ -23,13 +23,13 @@
 
 /**
  * SECTION:hda-launcher-tile
- * @short_description: Implementation of the ATK interfaces for a #HdLauncherGroup
+ * @short_description: Implementation of the ATK interfaces for a #HdLauncherTile
  * @see_also: #HdLauncherTile
  *
  * #HdaLauncherTile implements the required ATK interfaces of #HdLauncherTile
  */
 
-#include "cail/cail-actor.h"
+#include <cail/cail-actor.h>
 
 #include "launcher/hd-launcher-tile.h"
 #include "hda-launcher-tile.h"
@@ -111,7 +111,7 @@ hda_launcher_tile_get_name                      (AtkObject *obj)
     {
       ClutterActor *actor = NULL;
 
-      actor = CAIL_ACTOR (obj)->actor;
+      actor = CLUTTER_ACTOR (atk_gobject_accessible_get_object (ATK_GOBJECT_ACCESSIBLE (obj)));
       name = hd_launcher_tile_get_icon_name (HD_LAUNCHER_TILE (actor));
     }
 
@@ -130,7 +130,7 @@ hda_launcher_tile_get_description               (AtkObject *obj)
     {
       ClutterActor *actor = NULL;
 
-      actor = CAIL_ACTOR (obj)->actor;
+      actor = CLUTTER_ACTOR (atk_gobject_accessible_get_object (ATK_GOBJECT_ACCESSIBLE (obj)));
       description = hd_launcher_tile_get_text (HD_LAUNCHER_TILE (actor));
     }
 

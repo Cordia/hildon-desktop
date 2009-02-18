@@ -30,7 +30,7 @@
  * In particular it exposes the #HdLauncherGrid object inside.
  */
 
-#include "cail/cail-actor.h"
+#include <cail/cail-actor.h>
 
 #include "launcher/hd-launcher-grid.h"
 #include "hda-launcher-grid.h"
@@ -115,8 +115,8 @@ hda_launcher_grid_get_n_children                (AtkObject *obj)
   gint num = 0;
 
   g_return_val_if_fail (HDA_IS_LAUNCHER_GRID (obj), 0);
-  actor = CAIL_ACTOR(obj)->actor;
 
+  actor = CLUTTER_ACTOR (atk_gobject_accessible_get_object (ATK_GOBJECT_ACCESSIBLE (obj)));
   if (actor == NULL)
     {
       return 0;
@@ -145,7 +145,8 @@ hda_launcher_grid_ref_child                     (AtkObject *obj,
 
   g_return_val_if_fail (HDA_IS_LAUNCHER_GRID (obj), NULL);
 
-  grid = CAIL_ACTOR (obj)->actor;
+  grid = CLUTTER_ACTOR (atk_gobject_accessible_get_object (ATK_GOBJECT_ACCESSIBLE (obj)));
+
   if (grid == NULL) /* State is defunct */
     {
       return NULL;
