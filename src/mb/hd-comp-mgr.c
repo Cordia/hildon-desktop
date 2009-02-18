@@ -579,7 +579,7 @@ void
 hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
                                   int count)
 {
-  XserverRegion      region, subtract;
+  XserverRegion      region;
   Window             overlay;
   Window             clutter_window;
   MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
@@ -619,10 +619,18 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
     region = XFixesCreateRegion (wm->xdpy, NULL, 0);
 
   /* we must subtract the regions for any dialogs + notifications
-   * from this input mask... */
-  subtract = hd_comp_mgr_get_foreground_region(hmgr,
-      MBWMClientTypeNote | MBWMClientTypeDialog);
-  XFixesSubtractRegion (wm->xdpy, region, region, subtract);
+   * from this input mask... if we are in the position of showin
+   * any of them */
+  if (STATE_ONE_OF (hd_render_manager_get_state (),
+                    HDRM_STATE_APP | HDRM_STATE_HOME))
+    {
+      XserverRegion subtract;
+
+      subtract = hd_comp_mgr_get_foreground_region(hmgr,
+          MBWMClientTypeNote | MBWMClientTypeDialog);
+      XFixesSubtractRegion (wm->xdpy, region, region, subtract);
+      XFixesDestroyRegion (xdpy, subtract);
+    }
 
   XFixesSetWindowShapeRegion (xdpy,
                               overlay,
@@ -662,7 +670,6 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
                               region);
 
   XFixesDestroyRegion (xdpy, region);
-  XFixesDestroyRegion (xdpy, subtract);
 }
 
 static void
@@ -1872,10 +1879,12 @@ dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
 void
 hd_comp_mgr_dump_debug_info (const gchar *tag)
 {
-  int revert;
   Window focus;
   MBWMRootWindow *root;
   MBWindowManagerClient *mbwmc;
+  int i, revert, ninputshapes, unused;
+  XRectangle *inputshape;
+  ClutterActor *stage;
 
   if (tag)
     g_debug ("%s", tag);
@@ -1883,24 +1892,40 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
   g_debug ("Windows:");
   root = mb_wm_root_window_get (NULL);
   mb_wm_stack_enumerate_reverse (root->wm, mbwmc)
-    g_debug (" client=%p, type=%d, trfor=%p, layer=%d, win=0x%lx, group=0x%lx, name=%s",
-             mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc),
-             mbwmc->transient_for, mbwmc->stacking_layer,
-             mbwmc && mbwmc->window ? mbwmc->window->xwindow : 0,
-             mbwmc && mbwmc->window ? mbwmc->window->xwin_group : 0,
-             mbwmc && mbwmc->window ? mbwmc->window->name : "<unset>");
+    {
+      MBGeometry geo;
+
+      geo = mbwmc->window ? mbwmc->window->geometry : mbwmc->frame_geometry;
+      g_debug (" client=%p, type=%d, size=%dx%d%+d%+d, trfor=%p, layer=%d, "
+               "win=0x%lx, group=0x%lx, name=%s",
+               mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc), MBWM_GEOMETRY (&geo),
+               mbwmc->transient_for, mbwmc->stacking_layer,
+               mbwmc->window ? mbwmc->window->xwindow : 0,
+               mbwmc->window ? mbwmc->window->xwin_group : 0,
+               mbwmc->window ? mbwmc->window->name : "<unset>");
+    }
   mb_wm_object_unref (MB_WM_OBJECT (root));
 
+  g_debug ("input:");
   XGetInputFocus (clutter_x11_get_default_display (), &focus, &revert);
-  g_debug ("input focus: 0x%lx", focus);
+  g_debug ("  focus: 0x%lx", focus);
   if (revert == RevertToParent)
-    g_debug ("input focus reverts to parent");
+    g_debug ("  reverts to parent");
   else if (revert == RevertToPointerRoot)
-    g_debug ("input focus reverts to pointer root");
+    g_debug ("  reverts to pointer root");
   else if (revert == RevertToNone)
-    g_debug ("input focus reverts to none");
+    g_debug ("  reverts to none");
   else
-    g_debug ("input focus reverts to %d", revert);
+    g_debug ("  reverts to %d", revert);
+
+  g_debug ("  shape:");
+  stage = clutter_stage_get_default ();
+  inputshape = XShapeGetRectangles(root->wm->xdpy,
+                   clutter_x11_get_stage_window (CLUTTER_STAGE (stage)),
+                   ShapeInput, &ninputshapes, &unused);
+  for (i = 0; i < ninputshapes; i++)
+    g_debug ("    %dx%d%+d%+d", MBWM_GEOMETRY(&inputshape[i]));
+  XFree(inputshape);
 
   dump_clutter_actor_tree (clutter_stage_get_default (), NULL);
   hd_app_mgr_dump_app_list (TRUE);

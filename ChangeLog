@@ -1,5 +1,19 @@
 2009-02-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Regression fix, debugging features.
+
+	* src/mb/hd-comp-mgr.c:
+	  hd_comp_mgr_setup_input_viewport():
+	    Only consider subtracting the territory of foreground windows
+	    in application and home views.  Doing so in tasw view opens
+	    up the possibility of interaction with the thumbnail contents
+	    with the pointer, which is fun but incorrect.
+	  hd_comp_mgr_dump_debug_info():
+	    Dump client window geometries.
+	    Dump the input shape.
+
+2009-02-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Task navigator cleanups.
 
 	* src/home/hd-render-manager.h
