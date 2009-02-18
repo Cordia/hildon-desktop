@@ -1,7 +1,7 @@
 2009-02-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Add missing
-	hd_render_manager_stop_transition call when adding new actor to the
+	hd_render_manager_stop_transition calls when adding new actor to the
 	task navigator.
 
 2009-02-18  Jan Arne Petersen  <jpetersen@openismus.com>
