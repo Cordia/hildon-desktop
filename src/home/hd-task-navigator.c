@@ -15,8 +15,9 @@
  *
  * Thumbnail.thwin hierarchy:
  *   .prison                  #ClutterGroup
- *     .apwin                 #ClutterActor
- *     .dialogs               #ClutterActor
+ *     .windows               #ClutterGroup
+ *       .apwin               #ClutterActor
+ *       .dialogs             #ClutterActor
  *     .video                 #ClutterTexture
  *   .foreground              #ClutterCloneTexture
  *   .title                   #ClutterLabel or #ClutterGroup
@@ -35,9 +36,9 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <clutter/clutter.h>
-#include <cogl/cogl.h>
 #include <tidy/tidy-finger-scroll.h>
 
 #include <matchbox/core/mb-wm.h>
@@ -47,21 +48,24 @@
 #include "hildon-desktop.h"
 #include "hd-atoms.h"
 #include "hd-comp-mgr.h"
-#include "hd-gtk-utils.h"
 #include "hd-task-navigator.h"
 #include "hd-scrollable-group.h"
 #include "hd-switcher.h"
 #include "hd-render-manager.h"
 #include "hd-title-bar.h"
 
-#ifdef g_return_if_fail
-#undef g_return_if_fail
-#endif
-#define g_return_if_fail(X) if (!(X)) return
-
 /* Standard definitions {{{ */
 #undef  G_LOG_DOMAIN
-#define G_LOG_DOMAIN "hd-task-navigator"
+#define G_LOG_DOMAIN                    "hd-task-navigator"
+
+/* If g_return_*_if_fail() are disabled (as in the default configuration)
+ * replace them with g_assert() to have something at least. */
+#ifdef G_DISABLE_CHECKS
+# undef  g_return_if_fail
+# define g_return_if_fail               g_assert
+# undef  g_return_val_if_fail
+# define g_return_val_if_fail           g_assert
+#endif
 
 /* Measures (in pixels).  Unless indicated, none of them is tunable. */
 /* Common platform metrics */
@@ -185,7 +189,8 @@ typedef struct
    * -- @hdnote:               The notification's client window, which
    *                           has the texture to be shown.
    * -- @destination:          Which application @hdnote belongs to;
-   *                           needs to be XFree()d.
+   *                           needs to be XFree()d.  Compared to
+   *                           Thumbnail.class_hint.
    * -- @notewin:              @Navigator_area's actor and event responder.
    * -- @hdnote_changed_cb_id: %HdNoteSignalChanged callback id.
    */
@@ -200,12 +205,27 @@ typedef struct
 {
   /*
    * -- @thwin:       @Navigator_area's thumbnail window and event responder.
-   * -- @prison:      Clips, scales and positions @apwin.
+   * -- @prison:      Clips, scales and positions @windows and its contents.
+   * -- @windows:     Just 0-dimension container for @apwin and @dialogs,
+   *                  its sole purpose is to make it easier to hide them
+   *                  when the %Thumbnail has a @video.
+   * -- @dialogs:     The application's dialogs, popup menus and whatsnot
+   *                  if it has or had any earlier, otherwise %NULL.
+   *                  They are shown along with .apwin.  Hidden if
+   *                  we have a .video.
+   */
+  ClutterActor        *thwin, *prison, *windows;
+  GPtrArray           *dialogs;
+
+  /*
    * -- @foreground:  Scaled decoration created from @Master_foreground
    *                  covering the whole thumbnail.  Faded when zooming.
    * -- @close:       The cross in the top-right corner created from
    *                  @Master_close.  Anchored in the middle.
-   *
+   */
+  ClutterActor        *foreground, *close;
+
+  /*
    * -- @title:       What to put in the thumbnail's title area.
    *                  Faded in/out when zooming.
    * -- @title_icon:  If the title is a notification (@hdnote is set)
@@ -219,43 +239,45 @@ typedef struct
    *                  is removed while the client is still hibernated.
    *                  Cleared when the window actor is replaced, presumably
    *                  because it's woken up.
-   *
+   */
+  ClutterActor        *title, *title_icon, *title_text;
+  gchar               *saved_title;
+
+  /*
    * -- @apwin:       The pristine application window, not to be touched.
    *                  Hidden if we have a .video.  Its name is set to the
    *                  client's class_hint unless it had a name already.
    * -- @inapwin:     Delimits the non-decoration area in @apwin; this is
    *                  what we want to show in the navigator, not the whole
    *                  @apwin.
-   * -- @dialogs:     The application's dialogs if it has or had any earlier,
-   *                  otherwise %NULL.  They are shown along with .apwin,
-   *                  and their parent is expected to be the same as @apwin's.
-   *                  Hidden if we have a .video.
-   * -- @parent:      .apwin's (and @dialog's) original parent we took it
-   *                  away from when we entered the navigator.
    * -- @class_hint:  .apwin's XClassHint.res_class (effectively the name
    *                  of the application).  Needs to be XFree()d.
-   *
+   *                  Needed to create @title_text and also used
+   *                  to match the appropriate TNote.
+   */
+  ClutterActor        *apwin;
+  MBGeometry           inapwin;
+  gchar               *class_hint;
+
+  /*
    * -- @video_fname: Where to look for the last-frame video screenshot
    *                  for this application.  Deduced from .class_hint.
    * -- @video_mtime: The last modification time of the image loaded as
    *                  .video.  Used to decide if it should be refreshed.
    * -- @video:       The downsampled texture of the image loaded from
    *                  .video_fname or %NULL.
-   *
+   */
+  ClutterActor        *video;
+  gchar               *video_fname;
+  time_t               video_mtime;
+
+  /*
    * -- @tnote:       Notification of .apwin if it has one.  This case
    *                  .title reflects .hdnote's icon and summary.  A %TNote
    *                  is always created for a notification and the strcture
    *                  is added wather to a %Thumbnail or to @Notifications.
    */
-  ClutterActor                *thwin, *prison, *foreground, *close;
-  ClutterActor                *title, *title_icon, *title_text;
-  gchar                       *saved_title;
-  ClutterActor                *parent, *apwin, *video;
-  GPtrArray                   *dialogs;
-  const MBGeometry            *inapwin;
-  gchar                       *class_hint, *video_fname;
-  time_t                       video_mtime;
-  TNote                       *tnote;
+  TNote               *tnote;
 } Thumbnail;
 
 /* Used by add_effect_closure() to store what to call when the effect
@@ -944,9 +966,9 @@ layout_thumbs (const Layout * lout, ClutterActor * newborn)
       /* .prison is centered in the thumbnail, %MARGIN_DEFAULT
        * at both sides. */
       sxprison = (gdouble)(lout->wthumb - 2*MARGIN_DEFAULT)
-        / thumb->inapwin->width;
+        / thumb->inapwin.width;
       syprison = (gdouble)(lout->hthumb - 2*MARGIN_DEFAULT)
-        / thumb->inapwin->height;
+        / thumb->inapwin.height;
 
       /* Set the reaction area of .thwin. */
       clutter_actor_set_size (thumb->thwin, lout->wthumb, lout->hthumb);
@@ -1192,9 +1214,6 @@ need_to_load_video (Thumbnail * thumb)
 static void
 claim_win (Thumbnail * thumb)
 {
-  guint i;
-  ClutterActor *dialog;
-
   g_assert (hd_task_navigator_is_active (HD_TASK_NAVIGATOR (Navigator)));
 
   /*
@@ -1202,67 +1221,38 @@ claim_win (Thumbnail * thumb)
    * If we don't @thumb->apwin will be managed by its current parent and
    * we cannot force hiding it which would result in a full-size apwin
    * appearing in the background if it's added in switcher mode.
+   * TODO This may not be true anymore.
    */
-  thumb->parent = clutter_actor_get_parent (thumb->apwin);
-  clutter_actor_reparent(thumb->apwin, thumb->prison);
+  clutter_actor_reparent(thumb->apwin, thumb->windows);
   if (thumb->dialogs)
-      for (i = 0; i < thumb->dialogs->len; i++)
-        { /* Do the same to .dialogs; their position is already right. */
-          dialog = thumb->dialogs->pdata[i];
-          if (clutter_actor_get_parent (dialog) == thumb->parent)
-            clutter_actor_reparent(dialog, thumb->prison);
-          else /* This would be a problem when we release_win() because we're
-                * lazy and don't want to track @dialog's parent separately. */
-            g_critical ("dialog %p has unexpected parent", dialog);
-        }
+    g_ptr_array_foreach (thumb->dialogs,
+                         (GFunc)clutter_actor_reparent,
+                         thumb->windows);
 
   /* Load the video screenshot and place its actor in the hierarchy. */
   if (need_to_load_video (thumb))
     {
       g_assert (!thumb->video);
       thumb->video = load_image_fit (thumb->video_fname,
-                                     thumb->inapwin->width,
-                                     thumb->inapwin->height);
+                                     thumb->inapwin.width,
+                                     thumb->inapwin.height);
       if (thumb->video)
         {
           clutter_actor_set_name (thumb->video, "video");
           clutter_actor_set_position (thumb->video,
-                                      thumb->inapwin->x,
-                                      thumb->inapwin->y);
+                                      thumb->inapwin.x,
+                                      thumb->inapwin.y);
           clutter_container_add_actor (CLUTTER_CONTAINER (thumb->prison),
                                        thumb->video);
         }
     }
 
   if (!thumb->video)
-    {
-      /* Show @apwin just in case it isn't.  Make sure it doesn't hide
-       * our decoration. */
-      clutter_actor_show (thumb->apwin);
-      if (clutter_actor_get_reactive (thumb->apwin))
-        /* We should explicitly let the thumbnail window steal the
-         * application window's clicks (so we can switch to it),
-         * but tests show it's already non-reactive anyway. */
-        g_critical ("application window is still reactive");
-
-      if (thumb->dialogs)
-          for (i = 0; i < thumb->dialogs->len; i++)
-            {
-              dialog = thumb->dialogs->pdata[i];
-              clutter_actor_show (dialog);
-              if (clutter_actor_get_reactive (dialog))
-                g_critical ("application dialog is still reactive");
-            }
-    }
+    /* Show .windows and its contents just in case they aren't. */
+    clutter_actor_show_all (thumb->windows);
   else
-    { /* Only show @thumb->video. */
-      clutter_actor_hide (thumb->apwin);
-      if (thumb->dialogs && thumb->dialogs->len > 0)
-        { /* That sure is odd. */
-          g_warning ("apwin %p has both dialogs and video", thumb->apwin);
-          g_ptr_array_foreach (thumb->dialogs, (GFunc)clutter_actor_hide, NULL);
-        }
-    }
+    /* Only show @thumb->video. */
+    clutter_actor_hide (thumb->windows);
 
   /* Make sure @thumb->title is up-to-date. */
   if (!thumb->tnote)
@@ -1281,26 +1271,13 @@ static void
 release_win (const Thumbnail * thumb)
 {
   /* If we don't hide after reparenting, having clicked the background
-   * of the switcher .apwin will be shown in home view. */
-  clutter_actor_reparent(thumb->apwin, thumb->parent);
-  clutter_actor_hide (thumb->apwin);
-
-  /* Do the same to .dialogs. */
-  if (thumb->dialogs)
-    {
-      guint i;
-      ClutterActor *dialog;
-
-      for (i = 0; i < thumb->dialogs->len; i++)
-        { /* Make sure we managed to claim @dialog in claim_win(). */
-          dialog = thumb->dialogs->pdata[i];
-          if (clutter_actor_get_parent (dialog) == thumb->prison)
-            {
-              clutter_actor_reparent(dialog, thumb->parent);
-              clutter_actor_hide (dialog);
-            }
-        }
-    }
+   * of the switcher .apwin will be shown in home view.
+   * TODO May not be true anymore. */
+  hd_render_manager_return_app (thumb->apwin);
+  clutter_container_foreach (CLUTTER_CONTAINER (thumb->windows),
+                       (ClutterCallback)hd_render_manager_return_dialog,
+                       NULL);
+//  clutter_actor_hide (thumb->apwin);
 }
 /* Child adoption }}} */
 
@@ -1342,7 +1319,7 @@ find_by_apwin (ClutterActor * apwin)
 }
 
 /*
- * Find @dialog in one of the @Thumbnails.  If @dialog is for @removal
+ * Find @dialog in one of the @Thumbnails.  If @dialog is @for_removal
  * then its position is returned.  Otherwise @dialog is taken as the
  * parent of a dialog which is transient for @dialog and returns where
  * to insert the new dialog.  This case @dialog can be an application
@@ -1553,15 +1530,19 @@ set_thumb_title_from_tnote (Thumbnail * thumb, const TNote * tnote)
 static void
 zoom_in_complete (ClutterActor * navigator, ClutterActor * apwin)
 {
-  const Thumbnail *thumb;
+  clutter_actor_hide (navigator);
 
+#if 0 /* TODO may not be needed anymore */
   /* To minimize confusion the navigator hides all application windows it
    * knows about when it starts hiding.  Undo it for the one we have zoomed
    * inte, because it is expected to be shown. */
-  clutter_actor_hide (navigator);
+
+  const Thumbnail *thumb;
+
   clutter_actor_show (apwin);
   if ((thumb = find_by_apwin (apwin)) && thumb->dialogs)
     g_ptr_array_foreach (thumb->dialogs, (GFunc)clutter_actor_show, NULL);
+#endif
 }
 
 /*
@@ -1605,8 +1586,8 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
   clutter_effect_scale (Zoom_effect, Scroller,
                         1 / xscale, 1 / yscale, NULL, NULL);
   clutter_effect_move (Zoom_effect, Scroller,
-                       -xpos / xscale + thumb->inapwin->x,
-                       -ypos / yscale + thumb->inapwin->y,
+                       -xpos / xscale + thumb->inapwin.x,
+                       -ypos / yscale + thumb->inapwin.y,
                        NULL, NULL);
   clutter_effect_fade (Zoom_effect, thumb->foreground, 0, NULL, NULL);
   clutter_effect_fade (Zoom_effect, thumb->title,      0, NULL, NULL);
@@ -1680,8 +1661,8 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
 
   /* anchor of .prison      <- start of non-decoration area of .apwin
    * visual size of .prison <- width of non-decoration area of .apwin */
-  xscroller = thumb->inapwin->x - xprison/sxprison;
-  yscroller = thumb->inapwin->y - yprison/syprison;
+  xscroller = thumb->inapwin.x - xprison/sxprison;
+  yscroller = thumb->inapwin.y - yprison/syprison;
   sxscroller = 1 / sxprison;
   syscroller = 1 / syprison;
 
@@ -1747,16 +1728,20 @@ hd_task_navigator_replace_window (HdTaskNavigator * self,
   g_free (thumb->saved_title);
   thumb->saved_title = NULL;
 
-  /* The title is reset from claim_win() if it's changed,
-   * eg. if the window is replaced because of stacking.
-   * TODO Should we ditch .dialogs?  I guess we don't. */
+  /* Discard current .apwin. */
   showing = hd_task_navigator_is_active (self);
   if (showing)
-    release_win (thumb);
+    hd_render_manager_return_app (thumb->apwin);
   g_object_unref (thumb->apwin);
+
+  /* Embrace @new_win. */
   thumb->apwin = g_object_ref (new_win);
   if (showing)
-    claim_win (thumb);
+    { /* Don't forget to update the title. */
+      clutter_actor_reparent (thumb->apwin, thumb->windows);
+      if (!thumb->tnote)
+        reset_thumb_title (thumb);
+    }
 }
 /* Misc window commands }}} */
 
@@ -1790,12 +1775,6 @@ thwin_turned_off_1 (ClutterActor * unused, Thumbnail * thumb)
   release_win (thumb);
   clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator_area),
                                   thumb->thwin);
-  g_object_unref (thumb->apwin);
-  if (thumb->dialogs)
-    {
-      g_ptr_array_foreach (thumb->dialogs, (GFunc)g_object_unref, NULL);
-      g_ptr_array_free (thumb->dialogs, TRUE);
-    }
   g_free (thumb);
 }
 
@@ -1851,6 +1830,17 @@ thwin_close_clicked (ClutterActor * thwin, ClutterButtonEvent * event,
   return TRUE;
 }
 
+/* Set up the @thumb->inapwin-dependant properties of @thumb->prison. */
+static void
+setup_prison (const Thumbnail * thumb)
+{
+  clutter_actor_set_clip (thumb->prison,
+                          thumb->inapwin.x,     thumb->inapwin.y,
+                          thumb->inapwin.width, thumb->inapwin.height);
+  clutter_actor_set_anchor_point (thumb->prison,
+                                  thumb->inapwin.x, thumb->inapwin.y);
+}
+
 /* Fills @thumb, creating the .thwin hierarchy.  The exact position of the
  * inner actors is decided by layout_thumbs().  If there is a notewin for
  * this application it will be removed and added as the thumbnail title. */
@@ -1866,7 +1856,7 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
 
   /* @apwin related fields */
   thumb->apwin      = g_object_ref (apwin);
-  thumb->inapwin    = &mbwmcwin->geometry;
+  thumb->inapwin    = mbwmcwin->geometry;
   if (XGetClassHint (mbwmcwin->wm->xdpy, mbwmcwin->xwindow, &xwinhint))
     {
       thumb->class_hint = xwinhint.res_class;
@@ -1881,7 +1871,7 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
 
   /* .thwin */
   thumb->thwin = clutter_group_new ();
-  clutter_actor_set_name (thumb->thwin, "thwin");
+  clutter_actor_set_name (thumb->thwin, "thumbnail");
   clutter_actor_set_reactive (thumb->thwin, TRUE);
   g_signal_connect (thumb->thwin, "button-release-event",
                     G_CALLBACK (thwin_clicked), NULL);
@@ -1892,15 +1882,17 @@ create_thumb (Thumbnail * thumb, ClutterActor * apwin)
    * where the area starts. */
   thumb->prison = clutter_group_new ();
   clutter_actor_set_name (thumb->prison, "prison");
-  clutter_actor_set_clip (thumb->prison,
-                          thumb->inapwin->x,      thumb->inapwin->y,
-                          thumb->inapwin->width,  thumb->inapwin->height);
-  clutter_actor_set_anchor_point (thumb->prison,
-                                  thumb->inapwin->x, thumb->inapwin->y);
+  setup_prison (thumb);
   clutter_actor_set_position (thumb->prison,
                               MARGIN_DEFAULT, MARGIN_DEFAULT);
   clutter_container_add_actor (CLUTTER_CONTAINER (thumb->thwin),
                                thumb->prison);
+
+  /* .windows */
+  thumb->windows = clutter_group_new ();
+  clutter_actor_set_name (thumb->windows, "windows");
+  clutter_container_add_actor (CLUTTER_CONTAINER (thumb->prison),
+                               thumb->windows);
 
   /* .foreground */
   thumb->foreground = clutter_clone_texture_new (Master_foreground);
@@ -1951,24 +1943,21 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
                                  gpointer funparam)
 { g_debug (__FUNCTION__);
   guint i;
-  Thumbnail *thumb = 0;
+  Thumbnail *thumb;
   ClutterActor *newborn;
 
   /* Find @thumb for @win. */
-  for (i = 0; i < Thumbnails->len; i++)
+  for (i = 0; ; i++)
     {
-      Thumbnail *t = &g_array_index (Thumbnails, Thumbnail, i);
-      if (t->apwin == win)
-        {
-          thumb = t;
-          break;
+      if (i >= Thumbnails->len)
+        { /* Code bloat is your enemy, right? */
+          g_critical("%s: Window actor %p not found", __FUNCTION__, win);
+          return;
         }
-    }
 
-  if (!thumb)
-    {
-      g_warning("%s: Window actor %p not found", __FUNCTION__, win);
-      return;
+      thumb = &g_array_index (Thumbnails, Thumbnail, i);
+      if (thumb->apwin == win)
+        break;
     }
 
   /* If we're active let's do the TV-turned-off effect on @thumb.
@@ -2010,12 +1999,16 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
     { /* Not active, just remove .thwin. */
       clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator_area),
                                       thumb->thwin);
-      g_object_unref (thumb->apwin);
-      if (thumb->dialogs)
-        {
-          g_ptr_array_foreach (thumb->dialogs, (GFunc)g_object_unref, NULL);
-          g_ptr_array_free (thumb->dialogs, TRUE);
-        }
+    }
+
+  /* While thwin_turned_off_1() will refer to .apwin it is already safe
+   * to drop the reference. */
+  g_object_unref (thumb->apwin);
+  if (thumb->dialogs)
+    {
+      g_ptr_array_foreach (thumb->dialogs, (GFunc)g_object_unref, NULL);
+      g_ptr_array_free (thumb->dialogs, TRUE);
+      thumb->dialogs = NULL;
     }
 
   /* We don't need .class_hint even if we're doing the TV-turned-off
@@ -2089,9 +2082,8 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
 }
 
 /* Remove @dialog from its application's thumbnail
- * and don't show it anymore. Returns true if a
- * dialog if left for this window... */
-gboolean
+ * and don't show it anymore. */
+void
 hd_task_navigator_remove_dialog (HdTaskNavigator * self,
                                  ClutterActor * dialog)
 { g_debug (__FUNCTION__);
@@ -2099,14 +2091,13 @@ hd_task_navigator_remove_dialog (HdTaskNavigator * self,
   Thumbnail *thumb;
 
   if (!(thumb = find_dialog (&i, dialog, TRUE)))
-    return 0;
-
-  if (hd_task_navigator_is_active (self))
-    clutter_actor_reparent(dialog, thumb->parent);
+    return;
 
   g_object_unref (dialog);
   g_ptr_array_remove_index (thumb->dialogs, i);
-  return thumb->dialogs->len > 0;
+
+  if (hd_task_navigator_is_active (self))
+    hd_render_manager_return_dialog (dialog);
 }
 
 /*
@@ -2132,7 +2123,7 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
 
   /* Claim @dialog now if we're active. */
   if (hd_task_navigator_is_active (self))
-    clutter_actor_reparent (dialog, thumb->prison);
+    clutter_actor_reparent (dialog, thumb->windows);
 
   /* Add @dialog to @thumb->dialogs. */
   if (!thumb->dialogs)
@@ -2527,20 +2518,26 @@ screen_size_changed (void)
 {
   unsigned i;
   Layout lout;
-  const Thumbnail *thumb;
 
-  /* Updated everything that is affected by screen size.  Since the switcher
-   * doesn't support portrait mode it is only significant when the WM started
-   * right into portrait mode and it's been switched back. */
+  /*
+   * Screen size has an influence on all @Thumbnails.inapwin.
+   * This is the only time we care about changing @inapwin.
+   * Since @apwin:s are generally not resized it's only significant
+   * when the WM is started right into portrait mode and then it's
+   * switched to landscape.
+   */
   clutter_actor_set_size(Scroller, HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_SCREEN_HEIGHT);
   for (i = 0; i < Thumbnails->len; i++)
     {
+      Thumbnail *thumb;
+      const MBWMClientWindow * mbwmcwin;
+
       thumb = &g_array_index (Thumbnails, Thumbnail, i);
-      clutter_actor_set_clip (thumb->prison,
-                              thumb->inapwin->x,      thumb->inapwin->y,
-                              thumb->inapwin->width,  thumb->inapwin->height);
-      clutter_actor_set_anchor_point (thumb->prison,
-                                      thumb->inapwin->x, thumb->inapwin->y);
+      if (!(mbwmcwin = actor_to_client_window (thumb->apwin)))
+        continue;
+
+      thumb->inapwin = mbwmcwin->geometry;
+      setup_prison (thumb);
     }
 
   calc_layout (&lout);

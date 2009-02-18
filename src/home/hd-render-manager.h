@@ -181,8 +181,11 @@ gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c);
 void hd_render_manager_set_launcher_subview(gboolean subview);
 
 void hd_render_manager_return_windows(void);
+void hd_render_manager_return_app (ClutterActor *actor);
+void hd_render_manager_return_dialog (ClutterActor *actor);
+
 void hd_render_manager_restack(void);
-void hd_render_manager_place_titlebar_elements (void);
+void hd_render_manager_place_titlebar_elements(void);
 
 /* Sets whether any of the buttons will actually be set to do anything */
 void hd_render_manager_set_reactive(gboolean reactive);

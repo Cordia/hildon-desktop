@@ -1,6 +1,19 @@
+2009-02-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Task navigator cleanups.
+
+	* src/home/hd-render-manager.h
+	* src/home/hd-render-manager.c:
+	  added hd_render_manager_return_app()
+	  added hd_render_manager_return_dialog()
+	* src/home/hd-task-navigator.h
+	* src/home/hd-task-navigator.c:
+	  drop the application window's actor and its dialogs in a container
+	  to make it easier to hide them all at once
+
 2009-02-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
-	* src/mb/hd-wm.c: Applied Laslo Pere's patch for bug #95018 (switch
+	* src/mb/hd-wm.c: Applied Laszlo Pere's patch for bug #95018 (switch
 	  to app mode when application is activated). Also fixes #99100
 
 2009-02-17  Gordon Williams <gordon.williams@collabora.co.uk>

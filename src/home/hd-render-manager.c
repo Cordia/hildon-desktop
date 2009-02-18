@@ -1233,6 +1233,22 @@ void hd_render_manager_return_windows()
     }
 }
 
+/* Return @actor, an actor of a %HdApp to HDRM's care. */
+void hd_render_manager_return_app(ClutterActor *actor)
+{
+  clutter_actor_reparent(actor,
+                         CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+  clutter_actor_hide (actor);
+}
+
+/* Same for dialogs. */
+void hd_render_manager_return_dialog(ClutterActor *actor)
+{
+  clutter_actor_reparent(actor,
+                         CLUTTER_ACTOR(the_render_manager->priv->app_top));
+  clutter_actor_hide (actor);
+}
+
 /* Called to restack the windows in the way we use for rendering... */
 void hd_render_manager_restack()
 {
