@@ -1519,6 +1519,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 	  {
 	    g_debug ("%s: ADD ACTOR %p", __func__, actor);
             hd_switcher_add_window_actor (priv->switcher_group, actor);
+            hd_render_manager_stop_transition();
             /* This forces the decors to be redone, taking into account the
              * stack index. */
             mb_wm_client_theme_change (c);
