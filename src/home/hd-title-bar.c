@@ -598,12 +598,18 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
 
   if (!decor)
     {
+      HdTitleBarVisEnum state;
       /* No north decor found, or no client */
       /* we have nothing, make sure we're back to normal */
       clutter_actor_hide(CLUTTER_ACTOR(priv->title));
-      hd_title_bar_set_state(bar,
-	hd_title_bar_get_state(bar) &
-	  ~(HDTB_VIS_FULL_WIDTH | HDTB_VIS_BTN_CLOSE | HDTB_VIS_BTN_BACK));
+      if (hd_render_manager_get_state() &
+	  (HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
+        /* in Home edit mode we can have back button */
+	state = hd_title_bar_get_state(bar) & ~HDTB_VIS_FULL_WIDTH;
+      else
+	state = hd_title_bar_get_state(bar) & ~(HDTB_VIS_FULL_WIDTH |
+			         HDTB_VIS_BTN_CLOSE | HDTB_VIS_BTN_BACK);
+      hd_title_bar_set_state(bar, state);
       return;
     }
 
