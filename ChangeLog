@@ -1,3 +1,10 @@
+2009-02-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Removed checking for init_done signal before prestarting apps, as h-d wasn't
+	getting it in time.
+
+	* src/launcher/hd-app-mgr.c:
+
 2009-02-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#89949 -- removing another cool easter egg.

@@ -981,7 +981,8 @@ hd_app_mgr_state_check_loop (gpointer data)
   /* If we have enough memory and there are apps waiting to be prestarted,
    * do that.
    */
-  if (priv->init_done &&
+  if (/* TODO: Add a timeout for waiting on the init_done signal. */
+      /* priv->init_done && */
       !priv->lowmem &&
       !priv->bg_killing &&
       !priv->launcher_shown &&
