@@ -1,3 +1,9 @@
+2009-02-18  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/home/hd-render-manager.c: In addition to my previous checkin,
+	the menu button should still work when the screen is blurred
+	(since that's the only time it ever appears!)
+
 2009-02-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Applet stacking fixes.  Remedies the "applet is not activated when clicked"
