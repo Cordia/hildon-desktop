@@ -1,3 +1,15 @@
+2009-02-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Coverity warning fixes.
+
+	* src/home/hd-clutter-cache.c (hd_clutter_cache_get_real_texture):
+	Plug leaked filename_alloc in two error cases.
+	* src/home/hd-render-manager.c (hd_render_manager_sync_clutter_befo):
+	Fix coverity warning with HDRM_STATE_UNDEFINED.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client): Fix coverity
+	warning (app->leader is always non-NULL when app->stack_index >= 0
+	holds).
+
 2009-02-19  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c (hd_render_manager_update_blur_state):
@@ -12,23 +24,24 @@
 
 2009-02-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
-	Removed checking for init_done signal before prestarting apps, as h-d wasn't
-	getting it in time.
+	Removed checking for init_done signal before prestarting apps, as h-d
+	wasn't getting it in time.
 
 	* src/launcher/hd-app-mgr.c:
 
 2009-02-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#89949 -- removing another cool easter egg.
-	Activate (focus) the desktop client when going to switcher/launcher views.
-	This will naturally unfocus the current application.
+	Activate (focus) the desktop client when going to switcher/launcher
+	views. This will naturally unfocus the current application.
 
 	In addition this will enable home-call and home-contacts.
 
 	* src/home/hd-render-manager.h:
 	  Add STATE_TASK_NAV and STATE_LANUNCHER as NEED_DESKTOP.
 	* src/home/hd-home.c:
-	  Add the Input WM hint to the desktop client window to make it focusable.
+	  Add the Input WM hint to the desktop client window to make it
+	  focusable.
 	* src/home/hd-render-manager.c (hd_render_manager_set_state):
 	  Tiny cleanup.
 
@@ -40,9 +53,9 @@
 
 2009-02-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-	Applet stacking fixes.  Remedies the "applet is not activated when clicked"
-	and "invisible applet is activated when clicking on an empty desktop"
-	(aka. rodarvus-symptom) problems.
+	Applet stacking fixes.  Remedies the "applet is not activated when
+	clicked" and "invisible applet is activated when clicking on an empty
+	desktop" (aka. rodarvus-symptom) problems.
 
 	* src/mb/hd-desktop.c (hd_desktop_stack):
 	  Don't look at who is transient to the desktop but ask the active

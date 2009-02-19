@@ -757,11 +757,9 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       if (actor)
         {
-          if (HD_IS_APP (app))
-            {
 	      gboolean topmost;
 
-	      if (app->stack_index < 0 || !app->leader /* non-stackable */
+	      if (app->stack_index < 0 /* non-stackable */
 		  /* leader without secondarys: */
 	          || (!app->leader->followers && app->leader == app) ||
 	          /* or a secondary window on top of the stack: */
@@ -772,7 +770,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
               /* if we are secondary, there must be leader and probably
 	       * even followers */
-              if (app->leader && app->stack_index > 0 && app->leader != app)
+              if (app->stack_index > 0 && app->leader != app)
                 {
                   g_debug ("%s: %p is STACKABLE SECONDARY", __func__, app);
                   /* show the topmost follower and replace switcher actor
@@ -858,8 +856,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                     hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
 			                           HD_COMP_MGR_CLIENT (prev));
 		}
-            }
-
           g_object_set_data (G_OBJECT (actor),
                              "HD-MBWMCompMgrClutterClient", NULL);
         }
@@ -1442,7 +1438,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       hd_comp_mgr_handle_stackable (c, &to_replace, &add_to_tn);
 
-      if (app->stack_index < 0 || !app->leader /* non-stackable */
+      if (app->stack_index < 0 /* non-stackable */
           /* leader without followers: */
           || (!app->leader->followers && app->leader == app) ||
 	  /* or a secondary window on top of the stack: */

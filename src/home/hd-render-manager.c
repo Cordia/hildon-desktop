@@ -617,8 +617,8 @@ void hd_render_manager_sync_clutter_before ()
   switch (priv->state)
     {
       case HDRM_STATE_UNDEFINED:
-        g_warning("%s: NEVER supposed to be in HDRM_STATE_UNDEFINED",
-                  __FUNCTION__);
+        g_error("%s: NEVER supposed to be in HDRM_STATE_UNDEFINED", __func__);
+	return;
       case HDRM_STATE_HOME:
         if (hd_task_navigator_is_empty(priv->task_nav))
           visible_top_left = HDRM_BUTTON_LAUNCHER;
