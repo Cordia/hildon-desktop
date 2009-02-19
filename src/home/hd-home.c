@@ -501,6 +501,7 @@ hd_home_constructed (GObject *object)
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   ClutterColor     clr = {0,0,0,0xff};
   XSetWindowAttributes attr;
+  XWMHints         wmhints;
   GtkIconTheme	  *icon_theme;
 
   icon_theme = gtk_icon_theme_get_default ();
@@ -598,12 +599,15 @@ hd_home_constructed (GObject *object)
   /*
    * Create an InputOnly desktop window; we have a custom desktop client that
    * that will automatically wrap it, ensuring it is located in the correct
-   * place.
+   * place.  Make this window focusable ("Input" WM hint) so
+   * hd_home_desktop_key_press() will actually work.
    */
   attr.event_mask = MBWMChildMask |
     ButtonPressMask | ButtonReleaseMask |
     PointerMotionMask | ExposureMask |
     KeyPressMask;
+  wmhints.input = True;
+  wmhints.flags = InputHint;
 
   priv->desktop = XCreateWindow (wm->xdpy,
 				 wm->root_win->xwindow,
@@ -616,6 +620,7 @@ hd_home_constructed (GObject *object)
 				 CopyFromParent,
 				 CWEventMask,
 				 &attr);
+  XSetWMHints (wm->xdpy, priv->desktop, &wmhints);
   mb_wm_rename_window (wm, priv->desktop, "desktop");
 
   XChangeProperty (wm->xdpy, priv->desktop,

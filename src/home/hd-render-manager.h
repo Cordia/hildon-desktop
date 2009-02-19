@@ -93,11 +93,13 @@ typedef enum
 /* Does the desktop need to be above apps? */
 #define STATE_ONE_OF(state, states) (((state) & (states)) != 0)
 
+/* While the task switcher grabs all applications it still needs the desktop
+ * (focused) because otherwise hardware keyboard (quick dialing and contacts)
+ * won't work in switcher/launcher views. */
 #define STATE_NEED_DESKTOP(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_HOME_EDIT_DLG | HDRM_STATE_LAUNCHER)
-/* Task Navigator doesn't need the desktop because it grabs all
- * applications anyway */
+                    HDRM_STATE_HOME_EDIT_DLG | HDRM_STATE_LAUNCHER | \
+                    HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
 
 #define STATE_NEED_GRAB(s) \
   STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \

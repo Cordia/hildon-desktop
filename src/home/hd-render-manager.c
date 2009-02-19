@@ -1087,7 +1087,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           g_debug("%s: show_desktop %s",
                   __FUNCTION__, show?"TRUE":"FALSE");
 
-          mb_wm_handle_show_desktop(MB_WM_COMP_MGR(priv->comp_mgr)->wm, show);
+          mb_wm_handle_show_desktop(wm, show);
         }
 
       /* we always need to restack here */
