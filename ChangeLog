@@ -1,5 +1,11 @@
 2009-02-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
+	Added misc debug output of prestarting process.
+
+	* src/launcher/hd-app-mgr.c:
+
+2009-02-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
 	Removed checking for init_done signal before prestarting apps, as h-d wasn't
 	getting it in time.
 

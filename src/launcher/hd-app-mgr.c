@@ -211,7 +211,7 @@ static DBusHandlerResult hd_app_mgr_signal_handler (DBusConnection *conn,
                                                     DBusMessage *msg,
                                                     void *data);
 
-static void hd_app_mgr_get_app_pid (HdLauncherApp *app);
+static void hd_app_mgr_request_app_pid (HdLauncherApp *app);
 
 /* The HdLauncher singleton */
 static HdAppMgr *the_app_mgr = NULL;
@@ -511,12 +511,15 @@ hd_app_mgr_launch (HdLauncherApp *app)
     {
       result = hd_app_mgr_service_top (service, NULL);
       if (result)
-        hd_app_mgr_get_app_pid (app);
+        {
+          if (!hd_launcher_app_get_pid (app))
+            hd_app_mgr_request_app_pid (app);
 
-      /* As the app has been manually launched, stop considering it
-       * for prestarting.
-       */
-      hd_app_mgr_not_prestartable (app);
+          /* As the app has been manually launched, stop considering it
+           * for prestarting.
+           */
+          hd_app_mgr_not_prestartable (app);
+        }
     }
   else
     {
@@ -623,9 +626,11 @@ _hd_app_mgr_prestart_cb (DBusGProxy *proxy, guint result,
     }
   else
     {
+      g_debug ("%s: %s prestarted\n", __FUNCTION__,
+          hd_launcher_app_get_service (app));
       hd_launcher_app_set_state (app, HD_APP_STATE_PRESTARTED);
       hd_app_mgr_add_to_queue (QUEUE_PRESTARTED, app);
-      hd_app_mgr_get_app_pid (app);
+      hd_app_mgr_request_app_pid (app);
     }
 }
 
@@ -646,6 +651,8 @@ hd_app_mgr_prestart (HdLauncherApp *app)
 
   hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
 
+  g_debug ("%s: Starting to prestart %s\n", __FUNCTION__,
+           service);
   org_freedesktop_DBus_start_service_by_name_async (priv->dbus_proxy,
       service, 0,
       _hd_app_mgr_prestart_cb, (gpointer)app);
@@ -684,7 +691,7 @@ hd_app_mgr_wakeup   (HdLauncherApp *app)
   res = hd_app_mgr_service_top (service, "RESTORE");
   if (res) {
     hd_app_mgr_remove_from_queue (QUEUE_HIBERNATED, app);
-    hd_app_mgr_get_app_pid (app);
+    hd_app_mgr_request_app_pid (app);
     hd_launcher_app_set_state (app, HD_APP_STATE_LOADING);
   }
 
@@ -807,6 +814,8 @@ hd_app_mgr_service_top (const gchar *service, const gchar *param)
       return FALSE;
     }
 
+  g_debug ("%s: service: %s, param: %s", __FUNCTION__,
+           service, param ? param : "null");
   dbus_message_unref (msg);
   return TRUE;
 }
@@ -1022,8 +1031,6 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
   GList *items;
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
 
-  g_debug ("%s: name: %s old: %s new: %s\n", __FUNCTION__, name, old_owner, new_owner);
-
   /* Check only disconnections. */
   if (strcmp(new_owner, ""))
     return;
@@ -1040,6 +1047,8 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
 
           if (!g_strcmp0 (name, hd_launcher_app_get_service (app)))
             {
+              g_debug ("%s: App %s has fallen\n", __FUNCTION__,
+                  hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
               /* We have the correct app, deal accordingly. */
 
               /* The app must have been hibernated or closed. */
@@ -1121,7 +1130,7 @@ hd_app_mgr_signal_handler (DBusConnection *conn,
 }
 
 static void
-_hd_app_mgr_get_app_pid_cb (DBusGProxy *proxy, guint pid,
+_hd_app_mgr_request_app_pid_cb (DBusGProxy *proxy, guint pid,
     GError *error, gpointer data)
 {
   HdLauncherApp *app = HD_LAUNCHER_APP (data);
@@ -1133,11 +1142,13 @@ _hd_app_mgr_get_app_pid_cb (DBusGProxy *proxy, guint pid,
       return;
     }
 
+  g_debug ("%s: Got pid %d for %s\n", __FUNCTION__,
+           pid, hd_launcher_app_get_service (app));
   hd_launcher_app_set_pid (app, pid);
 }
 
 static void
-hd_app_mgr_get_app_pid (HdLauncherApp *app)
+hd_app_mgr_request_app_pid (HdLauncherApp *app)
 {
   DBusGProxy *proxy = (HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get()))->dbus_proxy;
   const gchar *service = hd_launcher_app_get_service (app);
@@ -1150,7 +1161,7 @@ hd_app_mgr_get_app_pid (HdLauncherApp *app)
 
   org_freedesktop_DBus_get_connection_unix_process_id_async (proxy,
       service,
-      _hd_app_mgr_get_app_pid_cb, (gpointer)app);
+      _hd_app_mgr_request_app_pid_cb, (gpointer)app);
 }
 
 HdLauncherApp *
