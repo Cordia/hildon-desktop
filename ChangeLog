@@ -1,3 +1,8 @@
+2009-02-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c (hd_task_navigator_add_dialog):
+	  Don't abort on error but emulate g_return_if_fail in five lines of code.
+
 2009-02-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Coverity warning fixes.

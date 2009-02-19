@@ -63,8 +63,6 @@
 #ifdef G_DISABLE_CHECKS
 # undef  g_return_if_fail
 # define g_return_if_fail               g_assert
-# undef  g_return_val_if_fail
-# define g_return_val_if_fail           g_assert
 #endif
 
 /* Measures (in pixels).  Unless indicated, none of them is tunable. */
@@ -2117,7 +2115,11 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
   Thumbnail *thumb;
 
   /* Already have @dialog?  If not, find its place. */
-  g_return_if_fail (!find_dialog (NULL, dialog, FALSE));
+  if (find_dialog (NULL, dialog, FALSE))
+    {
+      g_critical ("fuck");
+      return;
+    }
   if (!(thumb = find_dialog (&i, parent, FALSE)))
       return;
 
