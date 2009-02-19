@@ -567,31 +567,33 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
   gboolean pressed = FALSE;
   MBWMList *l;
   HdTitleBarPrivate *priv;
-  gboolean is_waiting;
+  gboolean is_waiting = FALSE;
 
   if (!HD_IS_TITLE_BAR(bar))
     return;
+
   priv = bar->priv;
 
   if (client != NULL)
     {
       c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
 
-        if (MB_WM_CLIENT_CLIENT_TYPE (client) != MBWMClientTypeApp)
-          {
-            g_critical("%s: should only be called on MBWMClientTypeApp", __FUNCTION__);
-            return;
-          }
+      if (MB_WM_CLIENT_CLIENT_TYPE (client) != MBWMClientTypeApp)
+        {
+          g_critical("%s: should only be called on MBWMClientTypeApp",
+		     __FUNCTION__);
+          return;
+        }
 
-        is_waiting = hd_decor_window_is_waiting(client->wmref,
-                                                client->window->xwindow);
+      is_waiting = hd_decor_window_is_waiting(client->wmref,
+                                              client->window->xwindow);
 
-        for (l = client->decor;l;l = l->next)
-          {
-            MBWMDecor *d = l->data;
-            if (d->type == MBWMDecorTypeNorth)
-              decor = d;
-          }
+      for (l = client->decor; l; l = l->next)
+        {
+          MBWMDecor *d = l->data;
+          if (d->type == MBWMDecorTypeNorth)
+            decor = d;
+        }
     }
 
   if (!decor)
@@ -600,7 +602,8 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
       /* we have nothing, make sure we're back to normal */
       clutter_actor_hide(CLUTTER_ACTOR(priv->title));
       hd_title_bar_set_state(bar,
-          hd_title_bar_get_state(bar) & (~HDTB_VIS_FULL_WIDTH));
+	hd_title_bar_get_state(bar) &
+	  ~(HDTB_VIS_FULL_WIDTH | HDTB_VIS_BTN_CLOSE | HDTB_VIS_BTN_BACK));
       return;
     }
 

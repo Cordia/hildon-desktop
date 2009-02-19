@@ -213,7 +213,6 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
   int                    stack_i = -1;
   HdApp                 *app = NULL;
 
-
   if (MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeApp)
     {
       app = HD_APP (client);
@@ -331,6 +330,9 @@ hd_theme_create_decor (MBWMTheme             *theme,
   HdDecor         *decor = NULL;
   MBWindowManager *wm = client->wmref;
   MBWMXmlClient   *c;
+
+  if (client->window->undecorated)
+    return NULL;
 
   if ((c = mb_wm_xml_client_find_by_type (theme->xml_clients, c_type)))
     {

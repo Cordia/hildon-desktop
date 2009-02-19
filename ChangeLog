@@ -1,3 +1,10 @@
+2009-02-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-title-bar.c (hd_title_bar_set_window): If the client is
+	NULL, remove the back and close button as well. Fixes: NB#102000
+	* src/mb/hd-theme.c (hd_theme_create_decor): Return immediately if the
+	client is undecorated.
+
 2009-02-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Avoid re-entering hd_render_manager_set_state if we came from there, the
