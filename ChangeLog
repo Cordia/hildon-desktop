@@ -4,6 +4,8 @@
 	Activate (focus) the desktop client when going to switcher/launcher views.
 	This will naturally unfocus the current application.
 
+	In addition this will enable home-call and home-contacts.
+
 	* src/home/hd-render-manager.h:
 	  Add STATE_TASK_NAV and STATE_LANUNCHER as NEED_DESKTOP.
 	* src/home/hd-home.c:
