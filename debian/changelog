@@ -3,14 +3,16 @@ hildon-desktop (1:2.2.21-1~unreleased) unstable; urgency=low
   * Support undecorated dialogs also size-wise. Fixes: NB#101816
   * Disable Gobject checks to make sure we get enough testing without them.
   * Disable operator applet in edit mode. Fixes: NB#100746
-  * Discard previews if there is an fullscreen application is shown. Fixes:
-    NB#97230
+  * Discard previews if there is an fullscreen application is shown.
+    Fixes: NB#97230
   * Implement full stackable window handling. Fixes: NB#101715
   * Replace the edit button with a themed version without any text.
     Fixes: NB#90289, NB#101918
   * Re-enable Laszlo's patch for setting transiency for stackable windows.
     Fixes: NB#97313
   * Coverity fixes. Fixes: NB#102252
+  * When removing the title bar actors, remove the back and close button as
+    well. Fixes: NB#102000
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 13 Feb 2009 16:52:55 +0200
 
