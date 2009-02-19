@@ -1,3 +1,9 @@
+2009-02-19  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c (hd_render_manager_update_blur_state):
+	  Add HdWmClientTypeAppMenu to list of client types that cause blur
+	  (for clock's popup window)	
+
 2009-02-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Added misc debug output of prestarting process.

@@ -1407,6 +1407,7 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
         break;
       if (c_type == MBWMClientTypeDialog ||
           c_type == MBWMClientTypeMenu ||
+          c_type == HdWmClientTypeAppMenu ||
           c_type == HdWmClientTypeStatusMenu ||
           HD_IS_CONFIRMATION_NOTE (c))
         {
