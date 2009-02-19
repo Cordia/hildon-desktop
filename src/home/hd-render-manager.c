@@ -174,7 +174,6 @@ struct _HdRenderManagerPrivate {
    * out for ourselves */
   gboolean            timeline_playing;
 
-  gboolean            in_notify;
   gboolean            in_set_state;
   gboolean            queued_redraw;
 
@@ -340,7 +339,6 @@ hd_render_manager_init (HdRenderManager *self)
 
   priv->state = HDRM_STATE_UNDEFINED;
   priv->current_blur = HDRM_BLUR_NONE;
-  priv->in_notify = TRUE;
 
   priv->home_blur = TIDY_BLUR_GROUP(tidy_blur_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->home_blur),
@@ -412,7 +410,6 @@ hd_render_manager_init (HdRenderManager *self)
                       G_CALLBACK (hd_render_manager_paint_notify),
                       0);
 
-  priv->in_notify = FALSE;
   priv->in_set_state = FALSE;
   priv->queued_redraw = FALSE;
 }
@@ -578,10 +575,19 @@ hd_render_manager_set_input_viewport()
       /* Block status area?  If so refer to the client geometry,
        * because we might be right after a place_titlebar_elements()
        * which could just have moved it. */
-      if (priv->state == HDRM_STATE_APP_PORTRAIT && priv->status_area
-          && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area)
-          && CLUTTER_ACTOR_IS_VISIBLE (priv->blur_front))
-        { g_assert(priv->status_area_client);
+      if ((priv->state == HDRM_STATE_APP_PORTRAIT
+	   && priv->status_area
+           && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area)) ||
+	  /* also in the case of "dialog blur": */
+	  (priv->state == HDRM_STATE_APP
+	   && priv->status_area
+           && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area)
+	   /* FIXME: the following check does not work when there are
+	    * two levels of dialogs */
+           && (priv->current_blur == HDRM_BLUR_BACKGROUND ||
+	       priv->current_blur == HDRM_BLUR_HOME)))
+        {
+          g_assert(priv->status_area_client);
           const MBGeometry *src = &priv->status_area_client->frame_geometry;
           ClutterGeometry *dst = &geom[geom_count++];
           dst->x = src->x;

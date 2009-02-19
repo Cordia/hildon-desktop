@@ -1,3 +1,11 @@
+2009-02-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-render-manager.c (hd_render_manager_init): Remove unused
+	member 'in_notify' from the priv struct.
+	(hd_render_manager_set_input_viewport): Block Status Area input when
+	we have the dialog blur (does not work for two levels of dialogs,
+	though).
+
 2009-02-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Remove check for being in a transition from HdSwitcher.
