@@ -225,6 +225,10 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
         = client->frame_geometry.height - (south + north);
     }
 
+  /* make sure there is space to tap outside */
+  if (client->frame_geometry.y < 56)
+    client->frame_geometry.y = 56;
+
   mb_wm_client_geometry_mark_dirty (client);
 
   return True; /* Geometry accepted */

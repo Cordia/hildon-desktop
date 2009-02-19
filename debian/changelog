@@ -13,6 +13,8 @@ hildon-desktop (1:2.2.21-1~unreleased) unstable; urgency=low
   * Coverity fixes. Fixes: NB#102252
   * When removing the title bar actors, remove the back and close button as
     well. Fixes: NB#102000
+  * Leave space on top of dialogs so that they always can be closed by tapping
+    outside. Fixes: NB#102537
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 13 Feb 2009 16:52:55 +0200
 

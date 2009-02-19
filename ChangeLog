@@ -4,6 +4,8 @@
 	NULL, remove the back and close button as well. Fixes: NB#102000
 	* src/mb/hd-theme.c (hd_theme_create_decor): Return immediately if the
 	client is undecorated.
+	* src/mb/hd-dialog.c (hd_dialog_request_geometry): Leave at least
+	title bar's worth of space on top of the dialog.
 
 2009-02-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
