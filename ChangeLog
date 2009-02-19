@@ -1,3 +1,10 @@
+2009-02-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Avoid re-entering hd_render_manager_set_state if we came from there, the
+	results are unspecified.
+
+	* src/mb/hd-wm.c:
+
 2009-02-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c (hd_task_navigator_add_dialog):

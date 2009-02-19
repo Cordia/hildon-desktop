@@ -322,10 +322,14 @@ hd_wm_client_activate (
   /*
    * When activating the client we hide the task switcher.
    */
-  if (c == wm->desktop) 
-    hd_render_manager_set_state (HDRM_STATE_HOME);
+  if (c == wm->desktop)
+  {
+    if (!STATE_NEED_DESKTOP(hd_render_manager_get_state () ))
+      hd_render_manager_set_state (HDRM_STATE_HOME);
+  }
   else if (HD_IS_APP (c))
-    hd_render_manager_set_state (HDRM_STATE_APP);
+    if (!STATE_IS_APP(hd_render_manager_get_state () ))
+      hd_render_manager_set_state (HDRM_STATE_APP);
 	
   return wm_class->client_activate (wm, c);
 }
