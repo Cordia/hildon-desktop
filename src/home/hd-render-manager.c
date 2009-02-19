@@ -644,6 +644,7 @@ void hd_render_manager_sync_clutter_before ()
       case HDRM_STATE_APP:
         visible_top_left = HDRM_BUTTON_TASK_NAV;
         visible_top_right = HDRM_BUTTON_NONE;
+        /* Fall through */
       case HDRM_STATE_APP_PORTRAIT:
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
