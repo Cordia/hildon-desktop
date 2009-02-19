@@ -68,12 +68,6 @@ struct _HdSwitcherPrivate
 
   MBWMCompMgrClutter   *comp_mgr;
 
-  /* FIXME: There should be a better way of knowing when not to respond
-   * to user input because we're transitioning from one state to the
-   * other.
-   */
-  gboolean in_transition;
-
   gboolean long_press;
   guint press_timeout;
 };
@@ -390,9 +384,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
     {
       g_debug("hd_switcher_clicked: show launcher, switcher=%p\n", switcher);
 
-      /* Only switch if we're not running any transition. */
-      if (!priv->in_transition)
-        hd_render_manager_set_state(HDRM_STATE_LAUNCHER);
+      hd_render_manager_set_state(HDRM_STATE_LAUNCHER);
     }
   else if (hd_render_manager_get_state() == HDRM_STATE_LAUNCHER)
     {
@@ -504,8 +496,6 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
                                "HD-MBWMCompMgrClutterClient");
   g_assert (hclient);
 
-  /* Stop any transition to app mode we may have had */
-  priv->in_transition = FALSE;
   hd_render_manager_set_state(HDRM_STATE_APP);
   hd_render_manager_stop_transition();
 
@@ -532,7 +522,6 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
-  priv->in_transition = TRUE;
   hd_task_navigator_zoom_in (priv->task_nav, actor,
               (ClutterEffectCompleteFunc) hd_switcher_zoom_in_complete,
               switcher);
