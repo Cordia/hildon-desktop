@@ -1001,17 +1001,16 @@ hd_home_view_get_all_applets (HdHomeView *view)
   HdHomeViewPrivate *priv = view->priv;
   GSList *sorted;
   GHashTableIter iter;
-  HdHomeViewAppletData *value;
-  gpointer crap;
+  gpointer tmp;
 
   /* Get a list of all applets sorted by modified time */
   sorted = NULL;
   g_hash_table_iter_init (&iter, priv->applets);
-  while (g_hash_table_iter_next (&iter, NULL, &crap))
-    {
-      value = crap;
-      sorted = g_slist_insert_sorted (sorted, value->cc, cmp_applet_modified);
-    }
+  while (g_hash_table_iter_next (&iter, NULL, &tmp))
+  {
+    HdHomeViewAppletData *value = tmp;
+    sorted = g_slist_insert_sorted (sorted, value->cc, cmp_applet_modified);
+  }
   return sorted;
 }
 
