@@ -17,7 +17,7 @@ hildon-desktop (1:2.2.21-1~unreleased) unstable; urgency=low
     outside. Fixes: NB#102537
   * Marc: Remove check for being in a transition from HdSwitcher.
     Fixes: NB#102568
-  * Jan Arne: Move background image caching to hildon-home.
+  * Jan Arne: Move background image caching to hildon-home. Fixes: NB#99941
 
  -- Kimmo Hamalainen <kimmo.hamalainen@nokia.com>  Fri, 20 Feb 2009 09:21:45 +0200
 
