@@ -1,3 +1,17 @@
+2009-02-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Fulfilling Lassi's requests wrt portrait mode.
+
+	* src/util/hd-util.c (hd_util_change_screen_orientation):
+	  Rotate_90 instead of Rotate_270.
+	* src/mb/hd-comp-mgr.c:
+	  hd_comp_mgr_client_property_changed():
+	    If the client's REQUEST property changes from 0->1 but SUPPORTS stays 0
+	    assume it.
+	  hd_comp_mgr_should_be_portrait():
+	    When deciding whether a client SUPPORTs portrait layout consider its
+	    ancestors in the transiency hierarchy as well.
+
 2009-02-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-render-manager.c (hd_render_manager_init): Remove unused

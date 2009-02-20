@@ -128,7 +128,7 @@ hd_util_is_client_system_modal (MBWindowManagerClient *c)
       mb_wm_get_modality_type (c->wmref) == MBWMModalitySystem;
 }
 
-/* Change the screen's orientation by rotating -90 degrees
+/* Change the screen's orientation by rotating 90 degrees
  * (portrait mode) or going back to landscape.
  * Returns whether the orientation has actually changed. */
 gboolean
@@ -145,7 +145,7 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
   if (goto_portrait)
     {
       g_debug ("Entering portrait mode");
-      want = RR_Rotate_270;
+      want = RR_Rotate_90;
     }
   else
     {
@@ -172,8 +172,7 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
     }
 
   ret = XRRSetScreenConfig(wm->xdpy, scrcfg, wm->root_win->xwindow, sizeid,
-                           goto_portrait ? RR_Rotate_270 : RR_Rotate_0,
-                           cfgtime);
+                           want, cfgtime);
   XRRFreeScreenConfigInfo(scrcfg);
 
   if (ret != Success)

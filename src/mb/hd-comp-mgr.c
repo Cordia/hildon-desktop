@@ -478,6 +478,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   MBWindowManager *wm;
   HdCompMgrClient *cc;
   MBWindowManagerClient *c;
+  gboolean previously_supported;
 
   g_return_val_if_fail (event->type == PropertyNotify, True);
 
@@ -502,14 +503,23 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
     goto out1;
   cc = HD_COMP_MGR_CLIENT (c->cm_client);
 
+  previously_supported = cc->priv->portrait_supported;
   if (event->atom == pok)
     cc->priv->portrait_supported = *value != 0;
   else
     cc->priv->portrait_requested = *value != 0;
 
   if (cc->priv->portrait_requested && !cc->priv->portrait_supported)
-    /* Might be some temporary state. */
-    g_warning ("%p: portrait mode requested but not supported", c);
+    {
+      g_warning ("%p: portrait mode requested but not supported", c);
+      if (!previously_supported)
+        { /* This is bullshit but that's the DESIGN. */
+          g_warning("%p: assuming portrait support", c);
+          cc->priv->portrait_supported = 1;
+        }
+      else
+        /* Might be some temporary state. */;
+    }
   g_debug ("portrait property of %p changed: supported=%u requested=%u", c,
            cc->priv->portrait_supported != 0,
            cc->priv->portrait_requested != 0);
@@ -1912,27 +1922,32 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
 {
   gboolean any_requests;
   MBWindowManager *wm;
-  MBWindowManagerClient *c;
-  HdCompMgrClient *cc;
+  MBWindowManagerClient *cs, *ct;
 
   any_requests = FALSE;
   wm = MB_WM_COMP_MGR (hmgr)->wm;
-  for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
+  for (cs = wm->stack_top; cs && cs != wm->desktop; cs = cs->stacked_below)
     {
-      if (c == hmgr->priv->status_area_client)
+      if (cs == hmgr->priv->status_area_client)
         /* It'll be blocked anyway. */
         continue;
-      if (hd_comp_mgr_is_client_screensaver (c))
+      if (hd_comp_mgr_is_client_screensaver (cs))
         continue;
-      if (hd_comp_mgr_ignore_window (c))
+      if (hd_comp_mgr_ignore_window (cs))
         continue;
-      if (!hd_render_manager_is_client_visible (c))
+      if (!hd_render_manager_is_client_visible (cs))
         continue;
 
-      cc = HD_COMP_MGR_CLIENT (c->cm_client);
-      if (!cc->priv->portrait_supported)
-        return FALSE;
-      any_requests |= cc->priv->portrait_requested;
+      /* Let's suppose @ct supportrs portrait layout if any of the windows
+       * it is transient for does. */
+      any_requests |= HD_COMP_MGR_CLIENT (cs->cm_client)->priv->portrait_requested;
+      for (ct = cs; ; ct = ct->transient_for)
+        {
+          if (!ct)
+            return FALSE;
+          if (HD_COMP_MGR_CLIENT (ct->cm_client)->priv->portrait_supported)
+            break;
+        }
     }
 
   return any_requests;
