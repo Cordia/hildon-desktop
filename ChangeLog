@@ -121,7 +121,7 @@
 
 	Applet stacking fixes.  Remedies the "applet is not activated when
 	clicked" and "invisible applet is activated when clicking on an empty
-	desktop" (aka. rodarvus-symptom) problems.
+	desktop" (aka. rodarvus-symptom) problems. Fixes: NB#101434
 
 	* src/mb/hd-desktop.c (hd_desktop_stack):
 	  Don't look at who is transient to the desktop but ask the active
