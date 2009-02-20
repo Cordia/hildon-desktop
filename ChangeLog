@@ -1,3 +1,19 @@
+2009-02-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Move background image caching to hildon-home. hildon-desktop just
+	loads the existing files.
+
+	* src/home/hd-home-view-container.c
+	  (hd_home_view_container_update_active_views): Monitor ~/.backgrounds.
+	  (hd_home_view_container_dispose): Remove ~/.backgrounds monitor.
+	* src/home/hd-home-view.c (
+	  load_background_source, hd_home_view_allocate,
+	  hd_home_view_constructed, hd_home_view_dispose,
+	  hd_home_view_finalize, load_background_idle,
+	  hd_home_view_load_background):
+	* src/home/hd-home-view.h: Just load the cached background.
+	* debian/changelog: Update.
+
 2009-02-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Fulfilling Lassi's requests wrt portrait mode.

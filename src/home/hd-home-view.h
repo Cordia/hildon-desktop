@@ -45,10 +45,6 @@ typedef struct _HdHomeViewPrivate HdHomeViewPrivate;
 struct _HdHomeViewClass
 {
   ClutterGroupClass parent_class;
-
-  void (*thumbnail_clicked)  (HdHomeView * view, ClutterButtonEvent * ev);
-  void (*background_clicked) (HdHomeView * view, ClutterButtonEvent * ev);
-  void (*applet_clicked)     (HdHomeView * view, ClutterActor *applet);
 };
 
 struct _HdHomeView
@@ -83,6 +79,7 @@ ClutterActor * hd_home_view_get_applets_container (HdHomeView *view);
 gboolean hd_home_view_get_active (HdHomeView *view);
 void     hd_home_view_set_active (HdHomeView *view,
                                   gboolean    active);
+void hd_home_view_load_background (HdHomeView *view);
 
 G_END_DECLS
 
