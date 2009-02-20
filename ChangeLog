@@ -1,3 +1,12 @@
+2009-02-20  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	Being intransient is now a sufficient condition to be considered
+	system-modal.  A dialog's modality is not relevant to its
+	system-modality.  After discussion with Kimmo.  
+	Fixes: NB#97489.
+	
+	* src/util/hd-util.c: Change prerequisites for being system-modal.
+
 2009-02-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Move background image caching to hildon-home. hildon-desktop just

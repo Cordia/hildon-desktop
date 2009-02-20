@@ -123,7 +123,10 @@ hd_util_modal_blocker_realize(MBWindowManagerClient *client)
 Bool
 hd_util_is_client_system_modal (MBWindowManagerClient *c)
 {
-  return mb_wm_client_is_modal (c) &&
+  /* Note that we no longer require that a system-modal
+   * window be modal.
+   */
+  return 
       !mb_wm_client_get_transient_for (c) &&
       mb_wm_get_modality_type (c->wmref) == MBWMModalitySystem;
 }
