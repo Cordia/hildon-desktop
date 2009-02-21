@@ -151,44 +151,12 @@ hd_home_view_container_update_active_views (HdHomeViewContainer *self,
                                             gboolean             constructed)
 {
   HdHomeViewContainerPrivate *priv = self->priv;
-  gchar *backgrounds_dir, *backgrounds_dir_uri;
-  GnomeVFSResult result;
   GSList *list;
   guint active_views[MAX_HOME_VIEWS] = { 0, };
   gboolean none_active = TRUE;
   guint i;
   guint current_view;
   GError *error = NULL;
-
-  /* Monitor ~/.backgrounds dir */
-  backgrounds_dir = g_build_filename (g_get_home_dir (),
-                                      BACKGROUNDS_DIR,
-                                      NULL);
-  if (g_mkdir (backgrounds_dir,
-               S_IRUSR | S_IWUSR | S_IXUSR |
-               S_IRGRP | S_IXGRP | 
-               S_IROTH | S_IXOTH))
-    {
-      g_warning ("Could not make %s dir", backgrounds_dir);
-    }
-
-  backgrounds_dir_uri = gnome_vfs_get_uri_from_local_path (backgrounds_dir);
-  result = gnome_vfs_monitor_add (&priv->backgrounds_dir_monitor,
-                                  backgrounds_dir_uri,
-                                  GNOME_VFS_MONITOR_DIRECTORY,
-                                  (GnomeVFSMonitorCallback) backgrounds_dir_changed,
-                                  self);
-
-  if (result == GNOME_VFS_OK)
-    g_debug ("%s. Started to monitor %s",
-             __FUNCTION__,
-             backgrounds_dir_uri);
-  else
-    g_warning ("Cannot monitor directory ~/.backgrounds for changed background files. %s",
-               gnome_vfs_result_to_string (result));
-
-  g_free (backgrounds_dir);
-  g_free (backgrounds_dir_uri);
 
   /* Read active views from GConf */
   list = gconf_client_get_list (priv->gconf_client,
@@ -254,7 +222,7 @@ hd_home_view_container_update_active_views (HdHomeViewContainer *self,
   i = current_view; 
   while (!active_views[i % MAX_HOME_VIEWS] && i - current_view < MAX_HOME_VIEWS)
     i++;
-  current_view = i;
+  current_view = (i % MAX_HOME_VIEWS);
 
   /* DEBUG */
   g_debug ("%s Active views:", __FUNCTION__);
@@ -336,6 +304,8 @@ hd_home_view_container_constructed (GObject *self)
   guint i;
   MBWindowManager *wm;
   long propvalue[1];
+  gchar *backgrounds_dir, *backgrounds_dir_uri;
+  GnomeVFSResult result;
   GError *error = NULL;
 
   if (G_OBJECT_CLASS (hd_home_view_container_parent_class)->constructed)
@@ -387,6 +357,36 @@ hd_home_view_container_constructed (GObject *self)
 		   XA_CARDINAL, 32, PropModeReplace,
 		   (unsigned char *) propvalue,
 		   1);
+
+  /* Monitor ~/.backgrounds dir */
+  backgrounds_dir = g_build_filename (g_get_home_dir (),
+                                      BACKGROUNDS_DIR,
+                                      NULL);
+  if (g_mkdir (backgrounds_dir,
+               S_IRUSR | S_IWUSR | S_IXUSR |
+               S_IRGRP | S_IXGRP | 
+               S_IROTH | S_IXOTH))
+    {
+      g_warning ("Could not make %s dir", backgrounds_dir);
+    }
+
+  backgrounds_dir_uri = gnome_vfs_get_uri_from_local_path (backgrounds_dir);
+  result = gnome_vfs_monitor_add (&priv->backgrounds_dir_monitor,
+                                  backgrounds_dir_uri,
+                                  GNOME_VFS_MONITOR_DIRECTORY,
+                                  (GnomeVFSMonitorCallback) backgrounds_dir_changed,
+                                  self);
+
+  if (result == GNOME_VFS_OK)
+    g_debug ("%s. Started to monitor %s",
+             __FUNCTION__,
+             backgrounds_dir_uri);
+  else
+    g_warning ("Cannot monitor directory ~/.backgrounds for changed background files. %s",
+               gnome_vfs_result_to_string (result));
+
+  g_free (backgrounds_dir);
+  g_free (backgrounds_dir_uri);
 
   hd_home_view_container_update_active_views (container, TRUE);
 }

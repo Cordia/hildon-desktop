@@ -19,6 +19,7 @@ hildon-desktop (1:2.2.21-1~unreleased) unstable; urgency=low
     Fixes: NB#102568
   * Jan Arne: Move background image caching to hildon-home. Fixes: NB#99941
   * Adam: Applet stacking fixes. Fixes: NB#101434
+  * Jan Arne: Fix selection of new current view. Fixes: NB#102458
 
  -- Kimmo Hamalainen <kimmo.hamalainen@nokia.com>  Fri, 20 Feb 2009 09:21:45 +0200
 

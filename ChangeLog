@@ -1,3 +1,12 @@
+2009-02-21  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view-container.c
+	  (hd_home_view_container_update_active_views): Fix selection of new
+	  current view. Fixes: NB#102458
+	  (hd_home_view_container_constructed): Start to monitor
+	  ~/.backgrounds in constructed.
+	* debian/changelog: Update.
+
 2009-02-20  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	Being intransient is now a sufficient condition to be considered
