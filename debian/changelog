@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.22-1~unreleased) unstable; urgency=low
+
+  * unreleased
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Feb 2009 13:08:41 +0200
+
 hildon-desktop (1:2.2.21-1) unstable; urgency=low
 
   * Support undecorated dialogs also size-wise. Fixes: NB#101816
