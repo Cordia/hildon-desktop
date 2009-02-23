@@ -6,4 +6,5 @@ res_DATA = \
 	edit-button.png \
 	launcher-button-highlight.png \
         blank-window.png \
-	white-particle.png
+	white-particle.png \
+	transitions.ini

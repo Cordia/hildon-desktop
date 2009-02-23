@@ -746,7 +746,6 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
         ClutterActor *tile_label = 0;
         ClutterVertex pos = {0,0,0};
         float d, dx, dy;
-        float tile_amt; /* amount depending on distance from pt */
         float order_diff;
         float order_amt; /* amount as if ordered */
         ClutterUnit depth;
@@ -760,10 +759,6 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
         /* We always want d to be 0 <=d <= 1 */
         d = sqrt(dx*dx + dy*dy) / 1000.0f;
         if (d>1) d=1;
-
-        tile_amt = amount*2 - d;
-        if (tile_amt<0) tile_amt = 0;
-        if (tile_amt>1) tile_amt = 1;
 
         order_diff = (CLUTTER_UNITS_TO_FLOAT(pos.x) +
                      (CLUTTER_UNITS_TO_FLOAT(pos.y)*5)) /
@@ -779,7 +774,10 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
             case HD_LAUNCHER_PAGE_TRANSITION_IN:
             case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
               {
-                float label_amt = (order_amt*3)-1.5;
+                float label_amt = (((order_amt*26) - 16) / 10);
+                float tile_amt = ((order_amt*26) / 16);
+                if (tile_amt<0) tile_amt = 0;
+                if (tile_amt>1) tile_amt = 1;
                 if (label_amt<0) label_amt=0;
                 if (label_amt>1) label_amt=1;
                 depth = CLUTTER_UNITS_FROM_FLOAT(
@@ -801,6 +799,10 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
                   clutter_actor_set_opacity(tile_label, 255-(int)(amount*255));
                 break;
             case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
+              {
+                float tile_amt = amount*2 - d;
+                if (tile_amt<0) tile_amt = 0;
+                if (tile_amt>1) tile_amt = 1;
                 depth = CLUTTER_UNITS_FROM_FLOAT(-150*tile_amt);
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
                 if (tile_icon)
@@ -808,6 +810,7 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
                 if (tile_label)
                   clutter_actor_set_opacity(tile_label, 255-(int)(amount*255));
                 break;
+              }
             /* We do't do anything for these now because we just use blur on
              * the whole group */
             case HD_LAUNCHER_PAGE_TRANSITION_BACK:

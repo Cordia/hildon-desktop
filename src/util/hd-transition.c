@@ -779,3 +779,98 @@ hd_transition_play_sound (const gchar * fname)
     ca_proplist_destroy(pl);
     is_playing = TRUE;
 }
+
+static GKeyFile *
+hd_transition_get_keyfile(const gchar *transition,
+                      const char *key)
+{
+  GError *error = NULL;
+  GKeyFile *key_file = NULL;
+  const char *full_path = "/usr/share/hildon-desktop/transitions.ini";
+
+  key_file = g_key_file_new ();
+  g_key_file_load_from_file (key_file, full_path, 0, &error);
+  if (error)
+    {
+      g_warning ("Unable to load file  '%s' : %s",
+                 full_path,
+                 error->message);
+
+      g_error_free (error);
+      g_key_file_free (key_file);
+      return NULL;
+    }
+
+  if (!g_key_file_has_group (key_file, transition))
+    {
+      g_key_file_free (key_file);
+      return NULL;
+    }
+
+  if (!g_key_file_has_key (key_file,
+                           transition,
+                           key,
+                           &error))
+    {
+      g_key_file_free (key_file);
+      return NULL;
+    }
+
+  return key_file;
+}
+
+gint
+hd_transition_get_int(const gchar *transition,
+                      const char *key,
+                      gint default_val)
+{
+  gint value;
+  GError *error = NULL;
+  GKeyFile *key_file =
+          hd_transition_get_keyfile(transition, key);
+  if (!key_file)
+    return default_val;
+  /* skip NoDisplay entries */
+  value = g_key_file_get_integer (key_file,
+                                  transition,
+                                  key,
+                                  &error);
+  if (error)
+    {
+      g_error_free (error);
+      g_key_file_free (key_file);
+      return default_val;
+    }
+
+  g_key_file_free (key_file);
+
+  return value;
+}
+
+gdouble
+hd_transition_get_double(const gchar *transition,
+                      const char *key,
+                      gdouble default_val)
+{
+  gdouble value;
+  GError *error = NULL;
+  GKeyFile *key_file =
+          hd_transition_get_keyfile(transition, key);
+  if (!key_file)
+    return default_val;
+  /* skip NoDisplay entries */
+  value = g_key_file_get_double (key_file,
+                                  transition,
+                                  key,
+                                  &error);
+  if (error)
+    {
+      g_error_free (error);
+      g_key_file_free (key_file);
+      return default_val;
+    }
+
+  g_key_file_free (key_file);
+
+  return value;
+}

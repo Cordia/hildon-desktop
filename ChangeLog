@@ -1,3 +1,27 @@
+2009-02-23  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-task-navigator.c: Modified task navigator tourette's
+	* src/home/hd-title-bar.c
+	* src/mb/hd-theme.h:
+	Used correct shape 'pressed' button NB#102652
+	* src/tidy/tidy-blur-group.c:
+	Modified vignette effect to Martin's spec
+	* src/tidy/tidy-mem-texture.c:
+	Removed exact row length in preparation for new SGX (Clutter will make
+	sure it still works)
+	* data/Makefile.am
+	* data/transitions.ini:
+	Added file to describe length of transitions
+	* src/util/hd-transition.c
+	* src/util/hd-transition.h:
+	Added functions to read settings from transitions.ini
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-grid.c:
+	Use hd-transition code to set animation lengths, tweaked animations to
+	Martin's spec
+	* src/home/hd-render-manager.c:
+	Tidying animation code, loading animation details from transitions.ini
+
 2009-02-23  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Remove connection from HdLauncherApp to HdCompMgrClient.

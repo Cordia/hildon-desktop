@@ -36,12 +36,14 @@
 #include <tidy/tidy-adjustment.h>
 #include <hildon/hildon-defines.h>
 
+#include "hd-transition.h"
 #include "hildon-desktop.h"
 #include "hd-launcher.h"
 #include "hd-launcher-grid.h"
 #include "hd-gtk-utils.h"
 #include "hd-gtk-style.h"
 #include "hd-comp-mgr.h"
+
 
 #define I_(str) (g_intern_static_string ((str)))
 #define HD_PARAM_READWRITE (G_PARAM_READWRITE | \
@@ -221,7 +223,7 @@ hd_launcher_page_constructed (GObject *object)
   priv->grid = g_object_ref (hd_launcher_grid_new ());
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->scroller),
                                priv->grid);
-  priv->transition = g_object_ref (clutter_timeline_new_for_duration (350));
+  priv->transition = g_object_ref (clutter_timeline_new_for_duration (1000));
   g_signal_connect (priv->transition, "new-frame",
                     G_CALLBACK (hd_launcher_page_new_frame), object);
   g_signal_connect (priv->transition, "completed",
@@ -616,6 +618,32 @@ hd_launcher_page_tile_clicked (HdLauncherTile *tile, gpointer data)
                  0, tile);
 }
 
+static const char *
+hd_launcher_page_get_transition_string(
+    HdLauncherPageTransition trans_type)
+{
+  switch (trans_type)
+  {
+    case HD_LAUNCHER_PAGE_TRANSITION_IN :
+      return "launcher_in";
+    case HD_LAUNCHER_PAGE_TRANSITION_OUT :
+      return "launcher_out";
+    case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK :
+      return "launcher_out_back";
+    case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH :
+      return "launcher_launch";
+    case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB :
+      return "launcher_in_sub";
+    case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB :
+      return "launcher_out_sub";
+    case HD_LAUNCHER_PAGE_TRANSITION_BACK :
+      return "launcher_back";
+    case HD_LAUNCHER_PAGE_TRANSITION_FORWARD :
+      return "launcher_forward";
+  }
+  return "unknown";
+}
+
 void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition trans_type)
 {
   HdLauncherPagePrivate *priv;
@@ -661,6 +689,13 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
 
   clutter_timeline_pause(priv->transition);
   clutter_timeline_rewind(priv->transition);
+
+  clutter_timeline_set_duration(priv->transition,
+      hd_transition_get_int(
+          hd_launcher_page_get_transition_string(priv->transition_type),
+          "duration",
+          500 /* default value */));
+
   clutter_timeline_start(priv->transition);
   priv->transition_playing = TRUE;
 

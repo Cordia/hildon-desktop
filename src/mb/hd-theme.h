@@ -37,6 +37,7 @@
 #define HD_THEME_IMG_LEFT_ATTACHED "wmLeftButtonAttached.png"
 #define HD_THEME_IMG_LEFT_END "wmLeftButtonEnd.png"
 #define HD_THEME_IMG_LEFT_PRESSED "wmLeftButtonEndPressed.png"
+#define HD_THEME_IMG_LEFT_ATTACHED_PRESSED "wmLeftButtonAttachedPressed.png"
 
 #define HD_THEME_IMG_RIGHT_END "wmRightButton.png"
 #define HD_THEME_IMG_RIGHT_PRESSED "wmRightButtonPressed.png"

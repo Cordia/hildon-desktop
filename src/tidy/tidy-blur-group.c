@@ -338,9 +338,17 @@ tidy_blur_group_paint (ClutterActor *actor)
               dy = CFX_QDIV(v->y - my, my/2);
               d = CFX_QMUL(dx,dx) + CFX_MUL(dy,dy);
               /* Colour value... */
-              gint c = (int)(priv->brightness*255) *
+              /*gint c = (int)(priv->brightness*255) *
                        (255 - CLUTTER_FIXED_TO_INT((d-CFX_ONE)*vignette_amt/6))
                        / 256;
+              if (c<0) c=0;
+              if (c>255) c=255;*/
+              gint c = 255;
+              if ((x==1) || (y==1) || (x==TILINGF-1) || (y==TILINGF-1))
+                c = 192;
+              if ((x==0) || (y==0) || (x==TILINGF) || (y==TILINGF))
+                c = 0;
+            //  c = (int)(priv->brightness * (255 - vignette_amt*c/255));
               if (c<0) c=0;
               if (c>255) c=255;
               v->color.red = v->color.green = v->color.blue = c;

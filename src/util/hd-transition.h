@@ -25,7 +25,6 @@
 #define __HD_TRANSITION_H__
 
 #include "hd-comp-mgr.h"
-#include <matchbox/core/mb-wm.h>
 
 float
 hd_transition_overshoot(float x);
@@ -62,5 +61,15 @@ hd_transition_subview(HdCompMgr                  *mgr,
 
 void
 hd_transition_play_sound(const gchar           *fname);
+
+gint
+hd_transition_get_int(const gchar *transition,
+                      const char *key,
+                      gint default_val);
+
+gdouble
+hd_transition_get_double(const gchar *transition,
+                      const char *key,
+                      gdouble default_val);
 
 #endif /* __HD_TRANSITION_H__ */

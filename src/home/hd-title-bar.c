@@ -47,6 +47,7 @@ enum
   BTN_BG_LEFT_END,
   BTN_BG_RIGHT_END,
   BTN_BG_LEFT_PRESSED,
+  BTN_BG_LEFT_ATTACHED_PRESSED,
   BTN_BG_RIGHT_PRESSED,
   BTN_SEPARATOR_LEFT,
   BTN_SEPARATOR_STATUS,
@@ -68,6 +69,7 @@ const char *BTN_FILENAMES[BTN_COUNT] = {
     HD_THEME_IMG_LEFT_END,
     HD_THEME_IMG_RIGHT_END,
     HD_THEME_IMG_LEFT_PRESSED,
+    HD_THEME_IMG_LEFT_ATTACHED_PRESSED,
     HD_THEME_IMG_RIGHT_PRESSED,
     HD_THEME_IMG_SEPARATOR,
     HD_THEME_IMG_SEPARATOR,
@@ -88,6 +90,7 @@ gboolean ALIGN_RIGHT[BTN_COUNT] = {
    FALSE, // BTN_BG_LEFT_END,
    TRUE,  // BTN_BG_RIGHT_END,
    FALSE, // BTN_BG_LEFT_PRESSED,
+   FALSE, // BTN_BG_LEFT_ATTACHED_PRESSED,
    TRUE,  // BTN_BG_RIGHT_PRESSED,
    FALSE, // BTN_SEPARATOR_LEFT,
    FALSE, // BTN_SEPARATOR_STATUS,
@@ -111,6 +114,7 @@ gboolean SET_SIZE[BTN_COUNT] = {
    TRUE, // BTN_BG_LEFT_END,
    TRUE,  // BTN_BG_RIGHT_END,
    TRUE, // BTN_BG_LEFT_PRESSED,
+   TRUE, // BTN_BG_LEFT_ATTACHED_PRESSED,
    TRUE,  // BTN_BG_RIGHT_PRESSED,
    FALSE, // BTN_SEPARATOR_LEFT,
    FALSE, // BTN_SEPARATOR_STATUS,
@@ -337,7 +341,10 @@ void hd_title_bar_set_state(HdTitleBar *bar,
   /* if a button isn't in the top-left or right, we want to make
    * sure we don't display the pressed state */
   if (!(button & HDTB_VIS_BTN_LEFT_MASK))
-    clutter_actor_hide(priv->buttons[BTN_BG_LEFT_PRESSED]);
+    {
+      clutter_actor_hide(priv->buttons[BTN_BG_LEFT_PRESSED]);
+      clutter_actor_hide(priv->buttons[BTN_BG_LEFT_ATTACHED_PRESSED]);
+    }
   if (!(button & HDTB_VIS_BTN_RIGHT_MASK))
     clutter_actor_hide(priv->buttons[BTN_BG_RIGHT_PRESSED]);
 
@@ -419,7 +426,16 @@ hd_title_bar_left_pressed(HdTitleBar *bar, gboolean pressed)
 
   if (pressed)
     {
-      clutter_actor_show(priv->buttons[BTN_BG_LEFT_PRESSED]);
+      if (CLUTTER_ACTOR_IS_VISIBLE(priv->buttons[BTN_BG_ATTACHED]))
+        {
+          clutter_actor_hide(priv->buttons[BTN_BG_LEFT_PRESSED]);
+          clutter_actor_show(priv->buttons[BTN_BG_LEFT_ATTACHED_PRESSED]);
+        }
+      else
+        {
+          clutter_actor_show(priv->buttons[BTN_BG_LEFT_PRESSED]);
+          clutter_actor_hide(priv->buttons[BTN_BG_LEFT_ATTACHED_PRESSED]);
+        }
       if (priv->state & HDTB_VIS_BTN_LAUNCHER)
         clutter_actor_show(priv->buttons[BTN_LAUNCHER_PRESSED]);
       if (priv->state & HDTB_VIS_BTN_SWITCHER)
@@ -428,6 +444,7 @@ hd_title_bar_left_pressed(HdTitleBar *bar, gboolean pressed)
   else
     {
       clutter_actor_hide(priv->buttons[BTN_BG_LEFT_PRESSED]);
+      clutter_actor_hide(priv->buttons[BTN_BG_LEFT_ATTACHED_PRESSED]);
       clutter_actor_hide(priv->buttons[BTN_LAUNCHER_PRESSED]);
       clutter_actor_hide(priv->buttons[BTN_SWITCHER_PRESSED]);
     }

@@ -102,8 +102,6 @@ typedef enum
   HDRM_BLUR_BACKGROUND = 32, /* like BLUR_HOME, but for dialogs, etc */
 } HDRMBlurEnum;
 
-#define HDRM_BLUR_DURATION 250
-
 #define HDRM_WIDTH  HD_COMP_MGR_SCREEN_WIDTH
 #define HDRM_HEIGHT HD_COMP_MGR_SCREEN_HEIGHT
 
@@ -136,6 +134,10 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *
  */
 
+typedef struct _Range {
+  float a, b, current;
+} Range;
+
 struct _HdRenderManagerPrivate {
   HDRMStateEnum state;
 
@@ -162,10 +164,15 @@ struct _HdRenderManagerPrivate {
   ClutterActor         *button_edit;
 
   /* these are current, from + to variables for doing the blurring animations */
-  float         home_blur_cur, home_blur_a, home_blur_b;
-  float         task_nav_blur_cur, task_nav_blur_a, task_nav_blur_b;
-  float         home_zoom_cur, home_zoom_a, home_zoom_b;
-  float         task_nav_zoom_cur, task_nav_zoom_a, task_nav_zoom_b;
+  Range         home_radius;
+  Range         home_zoom;
+  Range         home_brightness;
+  Range         home_saturation;
+  Range         task_nav_radius;
+  Range         task_nav_zoom;
+  Range         task_nav_brightness;
+  Range         task_nav_saturation;
+
   HDRMBlurEnum  current_blur;
 
   ClutterTimeline    *timeline_blur;
@@ -216,6 +223,23 @@ hd_render_manager_set_property (GObject      *gobject,
                                 guint         prop_id,
                                 const GValue *value,
                                 GParamSpec   *pspec);
+
+/* ------------------------------------------------------------------------- */
+/* -------------------------------------------------------------  RANGE      */
+/* ------------------------------------------------------------------------- */
+static inline void range_set(Range *range, float val)
+{
+  range->a = range->b = range->current = val;
+}
+static inline void range_interpolate(Range *range, float n)
+{
+  range->current = (range->a*(1-n)) + range->b*n;
+}
+static inline void range_next(Range *range, float x)
+{
+  range->a = range->current;
+  range->b = x;
+}
 
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    INIT     */
@@ -391,12 +415,16 @@ hd_render_manager_init (HdRenderManager *self)
                               CLUTTER_ACTOR(priv->blur_front));
 
   /* Animation stuff */
-  priv->home_blur_cur = priv->home_blur_a = priv->home_blur_b = 0;
-  priv->task_nav_blur_cur = priv->task_nav_blur_a = priv->task_nav_blur_b = 0;
-  priv->home_zoom_cur = priv->home_zoom_a = priv->home_zoom_b = 1;
-  priv->task_nav_zoom_cur = priv->task_nav_zoom_a = priv->task_nav_zoom_b = 1;
+  range_set(&priv->home_radius, 0);
+  range_set(&priv->home_zoom, 1);
+  range_set(&priv->home_saturation, 1);
+  range_set(&priv->home_brightness, 1);
+  range_set(&priv->task_nav_radius, 0);
+  range_set(&priv->task_nav_zoom, 1);
+  range_set(&priv->task_nav_saturation, 1);
+  range_set(&priv->task_nav_brightness, 1);
 
-  priv->timeline_blur = clutter_timeline_new_for_duration(HDRM_BLUR_DURATION);
+  priv->timeline_blur = clutter_timeline_new_for_duration(250);
   g_signal_connect (priv->timeline_blur, "new-frame",
                     G_CALLBACK (on_timeline_blur_new_frame), self);
   g_signal_connect (priv->timeline_blur, "completed",
@@ -440,32 +468,32 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
 
   amt = frame_num / (float)clutter_timeline_get_n_frames(timeline);
 
-  priv->home_blur_cur = priv->home_blur_a*(1-amt) +
-                        priv->home_blur_b*amt;
-  priv->task_nav_blur_cur = priv->task_nav_blur_a*(1-amt) +
-                            priv->task_nav_blur_b*amt;
-  priv->home_zoom_cur = priv->home_zoom_a*(1-amt) +
-                        priv->home_zoom_b*amt;
-  priv->task_nav_zoom_cur = priv->task_nav_zoom_a*(1-amt) +
-                            priv->task_nav_zoom_b*amt;
+  range_interpolate(&priv->home_radius, amt);
+  range_interpolate(&priv->home_zoom, amt);
+  range_interpolate(&priv->home_saturation, amt);
+  range_interpolate(&priv->home_brightness, amt);
+  range_interpolate(&priv->task_nav_radius, amt);
+  range_interpolate(&priv->task_nav_zoom, amt);
+  range_interpolate(&priv->task_nav_saturation, amt);
+  range_interpolate(&priv->task_nav_brightness, amt);
 
   tidy_blur_group_set_blur      (CLUTTER_ACTOR(priv->home_blur),
-                                 priv->home_blur_cur*4.0f);
+                                 priv->home_radius.current);
   tidy_blur_group_set_saturation(CLUTTER_ACTOR(priv->home_blur),
-                                 1.0f - priv->home_blur_cur*0.75f);
+                                 priv->home_saturation.current);
   tidy_blur_group_set_brightness(CLUTTER_ACTOR(priv->home_blur),
-                                 (2.0f-priv->home_blur_cur) * 0.5f);
+                                 priv->home_brightness.current);
   tidy_blur_group_set_zoom(CLUTTER_ACTOR(priv->home_blur),
-                1.0f - hd_transition_overshoot(priv->home_zoom_cur)*0.15f);
+                                 priv->home_zoom.current);
 
   tidy_blur_group_set_blur      (CLUTTER_ACTOR(priv->task_nav_blur),
-                                 priv->task_nav_blur_cur*4.0f);
+                                 priv->task_nav_radius.current);
   tidy_blur_group_set_saturation(CLUTTER_ACTOR(priv->task_nav_blur),
-                                 1.0f - priv->task_nav_blur_cur*0.75f);
+                                 priv->task_nav_saturation.current);
   tidy_blur_group_set_brightness(CLUTTER_ACTOR(priv->task_nav_blur),
-                                 (2.0f-priv->task_nav_blur_cur) * 0.5f);
+                                 priv->task_nav_brightness.current);
   tidy_blur_group_set_zoom(CLUTTER_ACTOR(priv->task_nav_blur),
-                1.0f - hd_transition_overshoot(priv->task_nav_zoom_cur)*0.15f);
+                                 priv->task_nav_zoom.current);
 }
 
 static void
@@ -506,9 +534,8 @@ static
 void hd_render_manager_set_blur (HDRMBlurEnum blur)
 {
   HdRenderManagerPrivate *priv;
-  float blur_amt = 1.0f;
-  float zoom_amt = 1.0f;
   gboolean blur_home;
+  gboolean more;
 
   priv = the_render_manager->priv;
 
@@ -520,24 +547,59 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 
   priv->current_blur = blur;
 
-  priv->home_blur_a = priv->home_blur_cur;
-  priv->task_nav_blur_a = priv->task_nav_blur_cur;
-  priv->home_zoom_a = priv->home_zoom_cur;
-  priv->task_nav_zoom_a = priv->task_nav_zoom_cur;
+  range_next(&priv->home_radius, 0);
+  range_next(&priv->home_saturation, 1);
+  range_next(&priv->home_brightness, 1);
+  range_next(&priv->home_zoom, 1);
+  range_next(&priv->task_nav_radius, 0);
+  range_next(&priv->task_nav_saturation, 1);
+  range_next(&priv->task_nav_brightness, 1);
+  range_next(&priv->task_nav_zoom, 1);
 
-  if (blur & HDRM_BLUR_MORE)
-    {
-      blur_amt = 1.5f;
-      zoom_amt = 2.0f;
-    }
+  more = blur & HDRM_BLUR_MORE;
 
   blur_home = blur & (HDRM_BLUR_BACKGROUND | HDRM_BLUR_HOME);
-  priv->home_blur_b = blur_home ? blur_amt : 0;
-  priv->task_nav_blur_b = (blur & HDRM_BLUR_TASK_NAV) ? blur_amt : 0;
-  priv->home_zoom_b = (blur & HDRM_ZOOM_HOME) ? zoom_amt : 0;
-  priv->task_nav_zoom_b = (blur & HDRM_ZOOM_TASK_NAV) ? zoom_amt : 0;
+
+  /* FIXME: cache the settings file */
+  if (blur_home)
+    {
+      priv->home_saturation.b =
+              hd_transition_get_double("blur","home_saturation", 1);
+      priv->home_brightness.b =
+              hd_transition_get_double("blur","home_brightness", 1);
+      priv->home_radius.b =
+              hd_transition_get_double("blur",
+                  more?"home_radius_more":"home_radius", 0);
+    }
+
+  if (blur & HDRM_ZOOM_HOME)
+    {
+      priv->home_zoom.b =
+              hd_transition_get_double("blur",
+                  more?"home_zoom_more":"home_zoom", 1);
+    }
+
+  if (blur & HDRM_BLUR_TASK_NAV)
+    {
+      priv->task_nav_saturation.b =
+              hd_transition_get_double("blur","task_nav_saturation", 1);
+      priv->task_nav_brightness.b =
+              hd_transition_get_double("blur","task_nav_brightness", 1);
+      priv->task_nav_radius.b =
+              hd_transition_get_double("blur",
+                  more?"task_nav_radius_more":"task_nav_radius", 0);
+    }
+  if (blur & HDRM_ZOOM_TASK_NAV)
+    {
+      priv->task_nav_zoom.b =
+              hd_transition_get_double("blur",
+                  more?"task_nav_zoom_more":"task_nav_zoom", 1);
+    }
 
   hd_comp_mgr_set_effect_running(priv->comp_mgr, TRUE);
+  /* Set duration here so we reload from the file every time */
+  clutter_timeline_set_duration(priv->timeline_blur,
+      hd_transition_get_int("blur", "duration", 250));
   clutter_timeline_start(priv->timeline_blur);
   priv->timeline_playing = TRUE;
 }
@@ -632,7 +694,6 @@ void hd_render_manager_sync_clutter_before ()
           visible_top_left = HDRM_BUTTON_TASK_NAV;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
-        clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         hd_home_update_layout (priv->home);
@@ -643,7 +704,6 @@ void hd_render_manager_sync_clutter_before ()
         visible_top_right = HDRM_BUTTON_BACK;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
-        clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(HDRM_BLUR_HOME);
         hd_home_update_layout (priv->home);
         break;
@@ -654,21 +714,18 @@ void hd_render_manager_sync_clutter_before ()
       case HDRM_STATE_APP_PORTRAIT:
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
-        clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         break;
       case HDRM_STATE_APP_FULLSCREEN:
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
-        clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         break;
       case HDRM_STATE_TASK_NAV:
         visible_top_left = HDRM_BUTTON_LAUNCHER;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));
         clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->task_nav_blur));
         hd_render_manager_set_blur(HDRM_BLUR_HOME | HDRM_ZOOM_HOME);
@@ -796,6 +853,11 @@ void hd_render_manager_sync_clutter_after ()
       clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
                              CLUTTER_ACTOR(priv->home_blur));
     }
+
+  /* The launcher transition should hide the launcher, so we shouldn't
+   * need this.
+  if (priv->state != HDRM_STATE_LAUNCHER)
+    clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));*/
 }
 
 /* ------------------------------------------------------------------------- */

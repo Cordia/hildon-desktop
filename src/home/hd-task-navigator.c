@@ -2117,7 +2117,9 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
   /* Already have @dialog?  If not, find its place. */
   if (find_dialog (NULL, dialog, FALSE))
     {
-      g_critical ("fuck");
+      const gchar *name = clutter_actor_get_name(dialog);
+      g_critical ("%s: Dialog actor %s added twice", __FUNCTION__,
+          name ? name : "unnamed");
       return;
     }
   if (!(thumb = find_dialog (&i, parent, FALSE)))

@@ -13,7 +13,7 @@
 #include <string.h>
 #include "cogl/cogl.h"
 
-#define EXACT_ROW_LENGTH 1
+#define EXACT_ROW_LENGTH 0
 /* We can only turn this off (which will be much quicker) when we have the
  * GLES driver/clutter that supports UNPACK_ROW_LENGTH */
 
