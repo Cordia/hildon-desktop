@@ -26,6 +26,7 @@
 #endif
 
 #include <math.h>
+#include <unistd.h>
 
 #include "hd-launcher.h"
 #include "hd-launcher-app.h"
@@ -519,17 +520,38 @@ _hd_launcher_transition_clicked(ClutterActor *actor,
 static gboolean
 hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
 {
-  const gchar *loading_image;
+  const gchar *loading_image = NULL;
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
   gboolean launch_anim = FALSE;
+  const gchar *service_name;
+  gchar *cached_image = NULL;
   ClutterActor *app_image = 0;
   ClutterActor *tb_image = 0;
   gint title_height;
 
-  loading_image = hd_launcher_app_get_loading_image( item );
-  /* We only do this is loading_image is NOT defined. If it is blank
-   * then see below - we don't do anything. */
+  /* Is there a cached image? */
+  service_name = hd_launcher_app_get_service (item);
+  if (service_name &&
+      index(service_name, '/')==NULL &&
+      service_name[0]!='.')
+    {
+      cached_image = g_strdup_printf("%s/.cache/launch/%s.jpg",
+				     getenv("HOME"),
+				     service_name);
+
+      if (access (cached_image, R_OK)==0)
+	loading_image = cached_image;
+    }
+
+  /* If not, does the .desktop file specify an image? */
+  if (!loading_image)
+    loading_image = hd_launcher_app_get_loading_image( item );
+
+  /* If not, fall back to the default. */
+  if (!loading_image)
+    loading_image = HD_LAUNCHER_LAUNCH_IMAGE_BLANK;
+
   if (loading_image && !strlen(loading_image))
     loading_image = 0;
 
@@ -626,6 +648,7 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
   launch_anim = TRUE;
 
   hd_transition_play_sound ("/usr/share/sounds/ui-window_open.wav");
+  g_free (cached_image);
 
   return launch_anim;
 }

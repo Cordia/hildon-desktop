@@ -1,3 +1,8 @@
+2009-02-23  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/launcher/hd-launcher.c: basic support for snapshot images
+	on loading.  No support for saving them yet.
+
 2009-02-23  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Themed app launch animation
