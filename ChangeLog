@@ -1,5 +1,16 @@
 2009-02-23  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Themed app launch animation
+	* data/blank-window.png (deleted)
+	* data/launcher-button-highlight.png (deleted)
+	* data/edit-button.png (deleted)
+	* data/Makefile.am: removed images that are no longer used
+	* src/launcher/hd-launcher.c: Now use app screenshot or gtk theme's
+	  background colour for launch transition, and use title bar image
+	* home/hd-home.c: Remove reference to edit-button.png in #define
+
+2009-02-23  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-task-navigator.c: Modified task navigator tourette's
 	* src/home/hd-title-bar.c
 	* src/mb/hd-theme.h:

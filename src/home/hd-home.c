@@ -69,8 +69,6 @@
 #define APPLET_SETTINGS_BUTTON "applet-settings-button"
 #define APPLET_RESIZE_BUTTON   "applet-resize-button"
 
-#define EDIT_BUTTON  "edit-button.png"
-
 #define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home"
 #define HD_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
 

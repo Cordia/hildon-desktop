@@ -42,6 +42,9 @@
 #include "hd-gtk-utils.h"
 #include "hd-render-manager.h"
 #include "hd-app-mgr.h"
+#include "hd-gtk-style.h"
+#include "hd-theme.h"
+#include "hd-clutter-cache.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 #define HD_LAUNCHER_LAUNCH_IMAGE_BLANK \
@@ -520,80 +523,107 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
   gboolean launch_anim = FALSE;
+  ClutterActor *app_image = 0;
+  ClutterActor *tb_image = 0;
+  gint title_height;
 
   loading_image = hd_launcher_app_get_loading_image( item );
   /* We only do this is loading_image is NOT defined. If it is blank
    * then see below - we don't do anything. */
-  if (!loading_image)
-    loading_image = HD_LAUNCHER_LAUNCH_IMAGE_BLANK;
+  if (loading_image && !strlen(loading_image))
+    loading_image = 0;
 
-  if (loading_image && strlen(loading_image)>0)
+  if (priv->launch_image)
+    clutter_actor_destroy(priv->launch_image);
+
+  /* Load the launch image and add to the stage, along with the title bar
+   * from the theme (in their own group) */
+  priv->launch_image = clutter_group_new();
+  clutter_actor_set_name(priv->launch_image,
+      "hd_launcher_transition_app_start");
+  clutter_actor_set_size(priv->launch_image,
+                         HD_COMP_MGR_SCREEN_WIDTH,
+                         HD_COMP_MGR_SCREEN_HEIGHT);
+  /* Title bar */
+  tb_image = hd_clutter_cache_get_texture(
+      HD_THEME_IMG_TITLE_BAR, TRUE);
+  clutter_actor_set_width(tb_image, HD_COMP_MGR_SCREEN_WIDTH);
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->launch_image), tb_image);
+  /* App image (or rect if not */
+  if (loading_image)
     {
-      gchar *loading_path = g_strdup(loading_image);
-      /* FIXME: Is there a relative path for these? */
-      if (priv->launch_image)
-        clutter_actor_destroy(priv->launch_image);
-
-      /* Load the launch image and add to the stage. Run the first
-       * step of the transition so we don't get flicker before the timeline
-       * is called */
-      priv->launch_image = clutter_texture_new_from_file(loading_path, 0);
-      if (priv->launch_image)
-        {
-          ClutterActor *icon;
-          ClutterContainer *parent = hd_render_manager_get_front_group();
-
-          /* default pos to centre of the screen */
-          priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
-          priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
-          /* work out where to expand the image from from the centre of the icon of
-           * the tile that was clicked on */
-          clutter_actor_get_positionu(CLUTTER_ACTOR(tile),
-                    &priv->launch_position.x,
-                    &priv->launch_position.y);
-          icon = hd_launcher_tile_get_icon(tile);
-          if (icon)
-            {
-              ClutterVertex offs, size;
-              clutter_actor_get_positionu(icon,
-                    &offs.x,
-                    &offs.y);
-              clutter_actor_get_sizeu(icon, &size.x, &size.y);
-              priv->launch_position.x += offs.x + size.x/2;
-              priv->launch_position.y += offs.y + size.y/2;
-            }
-          /* append scroller movement */
-          priv->launch_position.y += CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_YMARGIN);
-          if (priv->active_page)
-            priv->launch_position.y -=
-                hd_launcher_page_get_scroll_y(HD_LAUNCHER_PAGE(priv->active_page));
-          /* all because the tidy- stuff breaks clutter's nice 'get absolute position'
-           * code... */
-
-          clutter_actor_set_name(priv->launch_image,
-                                 "HdLauncher:launch_image");
-          clutter_container_add_actor(parent,
-                                      priv->launch_image);
-          clutter_actor_set_reactive ( priv->launch_image, TRUE );
-          g_signal_connect (priv->launch_image, "button-release-event",
-                            G_CALLBACK(_hd_launcher_transition_clicked), 0);
-
-          hd_launcher_transition_new_frame(priv->launch_transition,
-                                           0, launcher);
-          clutter_actor_show(priv->launch_image);
-
-          clutter_timeline_rewind(priv->launch_transition);
-          clutter_timeline_start(priv->launch_transition);
-
-          launch_anim = TRUE;
-        }
-      else
+      app_image = clutter_texture_new_from_file(loading_image, 0);
+      if (!app_image)
         g_warning("%s: Preload image file '%s' specified for '%s'"
-                  " couldn't be loaded",
-                __FUNCTION__, loading_path, hd_launcher_app_get_exec(item));
-
-      g_free(loading_path);
+                    " couldn't be loaded",
+                  __FUNCTION__, loading_image, hd_launcher_app_get_exec(item));
     }
+  if (!app_image)
+    {
+      ClutterColor col;
+      hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON,
+                                GTK_STATE_NORMAL,
+                                &col);
+      app_image = clutter_rectangle_new_with_color(&col);
+    }
+
+  title_height = clutter_actor_get_height(tb_image);
+  clutter_actor_set_size(app_image,
+                         HD_COMP_MGR_SCREEN_WIDTH,
+                         HD_COMP_MGR_SCREEN_HEIGHT-title_height);
+  clutter_actor_set_position(app_image,
+                             0, title_height);
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->launch_image), app_image);
+
+
+  ClutterActor *icon;
+  ClutterContainer *parent = hd_render_manager_get_front_group();
+
+  /* default pos to centre of the screen */
+  priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
+  priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
+  /* work out where to expand the image from from the centre of the icon of
+   * the tile that was clicked on */
+  clutter_actor_get_positionu(CLUTTER_ACTOR(tile),
+            &priv->launch_position.x,
+            &priv->launch_position.y);
+  icon = hd_launcher_tile_get_icon(tile);
+  if (icon)
+    {
+      ClutterVertex offs, size;
+      clutter_actor_get_positionu(icon,
+            &offs.x,
+            &offs.y);
+      clutter_actor_get_sizeu(icon, &size.x, &size.y);
+      priv->launch_position.x += offs.x + size.x/2;
+      priv->launch_position.y += offs.y + size.y/2;
+    }
+  /* append scroller movement */
+  priv->launch_position.y += CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_YMARGIN);
+  if (priv->active_page)
+    priv->launch_position.y -=
+        hd_launcher_page_get_scroll_y(HD_LAUNCHER_PAGE(priv->active_page));
+  /* all because the tidy- stuff breaks clutter's nice 'get absolute position'
+   * code... */
+
+  clutter_actor_set_name(priv->launch_image,
+                         "HdLauncher:launch_image");
+  clutter_container_add_actor(parent,
+                              priv->launch_image);
+  clutter_actor_set_reactive ( priv->launch_image, TRUE );
+  g_signal_connect (priv->launch_image, "button-release-event",
+                    G_CALLBACK(_hd_launcher_transition_clicked), 0);
+
+  /* Run the first step of the transition so we don't get flicker before
+   * the timeline is called */
+  hd_launcher_transition_new_frame(priv->launch_transition,
+                                   0, launcher);
+  clutter_actor_show(priv->launch_image);
+
+  clutter_timeline_rewind(priv->launch_transition);
+  clutter_timeline_start(priv->launch_transition);
+
+  launch_anim = TRUE;
 
   hd_transition_play_sound ("/usr/share/sounds/ui-window_open.wav");
 
@@ -623,6 +653,7 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
   gint frames;
   float amt;
   ClutterFixed mx,my,zx,zy;
+  guint width, height;
 
   if (!HD_IS_LAUNCHER(data))
     return;
@@ -635,19 +666,20 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
   if (!priv->launch_image)
     return;
 
+  clutter_actor_get_size(priv->launch_image, &width, &height);
   /* mid-position of actor */
   mx = CLUTTER_FLOAT_TO_FIXED(
-                HD_LAUNCHER_PAGE_WIDTH*0.5f*amt +
+                width*0.5f*amt +
                 CLUTTER_FIXED_TO_FLOAT(priv->launch_position.x)*(1-amt));
   my = CLUTTER_FLOAT_TO_FIXED(
-                HD_LAUNCHER_PAGE_HEIGHT*0.5f*amt +
+                height*0.5f*amt +
                 CLUTTER_FIXED_TO_FLOAT(priv->launch_position.y)*(1-amt));
   /* size of actor */
   zx = CLUTTER_FLOAT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH*amt*0.5f);
   zy = CLUTTER_FLOAT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT*amt*0.5f);
 
-  clutter_actor_set_sizeu(priv->launch_image, zx*2, zy*2);
   clutter_actor_set_positionu(priv->launch_image, mx-zx, my-zy);
+  clutter_actor_set_scale(priv->launch_image, amt, amt);
 }
 
 HdLauncherTree *
