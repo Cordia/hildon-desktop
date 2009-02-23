@@ -69,4 +69,6 @@ void hd_task_navigator_add_notification    (HdTaskNavigator *self,
 void hd_task_navigator_remove_notification (HdTaskNavigator *self,
                                             HdNote *hdnote);
 
+ClutterActor *hd_task_navigator_find_app_actor (HdTaskNavigator *self,
+                                                const gchar *id);
 #endif /* ! __HD_TASK_NAVIGATOR_H__ */

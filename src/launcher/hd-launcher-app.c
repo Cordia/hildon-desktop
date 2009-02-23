@@ -62,9 +62,6 @@ struct _HdLauncherAppPrivate
 
   HdLauncherAppState state;
 
-  /* HdCompMgrClients for this app's main window. */
-  HdCompMgrClient *main_comp_mgr_client;
-
   GPid pid;
 };
 
@@ -83,9 +80,6 @@ hd_launcher_app_finalize (GObject *gobject)
   g_free (priv->service);
   g_free (priv->loading_image);
   g_free (priv->wm_class);
-
-  if (priv->main_comp_mgr_client)
-    priv->main_comp_mgr_client = NULL;
 
   G_OBJECT_CLASS (hd_launcher_app_parent_class)->dispose (gobject);
 }
@@ -249,34 +243,6 @@ hd_launcher_app_is_executing (HdLauncherApp *app)
 {
   return (hd_launcher_app_get_state (app) == HD_APP_STATE_PRESTARTED ||
           hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN);
-}
-
-HdCompMgrClient *
-hd_launcher_app_get_comp_mgr_client (HdLauncherApp *app)
-{
-  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  return priv->main_comp_mgr_client;
-}
-
-void
-hd_launcher_app_set_comp_mgr_client (HdLauncherApp *app,
-                                     HdCompMgrClient *client)
-{
-  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-
-  if (client)
-    {
-      hd_launcher_app_set_state (app, HD_APP_STATE_SHOWN);
-    }
-  else
-    {
-      /* TODO: Does this really mean the app has been closed?
-       * If we ever keep a list of all the windows an app has, that'd be
-       * a better way of knowing.
-       */
-      hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
-    }
-  priv->main_comp_mgr_client = client;
 }
 
 GPid

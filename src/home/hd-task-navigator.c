@@ -2459,6 +2459,26 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
 }
 /* Add/remove notifications }}} */
 
+/*
+ * Find which thumbnail represents the requested app.
+ */
+ClutterActor *
+hd_task_navigator_find_app_actor (HdTaskNavigator *self,
+                                  const gchar *id)
+{
+  guint i;
+  Thumbnail *thumb;
+  for (i = 0; i < Thumbnails->len; i++)
+    {
+      thumb = &g_array_index (Thumbnails, Thumbnail, i);
+      const gchar *appid = g_object_get_data (G_OBJECT (thumb->apwin),
+                                              "HD-ApplicationId");
+      if (!g_strcmp0 (appid, id))
+        return thumb->apwin;
+    }
+  return NULL;
+}
+
 /* %HdTaskNavigator {{{ */
 /* Callbacks {{{ */
 G_DEFINE_TYPE (HdTaskNavigator, hd_task_navigator, CLUTTER_TYPE_GROUP);

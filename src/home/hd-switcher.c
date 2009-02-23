@@ -466,20 +466,22 @@ hd_switcher_relaunch_app (HdSwitcher *switcher,
                           HdLauncherApp *app,
                           gpointer data)
 {
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   ClutterActor *actor;
-  HdCompMgrClient *client = hd_launcher_app_get_comp_mgr_client (app);
-
-  /* First, go to the task switcher view. */
-  hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
 
   /* Get the actor for the window and act as if the user had selected it. */
-  actor = hd_comp_mgr_client_get_actor (client);
+  actor = hd_task_navigator_find_app_actor ( priv->task_nav,
+              hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
   if (!actor)
     {
       g_debug ("%s: Weird! Trying to relaunch a non-existing app.\n",
           __FUNCTION__);
       return;
     }
+
+  /* Go to the task switcher view. */
+  hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+
   hd_switcher_item_selected (switcher, actor);
 }
 

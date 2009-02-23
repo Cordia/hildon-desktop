@@ -31,7 +31,6 @@
 #define __HD_LAUNCHER_APP_H__
 
 #include "hd-launcher-item.h"
-#include "mb/hd-comp-mgr.h"
 
 G_BEGIN_DECLS
 
@@ -92,13 +91,6 @@ HdLauncherAppState hd_launcher_app_get_state (HdLauncherApp *app);
 void               hd_launcher_app_set_state (HdLauncherApp *app,
                                               HdLauncherAppState state);
 gboolean hd_launcher_app_is_executing     (HdLauncherApp *app);
-
-/* Returns the main window related to this application, if it has been
- * launched.
- */
-HdCompMgrClient *hd_launcher_app_get_comp_mgr_client (HdLauncherApp *app);
-void   hd_launcher_app_set_comp_mgr_client (HdLauncherApp *app,
-                                            HdCompMgrClient *client);
 
 GPid hd_launcher_app_get_pid (HdLauncherApp *app);
 void hd_launcher_app_set_pid (HdLauncherApp *app, GPid pid);

@@ -1,3 +1,20 @@
+2009-02-23  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Remove connection from HdLauncherApp to HdCompMgrClient.
+	Fixes: NB#102086
+
+	* src/home/hd-switcher.c: Changed handling of relaunching to use the new
+	function.
+	* src/home/hd-task-navigator.c: Added function to look for the appropiate
+	actor for an app.
+	* src/home/hd-task-navigator.h:
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-launcher-app.c: Removed methods for getting and setting
+	the main_comp_mgr_client.
+	* src/launcher/hd-launcher-app.h:
+	* src/mb/hd-comp-mgr.c: Set a property on each window actor with the app
+	id.
+
 2009-02-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.21

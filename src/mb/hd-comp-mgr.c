@@ -809,12 +809,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 		        priv->switcher_group, actor,
                   	mb_wm_comp_mgr_clutter_client_get_actor (prev));
 
-                    /* Tell the app which the main client is now. */
-                    if (hclient->priv->app)
-		    {
-                      hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
-                                                  HD_COMP_MGR_CLIENT (prev));
-		    }
 		  }
                 }
               else if (!(c->window->ewmh_state &
@@ -838,10 +832,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                                                  ? HDRM_STATE_TASK_NAV
                                                  : HDRM_STATE_HOME);
 
-                  /* This app is finished. */
-                  if (hclient->priv->app)
-                    hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
-                                                         NULL);
                 }
 	      else if (app->leader == app && app->followers)
 	        {
@@ -861,13 +851,11 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 		  /* set the new leader's followers list */
 		  new_leader->followers = g_list_remove (app->followers,
 	                                                 new_leader);
-                  /* The topmost child is the new main client. */
-                  if (hclient->priv->app)
-                    hd_launcher_app_set_comp_mgr_client (hclient->priv->app,
-			                           HD_COMP_MGR_CLIENT (prev));
 		}
           g_object_set_data (G_OBJECT (actor),
                              "HD-MBWMCompMgrClutterClient", NULL);
+          g_object_set_data (G_OBJECT (actor),
+                             "HD-ApplicationId", NULL);
         }
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea)
@@ -1276,10 +1264,16 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   ctype = MB_WM_CLIENT_CLIENT_TYPE (c);
 
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+  hclient = HD_COMP_MGR_CLIENT (cclient);
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
   g_object_set_data (G_OBJECT (actor),
 		     "HD-MBWMCompMgrClutterClient", cclient);
+  if (hclient->priv->app)
+    g_object_set_data (G_OBJECT (actor),
+           "HD-ApplicationId",
+           (gchar *)hd_launcher_item_get_id (
+                       HD_LAUNCHER_ITEM (hclient->priv->app)));
 
   hd_comp_mgr_hook_update_area(HD_COMP_MGR (mgr), actor);
 
@@ -1422,7 +1416,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   else if (ctype != MBWMClientTypeApp)
     return;
 
-  hclient = HD_COMP_MGR_CLIENT (cclient);
   hkey = hclient->priv->hibernation_key;
 
   hclient_h = g_hash_table_lookup (priv->hibernating_apps, &hkey);
@@ -1498,10 +1491,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 	          topmost = TRUE;
 	      }
 	  }
-
-        /* Set this new client as the main client for the app. */
-        if (hclient->priv->app && topmost)
-          hd_launcher_app_set_comp_mgr_client (hclient->priv->app, hclient);
 
 	if (to_replace && topmost)
 	  {
@@ -1857,6 +1846,7 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
   hd_comp_mgr_close_app (hmgr, cc, FALSE);
 }
 
+/* TODO: Move hibernation into HdAppMgr. */
 void
 hd_comp_mgr_hibernate_client (HdCompMgr *hmgr,
 			      MBWMCompMgrClutterClient *cc,
@@ -1893,25 +1883,20 @@ hd_comp_mgr_wakeup_client (HdCompMgr *hmgr, HdCompMgrClient *hclient)
 void
 hd_comp_mgr_hibernate_all (HdCompMgr *hmgr, gboolean force)
 {
-  GList *apps;
+  MBWMCompMgr     * mgr = MB_WM_COMP_MGR (hmgr);
+  MBWindowManager * wm = mgr->wm;
 
-  apps = hd_launcher_tree_get_items (hd_launcher_get_tree(), NULL);
-  for (; apps; apps = apps->next)
+  if (!mb_wm_stack_empty (wm))
     {
-      HdLauncherApp *app;
-      MBWMCompMgrClutterClient *cmgrcc;
+      MBWindowManagerClient * c;
 
-      if (hd_launcher_item_get_item_type (apps->data)
-          != HD_APPLICATION_LAUNCHER)
-        continue;
+      mb_wm_stack_enumerate (wm, c)
+       {
+         MBWMCompMgrClutterClient * cc =
+           MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
 
-      app = HD_LAUNCHER_APP (apps->data);
-      if (hd_launcher_app_get_state (app) != HD_APP_STATE_SHOWN)
-        continue;
-
-      cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (
-                        hd_launcher_app_get_comp_mgr_client (app));
-      hd_comp_mgr_hibernate_client (hmgr, cmgrcc, force);
+         hd_comp_mgr_hibernate_client (hmgr, cc, force);
+       }
     }
 }
 

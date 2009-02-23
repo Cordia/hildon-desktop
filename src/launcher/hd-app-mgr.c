@@ -1222,6 +1222,8 @@ hd_app_mgr_match_window (const char *res_name,
 
   if (result)
     {
+      hd_launcher_app_set_state (result, HD_APP_STATE_SHOWN);
+
       /* Signal that the app has appeared.
        * TODO: I'd prefer to signal this when the window is mapped,
        * but right now here's the only place HdAppMgr gets to know this.
@@ -1256,11 +1258,8 @@ hd_app_mgr_dump_app_list (gboolean only_running)
       app = HD_LAUNCHER_APP (apps->data);
       if (!only_running || hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN)
         {
-          MBWMCompMgrClient *cmgrc;
-
-          cmgrc = MB_WM_COMP_MGR_CLIENT (hd_launcher_app_get_comp_mgr_client (app));
-          g_debug("app=%p, cmgrc=%p, mbwmc=%p, wm_class=%s, service=%s, state=%d",
-                  app, cmgrc, cmgrc ? cmgrc->wm_client : NULL,
+          g_debug("app=%p, wm_class=%s, service=%s, state=%d",
+                  app,
                   hd_launcher_app_get_wm_class (app),
                   hd_launcher_app_get_service (app),
                   hd_launcher_app_get_state (app));
