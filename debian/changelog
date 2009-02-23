@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.21-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.21-1) unstable; urgency=low
 
   * Support undecorated dialogs also size-wise. Fixes: NB#101816
   * Disable Gobject checks to make sure we get enough testing without them.
@@ -20,8 +20,10 @@ hildon-desktop (1:2.2.21-1~unreleased) unstable; urgency=low
   * Jan Arne: Move background image caching to hildon-home. Fixes: NB#99941
   * Adam: Applet stacking fixes. Fixes: NB#101434
   * Jan Arne: Fix selection of new current view. Fixes: NB#102458
+  * Added dependency to ke-recv-extra because of the low-memory and background
+    killing signals.
 
- -- Kimmo Hamalainen <kimmo.hamalainen@nokia.com>  Fri, 20 Feb 2009 09:21:45 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Feb 2009 12:06:42 +0200
 
 hildon-desktop (1:2.2.20-1) unstable; urgency=low
 
