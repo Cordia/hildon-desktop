@@ -1,3 +1,9 @@
+2009-02-23  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher.c: removed loading of blank image 
+	(which is now not in the h-d package) - if there is no image a 
+	rect of the theme's background colour is created.
+
 2009-02-23  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/launcher/hd-launcher.c: basic support for snapshot images

@@ -48,8 +48,6 @@
 #include "hd-clutter-cache.h"
 
 #define I_(str) (g_intern_static_string ((str)))
-#define HD_LAUNCHER_LAUNCH_IMAGE_BLANK \
-                "/usr/share/hildon-desktop/blank-window.png"
 
 struct _HdLauncherPrivate
 {
@@ -548,10 +546,6 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
   if (!loading_image)
     loading_image = hd_launcher_app_get_loading_image( item );
 
-  /* If not, fall back to the default. */
-  if (!loading_image)
-    loading_image = HD_LAUNCHER_LAUNCH_IMAGE_BLANK;
-
   if (loading_image && !strlen(loading_image))
     loading_image = 0;
 
@@ -571,7 +565,7 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
       HD_THEME_IMG_TITLE_BAR, TRUE);
   clutter_actor_set_width(tb_image, HD_COMP_MGR_SCREEN_WIDTH);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->launch_image), tb_image);
-  /* App image (or rect if not */
+  /* App image - if we had one */
   if (loading_image)
     {
       app_image = clutter_texture_new_from_file(loading_image, 0);
@@ -580,6 +574,7 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
                     " couldn't be loaded",
                   __FUNCTION__, loading_image, hd_launcher_app_get_exec(item));
     }
+  /* if not, create a rectangle with the background colour from the theme */
   if (!app_image)
     {
       ClutterColor col;
