@@ -17,6 +17,14 @@
 #include <cogl/cogl.h>
 
 #include <string.h>
+#include <locale.h>
+
+
+/* This fixes the bug where the SGX GLSL compiler uses the current locale for
+ * numbers - so '1.0' in a shader will not work when the locale says that ','
+ * is a decimal separator.
+ */
+#define GLSL_LOCALE_FIX 1
 
 /* The OpenGL fragment shader used to do blur and desaturation.
  * We use 3 samples here arranged in a rough triangle. We need
@@ -227,10 +235,23 @@ tidy_blur_group_paint (ClutterActor *actor)
   if (priv->use_shader && !priv->shader)
     {
       GError           *error = NULL;
+      char             *old_locale;
+
+#if GLSL_LOCALE_FIX
+      old_locale = g_strdup( setlocale (LC_ALL, NULL) );
+      setlocale (LC_NUMERIC, "C");
+#endif
+
       priv->shader = clutter_shader_new();
       clutter_shader_set_fragment_source (priv->shader,
                                           BLUR_FRAGMENT_SHADER, -1);
       clutter_shader_compile (priv->shader, &error);
+
+#if GLSL_LOCALE_FIX
+      setlocale (LC_ALL, old_locale);
+      g_free (old_locale);
+#endif
+
       if (error)
         {
           g_warning ("unable to load shader: %s\n", error->message);

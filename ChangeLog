@@ -1,5 +1,10 @@
 2009-02-23  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/tidy/tidy-blur-group.c: Added workaround for GLSL shader
+	compilation when the language includes ',' as a decimal separator
+
+2009-02-23  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/launcher/hd-launcher.c: removed loading of blank image 
 	(which is now not in the h-d package) - if there is no image a 
 	rect of the theme's background colour is created.
