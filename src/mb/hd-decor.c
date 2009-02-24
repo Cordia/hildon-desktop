@@ -158,23 +158,6 @@ hd_decor_get_actor(HdDecor   *decor)
             MB_WM_COMP_MGR_CLUTTER_CLIENT(client->cm_client));
 }
 
-static gint
-hd_decor_get_start_x(HdDecor *decor)
-{
-  MBWMDecor         *mb_decor = MB_WM_DECOR (decor);
-  MBWindowManagerClient  *client = mb_decor->parent_client;
-  MBWMClientType          c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
-
-  /* because only apps are fullscreen and care about the status area */
-  if (c_type != MBWMClientTypeApp)
-    return 0;
-
-  /* Use what is set by mb_adjust_dialog_title_position()
-   * minus the LEFT_GUTTER.  HDRM will see to that @left_padding
-   * is up to date. */
-  return left_padding - 8;
-}
-
 static void
 hd_decor_remove_actors(HdDecor   *decor)
 {
@@ -213,7 +196,6 @@ hd_decor_create_actors(HdDecor *decor)
   MBWMXmlClient     *c;
   MBWMXmlDecor      *d;
   ClutterGeometry   /*geo, */area;
-  gint              x_start;
   gboolean          is_waiting;
 
   if (!client)
@@ -226,7 +208,6 @@ hd_decor_create_actors(HdDecor *decor)
 
   is_waiting = hd_decor_window_is_waiting(client->wmref,
                                           client->window->xwindow);
-  x_start = hd_decor_get_start_x(decor);
 
   area.x = 0;
   area.y = 0;
@@ -245,11 +226,7 @@ hd_decor_create_actors(HdDecor *decor)
         ClutterLabel *bar_title;
         ClutterColor white = { 0xFF, 0xFF, 0xFF, 0xFF };
         char font_name[512];
-        gint x;
         guint w = 0, h = 0;
-        gboolean centre_title;
-
-        centre_title = c_type != MBWMClientTypeApp;
 
         bar_title = CLUTTER_LABEL(clutter_label_new());
         clutter_label_set_color(bar_title, &white);
@@ -268,11 +245,18 @@ hd_decor_create_actors(HdDecor *decor)
         clutter_label_set_text(bar_title, title);
 
         clutter_actor_get_size(CLUTTER_ACTOR(bar_title), &w, &h);
-        x = centre_title ? (mb_decor->geom.width - w) / 2 :
-                           x_start + HD_DECOR_TITLE_MARGIN;
+        /* if it's too big, make sure we crop it */
+        if (w > HD_COMP_MGR_SCREEN_WIDTH)
+          {
+            clutter_label_set_ellipsize(bar_title, PANGO_ELLIPSIZE_END);
+            clutter_actor_set_width(CLUTTER_ACTOR(bar_title),
+                                    HD_COMP_MGR_SCREEN_WIDTH);
+            w = HD_COMP_MGR_SCREEN_WIDTH;
+          }
+
         clutter_actor_set_position(CLUTTER_ACTOR(bar_title),
-                                   x,
-                                   (mb_decor->geom.height - h) / 2);
+            (HD_COMP_MGR_SCREEN_WIDTH - w) / 2,
+            (mb_decor->geom.height - h) / 2);
       }
     }
 
@@ -339,7 +323,7 @@ void hd_decor_sync(HdDecor *decor)
   hd_decor_remove_actors(decor);
   if (MB_WM_DECOR(decor)->geom.width > 0 &&
       MB_WM_DECOR(decor)->geom.height > 0 &&
-      (MB_WM_CLIENT_CLIENT_TYPE(client) != MBWMClientTypeApp))
+      MB_WM_CLIENT_CLIENT_TYPE(client) != MBWMClientTypeApp)
     {
       /* For dialogs, etc. We need to fill our clutter group with
        * all the actors needed to draw it. */

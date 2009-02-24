@@ -640,10 +640,13 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
   if (d->show_title && title && strlen(title)) {
     ClutterActor *status_area;
     char font_name[512];
-    guint w,h;
+    gint h;
     int x_start = 0;
+    int x_end = HD_COMP_MGR_SCREEN_WIDTH;
     if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
       x_start += HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+    if (priv->state & HDTB_VIS_BTN_RIGHT_MASK)
+      x_end -= HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
     status_area = hd_render_manager_get_status_area();
     if (status_area && CLUTTER_ACTOR_IS_VISIBLE(status_area))
       x_start += clutter_actor_get_width(status_area);
@@ -655,10 +658,13 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
     clutter_label_set_font_name(priv->title, font_name);
     clutter_label_set_text(priv->title, title);
 
-    clutter_actor_get_size(CLUTTER_ACTOR(priv->title), &w, &h);
+    h = clutter_actor_get_height(CLUTTER_ACTOR(priv->title));
+    clutter_actor_set_width(CLUTTER_ACTOR(priv->title),
+        x_end - (x_start+HD_TITLE_BAR_TITLE_MARGIN));
     clutter_actor_set_position(CLUTTER_ACTOR(priv->title),
                                x_start+HD_TITLE_BAR_TITLE_MARGIN,
                                (HD_COMP_MGR_TOP_MARGIN-h)/2);
+    clutter_label_set_ellipsize(priv->title, PANGO_ELLIPSIZE_END);
     clutter_actor_show(CLUTTER_ACTOR(priv->title));
   }
   else

@@ -1,3 +1,10 @@
+2009-02-24  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-decor.c
+	* src/home/hd-title-bar.c:
+	NB#90445 - long window titles should be clipped to the screen. Removed
+	non-centred code paths from hd-decor as they were never executed.
+
 2009-02-24  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view-layout.c (added):
