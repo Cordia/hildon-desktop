@@ -14,6 +14,7 @@ hd-home-glue.h: hd-home-dbus.xml
 home_h = 	hd-home.h		\
 		hd-home-view.h		\
 		hd-home-view-container.h\
+		hd-home-view-layout.h   \
 		hd-render-manager.h	\
 		hd-scrollable-group.h	\
 		hd-switcher.h		\
@@ -25,6 +26,7 @@ home_h = 	hd-home.h		\
 home_c = 	hd-home.c		\
 		hd-home-view.c		\
 		hd-home-view-container.c\
+		hd-home-view-layout.c   \
 		hd-render-manager.c	\		
 		hd-scrollable-group.c	\
 		hd-switcher.c		\

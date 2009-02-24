@@ -43,7 +43,7 @@ hd_home_applet_theme_change (MBWindowManagerClient *client);
 static void
 hd_home_applet_show (MBWindowManagerClient *client)
 {
-  MBWindowManagerClientClass  *parent_klass = NULL;
+  MBWindowManagerClientClass *parent_klass = NULL;
 
   parent_klass = MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS (client));
 
@@ -86,14 +86,10 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
   MBWindowManager       *wm = client->wmref;
   MBWMClientWindow      *win = client->window;
   HdCompMgr             *hmgr = HD_COMP_MGR (wm->comp_mgr);
-  MBGeometry             geom;
-  int                    n, s, w, e;
-  int                   *view_id;
-  Atom                   view_id_atom;
   int                    n_items;
   Atom                   applet_id_atom, utf8_atom;
   char                  *applet_id;
-  GConfClient           *gconf_client  = gconf_client_get_default ();
+  GConfClient           *gconf_client = gconf_client_get_default ();
   char                  *modified_key, *modified;
   int *settings;
 
@@ -131,7 +127,8 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
       return 1;
     }
 
-  modified_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/modified", applet->applet_id);
+  modified_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/modified",
+                                  applet->applet_id);
   modified = gconf_client_get_string (gconf_client,
                                       modified_key,
                                       NULL);
@@ -172,29 +169,12 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
 
   if (settings)
     {
-      applet->settings = 1;
+      applet->settings = True;
       XFree (settings);
     }
   else
     {
-      applet->settings = 0;
-    }
-
-  view_id_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_HOME_VIEW);
-
-  view_id =
-    hd_util_get_win_prop_data_and_validate (wm->xdpy,
-					    win->xwindow,
-					    view_id_atom,
-					    XA_CARDINAL,
-					    32,
-					    1,
-					    &n_items);
-
-  if (view_id)
-    {
-      applet->view_id = *view_id;
-      XFree (view_id);
+      applet->settings = False;
     }
 
   XChangeProperty (wm->xdpy, win->xwindow,
@@ -207,15 +187,8 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
   mb_wm_client_set_layout_hints (client,
 				 LayoutPrefPositionFree |
 				 LayoutPrefMovable      |
+                                 LayoutPrefOverlaps     |
 				 LayoutPrefVisible);
-
-  if (!client->window->undecorated)
-    {
-      mb_wm_theme_create_decor (wm->theme, client, MBWMDecorTypeNorth);
-      mb_wm_theme_create_decor (wm->theme, client, MBWMDecorTypeSouth);
-      mb_wm_theme_create_decor (wm->theme, client, MBWMDecorTypeWest);
-      mb_wm_theme_create_decor (wm->theme, client, MBWMDecorTypeEast);
-    }
 
   client->desktop = 0;
   client->stacking_layer = 0;  /* We stack with desktop */
@@ -223,31 +196,7 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
   mb_wm_client_geometry_mark_dirty (client);
   mb_wm_client_visibility_mark_dirty (client);
 
-  if (!wm->theme)
-    return 1;
-
-  /*
-   * Since applets are free-sized, they do not necessarily get a request for
-   * geometry from the layout manager -- we have to set the initial geometry
-   * here
-   */
-  mb_wm_theme_get_decor_dimensions (wm->theme, client, &n, &s, &w, &e);
-
-  geom.x      = client->window->geometry.x;
-  geom.y      = client->window->geometry.y;
-  geom.width  = client->window->geometry.width + w + e;
-  geom.height = client->window->geometry.height + n + s;
-
-  /*
-   * Auto-allocate geometry for the applet.
-   *
-   * FIXME -- need some mechanism for storing geometry between sessions, and
-   * only auto-allocate the new ones.
-   */
-  applet->applet_layer =
-    hd_comp_mgr_request_home_applet_geometry (hmgr, applet->view_id, &geom);
-
-  hd_home_applet_request_geometry (client, &geom, MBWMClientReqGeomForced);
+/*  hd_home_applet_request_geometry (client, &geom, MBWMClientReqGeomForced); */
 
   return 1;
 }
@@ -288,7 +237,7 @@ hd_home_applet_request_geometry (MBWindowManagerClient *client,
    * external from ConfigureRequest, it is new geometry of the client window,
    * so we need to take care to handle this right.
    */
-  geom = (flags & MBWMClientReqGeomIsViaConfigureReq) ?
+  geom = (flags & MBWMClientReqGeomIsViaConfigureReq) ? 
     &client->window->geometry : &client->frame_geometry;
 
   change_pos = (geom->x != new_geometry->x || geom->y != new_geometry->y);
@@ -325,14 +274,10 @@ hd_home_applet_request_geometry (MBWindowManagerClient *client,
 	  client->window->geometry.width  = new_geometry->width;
 	  client->window->geometry.height = new_geometry->height;
 
-	  client->frame_geometry.x
-	    = client->window->geometry.x - west;
-	  client->frame_geometry.y
-	    = client->window->geometry.y - north;
-	  client->frame_geometry.width
-	    = client->window->geometry.width + (west + east);
-	  client->frame_geometry.height
-	    = client->window->geometry.height + (south + north);
+	  client->frame_geometry.x = client->window->geometry.x - west;
+	  client->frame_geometry.y = client->window->geometry.y - north;
+	  client->frame_geometry.width = client->window->geometry.width + (west + east);
+	  client->frame_geometry.height = client->window->geometry.height + (south + north);
 	}
       else
 	{
@@ -345,14 +290,10 @@ hd_home_applet_request_geometry (MBWindowManagerClient *client,
 	  client->frame_geometry.width  = new_geometry->width;
 	  client->frame_geometry.height = new_geometry->height;
 
-	  client->window->geometry.x
-	    = client->frame_geometry.x + west;
-	  client->window->geometry.y
-	    = client->frame_geometry.y + north;
-	  client->window->geometry.width
-	    = client->frame_geometry.width - (west + east);
-	  client->window->geometry.height
-	    = client->frame_geometry.height - (south + north);
+	  client->window->geometry.x = client->frame_geometry.x + west;
+	  client->window->geometry.y = client->frame_geometry.y + north;
+	  client->window->geometry.width = client->frame_geometry.width - (west + east);
+	  client->window->geometry.height = client->frame_geometry.height - (south + north);
 	}
 
       mb_wm_client_geometry_mark_dirty (client);

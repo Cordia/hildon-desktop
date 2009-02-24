@@ -1,3 +1,26 @@
+2009-02-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view-layout.c (added):
+	* src/home/hd-home-view-layout.h (added):
+	* src/home/Makefile.am: Add HdHomeViewLayout class which supports
+	arranging applets according to the Home UI spec.
+
+	* src/home/hd-home-view.c: Use new HdHomeViewLayout to arrange
+	applets. Fixes: NB#101724
+
+	* src/home/hd-home.c (hd_home_add_applet): Move applet positioning to
+	HdHomeView.
+	  (hd_home_show_applet_buttons): Hide settings icon. Fixes: NB#102994
+
+	* src/mb/Makefile.am:
+	* src/mb/hd-comp-mgr.c:
+	* src/mb/hd-comp-mgr.h:
+	* src/mb/hd-home-applet.c:
+	* src/mb/hd-home-applet.h:
+	* src/mb/hd-applet-layout-manager.c (deleted):
+	* src/mb/hd-applet-layout-manager.h (deleted): Remove old, non
+	working, applet arranging code.
+
 2009-02-23  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-blur-group.c: Added workaround for GLSL shader

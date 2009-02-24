@@ -889,10 +889,8 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
 {
   HdHomePrivate *priv = home->priv;
   gint view_id;
-  GConfClient *client  = gconf_client_get_default ();
-  gchar *view_key, *position_key;
-  GSList *position;
-  MBGeometry geom;
+  GConfClient *client = gconf_client_get_default ();
+  gchar *view_key;
   MBWMCompMgrClient *cclient;
   HdHomeApplet *wm_applet;
 
@@ -900,7 +898,6 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   wm_applet = (HdHomeApplet *) cclient->wm_client;
 
   view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view", wm_applet->applet_id);
-  position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", wm_applet->applet_id);
 
   view_id = gconf_client_get_int (client,
                                   view_key,
@@ -921,38 +918,8 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   g_object_set_data (G_OBJECT (applet),
                      "HD-view-id", GINT_TO_POINTER (view_id));
 
-  position = gconf_client_get_list (client,
-                                    position_key,
-                                    GCONF_VALUE_INT,
-                                    NULL);
-
-  if (position && position->next)
-    {
-      geom.x = GPOINTER_TO_INT (position->data);
-      geom.y = GPOINTER_TO_INT (position->next->data);
-
-      g_slist_free (position);
-    }
-  else
-    {
-      clutter_actor_get_position (applet, &geom.x, &geom.y);
-    }
-
-    {
-      guint width, height;
-
-      clutter_actor_get_size (applet, &width, &height);
-
-      geom.width = width;
-      geom.height = height;
-    }
-
-  mb_wm_client_request_geometry (cclient->wm_client, &geom,
-				 MBWMClientReqGeomIsViaUserAction);
-
   g_object_unref (client);
   g_free (view_key);
-  g_free (position_key);
 
   g_debug ("hd_home_add_applet (), view: %d", view_id);
 
@@ -1110,6 +1077,10 @@ hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet)
                                   x_a - w_b/2,
                                   y_a + h_a - h_b/2);
       clutter_actor_show (priv->applet_settings_button);
+    }
+  else
+    {
+      clutter_actor_hide (priv->applet_settings_button);
     }
 
   if (priv->active_applet != applet)

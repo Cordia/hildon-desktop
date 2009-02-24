@@ -128,12 +128,6 @@ gint hd_comp_mgr_get_current_home_view_id (HdCompMgr *hmgr);
 
 MBWindowManagerClient * hd_comp_mgr_get_desktop_client (HdCompMgr *hmgr);
 
-gint hd_comp_mgr_request_home_applet_geometry (HdCompMgr  *hmgr,
-					       gint        view_id,
-					       MBGeometry *geom);
-
-gint hd_comp_mgr_get_home_applet_layer_count (HdCompMgr *hmgr, gint view_id);
-
 void hd_comp_mgr_dump_debug_info (const gchar *tag);
 
 void hd_comp_mgr_setup_input_viewport (HdCompMgr       *hmgr,

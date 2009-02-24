@@ -34,7 +34,6 @@
 #include "hd-home-applet.h"
 #include "hd-app.h"
 #include "hd-gtk-style.h"
-#include "hd-applet-layout-manager.h"
 #include "hd-note.h"
 #include "hd-animation-actor.h"
 #include "hd-render-manager.h"
@@ -88,8 +87,6 @@ struct HdCompMgrPrivate
   Atom                   atoms[_HD_ATOM_LAST];
 
   DBusConnection        *dbus_connection;
-
-  HdAppletLayoutManager *applet_manager[4];
 
   gboolean               stack_sync      : 1;
 
@@ -373,7 +370,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   HdTaskNavigator      *task_nav;
   ClutterActor         *stage;
   ClutterActor         *arena;
-  gint                  i;
 
   priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
 
@@ -443,9 +439,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   priv->property_changed_cb_id = mb_wm_main_context_x_event_handler_add (
                    cmgr->wm->main_ctx, None, PropertyNotify,
                    (MBWMXEventFunc)hd_comp_mgr_client_property_changed, cmgr);
-
-  for (i = 0; i < 4; ++i)
-    priv->applet_manager[i] = hd_applet_layout_manager_new ();
 
   hd_render_manager_set_state(HDRM_STATE_HOME);
 
@@ -2011,59 +2004,6 @@ hd_comp_mgr_get_desktop_client (HdCompMgr *hmgr)
   HdCompMgrPrivate *priv = hmgr->priv;
 
   return priv->desktop;
-}
-
-gint
-hd_comp_mgr_request_home_applet_geometry (HdCompMgr  *hmgr,
-					  gint        view_id,
-					  MBGeometry *geom)
-{
-  HdCompMgrPrivate *priv = hmgr->priv;
-  gint              layer;
-
-  if (view_id < 0)
-    {
-      /*
-       * FIXME -- what is to happen to sticky applets ?
-       */
-      view_id = 0;
-    }
-
-  /*
-   * We support 4 views only
-   */
-  g_assert (view_id < 4);
-
-  layer =
-    hd_applet_layout_manager_request_geometry (priv->applet_manager[view_id],
-					       geom);
-
-  return layer;
-}
-
-gint
-hd_comp_mgr_get_home_applet_layer_count (HdCompMgr *hmgr, gint view_id)
-{
-  HdCompMgrPrivate *priv = hmgr->priv;
-  gint              count;
-
-  if (view_id < 0)
-    {
-      /*
-       * FIXME -- what is to happen to sticky applets ?
-       */
-      view_id = 0;
-    }
-
-  /*
-   * We support 4 views only
-   */
-  g_assert (view_id < 4);
-
-  count =
-    hd_applet_layout_manager_get_layer_count (priv->applet_manager[view_id]);
-
-  return count;
 }
 
 static void

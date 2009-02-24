@@ -38,13 +38,11 @@ struct HdHomeApplet
 {
   MBWMClientBase    parent;
 
-  MBWMDecorButton  *button_close;
-  unsigned int      view_id;
-  unsigned int      applet_layer;
-
   char             *applet_id;
+
+  Bool              settings;
+  unsigned int      view_id;
   time_t            modified;
-  unsigned int      settings;
 };
 
 struct HdHomeAppletClass

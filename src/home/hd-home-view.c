@@ -27,6 +27,7 @@
 
 #include "hd-home-view.h"
 #include "hd-home-view-container.h"
+#include "hd-home-view-layout.h"
 #include "hd-comp-mgr.h"
 #include "hd-home.h"
 #include "hd-util.h"
@@ -45,15 +46,16 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #define BACKGROUND_COLOR {0, 0, 0, 0xff}
-#define CACHED_BACKGROUND_IMAGE_FILE g_strdup_printf ("%s/.backgrounds/background-%u.png", g_get_home_dir (), priv->id + 1)
+#define CACHED_BACKGROUND_IMAGE_FILE "%s/.backgrounds/background-%u.png"
+
+#define GCONF_KEY_POSITION "/apps/osso/hildon-desktop/applets/%s/position"
+#define GCONF_KEY_MODIFIED "/apps/osso/hildon-desktop/applets/%s/modified"
+#define GCONF_KEY_VIEW     "/apps/osso/hildon-desktop/applets/%s/view"
 
 #define MAX_VIEWS 4
 
 /* Maximal pixel movement for a tap (before it is a move) */
 #define MAX_TAP_DISTANCE 20
-
-#define APPLET_AREA_MIN_X 0
-#define APPLET_AREA_MIN_Y 56
 
 enum
 {
@@ -74,9 +76,6 @@ struct _HdHomeViewPrivate
 
   ClutterActor             *background;
 
-  gint                      xwidth;
-  gint                      xheight;
-
   GHashTable               *applets;
 
   gint                      applet_motion_start_x;
@@ -94,10 +93,11 @@ struct _HdHomeViewPrivate
 
   guint                     id;
 
-  guint                     load_background_source;
+  guint load_background_source;
 
-  gint                      bg_image_dest_width;
-  gint                      bg_image_dest_height;
+  GConfClient *gconf_client;
+
+  HdHomeViewLayout *layout;
 };
 
 static void hd_home_view_class_init (HdHomeViewClass *klass);
@@ -261,29 +261,31 @@ hd_home_view_constructed (GObject *object)
                                          NULL,
                                          (GDestroyNotify) applet_data_free);
 
-  priv->xwidth  = HD_COMP_MGR_LANDSCAPE_WIDTH;
-  priv->xheight = HD_COMP_MGR_LANDSCAPE_HEIGHT;
-
-
   priv->background_container = clutter_group_new ();
   clutter_actor_set_name (priv->background_container, "HdHomeView::background-container");
   clutter_actor_set_visibility_detect(priv->background_container, FALSE);
   clutter_actor_set_position (priv->background_container, 0, 0);
-  clutter_actor_set_size (priv->background_container, priv->xwidth, priv->xheight);
+  clutter_actor_set_size (priv->background_container,
+                          HD_COMP_MGR_LANDSCAPE_WIDTH,
+                          HD_COMP_MGR_LANDSCAPE_HEIGHT);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->background_container);
 
   priv->applets_container = clutter_group_new ();
   clutter_actor_set_name (priv->applets_container, "HdHomeView::applets-container");
   clutter_actor_set_visibility_detect(priv->applets_container, FALSE);
   clutter_actor_set_position (priv->applets_container, 0, 0);
-  clutter_actor_set_size (priv->applets_container, priv->xwidth, priv->xheight);
+  clutter_actor_set_size (priv->applets_container,
+                          HD_COMP_MGR_LANDSCAPE_WIDTH,
+                          HD_COMP_MGR_LANDSCAPE_HEIGHT);
   clutter_container_add_actor (CLUTTER_CONTAINER (hd_home_get_front(priv->home)),
                                priv->applets_container);
 
   /* By default the background is a black rectangle */
   priv->background = clutter_rectangle_new_with_color (&clr);
   clutter_actor_set_name (priv->background, "HdHomeView::background");
-  clutter_actor_set_size (priv->background, priv->xwidth, priv->xheight);
+  clutter_actor_set_size (priv->background,
+                          HD_COMP_MGR_LANDSCAPE_WIDTH,
+                          HD_COMP_MGR_LANDSCAPE_HEIGHT);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->background_container),
                                priv->background);
 
@@ -305,6 +307,10 @@ hd_home_view_init (HdHomeView *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME_VIEW, HdHomeViewPrivate);
 
   clutter_actor_set_name(CLUTTER_ACTOR(self), "HdHomeView");
+
+  self->priv->gconf_client = gconf_client_get_default ();
+
+  self->priv->layout = hd_home_view_layout_new ();
 }
 
 static void
@@ -323,8 +329,14 @@ hd_home_view_dispose (GObject *object)
   if (priv->move_applet_right_timeout)
     priv->move_applet_right_timeout = (g_source_remove (priv->move_applet_right_timeout), 0);
 
+  if (priv->gconf_client)
+    priv->gconf_client = (g_object_unref (priv->gconf_client), NULL);
+
   if (priv->applets)
     priv->applets = (g_hash_table_destroy (priv->applets), NULL);
+
+  if (priv->layout)
+    priv->layout = (g_object_unref (priv->layout), NULL);
 
   G_OBJECT_CLASS (hd_home_view_parent_class)->dispose (object);
 }
@@ -349,7 +361,9 @@ load_background_idle (gpointer data)
   if (g_source_is_destroyed (g_main_current_source ()))
     return FALSE;
 
-  cached_background_image_file = CACHED_BACKGROUND_IMAGE_FILE;
+  cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE,
+                                                  g_get_home_dir (),
+                                                  priv->id + 1);
 
   new_bg = clutter_texture_new_from_file (cached_background_image_file,
                                           &error);
@@ -363,7 +377,9 @@ load_background_idle (gpointer data)
 
       /* Add a black background */
       new_bg = clutter_rectangle_new_with_color (&clr);
-      clutter_actor_set_size (new_bg, priv->xwidth, priv->xheight);
+      clutter_actor_set_size (new_bg,
+                              HD_COMP_MGR_LANDSCAPE_WIDTH,
+                              HD_COMP_MGR_LANDSCAPE_HEIGHT);
     }
   else
     {
@@ -542,9 +558,14 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   clutter_actor_get_size (applet, &w, &h);
 
   /* Restrict new applet actor position to allowed values */
-  /* FIXME: the area right of the status area is currently not allowed */
-  x = MAX (MIN (x, priv->xwidth - ((gint) w)), APPLET_AREA_MIN_X);
-  y = MAX (MIN (y, priv->xheight - ((gint) h)), APPLET_AREA_MIN_Y);
+  if (!hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)) ||
+      !hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
+    x = MAX (MIN (x,
+                  (gint) HD_COMP_MGR_LANDSCAPE_WIDTH - ((gint) w)),
+             0);
+  y = MAX (MIN (y,
+                (gint) HD_COMP_MGR_LANDSCAPE_HEIGHT - ((gint) h)),
+           HD_COMP_MGR_TOP_MARGIN);
 
   /* Update applet actor position */
   clutter_actor_set_position (applet, x, y);
@@ -561,7 +582,7 @@ hd_home_view_applet_motion (ClutterActor       *applet,
    if (event->x < HDH_SWITCH_WIDTH)
     {
       if (!priv->move_applet_left && !priv->move_applet_left_timeout)
-        priv->move_applet_left_timeout = g_timeout_add_seconds (1, (GSourceFunc) move_applet_left_timeout_cb, view);
+        priv->move_applet_left_timeout = g_timeout_add (100, (GSourceFunc) move_applet_left_timeout_cb, view);
     }
   else
     {
@@ -570,10 +591,10 @@ hd_home_view_applet_motion (ClutterActor       *applet,
         priv->move_applet_left_timeout = (g_source_remove (priv->move_applet_left_timeout), 0);
     }
 
-  if (event->x > priv->xwidth - HDH_SWITCH_WIDTH)
+  if (event->x > HD_COMP_MGR_LANDSCAPE_WIDTH - HDH_SWITCH_WIDTH)
     {
       if (!priv->move_applet_right && !priv->move_applet_right_timeout)
-        priv->move_applet_right_timeout = g_timeout_add_seconds (1, (GSourceFunc) move_applet_right_timeout_cb, view);
+        priv->move_applet_right_timeout = g_timeout_add (100, (GSourceFunc) move_applet_right_timeout_cb, view);
     }
   else
     {
@@ -623,7 +644,7 @@ hd_home_view_applet_press (ClutterActor       *applet,
   time (&wm_applet->modified);
 
   modified = g_strdup_printf ("%ld", wm_applet->modified);
-  modified_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/modified", wm_applet->applet_id);
+  modified_key = g_strdup_printf (GCONF_KEY_MODIFIED, wm_applet->applet_id);
 
   gconf_client_set_string (client,
                            modified_key,
@@ -647,6 +668,70 @@ hd_home_view_applet_press (ClutterActor       *applet,
   priv->move_applet_right = FALSE;
 
   return FALSE;
+}
+
+static void
+hd_home_view_store_applet_position (HdHomeView   *view,
+                                    ClutterActor *applet)
+{
+  HdHomeViewPrivate *priv = view->priv;
+  HdHomeViewAppletData *data;
+  ClutterGeometry c_geom;
+  MBGeometry mb_geom;
+  MBWMCompMgrClient *client;
+  const gchar *applet_id;
+  gchar *position_key;
+  GSList *position_value;
+  GError *error = NULL;
+
+  data = g_hash_table_lookup (priv->applets, applet);
+
+  /* Get applet size and position */
+  clutter_actor_get_geometry (applet, &c_geom);
+
+  /* Move into allowed area */
+  c_geom.x = MAX (MIN (c_geom.x,
+                       (gint) HD_COMP_MGR_LANDSCAPE_WIDTH - ((gint) c_geom.width)),
+                  0);
+  c_geom.y = MAX (MIN (c_geom.y,
+                       (gint) HD_COMP_MGR_LANDSCAPE_HEIGHT - ((gint) c_geom.height)),
+                  HD_COMP_MGR_TOP_MARGIN);
+
+  clutter_actor_set_position (applet, c_geom.x, c_geom.y);
+
+  /* Move the underlying window to match the actor's position */
+  mb_geom.x = c_geom.x;
+  mb_geom.y = c_geom.y;
+  mb_geom.width = c_geom.width;
+  mb_geom.height = c_geom.height;
+
+  client = (MBWMCompMgrClient *) data->cc;
+
+  mb_wm_client_request_geometry (client->wm_client,
+                                 &mb_geom,
+                                 MBWMClientReqGeomIsViaUserAction);
+
+  applet_id = HD_HOME_APPLET (client->wm_client)->applet_id;
+
+  position_key = g_strdup_printf (GCONF_KEY_POSITION, applet_id);
+  position_value = g_slist_prepend (g_slist_prepend (NULL,
+                                                     GINT_TO_POINTER (c_geom.y)),
+                                    GINT_TO_POINTER (c_geom.x));
+  gconf_client_set_list (priv->gconf_client,
+                         position_key,
+                         GCONF_VALUE_INT,
+                         position_value,
+                         &error);
+  if (error)
+    {
+      g_warning ("Could not store new applet position for applet %s to GConf. %s",
+                 applet_id,
+                 error->message);
+      g_error_free (error);
+    }
+
+  g_free (position_key);
+  g_slist_free (position_value);
 }
 
 static gboolean
@@ -704,45 +789,13 @@ hd_home_view_applet_release (ClutterActor       *applet,
         }
       else
         {
-          /* Applet should be moved in this view
+          /* 
+           * Applet should be moved in this view
            * Move the underlying window to match the actor's position
            */
-          gint x, y;
-          guint w, h;
-          MBWMCompMgrClient *cclient;
-          MBWindowManagerClient *client;
-          MBGeometry geom;
-          GConfClient *gconf_client;
-          gchar *applet_id, *position_key;
-          GSList *position_value;
-
-          cclient = (MBWMCompMgrClient *) data->cc;
-          client = cclient->wm_client;
-
-          clutter_actor_get_position (applet, &x, &y);
-          clutter_actor_get_size (applet, &w, &h);
-
-          geom.x = x;
-          geom.y = y;
-          geom.width = w;
-          geom.height = h;
-
-          mb_wm_client_request_geometry (client, &geom,
-                                         MBWMClientReqGeomIsViaUserAction);
-
-          gconf_client = gconf_client_get_default ();
-          applet_id = HD_HOME_APPLET (client)->applet_id;
-
-          position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", applet_id);
-          position_value = g_slist_prepend (g_slist_prepend (NULL, GINT_TO_POINTER (y)),
-                                            GINT_TO_POINTER (x));
-          gconf_client_set_list (gconf_client, position_key,
-                                 GCONF_VALUE_INT, position_value,
-                                 NULL);
-
-          g_object_unref (gconf_client);
-          g_free (position_key);
-          g_slist_free (position_value);
+          hd_home_view_store_applet_position (view,
+                                              applet);
+          hd_home_view_layout_reset (priv->layout);
         }
     }
 
@@ -799,6 +852,59 @@ hd_home_view_restack_applets (HdHomeView *view)
   g_slist_free (sorted);
 }
 
+static void
+hd_home_view_load_applet_position (HdHomeView           *view,
+                                   ClutterActor         *applet,
+                                   HdHomeViewAppletData *data)
+{
+  HdHomeViewPrivate *priv = view->priv;
+  MBWMCompMgrClient *client;
+  const gchar *applet_id;
+  gchar *position_key;
+  GSList *position;
+
+  client = (MBWMCompMgrClient *) data->cc;
+  applet_id = HD_HOME_APPLET (client->wm_client)->applet_id;
+
+  position_key = g_strdup_printf (GCONF_KEY_POSITION, applet_id);
+  position = gconf_client_get_list (priv->gconf_client,
+                                    position_key,
+                                    GCONF_VALUE_INT,
+                                    NULL);
+
+  if (position && position->next)
+    {
+      clutter_actor_set_position (applet,
+                                  GPOINTER_TO_INT (position->data),
+                                  GPOINTER_TO_INT (position->next->data));
+
+      hd_home_view_layout_reset (priv->layout);
+    }
+  else
+    {
+      GSList *applets = NULL;
+      GHashTableIter iter;
+      gpointer tmp;
+
+      /* Get a list of all applets */
+      g_hash_table_iter_init (&iter, priv->applets);
+      while (g_hash_table_iter_next (&iter, NULL, &tmp))
+        {
+          HdHomeViewAppletData *value = tmp;
+          applets = g_slist_prepend (applets, value->actor);
+        }
+
+      hd_home_view_layout_arrange_applet (priv->layout,
+                                          applets,
+                                          applet);
+
+      g_slist_free (applets);
+    }
+
+  g_free (position_key);
+  g_slist_free (position);
+}
+
 void
 hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
 {
@@ -821,9 +927,14 @@ hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
 
   g_object_set_data (G_OBJECT (applet), "HD-HomeView", view);
 
+  hd_home_view_load_applet_position (view, applet, data);
+
   g_hash_table_insert (priv->applets,
                        applet,
                        data);
+
+  hd_home_view_store_applet_position (view,
+                                      applet);
 
   hd_home_view_restack_applets (view);
 }
@@ -857,7 +968,7 @@ hd_home_view_move_applet (HdHomeView   *view,
 
   /* Reset position in GConf*/
   gconf_client = gconf_client_get_default ();
-  position_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/position", wm_applet->applet_id);
+  position_key = g_strdup_printf (GCONF_KEY_POSITION, wm_applet->applet_id);
   gconf_client_unset (gconf_client, position_key, &error);
   if (G_UNLIKELY (error))
     {
@@ -867,7 +978,7 @@ hd_home_view_move_applet (HdHomeView   *view,
   g_free (position_key);
 
   /* Update view in GConf */
-  view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view", wm_applet->applet_id);
+  view_key = g_strdup_printf (GCONF_KEY_VIEW, wm_applet->applet_id);
   gconf_client_set_int (gconf_client,
                         view_key,
                         wm_applet->view_id + 1,
