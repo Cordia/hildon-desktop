@@ -32,8 +32,7 @@
 
 #include "hd-home-view.h"
 
-/* FIXME -- match spec */
-#define HDH_SWITCH_WIDTH 40
+#define HD_EDGE_INDICATION_WIDTH 50
 
 G_BEGIN_DECLS
 
@@ -87,9 +86,9 @@ ClutterActor *hd_home_get_front (HdHome *home);
 
 void hd_home_set_operator_applet (HdHome *home, ClutterActor *operator);
 
-void hd_home_show_switching_edges (HdHome *home);
-void hd_home_hide_switching_edges (HdHome *home);
-void hd_home_highlight_switching_edges (HdHome *home, gboolean left, gboolean right);
+void hd_home_show_edge_indication (HdHome *home);
+void hd_home_hide_edge_indication (HdHome *home);
+void hd_home_highlight_edge_indication (HdHome *home, gboolean left, gboolean right);
 
 void hd_home_hide_edit_button (HdHome *home);
 

@@ -1,3 +1,9 @@
+2009-02-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view.c:
+	* src/home/hd-home.c:
+	* src/home/hd-home.h: Implement some changes in Home UI spec.
+
 2009-02-24  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/mb/hd-decor.c

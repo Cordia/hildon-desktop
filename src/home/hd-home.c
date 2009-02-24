@@ -50,8 +50,6 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-bindings.h>
 
-#define HDH_MOVE_DURATION 300
-#define HDH_ZOOM_DURATION 400
 #define HDH_EDIT_BUTTON_DURATION 200
 #define HDH_EDIT_BUTTON_TIMEOUT 3000
 
@@ -60,14 +58,10 @@
 
 /* FIXME -- match spec */
 #define HDH_PAN_THRESHOLD 20
-#define PAN_NEXT_PREVIOUS_PERCENTAGE 0.4
+#define PAN_NEXT_PREVIOUS_PERCENTAGE 0.25
 
-#define CLOSE_BUTTON "qgn_home_close"
-#define SETTINGS_BUTTON "qgn_home_settings"
-#define BACK_BUTTON  "back-button"
-#define NEW_BUTTON   "new-view-button"
-#define APPLET_SETTINGS_BUTTON "applet-settings-button"
-#define APPLET_RESIZE_BUTTON   "applet-resize-button"
+#define APPLET_CLOSE_BUTTON "AppletCloseButton.png"
+#define APPLET_CONFIGURE_BUTTON "AppletConfigureButton.png"
 
 #define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home"
 #define HD_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
@@ -79,6 +73,9 @@
 #define OSSO_ADDRESSBOOK_DBUS_NAME "com.nokia.osso_addressbook"
 #define OSSO_ADDRESSBOOK_DBUS_PATH "/com/nokia/osso_addressbook"
 #define OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND "search_append"
+
+#define INDICATION_WIDTH 50
+#define HD_EDGE_INDICATION_COLOR "SelectionColor"
 
 #define MAX_VIEWS 4
 
@@ -99,8 +96,6 @@ struct _HdHomePrivate
 {
   MBWMCompMgrClutter    *comp_mgr;
 
-  ClutterEffectTemplate *move_template;
-  ClutterEffectTemplate *zoom_template;
   ClutterEffectTemplate *edit_button_template;
 
   ClutterActor          *edit_group; /* An overlay group for edit mode */
@@ -115,18 +110,13 @@ struct _HdHomePrivate
   ClutterActor          *operator;
   ClutterActor          *operator_applet;
 
-  ClutterActor          *left_switch;
-  ClutterActor          *right_switch;
+  ClutterActor          *edge_indication_left;
+  ClutterActor          *edge_indication_right;
 
   ClutterActor          *view_container;
 
   /* container that sits infront of blurred home */
   ClutterGroup          *front;
-
-  guint                  current_view;
-  guint                  current_desktop;
-  gint                   xwidth;
-  gint                   xheight;
 
   gulong                 desktop_motion_cb;
 
@@ -143,7 +133,6 @@ struct _HdHomePrivate
   Window                 desktop;
 
   /* DBus Proxy for the call to com.nokia.CallUI.ShowDialpad */
-  DBusGConnection       *connection;
   DBusGProxy            *call_ui_proxy;
   DBusGProxy            *osso_addressbook_proxy;
 };
@@ -267,7 +256,7 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 
   if (priv->moved_over_threshold)
     {
-      if (ABS (priv->cumulative_x) >= PAN_NEXT_PREVIOUS_PERCENTAGE * priv->xwidth) /* */
+      if (ABS (priv->cumulative_x) >= PAN_NEXT_PREVIOUS_PERCENTAGE * HD_COMP_MGR_LANDSCAPE_WIDTH) /* */
         {
           if (priv->cumulative_x > 0)
             hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container));
@@ -500,12 +489,8 @@ hd_home_constructed (GObject *object)
   ClutterColor     clr = {0,0,0,0xff};
   XSetWindowAttributes attr;
   XWMHints         wmhints;
-  GtkIconTheme	  *icon_theme;
-
-  icon_theme = gtk_icon_theme_get_default ();
-
-  priv->xwidth  = HD_COMP_MGR_LANDSCAPE_WIDTH;
-  priv->xheight = HD_COMP_MGR_LANDSCAPE_HEIGHT;
+  GtkStyle        *style;
+  GdkColor         color;
 
   clutter_actor_set_name (CLUTTER_ACTOR(object), "HdHome");
 
@@ -524,8 +509,8 @@ hd_home_constructed (GObject *object)
   clutter_actor_set_name (priv->view_container, "HdHome:view_container");
   clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->view_container);
   clutter_actor_set_size (CLUTTER_ACTOR (priv->view_container),
-                          priv->xwidth,
-                          priv->xheight);
+                          HD_COMP_MGR_LANDSCAPE_WIDTH,
+                          HD_COMP_MGR_LANDSCAPE_HEIGHT);
   clutter_actor_show (priv->view_container);
 
   priv->edit_button = hd_home_create_edit_button ();
@@ -542,33 +527,37 @@ hd_home_constructed (GObject *object)
   clutter_actor_reparent (priv->operator, CLUTTER_ACTOR (object));
   clutter_actor_raise (priv->operator, priv->view_container);
 
-  priv->left_switch = clutter_rectangle_new ();
-  clutter_actor_set_name (priv->left_switch, "HdHome:left_switch");
+  priv->edge_indication_left = clutter_rectangle_new ();
+  clutter_actor_set_name (priv->edge_indication_left, "HdHome:left_switch");
 
   /* FIXME -- should the color come from theme ? */
-  clr.red = 0;
-  clr.green = 0xff;
-  clr.blue  = 0xff;
-  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->left_switch), &clr);
+  style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
+                                     NULL, NULL,
+                                     GTK_TYPE_WIDGET);
+  gtk_style_lookup_color (style, HD_EDGE_INDICATION_COLOR, &color);
+  clr.red = color.red >> 8;
+  clr.green = color.green >> 8;
+  clr.blue = color.blue >> 8;
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_left), &clr);
 
-  clutter_actor_set_size (priv->left_switch, HDH_SWITCH_WIDTH, priv->xheight);
-  clutter_actor_set_position (priv->left_switch, 0, 0);
-  clutter_actor_hide (priv->left_switch);
-  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group), priv->left_switch);
+  clutter_actor_set_size (priv->edge_indication_left, HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  clutter_actor_set_position (priv->edge_indication_left, 0, 0);
+  clutter_actor_hide (priv->edge_indication_left);
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group), priv->edge_indication_left);
 
-  priv->right_switch = clutter_rectangle_new ();
-  clutter_actor_set_name (priv->right_switch, "HdHome:right_switch");
+  priv->edge_indication_right = clutter_rectangle_new ();
+  clutter_actor_set_name (priv->edge_indication_right, "HdHome:right_switch");
 
-  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->right_switch), &clr);
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_right), &clr);
 
-  clutter_actor_set_size (priv->right_switch, HDH_SWITCH_WIDTH, priv->xheight);
-  clutter_actor_set_position (priv->right_switch,
-			      priv->xwidth - HDH_SWITCH_WIDTH, 0);
-  clutter_actor_hide (priv->right_switch);
-  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group), priv->right_switch);
+  clutter_actor_set_size (priv->edge_indication_right, HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  clutter_actor_set_position (priv->edge_indication_right,
+			      HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH, 0);
+  clutter_actor_hide (priv->edge_indication_right);
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group), priv->edge_indication_right);
 
   /* Applet buttons in layout mode */
-  priv->applet_close_button = hd_gtk_icon_theme_load_icon (icon_theme, CLOSE_BUTTON, 48, 0);
+  priv->applet_close_button = hd_clutter_cache_get_texture (APPLET_CLOSE_BUTTON, TRUE);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->applet_close_button);
@@ -579,7 +568,7 @@ hd_home_constructed (GObject *object)
 		    G_CALLBACK (hd_home_applet_close_button_clicked),
 		    object);
 
-  priv->applet_settings_button = hd_gtk_icon_theme_load_icon (icon_theme, SETTINGS_BUTTON, 48, 0);
+  priv->applet_settings_button = hd_clutter_cache_get_texture (APPLET_CONFIGURE_BUTTON, TRUE);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
 			       priv->applet_settings_button);
@@ -678,14 +667,6 @@ hd_home_init (HdHome *self)
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
 						   HD_TYPE_HOME, HdHomePrivate);
 
-  priv->move_template =
-    clutter_effect_template_new_for_duration (HDH_MOVE_DURATION,
-					      CLUTTER_ALPHA_RAMP_INC);
-
-  priv->zoom_template =
-    clutter_effect_template_new_for_duration (HDH_ZOOM_DURATION,
-					      CLUTTER_ALPHA_RAMP_INC);
-
   priv->edit_button_template =
     clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
 					      CLUTTER_ALPHA_RAMP_INC);
@@ -738,13 +719,12 @@ hd_home_init (HdHome *self)
            HD_HOME_DBUS_NAME,
            HD_HOME_DBUS_PATH);
 
-  priv->connection = connection;
-  priv->call_ui_proxy = dbus_g_proxy_new_for_name (priv->connection,
+  priv->call_ui_proxy = dbus_g_proxy_new_for_name (connection,
                                                    CALL_UI_DBUS_NAME,
                                                    CALL_UI_DBUS_PATH,
                                                    CALL_UI_DBUS_NAME);
 
-  priv->osso_addressbook_proxy = dbus_g_proxy_new_for_name (priv->connection,
+  priv->osso_addressbook_proxy = dbus_g_proxy_new_for_name (connection,
                                                             OSSO_ADDRESSBOOK_DBUS_NAME,
                                                             OSSO_ADDRESSBOOK_DBUS_PATH,
                                                             OSSO_ADDRESSBOOK_DBUS_NAME);
@@ -813,7 +793,7 @@ _hd_home_do_normal_layout (HdHome *home)
   clutter_actor_hide (priv->edit_group);
 
   hd_home_hide_applet_buttons (home);
-  hd_home_hide_switching_edges (home);
+  hd_home_hide_edge_indication (home);
 }
 
 /* FOR HDRM_STATE_HOME_EDIT */
@@ -1171,35 +1151,35 @@ hd_home_set_operator_applet (HdHome *home, ClutterActor *operator_applet)
 }
 
 void
-hd_home_show_switching_edges (HdHome *home)
+hd_home_show_edge_indication (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
 
-  clutter_actor_set_opacity (priv->left_switch, 0x7f);
-  clutter_actor_set_opacity (priv->right_switch, 0x7f);
+  clutter_actor_set_opacity (priv->edge_indication_left, 0x7f);
+  clutter_actor_set_opacity (priv->edge_indication_right, 0x7f);
 
   if (hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
-    clutter_actor_show (priv->left_switch);
+    clutter_actor_show (priv->edge_indication_left);
   if (hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
-    clutter_actor_show (priv->right_switch);
+    clutter_actor_show (priv->edge_indication_right);
 }
 
 void
-hd_home_hide_switching_edges (HdHome *home)
+hd_home_hide_edge_indication (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
 
-  clutter_actor_hide (priv->left_switch);
-  clutter_actor_hide (priv->right_switch);
+  clutter_actor_hide (priv->edge_indication_left);
+  clutter_actor_hide (priv->edge_indication_right);
 }
 
 void
-hd_home_highlight_switching_edges (HdHome *home, gboolean left, gboolean right)
+hd_home_highlight_edge_indication (HdHome *home, gboolean left, gboolean right)
 {
   HdHomePrivate *priv = home->priv;
 
-  clutter_actor_set_opacity (priv->left_switch, left ? 0xff : 0x7f);
-  clutter_actor_set_opacity (priv->right_switch, right ? 0xff : 0x7f);
+  clutter_actor_set_opacity (priv->edge_indication_left, left ? 0xff : 0x7f);
+  clutter_actor_set_opacity (priv->edge_indication_right, right ? 0xff : 0x7f);
 }
 
 void
