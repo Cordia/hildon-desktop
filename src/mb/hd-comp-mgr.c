@@ -47,7 +47,7 @@
 #include <X11/extensions/Xcomposite.h>
 #include <X11/extensions/shape.h>
 
-#include <clutter/clutter-container.h>
+#include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
 
 #include "../tidy/tidy-blur-group.h"
@@ -725,6 +725,10 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+
+  /* In cases like the FKB, we don't get an unmap event, so we need to
+   * update the state of blurring here. */
+  hd_render_manager_update_blur_state(c);
 
   /* FIXME: shouldn't this be in hd_comp_mgr_unmap_notify?
    * hd_comp_mgr_unregister_client might not be called for all unmapped

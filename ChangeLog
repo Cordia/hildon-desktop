@@ -1,3 +1,10 @@
+2009-02-25  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c: Fixed blurring of FKB (and full-screen
+	dialogs) again. NB#103395
+	* src/mb/hd-comp-mgr.c: Call update_blur on unregister, as we don't
+	get an unmap event for the FKB.
+	  
 2009-02-25  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view.c:

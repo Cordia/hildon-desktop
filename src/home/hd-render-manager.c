@@ -1479,8 +1479,16 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
           c_type == HdWmClientTypeStatusMenu ||
           HD_IS_CONFIRMATION_NOTE (c))
         {
-          g_debug("%s: Blurring caused by window type %d, name '%s'",
-              __FUNCTION__, c_type, c->name?c->name:"(null)");
+          /* If this is a dialog that is maximised, it will be put in the
+           * blur group - so do NOT blur the background. */
+          if (HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->window->geometry))
+            break;
+
+          g_debug("%s: Blurring caused by window type %d, geo=%d,%d,%d,%d name '%s'",
+              __FUNCTION__, c_type,
+              c->window->geometry.x, c->window->geometry.y,
+              c->window->geometry.width, c->window->geometry.height,
+              c->name?c->name:"(null)");
           blur=TRUE;
           break;
         }
