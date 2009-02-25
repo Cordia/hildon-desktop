@@ -60,9 +60,6 @@
 #define HDH_PAN_THRESHOLD 20
 #define PAN_NEXT_PREVIOUS_PERCENTAGE 0.25
 
-#define APPLET_CLOSE_BUTTON "AppletCloseButton.png"
-#define APPLET_CONFIGURE_BUTTON "AppletConfigureButton.png"
-
 #define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home"
 #define HD_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
 
@@ -100,12 +97,6 @@ struct _HdHomePrivate
 
   ClutterActor          *edit_group; /* An overlay group for edit mode */
   ClutterActor          *edit_button;
-
-  ClutterActor          *applet_close_button;
-  ClutterActor          *applet_settings_button;
-
-  ClutterActor          *active_applet;
-  guint                  active_applet_hide_id;
 
   ClutterActor          *operator;
   ClutterActor          *operator_applet;
@@ -370,59 +361,6 @@ hd_property_notify_message (XPropertyEvent *xev, void *userdata)
   return True;
 }
 
-static gboolean
-hd_home_applet_close_button_clicked (ClutterActor       *button,
-				     ClutterButtonEvent *event,
-				     HdHome             *home)
-{
-  HdHomePrivate *priv = home->priv;
-
-  if (!priv->active_applet)
-    {
-      g_warning ("No active applet to close.");
-
-      return FALSE;
-    }
-
-  hd_home_close_applet (home, priv->active_applet);
-
-  return TRUE;
-}
-
-static gboolean
-hd_home_applet_settings_button_clicked (ClutterActor       *button,
-                                        ClutterButtonEvent *event,
-                                        HdHome             *home)
-{
-  HdHomePrivate *priv = home->priv;
-  MBWMCompMgrClient *cclient;
-  MBWindowManagerClient *wm_client;
-  HdHomeApplet *wm_applet;
-
-  if (!priv->active_applet)
-    {
-      g_warning ("No active applet to close.");
-
-      return FALSE;
-    }
-
-  cclient = g_object_get_data (G_OBJECT (priv->active_applet),
-                               "HD-MBWMCompMgrClutterClient");
-  wm_client = cclient->wm_client;
-  wm_applet = HD_HOME_APPLET (wm_client);
-
-  if (wm_applet->settings)
-    {
-      HdCompMgr *hmgr = HD_COMP_MGR (priv->comp_mgr);
-
-      mb_wm_client_deliver_message (wm_client,
-                                    hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_SHOW_SETTINGS),
-                                    0, 0, 0, 0, 0);
-    }
-
-  return TRUE;
-}
-
 /* Called when a client message is sent to the root window. */
 static Bool
 root_window_client_message (XClientMessageEvent *event, HdHome *home)
@@ -555,31 +493,6 @@ hd_home_constructed (GObject *object)
 			      HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH, 0);
   clutter_actor_hide (priv->edge_indication_right);
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group), priv->edge_indication_right);
-
-  /* Applet buttons in layout mode */
-  priv->applet_close_button = hd_clutter_cache_get_texture (APPLET_CLOSE_BUTTON, TRUE);
-
-  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
-			       priv->applet_close_button);
-  clutter_actor_hide (priv->applet_close_button);
-  clutter_actor_set_reactive (priv->applet_close_button, TRUE);
-
-  g_signal_connect (priv->applet_close_button, "button-press-event",
-		    G_CALLBACK (hd_home_applet_close_button_clicked),
-		    object);
-
-  priv->applet_settings_button = hd_clutter_cache_get_texture (APPLET_CONFIGURE_BUTTON, TRUE);
-
-  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
-			       priv->applet_settings_button);
-  clutter_actor_hide (priv->applet_settings_button);
-  clutter_actor_set_reactive (priv->applet_settings_button, TRUE);
-
-  g_signal_connect (priv->applet_settings_button, "button-press-event",
-		    G_CALLBACK (hd_home_applet_settings_button_clicked),
-		    object);
-
-
 
   clutter_actor_lower_bottom (priv->view_container);
 
@@ -792,7 +705,6 @@ _hd_home_do_normal_layout (HdHome *home)
 
   clutter_actor_hide (priv->edit_group);
 
-  hd_home_hide_applet_buttons (home);
   hd_home_hide_edge_indication (home);
 }
 
@@ -813,6 +725,8 @@ hd_home_update_layout (HdHome * home)
 {
   /* FIXME: ideally all this should be done by HdRenderManager */
   HdHomePrivate *priv;
+  guint i;
+
   if (!HD_IS_HOME(home))
     return;
   priv = home->priv;
@@ -830,6 +744,14 @@ hd_home_update_layout (HdHome * home)
                 __FUNCTION__);
     }
 
+  for (i = 0; i < MAX_VIEWS; i++)
+    {
+      ClutterActor *view;
+      
+      view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                              i);
+      hd_home_view_update_state (HD_HOME_VIEW (view));
+    }
 }
 
 void
@@ -908,7 +830,7 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
       ClutterActor *view;
 
       view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
-                                         view_id);
+                                              view_id);
       hd_home_view_add_applet (HD_HOME_VIEW (view), applet);
     }
   else
@@ -974,23 +896,23 @@ hd_home_show_edit_button (HdHome *home)
   x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
 
   clutter_actor_set_position (priv->edit_button,
-                                x,
-                                0);
+                              x,
+                              0);
   /* we must set the final position first so that the X input
    * area can be set properly */
   hd_render_manager_set_visible(HDRM_BUTTON_EDIT, TRUE);
 
   clutter_actor_set_position (priv->edit_button,
-			      x,
-			      -button_height);
+                              x,
+                              -button_height);
 
   g_debug ("moving edit button from %d, %d to %d, 0", x, -button_height, x);
 
   timeline = clutter_effect_move (priv->edit_button_template,
-				  CLUTTER_ACTOR (priv->edit_button),
-				  x, 0,
-				  (ClutterEffectCompleteFunc)
-				  hd_home_edit_button_move_completed, home);
+                                  CLUTTER_ACTOR (priv->edit_button),
+                                  x, 0,
+                                  (ClutterEffectCompleteFunc)
+                                  hd_home_edit_button_move_completed, home);
 
   priv->edit_button_cb =
     g_timeout_add (HDH_EDIT_BUTTON_TIMEOUT, hd_home_edit_button_timeout, home);
@@ -1004,7 +926,7 @@ hd_home_hide_edit_button (HdHome *home)
   HdHomePrivate   *priv = home->priv;
 
   if (!hd_render_manager_get_visible(HDRM_BUTTON_EDIT))
-      return;
+    return;
 
   g_debug ("%s: Hiding button", __FUNCTION__);
 
@@ -1014,85 +936,6 @@ hd_home_hide_edit_button (HdHome *home)
       g_source_remove (priv->edit_button_cb);
       priv->edit_button_cb = 0;
     }
-}
-
-static void
-hide_cb (ClutterActor *applet, HdHome *home)
-{
-  g_debug ("%s", __FUNCTION__);
-
-  hd_home_hide_applet_buttons (home);
-}
-
-void
-hd_home_show_applet_buttons (HdHome *home, ClutterActor *applet)
-{
-  HdHomePrivate *priv = home->priv;
-  MBWMCompMgrClient *cclient;
-  HdHomeApplet *wm_applet;
-  gint x_a, y_a;
-  guint w_a, h_a, w_b, h_b;
-
-  cclient = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
-  wm_applet = (HdHomeApplet *) cclient->wm_client;
-
-  /* The applet buttons are placed within the edit_group. This group has the
-   * same size as a single view and is automatically positioned over the active
-   * view. This means that when placing the buttons, we do not need to consider
-   * the position of the view they belong to.
-   */
-  clutter_actor_get_position (applet, &x_a, &y_a);
-  clutter_actor_get_size (applet, &w_a, &h_a);
-
-  clutter_actor_get_size (priv->applet_close_button, &w_b, &h_b);
-  clutter_actor_set_position (priv->applet_close_button,
-			      x_a + w_a - w_b/2,
-			      y_a - h_b/2);
-  clutter_actor_show (priv->applet_close_button);
-
-  if (wm_applet->settings)
-    {
-      clutter_actor_get_size (priv->applet_settings_button, &w_b, &h_b);
-      clutter_actor_set_position (priv->applet_settings_button,
-                                  x_a - w_b/2,
-                                  y_a + h_a - h_b/2);
-      clutter_actor_show (priv->applet_settings_button);
-    }
-  else
-    {
-      clutter_actor_hide (priv->applet_settings_button);
-    }
-
-  if (priv->active_applet != applet)
-    {
-      if (priv->active_applet_hide_id)
-        {
-          g_signal_handler_disconnect (priv->active_applet,
-                                       priv->active_applet_hide_id);
-          priv->active_applet_hide_id = 0;
-        }
-      priv->active_applet = applet;
-
-      priv->active_applet_hide_id = g_signal_connect (applet, "hide",
-                                                      G_CALLBACK (hide_cb), home);
-    }
-}
-
-void
-hd_home_hide_applet_buttons (HdHome *home)
-{
-  HdHomePrivate   *priv = home->priv;
-
-  clutter_actor_hide (priv->applet_close_button);
-  clutter_actor_hide (priv->applet_settings_button);
-
-  if (priv->active_applet_hide_id)
-    {
-      g_signal_handler_disconnect (priv->active_applet,
-                                   priv->active_applet_hide_id);
-      priv->active_applet_hide_id = 0;
-    }
-  priv->active_applet = NULL;
 }
 
 ClutterActor*

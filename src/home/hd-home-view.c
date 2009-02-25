@@ -33,6 +33,7 @@
 #include "hd-util.h"
 #include "hd-home-applet.h"
 #include "hd-render-manager.h"
+#include "hd-clutter-cache.h"
 
 #include "hildon-desktop.h"
 
@@ -125,11 +126,14 @@ struct _HdHomeViewAppletData
 {
   ClutterActor *actor;
 
-  MBWMCompMgrClutterClient *cc;
+  MBWMCompMgrClient *cc;
 
   guint press_cb;
   guint release_cb;
   guint motion_cb;
+
+  ClutterActor *close_button;
+  ClutterActor *configure_button;
 };
 
 static HdHomeViewAppletData *applet_data_new  (ClutterActor *actor);
@@ -513,7 +517,6 @@ hd_home_view_applet_motion (ClutterActor       *applet,
     }
 
   hd_home_show_edge_indication (priv->home);
-  hd_home_hide_applet_buttons (priv->home);
 
   /* New position of applet actor based on movement */
   x = priv->applet_motion_start_position_x + event->x - priv->applet_motion_start_x;
@@ -564,12 +567,11 @@ hd_home_view_applet_press (ClutterActor       *applet,
   HdHomeViewPrivate *priv = view->priv;
   GConfClient *client = gconf_client_get_default ();
   gchar *modified_key, *modified;
-  MBWMCompMgrClient *cclient;
   HdHomeApplet *wm_applet;
   MBWindowManagerClient *desktop_client;
   HdHomeViewAppletData *data;
 
-  g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y);
+/*  g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y); */
 
   /* Get all pointer events */
   clutter_grab_pointer (applet);
@@ -578,8 +580,7 @@ hd_home_view_applet_press (ClutterActor       *applet,
 
   data = g_hash_table_lookup (priv->applets, applet);
 
-  cclient = (MBWMCompMgrClient *) data->cc;
-  wm_applet = (HdHomeApplet *) cclient->wm_client;
+  wm_applet = HD_HOME_APPLET (data->cc->wm_client);
 
   data->motion_cb = g_signal_connect (applet, "motion-event",
                                       G_CALLBACK (hd_home_view_applet_motion),
@@ -626,7 +627,6 @@ hd_home_view_store_applet_position (HdHomeView   *view,
   HdHomeViewAppletData *data;
   ClutterGeometry c_geom;
   MBGeometry mb_geom;
-  MBWMCompMgrClient *client;
   const gchar *applet_id;
   gchar *position_key;
   GSList *position_value;
@@ -653,13 +653,11 @@ hd_home_view_store_applet_position (HdHomeView   *view,
   mb_geom.width = c_geom.width;
   mb_geom.height = c_geom.height;
 
-  client = (MBWMCompMgrClient *) data->cc;
-
-  mb_wm_client_request_geometry (client->wm_client,
+  mb_wm_client_request_geometry (data->cc->wm_client,
                                  &mb_geom,
                                  MBWMClientReqGeomIsViaUserAction);
 
-  applet_id = HD_HOME_APPLET (client->wm_client)->applet_id;
+  applet_id = HD_HOME_APPLET (data->cc->wm_client)->applet_id;
 
   position_key = g_strdup_printf (GCONF_KEY_POSITION, applet_id);
   position_value = g_slist_prepend (g_slist_prepend (NULL,
@@ -690,7 +688,7 @@ hd_home_view_applet_release (ClutterActor       *applet,
   HdHomeViewPrivate *priv = view->priv;
   HdHomeViewAppletData *data;
 
-  g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y);
+/*  g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y); */
 
   /* Get all pointer events */
   clutter_ungrab_pointer ();
@@ -707,12 +705,7 @@ hd_home_view_applet_release (ClutterActor       *applet,
    * If this was a simple press/release, with no intervening pointer motion,
    * emit the applet-clicked signal.
    */
-  if (priv->applet_motion_tap)
-    {
-      if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
-        hd_home_show_applet_buttons (priv->home, applet);
-    }
-  else
+  if (!priv->applet_motion_tap)
     {
       /* Hide switching edges */
       hd_home_hide_edge_indication (priv->home);
@@ -805,13 +798,11 @@ hd_home_view_load_applet_position (HdHomeView           *view,
                                    HdHomeViewAppletData *data)
 {
   HdHomeViewPrivate *priv = view->priv;
-  MBWMCompMgrClient *client;
   const gchar *applet_id;
   gchar *position_key;
   GSList *position;
 
-  client = (MBWMCompMgrClient *) data->cc;
-  applet_id = HD_HOME_APPLET (client->wm_client)->applet_id;
+  applet_id = HD_HOME_APPLET (data->cc->wm_client)->applet_id;
 
   position_key = g_strdup_printf (GCONF_KEY_POSITION, applet_id);
   position = gconf_client_get_list (priv->gconf_client,
@@ -852,11 +843,54 @@ hd_home_view_load_applet_position (HdHomeView           *view,
   g_slist_free (position);
 }
 
+static gboolean
+close_button_clicked (ClutterActor       *button,
+                      ClutterButtonEvent *event,
+                      HdHomeView         *view)
+{
+  ClutterActor *applet;
+
+  applet = clutter_actor_get_parent (button);
+
+  hd_home_close_applet (view->priv->home, applet);
+
+  return TRUE;
+}
+
+static gboolean
+configure_button_clicked (ClutterActor       *button,
+                          ClutterButtonEvent *event,
+                          HdHomeView         *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+  ClutterActor *applet;
+  HdHomeViewAppletData *data;
+  HdHomeApplet *wm_applet;
+
+  applet = clutter_actor_get_parent (button);
+
+  data = g_hash_table_lookup (priv->applets, applet);
+
+  wm_applet = HD_HOME_APPLET (data->cc->wm_client);
+
+  if (wm_applet->settings)
+    {
+      HdCompMgr *hmgr = HD_COMP_MGR (priv->comp_mgr);
+
+      mb_wm_client_deliver_message (data->cc->wm_client,
+                                    hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_SHOW_SETTINGS),
+                                    0, 0, 0, 0, 0);
+    }
+
+  return TRUE;
+}
+  
 void
 hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
 {
   HdHomeViewPrivate *priv = view->priv;
   HdHomeViewAppletData *data;
+  ClutterActor *close_button;
 
   /*
    * Reparent the applet to ourselves; note that this automatically
@@ -866,6 +900,40 @@ hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
   clutter_actor_set_reactive (applet, TRUE);
 
   data = applet_data_new (applet);
+
+  /* Add close button */
+  close_button = hd_clutter_cache_get_texture ("AppletCloseButton.png", TRUE);
+  clutter_container_add_actor (CLUTTER_CONTAINER (applet), close_button);
+  clutter_actor_set_position (close_button,
+                              clutter_actor_get_width (applet) - clutter_actor_get_width (close_button),
+                              0);
+  clutter_actor_set_reactive (close_button, TRUE);
+  clutter_actor_raise_top (close_button);
+  if (!STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
+    clutter_actor_hide (close_button);
+  g_signal_connect (close_button, "button-press-event",
+                    G_CALLBACK (close_button_clicked), view);
+  data->close_button = close_button;
+
+  /* Add configure button */
+  if (HD_HOME_APPLET (data->cc->wm_client)->settings)
+    {
+      ClutterActor *configure_button;
+
+      configure_button = hd_clutter_cache_get_texture ("AppletConfigureButton.png", TRUE);
+      clutter_container_add_actor (CLUTTER_CONTAINER (applet), configure_button);
+
+      clutter_actor_set_position (configure_button,
+                                  0,
+                                  clutter_actor_get_height (applet) - clutter_actor_get_height (close_button));
+      clutter_actor_set_reactive (configure_button, TRUE);
+      clutter_actor_raise_top (configure_button);
+      if (!STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
+        clutter_actor_hide (configure_button);
+      g_signal_connect (configure_button, "button-press-event",
+                        G_CALLBACK (configure_button_clicked), view);
+      data->configure_button = configure_button;
+    }
 
   data->release_cb = g_signal_connect (applet, "button-release-event",
                                        G_CALLBACK (hd_home_view_applet_release), view);
@@ -910,7 +978,7 @@ hd_home_view_move_applet (HdHomeView   *view,
   data = g_hash_table_lookup (priv->applets, applet);
 
   /* Update view for WM window */
-  wm_applet = HD_HOME_APPLET (((MBWMCompMgrClient *) data->cc)->wm_client);
+  wm_applet = HD_HOME_APPLET (data->cc->wm_client);
   wm_applet->view_id = hd_home_view_get_view_id (new_view);
 
   /* Reset position in GConf*/
@@ -1008,6 +1076,39 @@ scroll_next_completed_cb (ClutterTimeline *timeline,
                              view);
  }
  */
+void
+hd_home_view_update_state (HdHomeView *view)
+{
+  HdHomeViewPrivate *priv;
+  GHashTableIter iter;
+  gpointer value;
+
+  g_return_if_fail (HD_IS_HOME_VIEW (view));
+
+  priv = view->priv;
+
+  /* Iterate over all applets */
+  g_hash_table_iter_init (&iter, priv->applets);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      HdHomeViewAppletData *data = value;
+
+      if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
+        {
+          if (data->close_button)
+            clutter_actor_show (data->close_button);
+          if (data->configure_button)
+            clutter_actor_show (data->configure_button);
+        }
+      else
+        {
+          if (data->close_button)
+            clutter_actor_hide (data->close_button);
+          if (data->configure_button)
+            clutter_actor_hide (data->configure_button);
+        }
+    }
+}
 
 static HdHomeViewAppletData *
 applet_data_new (ClutterActor *actor)
@@ -1037,6 +1138,11 @@ applet_data_free (HdHomeViewAppletData *data)
 
   data->actor = NULL;
   data->cc = NULL;
+
+  if (data->close_button)
+    data->close_button = (clutter_actor_destroy (data->close_button), NULL);
+  if (data->configure_button)
+    data->configure_button = (clutter_actor_destroy (data->configure_button), NULL);
 
   g_slice_free (HdHomeViewAppletData, data);
 }

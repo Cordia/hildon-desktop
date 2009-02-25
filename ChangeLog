@@ -1,3 +1,12 @@
+2009-02-25  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view.c:
+	* src/home/hd-home-view.h:
+	* src/home/hd-home.c:
+	* src/home/hd-home.h:
+	* src/home/hd-render-manager.h: Implement more changes in Home UI
+	spec.
+
 2009-02-24  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view.c:
