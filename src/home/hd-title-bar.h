@@ -53,20 +53,22 @@ typedef enum {
   /* LEFT */
   HDTB_VIS_BTN_LAUNCHER    = 1,
   HDTB_VIS_BTN_SWITCHER    = 2,
-  HDTB_VIS_BTN_MENU        = 4, /* for home edit */
+  HDTB_VIS_BTN_MENU        = 4,
   /* RIGHT */
   HDTB_VIS_BTN_BACK        = 8,
   HDTB_VIS_BTN_CLOSE       = 16,
+  HDTB_VIS_BTN_DONE        = 32,
 
-  HDTB_VIS_FULL_WIDTH      = 32,
-  HDTB_VIS_BTN_SWITCHER_HIGHLIGHT = 64,
+  HDTB_VIS_FULL_WIDTH      = 64,
+  HDTB_VIS_BTN_SWITCHER_HIGHLIGHT = 128,
 
 
   HDTB_VIS_BTN_LEFT_MASK   = HDTB_VIS_BTN_LAUNCHER |
                              HDTB_VIS_BTN_SWITCHER |
                              HDTB_VIS_BTN_MENU,
   HDTB_VIS_BTN_RIGHT_MASK  = HDTB_VIS_BTN_BACK |
-                             HDTB_VIS_BTN_CLOSE,
+                             HDTB_VIS_BTN_CLOSE |
+                             HDTB_VIS_BTN_DONE,
 } HdTitleBarVisEnum;
 
 GType hd_title_bar_get_type (void) G_GNUC_CONST;

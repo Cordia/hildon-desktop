@@ -39,6 +39,7 @@
 
 #include <matchbox/theme-engines/mb-wm-theme-png.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
+#include <glib/gi18n.h>
 #include <math.h>
 
 enum
@@ -61,6 +62,8 @@ enum
   BTN_BACK_PRESSED,
   BTN_CLOSE,
   BTN_CLOSE_PRESSED,
+  BTN_MENU,
+  BTN_DONE,
   BTN_COUNT
 };
 
@@ -83,6 +86,31 @@ const char *BTN_FILENAMES[BTN_COUNT] = {
     HD_THEME_IMG_BACK_PRESSED,
     HD_THEME_IMG_CLOSE,
     HD_THEME_IMG_CLOSE_PRESSED,
+    NULL,
+    NULL,
+};
+
+const char *BTN_LABELS[BTN_COUNT * 2] = {
+    NULL, NULL,  // BTN_BG_ATTACHED = 0,
+    NULL, NULL,  // BTN_BG_LEFT_END,
+    NULL, NULL,  // BTN_BG_RIGHT_END,
+    NULL, NULL,  // BTN_BG_LEFT_PRESSED,
+    NULL, NULL,  // BTN_BG_LEFT_ATTACHED_PRESSED,
+    NULL, NULL,  // BTN_BG_RIGHT_PRESSED,
+    NULL, NULL,  // BTN_SEPARATOR_LEFT,
+    NULL, NULL,  // BTN_SEPARATOR_STATUS,
+    NULL, NULL,  // BTN_SEPARATOR_RIGHT,
+    NULL, NULL,  // BTN_SWITCHER,
+    NULL, NULL,  // BTN_SWITCHER_HIGHLIGHT,
+    NULL, NULL,  // BTN_SWITCHER_PRESSED,
+    NULL, NULL,  // BTN_LAUNCHER,
+    NULL, NULL,  // BTN_LAUNCHER_PRESSED,
+    NULL, NULL,  // BTN_BACK,
+    NULL, NULL,  // BTN_BACK_PRESSED,
+    NULL, NULL,  // BTN_CLOSE,
+    NULL, NULL,  // BTN_CLOSE_PRESSED,
+    "", "Desktop Settings",
+    "hildon-libs", "wdgt_bd_done",
 };
 
 gboolean ALIGN_RIGHT[BTN_COUNT] = {
@@ -104,6 +132,8 @@ gboolean ALIGN_RIGHT[BTN_COUNT] = {
    TRUE,  // BTN_BACK_PRESSED,
    TRUE,  // BTN_CLOSE,
    TRUE,  // BTN_CLOSE_PRESSED,
+   FALSE, // BTN_MENU,
+   TRUE, // BTN_DONE,
 };
 
 /* We try and set sizes for what we can, because if we get images
@@ -128,6 +158,8 @@ gboolean SET_SIZE[BTN_COUNT] = {
    TRUE,  // BTN_BACK_PRESSED,
    TRUE,  // BTN_CLOSE,
    TRUE,  // BTN_CLOSE_PRESSED,
+   FALSE, // BTN_MENU,
+   FALSE, // BTN_DONE,
 };
 
 struct _HdTitleBarPrivate
@@ -174,6 +206,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size);
 
 /* margin to left of the app title */
 #define HD_TITLE_BAR_TITLE_MARGIN 24
+#define HD_TITLE_BAR_TEXT_MARGIN 8
 
 enum
 {
@@ -209,11 +242,47 @@ hd_title_bar_init (HdTitleBar *bar)
   /* Load every button we need */
   for (i=0;i<BTN_COUNT;i++)
     {
-      priv->buttons[i] = hd_clutter_cache_get_texture(BTN_FILENAMES[i], TRUE);
+      if (BTN_FILENAMES[i])
+        {
+          priv->buttons[i] = hd_clutter_cache_get_texture(BTN_FILENAMES[i], TRUE);
+        }
+      else
+        {
+          ClutterActor *label;
+          guint w, h;
+
+          label = clutter_label_new();
+          clutter_label_set_color(CLUTTER_LABEL(label), &white);
+          clutter_label_set_use_markup(CLUTTER_LABEL(label), TRUE);
+          clutter_label_set_font_name(CLUTTER_LABEL(label), "Nokia Sans 24px");
+          clutter_label_set_text(CLUTTER_LABEL(label), dgettext (BTN_LABELS[2 * i],
+                                                                 BTN_LABELS[2 * i + 1]));
+
+          priv->buttons[i] = clutter_group_new();
+          clutter_container_add_actor (CLUTTER_CONTAINER(priv->buttons[i]), label);
+
+          clutter_actor_get_size(CLUTTER_ACTOR(label), &w, &h);
+          w += (2 * HD_TITLE_BAR_TEXT_MARGIN);
+          clutter_actor_set_size(CLUTTER_ACTOR(priv->buttons[i]),
+                                 w,
+                                 HD_COMP_MGR_TOP_MARGIN);
+          clutter_actor_set_position (label, HD_TITLE_BAR_TEXT_MARGIN,
+                                      (HD_COMP_MGR_TOP_MARGIN - h) / 2);
+          if (ALIGN_RIGHT[i])
+            {
+              clutter_actor_set_position(CLUTTER_ACTOR(priv->buttons[i]),
+                                         HD_COMP_MGR_SCREEN_WIDTH - w,
+                                         0);
+            }
+          else
+            {
+              clutter_actor_set_position(CLUTTER_ACTOR(priv->buttons[i]), 0, 0);
+            }
+        }
       clutter_container_add_actor(CLUTTER_CONTAINER(bar), priv->buttons[i]);
       clutter_actor_hide(priv->buttons[i]);
 
-      if (ALIGN_RIGHT[i])
+      if (ALIGN_RIGHT[i] && BTN_FILENAMES[i])
         {
           clutter_actor_set_position(priv->buttons[i],
               HD_COMP_MGR_SCREEN_WIDTH-HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH, 0);
@@ -242,6 +311,9 @@ hd_title_bar_init (HdTitleBar *bar)
   hd_title_bar_add_right_signals(bar, priv->buttons[BTN_BACK]);
   hd_render_manager_set_button (HDRM_BUTTON_BACK,
                                 priv->buttons[BTN_BACK]);
+
+  hd_title_bar_add_left_signals(bar, priv->buttons[BTN_MENU]);
+  hd_title_bar_add_right_signals(bar, priv->buttons[BTN_DONE]);
 
   /* Create the title */
   priv->title = CLUTTER_LABEL(clutter_label_new());
@@ -394,6 +466,17 @@ void hd_title_bar_set_state(HdTitleBar *bar,
       clutter_actor_hide(priv->buttons[BTN_CLOSE_PRESSED]);
     }
 
+  if (button & HDTB_VIS_BTN_MENU)
+    {
+      clutter_actor_show(priv->buttons[BTN_MENU]);
+      clutter_actor_show(priv->buttons[BTN_DONE]);
+    }
+  else
+    {
+      clutter_actor_hide(priv->buttons[BTN_MENU]);
+      clutter_actor_hide(priv->buttons[BTN_DONE]);
+    }
+
   hd_title_bar_set_full_width(bar, button & HDTB_VIS_FULL_WIDTH);
 }
 
@@ -475,9 +558,14 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
         {
           clutter_actor_show(priv->buttons[BTN_SEPARATOR_LEFT]);
-          clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_LEFT],
-              HD_COMP_MGR_TOP_LEFT_BTN_WIDTH -
-              clutter_actor_get_width(priv->buttons[BTN_SEPARATOR_LEFT]));
+          if (CLUTTER_ACTOR_IS_VISIBLE (priv->buttons[BTN_MENU]))
+            clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_LEFT],
+                                clutter_actor_get_width (priv->buttons[BTN_MENU]) -
+                                clutter_actor_get_width(priv->buttons[BTN_SEPARATOR_LEFT]));
+          else
+            clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_LEFT],
+                                HD_COMP_MGR_TOP_LEFT_BTN_WIDTH -
+                                clutter_actor_get_width(priv->buttons[BTN_SEPARATOR_LEFT]));
         }
       else
         clutter_actor_hide(priv->buttons[BTN_SEPARATOR_LEFT]);
@@ -495,8 +583,13 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
       if (priv->state & HDTB_VIS_BTN_RIGHT_MASK)
         {
           clutter_actor_show(priv->buttons[BTN_SEPARATOR_RIGHT]);
-          clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_RIGHT],
-              HD_COMP_MGR_SCREEN_WIDTH - HD_COMP_MGR_TOP_LEFT_BTN_WIDTH);
+          if (CLUTTER_ACTOR_IS_VISIBLE (priv->buttons[BTN_DONE]))
+            clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_RIGHT],
+                                HD_COMP_MGR_SCREEN_WIDTH -
+                                clutter_actor_get_width (priv->buttons[BTN_DONE]));
+          else
+            clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_RIGHT],
+                                HD_COMP_MGR_SCREEN_WIDTH - HD_COMP_MGR_TOP_LEFT_BTN_WIDTH);
         }
       else
         clutter_actor_hide(priv->buttons[BTN_SEPARATOR_RIGHT]);
@@ -571,6 +664,23 @@ hd_title_bar_right_pressed(HdTitleBar *bar, gboolean pressed)
       clutter_actor_hide(priv->buttons[BTN_BACK_PRESSED]);
       clutter_actor_hide(priv->buttons[BTN_CLOSE_PRESSED]);
     }
+}
+
+static void
+hd_title_bar_set_for_edit_mode(HdTitleBar *bar)
+{
+  HdTitleBarPrivate *priv;
+  HdTitleBarVisEnum state = HDTB_VIS_NONE;
+
+  if (!HD_IS_TITLE_BAR(bar))
+    return;
+  priv = bar->priv;
+
+  state |= HDTB_VIS_BTN_MENU;
+  state |= HDTB_VIS_BTN_DONE;
+  state |= HDTB_VIS_FULL_WIDTH;
+
+  hd_title_bar_set_state(bar, state);
 }
 
 static void
@@ -733,7 +843,11 @@ hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm)
           client = client->stacked_below;
         }
     }
-  hd_title_bar_set_window(bar, client);
+  
+  if (STATE_IS_EDIT_MODE(hd_render_manager_get_state()))
+    hd_title_bar_set_for_edit_mode(bar);
+  else
+    hd_title_bar_set_window(bar, client);
 }
 
 /* Is the given decor one we should consider for a title bar? */
@@ -808,7 +922,8 @@ hd_title_bar_top_left_clicked (HdTitleBar *bar)
 static void
 hd_title_bar_top_left_press (HdTitleBar *bar)
 {
-  hd_title_bar_left_pressed(bar, TRUE);
+  if (!STATE_IN_EDIT_MODE(hd_render_manager_get_state()))
+    hd_title_bar_left_pressed(bar, TRUE);
 
   g_signal_emit (bar, signals[PRESS_TOP_LEFT], 0);
 }
@@ -825,6 +940,9 @@ static void
 hd_title_bar_top_right_press (HdTitleBar *bar)
 {
   hd_title_bar_right_pressed(bar, TRUE);
+
+  if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
+    hd_render_manager_set_state(HDRM_STATE_HOME);
 
   g_signal_emit (bar, signals[PRESS_TOP_LEFT], 0);
 }

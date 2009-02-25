@@ -48,8 +48,6 @@
 
 #include <dbus/dbus-glib.h>
 
-#define BUTTON_IMAGE_MENU     "menu-button.png"
-
 #define LONG_PRESS_DUR 1
 
 enum
@@ -92,8 +90,6 @@ static void hd_switcher_constructed (GObject *object);
 static void hd_switcher_clicked (HdSwitcher *switcher);
 static gboolean hd_switcher_press (HdSwitcher *switcher);
 static gboolean hd_switcher_leave (HdSwitcher *switcher);
-
-static gboolean hd_switcher_menu_clicked (HdSwitcher *switcher);
 
 static void hd_switcher_item_selected (HdSwitcher *switcher,
 				       ClutterActor *actor);
@@ -175,7 +171,6 @@ hd_switcher_constructed (GObject *object)
   HdSwitcherPrivate *priv = HD_SWITCHER (object)->priv;
   HdHome	    *home =
     HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
-  ClutterActor      *actor;
 
 
   g_signal_connect_swapped (hd_render_manager_get_title_bar(),
@@ -243,23 +238,6 @@ hd_switcher_constructed (GObject *object)
                                         "/com/nokia/HildonHome",
                                         "com.nokia.HildonHome");
     }
-
-  /* Home Menu Button */
-  actor = clutter_texture_new_from_file (
-		g_build_filename (HD_DATADIR, BUTTON_IMAGE_MENU, NULL),
-	        &error);
-  if (error)
-    {
-      g_error (error->message);
-      actor = clutter_rectangle_new ();
-      clutter_actor_set_size (actor, 200, 60);
-    }
-  hd_render_manager_set_button(HDRM_BUTTON_MENU, actor);
-  clutter_actor_set_position (actor, 0, 0);
-  clutter_actor_set_reactive (actor, TRUE);
-  g_signal_connect_swapped (actor, "button-release-event",
-                            G_CALLBACK (hd_switcher_menu_clicked),
-                            object);
 }
 
 static void
@@ -333,23 +311,6 @@ hd_switcher_get_property (GObject      *object,
     }
 }
 
-static gboolean
-hd_switcher_menu_clicked (HdSwitcher *switcher)
-{
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-  HdHome	    *home =
-    HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
-
-  g_debug("hd_switcher_menu_clicked, switcher=%p\n", switcher);
-
-  if (priv->hildon_home_proxy)
-    dbus_g_proxy_call_no_reply (priv->hildon_home_proxy, "ShowEditMenu",
-                                G_TYPE_UINT, hd_home_get_current_view_id (home),
-                                G_TYPE_INVALID);
-
-  return TRUE;
-}
-
 static void
 hd_switcher_clicked (HdSwitcher *switcher)
 {
@@ -358,7 +319,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
   g_debug("entered hd_switcher_clicked: state=%d\n",
         hd_render_manager_get_state());
 
-  if (priv->long_press)
+  if (priv->long_press || STATE_IS_EDIT_MODE (hd_render_manager_get_state ()))
     return;
 
   if (priv->press_timeout)
@@ -428,6 +389,16 @@ hd_switcher_press (HdSwitcher *switcher)
       priv->press_timeout = g_timeout_add_seconds (LONG_PRESS_DUR,
                                                    press_timeout_cb,
                                                    switcher);
+    }
+  else if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
+    {
+      HdHome *home = HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
+
+      g_debug("%s: show edit menu, switcher=%p\n", __FUNCTION__, switcher);
+      if (priv->hildon_home_proxy)
+        dbus_g_proxy_call_no_reply (priv->hildon_home_proxy, "ShowEditMenu",
+                                    G_TYPE_UINT, hd_home_get_current_view_id (home),
+                                    G_TYPE_INVALID);
     }
 
   return TRUE;

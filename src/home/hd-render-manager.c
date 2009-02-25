@@ -159,7 +159,6 @@ struct _HdRenderManagerPrivate {
   ClutterActor         *operator;
   ClutterActor         *button_task_nav;
   ClutterActor         *button_launcher;
-  ClutterActor         *button_menu;
   ClutterActor         *button_back;
   ClutterActor         *button_edit;
 
@@ -626,7 +625,7 @@ hd_render_manager_set_input_viewport()
           if (button &&
               CLUTTER_ACTOR_IS_VISIBLE(button) &&
               CLUTTER_ACTOR_IS_VISIBLE(clutter_actor_get_parent(button)) &&
-              (i==HDRM_BUTTON_MENU||CLUTTER_ACTOR_IS_REACTIVE(button)) &&
+              (CLUTTER_ACTOR_IS_REACTIVE(button)) &&
               (i!=HDRM_BUTTON_BACK || !app_mode))
             {
               clutter_actor_get_geometry (button, &geom[geom_count]);
@@ -700,8 +699,8 @@ void hd_render_manager_sync_clutter_before ()
         break;
       case HDRM_STATE_HOME_EDIT:
       case HDRM_STATE_HOME_EDIT_DLG:
-        visible_top_left = HDRM_BUTTON_MENU;
-        visible_top_right = HDRM_BUTTON_BACK;
+        visible_top_left = HDRM_BUTTON_NONE;
+        visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         hd_render_manager_set_blur(HDRM_BLUR_HOME);
@@ -771,18 +770,11 @@ void hd_render_manager_sync_clutter_before ()
   switch (visible_top_left)
   {
     case HDRM_BUTTON_NONE:
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_menu));
       break;
     case HDRM_BUTTON_LAUNCHER:
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_menu));
       btn_state |= HDTB_VIS_BTN_LAUNCHER;
       break;
-    case HDRM_BUTTON_MENU:
-      clutter_actor_show(CLUTTER_ACTOR(priv->button_menu));
-      btn_state |= HDTB_VIS_BTN_MENU;
-      break;
     case HDRM_BUTTON_TASK_NAV:
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_menu));
       btn_state |= HDTB_VIS_BTN_SWITCHER;
       break;
     default:
@@ -963,10 +955,6 @@ void hd_render_manager_set_button (HDRMButtonEnum btn,
         priv->button_launcher = CLUTTER_ACTOR(g_object_ref(item));
         reparent = FALSE;
         return; /* Likewise */
-      case HDRM_BUTTON_MENU:
-        g_assert(!priv->button_menu);
-        priv->button_menu = CLUTTER_ACTOR(g_object_ref(item));
-        break;
       case HDRM_BUTTON_BACK:
         g_assert(!priv->button_back);
         priv->button_back = CLUTTER_ACTOR(g_object_ref(item));
@@ -1001,8 +989,6 @@ ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button)
         return priv->button_task_nav;
       case HDRM_BUTTON_LAUNCHER:
         return priv->button_launcher;
-      case HDRM_BUTTON_MENU:
-        return priv->button_menu;
       case HDRM_BUTTON_BACK:
         return priv->button_back;
       case HDRM_BUTTON_EDIT:

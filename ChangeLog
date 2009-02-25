@@ -1,3 +1,31 @@
+2009-02-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Implement new edit mode title bar.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_input_viewport,
+	  hd_render_manager_sync_clutter_before): Remove HDRM_BUTTON_MENU
+	  handling.
+	* src/home/hd-render-manager.h (STATE_IS_EDIT_MODE): Add
+	  STATE_IS_EDIT_MODE macro.
+
+	* src/home/hd-switcher.c (hd_switcher_clicked, hd_switcher_press):
+	  Remove menu button. Use switcher_press to show edit menu in edit
+	  mode.
+
+	* src/home/hd-title-bar.c (hd_title_bar_init): Add supoort for buttons
+	  with text.
+	  (hd_title_bar_set_state): Add handling for BTN_MENU and BTN_DONE.
+	  (hd_title_bar_set_full_width): Use relative positions for left and
+	  right separtor in edit mode.
+	  (hd_title_bar_set_for_edit_mode, hd_title_bar_update): Show edit
+	  title bar in edit mode.
+	  (hd_title_bar_top_left_press): Do not show pressed state in edit
+	  mode.
+	  (hd_title_bar_top_right_press): Go back to home mode if in edit
+	  mode.
+
+	* src/home/hd-title-bar.h: Add HDTB_VIS_BTN_DONE.
+
 2009-02-25  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view.c (close_applet, close_button_clicked,
