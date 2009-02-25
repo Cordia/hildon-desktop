@@ -2,6 +2,7 @@ hildon-desktop (1:2.2.22-1~unreleased) unstable; urgency=low
 
   * Jan Arne: Implement working applet arranging code. Fixes: NB#101724
   * Jan Arne: Hide settings icon. Fixes: NB#102994
+  * Kimmo: Add -DG_DEBUG_DISABLE to package compilation options.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Feb 2009 13:08:41 +0200
 

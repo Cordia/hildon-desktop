@@ -12,7 +12,8 @@ DEB_DH_STRIP_ARGS := --dbg-package=hildon-desktop
 DEB_DH_INSTALLINIT_ARGS := --no-start -- start 51 2 3 4 . stop 20 0 1 5 6 .
 
 makebuilddir/hildon-desktop::
-	./autogen.sh --prefix=/usr --sysconfdir=/etc $(ENABLE_A11Y)
+	CFLAGS=-DG_DEBUG_DISABLE \
+	       ./autogen.sh --prefix=/usr --sysconfdir=/etc $(ENABLE_A11Y)
 
 binary-install/hildon-desktop::
 	dh_installxsession -u 'post 05'
