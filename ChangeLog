@@ -1,3 +1,12 @@
+2009-02-25  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view.c (close_applet, close_button_clicked,
+	  hd_home_view_close_all_applets): Move close applet function here.
+	  (hd_home_view_unregister_applet): Reset layout.
+
+	* src/home/hd-home.c:
+	* src/home/hd-home.h: Move close applet function to HdHomeView.
+
 2009-02-25  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c: Fixed blurring of FKB (and full-screen

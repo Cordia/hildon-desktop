@@ -72,8 +72,6 @@ void hd_home_add_status_menu (HdHome *home, ClutterActor *sa);
 void hd_home_remove_status_area (HdHome *home, ClutterActor *sa);
 void hd_home_remove_status_menu (HdHome *home, ClutterActor *sa);
 
-void hd_home_close_applet (HdHome *home, ClutterActor *applet);
-
 guint hd_home_get_current_view_id (HdHome *home);
 ClutterActor *hd_home_get_current_view (HdHome *home);
 

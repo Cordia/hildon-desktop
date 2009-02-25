@@ -843,16 +843,37 @@ hd_home_view_load_applet_position (HdHomeView           *view,
   g_slist_free (position);
 }
 
+static void
+close_applet (HdHomeView *view, HdHomeViewAppletData *data)
+{
+  HdHomeViewPrivate *priv = view->priv;
+  const gchar *applet_id;
+  gchar *applet_key;
+
+  /* Unset GConf configuration */
+  applet_id = HD_HOME_APPLET (data->cc->wm_client)->applet_id;
+
+  applet_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s", applet_id);
+  gconf_client_recursive_unset (priv->gconf_client, applet_key, 0, NULL);
+  g_free (applet_key);
+
+  mb_wm_client_deliver_delete (data->cc->wm_client);
+}
+
 static gboolean
 close_button_clicked (ClutterActor       *button,
                       ClutterButtonEvent *event,
                       HdHomeView         *view)
 {
+  HdHomeViewPrivate *priv = view->priv;
   ClutterActor *applet;
+  HdHomeViewAppletData *data;
 
   applet = clutter_actor_get_parent (button);
 
-  hd_home_close_applet (view->priv->home, applet);
+  data = g_hash_table_lookup (priv->applets, applet);
+
+  close_applet (view, data);
 
   return TRUE;
 }
@@ -960,6 +981,8 @@ hd_home_view_unregister_applet (HdHomeView *view, ClutterActor *applet)
   HdHomeViewPrivate *priv = view->priv;
 
   g_hash_table_remove (priv->applets, applet);
+
+  hd_home_view_layout_reset (priv->layout);
 }
 
 void
@@ -1048,7 +1071,7 @@ hd_home_view_close_all_applets (HdHomeView *view)
 {
   HdHomeViewPrivate *priv;
   GHashTableIter iter;
-  gpointer key;
+  gpointer value;
 
   g_return_if_fail (HD_IS_HOME_VIEW (view));
 
@@ -1056,9 +1079,9 @@ hd_home_view_close_all_applets (HdHomeView *view)
 
   /* Iterate over all applets */
   g_hash_table_iter_init (&iter, priv->applets);
-  while (g_hash_table_iter_next (&iter, &key, NULL))
+  while (g_hash_table_iter_next (&iter, NULL, &value))
     {
-      hd_home_close_applet (priv->home, CLUTTER_ACTOR (key));
+      close_applet (view, (HdHomeViewAppletData *) value);
     }
  }
 
