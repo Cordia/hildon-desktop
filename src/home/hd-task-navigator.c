@@ -389,9 +389,7 @@ pixbuf2texture (GdkPixbuf *pixbuf, gboolean fallback)
     {
       g_warning ("clutter_texture_set_from_rgb_data: %s", err->message);
       g_object_unref (texture);
-#ifndef G_DISABLE_CHECKS
-damage_control:
-#endif
+damage_control: __attribute__((unused))
       texture = fallback
         ? empty_texture (gdk_pixbuf_get_width (pixbuf),
                          gdk_pixbuf_get_height (pixbuf))
@@ -777,6 +775,24 @@ hd_task_navigator_has_window (HdTaskNavigator * self, ClutterActor * win)
     if (g_array_index (Thumbnails, Thumbnail, i).apwin == win)
       return TRUE;
   return FALSE;
+}
+
+ClutterActor *
+hd_task_navigator_find_app_actor (HdTaskNavigator *self, const gchar *id)
+{
+  guint i;
+  const Thumbnail *thumb;
+
+  for (i = 0; i < Thumbnails->len; i++)
+    {
+      const gchar *appid;
+
+      thumb = &g_array_index (Thumbnails, Thumbnail, i);
+      appid = g_object_get_data (G_OBJECT (thumb->apwin), "HD-ApplicationId");
+      if (appid && !g_strcmp0 (appid, id))
+        return thumb->apwin;
+    }
+  return NULL;
 }
 
 /* Enters the navigator without animation (modulo background blurring). */
@@ -2306,9 +2322,9 @@ remove_notewin (HdNote * hdnote, gboolean in_migration)
         row++;
     }
 
-  if (i == Notifications->len)
+  if (i >= Notifications->len)
     {
-      g_warning("%s: Notification window %p not found", __FUNCTION__, hdnote);
+      g_critical("%s: Notification window %p not found", __FUNCTION__, hdnote);
       return;
     }
 
@@ -2461,27 +2477,8 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
 }
 /* Add/remove notifications }}} */
 
-/*
- * Find which thumbnail represents the requested app.
- */
-ClutterActor *
-hd_task_navigator_find_app_actor (HdTaskNavigator *self,
-                                  const gchar *id)
-{
-  guint i;
-  Thumbnail *thumb;
-  for (i = 0; i < Thumbnails->len; i++)
-    {
-      thumb = &g_array_index (Thumbnails, Thumbnail, i);
-      const gchar *appid = g_object_get_data (G_OBJECT (thumb->apwin),
-                                              "HD-ApplicationId");
-      if (!g_strcmp0 (appid, id))
-        return thumb->apwin;
-    }
-  return NULL;
-}
-
 /* %HdTaskNavigator {{{ */
+/* Find which thumbnail represents the requested app. */
 /* Callbacks {{{ */
 G_DEFINE_TYPE (HdTaskNavigator, hd_task_navigator, CLUTTER_TYPE_GROUP);
 
@@ -2673,7 +2670,7 @@ hd_task_navigator_init (HdTaskNavigator * self)
     }
   else
     {
-      g_warning ("Unable to get style for \"task-switcher-thumbnail\"");
+      g_critical ("Unable to get style for \"task-switcher-thumbnail\"");
       Master_foreground = empty_texture (SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 

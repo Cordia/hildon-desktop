@@ -33,6 +33,8 @@ gboolean hd_task_navigator_has_apps   (HdTaskNavigator *self);
 gboolean hd_task_navigator_has_notifications (HdTaskNavigator * self);
 gboolean hd_task_navigator_has_window (HdTaskNavigator * self,
                                        ClutterActor * win);
+ClutterActor *hd_task_navigator_find_app_actor (HdTaskNavigator *self,
+                                                const gchar *id);
 
 void hd_task_navigator_enter     (HdTaskNavigator *self);
 void hd_task_navigator_exit      (HdTaskNavigator *self);
@@ -69,6 +71,4 @@ void hd_task_navigator_add_notification    (HdTaskNavigator *self,
 void hd_task_navigator_remove_notification (HdTaskNavigator *self,
                                             HdNote *hdnote);
 
-ClutterActor *hd_task_navigator_find_app_actor (HdTaskNavigator *self,
-                                                const gchar *id);
 #endif /* ! __HD_TASK_NAVIGATOR_H__ */

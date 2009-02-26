@@ -1,5 +1,11 @@
 2009-02-26  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-task-navigator.h
+	* src/home/hd-task-navigator.c:
+	  Little cleanups.
+
+2009-02-26  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Portrait mode changes.
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait):
