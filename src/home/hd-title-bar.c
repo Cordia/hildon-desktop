@@ -67,7 +67,7 @@ enum
   BTN_COUNT
 };
 
-const char *BTN_FILENAMES[BTN_COUNT] = {
+static const char *const BTN_FILENAMES[BTN_COUNT] = {
     HD_THEME_IMG_LEFT_ATTACHED,
     HD_THEME_IMG_LEFT_END,
     HD_THEME_IMG_RIGHT_END,
@@ -90,7 +90,7 @@ const char *BTN_FILENAMES[BTN_COUNT] = {
     NULL,
 };
 
-const char *BTN_LABELS[BTN_COUNT * 2] = {
+static const char *const BTN_LABELS[BTN_COUNT * 2] = {
     NULL, NULL,  // BTN_BG_ATTACHED = 0,
     NULL, NULL,  // BTN_BG_LEFT_END,
     NULL, NULL,  // BTN_BG_RIGHT_END,
@@ -113,7 +113,7 @@ const char *BTN_LABELS[BTN_COUNT * 2] = {
     "hildon-libs", "wdgt_bd_done",
 };
 
-gboolean ALIGN_RIGHT[BTN_COUNT] = {
+static const gboolean ALIGN_RIGHT[BTN_COUNT] = {
    FALSE, // BTN_BG_ATTACHED = 0,
    FALSE, // BTN_BG_LEFT_END,
    TRUE,  // BTN_BG_RIGHT_END,
@@ -139,7 +139,7 @@ gboolean ALIGN_RIGHT[BTN_COUNT] = {
 /* We try and set sizes for what we can, because if we get images
  * we couldn't load, they won't show properly otherwise
  */
-gboolean SET_SIZE[BTN_COUNT] = {
+static const gboolean SET_SIZE[BTN_COUNT] = {
    TRUE, // BTN_BG_ATTACHED = 0,
    TRUE, // BTN_BG_LEFT_END,
    TRUE,  // BTN_BG_RIGHT_END,
@@ -187,6 +187,9 @@ G_DEFINE_TYPE (HdTitleBar, hd_title_bar, CLUTTER_TYPE_GROUP);
                 (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
                 HD_TYPE_TITLE_BAR, HdTitleBarPrivate))
 
+static void
+hd_title_bar_stage_allocation_changed (HdTitleBar *bar, GParamSpec *unused,
+                                       ClutterActor *stage);
 static void
 hd_title_bar_add_left_signals(HdTitleBar *bar, ClutterActor *actor);
 static void
@@ -268,35 +271,24 @@ hd_title_bar_init (HdTitleBar *bar)
                                  HD_COMP_MGR_TOP_MARGIN);
           clutter_actor_set_position (label, HD_TITLE_BAR_TEXT_MARGIN,
                                       (HD_COMP_MGR_TOP_MARGIN - h) / 2);
-          if (ALIGN_RIGHT[i])
-            {
-              clutter_actor_set_position(CLUTTER_ACTOR(priv->buttons[i]),
-                                         HD_COMP_MGR_SCREEN_WIDTH - w,
-                                         0);
-            }
-          else
-            {
-              clutter_actor_set_position(CLUTTER_ACTOR(priv->buttons[i]), 0, 0);
-            }
         }
+
+      /* The position of left-aligned buttons is (0, 0) by default,
+       * and right aligned ones will be placed on the initial
+       * stage_allocation_changed(). */
       clutter_container_add_actor(CLUTTER_CONTAINER(bar), priv->buttons[i]);
       clutter_actor_hide(priv->buttons[i]);
 
-      if (ALIGN_RIGHT[i] && BTN_FILENAMES[i])
+      if (SET_SIZE[i])
         {
-          clutter_actor_set_position(priv->buttons[i],
-              HD_COMP_MGR_SCREEN_WIDTH-HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH, 0);
-          if (SET_SIZE[i])
-            clutter_actor_set_size(priv->buttons[i],
-              HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH,
-              HD_COMP_MGR_TOP_RIGHT_BTN_HEIGHT);
-        }
-      else
-        {
-          if (SET_SIZE[i])
+          if (!ALIGN_RIGHT[i])
             clutter_actor_set_size(priv->buttons[i],
               HD_COMP_MGR_TOP_LEFT_BTN_WIDTH,
               HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT);
+          else if (BTN_FILENAMES[i])
+            clutter_actor_set_size(priv->buttons[i],
+              HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH,
+              HD_COMP_MGR_TOP_RIGHT_BTN_HEIGHT);
         }
     }
 
@@ -351,6 +343,10 @@ hd_title_bar_init (HdTitleBar *bar)
                       G_CALLBACK (on_decor_progress_timeline_new_frame),
                       priv->progress_texture);
   }
+
+  g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
+                           G_CALLBACK(hd_title_bar_stage_allocation_changed),
+                           bar);
 }
 
 static void
@@ -911,6 +907,21 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
       opacity = (gint)((1-cos(amt*2*3.141592))*127);
       clutter_actor_set_opacity(priv->buttons[BTN_SWITCHER_HIGHLIGHT], opacity);
     }
+}
+
+/* Realign all right-aligned buttons when the screen size changes. */
+static void
+hd_title_bar_stage_allocation_changed (HdTitleBar *bar, GParamSpec *unused,
+                                       ClutterActor *stage)
+{
+  HdTitleBarPrivate *priv = bar->priv;
+  guint i, wscr;
+
+  wscr = HD_COMP_MGR_SCREEN_WIDTH;
+  for (i = 0; i < BTN_COUNT; i++)
+    if (ALIGN_RIGHT[i])
+      clutter_actor_set_x(priv->buttons[i],
+                          wscr - clutter_actor_get_width(priv->buttons[i]));
 }
 
 static void

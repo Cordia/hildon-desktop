@@ -1,3 +1,20 @@
+2009-02-26  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Portrait mode changes.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait):
+	  Let the REQUEST flag be inherited too.
+	  This is significant when the requesting window is not visible,
+	  eg. when there is a stackable window above.
+	* src/home/hd-title-bar.c (hd_title_bar_init):
+	  Regression fix: the right-aligned buttons weren't visible after
+	  switching to portrait mode.  Fixed by repositioning them after
+	  screen size change.
+	  Plus little cleanups (made global variables static).
+	* tests/Makefile.am
+	* tests/test-portrait-win.c:
+	  Enhanced.
+
 2009-02-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Implement new edit mode title bar.

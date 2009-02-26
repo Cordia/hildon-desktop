@@ -1921,12 +1921,12 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
         continue;
 
       /* Let's suppose @ct supportrs portrait layout if any of the windows
-       * it is transient for does. */
-      any_requests |= HD_COMP_MGR_CLIENT (cs->cm_client)->priv->portrait_requested;
+       * it is transient for does.  Same for requests. */
       for (ct = cs; ; ct = ct->transient_for)
         {
           if (!ct)
             return FALSE;
+          any_requests |= HD_COMP_MGR_CLIENT (ct->cm_client)->priv->portrait_requested;
           if (HD_COMP_MGR_CLIENT (ct->cm_client)->priv->portrait_supported)
             break;
         }

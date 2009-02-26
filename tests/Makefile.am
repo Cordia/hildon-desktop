@@ -10,8 +10,8 @@ test_applet_CFLAGS = `pkg-config --cflags gtk+-2.0`
 test_applet_LDFLAGS = `pkg-config --libs gtk+-2.0`
 
 test_portrait_win_SOURCES = test-portrait-win.c
-test_portrait_win_CFLAGS = `pkg-config --cflags gtk+-2.0`
-test_portrait_win_LDFLAGS = `pkg-config --libs gtk+-2.0`
+test_portrait_win_CFLAGS = `pkg-config --cflags hildon-1`
+test_portrait_win_LDFLAGS = `pkg-config --libs hildon-1`
 
 test_portrait_dlg_SOURCES = test-portrait-win.c
 test_portrait_dlg_CFLAGS = `pkg-config --cflags hildon-1`
