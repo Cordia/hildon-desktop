@@ -1,7 +1,14 @@
 2009-02-26  Alejandro Pinheiro <apinheiro@igalia.com>
 
-	* tests/Makefile.am
+	* src/a11y/tail: new directory, to add the implementation of the a11y
+	support for src/tidy
+	* src/a11y/tail/tail.[ch]: new
+	* src/a11y/tail/tail-sub-texture.[ch]
+	Added a11y implementation for TidySubTexture
 
+2009-02-26  Alejandro Pinheiro <apinheiro@igalia.com>
+
+	* tests/Makefile.am
 	Added -D_XOPEN_SOURCE compiling test portrait (win and dlg), to avoid
 	problems including hildon-remote-texture.h
 

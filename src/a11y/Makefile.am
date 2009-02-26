@@ -1,8 +1,9 @@
-SUBDIRS = launcher home
+SUBDIRS = launcher home tail
 
 INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
-MY_LIBS =	$(top_builddir)/src/a11y/launcher/libhdalauncher.la \
+MY_LIBS =	$(top_builddir)/src/a11y/launcher/libhdalauncher.la 	\
+		$(top_builddir)/src/a11y/tail/libtail.la 	    	\
 		$(top_builddir)/src/a11y/home/libhdahome.la
 
 
