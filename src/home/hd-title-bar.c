@@ -109,7 +109,7 @@ static const char *const BTN_LABELS[BTN_COUNT * 2] = {
     NULL, NULL,  // BTN_BACK_PRESSED,
     NULL, NULL,  // BTN_CLOSE,
     NULL, NULL,  // BTN_CLOSE_PRESSED,
-    "", "Desktop Settings",
+    "maemo-af-desktop", "home_ti_desktop_menu",
     "hildon-libs", "wdgt_bd_done",
 };
 

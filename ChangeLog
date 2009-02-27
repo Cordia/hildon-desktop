@@ -1,3 +1,13 @@
+2009-02-27  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view.c (hd_home_view_load_applet_position,
+	  hd_home_view_add_applet, hd_home_view_move_applet):
+	* src/home/hd-home-view.h:
+	* src/home/hd-home.c (hd_home_add_applet): Fix move of default
+	  applets.
+
+	* src/home/hd-title-bar.c (BTN_LABELS): Fix string.
+
 2009-02-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#103417 Animation actors cannot be resized

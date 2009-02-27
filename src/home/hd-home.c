@@ -831,7 +831,7 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
 
       view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
                                               view_id);
-      hd_home_view_add_applet (HD_HOME_VIEW (view), applet);
+      hd_home_view_add_applet (HD_HOME_VIEW (view), applet, FALSE);
     }
   else
     {

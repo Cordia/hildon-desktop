@@ -795,7 +795,8 @@ hd_home_view_restack_applets (HdHomeView *view)
 static void
 hd_home_view_load_applet_position (HdHomeView           *view,
                                    ClutterActor         *applet,
-                                   HdHomeViewAppletData *data)
+                                   HdHomeViewAppletData *data,
+                                   gboolean              force_arrange)
 {
   HdHomeViewPrivate *priv = view->priv;
   const gchar *applet_id;
@@ -810,7 +811,7 @@ hd_home_view_load_applet_position (HdHomeView           *view,
                                     GCONF_VALUE_INT,
                                     NULL);
 
-  if (position && position->next)
+  if (!force_arrange && position && position->next)
     {
       clutter_actor_set_position (applet,
                                   GPOINTER_TO_INT (position->data),
@@ -907,7 +908,9 @@ configure_button_clicked (ClutterActor       *button,
 }
   
 void
-hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
+hd_home_view_add_applet (HdHomeView   *view,
+                         ClutterActor *applet,
+                         gboolean      force_arrange)
 {
   HdHomeViewPrivate *priv = view->priv;
   HdHomeViewAppletData *data;
@@ -963,7 +966,10 @@ hd_home_view_add_applet (HdHomeView *view, ClutterActor *applet)
 
   g_object_set_data (G_OBJECT (applet), "HD-HomeView", view);
 
-  hd_home_view_load_applet_position (view, applet, data);
+  hd_home_view_load_applet_position (view,
+                                     applet,
+                                     data,
+                                     force_arrange);
 
   g_hash_table_insert (priv->applets,
                        applet,
@@ -1034,7 +1040,7 @@ hd_home_view_move_applet (HdHomeView   *view,
   hd_home_view_unregister_applet (view, applet);
 
   /* Add applet to the new view */
-  hd_home_view_add_applet (new_view, applet);
+  hd_home_view_add_applet (new_view, applet, TRUE);
 
   /* Mark desktop for restacking (because the wm window was moved) */
   desktop_client = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
