@@ -1,3 +1,7 @@
+2009-02-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* data/: Remove unused graphics.
+
 2009-02-26  Alejandro Pinheiro <apinheiro@igalia.com>
 
 	* src/a11y/tail: new directory, to add the implementation of the a11y
