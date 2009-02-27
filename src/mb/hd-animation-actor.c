@@ -403,7 +403,17 @@ hd_animation_actor_request_geometry (MBWindowManagerClient *client,
 	     flags);
 
     if (!(flags & MBWMClientReqGeomForced))
-	return False; /* Geometry rejected */
+    {
+	/* Geometry that is not forced is checked for sanity.
+	 * For animation actors, the sanity criteria is that the
+	 * window is off-screen.
+	 */
+	MBWindowManager	*wm = client->wmref;
+
+	if (new_geometry->x < wm->xdpy_width ||
+	    new_geometry->y < wm->xdpy_height)
+	    return False; /* Geometry rejected */
+    }
 
     client->frame_geometry.x      = new_geometry->x;
     client->frame_geometry.y      = new_geometry->y;

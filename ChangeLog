@@ -1,3 +1,12 @@
+2009-02-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#103417 Animation actors cannot be resized
+	Patch from Artem Egorkine.
+
+	* src/mb/hd-animation-actor.c:
+	  Allow geometry changes to HdAnimationActor:s as long as they
+	  remain off-screen.
+
 2009-02-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* data/: Remove unused graphics.
