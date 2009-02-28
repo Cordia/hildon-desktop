@@ -403,14 +403,22 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 	launcher_app = hd_comp_mgr_app_from_xwindow (hmgr, client->window->xwindow);
 
 	if (!launcher_app)
-	  return False;
+	  {
+	    g_warning ("Window %06x did not have an application associated with it\n",
+		       (int) client->window->xwindow);
+	    return True; /* we did handle it */
+	  }
 
 	service_name = hd_launcher_app_get_service (launcher_app);
 
 	if (!service_name ||
 	    index (service_name, '/')!=NULL ||
 	    service_name[0]=='.')
-	  return False; /* daft service name, don't get a loading pic */
+	  {
+	    g_warning ("Window %06x has no sane service name\n",
+		       (int) client->window->xwindow);
+	    return True; /* daft service name, don't get a loading pic */
+	  }
 
 	filename = g_strdup_printf ("%s/.cache/launch",
 				    getenv("HOME"));
@@ -468,10 +476,10 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 
 	      gdk_pixbuf_unref (pixbuf);
 	    }
-	    break;
+	    return True;
 	  case 1:
 	    unlink (filename);
-	    break;
+	    return True;
 	  default:
 	    g_warning ("Unknown screenshot command.\n");
 	  }

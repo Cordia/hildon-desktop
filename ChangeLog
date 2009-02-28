@@ -1,5 +1,10 @@
 2009-02-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
+	* src/home/hd-home.c: improve the warnings when apps
+	  don't get screenshots taken.
+
+2009-02-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
 	* src/home/hd-home.c: add ability to create and delete
 	  screenshots when _HILDON_LOADING_SCREENSHOT is received.
 	* src/launcher/hd-launcher.c: when restoring saved images,
