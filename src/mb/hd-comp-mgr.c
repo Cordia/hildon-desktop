@@ -71,8 +71,6 @@
               (!hd_comp_mgr_ignore_window(c) \
                && !HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->frame_geometry))
 
-HdLauncherApp *hd_comp_mgr_app_from_xwindow (HdCompMgr *hmgr, Window xid);
-
 struct HdCompMgrPrivate
 {
   MBWindowManagerClient *desktop;

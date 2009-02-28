@@ -534,7 +534,7 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
       index(service_name, '/')==NULL &&
       service_name[0]!='.')
     {
-      cached_image = g_strdup_printf("%s/.cache/launch/%s.jpg",
+      cached_image = g_strdup_printf("%s/.cache/launch/%s.png",
 				     getenv("HOME"),
 				     service_name);
 

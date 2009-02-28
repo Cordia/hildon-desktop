@@ -1,3 +1,19 @@
+2009-02-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/home/hd-home.c: add ability to create and delete
+	  screenshots when _HILDON_LOADING_SCREENSHOT is received.
+	* src/launcher/hd-launcher.c: when restoring saved images,
+	  look for PNGs, not JPEGs.
+	* src/mb/hd-atoms.c: declare _HILDON_LOADING_SCREENSHOT atom.
+	* src/mb/hd-atoms.h: declare _HILDON_LOADING_SCREENSHOT atom.
+	* configure.ac: add gdk-pixbuf-xlib library which we
+	  need for screenshots.
+	* src/main.c: initialise gdk-pixbuf-xlib library.
+	* src/launcher/hd-launcher-app.h: declare
+	  hd_comp_mgr_app_from_xwindow().
+	* src/mb/hd-comp-mgr.c: remove external declaration of 
+          hd_comp_mgr_app_from_xwindow().
+	
 2009-02-27  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view.c (hd_home_view_load_applet_position,

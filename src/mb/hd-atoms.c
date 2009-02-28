@@ -65,6 +65,8 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     "_HILDON_TEXTURE_CLIENT_MESSAGE_SCALE",
     "_HILDON_TEXTURE_CLIENT_MESSAGE_PARENT",
     "_HILDON_TEXTURE_CLIENT_READY",
+
+    "_HILDON_LOADING_SCREENSHOT",
   };
 
   XInternAtoms (xdpy,

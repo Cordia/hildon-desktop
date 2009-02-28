@@ -30,6 +30,7 @@
 #ifndef __HD_LAUNCHER_APP_H__
 #define __HD_LAUNCHER_APP_H__
 
+#include "hd-comp-mgr.h"
 #include "hd-launcher-item.h"
 
 G_BEGIN_DECLS
@@ -94,6 +95,8 @@ gboolean hd_launcher_app_is_executing     (HdLauncherApp *app);
 
 GPid hd_launcher_app_get_pid (HdLauncherApp *app);
 void hd_launcher_app_set_pid (HdLauncherApp *app, GPid pid);
+
+HdLauncherApp *hd_comp_mgr_app_from_xwindow (HdCompMgr *hmgr, Window xid);
 
 G_END_DECLS
 

@@ -39,16 +39,23 @@
 #include "hd-clutter-cache.h"
 #include "hd-theme.h"
 
+#include "hd-launcher-app.h"
+
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
+#include <clutter/clutter-texture.h>
 
 #include <matchbox/core/mb-wm.h>
 
 #include <gconf/gconf-client.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
+#include <gdk-pixbuf-xlib/gdk-pixbuf-xlib.h>
 
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-bindings.h>
+
+#include <strings.h>
+#include <unistd.h>
 
 #define HDH_EDIT_BUTTON_DURATION 200
 #define HDH_EDIT_BUTTON_TIMEOUT 3000
@@ -365,11 +372,12 @@ hd_property_notify_message (XPropertyEvent *xev, void *userdata)
 static Bool
 root_window_client_message (XClientMessageEvent *event, HdHome *home)
 {
-#if 0
-  //  FIXME should we really support NET_CURRENT_DESKTOP?
-
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  HdCompMgr     *hmgr = HD_COMP_MGR (home->priv->comp_mgr);
+
+#if 0
+  //  FIXME should we really support NET_CURRENT_DESKTOP?
 
   if (event->message_type == wm->atoms[MBWM_ATOM_NET_CURRENT_DESKTOP])
     {
@@ -377,7 +385,99 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
       hd_home_view_container_set_current_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
                                                desktop);
     }
+  else
 #endif
+    if (event->message_type == hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_LOADING_SCREENSHOT))
+      {
+        MBWindowManagerClient *client = 
+	  mb_wm_managed_client_from_xwindow (wm,
+					     event->data.l[1]);
+	
+	char *filename;
+	HdLauncherApp *launcher_app;
+	const char *service_name;
+
+	if (!client || !client->window)
+	  return False;
+
+	launcher_app = hd_comp_mgr_app_from_xwindow (hmgr, client->window->xwindow);
+
+	if (!launcher_app)
+	  return False;
+
+	service_name = hd_launcher_app_get_service (launcher_app);
+
+	if (!service_name ||
+	    index (service_name, '/')!=NULL ||
+	    service_name[0]=='.')
+	  return False; /* daft service name, don't get a loading pic */
+
+	filename = g_strdup_printf ("%s/.cache/launch",
+				    getenv("HOME"));
+
+	g_mkdir_with_parents (filename, 0770);
+	g_free (filename);
+
+	filename = g_strdup_printf ("%s/.cache/launch/%s.png",
+				     getenv("HOME"),
+				     service_name);
+
+	switch (event->data.l[0])
+	  {
+	  case 0:
+	    {
+	      Pixmap                          pixmap;
+	      GdkPixbuf                      *pixbuf;
+	      guint                           depth;
+	      guint                           width, height;
+
+	      ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor
+		(MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client));
+
+	      ClutterActor *texture =
+		clutter_group_get_nth_child(CLUTTER_GROUP(actor), 0);
+
+	      g_object_get (texture,
+			    "pixmap", &pixmap,
+			    "pixmap-depth", &depth,
+			    "pixmap-width", &width,
+			    "pixmap-height", &height,
+			    NULL);
+
+	      /* We could call mb_wm_theme_get_decor_dimensions() here
+	       * and take out the titlebar, etc, but in practice these
+	       * aren't drawn on the loading image so we have to keep
+	       * them on.
+	       */
+
+	      pixbuf =
+		gdk_pixbuf_xlib_get_from_drawable (NULL,
+						   pixmap,
+						   xlib_rgb_get_cmap(),
+						   xlib_rgb_get_visual(),
+						   0, 0,
+						   0, 0,
+						   width,
+						   height);
+
+	      gdk_pixbuf_save (pixbuf,
+			       filename,
+			       "png",
+			       NULL,
+			       NULL);
+
+	      gdk_pixbuf_unref (pixbuf);
+	    }
+	    break;
+	  case 1:
+	    unlink (filename);
+	    break;
+	  default:
+	    g_warning ("Unknown screenshot command.\n");
+	  }
+
+	g_free (filename);
+      }
 
   return False;
 }

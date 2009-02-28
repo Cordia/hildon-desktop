@@ -35,6 +35,7 @@
 #include <clutter/clutter-container.h>
 #include <libgnomevfs/gnome-vfs.h>
 #include <signal.h>
+#include <gdk-pixbuf-xlib/gdk-pixbuf-xlib.h>
 
 #include "hildon-desktop.h"
 #include "hd-wm.h"
@@ -333,6 +334,8 @@ main (int argc, char **argv)
 #endif
 
   dpy = clutter_x11_get_default_display ();
+
+  gdk_pixbuf_xlib_init (dpy, clutter_x11_get_default_screen ());
 
   /* Just before mb discovers there's a WM already and aborts
    * see if it's hildon-desktop and take it over. */
