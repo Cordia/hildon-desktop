@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.23-1~unreleased) unstable; urgency=low
+
+  * WRITEME
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  2 Mar 2009 09:48:19 +0200
+
 hildon-desktop (1:2.2.22-1) unstable; urgency=low
 
   * Jan Arne: Implement working applet arranging code.
