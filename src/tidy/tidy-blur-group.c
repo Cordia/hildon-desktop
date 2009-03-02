@@ -32,19 +32,20 @@
 #if CLUTTER_COGL_HAS_GLES
 const char *BLUR_FRAGMENT_SHADER =
 "precision lowp float;\n"
-"varying lowp vec4      frag_color;\n"
-"varying mediump vec2      tex_coord;\n"
-"uniform lowp sampler2D tex;\n"
+"varying lowp    vec4  frag_color;\n"
+"varying mediump vec2  tex_coord;\n"
+"uniform mediump sampler2D tex;\n"
 "uniform mediump float blur;\n"
 "uniform lowp float saturation;\n"
 "void main () {\n"
-"  mediump vec2 diffa = vec2(0.0, -0.875 * blur); \n"
-"  mediump vec2 diffb = vec2(0.75*blur, 0.25*blur); \n"
-"  mediump vec2 diffc = vec2(-blur, 0.375*blur); \n"
-"  lowp vec4 color =  texture2D (tex, tex_coord+diffa)*0.333 + "
-" texture2D (tex, tex_coord+diffb)*0.333 + "
-"texture2D (tex, tex_coord+diffc)*0.333;\n"
-"  color = color * frag_color;\n"
+"  mediump vec4 color = \n"
+"       texture2D (tex, vec2(tex_coord.x            , tex_coord.y -0.875 * blur)) + \n"
+"       texture2D (tex, vec2(tex_coord.x + 0.75*blur, tex_coord.y + 0.25 * blur)) + \n"
+"       texture2D (tex, vec2(tex_coord.x -      blur, tex_coord.y +0.375 * blur)) + \n"
+"       texture2D (tex, vec2(tex_coord.x            , tex_coord.y +0.875 * blur)) + \n"
+"       texture2D (tex, vec2(tex_coord.x + 0.75*blur, tex_coord.y - 0.25 * blur)) + \n"
+"       texture2D (tex, vec2(tex_coord.x -      blur, tex_coord.y -0.375 * blur)); \n"
+"  color = color * frag_color * 0.166;\n"
 // saturation
 "  lowp float lightness = (color.r+color.g+color.b)*0.333*(1.0-saturation); \n"
 "  gl_FragColor = vec4(\n"
@@ -197,7 +198,7 @@ tidy_blur_group_paint (ClutterActor *actor)
       tex_width = exp_width;
       tex_height = exp_height;
       priv->tex_preblur = cogl_texture_new_with_size(
-                tex_width, tex_height, 0, 0,
+                tex_width, tex_height, 0, FALSE /*mipmap*/,
                 priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_4444 :
                                   COGL_PIXEL_FORMAT_RGB_565);
       /* set nearest texture filter - this just takes a single sample */

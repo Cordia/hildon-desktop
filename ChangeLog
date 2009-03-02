@@ -1,3 +1,15 @@
+2009-03-02  Gordon Williams <gordon.williams@collabora.co.uk>
+	* src/tidy/tidy-blur-group.c:
+	  Optimised blur pixel shader a little, and added more samples
+	  for a more smooth blur effect
+	* src/mb/hd-theme.c
+	* src/mb/hd-theme.h:
+	  HdTheme now only extended from MBWMTheme, not MBWMThemePng
+	  (this should reduce X Pixmap usage)
+	* src/home/hd-home-view.c:
+	  Now use .pvr home view backgrounds. Added code to clip oversize
+	  backgrounds to the correct size.
+
 2009-03-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.22

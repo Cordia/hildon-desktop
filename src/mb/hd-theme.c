@@ -27,7 +27,7 @@
 #include "hd-decor.h"
 #include "hd-decor-button.h"
 
-#include <matchbox/theme-engines/mb-wm-theme-png.h>
+#include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 #include <X11/Xft/Xft.h>
 #include <gtk/gtk.h>
@@ -91,7 +91,7 @@ hd_theme_class_type ()
 	hd_theme_class_init
       };
 
-      type = mb_wm_object_register_class (&info, MB_WM_TYPE_THEME_PNG, 0);
+      type = mb_wm_object_register_class (&info, MB_WM_TYPE_THEME, 0);
     }
 
   return type;
@@ -248,7 +248,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 						back_button_data_destroy);
 	    }
 	  /* No close button for group followers */
-	  else if (b->type == MBWMDecorButtonClose && 
+	  else if (b->type == MBWMDecorButtonClose &&
 		   (stack_i < 0 || app->leader == app))
 	    {
 	      button = hd_decor_button_new(wm,

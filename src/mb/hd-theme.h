@@ -26,7 +26,7 @@
 #define _HAVE_HD_THEME_H
 
 #include <matchbox/mb-wm-config.h>
-#include <matchbox/theme-engines/mb-wm-theme-png.h>
+#include <matchbox/theme-engines/mb-wm-theme.h>
 
 /* ------------------------------------------------------------------------- */
 #define HD_THEME_IMG_TASK_LAUNCHER "wmTaskLauncherIcon.png"
@@ -78,13 +78,13 @@ typedef enum _HdThemeButtomType
 
 struct HdThemeClass
 {
-  MBWMThemePngClass    parent;
+  MBWMThemeClass    parent;
 
 };
 
 struct HdTheme
 {
-  MBWMThemePng     parent;
+  MBWMTheme     parent;
 };
 
 int hd_theme_class_type (void);

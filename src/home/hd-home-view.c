@@ -36,6 +36,7 @@
 #include "hd-clutter-cache.h"
 
 #include "hildon-desktop.h"
+#include "../tidy/tidy-sub-texture.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -47,7 +48,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #define BACKGROUND_COLOR {0, 0, 0, 0xff}
-#define CACHED_BACKGROUND_IMAGE_FILE "%s/.backgrounds/background-%u.png"
+#define CACHED_BACKGROUND_IMAGE_FILE "%s/.backgrounds/background-%u.pvr"
 
 #define GCONF_KEY_POSITION "/apps/osso/hildon-desktop/applets/%s/position"
 #define GCONF_KEY_MODIFIED "/apps/osso/hildon-desktop/applets/%s/modified"
@@ -76,6 +77,7 @@ struct _HdHomeViewPrivate
   ClutterActor             *applets_container;
 
   ClutterActor             *background;
+  TidySubTexture           *background_sub;
 
   GHashTable               *applets;
 
@@ -350,6 +352,7 @@ load_background_idle (gpointer data)
   ClutterActor *actor = CLUTTER_ACTOR (self);
   gchar *cached_background_image_file;
   ClutterActor *new_bg;
+  TidySubTexture *new_bg_sub = 0;
   ClutterColor clr = BACKGROUND_COLOR;
   GError *error = NULL;
 
@@ -378,11 +381,33 @@ load_background_idle (gpointer data)
     }
   else
     {
-      clutter_actor_set_position (new_bg,
-                                  (clutter_actor_get_width (actor) -
-                                   clutter_actor_get_width (new_bg))/2,
-                                  (clutter_actor_get_height (actor) -
-                                   clutter_actor_get_height (new_bg))/2);
+      guint bg_width, bg_height;
+      guint actual_width, actual_height;
+      bg_width = clutter_actor_get_width (actor);
+      bg_height = clutter_actor_get_height (actor);
+      actual_width = clutter_actor_get_width (new_bg);
+      actual_height = clutter_actor_get_height (new_bg);
+      /* It may be that we get a bigger texture than we need
+       * (because PVR texture compression has to use 2^n width
+       * and height). In this case we want to crop off the
+       * bottom + right sides, which we can do more efficiently
+       * with TidySubTexture than we can with set_clip.
+       */
+      if (bg_width != actual_width ||
+          bg_height != actual_height)
+        {
+          ClutterGeometry region;
+          region.x = 0;
+          region.y = 0;
+          region.width = actual_width > bg_width ? bg_width : actual_width;
+          region.height = actual_height > bg_height ? bg_height : actual_height;
+
+          new_bg_sub = tidy_sub_texture_new(CLUTTER_TEXTURE(new_bg));
+          tidy_sub_texture_set_region(new_bg_sub, &region);
+          clutter_actor_set_size(CLUTTER_ACTOR(new_bg_sub), bg_width, bg_height);
+          clutter_actor_hide(new_bg);
+          clutter_actor_show(CLUTTER_ACTOR(new_bg_sub));
+        }
     }
 
   g_free (cached_background_image_file);
@@ -390,17 +415,29 @@ load_background_idle (gpointer data)
   clutter_actor_set_name (new_bg, "HdHomeView::background");
 
   /* Add new background to the background container */
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->background_container), new_bg);
+  clutter_container_add_actor (
+              CLUTTER_CONTAINER (priv->background_container),
+              new_bg);
+  if (new_bg_sub)
+    clutter_container_add_actor (
+                CLUTTER_CONTAINER (priv->background_container),
+                CLUTTER_ACTOR(new_bg_sub));
 
   /* Raise the texture above the solid color */
   if (priv->background)
     clutter_actor_raise (new_bg, priv->background);
 
-  /* Remove the old background (color or image) */
+  /* Remove the old background (color or image) and the subtexture
+   * that may have been used to make it smaller */
+  if (priv->background_sub)
+      clutter_actor_destroy (CLUTTER_ACTOR(priv->background_sub));
   if (priv->background)
     clutter_actor_destroy (priv->background);
 
+
+
   priv->background = new_bg;
+  priv->background_sub = new_bg_sub;
 
   priv->load_background_source = 0;
 
@@ -729,7 +766,7 @@ hd_home_view_applet_release (ClutterActor       *applet,
         }
       else
         {
-          /* 
+          /*
            * Applet should be moved in this view
            * Move the underlying window to match the actor's position
            */
@@ -906,7 +943,7 @@ configure_button_clicked (ClutterActor       *button,
 
   return TRUE;
 }
-  
+
 void
 hd_home_view_add_applet (HdHomeView   *view,
                          ClutterActor *applet,
