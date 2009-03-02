@@ -161,6 +161,20 @@ tidy_blur_group_paint (ClutterActor *actor)
 
   clutter_actor_get_allocation_coords (actor, &x_1, &y_1, &x_2, &y_2);
 
+#ifdef __i386__
+  if (!cogl_features_available(COGL_FEATURE_OFFSCREEN))
+    { /* If we can't blur properly do something nicer instead :) */
+      /* Otherwise crash... */
+      TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
+      col.blue = priv->brightness * 255;
+      col.red = col.green = priv->brightness * 127;
+      col.alpha = (1-priv->saturation) * 255;
+      cogl_color (&col);
+      cogl_rectangle (0, 0, x_2 - x_1, y_2 - y_1);
+      return;
+    }
+#endif
+
   int width = x_2 - x_1;
   int height = y_2 - y_1;
   int exp_width = width/2;

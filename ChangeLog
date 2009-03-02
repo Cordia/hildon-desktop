@@ -1,5 +1,10 @@
 2009-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/tidy/tidy-blur-group.c (tidy_blur_group_paint):
+	  Fallback to something sensible if we don't have FBO.
+
+2009-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* tests/Makefile.am:
 	  Build test-portrait-dlg from the right source.
 	* tests/test-portrait-win.c:
