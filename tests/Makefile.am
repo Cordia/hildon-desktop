@@ -13,7 +13,7 @@ test_portrait_win_SOURCES = test-portrait-win.c
 test_portrait_win_CFLAGS = `pkg-config --cflags hildon-1` -D_XOPEN_SOURCE=500
 test_portrait_win_LDFLAGS = `pkg-config --libs hildon-1`
 
-test_portrait_dlg_SOURCES = test-portrait-win.c
+test_portrait_dlg_SOURCES = test-portrait-dlg.c
 test_portrait_dlg_CFLAGS = `pkg-config --cflags hildon-1` -D_XOPEN_SOURCE=500
 test_portrait_dlg_LDFLAGS = `pkg-config --libs hildon-1`
 

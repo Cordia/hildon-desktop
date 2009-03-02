@@ -1,4 +1,12 @@
+2009-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* tests/Makefile.am:
+	  Build test-portrait-dlg from the right source.
+	* tests/test-portrait-win.c:
+	  Header cleanup.
+
 2009-03-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/tidy/tidy-blur-group.c:
 	  Optimised blur pixel shader a little, and added more samples
 	  for a more smooth blur effect
