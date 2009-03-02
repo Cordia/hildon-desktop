@@ -1,14 +1,14 @@
-hildon-desktop (1:2.2.22-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.22-1) unstable; urgency=low
 
-  * Jan Arne: Implement working applet arranging code. Fixes: NB#101724,
-    NB#103419
+  * Jan Arne: Implement working applet arranging code.
+    Fixes: NB#101724, NB#103419
   * Jan Arne: Hide settings icon. Fixes: NB#102994
-  * Jan Arne: Implement updated layout mode from new Home UI spec. Fixes:
-    NB#103486
+  * Jan Arne: Implement updated layout mode from new Home UI spec.
+    Fixes: NB#103486
   * Kimmo: Add -DG_DEBUG_DISABLE to package compilation options.
   * Kimmo: Remove unused graphics from hildon-desktop package.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Feb 2009 13:08:41 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 02 Mar 2009 09:45:29 +0200
 
 hildon-desktop (1:2.2.21-1) unstable; urgency=low
 

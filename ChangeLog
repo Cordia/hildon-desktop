@@ -1,3 +1,7 @@
+2009-03-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.22
+
 2009-02-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/home/hd-home.c: improve the warnings when apps
@@ -35,7 +39,7 @@
 	Patch from Artem Egorkine.
 
 	* src/mb/hd-animation-actor.c:
-	  Allow geometry changes to HdAnimationActor:s as long as they
+	  Allow geometry changes to HdAnimationActors as long as they
 	  remain off-screen.
 
 2009-02-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
