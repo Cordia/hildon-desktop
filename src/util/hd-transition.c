@@ -39,17 +39,10 @@
 
 #include "hd-app.h"
 
-#define HDCM_UNMAP_DURATION 500
-#define HDCM_BLUR_DURATION 300
-#define HDCM_POPUP_DURATION 250
-#define HDCM_FADE_DURATION 150
-#define HDCM_NOTIFICATION_DURATION 500
-#define HDCM_SUBVIEW_DURATION 500
-
 #define HDCM_UNMAP_PARTICLES 8
-#define HDCM_NOTIFICATION_END_SIZE 32
 
 #define HD_EFFECT_PARTICLE "white-particle.png"
+#define HDCM_NOTIFICATION_END_SIZE 32
 
 typedef struct _HDEffectData
 {
@@ -92,6 +85,21 @@ float
 hd_transition_smooth_ramp(float amt)
 {
   return (1.0f - cos(amt*3.141592)) * 0.5f;
+}
+
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+static ClutterTimeline *
+hd_transition_timeline_new(const gchar *transition,
+                           MBWMCompMgrClientEvent event,
+                           gint default_length)
+{
+  const char *key =
+    event==MBWMCompMgrClientEventMap ?"duration_in":"duration_out";
+  return clutter_timeline_new_for_duration (
+      hd_transition_get_int(transition, key, default_length) );
 }
 
 /* ------------------------------------------------------------------------- */
@@ -486,8 +494,8 @@ hd_transition_popup(HdCompMgr                  *mgr,
   data->event = event;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
   data->hmgr = HD_COMP_MGR (mgr);
-  data->timeline = g_object_ref(
-            clutter_timeline_new_for_duration (HDCM_POPUP_DURATION) );
+  data->timeline =
+        g_object_ref( hd_transition_timeline_new("popup", event, 250) );
   g_signal_connect (data->timeline, "new-frame",
                         G_CALLBACK (on_popup_timeline_new_frame), data);
   g_signal_connect (data->timeline, "completed",
@@ -533,8 +541,8 @@ hd_transition_fade(HdCompMgr                  *mgr,
   data->event = event;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
   data->hmgr = HD_COMP_MGR (mgr);
-  data->timeline = g_object_ref(
-            clutter_timeline_new_for_duration (HDCM_FADE_DURATION) );
+  data->timeline =
+        g_object_ref( hd_transition_timeline_new("fade", event, 250) );
   g_signal_connect (data->timeline, "new-frame",
                         G_CALLBACK (on_fade_timeline_new_frame), data);
   g_signal_connect (data->timeline, "completed",
@@ -600,7 +608,8 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline = g_object_ref(
-                clutter_timeline_new_for_duration (HDCM_UNMAP_DURATION) );
+                clutter_timeline_new_for_duration (
+                    hd_transition_get_int("app_close", "duration", 500) ) );
   g_signal_connect (data->timeline, "new-frame",
                     G_CALLBACK (on_close_timeline_new_frame), data);
   g_signal_connect (data->timeline, "completed",
@@ -660,8 +669,9 @@ hd_transition_notification(HdCompMgr                  *mgr,
   data->event = event;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
   data->hmgr = HD_COMP_MGR (mgr);
-  data->timeline = g_object_ref(
-            clutter_timeline_new_for_duration (HDCM_NOTIFICATION_DURATION) );
+  data->timeline =
+        g_object_ref( hd_transition_timeline_new("notification", event, 500) );
+
   g_signal_connect (data->timeline, "new-frame",
                         G_CALLBACK (on_notification_timeline_new_frame), data);
   g_signal_connect (data->timeline, "completed",
@@ -708,8 +718,9 @@ hd_transition_subview(HdCompMgr                  *mgr,
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient_subview));
   data->cclient2 = /*mb_wm_object_ref (MB_WM_OBJECT (cclient_mainview))*/0;
   data->hmgr = HD_COMP_MGR (mgr);
-  data->timeline = g_object_ref(
-            clutter_timeline_new_for_duration (HDCM_SUBVIEW_DURATION) );
+  data->timeline =
+        g_object_ref( hd_transition_timeline_new("subview", event, 250) );
+
   g_signal_connect (data->timeline, "new-frame",
                         G_CALLBACK (on_subview_timeline_new_frame), data);
   g_signal_connect (data->timeline, "completed",

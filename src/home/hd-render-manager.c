@@ -95,7 +95,7 @@ typedef enum
 {
   HDRM_BLUR_NONE = 0,
   HDRM_BLUR_HOME = 1,
-  HDRM_BLUR_TASK_NAV = 2,
+  HDRM_SHOW_TASK_NAV = 2,
   HDRM_ZOOM_HOME = 4,
   HDRM_ZOOM_TASK_NAV = 8,
   HDRM_BLUR_MORE = 16,
@@ -124,7 +124,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |                                         --> title_bar
  *       |                                         --> home_get_front (STATE_HOME_FRONT)
  *       |
- *       --> task_nav_blur     ---> task_nav
+ *       --> task_nav
  *       |
  *       --> launcher
  *       |
@@ -142,7 +142,7 @@ struct _HdRenderManagerPrivate {
   HDRMStateEnum state;
 
   TidyBlurGroup *home_blur;
-  TidyBlurGroup *task_nav_blur;
+  ClutterGroup  *task_nav_container;
   ClutterGroup  *app_top;
   ClutterGroup  *front;
   ClutterGroup  *blur_front;
@@ -167,10 +167,8 @@ struct _HdRenderManagerPrivate {
   Range         home_zoom;
   Range         home_brightness;
   Range         home_saturation;
-  Range         task_nav_radius;
+  Range         task_nav_opacity;
   Range         task_nav_zoom;
-  Range         task_nav_brightness;
-  Range         task_nav_saturation;
 
   HDRMBlurEnum  current_blur;
 
@@ -239,6 +237,10 @@ static inline void range_next(Range *range, float x)
   range->a = range->current;
   range->b = x;
 }
+static inline gboolean range_equal(Range *range)
+{
+  return range->a == range->b;
+}
 
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    INIT     */
@@ -277,7 +279,7 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   clutter_actor_reparent(priv->operator, CLUTTER_ACTOR(priv->blur_front));
 
   priv->task_nav = g_object_ref(task_nav);
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->task_nav_blur),
+  clutter_container_add_actor(CLUTTER_CONTAINER(priv->task_nav_container),
                               CLUTTER_ACTOR(priv->task_nav));
 
   priv->title_bar = g_object_ref(g_object_new(HD_TYPE_TITLE_BAR, NULL));
@@ -374,17 +376,23 @@ hd_render_manager_init (HdRenderManager *self)
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->home_blur));
 
-  priv->task_nav_blur = TIDY_BLUR_GROUP(tidy_blur_group_new());
-  clutter_actor_set_name(CLUTTER_ACTOR(priv->task_nav_blur),
-                         "HdRenderManager:task_nav_blur");
-  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->task_nav_blur), FALSE);
-  tidy_blur_group_set_use_alpha(CLUTTER_ACTOR(priv->task_nav_blur), TRUE);
-  tidy_blur_group_set_use_mirror(CLUTTER_ACTOR(priv->task_nav_blur), FALSE);
-  clutter_actor_set_size (CLUTTER_ACTOR(priv->task_nav_blur),
+  priv->task_nav_container = CLUTTER_GROUP(clutter_group_new());
+  clutter_actor_set_name(CLUTTER_ACTOR(priv->task_nav_container),
+                         "HdRenderManager:task_nav_container");
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->task_nav_container), FALSE);
+  clutter_actor_set_size (CLUTTER_ACTOR(priv->task_nav_container),
                           HD_COMP_MGR_LANDSCAPE_WIDTH,
                           HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  /* we set the anchor point this way, so when we zoom we zoom from the
+   * middle */
+  clutter_actor_set_anchor_point_from_gravity(
+                          CLUTTER_ACTOR(priv->task_nav_container),
+                          CLUTTER_GRAVITY_CENTER);
+  clutter_actor_set_position (CLUTTER_ACTOR(priv->task_nav_container),
+                              HD_COMP_MGR_LANDSCAPE_WIDTH/2,
+                              HD_COMP_MGR_LANDSCAPE_HEIGHT/2);
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
-                              CLUTTER_ACTOR(priv->task_nav_blur));
+                              CLUTTER_ACTOR(priv->task_nav_container));
 
   priv->app_top = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->app_top),
@@ -418,10 +426,8 @@ hd_render_manager_init (HdRenderManager *self)
   range_set(&priv->home_zoom, 1);
   range_set(&priv->home_saturation, 1);
   range_set(&priv->home_brightness, 1);
-  range_set(&priv->task_nav_radius, 0);
+  range_set(&priv->task_nav_opacity, 0);
   range_set(&priv->task_nav_zoom, 1);
-  range_set(&priv->task_nav_saturation, 1);
-  range_set(&priv->task_nav_brightness, 1);
 
   priv->timeline_blur = clutter_timeline_new_for_duration(250);
   g_signal_connect (priv->timeline_blur, "new-frame",
@@ -462,6 +468,7 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
 {
   HdRenderManagerPrivate *priv;
   float amt;
+  gint task_opacity;
 
   priv = the_render_manager->priv;
 
@@ -471,10 +478,8 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
   range_interpolate(&priv->home_zoom, amt);
   range_interpolate(&priv->home_saturation, amt);
   range_interpolate(&priv->home_brightness, amt);
-  range_interpolate(&priv->task_nav_radius, amt);
+  range_interpolate(&priv->task_nav_opacity, amt);
   range_interpolate(&priv->task_nav_zoom, amt);
-  range_interpolate(&priv->task_nav_saturation, amt);
-  range_interpolate(&priv->task_nav_brightness, amt);
 
   tidy_blur_group_set_blur      (CLUTTER_ACTOR(priv->home_blur),
                                  priv->home_radius.current);
@@ -485,14 +490,16 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
   tidy_blur_group_set_zoom(CLUTTER_ACTOR(priv->home_blur),
                                  priv->home_zoom.current);
 
-  tidy_blur_group_set_blur      (CLUTTER_ACTOR(priv->task_nav_blur),
-                                 priv->task_nav_radius.current);
-  tidy_blur_group_set_saturation(CLUTTER_ACTOR(priv->task_nav_blur),
-                                 priv->task_nav_saturation.current);
-  tidy_blur_group_set_brightness(CLUTTER_ACTOR(priv->task_nav_blur),
-                                 priv->task_nav_brightness.current);
-  tidy_blur_group_set_zoom(CLUTTER_ACTOR(priv->task_nav_blur),
-                                 priv->task_nav_zoom.current);
+  task_opacity = priv->task_nav_opacity.current*255;
+  clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav_container),
+                            task_opacity);
+  if (task_opacity==0)
+    clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_container));
+  else
+    clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_container));
+  clutter_actor_set_scale(CLUTTER_ACTOR(priv->task_nav_container),
+                          priv->task_nav_zoom.current,
+                          priv->task_nav_zoom.current);
 }
 
 static void
@@ -550,9 +557,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   range_next(&priv->home_saturation, 1);
   range_next(&priv->home_brightness, 1);
   range_next(&priv->home_zoom, 1);
-  range_next(&priv->task_nav_radius, 0);
-  range_next(&priv->task_nav_saturation, 1);
-  range_next(&priv->task_nav_brightness, 1);
+  range_next(&priv->task_nav_opacity, 0);
   range_next(&priv->task_nav_zoom, 1);
 
   more = blur & HDRM_BLUR_MORE;
@@ -568,7 +573,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
               hd_transition_get_double("blur","home_brightness", 1);
       priv->home_radius.b =
               hd_transition_get_double("blur",
-                  more?"home_radius_more":"home_radius", 0);
+                  more?"home_radius_more":"home_radius", 8);
     }
 
   if (blur & HDRM_ZOOM_HOME)
@@ -578,15 +583,9 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
                   more?"home_zoom_more":"home_zoom", 1);
     }
 
-  if (blur & HDRM_BLUR_TASK_NAV)
+  if (blur & HDRM_SHOW_TASK_NAV)
     {
-      priv->task_nav_saturation.b =
-              hd_transition_get_double("blur","task_nav_saturation", 1);
-      priv->task_nav_brightness.b =
-              hd_transition_get_double("blur","task_nav_brightness", 1);
-      priv->task_nav_radius.b =
-              hd_transition_get_double("blur",
-                  more?"task_nav_radius_more":"task_nav_radius", 0);
+      priv->task_nav_opacity.b = 1;
     }
   if (blur & HDRM_ZOOM_TASK_NAV)
     {
@@ -594,6 +593,15 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
               hd_transition_get_double("blur",
                   more?"task_nav_zoom_more":"task_nav_zoom", 1);
     }
+
+  /* no point animating if everything is already right */
+  if (range_equal(&priv->home_radius) &&
+      range_equal(&priv->home_saturation) &&
+      range_equal(&priv->home_brightness) &&
+      range_equal(&priv->home_zoom) &&
+      range_equal(&priv->task_nav_opacity) &&
+      range_equal(&priv->task_nav_zoom))
+    return;
 
   hd_comp_mgr_set_effect_running(priv->comp_mgr, TRUE);
   /* Set duration here so we reload from the file every time */
@@ -692,7 +700,6 @@ void hd_render_manager_sync_clutter_before ()
         else
           visible_top_left = HDRM_BUTTON_TASK_NAV;
         visible_top_right = HDRM_BUTTON_NONE;
-        clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         hd_home_update_layout (priv->home);
@@ -702,7 +709,6 @@ void hd_render_manager_sync_clutter_before ()
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         hd_render_manager_set_blur(HDRM_BLUR_HOME);
         hd_home_update_layout (priv->home);
         break;
@@ -712,33 +718,27 @@ void hd_render_manager_sync_clutter_before ()
         /* Fall through */
       case HDRM_STATE_APP_PORTRAIT:
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
-        clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
-        hd_render_manager_set_blur(HDRM_BLUR_NONE);
+        hd_render_manager_set_blur(HDRM_BLUR_NONE | HDRM_SHOW_TASK_NAV);
         break;
       case HDRM_STATE_APP_FULLSCREEN:
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_NONE;
-        clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_blur));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
         break;
       case HDRM_STATE_TASK_NAV:
         visible_top_left = HDRM_BUTTON_LAUNCHER;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_blur));
-        clutter_actor_raise_top(CLUTTER_ACTOR(priv->task_nav_blur));
-        hd_render_manager_set_blur(HDRM_BLUR_HOME | HDRM_ZOOM_HOME);
+        hd_render_manager_set_blur(HDRM_BLUR_HOME | HDRM_ZOOM_HOME | HDRM_SHOW_TASK_NAV);
         break;
       case HDRM_STATE_LAUNCHER:
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_BACK;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_show(CLUTTER_ACTOR(priv->launcher));
-        clutter_actor_raise_top(CLUTTER_ACTOR(priv->task_nav_blur));
         clutter_actor_raise_top(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(
-            HDRM_BLUR_HOME | HDRM_BLUR_TASK_NAV |
+            HDRM_BLUR_HOME |
             HDRM_ZOOM_HOME | HDRM_ZOOM_TASK_NAV );
         break;
     }
@@ -796,12 +796,15 @@ void hd_render_manager_sync_clutter_before ()
   if (priv->status_menu)
     clutter_actor_raise_top(CLUTTER_ACTOR(priv->status_menu));
 
-  if (!STATE_BLUR_BUTTONS(priv->state))
+  if (!STATE_BLUR_BUTTONS(priv->state) &&
+      clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) !=
+              CLUTTER_ACTOR(priv->front))
     {
       /* raise the blur_front out of the blur group so we can still
        * see it unblurred */
       clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
                              CLUTTER_ACTOR(priv->front));
+      tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
     }
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
 
@@ -845,6 +848,13 @@ void hd_render_manager_sync_clutter_after ()
       clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
                              CLUTTER_ACTOR(priv->home_blur));
     }
+
+  /* If we've gone back to the app state, make
+   * sure we blur the right things (fix problem where going from
+   * task launcher->app breaks blur)
+   */
+  if (STATE_IS_APP(priv->state))
+    hd_render_manager_update_blur_state(0);
 
   /* The launcher transition should hide the launcher, so we shouldn't
    * need this.
@@ -1259,6 +1269,7 @@ void hd_render_manager_return_windows()
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   MBWindowManager *wm;
   MBWindowManagerClient *c;
+  gboolean      blur_changed = FALSE;
 
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   c = wm->stack_bottom;
@@ -1280,13 +1291,20 @@ void hd_render_manager_return_windows()
               /* else we put it back into the arena */
               if (parent == CLUTTER_ACTOR(priv->app_top) ||
                   parent == CLUTTER_ACTOR(priv->home_blur))
-                clutter_actor_reparent(actor, desktop);
+                {
+                  if (parent == CLUTTER_ACTOR(priv->home_blur))
+                    blur_changed = TRUE;
+                  clutter_actor_reparent(actor, desktop);
+                }
               g_object_unref(actor);
             }
         }
 
       c = c->stacked_above;
     }
+
+  if (blur_changed)
+    tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
 }
 
 /* Return @actor, an actor of a %HdApp to HDRM's care. */
@@ -1347,11 +1365,10 @@ void hd_render_manager_restack()
                   /* if we want to render this, add it */
                   if (parent == desktop ||
 		      parent == CLUTTER_ACTOR(priv->app_top))
-                    {
-                      clutter_actor_reparent(actor,
-                          CLUTTER_ACTOR(priv->home_blur));
-                      clutter_actor_raise_top(actor);
-                    }
+                    clutter_actor_reparent(actor,
+                        CLUTTER_ACTOR(priv->home_blur));
+                  if (parent == CLUTTER_ACTOR(priv->home_blur))
+                    clutter_actor_raise_top(actor);
                 }
               else
                 {
@@ -1422,16 +1439,34 @@ void hd_render_manager_restack()
       for (i = 0, it = g_list_last(previous_home_blur);
            (i<clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur))) && it;
            i++, it=it->prev)
-        if (CLUTTER_ACTOR(it->data) !=
-            clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i))
-          {
-            blur_changed = TRUE;
-            break;
-          }
+        {
+          ClutterActor *child =
+              clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
+          if (CLUTTER_ACTOR(it->data) != child)
+            {
+              //g_debug("*** RE-BLURRING *** because contents changed at pos %d", i);
+              blur_changed = TRUE;
+              break;
+            }
+        }
     }
   else
-    blur_changed = TRUE;
+    {
+      /*g_debug("*** RE-BLURRING *** because contents changed size %d -> %d",
+          g_list_length(previous_home_blur),
+          clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur)));*/
+      blur_changed = TRUE;
+    }
   g_list_free(previous_home_blur);
+
+  for (i = 0;i<clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));i++)
+    {
+      ClutterActor *child =
+                clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
+      const char *name = clutter_actor_get_name(child);
+      g_debug("STACK[%d] %s %s", i, name?name:"?",
+          CLUTTER_ACTOR_IS_VISIBLE(child)?"":"(invisible)");
+    }
 
   /* because swapping parents doesn't appear to fire a redraw */
   if (blur_changed)
@@ -1470,11 +1505,11 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
           if (HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->window->geometry))
             break;
 
-          g_debug("%s: Blurring caused by window type %d, geo=%d,%d,%d,%d name '%s'",
+          /*g_debug("%s: Blurring caused by window type %d, geo=%d,%d,%d,%d name '%s'",
               __FUNCTION__, c_type,
               c->window->geometry.x, c->window->geometry.y,
               c->window->geometry.width, c->window->geometry.height,
-              c->name?c->name:"(null)");
+              c->name?c->name:"(null)");*/
           blur=TRUE;
           break;
         }

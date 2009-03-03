@@ -88,8 +88,6 @@ struct HdCompMgrPrivate
 
   gboolean               stack_sync      : 1;
 
-  gint                   unmap_effect_running;
-
   MBWindowManagerClient *status_area_client;
   MBWindowManagerClient *status_menu_client;
 
@@ -948,7 +946,7 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
       if (TIDY_IS_BLUR_GROUP(parent) &&
           tidy_blur_group_source_buffered(parent))
         {
-          tidy_blur_group_set_source_changed(parent);
+         // tidy_blur_group_set_source_changed(parent);
           blur_update = TRUE;
         }
       parent = clutter_actor_get_parent(parent);
@@ -959,7 +957,6 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
    * We also must update fully if blurring, as we must update the whole
    * blur testure. */
   if (!STATE_DO_PARTIAL_REDRAW(hd_render_manager_get_state()) ||
-      priv->unmap_effect_running ||
       blur_update)
   {
     ClutterActor *stage = clutter_stage_get_default();
@@ -1694,15 +1691,12 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
    * let the switcher request stack sync when it closes.
    */
 
-  if (priv->unmap_effect_running ||
-      STATE_NEED_TASK_NAV(hd_render_manager_get_state()))
+  if (STATE_NEED_TASK_NAV(hd_render_manager_get_state()))
     {
       priv->stack_sync = TRUE;
     }
   else
     {
-      hd_render_manager_return_windows();
-
       if (parent_klass->restack)
 	parent_klass->restack (mgr);
 
@@ -1769,22 +1763,8 @@ hd_comp_mgr_sync_stacking (HdCompMgr * hmgr)
    */
   if (priv->stack_sync)
     {
-      if (!priv->unmap_effect_running)
-        {
-          priv->stack_sync = FALSE;
-          /*
-          g_debug("%s: Called, no effects running - restacking",
-                          __FUNCTION__);
-                          */
-          hd_comp_mgr_restack (MB_WM_COMP_MGR (hmgr));
-        }
-      else
-        {
-                /*
-          g_debug("%s: Called, but effects running = %d",
-                  __FUNCTION__, priv->unmap_effect_running);
-                  */
-        }
+      priv->stack_sync = FALSE;
+      hd_comp_mgr_restack (MB_WM_COMP_MGR (hmgr));
     }
 }
 
@@ -2099,22 +2079,8 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
 
 void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running)
 {
-  if (!HD_IS_COMP_MGR(hmgr))
-    return;
-
-  HdCompMgrPrivate         * priv = hmgr->priv;
-  if (running)
-    {
-      priv->unmap_effect_running++;
-    }
-  else
-    {
-      priv->unmap_effect_running--;
-      if (priv->unmap_effect_running == 0)
-        hd_comp_mgr_sync_stacking(hmgr);
-      if (priv->unmap_effect_running < 0)
-        g_warning("%s: unmap_effect_running < 0", __FUNCTION__);
-    }
+  /* We don't need this now, but this might be useful in the future.
+   * It is called when any transition begins or ends. */
 }
 
 guint

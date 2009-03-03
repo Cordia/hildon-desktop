@@ -1,3 +1,22 @@
+2009-03-03  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Clutter 0.8.2-0maemo20 reccomended (or transitions stutter)
+	* src/home/hd-render-manager.c:
+	  Removed blur box for task navigator, instead just adjust opacity.	  
+	  Fixed restacking bug
+	  Fixed bug causing transitions to be constantly running in some cases
+	* src/tidy/tidy-blur-group.c:
+	  Re-engineered blur to do a progressive blur for blurring in, and
+	  a simple fade for blurring out.
+	* src/mb/hd-comp-mgr.c:
+	  Removed the unmap_effect variable as it turns out not to be needed
+	  No longer return windows for stacking as we do it in HDRM now
+	  (this allows us to only update the screen when absolutely required)
+	* data/transitions.ini
+	* src/util/hd-transition.c:
+	  Added 'duration' settings for more types of transition. Removed
+	  settings for task navigator blur box
+
 2009-03-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view-container.c (backgrounds_dir_changed): Change

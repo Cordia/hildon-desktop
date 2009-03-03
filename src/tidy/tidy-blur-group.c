@@ -32,21 +32,26 @@
 #if CLUTTER_COGL_HAS_GLES
 const char *BLUR_FRAGMENT_SHADER =
 "precision lowp float;\n"
-"varying lowp    vec4  frag_color;\n"
 "varying mediump vec2  tex_coord;\n"
 "uniform mediump sampler2D tex;\n"
-"uniform mediump float blur;\n"
-"uniform lowp float saturation;\n"
+"uniform mediump float blurx;\n"
+"uniform mediump float blury;\n"
 "void main () {\n"
 "  mediump vec4 color = \n"
-"       texture2D (tex, vec2(tex_coord.x            , tex_coord.y -0.875 * blur)) + \n"
-"       texture2D (tex, vec2(tex_coord.x + 0.75*blur, tex_coord.y + 0.25 * blur)) + \n"
-"       texture2D (tex, vec2(tex_coord.x -      blur, tex_coord.y +0.375 * blur)) + \n"
-"       texture2D (tex, vec2(tex_coord.x            , tex_coord.y +0.875 * blur)) + \n"
-"       texture2D (tex, vec2(tex_coord.x + 0.75*blur, tex_coord.y - 0.25 * blur)) + \n"
-"       texture2D (tex, vec2(tex_coord.x -      blur, tex_coord.y -0.375 * blur)); \n"
-"  color = color * frag_color * 0.166;\n"
-// saturation
+"       texture2D (tex, vec2(tex_coord.x        , tex_coord.y - blury)) + \n"
+"       texture2D (tex, vec2(tex_coord.x        , tex_coord.y + blury)) + \n"
+"       texture2D (tex, vec2(tex_coord.x - blurx, tex_coord.y)) + \n"
+"       texture2D (tex, vec2(tex_coord.x + blurx, tex_coord.y)); \n"
+"  gl_FragColor = color * 0.25;\n"
+"}\n";
+const char *SATURATE_FRAGMENT_SHADER =
+"precision lowp float;\n"
+"varying lowp    vec4  frag_color;\n"
+"varying mediump vec2  tex_coord;\n"
+"uniform lowp sampler2D tex;\n"
+"uniform lowp float saturation;\n"
+"void main () {\n"
+"  lowp vec4 color = frag_color * texture2D (tex, tex_coord);\n"
 "  lowp float lightness = (color.r+color.g+color.b)*0.333*(1.0-saturation); \n"
 "  gl_FragColor = vec4(\n"
 "                      color.r*saturation + lightness,\n"
@@ -55,27 +60,8 @@ const char *BLUR_FRAGMENT_SHADER =
 "                      color.a);\n"
 "}\n";
 #else
-const char *BLUR_FRAGMENT_SHADER =
-"uniform sampler2D tex;\n"
-"uniform float blur;\n"
-"uniform float saturation;\n"
-"void main () {\n"
-"  vec2 diffa = vec2(0.0, -0.875 * blur); \n"
-"  vec2 diffb = vec2(0.75*blur, 0.25*blur); \n"
-"  vec2 diffc = vec2(-blur, 0.375*blur); \n"
-"  vec2 tex_coord = vec2(gl_TexCoord[0]); \n"
-"  vec4 color =  texture2D (tex, tex_coord+diffa)*0.333 + "
-" texture2D (tex, tex_coord+diffb)*0.333 + "
-"texture2D (tex, tex_coord+diffc)*0.333;\n"
-"  color = color * gl_Color;\n"
-// saturation
-"  float lightness = (color.r+color.g+color.b)*0.333*(1.0-saturation); \n"
-"  gl_FragColor = vec4(\n"
-"                      color.r*saturation + lightness,\n"
-"                      color.g*saturation + lightness,\n"
-"                      color.b*saturation + lightness,\n"
-"                      color.a);\n"
-"}\n";
+const char *BLUR_FRAGMENT_SHADER = "";
+const char *SATURATE_FRAGMENT_SHADER = "";
 #endif /* HAS_GLES */
 
 
@@ -83,25 +69,28 @@ const char *BLUR_FRAGMENT_SHADER =
 struct _TidyBlurGroupPrivate
 {
   /* Internal TidyBlurGroup stuff */
-  ClutterShader *shader;
-  CoglHandle tex_preblur;
-  CoglHandle fbo_preblur;
+  ClutterShader *shader_blur;
+  ClutterShader *shader_saturate;
+  CoglHandle tex_a;
+  CoglHandle fbo_a;
 
-  CoglHandle tex_postblur;
-  CoglHandle fbo_postblur;
+  CoglHandle tex_b;
+  CoglHandle fbo_b;
+  gboolean current_is_a;
 
   gboolean use_shader;
   float saturation; /* 0->1 how much colour there is */
-  float blur; /* amount of blur in pixels */
   float brightness; /* 1=normal, 0=black */
   float zoom; /* amount to zoom. 1=normal, 0.5=out, 2=double-size */
   gboolean use_alpha; /* whether to use an alpha channel in our textures */
   gboolean use_mirror; /* whether to mirror the edge of teh blurred texture */
 
+  int blur_step;
+  int current_blur_step;
+  int max_blur_step;
+
   /* if anything changed we need to recalculate preblur */
   gboolean source_changed;
-  /* if anything changed we need to recalculate postblur */
-  gboolean blur_changed;
 };
 
 /**
@@ -134,6 +123,92 @@ gboolean tidy_blur_group_notify_modified_real(ClutterActor          *actor,
   return TRUE;
 }
 
+static void tidy_blur_group_check_shaders(TidyBlurGroup *group)
+{
+  TidyBlurGroupPrivate *priv = group->priv;
+  if (!priv->use_shader)
+    return;
+  /* if we have no shader, so attempt to create one */
+  if (!priv->shader_blur)
+    {
+      GError           *error = NULL;
+      char             *old_locale;
+
+#if GLSL_LOCALE_FIX
+      old_locale = g_strdup( setlocale (LC_ALL, NULL) );
+      setlocale (LC_NUMERIC, "C");
+#endif
+
+      priv->shader_blur = clutter_shader_new();
+      clutter_shader_set_fragment_source (priv->shader_blur,
+                                          BLUR_FRAGMENT_SHADER, -1);
+      clutter_shader_compile (priv->shader_blur, &error);
+
+      if (error)
+        {
+          g_warning ("unable to load blur shader: %s\n", error->message);
+          g_error_free (error);
+          priv->use_shader = FALSE;
+        }
+
+#if GLSL_LOCALE_FIX
+      setlocale (LC_ALL, old_locale);
+      g_free (old_locale);
+#endif
+    }
+
+  if (!priv->shader_saturate)
+    {
+      GError           *error = NULL;
+      char             *old_locale;
+
+#if GLSL_LOCALE_FIX
+      old_locale = g_strdup( setlocale (LC_ALL, NULL) );
+      setlocale (LC_NUMERIC, "C");
+#endif
+
+      priv->shader_saturate = clutter_shader_new();
+      clutter_shader_set_fragment_source (priv->shader_saturate,
+                                          SATURATE_FRAGMENT_SHADER, -1);
+      clutter_shader_compile (priv->shader_saturate, &error);
+
+      if (error)
+        {
+          g_warning ("unable to load saturation shader: %s\n", error->message);
+          g_error_free (error);
+          priv->use_shader = FALSE;
+        }
+
+#if GLSL_LOCALE_FIX
+      setlocale (LC_ALL, old_locale);
+      g_free (old_locale);
+#endif
+    }
+}
+
+static gboolean
+tidy_blur_group_children_visible(ClutterGroup *group)
+{
+  gint n = clutter_group_get_n_children(group);
+  gint i;
+
+  for (i=0;i<n;i++)
+    {
+      ClutterActor *actor = clutter_group_get_nth_child(group, i);
+      if (CLUTTER_IS_GROUP(actor))
+        {
+          if (tidy_blur_group_children_visible(CLUTTER_GROUP(actor)))
+            return TRUE;
+        }
+      else
+        {
+          if (CLUTTER_ACTOR_IS_VISIBLE(actor))
+            return TRUE;
+        }
+    }
+  return FALSE;
+}
+
 /* An implementation for the ClutterGroup::paint() vfunc,
    painting all the child actors: */
 static void
@@ -151,6 +226,9 @@ tidy_blur_group_paint (ClutterActor *actor)
   TidyBlurGroup *container = TIDY_BLUR_GROUP(group);
   TidyBlurGroupPrivate *priv = container->priv;
 
+  if (!tidy_blur_group_children_visible(group))
+    return;
+
   /* If we are rendering normally then shortcut all this, and
    just render directly without the texture */
   if (!tidy_blur_group_source_buffered(actor))
@@ -158,6 +236,8 @@ tidy_blur_group_paint (ClutterActor *actor)
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
       return;
     }
+
+  tidy_blur_group_check_shaders(container);
 
   clutter_actor_get_allocation_coords (actor, &x_1, &y_1, &x_2, &y_2);
 
@@ -183,57 +263,56 @@ tidy_blur_group_paint (ClutterActor *actor)
   int tex_height = 0;
 
   /* check sizes */
-  if (priv->tex_preblur)
+  if (priv->tex_a)
     {
-      tex_width = cogl_texture_get_width(priv->tex_preblur);
-      tex_height = cogl_texture_get_height(priv->tex_preblur);
+      tex_width = cogl_texture_get_width(priv->tex_a);
+      tex_height = cogl_texture_get_height(priv->tex_a);
     }
   /* free texture if the size is wrong */
   if (tex_width!=exp_width || tex_height!=exp_height) {
-    if (priv->fbo_preblur)
+    if (priv->fbo_a)
       {
-        cogl_offscreen_unref(priv->fbo_preblur);
-        cogl_texture_unref(priv->tex_preblur);
-        priv->fbo_preblur = 0;
-        priv->tex_preblur = 0;
+        cogl_offscreen_unref(priv->fbo_a);
+        cogl_texture_unref(priv->tex_a);
+        priv->fbo_a = 0;
+        priv->tex_a = 0;
       }
-    if (priv->fbo_postblur)
+    if (priv->fbo_b)
       {
-        cogl_offscreen_unref(priv->fbo_postblur);
-        cogl_texture_unref(priv->tex_postblur);
-        priv->fbo_postblur = 0;
-        priv->tex_postblur = 0;
+        cogl_offscreen_unref(priv->fbo_b);
+        cogl_texture_unref(priv->tex_b);
+        priv->fbo_b = 0;
+        priv->tex_b = 0;
       }
   }
   /* create the texture + offscreen buffer if they didn't exist.
    * We can specify mipmapping here, but we don't need it */
-  if (!priv->tex_preblur)
+  if (!priv->tex_a)
     {
       tex_width = exp_width;
       tex_height = exp_height;
-      priv->tex_preblur = cogl_texture_new_with_size(
+
+      priv->tex_a = cogl_texture_new_with_size(
                 tex_width, tex_height, 0, FALSE /*mipmap*/,
                 priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_4444 :
                                   COGL_PIXEL_FORMAT_RGB_565);
-      /* set nearest texture filter - this just takes a single sample */
-      /* cogl_texture_set_filters(priv->tex_preblur, CGL_NEAREST, CGL_NEAREST); */
-      priv->fbo_preblur = cogl_offscreen_new_to_texture (priv->tex_preblur);
-      priv->source_changed = TRUE;
+      cogl_texture_set_filters(priv->tex_a, CGL_NEAREST, CGL_NEAREST);
+      priv->fbo_a = cogl_offscreen_new_to_texture (priv->tex_a);
     }
-  if (!priv->tex_postblur)
+  if (!priv->tex_b)
     {
-      priv->tex_postblur = cogl_texture_new_with_size(
+      priv->tex_b = cogl_texture_new_with_size(
                 tex_width, tex_height, 0, 0,
                 priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_4444 :
                                   COGL_PIXEL_FORMAT_RGB_565);
-      priv->fbo_postblur = cogl_offscreen_new_to_texture (priv->tex_postblur);
-      priv->blur_changed = TRUE;
+      cogl_texture_set_filters(priv->tex_b, CGL_NEAREST, CGL_NEAREST);
+      priv->fbo_b = cogl_offscreen_new_to_texture (priv->tex_b);
     }
 
   /* Draw children into an offscreen buffer */
-  if (priv->source_changed)
+  if (priv->source_changed && priv->current_blur_step==0)
     {
-      cogl_draw_buffer(COGL_OFFSCREEN_BUFFER, priv->fbo_preblur);
+      cogl_draw_buffer(COGL_OFFSCREEN_BUFFER, priv->fbo_a);
       cogl_push_matrix();
       cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height);
 
@@ -242,55 +321,36 @@ tidy_blur_group_paint (ClutterActor *actor)
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
 
       cogl_pop_matrix();
-      priv->blur_changed = TRUE;
+      cogl_draw_buffer(COGL_WINDOW_BUFFER, 0);
+
       priv->source_changed = FALSE;
+      priv->current_blur_step = 0;
+      priv->max_blur_step = 0;
+      priv->current_is_a = TRUE;
+      //g_debug("Rendered buffer");
+      /* If we're still not blurred enough, ask to be rendered again... */
+      if (priv->current_blur_step != priv->blur_step)
+        clutter_actor_queue_redraw(actor);
     }
-
-  /* if we have no shader, so attempt to create one */
-  if (priv->use_shader && !priv->shader)
+  else if (priv->current_blur_step < priv->blur_step)
     {
-      GError           *error = NULL;
-      char             *old_locale;
+      /* blur one texture into the other */
+      cogl_draw_buffer(COGL_OFFSCREEN_BUFFER,
+                       priv->current_is_a ? priv->fbo_b : priv->fbo_a);
 
-#if GLSL_LOCALE_FIX
-      old_locale = g_strdup( setlocale (LC_ALL, NULL) );
-      setlocale (LC_NUMERIC, "C");
-#endif
-
-      priv->shader = clutter_shader_new();
-      clutter_shader_set_fragment_source (priv->shader,
-                                          BLUR_FRAGMENT_SHADER, -1);
-      clutter_shader_compile (priv->shader, &error);
-
-#if GLSL_LOCALE_FIX
-      setlocale (LC_ALL, old_locale);
-      g_free (old_locale);
-#endif
-
-      if (error)
+      if (priv->use_shader && priv->shader_blur)
         {
-          g_warning ("unable to load shader: %s\n", error->message);
-          g_error_free (error);
-          priv->use_shader = FALSE;
-        }
-    }
-
-  /* blur the pre_blur texture into the post_blur texture */
-  if (priv->blur_changed)
-    {
-      cogl_draw_buffer(COGL_OFFSCREEN_BUFFER, priv->fbo_postblur);
-      if (priv->use_shader && priv->shader)
-        {
-          clutter_shader_set_is_enabled (priv->shader, TRUE);
-          clutter_shader_set_uniform_1f (priv->shader, "blur",
-                                         priv->blur/width);
-          clutter_shader_set_uniform_1f (priv->shader, "saturation",
-                                         priv->saturation);
+          clutter_shader_set_is_enabled (priv->shader_blur, TRUE);
+          clutter_shader_set_uniform_1f (priv->shader_blur, "blurx",
+                                         2.0f / width);
+          clutter_shader_set_uniform_1f (priv->shader_blur, "blury",
+                                         2.0f / height);
         }
 
       cogl_blend_func(CGL_ONE, CGL_ZERO);
       cogl_color (&white);
-      cogl_texture_rectangle (priv->tex_preblur, 0, 0,
+      cogl_texture_rectangle (priv->current_is_a ? priv->tex_a : priv->tex_b,
+                              0, 0,
                               CLUTTER_INT_TO_FIXED (tex_width),
                               CLUTTER_INT_TO_FIXED (tex_height),
                               0, 0,
@@ -298,123 +358,160 @@ tidy_blur_group_paint (ClutterActor *actor)
                               CFX_ONE);
       cogl_blend_func(CGL_SRC_ALPHA, CGL_ONE_MINUS_SRC_ALPHA);
 
-      if (priv->use_shader && priv->shader)
-        clutter_shader_set_is_enabled (priv->shader, FALSE);
-      priv->blur_changed = FALSE;
+      if (priv->use_shader && priv->shader_blur)
+        clutter_shader_set_is_enabled (priv->shader_blur, FALSE);
+      cogl_draw_buffer(COGL_WINDOW_BUFFER, 0);
+
+      //g_debug("Blurred to %d", priv->current_blur_step);
+      priv->current_blur_step++;
+      priv->max_blur_step = priv->current_blur_step;
+      priv->current_is_a = !priv->current_is_a;
+      /* We've destroyed our source image, so next time we've zoomed out we
+       * need to re-create it */
+      priv->source_changed = TRUE;
+      /* If we're still not blurred enough, ask to be rendered again... */
+      if (priv->current_blur_step != priv->blur_step)
+        clutter_actor_queue_redraw(actor);
     }
 
-  /* set our brightness here, so we don't have to re-render
-   * the blur if it changes */
+  ClutterFixed mx, my, zx, zy;
+  mx = CLUTTER_INT_TO_FIXED (width) / 2;
+  my = CLUTTER_INT_TO_FIXED (height) / 2;
+  zx = CLUTTER_FLOAT_TO_FIXED(width*0.5f*priv->zoom);
+  zy = CLUTTER_FLOAT_TO_FIXED(height*0.5f*priv->zoom);
+
+  /* Render what we've blurred to the screen */
   col.red = (int)(priv->brightness*255);
   col.green = (int)(priv->brightness*255);
   col.blue = (int)(priv->brightness*255);
   col.alpha = clutter_actor_get_paint_opacity (actor);
+
+  /* If we're blurring out, do it by adjusting the opacity of what we're
+   * rendering now... */
+  if (priv->blur_step < priv->max_blur_step)
+    {
+      priv->current_blur_step = priv->blur_step;
+      col.alpha = col.alpha * priv->current_blur_step / priv->max_blur_step;
+
+      /* And we must render ourselves properly so we can render
+       * the blur over the top */
+      cogl_push_matrix();
+      cogl_translatex(
+                 CLUTTER_FLOAT_TO_FIXED(width*(1-priv->zoom)/2),
+                 CLUTTER_FLOAT_TO_FIXED(height*(1-priv->zoom)/2),
+                 0);
+      cogl_scale(CLUTTER_FLOAT_TO_FIXED(priv->zoom),
+                 CLUTTER_FLOAT_TO_FIXED(priv->zoom));
+
+      cogl_clip_set(0, 0,
+                    CLUTTER_INT_TO_FIXED(width),
+                    CLUTTER_INT_TO_FIXED(height));
+      TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
+      cogl_clip_unset();
+      cogl_pop_matrix();
+    }
+
+  /* Now we render the image we have, with a desaturation pixel
+   * shader */
+  if (priv->use_shader && priv->shader_saturate)
+    {
+      clutter_shader_set_is_enabled (priv->shader_saturate, TRUE);
+      clutter_shader_set_uniform_1f (priv->shader_saturate, "saturation",
+                                     priv->saturation);
+    }
+
   cogl_color (&col);
 
-  /* Render the blurred texture to the screen */
-  cogl_draw_buffer(COGL_WINDOW_BUFFER, 0);
-
-  col.red = (int)(priv->brightness*255);
-  col.green = (int)(priv->brightness*255);
-  col.blue = (int)(priv->brightness*255);
-  col.alpha = clutter_actor_get_paint_opacity (actor);
-  cogl_color (&col);
-
-  {
-    ClutterFixed mx, my, zx, zy;
-    mx = CLUTTER_INT_TO_FIXED (width) / 2;
-    my = CLUTTER_INT_TO_FIXED (height) / 2;
-    zx = CLUTTER_FLOAT_TO_FIXED(width*0.5f*priv->zoom);
-    zy = CLUTTER_FLOAT_TO_FIXED(height*0.5f*priv->zoom);
-
-    if ((priv->zoom >= 1) || !priv->use_mirror)
-      {
-        cogl_texture_rectangle (priv->tex_postblur,
-                                mx-zx, my-zy,
-                                mx+zx, my+zy,
-                                0, 0, CFX_ONE, CFX_ONE);
-      }
-    else
-      {
-        gint vignette_amt;
-        /* draw a 7x7 grid with 5x5 unmirrored, and the edges mirrored  */
+  if ((priv->zoom >= 1) || !priv->use_mirror)
+    {
+      cogl_texture_rectangle (priv->current_is_a ? priv->tex_a : priv->tex_b,
+                              mx-zx, my-zy,
+                              mx+zx, my+zy,
+                              0, 0, CFX_ONE, CFX_ONE);
+    }
+  else
+    {
+      gint vignette_amt;
+      /* draw a 7x7 grid with 5x5 unmirrored, and the edges mirrored so
+       * we don't see dark edges when we zoom out */
 #define TILINGF 7
 #define TILING (TILINGF-2)
 
-        CoglTextureVertex verts[6*(TILINGF*TILINGF)];
-        CoglTextureVertex grid[(TILINGF+1)*(TILINGF+1)];
-        CoglTextureVertex *v = grid;
-        gint x,y;
+      CoglTextureVertex verts[6*(TILINGF*TILINGF)];
+      CoglTextureVertex grid[(TILINGF+1)*(TILINGF+1)];
+      CoglTextureVertex *v = grid;
+      gint x,y;
 
-        vignette_amt = (int)((1-priv->zoom)*2048);
-        if (vignette_amt<0) vignette_amt = 0;
-        if (vignette_amt>255) vignette_amt = 255;
+      vignette_amt = (int)((1-priv->zoom)*2048);
+      if (vignette_amt<0) vignette_amt = 0;
+      if (vignette_amt>255) vignette_amt = 255;
 
-        /* work out grid points */
-        for (y=0;y<=TILINGF;y++)
-          for (x=0;x<=TILINGF;x++)
-            {
-              ClutterFixed dx,dy,d;
-              v->x = mx+(zx*(x*2-(TILING+2))/TILING);
-              v->y = my+(zy*(y*2-(TILING+2))/TILING);
-              v->z = 0;
-              v->tx = (x-1) * CFX_ONE / TILING;
-              v->ty = (y-1) * CFX_ONE / TILING;
-              /* mirror edges */
-              if (v->tx < 0)
-                v->tx = -v->tx;
-              if (v->tx > CFX_ONE)
-                v->tx = CFX_ONE*2 - v->tx;
-              if (v->ty < 0)
-                v->ty = -v->ty;
-              if (v->ty > CFX_ONE)
-                v->ty = CFX_ONE*2 - v->ty;
-              /* colour - work out distance from centre (squared) */
-              dx = CFX_QDIV(v->x - mx, mx/2);
-              dy = CFX_QDIV(v->y - my, my/2);
-              d = CFX_QMUL(dx,dx) + CFX_MUL(dy,dy);
-              /* Colour value... */
-              /*gint c = (int)(priv->brightness*255) *
-                       (255 - CLUTTER_FIXED_TO_INT((d-CFX_ONE)*vignette_amt/6))
-                       / 256;
-              if (c<0) c=0;
-              if (c>255) c=255;*/
-              gint c = 255;
-              if ((x==1) || (y==1) || (x==TILINGF-1) || (y==TILINGF-1))
-                c = 192;
-              if ((x==0) || (y==0) || (x==TILINGF) || (y==TILINGF))
-                c = 0;
-            //  c = (int)(priv->brightness * (255 - vignette_amt*c/255));
-              if (c<0) c=0;
-              if (c>255) c=255;
-              v->color.red = v->color.green = v->color.blue = c;
-              v->color.alpha = col.alpha;
-              /* next vertex */
-              v++;
-            }
+      /* work out grid points */
+      for (y=0;y<=TILINGF;y++)
+        for (x=0;x<=TILINGF;x++)
+          {
+            float fx = x, fy = y;
+            /* we don't want full-size tiles for the edges - just half-size */
+            if (x==0) fx = 0.5f;
+            if (x==TILINGF) fx = TILINGF-0.5f;
+            if (y==0) fy = 0.5f;
+            if (y==TILINGF) fy = TILINGF-0.5f;
+            /* work out vertex coords */
+            v->x = mx+(zx*(fx*2-(TILING+2))/TILING);
+            v->y = my+(zy*(fy*2-(TILING+2))/TILING);
+            v->z = 0;
+            v->tx = (fx-1) * CFX_ONE / TILING;
+            v->ty = (fy-1) * CFX_ONE / TILING;
+            /* mirror edges */
+            if (v->tx < 0)
+              v->tx = -v->tx;
+            if (v->tx > CFX_ONE)
+              v->tx = CFX_ONE*2 - v->tx;
+            if (v->ty < 0)
+              v->ty = -v->ty;
+            if (v->ty > CFX_ONE)
+              v->ty = CFX_ONE*2 - v->ty;
+            /* Colour value... */
+            gint c = 255;
+            if ((x==1) || (y==1) || (x==TILINGF-1) || (y==TILINGF-1))
+              c = 192;
+            if ((x==0) || (y==0) || (x==TILINGF) || (y==TILINGF))
+              c = 0;
+          //  c = (int)(priv->brightness * (255 - vignette_amt*c/255));
+            if (c<0) c=0;
+            if (c>255) c=255;
+            v->color.red = col.red * c / 255;
+            v->color.green = col.green * c / 255;
+            v->color.blue = col.blue * c / 255;
+            v->color.alpha = col.alpha;
+            /* next vertex */
+            v++;
+          }
 
-        /* now work out actual vertices - join the grid points with
-         * 2 triangles to make a quad */
-        v = verts;
-        for (y=0;y<TILINGF;y++)
-          for (x=0;x<TILINGF;x++)
-            {
-              CoglTextureVertex *grid_pt = &grid[x + y*(TILINGF+1)];
-              v[0] = grid_pt[0]; /* tri 1 */
-              v[1] = grid_pt[1];
-              v[2] = grid_pt[1+(TILINGF+1)];
-              v[3] = grid_pt[0]; /* tri 2 */
-              v[4] = grid_pt[1+(TILINGF+1)];
-              v[5] = grid_pt[TILINGF+1];
-              v+=6;
-            }
-        /* render! */
-        cogl_texture_triangles (priv->tex_postblur,
-                                6*(TILINGF*TILINGF),
-                                verts,
-                                TRUE);
-      }
-  }
+      /* now work out actual vertices - join the grid points with
+       * 2 triangles to make a quad */
+      v = verts;
+      for (y=0;y<TILINGF;y++)
+        for (x=0;x<TILINGF;x++)
+          {
+            CoglTextureVertex *grid_pt = &grid[x + y*(TILINGF+1)];
+            v[0] = grid_pt[0]; /* tri 1 */
+            v[1] = grid_pt[1];
+            v[2] = grid_pt[1+(TILINGF+1)];
+            v[3] = grid_pt[0]; /* tri 2 */
+            v[4] = grid_pt[1+(TILINGF+1)];
+            v[5] = grid_pt[TILINGF+1];
+            v+=6;
+          }
+      /* render! */
+      cogl_texture_triangles (priv->current_is_a ? priv->tex_a : priv->tex_b,
+                              6*(TILINGF*TILINGF),
+                              verts,
+                              TRUE);
+    }
+
+  if (priv->use_shader && priv->shader_saturate)
+    clutter_shader_set_is_enabled (priv->shader_saturate, FALSE);
 
 }
 
@@ -424,19 +521,19 @@ tidy_blur_group_dispose (GObject *gobject)
   TidyBlurGroup *container = TIDY_BLUR_GROUP(gobject);
   TidyBlurGroupPrivate *priv = container->priv;
 
-  if (priv->fbo_preblur)
+  if (priv->fbo_a)
     {
-      cogl_offscreen_unref(priv->fbo_preblur);
-      cogl_texture_unref(priv->tex_preblur);
-      priv->fbo_preblur = 0;
-      priv->tex_preblur = 0;
+      cogl_offscreen_unref(priv->fbo_a);
+      cogl_texture_unref(priv->tex_a);
+      priv->fbo_a = 0;
+      priv->tex_a = 0;
     }
-  if (priv->fbo_postblur)
+  if (priv->fbo_b)
     {
-      cogl_offscreen_unref(priv->fbo_postblur);
-      cogl_texture_unref(priv->tex_postblur);
-      priv->fbo_postblur = 0;
-      priv->tex_postblur = 0;
+      cogl_offscreen_unref(priv->fbo_b);
+      cogl_texture_unref(priv->tex_b);
+      priv->fbo_b = 0;
+      priv->tex_b = 0;
     }
 
   G_OBJECT_CLASS (tidy_blur_group_parent_class)->dispose (gobject);
@@ -466,13 +563,14 @@ tidy_blur_group_init (TidyBlurGroup *self)
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
                                                    TIDY_TYPE_BLUR_GROUP,
                                                    TidyBlurGroupPrivate);
-  priv->blur = 0;
+  priv->blur_step = 0;
+  priv->current_blur_step = 0;
+  priv->max_blur_step = 0;
   priv->saturation = 1;
   priv->brightness = 1;
   priv->zoom = 1;
   priv->use_alpha = TRUE;
   priv->use_mirror = FALSE;
-  priv->blur_changed = TRUE;
   priv->source_changed = TRUE;
 
 #if CLUTTER_COGL_HAS_GLES
@@ -480,11 +578,14 @@ tidy_blur_group_init (TidyBlurGroup *self)
 #else
   priv->use_shader = FALSE; /* For now, as Xephyr hates us */
 #endif
-  priv->tex_preblur = 0;
-  priv->fbo_preblur = 0;
-  priv->tex_postblur = 0;
-  priv->fbo_postblur = 0;
-  priv->shader = 0;
+  priv->shader_blur = 0;
+  priv->shader_saturate = 0;
+
+  priv->tex_a = 0;
+  priv->fbo_a = 0;
+  priv->tex_b = 0;
+  priv->fbo_b = 0;
+  priv->current_is_a = TRUE;
 }
 
 /*
@@ -512,16 +613,16 @@ tidy_blur_group_new (void)
 void tidy_blur_group_set_blur(ClutterActor *blur_group, float blur)
 {
   TidyBlurGroupPrivate *priv;
+  gint step = (int)blur;
 
   if (!TIDY_IS_BLUR_GROUP(blur_group))
     return;
 
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
 
-  if (priv->blur != blur)
+  if (priv->blur_step != step)
     {
-      priv->blur_changed = TRUE;
-      priv->blur = blur;
+      priv->blur_step = step;
       if (CLUTTER_ACTOR_IS_VISIBLE(blur_group))
         clutter_actor_queue_redraw(blur_group);
     }
@@ -543,7 +644,6 @@ void tidy_blur_group_set_saturation(ClutterActor *blur_group, float saturation)
 
   if (priv->saturation != saturation)
     {
-      priv->blur_changed = TRUE;
       priv->saturation = saturation;
       if (CLUTTER_ACTOR_IS_VISIBLE(blur_group))
         clutter_actor_queue_redraw(blur_group);
@@ -665,6 +765,9 @@ void tidy_blur_group_set_source_changed(ClutterActor *blur_group)
 
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
   priv->source_changed = TRUE;
+  /* This will actually force a redraw */
+  priv->current_blur_step = 0;
+  clutter_actor_queue_redraw(blur_group);
 }
 
 /**
@@ -681,5 +784,5 @@ gboolean tidy_blur_group_source_buffered(ClutterActor *blur_group)
     return FALSE;
 
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
-  return !(priv->blur==0 && priv->saturation==1 && priv->brightness==1);
+  return !(priv->blur_step==0 && priv->saturation==1 && priv->brightness==1);
 }

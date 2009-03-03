@@ -488,6 +488,9 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
               priv->comp_mgr, hclient);
       hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
     }
+
+  /* make sure everything is in the correct order */
+  hd_comp_mgr_restack(MB_WM_COMP_MGR_CLIENT(hclient)->wm->comp_mgr);
 }
 
 static void
