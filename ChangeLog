@@ -1,3 +1,8 @@
+2009-03-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view-container.c (backgrounds_dir_changed): Change
+	suffix to .pvr.
+
 2009-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/tidy/tidy-blur-group.c (tidy_blur_group_paint):

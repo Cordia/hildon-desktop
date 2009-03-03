@@ -128,7 +128,7 @@ backgrounds_dir_changed (GnomeVFSMonitorHandle    *handler,
       basename = g_path_get_basename (filename);
 
       if (g_str_has_prefix (basename, "background-") &&
-          g_str_has_suffix (basename, ".png"))
+          g_str_has_suffix (basename, ".pvr"))
         {
           guint id;
 
