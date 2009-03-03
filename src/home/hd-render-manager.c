@@ -1458,7 +1458,7 @@ void hd_render_manager_restack()
       blur_changed = TRUE;
     }
   g_list_free(previous_home_blur);
-
+/*
   for (i = 0;i<clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));i++)
     {
       ClutterActor *child =
@@ -1467,7 +1467,7 @@ void hd_render_manager_restack()
       g_debug("STACK[%d] %s %s", i, name?name:"?",
           CLUTTER_ACTOR_IS_VISIBLE(child)?"":"(invisible)");
     }
-
+*/
   /* because swapping parents doesn't appear to fire a redraw */
   if (blur_changed)
     tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
