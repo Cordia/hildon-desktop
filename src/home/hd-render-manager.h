@@ -210,6 +210,9 @@ void hd_render_manager_stop_transition(void);
  * arrive the button in the top-left may need to change */
 void hd_render_manager_update(void);
 
+/* If something that is blurred has changed, update it. */
+void hd_render_manager_blurred_changed(void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */

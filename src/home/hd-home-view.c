@@ -434,7 +434,7 @@ load_background_idle (gpointer data)
   if (priv->background)
     clutter_actor_destroy (priv->background);
 
-
+  hd_render_manager_blurred_changed();
 
   priv->background = new_bg;
   priv->background_sub = new_bg_sub;

@@ -1,5 +1,18 @@
 2009-03-03  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h:
+	Added hd_render_manager_blurred_changed convenience function
+	* src/home/hd-home-view.c:
+	Now call update_blur when the background image changes
+	* src/tidy/tidy-blur-group.c:
+	Added fallback for when pixel shader can't be used - like scratchbox
+        (uses multiple renders)
+	* src/mb/hd-comp-mgr.c:
+	Added comment to explain commenting of blur update code
+
+2009-03-03  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Clutter 0.8.2-0maemo20 reccomended (or transitions stutter)
 	* src/home/hd-render-manager.c:
 	  Removed blur box for task navigator, instead just adjust opacity.	  

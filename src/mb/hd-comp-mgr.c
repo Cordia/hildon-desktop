@@ -946,7 +946,10 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
       if (TIDY_IS_BLUR_GROUP(parent) &&
           tidy_blur_group_source_buffered(parent))
         {
-         // tidy_blur_group_set_source_changed(parent);
+          /* we don't update blur on every change of
+           * an application now as it causes
+           * a flicker. */
+          /* tidy_blur_group_set_source_changed(parent); */
           blur_update = TRUE;
         }
       parent = clutter_actor_get_parent(parent);

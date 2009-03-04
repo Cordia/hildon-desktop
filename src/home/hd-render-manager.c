@@ -804,7 +804,7 @@ void hd_render_manager_sync_clutter_before ()
        * see it unblurred */
       clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
                              CLUTTER_ACTOR(priv->front));
-      tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
+      hd_render_manager_blurred_changed();
     }
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
 
@@ -1304,7 +1304,7 @@ void hd_render_manager_return_windows()
     }
 
   if (blur_changed)
-    tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
+    hd_render_manager_blurred_changed();
 }
 
 /* Return @actor, an actor of a %HdApp to HDRM's care. */
@@ -1470,7 +1470,7 @@ void hd_render_manager_restack()
 */
   /* because swapping parents doesn't appear to fire a redraw */
   if (blur_changed)
-    tidy_blur_group_set_source_changed(CLUTTER_ACTOR(priv->home_blur));
+    hd_render_manager_blurred_changed();
 
   /* update our fixed title bar at the top of the screen */
   hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
@@ -1891,4 +1891,12 @@ void hd_render_manager_place_titlebar_elements (void)
       /* g_debug("application title at %u", x); */
       mb_adjust_dialog_title_position(MB_WM_COMP_MGR(priv->comp_mgr)->wm, x);
     }
+}
+
+void hd_render_manager_blurred_changed()
+{
+  if (!the_render_manager) return;
+
+  tidy_blur_group_set_source_changed(
+      CLUTTER_ACTOR(the_render_manager->priv->home_blur));
 }

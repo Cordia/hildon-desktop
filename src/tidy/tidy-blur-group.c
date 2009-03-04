@@ -209,6 +209,44 @@ tidy_blur_group_children_visible(ClutterGroup *group)
   return FALSE;
 }
 
+/* Perform blur without a pixel shader */
+static void
+tidy_blur_group_fallback_blur(TidyBlurGroup *group, int tex_width, int tex_height)
+{
+  ClutterColor    col = { 0x3f, 0x3f, 0x3f, 0x3f };
+
+  TidyBlurGroupPrivate *priv = group->priv;
+  CoglHandle tex = priv->current_is_a ? priv->tex_a : priv->tex_b;
+  ClutterFixed diffx, diffy;
+  diffx = CLUTTER_FLOAT_TO_FIXED(1.0f / tex_width);
+  diffy = CLUTTER_FLOAT_TO_FIXED(1.0f / tex_height);
+
+  cogl_blend_func(CGL_ONE, CGL_ZERO);
+  cogl_color (&col);
+  cogl_texture_rectangle (tex,
+                          0, 0,
+                          CLUTTER_INT_TO_FIXED (tex_width),
+                          CLUTTER_INT_TO_FIXED (tex_height),
+                          -diffx, 0, CFX_ONE-diffx, CFX_ONE);
+  cogl_blend_func(CGL_ONE, CGL_ONE);
+  cogl_texture_rectangle (tex,
+                            0, 0,
+                            CLUTTER_INT_TO_FIXED (tex_width),
+                            CLUTTER_INT_TO_FIXED (tex_height),
+                            0, diffy, CFX_ONE+diffx, CFX_ONE);
+  cogl_texture_rectangle (tex,
+                            0, 0,
+                            CLUTTER_INT_TO_FIXED (tex_width),
+                            CLUTTER_INT_TO_FIXED (tex_height),
+                            0, -diffy, CFX_ONE, CFX_ONE-diffy);
+  cogl_texture_rectangle (tex,
+                            0, 0,
+                            CLUTTER_INT_TO_FIXED (tex_width),
+                            CLUTTER_INT_TO_FIXED (tex_height),
+                            0, diffy, CFX_ONE, CFX_ONE+diffy);
+  cogl_blend_func(CGL_SRC_ALPHA, CGL_ONE_MINUS_SRC_ALPHA);
+}
+
 /* An implementation for the ClutterGroup::paint() vfunc,
    painting all the child actors: */
 static void
@@ -342,21 +380,26 @@ tidy_blur_group_paint (ClutterActor *actor)
         {
           clutter_shader_set_is_enabled (priv->shader_blur, TRUE);
           clutter_shader_set_uniform_1f (priv->shader_blur, "blurx",
-                                         2.0f / width);
+                                         1.0f / tex_width);
           clutter_shader_set_uniform_1f (priv->shader_blur, "blury",
-                                         2.0f / height);
+                                         1.0f / tex_height);
         }
 
-      cogl_blend_func(CGL_ONE, CGL_ZERO);
-      cogl_color (&white);
-      cogl_texture_rectangle (priv->current_is_a ? priv->tex_a : priv->tex_b,
-                              0, 0,
-                              CLUTTER_INT_TO_FIXED (tex_width),
-                              CLUTTER_INT_TO_FIXED (tex_height),
-                              0, 0,
-                              CFX_ONE,
-                              CFX_ONE);
-      cogl_blend_func(CGL_SRC_ALPHA, CGL_ONE_MINUS_SRC_ALPHA);
+      if (priv->use_shader)
+        {
+          cogl_blend_func(CGL_ONE, CGL_ZERO);
+          cogl_color (&white);
+          cogl_texture_rectangle (priv->current_is_a ? priv->tex_a : priv->tex_b,
+                                  0, 0,
+                                  CLUTTER_INT_TO_FIXED (tex_width),
+                                  CLUTTER_INT_TO_FIXED (tex_height),
+                                  0, 0,
+                                  CFX_ONE,
+                                  CFX_ONE);
+          cogl_blend_func(CGL_SRC_ALPHA, CGL_ONE_MINUS_SRC_ALPHA);
+        }
+      else
+        tidy_blur_group_fallback_blur(container, tex_width, tex_height);
 
       if (priv->use_shader && priv->shader_blur)
         clutter_shader_set_is_enabled (priv->shader_blur, FALSE);
