@@ -639,12 +639,9 @@ _hd_app_mgr_prestart_cb (DBusGProxy *proxy, guint result,
       g_warning ("%s: Couldn't prestart service %s, error: %s\n",
           __FUNCTION__, hd_launcher_app_get_service (app),
           error ? error->message : "no result");
-      /* Move the app to the back of the queue, so it doesn't stop
-       * other apps from being prestarted.
-       * TODO: Check number of times this has been tried and stop after
+      /* TODO: Check number of times this has been tried and stop after
        * a while.
        */
-      hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
     }
   else
     {

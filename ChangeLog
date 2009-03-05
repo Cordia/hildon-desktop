@@ -1,5 +1,12 @@
 2009-03-05  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
+	Stop trying to prestart apps if they fail.
+	Fixes: NB#99791
+
+	* src/launcher/hd-app-mgr.c:
+
+2009-03-05  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
 	Added prestarting priorities.
 	Fixes: NB#100675
 
