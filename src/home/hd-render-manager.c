@@ -1363,12 +1363,9 @@ void hd_render_manager_restack()
               if (past_desktop)
                 {
                   /* if we want to render this, add it */
-                  if (parent == desktop ||
-		      parent == CLUTTER_ACTOR(priv->app_top))
-                    clutter_actor_reparent(actor,
-                        CLUTTER_ACTOR(priv->home_blur));
-                  if (parent == CLUTTER_ACTOR(priv->home_blur))
-                    clutter_actor_raise_top(actor);
+		  clutter_actor_reparent(actor,
+					 CLUTTER_ACTOR(priv->home_blur));
+		  clutter_actor_raise_top(actor);
                 }
               else
                 {

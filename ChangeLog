@@ -1,3 +1,12 @@
+2009-03-05  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	Fixes: NB#96780
+	and its duplicates NB#104206 and NB#104320.
+	Does not yet fix NB#104037 which appears not to be identical.
+	
+	* src/home/hd-render-manager.c: unconditionally raise apps
+	in the order the WM believes they're in, when switching to them.
+
 2009-03-05  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Stop trying to prestart apps if they fail.
