@@ -1,5 +1,10 @@
 2009-03-05  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
+	* src/home/hd-switcher.c: remove debug statements accidentally checked
+	in in previous commit.
+
+2009-03-05  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
 	Fixes: NB#96780
 	and its duplicates NB#104206 and NB#104320.
 	Does not yet fix NB#104037 which appears not to be identical.

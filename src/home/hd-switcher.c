@@ -479,8 +479,6 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       c = MB_WM_COMP_MGR_CLIENT(hclient)->wm_client;
       g_debug("hd_switcher_zoom_in_complete: calling "
               "mb_wm_activate_client c=%p\n", c);
-      g_warning("hd_switcher_zoom_in_complete: calling "
-		"mb_wm_activate_client c=%p\n", c);
       mb_wm_activate_client (c->wmref, c);
     }
   else
@@ -488,9 +486,6 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       g_debug("hd_switcher_zoom_in_complete: calling "
               "hd_comp_mgr_wakeup_client comp_mgr=%p hclient=%p\n",
               priv->comp_mgr, hclient);
-      g_warning("hd_switcher_zoom_in_complete: calling "
-		"hd_comp_mgr_wakeup_client comp_mgr=%p hclient=%p\n",
-		priv->comp_mgr, hclient);
       hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
     }
 
