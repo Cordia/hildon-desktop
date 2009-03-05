@@ -44,6 +44,7 @@
 #define HD_DESKTOP_ENTRY_LOADING_IMAGE  "X-App-Loading-Image"
 #define HD_DESKTOP_ENTRY_PRESTART_MODE  "X-Maemo-Prestarted"
 #define HD_DESKTOP_ENTRY_WM_CLASS       "X-Maemo-Wm-Class"
+#define HD_DESKTOP_ENTRY_PRIORITY       "X-Maemo-Prestarted-Priority"
 
 /* DBus names */
 #define OSSO_BUS_ROOT          "com.nokia"
@@ -63,6 +64,7 @@ struct _HdLauncherAppPrivate
   HdLauncherAppState state;
 
   GPid pid;
+  gint priority;
 };
 
 G_DEFINE_TYPE (HdLauncherApp, hd_launcher_app, HD_TYPE_LAUNCHER_ITEM);
@@ -182,6 +184,11 @@ hd_launcher_app_parse_keyfile (HdLauncherItem *item,
                                           HD_DESKTOP_ENTRY_WM_CLASS,
                                           NULL);
 
+  priv->priority = g_key_file_get_integer (key_file,
+                                           HD_DESKTOP_ENTRY_GROUP,
+                                           HD_DESKTOP_ENTRY_PRIORITY,
+                                           NULL);
+
   return TRUE;
 }
 
@@ -257,4 +264,11 @@ hd_launcher_app_set_pid (HdLauncherApp *app, GPid pid)
 {
   HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
   priv->pid = pid;
+}
+
+gint
+hd_launcher_app_get_priority (HdLauncherApp *app)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  return priv->priority;
 }

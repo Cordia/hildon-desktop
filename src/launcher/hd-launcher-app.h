@@ -96,6 +96,8 @@ gboolean hd_launcher_app_is_executing     (HdLauncherApp *app);
 GPid hd_launcher_app_get_pid (HdLauncherApp *app);
 void hd_launcher_app_set_pid (HdLauncherApp *app, GPid pid);
 
+gint hd_launcher_app_get_priority (HdLauncherApp *app);
+
 HdLauncherApp *hd_comp_mgr_app_from_xwindow (HdCompMgr *hmgr, Window xid);
 
 G_END_DECLS

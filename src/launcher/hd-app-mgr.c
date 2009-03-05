@@ -83,7 +83,7 @@ struct _HdAppMgrPrivate
   DBusGProxy *dbus_sys_proxy;
 
   /* Each one of these lists contain different HdLauncherApps. */
-  GSList *queues[NUM_QUEUES];
+  GQueue *queues[NUM_QUEUES];
 
   /* Is the state check already looping? */
   gboolean state_check_looping;
@@ -281,6 +281,10 @@ hd_app_mgr_init (HdAppMgr *self)
 
   self->priv = priv = HD_APP_MGR_GET_PRIVATE (self);
 
+  /* Initialize the queues. */
+  for (int i = 0; i < NUM_QUEUES; i++)
+    priv->queues[i] = g_queue_new ();
+
   /* Connect to state changes. */
   g_signal_connect (hd_render_manager_get (), "notify::state",
                     G_CALLBACK (hd_app_mgr_hdrm_state_change),
@@ -410,12 +414,24 @@ hd_app_mgr_dispose (GObject *gobject)
     {
       if (priv->queues[i])
         {
-          g_slist_foreach (priv->queues[i], (GFunc)g_object_unref, NULL);
+          g_queue_foreach (priv->queues[i], (GFunc)g_object_unref, NULL);
+          g_queue_free (priv->queues[i]);
           priv->queues[i] = NULL;
         }
     }
 
   G_OBJECT_CLASS (hd_app_mgr_parent_class)->dispose (gobject);
+}
+
+static gint
+_hd_app_mgr_compare_app_priority (gconstpointer a,
+                                  gconstpointer b,
+                                  gpointer user_data)
+{
+  gint a_priority = hd_launcher_app_get_priority (HD_LAUNCHER_APP (a));
+  gint b_priority = hd_launcher_app_get_priority (HD_LAUNCHER_APP (b));
+
+  return b_priority - a_priority;
 }
 
 static void
@@ -426,20 +442,22 @@ hd_app_mgr_add_to_queue (HdAppMgrQueue queue, HdLauncherApp *app)
 
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
 
-  priv->queues[queue] = g_slist_append (priv->queues[queue],
-                                        g_object_ref (app));
+  g_queue_insert_sorted (priv->queues[queue],
+                         g_object_ref (app),
+                         _hd_app_mgr_compare_app_priority,
+                         NULL);
 }
 
 static void
 hd_app_mgr_remove_from_queue (HdAppMgrQueue queue, HdLauncherApp *app)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
-  GSList *link = g_slist_find (priv->queues[queue], app);
+  GList *link = g_queue_find (priv->queues[queue], app);
 
   if (link)
     {
       g_object_unref (app);
-      priv->queues[queue] = g_slist_delete_link (priv->queues[queue], link);
+      g_queue_delete_link (priv->queues[queue], link);
     }
 }
 
@@ -454,12 +472,16 @@ hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
     return;
 
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
-  GSList *link = g_slist_find (priv->queues[queue_from], app);
+  GList *link = g_queue_find (priv->queues[queue_from], app);
 
   if (link)
     {
-      priv->queues[queue_from] = g_slist_remove_link (priv->queues[queue_from], link);
-      priv->queues[queue_to] = g_slist_concat (priv->queues[queue_to], link);
+      g_queue_delete_link (priv->queues[queue], link);
+      g_queue_insert_sorted (priv->queues[queue],
+                             app,
+                             _hd_app_mgr_compare_app_priority,
+                             NULL);
+
     }
   else
     hd_app_mgr_add_to_queue (queue_to, app);
@@ -970,11 +992,11 @@ hd_app_mgr_state_check_loop (gpointer data)
   if (priv->lowmem)
     {
       /* If there are prestarted apps, kill one of them. */
-      if (priv->queues[QUEUE_PRESTARTED])
+      if (!g_queue_is_empty (priv->queues[QUEUE_PRESTARTED]))
         {
-          HdLauncherApp *app = priv->queues[QUEUE_PRESTARTED]->data;
+          HdLauncherApp *app = g_queue_peek_tail (priv->queues[QUEUE_PRESTARTED]);
           hd_app_mgr_kill (app);
-          if (priv->queues[QUEUE_PRESTARTED])
+          if (!g_queue_is_empty (priv->queues[QUEUE_PRESTARTED]))
             loop = TRUE;
         }
     }
@@ -983,8 +1005,7 @@ hd_app_mgr_state_check_loop (gpointer data)
   if (priv->bg_killing)
     {
       /* TODO: Hibernate an app and loop. */
-      if (priv->queues[QUEUE_HIBERNATABLE])
-        loop = TRUE;
+      loop = FALSE;
     }
 
   /* If we have enough memory and there are apps waiting to be prestarted,
@@ -995,12 +1016,12 @@ hd_app_mgr_state_check_loop (gpointer data)
       !priv->lowmem &&
       !priv->bg_killing &&
       !priv->launcher_shown &&
-      priv->queues[QUEUE_PRESTARTABLE] &&
+      !g_queue_is_empty (priv->queues[QUEUE_PRESTARTABLE]) &&
       hd_app_mgr_can_prestart ())
     {
-      HdLauncherApp *app = priv->queues[QUEUE_PRESTARTABLE]->data;
+      HdLauncherApp *app = g_queue_peek_head (priv->queues[QUEUE_PRESTARTABLE]);
       hd_app_mgr_prestart (app);
-      if (priv->queues[QUEUE_PRESTARTABLE])
+      if (!g_queue_is_empty (priv->queues[QUEUE_PRESTARTABLE]))
         loop = TRUE;
     }
 

@@ -1,3 +1,14 @@
+2009-03-05  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Added prestarting priorities.
+	Fixes: NB#100675
+
+	* src/launcher/hd-app-mgr.c: Prestart apps in priority order, kill them
+	in inverse sequence.
+	* src/launcher/hd-launcher-app.c: Added new priority variable, read from
+	the .desktop file.
+	* src/launcher/hd-launcher-app.h:
+
 2009-03-03  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c
