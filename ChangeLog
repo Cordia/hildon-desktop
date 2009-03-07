@@ -1,3 +1,10 @@
+2009-03-07  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+        Fixes: NB#100141
+	
+	* src/mb/hd-comp-mgr.c: app->leader->followers can be null,
+	so check before we dereference it.
+
 2009-03-05  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/home/hd-switcher.c: remove debug statements accidentally checked
