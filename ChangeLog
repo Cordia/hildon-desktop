@@ -1,3 +1,10 @@
+2009-03-09  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	Fixes: NB#103602
+
+	* src/mb/hd-dialog.c: when a dialogue opens, remove all
+	open menus.
+
 2009-03-07  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
         Fixes: NB#100141

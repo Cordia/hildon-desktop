@@ -23,6 +23,7 @@
 
 #include "hd-dialog.h"
 #include "hd-util.h"
+#include "hd-wm.h"
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
 static Bool
@@ -59,6 +60,25 @@ hd_dialog_destroy (MBWMObject *this)
 
   mb_wm_main_context_x_event_handler_remove (wm->main_ctx, ButtonRelease,
 					     dialog->release_cb_id);
+}
+
+/* Close any menu that's open.  NB#103602. */
+static void
+destroy_open_menus (MBWindowManager *wm)
+{
+  MBWindowManagerClient *c, *menu=NULL;
+
+  for (c = wm->stack_top; c; c = c->stacked_below)
+    {
+      if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeAppMenu)
+	{
+	  menu = c;
+	  break;
+	}
+    }
+
+  if (menu)
+    mb_wm_client_deliver_delete (menu);
 }
 
 static int
@@ -110,6 +130,8 @@ hd_dialog_init (MBWMObject *this, va_list vap)
   client->frame_geometry.height = 0;
 
   hd_dialog_request_geometry (client, &geom, MBWMClientReqGeomForced);
+
+  destroy_open_menus (wm);
 
   return 1;
 }
