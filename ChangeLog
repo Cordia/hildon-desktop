@@ -1,4 +1,14 @@
-2009-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-03-10  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes for NB#104037 and NB#96780
+	
+	* src/home/hd-render-manager.c: Added more #defined debug info
+	* src/mb/hd-comp-mgr.c: Removed un-needed restacks
+	* src/home/hd-task-navigator.c: Removed foreach that didn't work
+	 (You can't modify what you iterate over in clutter)
+	* src/tidy/tidy-blur-group.c: Added more dimming for vignette effect
+
+2009-03-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Make the app_killer interface usable again.
 

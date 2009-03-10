@@ -517,7 +517,7 @@ tidy_blur_group_paint (ClutterActor *actor)
             /* Colour value... */
             gint c = 255;
             if ((x==1) || (y==1) || (x==TILINGF-1) || (y==TILINGF-1))
-              c = 192;
+              c = 128;
             if ((x==0) || (y==0) || (x==TILINGF) || (y==TILINGF))
               c = 0;
           //  c = (int)(priv->brightness * (255 - vignette_amt*c/255));

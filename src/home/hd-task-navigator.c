@@ -1288,10 +1288,12 @@ release_win (const Thumbnail * thumb)
    * of the switcher .apwin will be shown in home view.
    * TODO May not be true anymore. */
   hd_render_manager_return_app (thumb->apwin);
-  clutter_container_foreach (CLUTTER_CONTAINER (thumb->windows),
-                       (ClutterCallback)hd_render_manager_return_dialog,
-                       NULL);
-//  clutter_actor_hide (thumb->apwin);
+
+  /* We can't foreach here, because we iterator over something while it
+   * is changing */
+  while (clutter_group_get_n_children(CLUTTER_GROUP(thumb->windows)))
+    hd_render_manager_return_dialog(
+        clutter_group_get_nth_child(CLUTTER_GROUP(thumb->windows), 0));
 }
 /* Child adoption }}} */
 

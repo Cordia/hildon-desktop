@@ -1634,17 +1634,9 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
             else
               hd_transition_close_app (hmgr, c);
           }
-
-
-
-      /* after the effect, restack */
-      hd_comp_mgr_restack(mgr);
     }
   else if (event == MBWMCompMgrClientEventMap)
     {
-      /* before the effect, restack */
-      hd_comp_mgr_restack(mgr);
-
       if (c_type == HdWmClientTypeStatusMenu)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventMap);
       else if (c_type == MBWMClientTypeDialog)

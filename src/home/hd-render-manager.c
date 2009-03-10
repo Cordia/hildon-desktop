@@ -44,6 +44,11 @@
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
+/* This is to dump debug information to the console to help see whether the
+ * order of clutter actors matches that of matchbox
+#define STACKING_DEBUG 1
+*/
+
 /* ------------------------------------------------------------------------- */
 #define I_(str) (g_intern_static_string ((str)))
 
@@ -1362,9 +1367,21 @@ void hd_render_manager_restack()
               ClutterActor *parent = clutter_actor_get_parent(actor);
               if (past_desktop)
                 {
-                  /* if we want to render this, add it */
-		  clutter_actor_reparent(actor,
-					 CLUTTER_ACTOR(priv->home_blur));
+                  /* if we want to render this, add it. we need to be careful
+                   * not to pull applets or other things out from where they
+                   * were */
+                  if (parent == CLUTTER_ACTOR(desktop) ||
+                      parent == CLUTTER_ACTOR(priv->app_top))
+                    {
+                      clutter_actor_reparent(actor,
+                                             CLUTTER_ACTOR(priv->home_blur));
+                    }
+#if STACKING_DEBUG
+                  else
+                    g_debug("%s NOT MOVED - OWNED BY %s",
+                        clutter_actor_get_name(actor)?clutter_actor_get_name(actor):"?",
+                        clutter_actor_get_name(parent)?clutter_actor_get_name(parent):"?");
+#endif /*STACKING_DEBUG*/
 		  clutter_actor_raise_top(actor);
                 }
               else
@@ -1455,7 +1472,9 @@ void hd_render_manager_restack()
       blur_changed = TRUE;
     }
   g_list_free(previous_home_blur);
-/*
+
+  /* ----------------------------- DEBUG PRINTING */
+#if STACKING_DEBUG
   for (i = 0;i<clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));i++)
     {
       ClutterActor *child =
@@ -1464,7 +1483,29 @@ void hd_render_manager_restack()
       g_debug("STACK[%d] %s %s", i, name?name:"?",
           CLUTTER_ACTOR_IS_VISIBLE(child)?"":"(invisible)");
     }
-*/
+  for (i = 0;i<clutter_group_get_n_children(CLUTTER_GROUP(priv->app_top));i++)
+      {
+        ClutterActor *child =
+                  clutter_group_get_nth_child(CLUTTER_GROUP(priv->app_top), i);
+        const char *name = clutter_actor_get_name(child);
+        g_debug("TOP[%d] %s %s", i, name?name:"?",
+            CLUTTER_ACTOR_IS_VISIBLE(child)?"":"(invisible)");
+      }
+
+  for (c = wm->stack_bottom,i=0; c; c = c->stacked_above,i++)
+    {
+      ClutterActor *a = 0;
+
+      if (c->cm_client)
+        a = mb_wm_comp_mgr_clutter_client_get_actor(MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
+      g_debug("WM[%d] : %s %s %s", i,
+          c->name?c->name:"?",
+          (a && clutter_actor_get_name(a)) ?  clutter_actor_get_name(a) : "?",
+          (wm->desktop==c) ? "DESKTOP" : "");
+    }
+#endif /*STACKING_DEBUG*/
+    /* ----------------------------- */
+
   /* because swapping parents doesn't appear to fire a redraw */
   if (blur_changed)
     hd_render_manager_blurred_changed();
