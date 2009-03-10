@@ -553,7 +553,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   if (priv->timeline_playing)
     {
       clutter_timeline_stop(priv->timeline_blur);
-      on_timeline_blur_completed(priv->timeline_blur, the_render_manager);
+      hd_comp_mgr_set_effect_running(priv->comp_mgr, FALSE);
     }
 
   priv->current_blur = blur;

@@ -1,3 +1,15 @@
+2009-03-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_blur):
+	  Don't call the complete() function if the effect is already playing
+	  because that indirectly calls hd_comp_mgr_restack() and whatsnot
+	  with the end result that set_blur() may recurse.
+
+	  This fixes a problem with windows requesting portrait mode
+	  as soon as mapped: everything changes well, hdrm goes to the
+	  appropriate state but HdTitleBar's state becomes inconsistent
+	  and shows the top-left button again.
+
 2009-03-10  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-blur-group.c: made shading pattern be loaded from an
