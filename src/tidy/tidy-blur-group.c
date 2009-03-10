@@ -26,6 +26,10 @@
  */
 #define GLSL_LOCALE_FIX 1
 
+
+#define VIGNETTE_TILES 7
+#define VIGNETTE_COLOURS ((VIGNETTE_TILES)/2 + 1)
+
 /* The OpenGL fragment shader used to do blur and desaturation.
  * We use 3 samples here arranged in a rough triangle. We need
  * 2 versions as GLES and GL use slightly different syntax */
@@ -88,6 +92,8 @@ struct _TidyBlurGroupPrivate
   int blur_step;
   int current_blur_step;
   int max_blur_step;
+
+  gint vignette_colours[VIGNETTE_COLOURS]; /* dimming for the vignette */
 
   /* if anything changed we need to recalculate preblur */
   gboolean source_changed;
@@ -475,13 +481,11 @@ tidy_blur_group_paint (ClutterActor *actor)
   else
     {
       gint vignette_amt;
+
       /* draw a 7x7 grid with 5x5 unmirrored, and the edges mirrored so
        * we don't see dark edges when we zoom out */
-#define TILINGF 7
-#define TILING (TILINGF-2)
-
-      CoglTextureVertex verts[6*(TILINGF*TILINGF)];
-      CoglTextureVertex grid[(TILINGF+1)*(TILINGF+1)];
+      CoglTextureVertex verts[6*(VIGNETTE_TILES*VIGNETTE_TILES)];
+      CoglTextureVertex grid[(VIGNETTE_TILES+1)*(VIGNETTE_TILES+1)];
       CoglTextureVertex *v = grid;
       gint x,y;
 
@@ -490,21 +494,23 @@ tidy_blur_group_paint (ClutterActor *actor)
       if (vignette_amt>255) vignette_amt = 255;
 
       /* work out grid points */
-      for (y=0;y<=TILINGF;y++)
-        for (x=0;x<=TILINGF;x++)
+      for (y=0;y<=VIGNETTE_TILES;y++)
+        for (x=0;x<=VIGNETTE_TILES;x++)
           {
             float fx = x, fy = y;
+            gint c = 255;
+            gint edge;
             /* we don't want full-size tiles for the edges - just half-size */
             if (x==0) fx = 0.5f;
-            if (x==TILINGF) fx = TILINGF-0.5f;
+            if (x==VIGNETTE_TILES) fx = VIGNETTE_TILES-0.5f;
             if (y==0) fy = 0.5f;
-            if (y==TILINGF) fy = TILINGF-0.5f;
+            if (y==VIGNETTE_TILES) fy = VIGNETTE_TILES-0.5f;
             /* work out vertex coords */
-            v->x = mx+(zx*(fx*2-(TILING+2))/TILING);
-            v->y = my+(zy*(fy*2-(TILING+2))/TILING);
+            v->x = mx+(zx*(fx*2-VIGNETTE_TILES)/(VIGNETTE_TILES-2));
+            v->y = my+(zy*(fy*2-VIGNETTE_TILES)/(VIGNETTE_TILES-2));
             v->z = 0;
-            v->tx = (fx-1) * CFX_ONE / TILING;
-            v->ty = (fy-1) * CFX_ONE / TILING;
+            v->tx = (fx-1) * CFX_ONE / (VIGNETTE_TILES-2);
+            v->ty = (fy-1) * CFX_ONE / (VIGNETTE_TILES-2);
             /* mirror edges */
             if (v->tx < 0)
               v->tx = -v->tx;
@@ -515,14 +521,8 @@ tidy_blur_group_paint (ClutterActor *actor)
             if (v->ty > CFX_ONE)
               v->ty = CFX_ONE*2 - v->ty;
             /* Colour value... */
-            gint c = 255;
-            if ((x==1) || (y==1) || (x==TILINGF-1) || (y==TILINGF-1))
-              c = 128;
-            if ((x==0) || (y==0) || (x==TILINGF) || (y==TILINGF))
-              c = 0;
-          //  c = (int)(priv->brightness * (255 - vignette_amt*c/255));
-            if (c<0) c=0;
-            if (c>255) c=255;
+            edge = MIN(x, MIN(y, MIN(VIGNETTE_TILES-x, VIGNETTE_TILES-y)));
+            c = priv->vignette_colours[edge];
             v->color.red = col.red * c / 255;
             v->color.green = col.green * c / 255;
             v->color.blue = col.blue * c / 255;
@@ -534,21 +534,21 @@ tidy_blur_group_paint (ClutterActor *actor)
       /* now work out actual vertices - join the grid points with
        * 2 triangles to make a quad */
       v = verts;
-      for (y=0;y<TILINGF;y++)
-        for (x=0;x<TILINGF;x++)
+      for (y=0;y<VIGNETTE_TILES;y++)
+        for (x=0;x<VIGNETTE_TILES;x++)
           {
-            CoglTextureVertex *grid_pt = &grid[x + y*(TILINGF+1)];
+            CoglTextureVertex *grid_pt = &grid[x + y*(VIGNETTE_TILES+1)];
             v[0] = grid_pt[0]; /* tri 1 */
             v[1] = grid_pt[1];
-            v[2] = grid_pt[1+(TILINGF+1)];
+            v[2] = grid_pt[1+(VIGNETTE_TILES+1)];
             v[3] = grid_pt[0]; /* tri 2 */
-            v[4] = grid_pt[1+(TILINGF+1)];
-            v[5] = grid_pt[TILINGF+1];
+            v[4] = grid_pt[1+(VIGNETTE_TILES+1)];
+            v[5] = grid_pt[VIGNETTE_TILES+1];
             v+=6;
           }
       /* render! */
       cogl_texture_triangles (priv->current_is_a ? priv->tex_a : priv->tex_b,
-                              6*(TILINGF*TILINGF),
+                              6*(VIGNETTE_TILES*VIGNETTE_TILES),
                               verts,
                               TRUE);
     }
@@ -602,6 +602,7 @@ static void
 tidy_blur_group_init (TidyBlurGroup *self)
 {
   TidyBlurGroupPrivate *priv;
+  gint i;
 
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
                                                    TIDY_TYPE_BLUR_GROUP,
@@ -629,6 +630,12 @@ tidy_blur_group_init (TidyBlurGroup *self)
   priv->tex_b = 0;
   priv->fbo_b = 0;
   priv->current_is_a = TRUE;
+
+  /* dimming for the vignette */
+  for (i=0;i<VIGNETTE_COLOURS;i++)
+    priv->vignette_colours[i] = 255;
+  priv->vignette_colours[0] = 0;
+  priv->vignette_colours[1] = 128;
 }
 
 /*

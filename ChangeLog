@@ -1,5 +1,12 @@
 2009-03-10  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/tidy/tidy-blur-group.c: made shading pattern be loaded from an
+	  array
+	* src/launcher/hd-launcher-grid.c: modify launcher animation to 
+	  fade diagonally
+
+2009-03-10  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Fixes for NB#104037 and NB#96780, and black desktop + non-blurring
 	applet regression from a few days ago.
 	
