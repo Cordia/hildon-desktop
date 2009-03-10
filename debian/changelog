@@ -1,8 +1,21 @@
-hildon-desktop (1:2.2.23-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.23-1) unstable; urgency=low
 
-  * Jan Arne: By default views 1, 2, 3 are displayed. Fixes: NB#93980
+  * Fixes: NB#93980 - Jan Arne: By default views 1, 2, 3 are displayed.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  2 Mar 2009 09:48:19 +0200
+  Thomas Thurman  <thomas.thurman@collabora.co.uk>:
+
+  * Fixes: NB#103602 - when a dialogue opens, remove all open menus.
+  * Fixes: NB#100141
+  * Fixes: NB#96780
+    and its duplicates NB#104206 and NB#104320.
+    Does not yet fix NB#104037 which appears not to be identical.
+
+  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>:
+
+  * Fixes: NB#99791 - Stop trying to prestart apps if they fail.
+  * Fixes: NB#100675 - Added prestarting priorities.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 10 Mar 2009 12:08:56 +0200
 
 hildon-desktop (1:2.2.22-1) unstable; urgency=low
 

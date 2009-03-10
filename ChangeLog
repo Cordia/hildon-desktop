@@ -1,3 +1,7 @@
+2009-03-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.23
+
 2009-03-10  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hildon-desktop-views.schemas: By default views 1, 2, 3 are
