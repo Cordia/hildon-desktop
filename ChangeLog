@@ -1,6 +1,7 @@
 2009-03-10  Gordon Williams <gordon.williams@collabora.co.uk>
 
-	Fixes for NB#104037 and NB#96780
+	Fixes for NB#104037 and NB#96780, and black desktop + non-blurring
+	applet regression from a few days ago.
 	
 	* src/home/hd-render-manager.c: Added more #defined debug info
 	* src/mb/hd-comp-mgr.c: Removed un-needed restacks
