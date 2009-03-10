@@ -352,7 +352,10 @@ hd_property_notify_message (XPropertyEvent *xev, void *userdata)
       MBWindowManagerClient *top;
       /* previous mb_wm_client_decor_mark_dirty didn't actually cause a redraw,
        * so mark the decor itself dirty */
-      if ((top = mb_wm_get_visible_main_client(MB_WM_COMP_MGR (hmgr)->wm)) != NULL)
+      top = mb_wm_managed_client_from_xwindow(MB_WM_COMP_MGR (hmgr)->wm,
+					      xev->window);
+
+      if (top)
         {
           MBWMList *l = top->decor;
           while (l)
