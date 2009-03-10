@@ -112,7 +112,7 @@ void hd_comp_mgr_hibernate_client    (HdCompMgr                *hmgr,
 				      MBWMCompMgrClutterClient *c,
 				      gboolean                  force);
 
-void hd_comp_mgr_hibernate_all       (HdCompMgr *hmgr, gboolean force);
+void hd_comp_mgr_kill_all_apps       (HdCompMgr *hmgr);
 
 void hd_comp_mgr_wakeup_client       (HdCompMgr       *hmgr,
 				      HdCompMgrClient *hclient);

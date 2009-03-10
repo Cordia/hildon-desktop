@@ -535,6 +535,8 @@ hd_app_mgr_launch (HdLauncherApp *app)
       if (result)
         {
           if (!hd_launcher_app_get_pid (app))
+            /* It's likely to fail because the service hasn't been
+             * registered, but anyways. */
             hd_app_mgr_request_app_pid (app);
 
           /* As the app has been manually launched, stop considering it
@@ -1049,8 +1051,8 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
   GList *items;
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
 
-  /* Check only disconnections. */
-  if (strcmp(new_owner, ""))
+  /* Check only connections and disconnections. */
+  if (!old_owner[0] == !new_owner[0])
     return;
 
   /* Check if the service is one we want always on. */
@@ -1065,21 +1067,29 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
 
           if (!g_strcmp0 (name, hd_launcher_app_get_service (app)))
             {
-              g_debug ("%s: App %s has fallen\n", __FUNCTION__,
-                  hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
-              /* We have the correct app, deal accordingly. */
+              if (!new_owner[0])
+                { /* Disconnection */
+                  g_debug ("%s: App %s has fallen\n", __FUNCTION__,
+                      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
+                  /* We have the correct app, deal accordingly. */
 
-              /* The app must have been hibernated or closed. */
-              if (hd_launcher_app_get_state (app) !=
-                  HD_APP_STATE_HIBERNATING)
-                hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
+                  /* The app must have been hibernated or closed. */
+                  if (hd_launcher_app_get_state (app) !=
+                      HD_APP_STATE_HIBERNATING)
+                    hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
 
-              /* Add to prestartable and check state if always-on. */
-              if (hd_launcher_app_get_prestart_mode (app) ==
-                    HD_APP_PRESTART_ALWAYS)
-                {
-                  hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
-                  hd_app_mgr_state_check ();
+                  /* Add to prestartable and check state if always-on. */
+                  if (hd_launcher_app_get_prestart_mode (app) ==
+                        HD_APP_PRESTART_ALWAYS)
+                    {
+                      hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
+                      hd_app_mgr_state_check ();
+                    }
+                }
+              else
+                { /* Connection */
+                  if (!hd_launcher_app_get_pid (app))
+                    hd_app_mgr_request_app_pid (app);
                 }
               break;
             }
@@ -1155,8 +1165,9 @@ _hd_app_mgr_request_app_pid_cb (DBusGProxy *proxy, guint pid,
 
   if (error)
     {
-      g_warning ("%s: Couldn't get pid for app %s\n", __FUNCTION__,
-          hd_launcher_app_get_service (app));
+      g_warning ("%s: Couldn't get pid for app %s because %s\n",
+                 __FUNCTION__, hd_launcher_app_get_service (app),
+                 error->message);
       return;
     }
 
@@ -1276,8 +1287,8 @@ hd_app_mgr_dump_app_list (gboolean only_running)
       app = HD_LAUNCHER_APP (apps->data);
       if (!only_running || hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN)
         {
-          g_debug("app=%p, wm_class=%s, service=%s, state=%d",
-                  app,
+          g_debug("app=%p, pid=%d, wm_class=%s, service=%s, state=%d",
+                  app, hd_launcher_app_get_pid (app),
                   hd_launcher_app_get_wm_class (app),
                   hd_launcher_app_get_service (app),
                   hd_launcher_app_get_state (app));

@@ -1,3 +1,22 @@
+2009-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Make the app_killer interface usable again.
+
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_dbus_name_owner_changed):
+	  Listen for new registrations too.
+	  Request for the PID of the launched application's service
+	  when we see its NameOwnerChanged.  Getting it right after
+	  launch fails because the service is not registered at that time.
+	* src/mb/hd-comp-mgr.h
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_kill_all_apps):
+	  Renamed from hd_comp_mgr_hibernate_all().
+	  Reverts change from r35805 and use HdAppMgr again
+	  to enumerate running applications.
+	  Fixes a crash when hd_comp_mgr_hibernate_client() tried to
+	  hibernate the desktop client, which doesn't have a ClutterClient.
+	* src/util/hd-dbus.c:
+	  Update.
+
 2009-03-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.23

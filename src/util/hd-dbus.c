@@ -23,7 +23,7 @@ hd_dbus_signal_handler (DBusConnection *conn, DBusMessage *msg, void *data)
 			     APPKILLER_SIGNAL_INTERFACE,
 			     APPKILLER_SIGNAL_NAME))
     { /* kill -TERM all programs started from the launcher unconditionally */
-      hd_comp_mgr_hibernate_all (hmgr, TRUE);
+      hd_comp_mgr_kill_all_apps (hmgr);
 
       return DBUS_HANDLER_RESULT_HANDLED;
     }
