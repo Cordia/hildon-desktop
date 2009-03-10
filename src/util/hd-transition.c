@@ -296,7 +296,8 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
                 CLUTTER_FLOAT_TO_FIXED(centrey + cos(ang) * particle_radius));
       }
     else
-      clutter_actor_hide( data->particles[i] );
+      if (data->particles[i])
+	clutter_actor_hide( data->particles[i] );
 
   if (actor)
     g_object_unref(actor);

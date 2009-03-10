@@ -1,5 +1,10 @@
 2009-03-10  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
+	* src/util/hd-transition.c: added check for null dereference
+	that just crashed my rover.
+
+2009-03-10  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
 	Fixes NB#91048.
 	
 	* src/home/hd-home.c: When we get a request to show or hide the
