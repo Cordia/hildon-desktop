@@ -24,8 +24,6 @@
 - Implement progress indicator in application window and dialog title.
   Window property _HILDON_WM_WINDOW_PROGRESS_INDICATOR (int), values 0 (off)
   and 1 (on). Other values can be used in future if needed.
-- Take away input focus when leaving application view
-  Kimmo: What for?
 - Don't show incoming event notification previews
   if the do not disturb flag is set.
 - Be more sensible differentiating clicks vs. scroll attempts.
@@ -35,3 +33,6 @@
 - Do we really need clutter_actor_get_parent() to g_object_ref(actor)?
 - We use linked lists all over the place and take the lists's length
   and the nth element many times.
+- Remove hd-notification.c.
+- Use ATOM:ic property values in hd-note.c.
+- Make HdClutterCache a simple hash table and theme-change-aware.
