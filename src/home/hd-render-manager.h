@@ -149,7 +149,7 @@ typedef enum
   (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
 
 #define STATE_DISCARD_PREVIEW_NOTE(s) \
-  (STATE_ONE_OF((s), HDRM_STATE_TASK_NAV))
+  (STATE_ONE_OF((s), HDRM_STATE_TASK_NAV | HDRM_STATE_APP_PORTRAIT))
 
 GType hd_render_manager_state_get_type (void) G_GNUC_CONST;
 GType hd_render_manager_get_type       (void) G_GNUC_CONST;

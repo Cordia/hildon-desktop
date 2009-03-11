@@ -1,3 +1,10 @@
+2009-03-11  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#105071 - Do not show notification previews in portrait mode.
+
+	* src/home/hd-render-manager.h (STATE_DISCARD_PREVIEW_NOTE): Do not
+	show notification previews in portrait mode.
+
 2009-03-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Regression fix: application window disappeared after coming from
