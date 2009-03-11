@@ -1888,6 +1888,11 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
       if (cs == hmgr->priv->status_area_client)
         /* It'll be blocked anyway. */
         continue;
+      if (MB_WM_CLIENT_CLIENT_TYPE (cs)
+          & (HdWmClientTypeAppMenu | MBWMClientTypeMenu))
+        /* Menus are not transient for their window nor they claim
+         * portrait layout support.  Let's just assume they can. */
+        continue;
       if (hd_comp_mgr_is_client_screensaver (cs))
         continue;
       if (hd_comp_mgr_ignore_window (cs))

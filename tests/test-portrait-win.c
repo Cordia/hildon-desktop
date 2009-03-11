@@ -37,7 +37,7 @@ static void boo_cb(GtkWindow *win)
 
   dlg = gtk_message_dialog_new(win, GTK_DIALOG_MODAL,
                                GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-                               "Edd meg a gyikomat");
+                               "Boo!");
   portrait_supported(dlg);
   gtk_dialog_run(GTK_DIALOG(dlg));
   gtk_widget_destroy(dlg);
@@ -47,7 +47,7 @@ static void bee_cb(GtkWindow *win)
 {
   GtkWidget *dlg;
 
-  dlg = hildon_note_new_information(win, "Faszkivan");
+  dlg = hildon_note_new_information(win, "Bee!");
   portrait_supported(dlg);
   gtk_dialog_run(GTK_DIALOG(dlg));
   gtk_widget_destroy(dlg);
@@ -55,7 +55,7 @@ static void bee_cb(GtkWindow *win)
 
 static void baa_cb(GtkWindow *win)
 {
-  hildon_banner_show_information(GTK_WIDGET(win), NULL, "Lehanylak");
+  hildon_banner_show_information(GTK_WIDGET(win), NULL, "Baa!");
 }
 
 static void moo_cb(GtkWindow *win)
@@ -63,9 +63,9 @@ static void moo_cb(GtkWindow *win)
   GtkWidget *dlg;
 
   dlg = hildon_note_new_confirmation_add_buttons(win,
-    "Kivered nekem?",
-    "Mint a turmixgep", 1,
-    "Nyissz", 0,
+    "Moo?",
+    "Moo!", 1,
+    "Ooo...", 0,
     NULL, NULL);
   portrait_supported(dlg);
   gtk_dialog_run(GTK_DIALOG(dlg));
@@ -74,13 +74,22 @@ static void moo_cb(GtkWindow *win)
 
 static void hee_cb(GtkWindow *win)
 {
-  GtkWidget *newin;
+  GtkWidget *newin, *menu, *menu_item;
 
   newin = hildon_stackable_window_new();
   gtk_window_set_title(GTK_WINDOW(newin),
                        "Hejj ha en egyszer osember lennek");
   gtk_container_add(GTK_CONTAINER(newin),
            gtk_label_new("Bunkosbottal bunkoznam le a sok bugris bunkot"));
+
+  menu = gtk_menu_new();
+  menu_item = gtk_menu_item_new_with_label("Die, my darling");
+  g_signal_connect_swapped(menu_item, "activate",
+                           G_CALLBACK(gtk_object_destroy), newin);
+  gtk_widget_show(menu_item);
+  gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
+  hildon_window_set_main_menu(HILDON_WINDOW(newin), GTK_MENU(menu));
+
   gtk_widget_show_all(newin);
 }
 
@@ -121,11 +130,34 @@ static gboolean hit_cb(GtkWindow *win, GdkEventKey *e, GtkContainer *bin)
           case '5':
             hee_cb(win);
             break;
+          case HILDON_HARDKEY_MENU:
+            HILDON_WINDOW_GET_CLASS(win)->toggle_menu(HILDON_WINDOW(win), 0, 0);
+            break;
           case 'x':
             exit(0);
         }
     }
   return TRUE;
+}
+
+static HildonAppMenu *create_menu(void)
+{
+  static const gchar *const labels[] =
+    { "Time", "so", "goes", "slowly", "by", NULL };
+  guint i;
+  GtkWidget *menu, *button;
+
+  menu = hildon_app_menu_new();
+  for (i = 0; labels[i]; i++)
+    {
+      button = hildon_gtk_button_new(
+                       HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
+      gtk_button_set_label(GTK_BUTTON (button), labels[i]);
+      hildon_app_menu_append(HILDON_APP_MENU(menu), GTK_BUTTON(button));
+    }
+  gtk_widget_show_all(menu);
+
+  return HILDON_APP_MENU(menu);
 }
 
 int main(int argc, char const *argv[])
@@ -134,7 +166,9 @@ int main(int argc, char const *argv[])
 
   gtk_init(NULL, NULL);
   win = hildon_stackable_window_new();
-  gtk_window_set_title(GTK_WINDOW(win), "Faszvero");
+  gtk_window_set_title(GTK_WINDOW(win), "Portrait window");
+  hildon_stackable_window_set_main_menu(HILDON_STACKABLE_WINDOW(win),
+                                        create_menu());
   g_signal_connect(win, "destroy", G_CALLBACK(exit), NULL);
   init_portrait(win, argv);
 
@@ -144,7 +178,7 @@ int main(int argc, char const *argv[])
   hbox = portrait();
   w = gtk_check_button_new();
   g_signal_connect(w, "toggled", G_CALLBACK(fos_cb), win);
-  gtk_container_add(GTK_CONTAINER(hbox), gtk_label_new("Fos"));
+  gtk_container_add(GTK_CONTAINER(hbox), gtk_label_new("FS"));
   gtk_container_add(GTK_CONTAINER(hbox), w);
   gtk_container_add(GTK_CONTAINER(vbox), hbox);
   g_signal_connect(win, "key-press-event", G_CALLBACK(hit_cb), hbox);

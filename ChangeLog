@@ -1,3 +1,10 @@
+2009-03-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#105036 Menu Items are not displayed in Call handling view
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait):
+	  Ignore menus, which are not transient.  What a mess.
+
 2009-03-10  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/util/hd-transition.c: added check for null dereference
