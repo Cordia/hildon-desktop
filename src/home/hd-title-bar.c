@@ -749,6 +749,8 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
     gint h;
     int x_start = 0;
     int x_end = HD_COMP_MGR_SCREEN_WIDTH;
+    char *escaped_title = g_markup_escape_text (title, -1);
+
     if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
       x_start += HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
     if (priv->state & HDTB_VIS_BTN_RIGHT_MASK)
@@ -762,7 +764,8 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
               d->font_size ? d->font_size : 18,
               d->font_units == MBWMXmlFontUnitsPoints ? "" : "px");
     clutter_label_set_font_name(priv->title, font_name);
-    clutter_label_set_text(priv->title, title);
+    clutter_label_set_text(priv->title, escaped_title);
+    g_free (escaped_title);
 
     h = clutter_actor_get_height(CLUTTER_ACTOR(priv->title));
     clutter_actor_set_width(CLUTTER_ACTOR(priv->title),

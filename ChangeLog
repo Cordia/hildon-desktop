@@ -1,3 +1,15 @@
+2009-03-11  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	Escape titles before we display them so that you can
+	use <, >, and & within them.  For some reason, turning
+	off markup in titles doesn't do this, so we have to
+	escape them explicitly.
+
+	Fixes: #NB105404
+
+	* src/home/hd-title-bar.c:
+	* src/mb/hd-decor.c:
+
 2009-03-11  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-transition.c: Re-enabled proper sliding
