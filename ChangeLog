@@ -1,3 +1,8 @@
+2009-03-11  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-transition.c: Re-enabled proper sliding
+	subview transition
+
 2009-03-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Implemented don't support portrait mode.

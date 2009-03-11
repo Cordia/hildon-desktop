@@ -383,9 +383,14 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
     float corner_x;
     corner_x = (1-amt) * HD_COMP_MGR_SCREEN_WIDTH;
     if (subview_actor)
-      clutter_actor_set_anchor_pointu(subview_actor,
-         CLUTTER_FLOAT_TO_FIXED( -corner_x ),
-         CLUTTER_FLOAT_TO_FIXED( 0 ) );
+      {
+        clutter_actor_set_anchor_pointu(subview_actor,
+           CLUTTER_FLOAT_TO_FIXED( -corner_x ),
+           CLUTTER_FLOAT_TO_FIXED( 0 ) );
+        /* we have to show this actor, because it'll get hidden by the
+         * render manager visibility test if not. */
+        clutter_actor_show(subview_actor);
+      }
     if (main_actor)
       {
         clutter_actor_set_anchor_pointu(main_actor,
@@ -393,7 +398,7 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
            CLUTTER_FLOAT_TO_FIXED( 0 ) );
         /* we have to show this actor, because it'll get hidden by the
          * render manager visibility test if not. */
-        /*clutter_actor_show(main_actor);*/
+        clutter_actor_show(main_actor);
       }
   }
 
@@ -717,7 +722,7 @@ hd_transition_subview(HdCompMgr                  *mgr,
   data = g_new0 (HDEffectData, 1);
   data->event = event;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient_subview));
-  data->cclient2 = /*mb_wm_object_ref (MB_WM_OBJECT (cclient_mainview))*/0;
+  data->cclient2 = mb_wm_object_ref (MB_WM_OBJECT (cclient_mainview));
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline =
         g_object_ref( hd_transition_timeline_new("subview", event, 250) );
@@ -730,9 +735,9 @@ hd_transition_subview(HdCompMgr                  *mgr,
   mb_wm_comp_mgr_clutter_client_set_flags (cclient_subview,
                               MBWMCompMgrClutterClientDontUpdate |
                               MBWMCompMgrClutterClientEffectRunning);
- /* mb_wm_comp_mgr_clutter_client_set_flags (cclient_mainview,
+  mb_wm_comp_mgr_clutter_client_set_flags (cclient_mainview,
                                 MBWMCompMgrClutterClientDontUpdate |
-                                MBWMCompMgrClutterClientEffectRunning);*/
+                                MBWMCompMgrClutterClientEffectRunning);
   hd_comp_mgr_set_effect_running(mgr, TRUE);
 
   /* first call to stop flicker */
@@ -861,8 +866,8 @@ hd_transition_get_int(const gchar *transition,
 
 gdouble
 hd_transition_get_double(const gchar *transition,
-                      const char *key,
-                      gdouble default_val)
+                         const char *key,
+                         gdouble default_val)
 {
   gdouble value;
   GError *error = NULL;
