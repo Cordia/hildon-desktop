@@ -3,6 +3,23 @@
 
 #include "portrait-common.c"
 
+static GtkWidget *Subverter;
+
+static GtkWidget *fancy(GtkWidget *w)
+{
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(Subverter)))
+    {
+      static guint32 no = { 0 };
+
+      gtk_widget_realize(w);
+      gdk_property_change(w->window,
+               gdk_atom_intern_static_string ("_HILDON_PORTRAIT_MODE_SUPPORT"),
+               gdk_x11_xatom_to_atom(XA_CARDINAL), 32,
+               GDK_PROP_MODE_REPLACE, (gpointer)&no, 1);
+    }
+  return w;
+}
+
 static void fos_cb(GtkToggleButton *self, GtkWindow *win)
 {
   if (gtk_toggle_button_get_active(self))
@@ -20,25 +37,13 @@ static gboolean idiot_cb(gpointer entry)
   return TRUE;
 }
 
-static void portrait_supported(GtkWidget *w)
-{
-  if (!Init_portrait_support)
-    return;
-  gtk_widget_realize(w);
-  gdk_property_change(w->window,
-           gdk_atom_intern_static_string ("_HILDON_PORTRAIT_MODE_SUPPORT"),
-           gdk_x11_xatom_to_atom(XA_CARDINAL), 32,
-           GDK_PROP_MODE_REPLACE, (gpointer)&Init_portrait_support, 1);
-}
-
 static void boo_cb(GtkWindow *win)
 {
   GtkWidget *dlg;
 
-  dlg = gtk_message_dialog_new(win, GTK_DIALOG_MODAL,
-                               GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-                               "Boo!");
-  portrait_supported(dlg);
+  dlg = fancy(gtk_message_dialog_new(win, GTK_DIALOG_MODAL,
+                                     GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+                                     "Boo!"));
   gtk_dialog_run(GTK_DIALOG(dlg));
   gtk_widget_destroy(dlg);
 }
@@ -47,8 +52,7 @@ static void bee_cb(GtkWindow *win)
 {
   GtkWidget *dlg;
 
-  dlg = hildon_note_new_information(win, "Bee!");
-  portrait_supported(dlg);
+  dlg = fancy(hildon_note_new_information(win, "Bee!"));
   gtk_dialog_run(GTK_DIALOG(dlg));
   gtk_widget_destroy(dlg);
 }
@@ -67,7 +71,6 @@ static void moo_cb(GtkWindow *win)
     "Moo!", 1,
     "Ooo...", 0,
     NULL, NULL);
-  portrait_supported(dlg);
   gtk_dialog_run(GTK_DIALOG(dlg));
   gtk_widget_destroy(dlg);
 }
@@ -90,7 +93,7 @@ static void hee_cb(GtkWindow *win)
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
   hildon_window_set_main_menu(HILDON_WINDOW(newin), GTK_MENU(menu));
 
-  gtk_widget_show_all(newin);
+  gtk_widget_show_all(fancy(newin));
 }
 
 static gboolean hit_cb(GtkWindow *win, GdkEventKey *e, GtkContainer *bin)
@@ -180,6 +183,11 @@ int main(int argc, char const *argv[])
   g_signal_connect(w, "toggled", G_CALLBACK(fos_cb), win);
   gtk_container_add(GTK_CONTAINER(hbox), gtk_label_new("FS"));
   gtk_container_add(GTK_CONTAINER(hbox), w);
+
+  Subverter = gtk_check_button_new();
+  gtk_container_add(GTK_CONTAINER(hbox), gtk_label_new("Subvert"));
+  gtk_container_add(GTK_CONTAINER(hbox), Subverter);
+
   gtk_container_add(GTK_CONTAINER(vbox), hbox);
   g_signal_connect(win, "key-press-event", G_CALLBACK(hit_cb), hbox);
 

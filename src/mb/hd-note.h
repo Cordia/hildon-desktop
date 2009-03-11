@@ -76,6 +76,11 @@ struct HdNote
    * only relevant for HdNoteTypeIncomingEvent:s. */
   unsigned long   property_changed_cb_id;
 
+  /* For Banner:s, Info:s and Confirmation:s,
+   * which are sized to fill the screen,
+   * to know when to resize. */
+  unsigned long   screen_size_changed_cb_id;
+
   /* For hd_util_modal_blocker_realize(). */
   unsigned long   modal_blocker_cb_id;
 };

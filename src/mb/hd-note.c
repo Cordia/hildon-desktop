@@ -67,6 +67,49 @@ get_x_window_string_property (HdNote *self, HdAtoms atom_id)
   return ret != Success || type == None ? NULL : (char *)value;
 }
 
+static Bool
+resize_note (XConfigureEvent *xev, MBWindowManagerClient *client)
+{
+  int n, s, w, e;
+  MBGeometry geom;
+  MBWindowManager *wm;
+
+  wm = client->wmref;
+  if (wm->theme)
+    mb_wm_theme_get_decor_dimensions (wm->theme, client, &n, &s, &w, &e);
+  else
+    n = s = w = e = 0;
+
+  /* Set the frame geometry */
+  geom.x      = 0;
+  geom.width  = wm->xdpy_width;
+  geom.height = n + client->window->geometry.height + s;
+
+  /* Set geom.y */
+  if (HD_NOTE (client)->note_type == HdNoteTypeBanner)
+    { /* Display right below the application title bar. */
+      MBWMXmlClient *c;
+      MBWMXmlDecor  *d;
+
+      geom.y = wm->theme
+          && (c = mb_wm_xml_client_find_by_type (wm->theme->xml_clients,
+                                                 MBWMClientTypeApp)) != NULL
+          && (d = mb_wm_xml_decor_find_by_type (c->decors,
+                                                MBWMDecorTypeNorth)) != NULL
+        ? d->height : 40;
+    }
+  else if (HD_NOTE (client)->note_type == HdNoteTypeInfo)
+    /* Center vertically. */
+    geom.y = (wm->xdpy_height-geom.height) / 2;
+  else /* Confirmation */
+    /* Align to bottom. */
+    geom.y = wm->xdpy_height - geom.height;
+
+  hd_note_request_geometry (client, &geom, MBWMClientReqGeomForced);
+
+  return True;
+}
+
 /* Called when a %HdIncomingEvent's X window property has changed. */
 static Bool
 x_window_property_changed (XPropertyEvent *event, HdNote *self)
@@ -112,6 +155,13 @@ hd_note_destroy (MBWMObject *this)
                                 MB_WM_CLIENT (this)->wmref->main_ctx,
                                 PropertyNotify,
                                 HD_NOTE (this)->property_changed_cb_id);
+  if (HD_NOTE (this)->note_type == HdNoteTypeBanner
+      || HD_NOTE (this)->note_type == HdNoteTypeInfo
+      || HD_NOTE (this)->note_type == HdNoteTypeConfirmation)
+    mb_wm_main_context_x_event_handler_remove (
+                                MB_WM_CLIENT (this)->wmref->main_ctx,
+                                ConfigureNotify,
+                                HD_NOTE (this)->screen_size_changed_cb_id);
   if (HD_NOTE (this)->note_type == HdNoteTypeInfo)
     mb_wm_main_context_x_event_handler_remove (
                                 MB_WM_CLIENT (this)->wmref->main_ctx,
@@ -125,9 +175,7 @@ hd_note_init (MBWMObject *this, va_list vap)
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
   MBWindowManager       *wm = client->wmref;
   HdNote                *note = HD_NOTE (this);
-  MBGeometry             geom;
   char                  *prop;
-  int                    n, s, w, e;
 
   prop = get_x_window_string_property (note,
                                        HD_ATOM_HILDON_NOTIFICATION_TYPE);
@@ -159,7 +207,7 @@ hd_note_init (MBWMObject *this, va_list vap)
       client->stacking_layer = MBWMStackLayerBottom;
 
       /* Leave it up to the client to specify size; position doesn't matter. */
-      hd_note_request_geometry (client, &client->window->geometry,
+      hd_note_request_geometry (client, &client->frame_geometry,
                                 MBWMClientReqGeomForced);
 
       note->property_changed_cb_id = mb_wm_main_context_x_event_handler_add (
@@ -168,52 +216,31 @@ hd_note_init (MBWMObject *this, va_list vap)
       return 1;
     }
 
-  mb_wm_theme_get_decor_dimensions (wm->theme, client, &n, &s, &w, &e);
-
   if (note->note_type == HdNoteTypeIncomingEventPreview)
     {
-      geom.x = w;
-      geom.y = n;
-      geom.width = client->window->geometry.width + e + w;
-      geom.height = client->window->geometry.height + n + s;
-    }
-  else
-    {
-      geom.x      = 0;
-      geom.width  = wm->xdpy_width;
-      geom.height = client->window->geometry.height + n + s;
+      int n, s, w, e;
+      MBGeometry geom;
 
-      if (note->note_type == HdNoteTypeInfo)
-        {
-          geom.y = (wm->xdpy_height - (client->window->geometry.height + n + s))/2;
-        }
-      else if (note->note_type == HdNoteTypeBanner)
-        {
-          /* FIXME -- need to get decor size from theme */
-          MBWMXmlClient *c;
-          MBWMXmlDecor  *d;
-          int            north = 0;
-
-          if (wm->theme &&
-              (c = mb_wm_xml_client_find_by_type (wm->theme->xml_clients,
-                                                  MBWMClientTypeApp)))
-            {
-              if ((d = mb_wm_xml_decor_find_by_type (c->decors,MBWMDecorTypeNorth)))
-                north = d->height;
-            }
-
-          if (!north)
-            north = 40; /* Fallback value */
-
-          geom.y = north;
-        }
+      if (wm->theme)
+        mb_wm_theme_get_decor_dimensions (wm->theme, client, &n, &s, &w, &e);
       else
-        {
-          geom.y = wm->xdpy_height - (client->window->geometry.height + n + s);
-        }
-    }
+        n = s = w = e = 0;
 
-  hd_note_request_geometry (client, &geom, MBWMClientReqGeomForced);
+      geom.x = geom.y = 0;
+      geom.width  = w + client->window->geometry.width  + e;
+      geom.height = n + client->window->geometry.height + s;
+      hd_note_request_geometry (client, &geom, MBWMClientReqGeomForced);
+    }
+  else /* Banner, Info, Confirmation */
+    {
+      resize_note (NULL, client);
+      note->screen_size_changed_cb_id =
+        mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+                                                wm->root_win->xwindow,
+                                                ConfigureNotify,
+                                                (MBWMXEventFunc)resize_note,
+                                                client);
+    }
 
   return 1;
 }

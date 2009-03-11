@@ -1,3 +1,18 @@
+2009-03-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Implemented don't support portrait mode.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait):
+	  Effectively all clients are assumed to support portrait mode
+	  unless they claim otherwise.
+	* src/mb/hd-note.h
+	* src/mb/hd-note.c:
+	  Resize the note when the screen geometry changes.
+	  Necessary if we switch back to landscape because of a note
+	  because notes are sized to fill the screen horizontally.
+	  Dialogs don't have this problem.
+	* tests/test-portrait-win.c
+
 2009-03-11  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#105071 - Do not show notification previews in portrait mode.
