@@ -1317,7 +1317,8 @@ void hd_render_manager_return_app(ClutterActor *actor)
 {
   clutter_actor_reparent(actor,
                          CLUTTER_ACTOR(the_render_manager->priv->home_blur));
-  clutter_actor_hide (actor);
+  clutter_actor_lower_bottom(actor);
+  clutter_actor_hide(actor);
 }
 
 /* Same for dialogs. */

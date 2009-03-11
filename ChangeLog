@@ -1,4 +1,12 @@
-2009-03-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-03-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Regression fix: application window disappeared after coming from
+	switcher view and opening the menu.
+
+	* src/home/hd-render-manager.c (hd_render_manager_return_app):
+	  Don't let HdHome cover applications.
+
+2009-03-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#105036 Menu Items are not displayed in Call handling view
 
