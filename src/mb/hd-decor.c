@@ -228,6 +228,9 @@ hd_decor_create_actors(HdDecor *decor)
         char font_name[512];
         guint w = 0, h = 0;
 
+        /* TODO: handle it so that _NET_WM_NAME has pure UTF-8 and no markup,
+         * and _HILDON_WM_NAME has UTF-8 + Pango markup. If _HILDON_WM_NAME
+         * is there, it is used, otherwise use the traditional properties. */
         bar_title = CLUTTER_LABEL(clutter_label_new());
         clutter_label_set_color(bar_title, &white);
         clutter_label_set_use_markup(bar_title, TRUE);
