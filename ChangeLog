@@ -6,7 +6,7 @@
 	  mapping without an unmap (eg. fullscreen->window case for image
 	  viewer)
 
-2009-03-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-03-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-transition.c (hd_transition_close_app,
 	  on_close_timeline_new_frame, hd_transition_completed)
