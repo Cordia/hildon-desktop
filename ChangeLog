@@ -1,5 +1,12 @@
 2009-03-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
+	Ensure apps go to inactive state when main window gets closed.
+	Fixes: NB#105003.
+
+	* src/mb/hd-comp-mgr.c:
+
+2009-03-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
 	Background killing.
 	Fixes: NB#100159
 

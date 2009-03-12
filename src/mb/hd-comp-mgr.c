@@ -964,6 +964,12 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                                                  ? HDRM_STATE_TASK_NAV
                                                  : HDRM_STATE_HOME);
 
+                  if (hclient->priv->app)
+                    {
+                      /* Notify HdAppMgr that the application has been closed. */
+                      hd_app_mgr_closed (hclient->priv->app);
+                    }
+
                 }
 	      else if (app->leader == app && app->followers)
 	        {
