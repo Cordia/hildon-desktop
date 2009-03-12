@@ -1,3 +1,20 @@
+2009-03-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Background killing.
+	Fixes: NB#100159
+
+	* src/home/hd-home.c: Replaced call to hd_comp_mgr_app_from_xwindow to
+	hd_comp_mgr_client_get_app.
+	* src/home/hd-switcher.c: Remove the previous actor when a new one is
+	waking up.
+	* src/launcher/hd-app-mgr.c: Many changes for app hibernation.
+	* src/launcher/hd-app-mgr.h:
+	* src/launcher/hd-launcher-app.h: Removed hd_comp_mgr_app_from_xwindow.
+	* src/launcher/hd-launcher.c: Used the new unified hd_app_mgr_launch
+	instead of hd_app_mgr_relaunch.
+	* src/mb/hd-comp-mgr.c: Many, many hacks to make hibernation work.
+	* src/mb/hd-comp-mgr.h:
+
 2009-03-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-transition.c: Replaced call to canberra (for sound)

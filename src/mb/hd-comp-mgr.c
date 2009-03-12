@@ -91,6 +91,8 @@ struct HdCompMgrPrivate
   MBWindowManagerClient *status_area_client;
   MBWindowManagerClient *status_menu_client;
 
+  HdCompMgrClient       *current_hclient;
+
   /* Clients who need to block the Tasksk button. */
   GHashTable            *tasks_button_blockers;
 
@@ -107,7 +109,6 @@ struct HdCompMgrClientPrivate
   HdLauncherApp *app;
 
   guint                 hibernation_key;
-  gboolean              hibernating   : 1;
   gboolean              can_hibernate : 1;
 
   /*
@@ -120,6 +121,9 @@ struct HdCompMgrClientPrivate
   gint                  portrait_supported;
   gboolean              portrait_requested;
 };
+
+HdLauncherApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
+                                               HdCompMgr *hmgr);
 
 static MBWMCompMgrClient *
 hd_comp_mgr_client_new (MBWindowManagerClient * client)
@@ -176,12 +180,87 @@ hd_comp_mgr_client_process_hibernation_prop (HdCompMgrClient * hc)
     }
 
   if (hibernable)
-    priv->can_hibernate = TRUE;
+      priv->can_hibernate = TRUE;
   else
     priv->can_hibernate = FALSE;
 
   if (hibernable)
     XFree (hibernable);
+}
+
+HdLauncherApp *
+hd_comp_mgr_client_get_app_key (HdCompMgrClient *client, HdCompMgr *hmgr)
+{
+  MBWindowManagerClient *wm_client;
+  MBWindowManager       *wm;
+  XClassHint             class_hint;
+  Status                 status = 0;
+  HdLauncherApp          *app = NULL;
+  HdCompMgrClientPrivate *priv = client->priv;
+
+  wm = MB_WM_COMP_MGR (hmgr)->wm;
+  wm_client = MB_WM_COMP_MGR_CLIENT (client)->wm_client;
+
+  memset(&class_hint, 0, sizeof(XClassHint));
+
+  mb_wm_util_trap_x_errors ();
+
+  status = XGetClassHint(wm->xdpy, wm_client->window->xwindow, &class_hint);
+
+  if (mb_wm_util_untrap_x_errors () || !status || !class_hint.res_name)
+    goto out;
+
+  app = hd_app_mgr_match_window (class_hint.res_name,
+                                 class_hint.res_class,
+                                 (GPid)wm_client->window->pid);
+
+  if (app)
+    {
+      /* Calculate an hibernation key from:
+       * - The app name.
+       * - The role, if present.
+       * - The window name.
+       */
+      gchar *role = NULL;
+      gchar *key = NULL;
+      gint level = 0;
+      role = hd_util_get_win_prop_data_and_validate
+                         (wm_client->wmref->xdpy,
+                          wm_client->window->xwindow,
+                          hmgr->priv->atoms[HD_ATOM_WM_WINDOW_ROLE],
+                          XA_STRING,
+                          8,
+                          0,
+                          NULL);
+
+      if (MB_WM_CLIENT_CLIENT_TYPE (wm_client) == MBWMClientTypeApp)
+        {
+          HdApp *hdapp = HD_APP (wm_client);
+          level = hdapp->stack_index;
+        }
+
+      key = g_strdup_printf ("%s/%s/%s/%d",
+              hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)),
+              class_hint.res_class ? class_hint.res_class : "",
+              role ? role : "",
+              level);
+      g_debug ("%s: app %s, window key: %s\n", __FUNCTION__,
+                hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)),
+                key);
+      priv->hibernation_key = g_str_hash (key);
+      if (role)
+        XFree (role);
+      g_free (key);
+    }
+
+ out:
+  if (class_hint.res_class)
+    XFree(class_hint.res_class);
+
+  if (class_hint.res_name)
+    XFree(class_hint.res_name);
+
+  return app;
 }
 
 static int
@@ -198,12 +277,11 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
 
   priv = client->priv = g_new0 (HdCompMgrClientPrivate, 1);
 
-  app = hd_comp_mgr_app_from_xwindow (hmgr, wm_client->window->xwindow);
+  app = hd_comp_mgr_client_get_app_key (client, hmgr);
   if (app)
     {
       priv->app = g_object_ref (app);
       hd_comp_mgr_client_process_hibernation_prop (client);
-      priv->hibernation_key = (guint)wm_client;
     }
 
   /* Set portrait_* initially. */
@@ -282,7 +360,18 @@ hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient)
 {
   HdCompMgrClientPrivate * priv = hclient->priv;
 
-  return priv->hibernating;
+  if (priv->app)
+    return (hd_launcher_app_get_state (priv->app) == HD_APP_STATE_HIBERNATING);
+
+  return FALSE;
+}
+
+gboolean
+hd_comp_mgr_client_can_hibernate (HdCompMgrClient *hclient)
+{
+  HdCompMgrClientPrivate * priv = hclient->priv;
+
+  return priv->can_hibernate;
 }
 
 ClutterActor *
@@ -293,6 +382,13 @@ hd_comp_mgr_client_get_actor (HdCompMgrClient *hclient)
   if (cclient)
     return mb_wm_comp_mgr_clutter_client_get_actor (cclient);
   return NULL;
+}
+
+HdLauncherApp *
+hd_comp_mgr_client_get_app (HdCompMgrClient *hclient)
+{
+  g_return_val_if_fail(hclient, NULL);
+  return hclient->priv->app;
 }
 
 const gchar *
@@ -318,6 +414,7 @@ static void hd_comp_mgr_turn_on (MBWMCompMgr *mgr);
 static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c, MBWMCompMgrClientEvent event);
 static void hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor);
 static Bool hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr);
+static HdCompMgrClient *hd_comp_mgr_get_current_client (HdCompMgr *hmgr);
 
 int
 hd_comp_mgr_class_type ()
@@ -463,14 +560,22 @@ hd_comp_mgr_destroy (MBWMObject *obj)
                                      priv->property_changed_cb_id);
 }
 
+static HdCompMgrClient *
+hd_comp_mgr_get_current_client (HdCompMgr *hmgr)
+{
+  HdCompMgrPrivate * priv = hmgr->priv;
+
+  return priv->current_hclient;
+}
+
 /* Called on #PropertyNotify to handle changes to
  * _HILDON_PORTRAIT_MODE_SUPPORT and _HILDON_PORTRAIT_MODE_REQUEST. */
 Bool
 hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
 {
-  static gint32 no[] = { 0 }, idontcare[] = { -1 };
-  Atom pok, prq;
-  gint32 *value;
+  static guint32 no[] = { 0 }, idontcare[] = { -1 };
+  Atom pok, prq, killable, able_to_hibernate;
+  guint32 *value;
   MBWindowManager *wm;
   HdCompMgrClient *cc;
   MBWindowManagerClient *c;
@@ -479,12 +584,49 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
 
   pok = hd_comp_mgr_get_atom (hmgr, HD_ATOM_WM_PORTRAIT_OK);
   prq = hd_comp_mgr_get_atom (hmgr, HD_ATOM_WM_PORTRAIT_REQUESTED);
+  killable = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APP_KILLABLE);
+  able_to_hibernate = hd_comp_mgr_get_atom (hmgr,
+                          HD_ATOM_HILDON_ABLE_TO_HIBERNATE);
+
+  wm = MB_WM_COMP_MGR (hmgr)->wm;
+
+  /* Check for changes to the hibernable state. */
+  if (event->atom == killable ||
+      event->atom == able_to_hibernate)
+    {
+      HdLauncherApp *app, *current_app;
+      c = mb_wm_managed_client_from_xwindow (wm, event->window);
+      if (!c || !c->cm_client)
+        return False;
+      cc = HD_COMP_MGR_CLIENT (c->cm_client);
+      if (event->state == PropertyNewValue)
+        cc->priv->can_hibernate = TRUE;
+      else
+        cc->priv->can_hibernate = FALSE;
+
+      /* Change the hibernable state of the app only if it's not the
+       * current app.
+       */
+      app = cc->priv->app;
+      if (!app)
+        return False;
+      current_app =
+        hd_comp_mgr_client_get_app (hd_comp_mgr_get_current_client (hmgr));
+      if (app == current_app)
+        return False;
+
+      if (event->state == PropertyNewValue)
+        hd_app_mgr_hibernatable(app, TRUE);
+      else
+        hd_app_mgr_hibernatable (app, FALSE);
+
+      return False;
+    }
 
   if (event->atom != pok && event->atom != prq)
     return True;
 
   /* Read the new property value. */
-  wm = MB_WM_COMP_MGR (hmgr)->wm;
   value = event->state == PropertyNewValue
     ? hd_util_get_win_prop_data_and_validate (wm->xdpy, event->window,
                                               event->atom, XA_CARDINAL,
@@ -731,12 +873,16 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   /*
    * If the actor is an application, remove it also to the switcher
    */
-  if (hclient->priv->hibernating)
+  if (hclient->priv->app &&
+      (hd_launcher_app_get_state (hclient->priv->app) == HD_APP_STATE_HIBERNATING) &&
+      !g_hash_table_lookup (priv->hibernating_apps, & hclient->priv->hibernation_key))
     {
       /*
        * We want to hold onto the CM client object, so we can continue using
        * the actor.
        */
+      mb_wm_comp_mgr_clutter_client_set_flags (cclient,
+                                               MBWMCompMgrClutterClientDontUpdate);
       mb_wm_object_ref (MB_WM_OBJECT (cclient));
 
       g_hash_table_insert (priv->hibernating_apps,
@@ -869,6 +1015,10 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           g_object_unref (applet);
         }
     }
+
+  if (priv->current_hclient == hclient)
+    priv->current_hclient = NULL;
+
   /* Dialogs and Notes (including notifications) have already been dealt
    * with in hd_comp_mgr_effect().  This is because by this time we don't
    * have information about transiency. */
@@ -1410,132 +1560,127 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   if (hclient_h)
     {
-      ClutterActor             * actor_h;
-      MBWMCompMgrClutterClient * cclient_h;
-
+      MBWMCompMgrClutterClient *cclient_h;
+      ClutterActor *actor_h;
       cclient_h = MB_WM_COMP_MGR_CLUTTER_CLIENT (hclient_h);
-
       actor_h = mb_wm_comp_mgr_clutter_client_get_actor (cclient_h);
-
       hd_switcher_replace_window_actor (priv->switcher_group,
-					actor_h, actor);
-
+                                        actor_h, actor);
+      mb_wm_object_unref (MB_WM_OBJECT (hclient_h));
       g_hash_table_remove (priv->hibernating_apps, &hkey);
     }
+
+  int topmost;
+  HdApp *app = HD_APP (c), *to_replace = NULL, *add_to_tn = NULL;
+
+  hd_comp_mgr_handle_stackable (c, &to_replace, &add_to_tn);
+
+  if (app->stack_index < 0 /* non-stackable */
+      /* leader without followers: */
+      || (!app->leader->followers && app->leader == app) ||
+      /* or a secondary window on top of the stack: */
+      app == g_list_last (app->leader->followers)->data)
+    topmost = 1;
   else
+    topmost = 0;
+
+  /* handle the restart case when the stack does not have any window
+   * in the switcher yet */
+  if (app->stack_index >= 0 && !topmost)
     {
-      int topmost;
-      HdApp *app = HD_APP (c), *to_replace = NULL, *add_to_tn = NULL;
+      HdTaskNavigator *tasknav;
+      MBWMCompMgrClutterClient *cclient;
+      gboolean in_tasknav;
 
-      hd_comp_mgr_handle_stackable (c, &to_replace, &add_to_tn);
-
-      if (app->stack_index < 0 /* non-stackable */
-          /* leader without followers: */
-          || (!app->leader->followers && app->leader == app) ||
-	  /* or a secondary window on top of the stack: */
-	  app == g_list_last (app->leader->followers)->data)
-        topmost = 1;
+      tasknav = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (
+                                   priv->switcher_group));
+      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+      if (hd_task_navigator_has_window (tasknav,
+          mb_wm_comp_mgr_clutter_client_get_actor (cclient)))
+        in_tasknav = TRUE;
       else
-        topmost = 0;
+        in_tasknav = FALSE;
 
-      /* handle the restart case when the stack does not have any window
-       * in the switcher yet */
-	if (app->stack_index >= 0 && !topmost)
-	  {
-	    HdTaskNavigator *tasknav;
-            MBWMCompMgrClutterClient *cclient;
-	    gboolean in_tasknav;
+      if (!app->leader->followers && !in_tasknav)
+        /* lonely leader */
+        topmost = TRUE;
+      else if (app->leader->followers && !in_tasknav)
+        {
+          GList *l;
+          gboolean child_found = FALSE;
 
-	    tasknav = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (
-				         priv->switcher_group));
-	    cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
-	    if (hd_task_navigator_has_window (tasknav,
-		mb_wm_comp_mgr_clutter_client_get_actor (cclient)))
-	      in_tasknav = TRUE;
-	    else
-	      in_tasknav = FALSE;
+          for (l = app->leader->followers; l; l = l->next)
+            {
+              cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (
+                             MB_WM_CLIENT (l->data)->cm_client);
+              if (hd_task_navigator_has_window (tasknav,
+                  mb_wm_comp_mgr_clutter_client_get_actor (cclient)))
+                {
+                  child_found = TRUE;
+                  break;
+                }
+            }
 
-	    if (!app->leader->followers && !in_tasknav)
-	      /* lonely leader */
-	      topmost = TRUE;
-	    else if (app->leader->followers && !in_tasknav)
-	      {
-                GList *l;
-		gboolean child_found = FALSE;
+          if (!child_found)
+            topmost = TRUE;
+        }
+    }
 
-                for (l = app->leader->followers; l; l = l->next)
-                  {
-                    cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (
-			           MB_WM_CLIENT (l->data)->cm_client);
-		    if (hd_task_navigator_has_window (tasknav,
-                        mb_wm_comp_mgr_clutter_client_get_actor (cclient)))
-		      {
-		        child_found = TRUE;
-			break;
-		      }
-                  }
+  if (to_replace && topmost)
+    {
+      ClutterActor *old_actor;
+      old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
+                  MB_WM_COMP_MGR_CLUTTER_CLIENT (
+                    MB_WM_CLIENT (to_replace)->cm_client));
+      if (old_actor != actor)
+      {
+        g_debug ("%s: REPLACE ACTOR %p WITH %p", __func__, old_actor,
+               actor);
+        hd_switcher_replace_window_actor (priv->switcher_group,
+                                        old_actor, actor);
+        clutter_actor_hide (old_actor);
+        /* and make sure we're in app mode and not transitioning as
+         * we'll want to show this new app right away*/
+        if (!STATE_IS_APP(hd_render_manager_get_state()))
+          hd_render_manager_set_state(HDRM_STATE_APP);
+        hd_render_manager_stop_transition();
+        /* This forces the decors to be redone, taking into account the
+         * stack index. */
+        mb_wm_client_theme_change (c);
+      }
+    }
+  else if (add_to_tn)
+    {
+      g_debug ("%s: ADD ACTOR %p", __func__, actor);
+      hd_switcher_add_window_actor (priv->switcher_group, actor);
+      /* and make sure we're in app mode and not transitioning as
+       * we'll want to show this new app right away*/
+      if (!STATE_IS_APP(hd_render_manager_get_state()))
+        hd_render_manager_set_state(HDRM_STATE_APP);
+      hd_render_manager_stop_transition();
+      /* This forces the decors to be redone, taking into account the
+       * stack index. */
+      mb_wm_client_theme_change (c);
+    }
 
-		if (!child_found)
-	          topmost = TRUE;
-	      }
-	  }
+  if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar)
+      && !to_replace && !add_to_tn && topmost)
+    {
+            /*
+      printf("non-stackable, stackable leader, "
+             "or secondary acting as leader\n");
+             */
+      g_debug ("%s: ADD CLUTTER ACTOR %p", __func__, actor);
+      hd_switcher_add_window_actor (priv->switcher_group, actor);
+      /* and make sure we're in app mode and not transitioning as
+       * we'll want to show this new app right away*/
+      if (!STATE_IS_APP(hd_render_manager_get_state()))
+        hd_render_manager_set_state(HDRM_STATE_APP);
+      hd_render_manager_stop_transition();
 
-	if (to_replace && topmost)
-	  {
-            ClutterActor *old_actor;
-            old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
-			MB_WM_COMP_MGR_CLUTTER_CLIENT (
-			  MB_WM_CLIENT (to_replace)->cm_client));
-	    if (old_actor != actor)
-	    {
-	      g_debug ("%s: REPLACE ACTOR %p WITH %p", __func__, old_actor,
-	             actor);
-              hd_switcher_replace_window_actor (priv->switcher_group,
-                                              old_actor, actor);
-              clutter_actor_hide (old_actor);
-              /* and make sure we're in app mode and not transitioning as
-               * we'll want to show this new app right away*/
-              if (!STATE_IS_APP(hd_render_manager_get_state()))
-                hd_render_manager_set_state(HDRM_STATE_APP);
-              hd_render_manager_stop_transition();
-              /* This forces the decors to be redone, taking into account the
-               * stack index. */
-              mb_wm_client_theme_change (c);
-	    }
-	  }
-	else if (add_to_tn)
-	  {
-	    g_debug ("%s: ADD ACTOR %p", __func__, actor);
-            hd_switcher_add_window_actor (priv->switcher_group, actor);
-            /* and make sure we're in app mode and not transitioning as
-             * we'll want to show this new app right away*/
-            if (!STATE_IS_APP(hd_render_manager_get_state()))
-              hd_render_manager_set_state(HDRM_STATE_APP);
-            hd_render_manager_stop_transition();
-            /* This forces the decors to be redone, taking into account the
-             * stack index. */
-            mb_wm_client_theme_change (c);
-	  }
-
-        if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar)
-	    && !to_replace && !add_to_tn && topmost)
-          {
-		  /*
-	    printf("non-stackable, stackable leader, "
-	           "or secondary acting as leader\n");
-		   */
-	    g_debug ("%s: ADD CLUTTER ACTOR %p", __func__, actor);
-            hd_switcher_add_window_actor (priv->switcher_group, actor);
-            /* and make sure we're in app mode and not transitioning as
-             * we'll want to show this new app right away*/
-            if (!STATE_IS_APP(hd_render_manager_get_state()))
-              hd_render_manager_set_state(HDRM_STATE_APP);
-            hd_render_manager_stop_transition();
-
-            /* This forces the decors to be redone, taking into account the
-             * stack index (if any). */
-            mb_wm_client_theme_change (c);
-          }
+      /* This forces the decors to be redone, taking into account the
+       * stack index (if any). */
+      mb_wm_client_theme_change (c);
     }
 }
 
@@ -1715,8 +1860,37 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
       /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed. */
       if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop)
         {
-          MBWindowManagerClient *current_client;
-          current_client = hd_wm_determine_current_app (mgr->wm);
+          MBWindowManagerClient *current_client =
+                                  hd_wm_determine_current_app (mgr->wm);
+
+          HdCompMgrClient *new_current_hclient =
+            HD_COMP_MGR_CLIENT (current_client->cm_client);
+          if (new_current_hclient != priv->current_hclient)
+            {
+              HdLauncherApp *old_current_app;
+              HdLauncherApp *new_current_app;
+
+              /* Switch the hibernatable state for the new current client. */
+              if (priv->current_hclient &&
+                  hd_comp_mgr_client_can_hibernate (priv->current_hclient))
+                {
+                  old_current_app =
+                    hd_comp_mgr_client_get_app (priv->current_hclient);
+                  if (old_current_app)
+                    hd_app_mgr_hibernatable (old_current_app, TRUE);
+                }
+
+              if (new_current_hclient)
+                {
+                  new_current_app =
+                    hd_comp_mgr_client_get_app (new_current_hclient);
+                  if (new_current_app)
+                    hd_app_mgr_hibernatable (new_current_app, FALSE);
+                }
+
+              priv->current_hclient = new_current_hclient;
+            }
+
           hd_wm_current_app_is (mgr->wm, current_client->window->xwindow);
           /* If we have an app as the current client and we're not in
            * app mode - enter app mode. */
@@ -1724,6 +1898,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
                                          MBWMClientTypeDesktop) &&
               !STATE_IS_APP(hd_render_manager_get_state()))
             hd_render_manager_set_state(HDRM_STATE_APP);
+
         }
 
       hd_render_manager_restack();
@@ -1782,7 +1957,7 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
   HdCompMgrClient       * h_client = HD_COMP_MGR_CLIENT (cc);
 
   g_return_if_fail (cc != NULL);
-  if (h_client->priv->hibernating)
+  if (hd_comp_mgr_client_is_hibernating(h_client))
     {
       ClutterActor * actor;
 
@@ -1808,40 +1983,18 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
       else /* Either primary or a secondary who's lost its leader. */
         mb_wm_client_deliver_delete (c);
     }
+
+  if (h_client->priv->app)
+    {
+      /* Notify HdAppMgr that the application has been closed. */
+      hd_app_mgr_closed (h_client->priv->app);
+    }
 }
 
 void
 hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
 {
   hd_comp_mgr_close_app (hmgr, cc, FALSE);
-}
-
-/* TODO: Move hibernation into HdAppMgr. */
-void
-hd_comp_mgr_hibernate_client (HdCompMgr *hmgr,
-			      MBWMCompMgrClutterClient *cc,
-			      gboolean force)
-{
-  MBWMCompMgrClient * c  = MB_WM_COMP_MGR_CLIENT (cc);
-  HdCompMgrClient   * hc = HD_COMP_MGR_CLIENT (cc);
-
-  g_return_if_fail(c->wm_client && c->wm_client->window);
-  if (!force && !(hc->priv->can_hibernate))
-    return;
-
-  mb_wm_comp_mgr_clutter_client_set_flags (cc,
-					   MBWMCompMgrClutterClientDontUpdate);
-
-  if (!force)
-    {
-      hc->priv->hibernating = TRUE;
-      if (hc->priv->app)
-        hd_launcher_app_set_state (hc->priv->app, HD_APP_STATE_HIBERNATING);
-    }
-  else
-    /* Not really a hibernation but ordinary killing. */;
-
-  kill(c->wm_client->window->pid, SIGTERM);
 }
 
 void
@@ -1913,38 +2066,6 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
     }
 
   return any_requests;
-}
-
-HdLauncherApp *
-hd_comp_mgr_app_from_xwindow (HdCompMgr *hmgr, Window xid)
-{
-  MBWindowManager  *wm;
-  XClassHint        class_hint;
-  Status            status = 0;
-  HdLauncherApp    *app = NULL;
-
-  wm = MB_WM_COMP_MGR (hmgr)->wm;
-
-  memset(&class_hint, 0, sizeof(XClassHint));
-
-  mb_wm_util_trap_x_errors ();
-
-  status = XGetClassHint(wm->xdpy, xid, &class_hint);
-
-  if (mb_wm_util_untrap_x_errors () || !status || !class_hint.res_name)
-    goto out;
-
-  app = hd_app_mgr_match_window (class_hint.res_name,
-                                 class_hint.res_class);
-
- out:
-  if (class_hint.res_class)
-    XFree(class_hint.res_class);
-
-  if (class_hint.res_name)
-    XFree(class_hint.res_name);
-
-  return app;
 }
 
 Atom

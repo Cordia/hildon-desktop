@@ -366,8 +366,6 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
     {
       g_signal_emit (hd_launcher_get (), launcher_signals[APP_RELAUNCHED],
                      0, data, NULL);
-      hd_app_mgr_relaunch (app);
-      return;
     }
   /* If there's no launch transition, do the 'fall away' transition.
    */

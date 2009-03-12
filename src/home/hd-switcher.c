@@ -486,6 +486,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       g_debug("hd_switcher_zoom_in_complete: calling "
               "hd_comp_mgr_wakeup_client comp_mgr=%p hclient=%p\n",
               priv->comp_mgr, hclient);
+      hd_switcher_remove_window_actor (switcher, actor);
       hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
     }
 

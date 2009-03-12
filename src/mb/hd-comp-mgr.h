@@ -30,6 +30,7 @@
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 
 #include "hd-atoms.h"
+#include "launcher/hd-launcher-app.h"
 
 G_BEGIN_DECLS
 
@@ -76,8 +77,11 @@ struct HdCompMgrClientClass
 int hd_comp_mgr_client_class_type (void);
 
 gboolean hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient);
-ClutterActor *hd_comp_mgr_client_get_actor (HdCompMgrClient *hclient);
-const gchar  *hd_comp_mgr_client_get_app_local_name (HdCompMgrClient *hclient);
+gboolean hd_comp_mgr_client_can_hibernate (HdCompMgrClient *hclient);
+
+ClutterActor  *hd_comp_mgr_client_get_actor (HdCompMgrClient *hclient);
+HdLauncherApp *hd_comp_mgr_client_get_app (HdCompMgrClient *hclient);
+const gchar   *hd_comp_mgr_client_get_app_local_name (HdCompMgrClient *hclient);
 
 typedef struct HdCompMgrClass   HdCompMgrClass;
 typedef struct HdCompMgr        HdCompMgr;

@@ -170,7 +170,9 @@ static void hd_app_mgr_dispose (GObject *gobject);
 static void hd_app_mgr_populate_tree_finished (HdLauncherTree *tree,
                                                gpointer data);
 
-gboolean hd_app_mgr_prestart (HdLauncherApp *app);
+gboolean hd_app_mgr_start     (HdLauncherApp *app);
+gboolean hd_app_mgr_prestart  (HdLauncherApp *app);
+gboolean hd_app_mgr_hibernate (HdLauncherApp *app);
 static gboolean hd_app_mgr_service_top (const gchar *service,
                                         const gchar *param);
 static gboolean  hd_app_mgr_execute (const gchar *exec, GPid *pid);
@@ -179,11 +181,9 @@ static void hd_app_mgr_add_to_queue (HdAppMgrQueue queue,
                                      HdLauncherApp *app);
 static void hd_app_mgr_remove_from_queue (HdAppMgrQueue queue,
                                           HdLauncherApp *app);
-#if 0
 static void hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
                                    HdAppMgrQueue queue_to,
                                    HdLauncherApp *app);
-#endif
 
 static size_t   hd_app_mgr_read_lowmem (const gchar *filename);
 static HdAppMgrPrestartMode
@@ -461,8 +461,6 @@ hd_app_mgr_remove_from_queue (HdAppMgrQueue queue, HdLauncherApp *app)
     }
 }
 
-/* NOTE: This function is not yet used. */
-#if 0
 static void
 hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
                        HdAppMgrQueue queue_to,
@@ -476,8 +474,8 @@ hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
 
   if (link)
     {
-      g_queue_delete_link (priv->queues[queue], link);
-      g_queue_insert_sorted (priv->queues[queue],
+      g_queue_delete_link (priv->queues[queue_from], link);
+      g_queue_insert_sorted (priv->queues[queue_to],
                              app,
                              _hd_app_mgr_compare_app_priority,
                              NULL);
@@ -486,37 +484,71 @@ hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
   else
     hd_app_mgr_add_to_queue (queue_to, app);
 }
-#endif
 
-void hd_app_mgr_prestartable (HdLauncherApp *app)
+void hd_app_mgr_prestartable (HdLauncherApp *app, gboolean prestartable)
 {
-  hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
+  if (prestartable)
+    hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
+  else
+    hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
 }
 
-void hd_app_mgr_not_prestartable (HdLauncherApp *app)
+void hd_app_mgr_hibernatable (HdLauncherApp *app, gboolean hibernatable)
 {
-  hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
-}
+  /* We can only hibernate apps that have a dbus service.
+   */
+  if (!hd_launcher_app_get_service (app))
+    return;
 
-void hd_app_mgr_hibernatable (HdLauncherApp *app)
-{
-  hd_app_mgr_add_to_queue (QUEUE_HIBERNATABLE, app);
-}
+  g_debug ("%s: Making app %s %s hibernatable", __FUNCTION__,
+      hd_launcher_app_get_service (app),
+      hibernatable ? "really" : "not");
 
-void hd_app_mgr_not_hibernatable (HdLauncherApp *app)
-{
-  hd_app_mgr_remove_from_queue (QUEUE_HIBERNATABLE, app);
+  if (hibernatable)
+    hd_app_mgr_add_to_queue (QUEUE_HIBERNATABLE, app);
+  else
+    hd_app_mgr_remove_from_queue (QUEUE_HIBERNATABLE, app);
 }
 
 /* Application management */
 
+/* This function either:
+ * - Relaunches an app if already running.
+ * - Wakes up an app if it's hibernating.
+ * - Starts the app if not running.
+ */
 gboolean
 hd_app_mgr_launch (HdLauncherApp *app)
 {
   gboolean result = FALSE;
+  HdLauncherAppState state = hd_launcher_app_get_state (app);
+
+  switch (state)
+  {
+    case HD_APP_STATE_INACTIVE:
+    case HD_APP_STATE_LOADING:
+    case HD_APP_STATE_PRESTARTED:
+      result = hd_app_mgr_start (app);
+      break;
+    case HD_APP_STATE_SHOWN:
+      result = hd_app_mgr_relaunch (app);
+      break;
+    case HD_APP_STATE_HIBERNATING:
+      result = hd_app_mgr_wakeup (app);
+      break;
+    default:
+      result = FALSE;
+  }
+
+  return result;
+}
+
+gboolean
+hd_app_mgr_start (HdLauncherApp *app)
+{
+  gboolean result = FALSE;
   const gchar *service = hd_launcher_app_get_service (app);
   const gchar *exec;
-  GPid pid = 0;
 
   if (!hd_app_mgr_can_launch ())
     {
@@ -525,7 +557,7 @@ hd_app_mgr_launch (HdLauncherApp *app)
        * kill some apps as the old TN used to do; check the current spec.
        */
       g_debug ("%s: Not enough memory to start application %s.",
-               __FUNCTION__, service);
+               __FUNCTION__, hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
       return FALSE;
     }
 
@@ -542,7 +574,7 @@ hd_app_mgr_launch (HdLauncherApp *app)
           /* As the app has been manually launched, stop considering it
            * for prestarting.
            */
-          hd_app_mgr_not_prestartable (app);
+          hd_app_mgr_prestartable (app, FALSE);
         }
     }
   else
@@ -550,13 +582,15 @@ hd_app_mgr_launch (HdLauncherApp *app)
       exec = hd_launcher_app_get_exec (app);
       if (exec)
         {
+          GPid pid = 0;
           result = hd_app_mgr_execute (exec, &pid);
+          if (result)
+            hd_launcher_app_set_pid (app, pid);
         }
     }
 
   if (result)
     {
-      hd_launcher_app_set_pid (app, pid);
       hd_launcher_app_set_state (app, HD_APP_STATE_LOADING);
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LAUNCHED],
           0, app, NULL);
@@ -600,12 +634,20 @@ hd_app_mgr_kill (HdLauncherApp *app)
   if (kill (pid, SIGTERM) != 0)
     return FALSE;
 
+  hd_app_mgr_closed (app);
+  return TRUE;
+}
+
+void
+hd_app_mgr_closed (HdLauncherApp *app)
+{
   /* Remove from anywhere we keep executing apps. */
   hd_app_mgr_remove_from_queue (QUEUE_PRESTARTED, app);
+  hd_app_mgr_remove_from_queue (QUEUE_HIBERNATED, app);
   hd_app_mgr_remove_from_queue (QUEUE_HIBERNATABLE, app);
 
+  hd_launcher_app_set_pid (app, 0);
   hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
-  return TRUE;
 }
 
 static void
@@ -615,7 +657,7 @@ _hd_app_mgr_collect_prestarted (HdLauncherItem *item, HdAppMgrPrivate *priv)
     {
       HdLauncherApp *app = HD_LAUNCHER_APP (item);
       if (hd_launcher_app_get_prestart_mode (app) == HD_APP_PRESTART_ALWAYS)
-        hd_app_mgr_prestartable (app);
+        hd_app_mgr_prestartable (app, TRUE);
     }
 }
 
@@ -651,7 +693,8 @@ _hd_app_mgr_prestart_cb (DBusGProxy *proxy, guint result,
           hd_launcher_app_get_service (app));
       hd_launcher_app_set_state (app, HD_APP_STATE_PRESTARTED);
       hd_app_mgr_add_to_queue (QUEUE_PRESTARTED, app);
-      hd_app_mgr_request_app_pid (app);
+      if (!hd_launcher_app_get_pid (app))
+        hd_app_mgr_request_app_pid (app);
     }
 }
 
@@ -679,6 +722,31 @@ hd_app_mgr_prestart (HdLauncherApp *app)
       _hd_app_mgr_prestart_cb, (gpointer)app);
 
   /* We always return true because we don't know the result at this point. */
+  return TRUE;
+}
+
+gboolean
+hd_app_mgr_hibernate (HdLauncherApp *app)
+{
+  const gchar *service = hd_launcher_app_get_service (app);
+
+  if (!service)
+    /* Can't hibernate a non-dbus app. */
+    return FALSE;
+
+  g_debug ("%s: service %s\n", __FUNCTION__, service);
+  if (hd_app_mgr_kill (app))
+    {
+      hd_launcher_app_set_state (app, HD_APP_STATE_HIBERNATING);
+      hd_app_mgr_move_queue (QUEUE_HIBERNATABLE, QUEUE_HIBERNATED, app);
+    }
+  else
+    {
+      /* We couldn't kill it, so just take it out of the hibernatable queue. */
+      hd_app_mgr_hibernatable (app, FALSE);
+      return FALSE;
+    }
+
   return TRUE;
 }
 
@@ -1001,19 +1069,36 @@ hd_app_mgr_state_check_loop (gpointer data)
     }
 
   /* If we're running low, hibernate an app. */
-  if (priv->bg_killing)
+  else if (priv->bg_killing)
     {
       /* TODO: Hibernate an app and loop. */
-      loop = FALSE;
+      if (!g_queue_is_empty (priv->queues[QUEUE_HIBERNATABLE]))
+        {
+          HdLauncherApp *app = g_queue_peek_tail (priv->queues[QUEUE_HIBERNATABLE]);
+          hd_app_mgr_hibernate (app);
+          if (!g_queue_is_empty (priv->queues[QUEUE_HIBERNATABLE]))
+            loop = TRUE;
+        }
     }
-
+  /* If there's enough memory and hibernated apps, try to awake them.
+   * TODO: Add some way to avoid waking-up apps from being shown immediately
+   * to the user as if launched anew.
+  else if (!g_queue_is_empty (priv->queues[QUEUE_HIBERNATED]) &&
+           hd_app_mgr_can_launch ())
+    {
+      HdLauncherApp *app = g_queue_peek_head (priv->queues[QUEUE_HIBERNATED]);
+      hd_app_mgr_wakeup (app);
+      if (!g_queue_is_empty (priv->queues[QUEUE_HIBERNATED]))
+        loop = TRUE;
+    }
+   */
   /* If we have enough memory and there are apps waiting to be prestarted,
    * do that.
    */
-  if (/* TODO: Add a timeout for waiting on the init_done signal. */
-      /* priv->init_done && */
+  else if (/* TODO: Add a timeout for waiting on the init_done signal. */
+      /* priv->init_done &&
       !priv->lowmem &&
-      !priv->bg_killing &&
+      !priv->bg_killing && */
       !priv->launcher_shown &&
       !g_queue_is_empty (priv->queues[QUEUE_PRESTARTABLE]) &&
       hd_app_mgr_can_prestart ())
@@ -1076,7 +1161,7 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
                   /* The app must have been hibernated or closed. */
                   if (hd_launcher_app_get_state (app) !=
                       HD_APP_STATE_HIBERNATING)
-                    hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
+                    hd_app_mgr_closed (app);
 
                   /* Add to prestartable and check state if always-on. */
                   if (hd_launcher_app_get_prestart_mode (app) ==
@@ -1112,10 +1197,6 @@ hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id)
     return FALSE;
 
   app = HD_LAUNCHER_APP (item);
-
-  /* TODO: Deal with hibernated apps. */
-  if (hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN)
-    return hd_app_mgr_relaunch (app);
 
   return hd_app_mgr_launch (app);
 }
@@ -1195,7 +1276,8 @@ hd_app_mgr_request_app_pid (HdLauncherApp *app)
 
 HdLauncherApp *
 hd_app_mgr_match_window (const char *res_name,
-                         const char *res_class)
+                         const char *res_class,
+                         GPid pid)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   GList *apps = hd_launcher_tree_get_items (priv->tree, NULL);
@@ -1252,6 +1334,10 @@ hd_app_mgr_match_window (const char *res_name,
   if (result)
     {
       hd_launcher_app_set_state (result, HD_APP_STATE_SHOWN);
+
+      /* If we didn't have a pid, get the one from the window. */
+      if (!hd_launcher_app_get_pid (result))
+        hd_launcher_app_set_pid (result, pid);
 
       /* Signal that the app has appeared.
        * TODO: I'd prefer to signal this when the window is mapped,
