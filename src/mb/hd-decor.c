@@ -227,11 +227,9 @@ hd_decor_create_actors(HdDecor *decor)
         ClutterColor white = { 0xFF, 0xFF, 0xFF, 0xFF };
         char font_name[512];
         guint w = 0, h = 0;
-	char *escaped_title;
 
         bar_title = CLUTTER_LABEL(clutter_label_new());
         clutter_label_set_color(bar_title, &white);
-	
         clutter_label_set_use_markup(bar_title, TRUE);
 
         decor->title_actor = CLUTTER_ACTOR(bar_title);
@@ -244,10 +242,7 @@ hd_decor_create_actors(HdDecor *decor)
                   d->font_size ? d->font_size : 18,
                   d->font_units == MBWMXmlFontUnitsPoints ? "" : "px");
         clutter_label_set_font_name(bar_title, font_name);
-
-	escaped_title = g_markup_escape_text (title, -1);
         clutter_label_set_text(bar_title, title);
-	g_free (escaped_title);
 
         clutter_actor_get_size(CLUTTER_ACTOR(bar_title), &w, &h);
         /* if it's too big, make sure we crop it */

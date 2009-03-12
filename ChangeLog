@@ -1,3 +1,16 @@
+2009-03-12   Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Revert Thomas' patch, we need to make it so that _NET_WM_NAME is free
+	from markup and markup will be in new window property:
+
+	Escape titles before we display them so that you can
+	use <, >, and & within them.  For some reason, turning
+	off markup in titles doesn't do this, so we have to
+	escape them explicitly.
+
+	* src/home/hd-title-bar.c:
+	* src/mb/hd-decor.c:
+
 2009-03-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-render-manager.c
