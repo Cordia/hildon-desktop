@@ -1,3 +1,16 @@
+2009-03-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fix for app relaunch transition.
+
+	* src/launcher/hd-app-mgr.h
+	* src/launcher/hd-app-mgr.c: Split hd_app_mgr_relaunch out into
+	  hd_app_mgr_relaunch_set_top 
+	* src/home/hd-render-manager.h: tidying up
+	* src/home/hd-render-manager.c: added transition-complete signal
+	* src/home/hd-task-navigator.c: add zoom-in-complete signal
+	* src/home/hd-switcher.c: Now sequence app relaunch event to go to
+	  launcher, then zoom in, then send app_top message
+
 2009-03-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Ensure apps go to inactive state when main window gets closed.

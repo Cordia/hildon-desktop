@@ -601,15 +601,27 @@ hd_app_mgr_start (HdLauncherApp *app)
 gboolean
 hd_app_mgr_relaunch (HdLauncherApp *app)
 {
+  /* we have to call hd_app_mgr_service_top when we relaunch an app,
+   * but we can't do it straight away because the change in focus pulls
+   * us out of our transitions. Instead, we get HdSwitcher to call
+   * hd_app_mgr_relaunch_set_top after the task navigator has zoomed in
+   * on the application. */
+
+  g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_RELAUNCHED],
+      0, app, NULL);
+
+  return TRUE;
+}
+
+gboolean
+hd_app_mgr_relaunch_set_top (HdLauncherApp *app)
+{
   gboolean result = TRUE;
   const gchar *service = hd_launcher_app_get_service (app);
 
   if (service)
     {
       result = hd_app_mgr_service_top (service, NULL);
-      if (result)
-        g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_RELAUNCHED],
-            0, app, NULL);
     }
 
   /* If it's a plain old app, nothing to do. */

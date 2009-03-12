@@ -97,7 +97,7 @@ typedef enum
  * won't work in switcher/launcher views. */
 #define STATE_NEED_DESKTOP(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_HOME_EDIT_DLG | HDRM_STATE_LAUNCHER | \
+                    HDRM_STATE_HOME_EDIT_DLG | \
                     HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
 
 #define STATE_NEED_GRAB(s) \

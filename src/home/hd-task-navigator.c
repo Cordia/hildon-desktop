@@ -1548,6 +1548,8 @@ zoom_in_complete (ClutterActor * navigator, ClutterActor * apwin)
 {
   clutter_actor_hide (navigator);
 
+  g_signal_emit_by_name (Navigator, "zoom-in-complete", apwin);
+
 #if 0 /* TODO may not be needed anymore */
   /* To minimize confusion the navigator hides all application windows it
    * knows about when it starts hiding.  Undo it for the one we have zoomed
@@ -2717,6 +2719,12 @@ hd_task_navigator_class_init (HdTaskNavigatorClass * klass)
                 G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
                 0, NULL, NULL, g_cclosure_marshal_VOID__POINTER,
                 G_TYPE_NONE, 1, G_TYPE_POINTER);
+
+  /* When the zoom in transition has finished */
+  g_signal_new ("zoom-in-complete", G_TYPE_FROM_CLASS (klass),
+                  G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
+                  0, NULL, NULL, g_cclosure_marshal_VOID__POINTER,
+                  G_TYPE_NONE, 1, G_TYPE_POINTER);
 }
 
 HdTaskNavigator *

@@ -70,6 +70,13 @@ struct _HdSwitcherPrivate
   guint press_timeout;
 };
 
+/* used for a callback to trigger the relaunch animation */
+typedef struct _HdSwitcherRelaunchAppData {
+  HdSwitcher *switcher;
+  ClutterActor *actor;
+  HdLauncherApp *app;
+} HdSwitcherRelaunchAppData;
+
 static void hd_switcher_class_init (HdSwitcherClass *klass);
 static void hd_switcher_init       (HdSwitcher *self);
 static void hd_switcher_dispose    (GObject *object);
@@ -432,6 +439,44 @@ hd_switcher_launcher_cat_hidden (HdLauncher *launcher,
   hd_render_manager_set_launcher_subview(FALSE);
 }
 
+/* called back after Task Navigator's zoom in transition has finished,
+ * this sets app_top. We can't do this normally when zooming in on an app
+ * because it's specced only for when relaunching. And we can't do it when
+ * we zoom in, because hd-wm pulls us out of the task navigator abruptly */
+static void
+hd_switcher_relaunched_app_callback(HdSwitcherRelaunchAppData *data)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (data->switcher)->priv;
+
+  hd_app_mgr_relaunch_set_top(data->app);
+
+  g_signal_handlers_disconnect_by_func(
+      priv->task_nav,
+      G_CALLBACK(hd_switcher_relaunched_app_callback),
+      data);
+
+  g_free(data);
+}
+
+/* called back after the transition to TASK_NAV has finished, and
+ * this starts the zoom in on the thumbnail */
+static void
+hd_switcher_relaunch_app_callback(HdSwitcherRelaunchAppData *data)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (data->switcher)->priv;
+
+  g_signal_connect_swapped(priv->task_nav, "zoom-in-complete",
+          G_CALLBACK(hd_switcher_relaunched_app_callback),
+          data);
+
+  hd_switcher_item_selected (data->switcher, data->actor);
+
+  g_signal_handlers_disconnect_by_func(
+      hd_render_manager_get(),
+      G_CALLBACK(hd_switcher_relaunch_app_callback),
+      data);
+}
+
 static void
 hd_switcher_relaunch_app (HdSwitcher *switcher,
                           HdLauncherApp *app,
@@ -439,6 +484,7 @@ hd_switcher_relaunch_app (HdSwitcher *switcher,
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   ClutterActor *actor;
+  HdSwitcherRelaunchAppData *cb_data;
 
   /* Get the actor for the window and act as if the user had selected it. */
   actor = hd_task_navigator_find_app_actor ( priv->task_nav,
@@ -450,11 +496,20 @@ hd_switcher_relaunch_app (HdSwitcher *switcher,
       return;
     }
 
-  /* Go to the task switcher view. */
-  hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+  cb_data = g_malloc0(sizeof(HdSwitcherRelaunchAppData));
+  cb_data->app = app;
+  cb_data->actor = actor;
+  cb_data->switcher = switcher;
 
-  hd_switcher_item_selected (switcher, actor);
+  g_signal_connect_swapped(hd_render_manager_get(), "transition-complete",
+        G_CALLBACK(hd_switcher_relaunch_app_callback),
+        cb_data);
+
+  /* Go to the task switcher view. After this is done, we'll do
+   * our zoom in on the app view the callback above */
+  hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
 }
+
 
 static void
 hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)

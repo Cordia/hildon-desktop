@@ -113,6 +113,7 @@ typedef enum
 enum
 {
   DAMAGE_REDRAW,
+  TRANSITION_COMPLETE,
   LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0, };
@@ -129,7 +130,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |                                         --> title_bar
  *       |                                         --> home_get_front (STATE_HOME_FRONT)
  *       |
- *       --> task_nav
+ *       --> task_nav_container --> task_nav
  *       |
  *       --> launcher
  *       |
@@ -341,6 +342,15 @@ hd_render_manager_class_init (HdRenderManagerClass *klass)
                     0, NULL, NULL,
                     g_cclosure_marshal_VOID__VOID,
                     G_TYPE_NONE, 0);
+  signals[TRANSITION_COMPLETE] =
+        g_signal_new ("transition-complete",
+                      G_TYPE_FROM_CLASS (klass),
+                      G_SIGNAL_RUN_LAST,
+                      0, NULL, NULL,
+                      g_cclosure_marshal_VOID__VOID,
+                      G_TYPE_NONE, 0);
+
+
 
   pspec = g_param_spec_enum ("state",
                              "State", "Render manager state",
@@ -514,6 +524,8 @@ on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
 
   priv->timeline_playing = FALSE;
   hd_comp_mgr_set_effect_running(priv->comp_mgr, FALSE);
+
+  g_signal_emit (the_render_manager, signals[TRANSITION_COMPLETE], 0);
 
   /* to trigger a change after the transition */
   hd_render_manager_sync_clutter_after();
@@ -741,7 +753,6 @@ void hd_render_manager_sync_clutter_before ()
         visible_top_right = HDRM_BUTTON_BACK;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         clutter_actor_show(CLUTTER_ACTOR(priv->launcher));
-        clutter_actor_raise_top(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(
             HDRM_BLUR_HOME |
             HDRM_ZOOM_HOME | HDRM_ZOOM_TASK_NAV );
@@ -1113,8 +1124,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       priv->state = state;
 
       /* Make everything reactive again if we switched state, or we risk
-       * getting into a mode where noithing works */
-      hd_render_manager_set_reactive(TRUE);
+       * getting into a mode where nothing works */
+      /*hd_render_manager_set_reactive(TRUE);*/
 
       if (STATE_NEED_TASK_NAV(state) &&
           !STATE_NEED_TASK_NAV(oldstate))
@@ -1161,7 +1172,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         }
 
       /* we always need to restack here */
-      hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
+      /*hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));*/
 
       /*
        * Coming not from portrait mode going to APP state.

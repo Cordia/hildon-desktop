@@ -64,6 +64,7 @@ HdAppMgr   *hd_app_mgr_get (void);
 
 gboolean hd_app_mgr_launch       (HdLauncherApp *app);
 gboolean hd_app_mgr_relaunch     (HdLauncherApp *app);
+gboolean hd_app_mgr_relaunch_set_top (HdLauncherApp *app);
 gboolean hd_app_mgr_wakeup       (HdLauncherApp *app);
 gboolean hd_app_mgr_kill         (HdLauncherApp *app);
 
