@@ -1,3 +1,10 @@
+2009-03-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-transition.c
+	* data/white-particle.png: New 'twinkling' close transitions, and
+	using clutter-cache for the particle texture. Added cache flag for
+	canberra, and added debug print if the call takes >100ms	
+
 2009-03-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view.c (hd_home_view_add_applet): Restack windows.

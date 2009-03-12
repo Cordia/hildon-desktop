@@ -35,6 +35,7 @@
 #include "hd-render-manager.h"
 #include "hildon-desktop.h"
 #include "hd-theme.h"
+#include "hd-clutter-cache.h"
 #include "tidy/tidy-sub-texture.h"
 
 #include "hd-app.h"
@@ -57,9 +58,6 @@ typedef struct _HDEffectData
   /* Any extra particles if they are used for this effect */
   ClutterActor             *particles[HDCM_UNMAP_PARTICLES];
 } HDEffectData;
-
-
-static ClutterActor *particle_tex = NULL;
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -258,18 +256,18 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
 
   amt = (float)clutter_timeline_get_progress(timeline);
 
-  amtx = 2 - amt*3;
-  amty = 1 - amt*3;
+  amtx = 1.3 - amt*2;
+  amty = 1 - amt*2;
   amtp = amt*2 - 1;
-  if (amtx<0.1) amtx=0.1;
+  if (amtx<0) amtx=0;
   if (amtx>1) amtx=1;
-  if (amty<0.1) amty=0.1;
+  if (amty<0) amty=0;
   if (amty>1) amty=1;
   if (amtp<0) amtp=0;
   if (amtp>1) amtp=1;
   /* smooth out movement */
-  amtx = (1-cos(amtx * 3.141592)) * 0.5f;
-  amty = (1-cos(amty * 3.141592)) * 0.5f;
+  amtx = (1-cos(amtx * 3.141592)) * 0.45f + 0.1f;
+  amty = (1-cos(amty * 3.141592)) * 0.45f + 0.1f;
   particle_opacity = sin(amtp * 3.141592);
   particle_radius = 8 + (1-cos(amtp * 3.141592)) * 32.0f;
 
@@ -284,14 +282,18 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
     if (data->particles[i] && (amtp > 0) && (amtp < 1))
       {
         /* space particles equally and rotate once */
-        float ang = i * 2 * 3.141592f / HDCM_UNMAP_PARTICLES +
-                    amtp * 2 * 3.141592f;
+        float ang = i * 15 +
+                    amtp * 3.141592f / 2;
+        float radius = particle_radius * i / HDCM_UNMAP_PARTICLES;
+        /* twinkle effect */
+        float opacity = particle_opacity * ((1-cos(amt*50+i)) * 0.5f);
         clutter_actor_show( data->particles[i] );
         clutter_actor_set_opacity(data->particles[i],
-                (int)(255 * particle_opacity));
+                (int)(255 * opacity));
+
         clutter_actor_set_positionu(data->particles[i],
-                CLUTTER_FLOAT_TO_FIXED(centrex +  sin(ang) * particle_radius),
-                CLUTTER_FLOAT_TO_FIXED(centrey + cos(ang) * particle_radius));
+                CLUTTER_FLOAT_TO_FIXED(centrex + sin(ang) * radius),
+                CLUTTER_FLOAT_TO_FIXED(centrey + cos(ang) * radius));
       }
     else
       if (data->particles[i])
@@ -621,7 +623,8 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   HDEffectData             * data;
   ClutterGeometry            geo;
   ClutterContainer         * parent;
-  gint i;
+  gchar                    * fname;
+  gint                       i;
 
   /* proper app close animation */
   if (c_type != MBWMClientTypeApp)
@@ -684,20 +687,11 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   clutter_actor_lower_bottom(actor);
   clutter_actor_move_anchor_point_from_gravity(actor, CLUTTER_GRAVITY_CENTER);
 
-  if (!particle_tex)
-  { /* we need to load some actors for this animation... */
-    gchar *fname;
-
-    fname = g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL);
-    particle_tex = clutter_texture_new_from_file (fname, 0);
-    g_free (fname);
-  }
+  fname = g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL);
 
   for (i = 0; i < HDCM_UNMAP_PARTICLES; ++i)
     {
-      if (particle_tex)
-        data->particles[i] = clutter_clone_texture_new(
-			     		CLUTTER_TEXTURE(particle_tex));
+      data->particles[i] = hd_clutter_cache_get_texture(fname, FALSE);
       if (data->particles[i])
         {
           clutter_actor_set_anchor_point_from_gravity(data->particles[i],
@@ -706,6 +700,8 @@ hd_transition_close_app (HdCompMgr                  *mgr,
           clutter_actor_hide(data->particles[i]);
         }
     }
+
+  g_free (fname);
   hd_comp_mgr_set_effect_running(mgr, TRUE);
   clutter_timeline_start (data->timeline);
 
@@ -816,6 +812,8 @@ hd_transition_play_sound (const gchar * fname)
     static gboolean is_playing;
     ca_proplist *pl;
     int ret;
+    GTimer *timer;
+    gint millisec;
 
     /* Canberra uses threads. */
     if (hd_disable_threads())
@@ -843,13 +841,24 @@ hd_transition_play_sound (const gchar * fname)
           }
       }
 
+    timer = g_timer_new();
+
     ca_proplist_create (&pl);
+    ca_proplist_sets (pl, CA_PROP_CANBERRA_CACHE_CONTROL, "permanent");
     ca_proplist_sets (pl, CA_PROP_MEDIA_FILENAME, fname);
+    ca_proplist_sets (pl, CA_PROP_MEDIA_ROLE, "event");
     if ((ret = ca_context_play_full (ca, 0, pl, play_finished,
                                      &is_playing)) != CA_SUCCESS)
       g_warning("%s: %s", fname, ca_strerror (ret));
     ca_proplist_destroy(pl);
     is_playing = TRUE;
+    millisec = (gint)(g_timer_elapsed(timer, 0)*1000);
+    g_timer_destroy(timer);
+
+    if (millisec > 100) /* [Bug 105635] */
+      g_debug("%s: ca_context_play_full is blocking for %d ms to play %s",
+          __FUNCTION__, millisec, fname);
+
 }
 
 static GKeyFile *
