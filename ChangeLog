@@ -1,3 +1,7 @@
+2009-03-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.24
+
 2009-03-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-transition.c

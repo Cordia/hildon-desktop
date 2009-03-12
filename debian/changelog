@@ -1,14 +1,23 @@
-hildon-desktop (1:2.2.24-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.24-1) unstable; urgency=low
 
+  Adam:
   * Adam's dbus interface fix.
+  * Fixes: NB#105036 - Menu Items are not displayed in Call handling view
 
   Jan Arne: 
-
   * Fixes: NB#105256 - Update status area background on status area size
     change.
   * Fixes: NB#104480 - Fix tapping on added applets.
+  * Fixes: NB#105071 - Do not show notification previews in portrait mode
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 10 Mar 2009 13:13:25 +0200
+  Thomas:
+  * Fixes: NB#91048 - Progress indicator does not appear.
+
+  Gordon:
+  * Fixes: NB#104037 - Repeat dialog
+  * NB#96780 (marked ALREADYFIXED)
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 12 Mar 2009 15:26:37 +0200
 
 hildon-desktop (1:2.2.23-1) unstable; urgency=low
 
