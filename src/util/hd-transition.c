@@ -275,11 +275,9 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
 
   centrex =  data->geo.x + data->geo.width / 2 ;
   centrey =  data->geo.y + data->geo.height / 2 ;
-  /* set app location and fold up like a turned-off TV */
+  /* set app location and fold up like a turned-off TV.
+   * @actor is anchored in the middle so it needn't be repositioned */
   clutter_actor_set_scale(actor, amtx, amty);
-  clutter_actor_set_position(actor,
-                        centrex - data->geo.width * amtx / 2,
-                        centrey - data->geo.height * amty / 2);
   clutter_actor_set_opacity(actor, (int)(255 * (1-amtp)));
   /* do sparkles... */
   for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
@@ -430,6 +428,50 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 
+/* #ClutterStage's notify::allocation callback to notice if we are
+ * switching between landscape and portrait modes duing an effect. */
+static void
+on_screen_size_changed (ClutterActor *stage, GParamSpec *unused,
+                        HDEffectData *data)
+{
+  gint tmp;
+  guint scrw, scrh;
+  ClutterActor *actor;
+
+  /* Rotate @actor back to the mode it is layed out for.
+   * Assume it's anchored in the middle. */
+  clutter_actor_get_size (stage, &scrw, &scrh);
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+
+  /* It is very interesting to observe the dualism here. */
+  if (scrw > scrh)
+    { /* Coming from portrait to landscape. */
+      clutter_actor_set_rotation (actor, CLUTTER_Z_AXIS, -90, 0, 0, 0);
+
+      tmp = data->geo.x;
+      data->geo.x = data->geo.y;
+      data->geo.y = scrh - (tmp + data->geo.width);
+    }
+  else
+    { /* Coming from landscape to portrait. */
+      clutter_actor_set_rotation (actor, CLUTTER_Z_AXIS, +90, 0, 0, 0);
+
+      tmp = data->geo.y;
+      data->geo.y = data->geo.x;
+      data->geo.x = scrw - (tmp + data->geo.height);
+    }
+
+  tmp = data->geo.width;
+  data->geo.width = data->geo.height;
+  data->geo.height = tmp;
+
+  clutter_actor_set_position (actor,
+                              data->geo.x + data->geo.width/2,
+                              data->geo.y + data->geo.height/2);
+
+  g_object_unref (actor);
+}
+
 static void
 hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
 {
@@ -472,8 +514,12 @@ hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
     if (data->particles[i])
       clutter_actor_destroy(data->particles[i]);
 
+  g_signal_handlers_disconnect_by_func (clutter_stage_get_default (),
+                                        G_CALLBACK (on_screen_size_changed),
+                                        data);
+
   g_free (data);
-};
+}
 
 void
 hd_transition_popup(HdCompMgr                  *mgr,
@@ -605,9 +651,13 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   if (geo.width<16 || geo.height<16)
     return;
 
-  /* Need to store also pointer to the manager, as by the time
+  /*
+   * Need to store also pointer to the manager, as by the time
    * the effect finishes, the back pointer in the cm_client to
    * MBWindowManagerClient is not longer valid/set.
+   *
+   * It is possible that during the effect we leave portrait mode,
+   * so be prepared for it.
    */
   data = g_new0 (HDEffectData, 1);
   data->event = MBWMCompMgrClientEventUnmap;
@@ -618,6 +668,8 @@ hd_transition_close_app (HdCompMgr                  *mgr,
                     hd_transition_get_int("app_close", "duration", 500) ) );
   g_signal_connect (data->timeline, "new-frame",
                     G_CALLBACK (on_close_timeline_new_frame), data);
+  g_signal_connect (clutter_stage_get_default (), "notify::allocation",
+                    G_CALLBACK (on_screen_size_changed), data);
   g_signal_connect (data->timeline, "completed",
                     G_CALLBACK (hd_transition_completed), data);
   data->geo = geo;
@@ -630,12 +682,15 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   /* reparent our actor so it will be visible when we switch views */
   clutter_actor_reparent(actor, CLUTTER_ACTOR(parent));
   clutter_actor_lower_bottom(actor);
+  clutter_actor_move_anchor_point_from_gravity(actor, CLUTTER_GRAVITY_CENTER);
 
   if (!particle_tex)
-  {
-    /* we need to load some actors for this animation... */
-    particle_tex = clutter_texture_new_from_file (
-           g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL), 0);
+  { /* we need to load some actors for this animation... */
+    gchar *fname;
+
+    fname = g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL);
+    particle_tex = clutter_texture_new_from_file (fname, 0);
+    g_free (fname);
   }
 
   for (i = 0; i < HDCM_UNMAP_PARTICLES; ++i)

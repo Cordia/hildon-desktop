@@ -1,3 +1,13 @@
+2009-03-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-transition.c (hd_transition_close_app,
+	  on_close_timeline_new_frame, hd_transition_completed)
+
+	  Prepare the close-app transition for portrait<->landscape
+	  mode switching, which might be triggered by the application
+	  closing.  Failing to do this the effect goes wrong.
+	  Also closed a memory leak.
+
 2009-03-11  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	Escape titles before we display them so that you can
