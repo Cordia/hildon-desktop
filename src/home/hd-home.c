@@ -243,7 +243,7 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
 
-  g_debug("%s:", __FUNCTION__);
+  /*g_debug("%s:", __FUNCTION__);*/
 
   if (priv->desktop_motion_cb)
     mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
@@ -392,10 +392,10 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 #endif
     if (event->message_type == hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_LOADING_SCREENSHOT))
       {
-        MBWindowManagerClient *client = 
+        MBWindowManagerClient *client =
 	  mb_wm_managed_client_from_xwindow (wm,
 					     event->data.l[1]);
-	
+
 	char *filename;
 	HdLauncherApp *launcher_app;
 	const char *service_name;
@@ -858,7 +858,7 @@ hd_home_update_layout (HdHome * home)
   for (i = 0; i < MAX_VIEWS; i++)
     {
       ClutterActor *view;
-      
+
       view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
                                               i);
       hd_home_view_update_state (HD_HOME_VIEW (view));
@@ -991,7 +991,7 @@ hd_home_show_edit_button (HdHome *home)
                               x,
                               -button_height);
 
-  g_debug ("moving edit button from %d, %d to %d, 0", x, -button_height, x);
+  /*g_debug ("moving edit button from %d, %d to %d, 0", x, -button_height, x);*/
 
   timeline = clutter_effect_move (priv->edit_button_template,
                                   CLUTTER_ACTOR (priv->edit_button),
@@ -1013,7 +1013,7 @@ hd_home_hide_edit_button (HdHome *home)
   if (!hd_render_manager_get_visible(HDRM_BUTTON_EDIT))
     return;
 
-  g_debug ("%s: Hiding button", __FUNCTION__);
+  /*g_debug ("%s: Hiding button", __FUNCTION__);*/
 
   hd_render_manager_set_visible(HDRM_BUTTON_EDIT, FALSE);
   if (priv->edit_button_cb)

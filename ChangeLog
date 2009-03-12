@@ -1,3 +1,11 @@
+2009-03-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-home.c: Removed some debug printing
+	* src/mb/hd-app.h
+	* src/mb/hd-comp-mgr.c: Now don't perform a subview transition if
+	  mapping without an unmap (eg. fullscreen->window case for image
+	  viewer)
+
 2009-03-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-transition.c (hd_transition_close_app,

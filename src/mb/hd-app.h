@@ -42,6 +42,10 @@ struct HdApp
   GList       *followers;
   HdApp       *leader;
   int          stack_index;
+
+  /* set to true if we have had a map effect before. Helps stop us doing a
+   * subview transition if we're merely remapping the same window */
+  Bool         map_effect_before;
 };
 
 struct HdAppClass

@@ -1621,11 +1621,14 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
             /* Look if it's a stackable window. */
             HdApp *app = HD_APP (c);
             if (app->stack_index > 0 && app->leader != app)
-              hd_transition_subview(hmgr, c,
-                                    MB_WM_CLIENT(app->leader),
-                                    MBWMCompMgrClientEventUnmap);
+              {
+                hd_transition_subview(hmgr, c,
+                                      MB_WM_CLIENT(app->leader),
+                                      MBWMCompMgrClientEventUnmap);
+              }
             else
               hd_transition_close_app (hmgr, c);
+            app->map_effect_before = FALSE;
           }
     }
   else if (event == MBWMCompMgrClientEventMap)
@@ -1641,15 +1644,19 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
       else if (c_type == MBWMClientTypeApp)
         if (!hd_comp_mgr_is_client_screensaver(c))
           {
-            /* Look if it's a stackable window. */
+            /* Look if it's a stackable window. We don't do the subview
+             * animation again if we have had a mapping without an unmap,
+             * which is what happens in the Image Viewer when the same
+             * window goes from Fullscreen to Windowed */
             HdApp *app = HD_APP (c);
-            if (app->stack_index > 0)
+            if (app->stack_index > 0 && !app->map_effect_before)
               hd_transition_subview(hmgr, c,
                                     MB_WM_CLIENT(app->leader),
                                     MBWMCompMgrClientEventMap);
             /* We're now showing this app, so remove our app
              * starting screen if we had one */
             hd_launcher_window_created();
+            app->map_effect_before = TRUE;
           }
     }
 
