@@ -1,3 +1,10 @@
+2009-03-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-transition.c: Replaced call to canberra (for sound)
+	with a warning (for speed). Will be removed when 105635 is fixed.
+	* data/transitions.ini: Made transitions really fast to increase
+	apparent speed of device.
+
 2009-03-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.24

@@ -815,6 +815,11 @@ hd_transition_play_sound (const gchar * fname)
     GTimer *timer;
     gint millisec;
 
+    /* FIXME: Take this out when Bug 105635 is fixed */
+    g_warning("%s: Canberra sound disabled for speed reasons, %s",
+              __FUNCTION__, fname);
+    return;
+
     /* Canberra uses threads. */
     if (hd_disable_threads())
       return;
