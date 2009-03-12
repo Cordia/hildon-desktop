@@ -1,3 +1,11 @@
+2009-03-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-render-manager.c
+	  (hd_render_manager_place_titlebar_elements): Call
+	  hd_title_bar_update. Fixes: NB#105256
+
+	* debian/changelog: Update
+
 2009-03-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-home.c: Removed some debug printing

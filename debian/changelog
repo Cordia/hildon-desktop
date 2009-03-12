@@ -2,6 +2,11 @@ hildon-desktop (1:2.2.24-1~unreleased) unstable; urgency=low
 
   * Adam's dbus interface fix.
 
+  Jan Arne: 
+
+  * Fixes: NB#105256 - Update status area background on status area size
+    change.
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 10 Mar 2009 13:13:25 +0200
 
 hildon-desktop (1:2.2.23-1) unstable; urgency=low

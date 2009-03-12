@@ -1930,6 +1930,8 @@ void hd_render_manager_place_titlebar_elements (void)
       /* g_debug("application title at %u", x); */
       mb_adjust_dialog_title_position(MB_WM_COMP_MGR(priv->comp_mgr)->wm, x);
     }
+
+  hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
 }
 
 void hd_render_manager_blurred_changed()
