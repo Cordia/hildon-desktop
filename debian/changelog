@@ -6,6 +6,7 @@ hildon-desktop (1:2.2.24-1~unreleased) unstable; urgency=low
 
   * Fixes: NB#105256 - Update status area background on status area size
     change.
+  * Fixes: NB#104480 - Fix tapping on added applets.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 10 Mar 2009 13:13:25 +0200
 

@@ -952,6 +952,7 @@ hd_home_view_add_applet (HdHomeView   *view,
   HdHomeViewPrivate *priv = view->priv;
   HdHomeViewAppletData *data;
   ClutterActor *close_button;
+  MBWindowManagerClient *desktop;
 
   /*
    * Reparent the applet to ourselves; note that this automatically
@@ -1015,6 +1016,13 @@ hd_home_view_add_applet (HdHomeView   *view,
   hd_home_view_store_applet_position (view,
                                       applet);
 
+  desktop = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
+  if (desktop)
+    { /* Synchronize here, we may not come from clutter_x11_event_filter()
+       * at all. */
+      mb_wm_client_stacking_mark_dirty (desktop);
+      mb_wm_sync (MB_WM_COMP_MGR (priv->comp_mgr)->wm);
+    }
   hd_home_view_restack_applets (view);
 }
 
