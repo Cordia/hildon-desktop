@@ -367,6 +367,10 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
       g_signal_emit (hd_launcher_get (), launcher_signals[APP_RELAUNCHED],
                      0, data, NULL);
     }
+
+  if (!hd_app_mgr_launch (app))
+    return;
+
   /* If there's no launch transition, do the 'fall away' transition.
    */
   else if (!hd_launcher_transition_app_start (tile, app))
@@ -384,10 +388,8 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
         }
     }
 
-  /* then launch */
   g_signal_emit (hd_launcher_get (), launcher_signals[APP_LAUNCHED],
                  0, data, NULL);
-  hd_app_mgr_launch (app);
 }
 
 /*

@@ -112,6 +112,7 @@ enum
   APP_LAUNCHED,
   APP_RELAUNCHED,
   APP_SHOWN,
+  NOT_ENOUGH_MEMORY,
 
   LAST_SIGNAL
 };
@@ -254,6 +255,13 @@ hd_app_mgr_class_init (HdAppMgrClass *klass)
                   0, NULL, NULL,
                   g_cclosure_marshal_VOID__OBJECT,
                   G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
+  app_mgr_signals[NOT_ENOUGH_MEMORY] =
+    g_signal_new (I_("not-enough-memory"),
+                  HD_TYPE_APP_MGR,
+                  G_SIGNAL_RUN_FIRST,
+                  0, NULL, NULL,
+                  g_cclosure_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0, NULL);
 
   /* Bind D-Bus info. */
   dbus_g_object_type_install_info (HD_TYPE_APP_MGR,
@@ -552,12 +560,9 @@ hd_app_mgr_start (HdLauncherApp *app)
 
   if (!hd_app_mgr_can_launch ())
     {
-      /*
-       * TODO -- we probably should pop a dialog here asking the user to
-       * kill some apps as the old TN used to do; check the current spec.
-       */
       g_debug ("%s: Not enough memory to start application %s.",
                __FUNCTION__, hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
+      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[NOT_ENOUGH_MEMORY], 0);
       return FALSE;
     }
 
@@ -780,12 +785,9 @@ hd_app_mgr_wakeup   (HdLauncherApp *app)
 
   if (!hd_app_mgr_can_launch ())
     {
-      /*
-       * TODO -- we probably should pop a dialog here asking the user to
-       * kill some apps as the old TN used to do; check the current spec.
-       */
       g_debug ("%s: Not enough memory to start application %s.",
                __FUNCTION__, service);
+      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[NOT_ENOUGH_MEMORY], 0);
       return FALSE;
     }
 
@@ -999,15 +1001,7 @@ static gboolean
 hd_app_mgr_can_launch (void)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
-  if (priv->launch_required_pages == NSIZE)
-    /* Not checking. */
-    return TRUE;
-
-  size_t free_pages = hd_app_mgr_read_lowmem (LOWMEM_PROC_FREE);
-  if (free_pages == NSIZE)
-    return TRUE;
-
-  return free_pages >= priv->launch_required_pages;
+  return !priv->bg_killing;
 }
 
 static gboolean hd_app_mgr_can_prestart (void)

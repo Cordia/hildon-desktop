@@ -1,3 +1,12 @@
+2009-03-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	When not enough memory is available for launching an app, show a notification
+	and allow the user to close other apps.
+
+	* src/home/hd-switcher.c:
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-launcher.c:
+
 2009-03-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-transition.c (hd_transition_subview):

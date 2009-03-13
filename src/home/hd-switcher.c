@@ -27,6 +27,7 @@
 #include "config.h"
 #endif
 
+#include "hildon-desktop.h"
 #include "hd-switcher.h"
 #include "hd-task-navigator.h"
 #include "hd-app-mgr.h"
@@ -47,6 +48,8 @@
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 
 #include <dbus/dbus-glib.h>
+
+#include <hildon/hildon-banner.h>
 
 #define LONG_PRESS_DUR 1
 
@@ -122,6 +125,8 @@ static void hd_switcher_launcher_cat_hidden (HdLauncher *launcher,
 static void hd_switcher_relaunch_app (HdSwitcher *switcher,
                                       HdLauncherApp *app,
                                       gpointer data);
+static void hd_switcher_insufficient_memory(HdSwitcher *switcher,
+                                            gpointer data);
 
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, G_TYPE_OBJECT);
 
@@ -209,6 +214,9 @@ hd_switcher_constructed (GObject *object)
   /* App manager events. */
   g_signal_connect_swapped (hd_app_mgr_get (), "application-relaunched",
                     G_CALLBACK (hd_switcher_relaunch_app),
+                    object);
+  g_signal_connect_swapped (hd_app_mgr_get (), "not-enough-memory",
+                    G_CALLBACK (hd_switcher_insufficient_memory),
                     object);
 
   /* Task navigator events */
@@ -510,6 +518,25 @@ hd_switcher_relaunch_app (HdSwitcher *switcher,
   hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
 }
 
+/*
+ * Called when the HdAppMgr doesn't have enough memory to launch an
+ * application.
+ */
+static void
+hd_switcher_insufficient_memory(HdSwitcher *switcher,
+                                gpointer data)
+{
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  if (hd_task_navigator_has_apps (priv->task_nav))
+    hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+  else
+    hd_render_manager_set_state (HDRM_STATE_HOME);
+
+  GtkWidget* banner = hildon_banner_show_information (NULL, NULL,
+                        _("memr_ti_close_applications"));
+  hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
+}
 
 static void
 hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
