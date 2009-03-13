@@ -903,9 +903,10 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
 	      if (app->stack_index < 0 /* non-stackable */
 		  /* leader without secondarys: */
-	          || (!app->leader->followers && app->leader == app) ||
+	          || (app->leader == app && !app->leader->followers) ||
 	          /* or a secondary window on top of the stack: */
-	          (app->leader->followers && app == g_list_last (app->leader->followers)->data))
+	          (app->leader == app &&
+	           app->leader->followers && app == g_list_last (app->leader->followers)->data))
 	        topmost = 1;
 	      else
 	        topmost = 0;

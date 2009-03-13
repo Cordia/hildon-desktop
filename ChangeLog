@@ -1,3 +1,9 @@
+2009-03-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client):
+	  Fix sigsegv that happened on Rover after closing web browser
+	opened from RSS reader
+
 2009-03-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#105295 Giving a Missed call in potrait mode changes
