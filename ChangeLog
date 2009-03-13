@@ -1,3 +1,10 @@
+2009-03-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client):
+	  Regression fix: closing a window stack in tasw segfaulted
+	  because unregister_client() forgot to remove the secondary's
+	  actor from the switcher.
+
 2009-03-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	When not enough memory is available for launching an app, show a notification
