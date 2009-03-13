@@ -1371,9 +1371,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   MBWMClientType             ctype;
 
   g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
-  /*
-   * Parent class map_notify creates the actor representing the client.
-   */
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
     return;
 
@@ -1394,6 +1391,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         }
     }
 
+  /* #MBWMCompMgrClutterClient already has an actor, now it's time
+   * for #MBWMCompMgrClutter to create its texture and bind it to
+   * the window's pixmap. */
   if (parent_klass->map_notify)
     parent_klass->map_notify (mgr, c);
 

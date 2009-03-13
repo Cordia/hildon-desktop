@@ -1889,12 +1889,16 @@ gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c)
     return FALSE;
   g_object_unref(a);
 
-  /* It is necessary to check the parents because sometimes
+  /*
+   * It is necessary to check the parents because sometimes
    * hd_render_manager_set_visibilities() hides the container
-   * altogether.  Stage is never visible. */
-  while (a != CLUTTER_ACTOR (the_render_manager))
+   * altogether.  Stage is never visible.  It is possible for
+   * a client's actor to have a %NULL parent in case it was
+   * never really mapped but deleted right away that time,
+   * like in the case of unwanted notifications.
+   */
+  while (a && a != CLUTTER_ACTOR (the_render_manager))
     {
-      g_return_val_if_fail (a != NULL, FALSE);
       if (!CLUTTER_ACTOR_IS_VISIBLE(a))
         return FALSE;
       a = clutter_actor_get_parent(a);

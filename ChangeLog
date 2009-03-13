@@ -1,3 +1,19 @@
+2009-03-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#105295 Giving a Missed call in potrait mode changes
+	          the orientation to landscape
+
+	Actually not changes but crashed hd.
+
+	* src/home/hd-render-manager.c (hd_render_manager_is_client_visible):
+	  Tolerate actors of clients in the window stack which are not
+	  child of the_render_manager.  This may occurr when the client
+	  is in the stack but was not mapped on wm-side.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
+	  Fix misleading comment.
+
+	Don't tell me it's 13rd Friday again!
+
 2009-03-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fix for app relaunch transition.
