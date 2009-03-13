@@ -1,3 +1,9 @@
+2009-03-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-transition.c (hd_transition_subview):
+	  Regression workaround: after the transition to the subview
+	  the main view wouldn't update anymore.
+
 2009-03-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client):
