@@ -1,3 +1,11 @@
+2009-03-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Added X-Maemo-Switcher-Icon property to HdAppLauncher, read from the
+	.desktop file.
+
+	* src/launcher/hd-launcher-app.c:
+	* src/launcher/hd-launcher-app.h:
+
 2009-03-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/mb/hd-status-menu.c (hd_status_menu_init): Move resize/center to

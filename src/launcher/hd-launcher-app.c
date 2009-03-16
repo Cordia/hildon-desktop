@@ -45,6 +45,7 @@
 #define HD_DESKTOP_ENTRY_PRESTART_MODE  "X-Maemo-Prestarted"
 #define HD_DESKTOP_ENTRY_WM_CLASS       "X-Maemo-Wm-Class"
 #define HD_DESKTOP_ENTRY_PRIORITY       "X-Maemo-Prestarted-Priority"
+#define HD_DESKTOP_ENTRY_SWITCHER_ICON  "X-Maemo-Switcher-Icon"
 
 /* DBus names */
 #define OSSO_BUS_ROOT          "com.nokia"
@@ -57,6 +58,7 @@ struct _HdLauncherAppPrivate
   gchar *exec;
   gchar *service;
   gchar *loading_image;
+  gchar *switcher_icon;
   gchar *wm_class;
 
   HdLauncherAppPrestartMode prestart_mode;
@@ -81,6 +83,7 @@ hd_launcher_app_finalize (GObject *gobject)
   g_free (priv->exec);
   g_free (priv->service);
   g_free (priv->loading_image);
+  g_free (priv->switcher_icon);
   g_free (priv->wm_class);
 
   G_OBJECT_CLASS (hd_launcher_app_parent_class)->dispose (gobject);
@@ -173,6 +176,11 @@ hd_launcher_app_parse_keyfile (HdLauncherItem *item,
                                                HD_DESKTOP_ENTRY_LOADING_IMAGE,
                                                NULL);
 
+  priv->switcher_icon = g_key_file_get_string (key_file,
+                                               HD_DESKTOP_ENTRY_GROUP,
+                                               HD_DESKTOP_ENTRY_SWITCHER_ICON,
+                                               NULL);
+
   priv->prestart_mode =
     hd_launcher_app_parse_prestart_mode (g_key_file_get_string (key_file,
                                            HD_DESKTOP_ENTRY_GROUP,
@@ -214,6 +222,14 @@ hd_launcher_app_get_loading_image (HdLauncherApp *item)
   g_return_val_if_fail (HD_IS_LAUNCHER_APP (item), NULL);
 
   return item->priv->loading_image;
+}
+
+G_CONST_RETURN gchar *
+hd_launcher_app_get_switcher_icon (HdLauncherApp *item)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_APP (item), NULL);
+
+  return item->priv->switcher_icon;
 }
 
 G_CONST_RETURN gchar *
