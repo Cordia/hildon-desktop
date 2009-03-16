@@ -1,3 +1,8 @@
+2009-03-16  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/mb/hd-status-menu.c (hd_status_menu_init): Move resize/center to
+	hildon-status-menu.
+
 2009-03-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client):

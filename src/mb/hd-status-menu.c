@@ -29,10 +29,6 @@
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 
-static Bool hd_status_menu_request_geometry (MBWindowManagerClient *client,
-				      MBGeometry            *new_geometry,
-				      MBWMClientReqGeomType  flags);
-
 static void
 hd_status_menu_class_init (MBWMObjectClass *klass)
 {
@@ -43,7 +39,6 @@ hd_status_menu_class_init (MBWMObjectClass *klass)
   client = (MBWindowManagerClientClass *)klass;
 
   client->client_type  = HdWmClientTypeStatusMenu;
-  client->geometry     = hd_status_menu_request_geometry;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdStatusMenu";
@@ -59,19 +54,11 @@ static int
 hd_status_menu_init (MBWMObject *this, va_list vap)
 {
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
-  MBGeometry             geom;
 
-  mb_wm_client_set_layout_hints (client, LayoutPrefPositionFree |
+  mb_wm_client_set_layout_hints (client, LayoutPrefFixedX |
                                  LayoutPrefVisible);
 
   client->stacking_layer = MBWMStackLayerTopMid;
-
-  geom.x      = (HD_COMP_MGR_SCREEN_WIDTH - HD_COMP_MGR_STATUS_MENU_WIDTH) / 2;
-  geom.y      = 0;
-  geom.width  = HD_COMP_MGR_STATUS_MENU_WIDTH;
-  geom.height = client->window->geometry.height;
-
-  hd_status_menu_request_geometry (client, &geom, MBWMClientReqGeomForced);
 
   return 1;
 }
@@ -95,25 +82,6 @@ hd_status_menu_class_type ()
     }
 
   return type;
-}
-
-static Bool
-hd_status_menu_request_geometry (MBWindowManagerClient *client,
-			  MBGeometry            *new_geometry,
-			  MBWMClientReqGeomType  flags)
-{
-  client->frame_geometry.x = new_geometry->x;
-  client->frame_geometry.y = new_geometry->y;
-  client->frame_geometry.width  = new_geometry->width;
-  client->frame_geometry.height = new_geometry->height;
-  client->window->geometry.x = new_geometry->x;
-  client->window->geometry.y = new_geometry->y;
-  client->window->geometry.width  = new_geometry->width;
-  client->window->geometry.height = new_geometry->height;
-
-  mb_wm_client_geometry_mark_dirty (client);
-
-  return True; /* Geometry accepted */
 }
 
 MBWindowManagerClient*
