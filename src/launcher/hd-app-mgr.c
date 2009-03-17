@@ -1001,7 +1001,7 @@ static gboolean
 hd_app_mgr_can_launch (void)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
-  return !priv->bg_killing;
+  return !priv->lowmem;
 }
 
 static gboolean hd_app_mgr_can_prestart (void)
