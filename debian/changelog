@@ -1,6 +1,10 @@
-hildon-desktop (1:2.2.25-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.25-1) unstable; urgency=low
 
-  * WRITEME
+  * Fixes: NB#100159 - background killing
+  * Fixes: NB#105003 - Ensure apps go to inactive state when main window gets
+    closed.
+  * Fixes: NB#105295 - Giving a Missed call in portrait mode changes the
+    orientation to landscape
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 13 Mar 2009 08:17:53 +0200
 

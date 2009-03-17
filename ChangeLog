@@ -1,3 +1,7 @@
+2009-03-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.25
+
 2009-03-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Added X-Maemo-Switcher-Icon property to HdAppLauncher, read from the
@@ -20,8 +24,8 @@
 
 2009-03-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
-	When not enough memory is available for launching an app, show a notification
-	and allow the user to close other apps.
+	When not enough memory is available for launching an app, show a
+	notification and allow the user to close other apps.
 
 	* src/home/hd-switcher.c:
 	* src/launcher/hd-app-mgr.c:
@@ -41,7 +45,7 @@
 
 2009-03-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-	NB#105295 Giving a Missed call in potrait mode changes
+	NB#105295 Giving a Missed call in portrait mode changes
 	          the orientation to landscape
 
 	Actually not changes but crashed hd.
