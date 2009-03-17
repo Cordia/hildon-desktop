@@ -57,6 +57,8 @@
 #include <strings.h>
 #include <unistd.h>
 
+#include <gdk/gdkx.h>
+
 #define HDH_EDIT_BUTTON_DURATION 200
 #define HDH_EDIT_BUTTON_TIMEOUT 3000
 
@@ -280,29 +282,50 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 {
   HdHome *home = userdata;
   HdHomePrivate *priv = home->priv;
-  static XComposeStatus *compose_status = NULL;
+  GdkDisplay *display = gdk_display_get_default ();
+  GdkKeymap *keymap = gdk_keymap_get_for_display (display);
+  guint keyval;
+  guint32 unicode;
 
-  char buffer[10] = {0,};
+/*  g_debug ("%s, display: %p, keymap: %p", __FUNCTION__, display, keymap); */
 
-  XLookupString (xev, buffer, 10, NULL, compose_status);
+  gdk_keymap_translate_keyboard_state (keymap,
+                                       xev->keycode,
+                                       (GdkModifierType) xev->state,
+                                       0,
+                                       &keyval,
+                                       NULL, NULL, NULL);
 
-  /* g_debug ("%s, key: %s, %x, %d", __FUNCTION__, buffer, buffer[0], g_ascii_isdigit (buffer[0])); */
-
-  if (priv->call_ui_proxy && g_ascii_isdigit (buffer[0]))
+  unicode = gdk_keyval_to_unicode (keyval);
+  if (g_unichar_isdigit (unicode))
     {
-/*      g_debug ("Call Dialpad via D-BUS. " CALL_UI_DBUS_NAME "." CALL_UI_DBUS_METHOD_SHOW_DIALPAD " (s: %s)", buffer);*/
+      char buffer[10] = {0,};
 
-      dbus_g_proxy_call_no_reply (priv->call_ui_proxy, CALL_UI_DBUS_METHOD_SHOW_DIALPAD,
-                                  G_TYPE_STRING, buffer,
-                                  G_TYPE_INVALID);
+      g_unichar_to_utf8 (unicode, buffer);
+
+/*      g_debug ("%s, digit: keyval: %u, unicode: %u, buffer: %s", __FUNCTION__, keyval, unicode, buffer); */
+
+      if (priv->call_ui_proxy)
+        {
+          dbus_g_proxy_call_no_reply (priv->call_ui_proxy, CALL_UI_DBUS_METHOD_SHOW_DIALPAD,
+                                      G_TYPE_STRING, buffer,
+                                      G_TYPE_INVALID);
+        }
     }
-  else if (priv->osso_addressbook_proxy && buffer[0])
+  else if (g_unichar_isalpha (unicode))
     {
-/*      g_debug ("Call via D-BUS. " OSSO_ADDRESSBOOK_DBUS_NAME "." OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND " (s: %s)", buffer); */
+      char buffer[10] = {0,};
 
-      dbus_g_proxy_call_no_reply (priv->osso_addressbook_proxy, OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND,
-                                  G_TYPE_STRING, buffer,
-                                  G_TYPE_INVALID);
+      g_unichar_to_utf8 (unicode, buffer);
+
+/*      g_debug ("%s, letter: keyval: %u, unicode: %u, buffer: %s", __FUNCTION__, keyval, unicode, buffer); */
+
+      if (priv->osso_addressbook_proxy)
+        {
+          dbus_g_proxy_call_no_reply (priv->osso_addressbook_proxy, OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND,
+                                      G_TYPE_STRING, buffer,
+                                      G_TYPE_INVALID);
+        }
     }
 
   return TRUE;

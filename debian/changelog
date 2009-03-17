@@ -2,6 +2,9 @@ hildon-desktop (1:2.2.26-1~unreleased) unstable; urgency=low
 
   * WRITEME
 
+  Jan Arne:
+  * Fixes: NB#104578, NB#104534 - Fix some call from Home bugs.
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 17 Mar 2009 10:59:54 +0200
 
 hildon-desktop (1:2.2.25-1) unstable; urgency=low

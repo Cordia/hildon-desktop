@@ -362,10 +362,10 @@ hd_home_view_container_constructed (GObject *self)
   backgrounds_dir = g_build_filename (g_get_home_dir (),
                                       BACKGROUNDS_DIR,
                                       NULL);
-  if (g_mkdir (backgrounds_dir,
-               S_IRUSR | S_IWUSR | S_IXUSR |
-               S_IRGRP | S_IXGRP | 
-               S_IROTH | S_IXOTH))
+  if (g_mkdir_with_parents (backgrounds_dir,
+                            S_IRUSR | S_IWUSR | S_IXUSR |
+                            S_IRGRP | S_IXGRP | 
+                            S_IROTH | S_IXOTH))
     {
       g_warning ("Could not make %s dir", backgrounds_dir);
     }

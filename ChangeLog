@@ -1,3 +1,12 @@
+2009-03-17  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view-container.c
+	  (hd_home_view_container_constructed): Use g_mkdir_with_parents fix
+	  warning.
+
+	* src/home/hd-home.c (hd_home_desktop_key_press): Use Gdk to get
+	pressed key. Fixes: NB#104578, NB#104534
+
 2009-03-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher.h
