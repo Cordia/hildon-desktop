@@ -910,7 +910,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 	        topmost = 1;
 	      else
 	        topmost = 0;
-
+              g_assert(app->leader);
               /* if we are secondary, there must be leader and probably
 	       * even followers */
               if (app->stack_index > 0 && app->leader != app)
@@ -984,11 +984,15 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                   for (l = app->followers; l; l = l->next)
                   {
 		    /* bottommost secondary is the new leader */
-	            HD_APP (l->data)->leader = new_leader;
+                    HD_APP (l->data)->leader = new_leader;
 		  }
-		  /* set the new leader's followers list */
-		  new_leader->followers = g_list_remove (app->followers,
-	                                                 new_leader);
+                  /* set the new leader's followers list */
+                  new_leader->followers = g_list_remove (app->followers,
+                                                         new_leader);
+		  /* disconnect the app */
+                  app->followers = NULL; /* list is now in new_leader */
+                  app->leader = NULL;
+                  app->stack_index = -1;
 		}
           g_object_set_data (G_OBJECT (actor),
                              "HD-MBWMCompMgrClutterClient", NULL);

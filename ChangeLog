@@ -1,3 +1,9 @@
+2009-03-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-comp-mgr.c: Changes to unregister_client so that an
+	unregistered HdApp no longer contains links to the followers it
+	had previously.
+
 2009-03-17  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view-container.c
