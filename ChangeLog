@@ -1,3 +1,10 @@
+2009-03-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h: Fix for bugs NB#105855 and NB#106022,
+	both related to what is blurred/visible in home edit mode.
+	* src/mb/hd-comp-mgr.c: Fixed regression caused by misplaced assert
+
 2009-03-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Use the lowmem signal to determine whether we can launch new applications.

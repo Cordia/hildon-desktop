@@ -134,7 +134,7 @@ typedef enum
 
 /* States to move the home applets out to the front in */
 #define STATE_HOME_FRONT(s) \
-  (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT))
+  (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
 
 #define STATE_IN_EDIT_MODE(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))

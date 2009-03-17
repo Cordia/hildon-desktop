@@ -910,11 +910,12 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 	        topmost = 1;
 	      else
 	        topmost = 0;
-              g_assert(app->leader);
+
               /* if we are secondary, there must be leader and probably
 	       * even followers */
               if (app->stack_index > 0 && app->leader != app)
                 {
+                  g_assert(app->leader);
                   g_debug ("%s: %p is STACKABLE SECONDARY", __func__, app);
                   /* show the topmost follower and replace switcher actor
 		   * for the stackable */
@@ -1430,7 +1431,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * look the same but remove our grab. */
   if ((hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT) &&
       (ctype & (MBWMClientTypeDialog |
-                HdWmClientTypeAppMenu)))
+                HdWmClientTypeAppMenu |
+                HdWmClientTypeStatusMenu)))
     {
       hd_render_manager_set_state(HDRM_STATE_HOME_EDIT_DLG);
     }

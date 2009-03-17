@@ -125,7 +125,8 @@ static guint signals[LAST_SIGNAL] = { 0, };
  * HDRM ---> home_blur         ---> home
  *       |                                         --> home_get_front (!STATE_HOME_FRONT)
  *       |                      --> apps (not app_top)
- *       |                      --> blur_front    ---> button_menu
+ *       |                      --> blur_front (STATE_BLUR_BUTTONS)
+ *       |                                        ---> button_menu
  *       |                                         --> status_area
  *       |                                         --> title_bar
  *       |                                         --> home_get_front (STATE_HOME_FRONT)
@@ -137,6 +138,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       --> app_top           ---> dialogs
  *       |
  *       --> front             ---> status_menu
+ *                              --> blur_front (!STATE_BLUR_BUTTONS)
  *
  */
 
@@ -618,7 +620,10 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
       range_equal(&priv->home_zoom) &&
       range_equal(&priv->task_nav_opacity) &&
       range_equal(&priv->task_nav_zoom))
-    return;
+    {
+      hd_render_manager_sync_clutter_after();
+      return;
+    }
 
   hd_comp_mgr_set_effect_running(priv->comp_mgr, TRUE);
   /* Set duration here so we reload from the file every time */
@@ -857,12 +862,15 @@ void hd_render_manager_sync_clutter_after ()
 
   hd_title_bar_left_pressed(priv->title_bar, FALSE);
 
-  if (STATE_BLUR_BUTTONS(priv->state))
+  if (STATE_BLUR_BUTTONS(priv->state) &&
+      clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) !=
+                                CLUTTER_ACTOR(priv->home_blur))
     {
       /* raise the blur_front to the top of the home_blur group so
        * we still see the apps */
       clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
                              CLUTTER_ACTOR(priv->home_blur));
+      hd_render_manager_blurred_changed();
     }
 
   /* If we've gone back to the app state, make
@@ -1571,9 +1579,10 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
     blur_flags = blur_flags | HDRM_BLUR_BACKGROUND;
   else
     blur_flags = blur_flags & ~HDRM_BLUR_BACKGROUND;
-  hd_render_manager_set_blur(blur_flags);
-  /* calling this after a blur transition will force a restack after
-   * it has ended */
+
+  if (blur_flags !=  priv->current_blur)
+    hd_render_manager_set_blur(blur_flags);
+
   hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
 }
 
