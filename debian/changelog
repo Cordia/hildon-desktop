@@ -1,6 +1,5 @@
 hildon-desktop (1:2.2.25-1) unstable; urgency=low
 
-  * Fixes: NB#100159 - background killing
   * Fixes: NB#105003 - Ensure apps go to inactive state when main window gets
     closed.
   * Fixes: NB#105295 - Giving a Missed call in portrait mode changes the
