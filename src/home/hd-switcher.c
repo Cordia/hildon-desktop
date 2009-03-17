@@ -549,7 +549,15 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
 
   hclient = g_object_get_data (G_OBJECT (actor),
                                "HD-MBWMCompMgrClutterClient");
-  g_assert (hclient);
+  if (!hclient)
+    {
+      g_warning("%s: Actor that has just been zoomed in on has no "
+                "HD-MBWMCompMgrClutterClient", __FUNCTION__);
+      /* this is a real problem - not a normal use case, so just return
+       * to home, as everything should be ok there */
+      hd_render_manager_set_state(HDRM_STATE_HOME);
+      return;
+    }
 
   hd_render_manager_set_state(HDRM_STATE_APP);
   hd_render_manager_stop_transition();
@@ -573,7 +581,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
     }
 
   /* make sure everything is in the correct order */
-  hd_comp_mgr_restack(MB_WM_COMP_MGR_CLIENT(hclient)->wm->comp_mgr);
+  hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
 }
 
 static void
@@ -593,6 +601,12 @@ hd_switcher_item_closed (HdSwitcher *switcher, ClutterActor *actor)
   MBWMCompMgrClutterClient * cc;
 
   cc = g_object_get_data(G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
+  if (cc == NULL)
+    {
+      g_warning("%s: Trying to close a window from an actor with no "
+                "HD-MBWMCompMgrClutterClient", __FUNCTION__);
+      return;
+    }
   hd_comp_mgr_close_app (HD_COMP_MGR (priv->comp_mgr), cc, TRUE);
 }
 

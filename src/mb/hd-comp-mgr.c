@@ -941,7 +941,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                     hd_switcher_replace_window_actor (
 		        priv->switcher_group, actor,
                   	mb_wm_comp_mgr_clutter_client_get_actor (prev));
-
 		  }
                 }
               else if (!(c->window->ewmh_state &
@@ -1371,7 +1370,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   guint                      hkey;
   MBWMClientType             ctype;
 
-  g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
+  /*g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));*/
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
     return;
 
@@ -1753,8 +1752,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 {
   HdCompMgr      *hmgr = HD_COMP_MGR(mgr);
   MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
-  g_debug ("%s, c=%p ctype=%d event=%d",
-            __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c), event);
+  /*g_debug ("%s, c=%p ctype=%d event=%d",
+            __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c), event);*/
 
   /*HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;*/
   if (event == MBWMCompMgrClientEventUnmap)
@@ -1964,6 +1963,7 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
   HdCompMgrClient       * h_client = HD_COMP_MGR_CLIENT (cc);
 
   g_return_if_fail (cc != NULL);
+  g_return_if_fail (h_client != NULL);
   if (hd_comp_mgr_client_is_hibernating(h_client))
     {
       ClutterActor * actor;

@@ -94,8 +94,6 @@ static void hd_launcher_application_tile_clicked (HdLauncherTile *tile,
                                                   gpointer data);
 static void hd_launcher_populate_tree_finished (HdLauncherTree *tree,
                                                 gpointer data);
-static gboolean hd_launcher_transition_app_start (HdLauncherTile *tile,
-                                                  HdLauncherApp *item);
 static void hd_launcher_transition_new_frame(ClutterTimeline *timeline,
                                              gint frame_num, gpointer data);
 
@@ -515,21 +513,22 @@ _hd_launcher_transition_clicked(ClutterActor *actor,
 }
 
 /* Does the transition for the application launch */
-static gboolean
+gboolean
 hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
 {
   const gchar *loading_image = NULL;
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
   gboolean launch_anim = FALSE;
-  const gchar *service_name;
+  const gchar *service_name = 0;
   gchar *cached_image = NULL;
   ClutterActor *app_image = 0;
   ClutterActor *tb_image = 0;
   gint title_height;
 
   /* Is there a cached image? */
-  service_name = hd_launcher_app_get_service (item);
+  if (item)
+    service_name = hd_launcher_app_get_service (item);
   if (service_name &&
       index(service_name, '/')==NULL &&
       service_name[0]!='.')
@@ -543,7 +542,7 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
     }
 
   /* If not, does the .desktop file specify an image? */
-  if (!loading_image)
+  if (!loading_image && item)
     loading_image = hd_launcher_app_get_loading_image( item );
 
   if (loading_image && !strlen(loading_image))
@@ -592,8 +591,6 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
                              0, title_height);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->launch_image), app_image);
 
-
-  ClutterActor *icon;
   ClutterContainer *parent = hd_render_manager_get_front_group();
 
   /* default pos to centre of the screen */
@@ -601,19 +598,23 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
   priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
   /* work out where to expand the image from from the centre of the icon of
    * the tile that was clicked on */
-  clutter_actor_get_positionu(CLUTTER_ACTOR(tile),
-            &priv->launch_position.x,
-            &priv->launch_position.y);
-  icon = hd_launcher_tile_get_icon(tile);
-  if (icon)
+  if (tile)
     {
-      ClutterVertex offs, size;
-      clutter_actor_get_positionu(icon,
-            &offs.x,
-            &offs.y);
-      clutter_actor_get_sizeu(icon, &size.x, &size.y);
-      priv->launch_position.x += offs.x + size.x/2;
-      priv->launch_position.y += offs.y + size.y/2;
+      ClutterActor *icon;
+      clutter_actor_get_positionu(CLUTTER_ACTOR(tile),
+                &priv->launch_position.x,
+                &priv->launch_position.y);
+      icon = hd_launcher_tile_get_icon(tile);
+      if (icon)
+        {
+          ClutterVertex offs, size;
+          clutter_actor_get_positionu(icon,
+                &offs.x,
+                &offs.y);
+          clutter_actor_get_sizeu(icon, &size.x, &size.y);
+          priv->launch_position.x += offs.x + size.x/2;
+          priv->launch_position.y += offs.y + size.y/2;
+        }
     }
   /* append scroller movement */
   priv->launch_position.y += CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_YMARGIN);

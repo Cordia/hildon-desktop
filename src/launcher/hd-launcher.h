@@ -35,6 +35,8 @@
 #include <clutter/clutter-actor.h>
 
 #include "hd-launcher-tree.h"
+#include "hd-launcher-app.h"
+#include "hd-launcher-tile.h"
 
 G_BEGIN_DECLS
 
@@ -86,6 +88,11 @@ gboolean
 hd_launcher_back_button_clicked (ClutterActor *actor,
                                  ClutterEvent *event,
                                  gpointer data);
+
+/* Exported so it can be called for hd-app-mgr when it gets a dbus call
+ * to launch something */
+gboolean
+hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item);
 
 G_END_DECLS
 

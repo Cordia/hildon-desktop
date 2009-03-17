@@ -1698,8 +1698,13 @@ hd_render_manager_get_wm_client_from_actor(ClutterActor *actor)
   MBWindowManager *wm;
   MBWindowManagerClient *c;
 
-  /* TODO: use g_object_get_data on actor - "MBWMCompMgrClutterClient" */
+  /* first off, try and get the client from the data set in the actor */
+  MBWMCompMgrClient *cc = g_object_get_data (G_OBJECT (actor),
+                                             "HD-MBWMCompMgrClutterClient");
+  if (cc && cc->wm_client)
+    return cc->wm_client;
 
+  /*Or search... */
   wm = MB_WM_COMP_MGR(the_render_manager->priv->comp_mgr)->wm;
   /* Order and choose which window actors will be visible */
   for (c = wm->stack_bottom; c; c = c->stacked_above)

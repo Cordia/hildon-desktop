@@ -1,3 +1,17 @@
+2009-03-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher.h
+	* src/launcher/hd-launcher.c
+	* src/launcher/hd-app-mgr.c: Code to start an app launch transition
+	whenever hildon-desktop is asked to launch an application
+	* src/home/hd-render-manager.c: Switched to using object_get_data to
+	find clients from actors as it is faster than a search
+	* src/home/hd-switcher.c: Added extra checks for valid clients to
+	help fix NB#105933 - although this stops the crash it doesn't fix the
+	real issue yet
+	* src/mb/hd-comp-mgr.c: Added a check for the client, removed some
+	debug statements that were spamming the console
+
 2009-03-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.25
