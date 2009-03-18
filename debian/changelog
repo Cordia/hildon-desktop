@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.27-1~unreleased) unstable; urgency=low
+
+  * writeme
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 18 Mar 2009 15:59:54 +0200
+
 hildon-desktop (1:2.2.26-1) unstable; urgency=low
 
   Gordon Williams <gordon.williams@collabora.co.uk>
