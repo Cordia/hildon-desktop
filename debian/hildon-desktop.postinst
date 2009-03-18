@@ -3,19 +3,6 @@
 case "$1" in
     configure)
 
-      # FIXME modify the icon theme (this can be removed after icon delivery)
-      THEME='/usr/share/icons/hicolor/index.theme'
-      if ! grep '48x48' $THEME; then
-        TMP=`mktemp -p $TMPDIR index.theme.XXXXXX`
-        cat $THEME | awk '{ if ($0 ~ /^Directories/) { print ($0 ",48x48/apps") } else print $0 } END { print "\n[48x48/apps]\nSize=48\nContext=Applications\nType=Threshold" }' > $TMP
-        sync
-        mv $TMP $THEME
-	chmod ugo+r $THEME
-      fi
-
-      echo "Updating icon cache."
-      gtk-update-icon-cache -f -t /usr/share/icons/hicolor
-
       gconf-schemas --register hildon-desktop-views.schemas
     ;;
 

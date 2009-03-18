@@ -2597,6 +2597,7 @@ static void
 hd_task_navigator_init (HdTaskNavigator * self)
 {
   GtkStyle *style;
+  GError *error = NULL;
 
   /* Data structures */
   Thumbnails = g_array_new (FALSE, FALSE, sizeof (Thumbnail));
@@ -2657,8 +2658,13 @@ hd_task_navigator_init (HdTaskNavigator * self)
   Zoom_effect = new_effect (&Zoom_effect_timeline, ZOOM_EFFECT_DURATION);
 
   /* Master pieces */
-  Master_close      = load_icon ("qgn_home_close",
-                                 MIN (THWIN_CLOSE_WIDTH, THWIN_CLOSE_HEIGHT));
+  /* FIXME: use the real icon when available */
+  Master_close = (ClutterTexture*)clutter_texture_new_from_file (
+                        "/usr/share/hildon-desktop/qgn_home_close.png",
+                        &error);
+  clutter_actor_set_size ((ClutterActor*)Master_close,
+                          MIN (THWIN_CLOSE_WIDTH, THWIN_CLOSE_HEIGHT),
+                          MIN (THWIN_CLOSE_WIDTH, THWIN_CLOSE_HEIGHT));
 
   style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
                                      "task-switcher-thumbnail", NULL,

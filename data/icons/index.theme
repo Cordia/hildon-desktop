@@ -1,9 +1,0 @@
-[Icon Theme]
-Name=temporary-hildon-desktop-Icons
-Comment=Temporary icons for hildon-desktop
-Directories=48x48/apps
-
-[48x48/apps]
-Size=48
-Context=Applications
-Type=Threshold

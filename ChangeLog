@@ -1,3 +1,14 @@
+2009-03-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Removed the icon theme hack, using a bit cleaner workaround.
+
+	* configure.ac,
+	  data/icons: Removed data/icons.
+	* data/Makefile.am,
+	  data/qgn_home_close.png: Moved PNG here from the icons directory.
+	* src/home/hd-task-navigator.c (hd_task_navigator_init): Load
+	qgn_home_close.png from /usr/share/hildon-desktop for now.
+
 2009-03-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes for NB#101613 
