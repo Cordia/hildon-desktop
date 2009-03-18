@@ -825,9 +825,9 @@ void hd_render_manager_sync_clutter_before ()
        * see it unblurred */
       clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
                              CLUTTER_ACTOR(priv->front));
+      clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->blur_front));
       hd_render_manager_blurred_changed();
     }
-  clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
 
   if (STATE_HOME_FRONT(priv->state))
     {
@@ -1458,7 +1458,9 @@ void hd_render_manager_restack()
       }
   }
 
-  clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
+  if (clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) ==
+                               CLUTTER_ACTOR(priv->home_blur))
+    clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
 
   /* And for speed of rendering, work out what is visible and what
    * isn't, and hide anything that would be rendered over by another app */

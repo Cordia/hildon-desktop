@@ -151,6 +151,13 @@ typedef enum
 #define STATE_DISCARD_PREVIEW_NOTE(s) \
   (STATE_ONE_OF((s), HDRM_STATE_TASK_NAV | HDRM_STATE_APP_PORTRAIT))
 
+/* If we have notes then we may want to be able to click on them. If so
+ * then we don't want h-d to have a grab over the notification, so subtract
+ * them from the grab area */
+#define STATE_UNGRAB_NOTES(s) \
+  (STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_HOME | \
+                     HDRM_STATE_HOME_EDIT))
+
 GType hd_render_manager_state_get_type (void) G_GNUC_CONST;
 GType hd_render_manager_get_type       (void) G_GNUC_CONST;
 

@@ -1,5 +1,15 @@
 2009-03-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes for NB#101613 
+
+	* src/home/hd-render-manager.c: Made sure blur_Front is not raised to
+	the top of front - allowing notifications to be seen properly.
+	* src/home/hd-render-manager.h
+	* src/mb/hd-comp-mgr.c: moved hard-coded state to the top of HDRM like
+	we have for other states
+
+2009-03-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* data/transitions.ini: Speeded up transitions even more
 
 2009-03-18  Gordon Williams <gordon.williams@collabora.co.uk>

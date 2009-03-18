@@ -753,10 +753,9 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
     region = XFixesCreateRegion (wm->xdpy, NULL, 0);
 
   /* we must subtract the regions for any dialogs + notifications
-   * from this input mask... if we are in the position of showin
+   * from this input mask... if we are in the position of showing
    * any of them */
-  if (STATE_ONE_OF (hd_render_manager_get_state (),
-                    HDRM_STATE_APP | HDRM_STATE_HOME))
+  if (STATE_UNGRAB_NOTES(hd_render_manager_get_state()))
     {
       XserverRegion subtract;
 
