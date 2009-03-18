@@ -1,3 +1,10 @@
+2009-03-18  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Changed default application icon name to the correct spelling.
+	Fixes: NB#106105.
+
+	* src/launcher/hd-launcher.h:
+
 2009-03-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.26
