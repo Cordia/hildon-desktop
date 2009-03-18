@@ -1,5 +1,9 @@
 2009-03-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* data/transitions.ini: Speeded up transitions even more
+
+2009-03-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/launcher/hd-launcher-page.h: Commented enums
 	* src/home/hd-home-view-container.c: Fix for NB#106484, allowing
 	background image to move even when blurred
