@@ -1087,6 +1087,30 @@ hd_home_get_current_view (HdHome *home)
                                           hd_home_get_current_view_id (home));
 }
 
+GSList *
+hd_home_get_not_visible_views (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  GSList *list = NULL;
+  guint i, current;
+
+  current = hd_home_get_current_view_id (home);
+
+  for (i = 0; i < MAX_VIEWS; i++)
+    {
+      if (i != current)
+        {
+          ClutterActor *view;
+
+          view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                                  i);
+          list = g_slist_prepend (list, view);
+        }
+    }
+
+  return list;
+}
+
 void
 hd_home_set_operator_applet (HdHome *home, ClutterActor *applet)
 {

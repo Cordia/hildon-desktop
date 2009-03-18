@@ -74,6 +74,7 @@ void hd_home_remove_status_menu (HdHome *home, ClutterActor *sa);
 
 guint hd_home_get_current_view_id (HdHome *home);
 ClutterActor *hd_home_get_current_view (HdHome *home);
+GSList *hd_home_get_not_visible_views (HdHome *home);
 
 ClutterActor *hd_home_get_edit_button (HdHome *home);
 ClutterActor *hd_home_get_operator (HdHome *home);

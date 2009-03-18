@@ -1,3 +1,18 @@
+2009-03-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Add support for _HILDON_APPLET_ON_CURRENT_DESKTOP property.
+
+	* src/home/hd-home.c (hd_home_get_current_view,
+	  hd_home_get_not_visible_views):
+	* src/home/hd-home.h: Add function to get all not visible views.
+
+	* src/mb/hd-atoms.c (hd_atoms_init):
+	* src/mb/hd-atoms.h (HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP): Add
+	new atom.
+
+	* src/mb/hd-desktop.c (hd_desktop_stack): Add/Remove
+	_HILDON_APPLET_ON_CURRENT_DESKTOP property to applets.
+
 2009-03-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#104475

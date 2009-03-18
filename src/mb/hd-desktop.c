@@ -286,6 +286,7 @@ hd_desktop_stack (MBWindowManagerClient *client,
   /* Stack to highest/lowest possible position in stack */
   HdCompMgr *hmgr = HD_COMP_MGR (client->wmref->comp_mgr);
   GSList    *applets = NULL, *a;
+  GSList    *views, *v;
   MBWMList  *l_start, *l;
 
   mb_wm_stack_move_top (client);
@@ -295,8 +296,35 @@ hd_desktop_stack (MBWindowManagerClient *client,
 
   /* Now stack all applets */
   for (a = applets; a; a = a->next)
-    mb_wm_client_stack (MB_WM_COMP_MGR_CLIENT (a->data)->wm_client, flags);
+    {
+      MBWindowManagerClient *wm_client = MB_WM_COMP_MGR_CLIENT (a->data)->wm_client;
+      unsigned char on_desktop = 1;
+      mb_wm_client_stack (wm_client, flags);
+      XChangeProperty (wm_client->wmref->xdpy,
+                       wm_client->window->xwindow,
+                       hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP),
+                       XA_CARDINAL,
+                       32,
+                       PropModeReplace,
+                       &on_desktop,
+                       1);
+    }
   g_slist_free (applets);
+
+  views = hd_home_get_not_visible_views (HD_HOME (hd_comp_mgr_get_home (hmgr)));
+  for (v = views; v; v = v->next)
+    {
+      applets = hd_home_view_get_all_applets (HD_HOME_VIEW (v->data));
+      for (a = applets; a; a = a->next)
+        {
+          MBWindowManagerClient *wm_client = MB_WM_COMP_MGR_CLIENT (a->data)->wm_client;
+          XDeleteProperty (wm_client->wmref->xdpy,
+                           wm_client->window->xwindow,
+                           hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP));
+        }
+      g_slist_free (applets);
+    }
+  g_slist_free (views);
 
 #if 0
   /* This is pathetic too. */
