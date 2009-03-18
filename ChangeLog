@@ -1,3 +1,7 @@
+2009-03-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.26
+
 2009-03-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c
@@ -7,7 +11,8 @@
 
 2009-03-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
-	Use the lowmem signal to determine whether we can launch new applications.
+	Use the lowmem signal to determine whether we can launch new
+	applications.
 	Fixes: NB#106339
 
 	* src/launcher/hd-app-mgr.c:

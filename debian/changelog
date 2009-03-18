@@ -1,11 +1,15 @@
-hildon-desktop (1:2.2.26-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.26-1) unstable; urgency=low
 
-  * WRITEME
+  Gordon Williams <gordon.williams@collabora.co.uk>
+  * Fixes: NB#105855, NB#106022
+
+  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+  * Fixes: NB#106339 - not able to start applications after bgkill_on
 
   Jan Arne:
   * Fixes: NB#104578, NB#104534 - Fix some call from Home bugs.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 17 Mar 2009 10:59:54 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 18 Mar 2009 09:07:11 +0200
 
 hildon-desktop (1:2.2.25-1) unstable; urgency=low
 
