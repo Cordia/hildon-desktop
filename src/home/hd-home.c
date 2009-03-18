@@ -287,6 +287,9 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
   guint keyval;
   guint32 unicode;
 
+  if (STATE_NO_CALL_FROM_HOME (hd_render_manager_get_state ()))
+    return FALSE;
+
 /*  g_debug ("%s, display: %p, keymap: %p", __FUNCTION__, display, keymap); */
 
   gdk_keymap_translate_keyboard_state (keymap,

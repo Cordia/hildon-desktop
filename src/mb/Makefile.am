@@ -12,8 +12,8 @@ mb_h =		hd-atoms.h			\
 		hd-dialog.h			\
 		hd-home-applet.h		\
 		hd-theme.h			\
-		hd-decor.h			\		
-		hd-decor-button.h		\		
+		hd-decor.h			\
+		hd-decor-button.h		\
 		hd-animation-actor.h		\
 		hd-remote-texture.h
 
@@ -29,8 +29,8 @@ mb_c = 		hd-atoms.c			\
 		hd-dialog.c			\
 		hd-home-applet.c		\
 		hd-theme.c			\
-		hd-decor.c			\		
-		hd-decor-button.c		\		
+		hd-decor.c			\
+		hd-decor-button.c		\
 		hd-animation-actor.c		\
 		hd-remote-texture.c
 

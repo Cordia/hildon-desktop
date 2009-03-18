@@ -1,3 +1,13 @@
+2009-03-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#104475
+
+	* src/home/hd-home.c (hd_home_desktop_key_press):
+	* src/home/hd-render-manager.h (STATE_NO_CALL_FROM_HOME): Do not allow
+	call from Home for layout mode, switcher and launcher.
+
+	* src/mb/Makefile.am: Remove trailing spaces.
+
 2009-03-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Removed the icon theme hack, using a bit cleaner workaround.
