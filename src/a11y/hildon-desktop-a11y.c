@@ -31,24 +31,28 @@
 #include "home/hda-home-init.h"
 #include "tail/tail.h"
 
+#define ENV_VAR      "ENABLE_HILDON_DESKTOP_A11Y"
+#define VALUE_STRING "TRUE"
+
 static gboolean
-_a11y_invoke_module                    (const char   *libname,
+_a11y_invoke_module                    (const gchar  *libname,
                                         gboolean      init);
 static char *
-_a11y_create_accessibility_module_name (const char *libname);
-
-
+_a11y_create_accessibility_module_name (const gchar *libname);
 
 static gboolean
-_a11y_invoke_module (const char   *libname,
+_should_enable_a11y                    ();
+
+static gboolean
+_a11y_invoke_module (const gchar  *libname,
                      gboolean      init)
 {
   GModule    *handle;
   void      (*invoke_fn) (void);
   const char *method;
   gboolean    retval = FALSE;
-  char       *module_name;
-  
+  gchar      *module_name;
+
   if (init)
     method = "gnome_accessibility_module_init";
   else
@@ -82,11 +86,11 @@ _a11y_invoke_module (const char   *libname,
   return retval;
 }
 
-static char *
-_a11y_create_accessibility_module_name (const char *libname)
+static gchar *
+_a11y_create_accessibility_module_name (const gchar *libname)
 {
-  char *fname;
-  char *retval;
+  gchar *fname;
+  gchar *retval;
 
   fname = g_strconcat (libname, "." G_MODULE_SUFFIX, NULL);
 
@@ -99,9 +103,39 @@ _a11y_create_accessibility_module_name (const char *libname)
   return retval;
 }
 
+static gboolean
+_should_enable_a11y                    ()
+{
+  const gchar *value = NULL;
+  gint found = 0;
+
+  value = g_getenv (ENV_VAR);
+  if (value == NULL)
+    {
+      return FALSE;
+    }
+
+  found = !g_ascii_strcasecmp (value, VALUE_STRING);
+
+  if (found)
+    {
+      return TRUE;
+    }
+
+  return FALSE;
+}
+
+/* public methods */
 void
 hildon_desktop_a11y_init (void)
 {
+  if (!_should_enable_a11y ())
+    {
+      g_debug ("Current % doesn't allow a11y support. Avoiding load a11y modules",
+               ENV_VAR);
+      return;
+    }
+
   /* gail */
   _a11y_invoke_module ("libgail", TRUE);
 

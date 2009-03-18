@@ -1,3 +1,10 @@
+2009-03-18  Alejandro Pinheiro <apinheiro@igalia.com>
+
+	* debian/rules: set a11y suppport compilation as the default one
+	* src/a11y/hildon-desktop-a11y.c: use the environment variable
+	ENABLE_HILDON_DESKTOP_A11Y in order to check in runtime if it is
+	needed to init the a11y support
+
 2009-03-18  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Changed default application icon name to the correct spelling.
