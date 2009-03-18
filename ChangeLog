@@ -1,3 +1,11 @@
+2009-03-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher-page.h: Commented enums
+	* src/home/hd-home-view-container.c: Fix for NB#106484, allowing
+	background image to move even when blurred
+	* src/util/hd-transition.c: Modified close animation to shrink
+	more vertically before it starts to shrink horizontally
+
 2009-03-18  Alejandro Pinheiro <apinheiro@igalia.com>
 
 	* debian/rules: set a11y suppport compilation as the default one

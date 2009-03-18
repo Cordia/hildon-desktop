@@ -58,14 +58,14 @@ struct _HdLauncherPageClass
 
 typedef enum
 {
-  HD_LAUNCHER_PAGE_TRANSITION_IN = 0,
-  HD_LAUNCHER_PAGE_TRANSITION_OUT,
-  HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK, /* out for topmost menu when the back is over it */
-  HD_LAUNCHER_PAGE_TRANSITION_LAUNCH,
+  HD_LAUNCHER_PAGE_TRANSITION_IN = 0, /* in for main view */
+  HD_LAUNCHER_PAGE_TRANSITION_OUT, /* out for main view */
+  HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK, /* out for main view when the subview is over it */
+  HD_LAUNCHER_PAGE_TRANSITION_LAUNCH, /* launching an application */
   HD_LAUNCHER_PAGE_TRANSITION_IN_SUB, /* in for sub-menu */
   HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB, /* out for sub-menu */
-  HD_LAUNCHER_PAGE_TRANSITION_BACK, /* back out as a new menu appears */
-  HD_LAUNCHER_PAGE_TRANSITION_FORWARD, /* forwards after a new menu is removed */
+  HD_LAUNCHER_PAGE_TRANSITION_BACK, /* back out the main view as a subview appears */
+  HD_LAUNCHER_PAGE_TRANSITION_FORWARD, /* main view forwards after a subview is removed */
 } HdLauncherPageTransition;
 
 GType            hd_launcher_page_get_type (void) G_GNUC_CONST;

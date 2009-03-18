@@ -27,6 +27,7 @@
 #include "hd-home-view.h"
 #include "hd-home.h"
 #include "hd-comp-mgr.h"
+#include "hd-render-manager.h"
 
 #include <glib/gstdio.h>
 
@@ -68,7 +69,7 @@ struct _HdHomeViewContainerPrivate
 
   /* GConf */
   GConfClient *gconf_client;
- 
+
   GnomeVFSMonitorHandle *backgrounds_dir_monitor;
 
   guint views_active_notify;
@@ -219,7 +220,7 @@ hd_home_view_container_update_active_views (HdHomeViewContainer *self,
     }
 
   /* Set current view to an active view*/
-  i = current_view; 
+  i = current_view;
   while (!active_views[i % MAX_HOME_VIEWS] && i - current_view < MAX_HOME_VIEWS)
     i++;
   current_view = (i % MAX_HOME_VIEWS);
@@ -364,7 +365,7 @@ hd_home_view_container_constructed (GObject *self)
                                       NULL);
   if (g_mkdir_with_parents (backgrounds_dir,
                             S_IRUSR | S_IWUSR | S_IXUSR |
-                            S_IRGRP | S_IXGRP | 
+                            S_IRGRP | S_IXGRP |
                             S_IROTH | S_IXOTH))
     {
       g_warning ("Could not make %s dir", backgrounds_dir);
@@ -616,7 +617,7 @@ hd_home_view_container_set_current_view (HdHomeViewContainer *container,
     }
 
   /* Set _NET_DESKTOP porperty to root window */
-  wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm; 
+  wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   propvalue[0] = current_view;
 
   XChangeProperty (wm->xdpy, wm->root_win->xwindow,
@@ -682,6 +683,8 @@ scroll_back_new_frame_cb (ClutterTimeline     *timeline,
   HdHomeViewContainerPrivate *priv = container->priv;
 
   priv->offset = (priv->frames - frame_num) * priv->offset_per_frame;
+  /* prod the blur control so it notices that the background has changed */
+  hd_render_manager_blurred_changed();
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
 }

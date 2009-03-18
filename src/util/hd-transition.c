@@ -256,7 +256,7 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
 
   amt = (float)clutter_timeline_get_progress(timeline);
 
-  amtx = 1.3 - amt*2;
+  amtx = 1.6 - amt*2;
   amty = 1 - amt*2;
   amtp = amt*2 - 1;
   if (amtx<0) amtx=0;
