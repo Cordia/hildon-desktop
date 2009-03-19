@@ -209,7 +209,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size);
 
 /* margin to left of the app title */
 #define HD_TITLE_BAR_TITLE_MARGIN 24
-#define HD_TITLE_BAR_TEXT_MARGIN 8
+#define HD_TITLE_BAR_TEXT_MARGIN 24
 
 enum
 {
