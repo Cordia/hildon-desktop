@@ -1,3 +1,14 @@
+2009-03-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#103409 - Display is not on when information banner comes
+
+	* configure.ac:
+	* debian/control: Add mce-dev dependency
+
+	* src/mb/hd-comp-mgr.c (property_changed_cb_id, mce_proxy,
+	  hd_comp_mgr_init, hd_comp_mgr_map_notify): Request mce to switch
+	  display on if there is an information banner displayed.
+
 2009-03-19  Gordon Williams <gordon.williams@collabora.co.uk>
 
         * src/home/hd-clutter-cache.c
