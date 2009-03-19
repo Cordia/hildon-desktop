@@ -1402,7 +1402,13 @@ void hd_render_manager_restack()
                         clutter_actor_get_name(actor)?clutter_actor_get_name(actor):"?",
                         clutter_actor_get_name(parent)?clutter_actor_get_name(parent):"?");
 #endif /*STACKING_DEBUG*/
-		  clutter_actor_raise_top(actor);
+                  if (parent)
+		    clutter_actor_raise_top(actor);
+#if STACKING_DEBUG
+                  else
+                    g_debug("%s DOES NOT HAVE A PARENT",
+                        clutter_actor_get_name(actor)?clutter_actor_get_name(actor):"?");
+#endif /*STACKING_DEBUG*/
                 }
               else
                 {
