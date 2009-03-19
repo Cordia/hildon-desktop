@@ -1,3 +1,13 @@
+2009-03-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#105921 Task switcher is not accessible after the missed call event
+	          when call UI is opened
+
+	* src/mb/hd-note.c:
+	  Stack incoming event windows below the desktop,
+	  so hd_comp_mgr_get_foreground_region() won't find it
+	  and won't think it covers anything.
+
 2009-03-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Add support for _HILDON_APPLET_ON_CURRENT_DESKTOP property.
