@@ -374,3 +374,29 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
   /* FIXME: Do other kinds of extension */
   return CLUTTER_ACTOR(group);
 }
+
+static void
+reload_texture_cb (ClutterActor *child,
+                   gpointer      data)
+{
+  gchar *filename;
+  if (!CLUTTER_IS_TEXTURE(child))
+    return;
+
+  /* filename is set in the child's name. clutter_texture_set_from_file sets
+   * the anme to this string, but the string is from the actor in the first
+   * place and it just breaks... */
+  filename = g_strdup(clutter_actor_get_name(child));
+  clutter_texture_set_from_file(CLUTTER_TEXTURE(child), filename, 0);
+  g_free(filename);
+}
+
+void hd_clutter_cache_theme_changed(void) {
+  /* If there is no clutter cache yet then we definitely
+   * don't care about reloading stuff */
+  if (!the_clutter_cache)
+    return;
+
+  clutter_container_foreach (CLUTTER_CONTAINER(the_clutter_cache),
+                             reload_texture_cb, 0);
+}

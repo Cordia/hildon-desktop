@@ -50,6 +50,11 @@ struct _HdClutterCacheClass
 
 GType hd_clutter_cache_get_type (void) G_GNUC_CONST;
 
+/* Called when the theme has changes, this causes a reload of
+ * all textures. */
+void
+hd_clutter_cache_theme_changed(void);
+
 /* Create a clutter clone texture from a texture in our cache.
  * This is created specially and is not owned by the cache.
  * If from_theme is true, the filename will be appended to the current

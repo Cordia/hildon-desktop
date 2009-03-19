@@ -1,4 +1,13 @@
-2009-03-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-03-19  Gordon Williams <gordon.williams@collabora.co.uk>
+
+        * src/home/hd-clutter-cache.c
+        * src/home/hd-clutter-cache.h: Added support for reloading textures in
+        the cache
+        * src/mb/hd-theme.c: Whenever a new theme is created, notify the 
+        texture so it can reload all its' textures on theme change. This
+        updates titlebars etc, which PARTIALLY solves NB#101874
+
+2009-03-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#105921 Task switcher is not accessible after the missed call event
 	          when call UI is opened

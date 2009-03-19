@@ -26,6 +26,7 @@
 #include "hd-app.h"
 #include "hd-decor.h"
 #include "hd-decor-button.h"
+#include "hd-clutter-cache.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -73,6 +74,8 @@ hd_theme_destroy (MBWMObject *obj)
 static int
 hd_theme_init (MBWMObject *obj, va_list vap)
 {
+  hd_clutter_cache_theme_changed();
+
   return 1;
 }
 
