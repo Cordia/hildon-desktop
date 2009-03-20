@@ -81,6 +81,7 @@ HdLauncherItem *   hd_launcher_item_new_from_keyfile (const gchar *id,
                                                       GKeyFile *key_file,
                                                       GError   **error);
 const gchar *      hd_launcher_item_get_id           (HdLauncherItem *item);
+GQuark             hd_launcher_item_get_id_quark     (HdLauncherItem *item);
 HdLauncherItemType hd_launcher_item_get_item_type    (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_name         (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_local_name   (HdLauncherItem *item);

@@ -357,6 +357,9 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
   HdLauncherApp *app = HD_LAUNCHER_APP (data);
   ClutterActor *top_page;
 
+  if (!hd_app_mgr_launch (app))
+    return;
+
   /* If the app has been already launched, send the relaunched signal
    * and don't animate anything.
    */
@@ -364,10 +367,8 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
     {
       g_signal_emit (hd_launcher_get (), launcher_signals[APP_RELAUNCHED],
                      0, data, NULL);
+      return;
     }
-
-  if (!hd_app_mgr_launch (app))
-    return;
 
   /* If there's no launch transition, do the 'fall away' transition.
    */

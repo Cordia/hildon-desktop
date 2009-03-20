@@ -1,3 +1,17 @@
+2009-03-20  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Track the windows (including dialogs) for each app so the HdCompMgr can
+	tell HdAppMgr when an app has disappeared.
+	Fixes: NB#106673
+
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-app-mgr.h:
+	* src/launcher/hd-launcher-item.c: Added a way to get the GQuark of the
+	application id.
+	* src/launcher/hd-launcher-item.h:
+	* src/launcher/hd-launcher.c:
+	* src/mb/hd-comp-mgr.c:
+
 2009-03-20  Gordon Williams <gordon.williams@collabora.co.uk>
 
         * src/home/hd-render-manager.c: Fix for NB#106678 - Home edit tab

@@ -83,6 +83,7 @@ struct HdCompMgrPrivate
   HdSwitcher            *switcher_group;
   ClutterActor          *home;
 
+  GHashTable            *shown_apps;
   GHashTable            *hibernating_apps;
 
   Atom                   atoms[_HD_ATOM_LAST];
@@ -217,8 +218,7 @@ hd_comp_mgr_client_get_app_key (HdCompMgrClient *client, HdCompMgr *hmgr)
     goto out;
 
   app = hd_app_mgr_match_window (class_hint.res_name,
-                                 class_hint.res_class,
-                                 (GPid)wm_client->window->pid);
+                                 class_hint.res_class);
 
   if (app)
     {
@@ -286,8 +286,19 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
   app = hd_comp_mgr_client_get_app_key (client, hmgr);
   if (app)
     {
+      GQuark appid = hd_launcher_item_get_id_quark (HD_LAUNCHER_ITEM (app));
       priv->app = g_object_ref (app);
       hd_comp_mgr_client_process_hibernation_prop (client);
+
+      /* Look up if there were already windows for this app. */
+      guint windows = (guint)g_hash_table_lookup (hmgr->priv->shown_apps,
+                                           (gpointer)appid);
+      if (!windows)
+        hd_app_mgr_app_opened (app, wm_client->window->pid);
+
+      g_hash_table_insert (hmgr->priv->shown_apps,
+                           (gpointer)appid,
+                           (gpointer)++windows);
     }
 
   /* Set portrait_* initially. */
@@ -533,11 +544,16 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
     }
 
   /*
-   * Create a hash table for hibernating windows.
+   * Create hash tables for keeping active apps and hibernating windows.
    */
+  priv->shown_apps =
+    g_hash_table_new_full (g_direct_hash,
+                           g_direct_equal,
+                           NULL,
+                           NULL);
   priv->hibernating_apps =
-    g_hash_table_new_full (g_int_hash,
-			   g_int_equal,
+    g_hash_table_new_full (g_direct_hash,
+			   g_direct_equal,
 			   NULL,
 			   (GDestroyNotify)mb_wm_object_unref);
 
@@ -576,6 +592,8 @@ hd_comp_mgr_destroy (MBWMObject *obj)
 {
   HdCompMgrPrivate * priv = HD_COMP_MGR (obj)->priv;
 
+  if (priv->shown_apps)
+    g_hash_table_destroy (priv->shown_apps);
   if (priv->hibernating_apps)
     g_hash_table_destroy (priv->hibernating_apps);
   g_object_unref( priv->render_manager );
@@ -901,12 +919,32 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       hd_render_manager_set_reactive(TRUE);
     }
 
+  /* Check if it's the last window for the app. */
+  if (hclient->priv->app)
+    {
+      GQuark appid = hd_launcher_item_get_id_quark (
+                      HD_LAUNCHER_ITEM (hclient->priv->app));
+      guint windows = (guint)g_hash_table_lookup (priv->shown_apps,
+                                                  (gpointer)appid);
+      if (--windows == 0)
+        {
+          hd_app_mgr_app_closed (hclient->priv->app);
+          g_hash_table_remove (priv->shown_apps, (gpointer)appid);
+        }
+      else
+        {
+          g_hash_table_insert (priv->shown_apps,
+                               (gpointer)appid,
+                               (gpointer) windows);
+        }
+    }
+
   /*
    * If the actor is an application, remove it also to the switcher
    */
   if (hclient->priv->app &&
       (hd_launcher_app_get_state (hclient->priv->app) == HD_APP_STATE_HIBERNATING) &&
-      !g_hash_table_lookup (priv->hibernating_apps, & hclient->priv->hibernation_key))
+      !g_hash_table_lookup (priv->hibernating_apps, (gpointer) hclient->priv->hibernation_key))
     {
       /*
        * We want to hold onto the CM client object, so we can continue using
@@ -917,7 +955,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       mb_wm_object_ref (MB_WM_OBJECT (cclient));
 
       g_hash_table_insert (priv->hibernating_apps,
-			   & hclient->priv->hibernation_key,
+			   (gpointer) hclient->priv->hibernation_key,
 			   hclient);
 
       hd_switcher_hibernate_window_actor (priv->switcher_group,
@@ -995,13 +1033,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                     hd_render_manager_set_state (hd_render_manager_has_apps ()
                                                  ? HDRM_STATE_TASK_NAV
                                                  : HDRM_STATE_HOME);
-
-                  if (hclient->priv->app)
-                    {
-                      /* Notify HdAppMgr that the application has been closed. */
-                      hd_app_mgr_closed (hclient->priv->app);
-                    }
-
                 }
 	      else if (app->leader == app && app->followers)
 	        {
@@ -1608,7 +1639,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   hkey = hclient->priv->hibernation_key;
 
-  hclient_h = g_hash_table_lookup (priv->hibernating_apps, &hkey);
+  hclient_h = g_hash_table_lookup (priv->hibernating_apps, (gpointer)hkey);
 
   if (hclient_h)
     {
@@ -1619,7 +1650,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       hd_switcher_replace_window_actor (priv->switcher_group,
                                         actor_h, actor);
       mb_wm_object_unref (MB_WM_OBJECT (hclient_h));
-      g_hash_table_remove (priv->hibernating_apps, &hkey);
+      g_hash_table_remove (priv->hibernating_apps, (gpointer)hkey);
     }
 
   int topmost;
@@ -2040,7 +2071,7 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
   if (h_client->priv->app)
     {
       /* Notify HdAppMgr that the application has been closed. */
-      hd_app_mgr_closed (h_client->priv->app);
+      hd_app_mgr_app_closed (h_client->priv->app);
     }
 }
 

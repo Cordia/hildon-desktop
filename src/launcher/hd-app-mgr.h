@@ -68,7 +68,9 @@ gboolean hd_app_mgr_relaunch_set_top (HdLauncherApp *app);
 gboolean hd_app_mgr_wakeup       (HdLauncherApp *app);
 gboolean hd_app_mgr_kill         (HdLauncherApp *app);
 
-void hd_app_mgr_closed (HdLauncherApp *app);
+void hd_app_mgr_app_opened (HdLauncherApp *app,
+                            GPid pid);
+void hd_app_mgr_app_closed (HdLauncherApp *app);
 
 gboolean hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id);
 
@@ -77,8 +79,7 @@ void hd_app_mgr_hibernatable     (HdLauncherApp *app, gboolean hibernatable);
 
 /* Window matching */
 HdLauncherApp *hd_app_mgr_match_window (const char *res_name,
-                                        const char *res_class,
-                                        GPid pid);
+                                        const char *res_class);
 
 void hd_app_mgr_dump_app_list (gboolean only_running);
 

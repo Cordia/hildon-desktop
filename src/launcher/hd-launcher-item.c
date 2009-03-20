@@ -62,6 +62,7 @@ hd_launcher_item_type_get_type (void)
 struct _HdLauncherItemPrivate
 {
   HdLauncherItemType item_type;
+  GQuark id_quark;
   gchar *id;
   gchar *name;
   gchar *icon_name;
@@ -234,6 +235,14 @@ hd_launcher_item_get_id (HdLauncherItem *item)
   g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), NULL);
 
   return item->priv->id;
+}
+
+GQuark
+hd_launcher_item_get_id_quark (HdLauncherItem *item)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), NULL);
+
+  return item->priv->id_quark;
 }
 
 const gchar *
@@ -435,6 +444,7 @@ hd_launcher_item_new_from_keyfile (const gchar *id,
 
   result->priv->item_type = type_value->value;
   result->priv->id = g_strdup (id);
+  result->priv->id_quark = g_quark_from_string (result->priv->id);
   if (!hd_launcher_item_parse_keyfile (result, key_file, error))
     {
       g_object_unref (result);

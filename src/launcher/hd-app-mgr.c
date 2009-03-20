@@ -651,17 +651,59 @@ hd_app_mgr_kill (HdLauncherApp *app)
   if (kill (pid, SIGTERM) != 0)
     return FALSE;
 
-  hd_app_mgr_closed (app);
+  hd_app_mgr_app_closed (app);
   return TRUE;
 }
 
-void
-hd_app_mgr_closed (HdLauncherApp *app)
+void hd_app_mgr_app_opened (HdLauncherApp *app,
+                            GPid pid)
 {
+  g_debug ("%s: app %s shown\n", __FUNCTION__,
+      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
+
+  hd_launcher_app_set_state (app, HD_APP_STATE_SHOWN);
+
+  /* If we didn't have a pid, get the one from the window. */
+  if (!hd_launcher_app_get_pid (app))
+    hd_launcher_app_set_pid (app, pid);
+
+  /* Signal that the app has appeared.
+   */
+  g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_SHOWN],
+                 0, app, NULL);
+
+  /* Remove it from prestarting lists, just in case it has been launched
+   * from somewhere else.
+   */
+  hd_app_mgr_remove_from_queue (QUEUE_PRESTARTED, app);
+  hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
+
+}
+
+void
+hd_app_mgr_app_closed (HdLauncherApp *app)
+{
+  g_debug ("%s: app %s closed\n", __FUNCTION__,
+      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
+
+  if (hd_launcher_app_get_state (app) == HD_APP_STATE_HIBERNATING)
+    {
+      hd_launcher_app_set_pid (app, 0);
+      return;
+    }
+
   /* Remove from anywhere we keep executing apps. */
   hd_app_mgr_remove_from_queue (QUEUE_PRESTARTED, app);
   hd_app_mgr_remove_from_queue (QUEUE_HIBERNATED, app);
   hd_app_mgr_remove_from_queue (QUEUE_HIBERNATABLE, app);
+
+  /* Add to prestartable and check state if always-on. */
+  if (hd_launcher_app_get_prestart_mode (app) ==
+        HD_APP_PRESTART_ALWAYS)
+    {
+      hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
+      hd_app_mgr_state_check ();
+    }
 
   hd_launcher_app_set_pid (app, 0);
   hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
@@ -1162,20 +1204,9 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
                 { /* Disconnection */
                   g_debug ("%s: App %s has fallen\n", __FUNCTION__,
                       hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
+
                   /* We have the correct app, deal accordingly. */
-
-                  /* The app must have been hibernated or closed. */
-                  if (hd_launcher_app_get_state (app) !=
-                      HD_APP_STATE_HIBERNATING)
-                    hd_app_mgr_closed (app);
-
-                  /* Add to prestartable and check state if always-on. */
-                  if (hd_launcher_app_get_prestart_mode (app) ==
-                        HD_APP_PRESTART_ALWAYS)
-                    {
-                      hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
-                      hd_app_mgr_state_check ();
-                    }
+                  hd_app_mgr_app_closed (app);
                 }
               else
                 { /* Connection */
@@ -1287,8 +1318,7 @@ hd_app_mgr_request_app_pid (HdLauncherApp *app)
 
 HdLauncherApp *
 hd_app_mgr_match_window (const char *res_name,
-                         const char *res_class,
-                         GPid pid)
+                         const char *res_class)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   GList *apps = hd_launcher_tree_get_items (priv->tree, NULL);
@@ -1340,28 +1370,6 @@ hd_app_mgr_match_window (const char *res_name,
 
       next:
         apps = g_list_next (apps);
-    }
-
-  if (result)
-    {
-      hd_launcher_app_set_state (result, HD_APP_STATE_SHOWN);
-
-      /* If we didn't have a pid, get the one from the window. */
-      if (!hd_launcher_app_get_pid (result))
-        hd_launcher_app_set_pid (result, pid);
-
-      /* Signal that the app has appeared.
-       * TODO: I'd prefer to signal this when the window is mapped,
-       * but right now here's the only place HdAppMgr gets to know this.
-       */
-      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_SHOWN],
-                     0, result, NULL);
-
-      /* Remove it from prestarting lists, just in case it has been launched
-       * from somewhere else.
-       */
-      hd_app_mgr_remove_from_queue (QUEUE_PRESTARTED, result);
-      hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, result);
     }
 
   return result;
