@@ -1,3 +1,8 @@
+2009-03-20  Gordon Williams <gordon.williams@collabora.co.uk>
+
+        * src/home/hd-title-bar.c: Ensured that the progress indicator is at
+        the end of the title, and that it never overlaps the close button. 
+        
 2009-03-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#107155 ROTATION: Call handling with system lock dialog is not

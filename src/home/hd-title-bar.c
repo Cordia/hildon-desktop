@@ -780,12 +780,22 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
   if (is_waiting)
     {
       gint x = 0;
+      gint max_x = HD_COMP_MGR_SCREEN_WIDTH -
+                  (HD_THEME_IMG_PROGRESS_SIZE +
+                   HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH);
+      PangoRectangle logical_rect = { 0, };
+      PangoLayout *layout;
+
       clutter_actor_show(priv->progress_texture);
       clutter_timeline_start(priv->progress_timeline);
 
+      layout = clutter_label_get_layout (priv->title);
+      pango_layout_get_extents (layout, NULL, &logical_rect);
+
       x = clutter_actor_get_x(CLUTTER_ACTOR(priv->title)) +
-          clutter_actor_get_width(CLUTTER_ACTOR(priv->title)) +
+          (int)pango_units_to_double(logical_rect.width) +
           HD_TITLE_BAR_TITLE_MARGIN;
+      if (x > max_x) x = max_x;
 
       clutter_actor_set_position(priv->progress_texture,
                 x,
@@ -839,7 +849,7 @@ hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm)
           client = client->stacked_below;
         }
     }
-  
+
   if (STATE_IS_EDIT_MODE(hd_render_manager_get_state()))
     hd_title_bar_set_for_edit_mode(bar);
   else
