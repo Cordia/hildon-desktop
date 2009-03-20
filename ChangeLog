@@ -1,3 +1,10 @@
+2009-03-20  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Misc improvements to prestarting sequence.
+	Fixes: NB#106507
+
+	* src/launcher/hd-app-mgr.c:
+
 2009-03-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c:
