@@ -119,13 +119,18 @@ struct HdCompMgrClientPrivate
   gboolean              can_hibernate : 1;
 
   /*
-   * Current values of _HILDON_PORTRAIT_MODE_SUPPORT
-   * and _HILDON_PORTRAIT_MODE_REQUEST of the client.
-   * If @portrait_supported < 0 the client doesn't care.
-   * Else if it's zero the client asks us NOT to show it
-   * in portrait mode.  Otherwise it's fine with it.
+   * Clients have the means to specify properties to indicate
+   * portrait-capability, which are mapped as follows:
+   *
+   * #_HILDON_PORTRAIT_MODE_REQUEST => @portrait_mode_requested
+   * #_HILDON_PORTRAIT_MODE_SUPPORT:
+   *   if 0 => @portrait_mode_not_supported := 1
+   *   else => @portrait_mode_not_supported == 0
+   *
+   * That is, all clients are assumed to be OK with portrait mode,
+   * unless they say otherwise.
    */
-  gint                  portrait_supported;
+  gboolean              portrait_not_supported;
   gboolean              portrait_requested;
 };
 
@@ -309,11 +314,11 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
                               XA_CARDINAL, 32, 1, NULL);
   if (prop)
     {
-      priv->portrait_supported = *prop;
+      priv->portrait_not_supported = *prop == 0;
       XFree (prop);
     }
   else
-    priv->portrait_supported = -1;
+    priv->portrait_not_supported = FALSE;
 
   prop = hd_util_get_win_prop_data_and_validate (
                        wm_client->wmref->xdpy,
@@ -326,11 +331,10 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
       XFree (prop);
     }
 
-  if (priv->portrait_supported || priv->portrait_requested)
-    g_debug ("portrait properties of %p: supported=%d requested=%d",
-             wm_client,
-             priv->portrait_supported,
-             priv->portrait_requested);
+  g_debug ("portrait properties of %p: supported=%d requested=%d",
+           wm_client,
+           !priv->portrait_not_supported,
+           priv->portrait_requested);
 
   return 1;
 }
@@ -691,12 +695,12 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   cc = HD_COMP_MGR_CLIENT (c->cm_client);
 
   if (event->atom == pok)
-    cc->priv->portrait_supported = *value;
+    cc->priv->portrait_not_supported  = *value == 0;
   else
-    cc->priv->portrait_requested = *value != 0;
+    cc->priv->portrait_requested      = *value != 0;
 
   g_debug ("portrait property of %p changed: supported=%d requested=%d", c,
-           cc->priv->portrait_supported, cc->priv->portrait_requested);
+           !cc->priv->portrait_not_supported, cc->priv->portrait_requested);
 
   /* Switch HDRM state if we need to. */
   if (hd_render_manager_get_state() == HDRM_STATE_APP_PORTRAIT)
@@ -2144,7 +2148,7 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
        * it is transient for does. */
       for (ct = cs; ct; ct = ct->transient_for)
         {
-          if (!HD_COMP_MGR_CLIENT (ct->cm_client)->priv->portrait_supported
+          if (HD_COMP_MGR_CLIENT (ct->cm_client)->priv->portrait_not_supported
               && hd_render_manager_is_client_visible (ct))
             /* @cs is visible and doesn't support portrait layout. */
             /* Visibility had to be rechecked because @cs may not be visible. */
