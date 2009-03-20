@@ -2134,7 +2134,10 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
         continue;
       if (hd_comp_mgr_ignore_window (cs))
         continue;
-      if (!hd_render_manager_is_client_visible (cs))
+      if (!hd_render_manager_is_client_visible (cs)
+          && !(cs->window
+               && hd_wm_current_app_is (NULL, 0) == cs->window->xwindow))
+        /* Ignore invisibles except if it's the current application. */
         continue;
 
       /* Let's suppose @ct requests portrait layout if any of the windows
@@ -2142,8 +2145,9 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
       for (ct = cs; ct; ct = ct->transient_for)
         {
           if (!HD_COMP_MGR_CLIENT (ct->cm_client)->priv->portrait_supported
-              && (ct == cs || hd_render_manager_is_client_visible (ct)))
+              && hd_render_manager_is_client_visible (ct))
             /* @cs is visible and doesn't support portrait layout. */
+            /* Visibility had to be rechecked because @cs may not be visible. */
             return FALSE;
           any_requests |= HD_COMP_MGR_CLIENT (ct->cm_client)->priv->portrait_requested;
         }

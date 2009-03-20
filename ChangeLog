@@ -1,3 +1,12 @@
+2009-03-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#107155 ROTATION: Call handling with system lock dialog is not
+	          shown in portrait mode
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait):
+	  Honor the current application's portrait request even
+	  if it's not currently visible.
+
 2009-03-20  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Track the windows (including dialogs) for each app so the HdCompMgr can
