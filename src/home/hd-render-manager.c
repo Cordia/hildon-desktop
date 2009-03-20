@@ -849,6 +849,10 @@ void hd_render_manager_sync_clutter_before ()
   /* update our fixed title bar at the top of the screen */
   hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
 
+  /* Make sure we hide the edit button if it's not required */
+  if (priv->state != HDRM_STATE_HOME)
+    hd_home_hide_edit_button(priv->home);
+
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport */
   hd_render_manager_set_input_viewport();

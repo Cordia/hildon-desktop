@@ -1,3 +1,8 @@
+2009-03-20  Gordon Williams <gordon.williams@collabora.co.uk>
+
+        * src/home/hd-render-manager.c: Fix for NB#106678 - Home edit tab
+        staying visible when changing states.
+
 2009-03-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-title-bar.c (HD_TITLE_BAR_TEXT_MARGIN): Use 24px instead
