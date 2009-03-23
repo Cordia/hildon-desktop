@@ -1,5 +1,8 @@
 2009-03-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#106587 Drawing bug using widgets requesting size bigger than the
+	          max size inside dialogs
+
 	* src/mb/hd-dialog.c (hd_dialog_request_geometry):
 	  Make sure the granted geometry doesn't exceed the screen height.
 
