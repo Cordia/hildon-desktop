@@ -1,3 +1,8 @@
+2009-03-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-dialog.c (hd_dialog_request_geometry):
+	  Make sure the granted geometry doesn't exceed the screen height.
+
 2009-03-20  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Misc improvements to prestarting sequence.

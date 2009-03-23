@@ -176,7 +176,6 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
 			    MBGeometry            *new_geometry,
 			    MBWMClientReqGeomType  flags)
 {
-  const MBGeometry *geom;
   int north = 0, south = 0, west = 0, east = 0;
   MBWindowManager *wm = client->wmref;
 
@@ -190,9 +189,6 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
    * screen. We do not allow change of position, dialogs are always aligned
    * with the bottom of the screen.
    */
-  geom = (flags & MBWMClientReqGeomIsViaConfigureReq) ?
-    &client->window->geometry : &client->frame_geometry;
-
   if (client->decor)
     mb_wm_theme_get_decor_dimensions (wm->theme, client,
                                       &north, &south, &west, &east);
@@ -248,8 +244,21 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
     }
 
   /* make sure there is space to tap outside */
-  if (client->frame_geometry.y < 56)
-    client->frame_geometry.y = 56;
+  int diff;
+  diff = 56 - client->frame_geometry.y;
+  if (diff > 0)
+    {
+      client->frame_geometry.y   += diff;
+      client->window->geometry.y += diff;
+    }
+
+  diff = (client->frame_geometry.y + client->frame_geometry.height)
+          - wm->xdpy_height;
+  if (diff > 0)
+    {
+      client->frame_geometry.height   -= diff;
+      client->window->geometry.height -= diff;
+    }
 
   mb_wm_client_geometry_mark_dirty (client);
 
