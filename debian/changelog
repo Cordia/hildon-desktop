@@ -1,6 +1,6 @@
 hildon-desktop (1:2.2.27-1~unreleased) unstable; urgency=low
 
-  * writeme
+  * Link to libmatchbox2 statically when --enable-static-mb2 is given.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 18 Mar 2009 15:59:54 +0200
 

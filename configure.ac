@@ -49,17 +49,24 @@ AC_SUBST(ALL_LINGUAS)
 AM_GLIB_GNU_GETTEXT
 AC_DEFINE(GETTEXT_PACKAGE, ["maemo-af-desktop"], [Localisation domain])
 
+# check if MB2 should be linked statically
+AC_ARG_ENABLE(static_mb2,
+             [  --enable-static-mb2  Link to MB2 statically [default=no]],
+             [ac_cv_enable_static_mb2=$enableval],[ac_cv_enable_static_mb2=no])
+AC_MSG_CHECKING([whether to statically link Matchbox2])
+if test "$ac_cv_enable_static_mb2" = yes; then
+       AC_MSG_RESULT(yes)
+else
+       AC_MSG_RESULT(no)
+fi
 
 # do we want a11y support?
 AC_ARG_ENABLE(a11y,
-             [ --enable-a11y   Enable Accessibility (requires cail) [default=no]],
+             [  --enable-a11y   Enable Accessibility (requires cail) [default=no]],
              [ac_cv_enable_a11y=$enableval],[ac_cv_enable_a11y=no])
+
 AC_MSG_CHECKING([whether to enable a11y])
-if test -z "$PKG_CONFIG"; then
-       echo "Going to check for pkg-config ..."
-       AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
-       echo "Checked for pkg-config: $PKG_CONFIG"
-fi
+AC_PATH_PROG(PKG_CONFIG, pkg-config, yes)
 if test "$ac_cv_enable_a11y" = yes; then
        echo "ac_cv_enable_a11y: Forced off."
        ac_cv_enable_a11y=no
@@ -94,7 +101,11 @@ fi
 # Dependencies checks
 #+++++++++++++++++++++
 
-PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
+if test "$ac_cv_enable_static_mb2" = yes; then
+        PKG_CHECK_MODULES([MB2], [libmatchbox2-0.1])
+        MB2_STATIC_LIB=/usr/lib/libmatchbox2-0.1.a
+
+        PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
 		       dbus-1 dnl
@@ -102,17 +113,42 @@ PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
 		       xcomposite dnl
 		       xfixes dnl
 		       xrandr dnl
-		       libmatchbox2-0.1 dnl
 		       gtk+-2.0 dnl
 		       gconf-2.0 dnl
 		       hildon-1 dnl
 		       libcanberra dnl
 		       gnome-vfs-2.0 dnl
 		       gdk-pixbuf-xlib-2.0 dnl
-		       xft dnl
+                       pangoxft dnl
+                       xft dnl
                        mce])
+else
+        MB2_CFLAGS=''
+        MB2_STATIC_LIB=''
+        PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
+                       glib-2.0 >= 2.12 dnl
+                       gthread-2.0 dnl
+		       dbus-1 dnl
+		       x11 dnl
+		       xcomposite dnl
+		       xfixes dnl
+		       xrandr dnl
+		       gtk+-2.0 dnl
+		       gconf-2.0 dnl
+		       hildon-1 dnl
+		       libcanberra dnl
+		       gnome-vfs-2.0 dnl
+		       gdk-pixbuf-xlib-2.0 dnl
+                       xft dnl
+                       libmatchbox2-0.1 dnl
+                       mce])
+fi
 
 HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util -I$(top_srcdir)/src/a11y'
+
+# only CFLAGS are needed from MB2 since we are statically linking
+AC_SUBST(MB2_CFLAGS)
+AC_SUBST(MB2_STATIC_LIB)
 
 AC_SUBST(HD_LIBS)
 AC_SUBST(HD_CFLAGS)

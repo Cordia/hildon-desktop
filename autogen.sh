@@ -1,6 +1,2 @@
-#! /bin/sh
-
-# back in the stupidity of autoreconf
+#!/bin/sh
 autoreconf -v --install || exit 1
-
-./configure "$@"

@@ -1,6 +1,6 @@
 INCLUDES = -I $(top_srcdir)/src/launcher \
 	-I $(top_srcdir)src/tidy \
-	@HD_INCS@ $(HD_CFLAGS) \
+	@HD_INCS@ $(MB2_CFLAGS) $(HD_CFLAGS) \
 	-D_XOPEN_SOURCE=500
 
 BUILT_SOURCES =	\

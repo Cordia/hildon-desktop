@@ -8,12 +8,16 @@ else
 ENABLE_A11Y =
 endif
 
+CFLAGS += -DG_DEBUG_DISABLE
+DEB_CONFIGURE_EXTRA_FLAGS += \
+	$(ENABLE_A11Y) \
+	--enable-static-mb2=yes
+
 DEB_DH_STRIP_ARGS := --dbg-package=hildon-desktop
 DEB_DH_INSTALLINIT_ARGS := --no-start -- start 51 2 3 4 . stop 20 0 1 5 6 .
 
 makebuilddir/hildon-desktop::
-	CFLAGS=-DG_DEBUG_DISABLE \
-	       ./autogen.sh --prefix=/usr --sysconfdir=/etc $(ENABLE_A11Y)
+	./autogen.sh
 
 binary-install/hildon-desktop::
 	dh_installxsession -u 'post 05'

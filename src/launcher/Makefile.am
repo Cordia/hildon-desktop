@@ -6,7 +6,7 @@ INCLUDES = \
 	-DPREFIX=\""$(prefix)"\" \
 	-DDATADIR=\""$(datadir)"\" \
 	-DSYSCONFDIR=\""$(sysconfdir)"\" \
-	@HD_INCS@
+	@HD_INCS@ $(MB2_CFLAGS)
 
 BUILT_SOURCES =	\
 	hd-app-mgr-glue.h

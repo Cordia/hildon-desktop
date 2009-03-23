@@ -1,4 +1,4 @@
-INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
+INCLUDES = @HD_INCS@ $(MB2_CFLAGS) $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
 mb_h =		hd-atoms.h			\
 		hd-comp-mgr.h			\

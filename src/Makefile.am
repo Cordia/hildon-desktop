@@ -1,8 +1,9 @@
 SUBDIRS = mb tidy util launcher home $(A11Y_DIR)
 
-INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
+INCLUDES = @HD_INCS@ $(MB2_CFLAGS) $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
 MY_LIBS =	$(top_builddir)/src/mb/libmb.a			\
+		$(MB2_STATIC_LIB)                               \
 		$(top_builddir)/src/launcher/liblauncher.la 	\
 		$(top_builddir)/src/home/libhome.la		\
 		$(top_builddir)/src/util/libutil.la

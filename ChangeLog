@@ -1,3 +1,13 @@
+2009-03-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* autogen.sh: Do not call configure, it's done later by cdbs.
+	* debian/rules: Use DEB_CONFIGURE_EXTRA_FLAGS and CFLAGS to pass the
+	options in the right way.
+	* src/launcher/Makefile.am, src/home/Makefile.am,
+	src/Makefile.am, src/util/Makefile.am, src/mb/Makefile.am,
+	configure.ac: Link to libmatchbox2 statically when configure flag
+	--enable-static-mb2=yes is given.
+
 2009-03-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#106587 Drawing bug using widgets requesting size bigger than the
