@@ -1,3 +1,9 @@
+2009-03-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_visibilities):
+	  Don't add hidden actors to the list of blockers since it doesn't
+	  block anything.  May fix some actual problems.
+
 2009-03-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-theme.c (back_button_timeout): Add some NULL guards. The

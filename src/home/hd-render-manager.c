@@ -1818,12 +1818,15 @@ void hd_render_manager_set_visibilities()
           clutter_actor_get_geometry(child, &geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
           if (hd_render_manager_is_visible(blockers, geo))
-            clutter_actor_show(child);
+            {
+              clutter_actor_show(child);
+
+              /* Add the geometry to our list of blockers and go to next... */
+              if (hd_render_manager_actor_opaque(child))
+                blockers = g_list_prepend(blockers, g_memdup(&geo, sizeof(geo)));
+            }
           else
             clutter_actor_hide(child);
-          /* Add the geometry to our list of blockers and go to next... */
-          if (hd_render_manager_actor_opaque(child))
-            blockers = g_list_prepend(blockers, g_memdup(&geo, sizeof(geo)));
         }
     }
 
