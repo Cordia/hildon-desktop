@@ -1,8 +1,30 @@
-hildon-desktop (1:2.2.27-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.27-1) unstable; urgency=low
 
+  Kimmo:
   * Link to libmatchbox2 statically when --enable-static-mb2 is given.
+  Adam:
+  * Fixes: NB#106587 - Drawing bug using widgets requesting size bigger than
+    the max size inside dialogs
+  * Fixes: NB#107155 - ROTATION: Call handling with system lock dialog is not
+    shown in portrait mode
+  * Fixes: NB#105921 - Task switcher is not accessible after the missed call
+    event when call UI is opened
+  Marc:
+  * Fixes: NB#106507 - Misc improvements to prestarting sequence.
+  * Fixes: NB#106673 - Track the windows (including dialogs) for each app so
+    the HdCompMgr can tell HdAppMgr when an app has disappeared.
+  * Fixes: NB#106105 - Applications doesn't have default icon
+  Gordon:
+  * Fixes: NB#106678 - Home edit tab staying visible when changing states.
+  * Fixes: NB#101613 - Cannot open SMS notification from layout mode
+  * Fixes: NB#106484 - Background image of the home view is moved along with
+    the widget in layout mode
+  Jan Arne:
+  * Fixes: NB#103409 - Display is not on when information banner comes
+  * Fixes: NB#104475 - Dialpad view is displayed in layout mode if Fn+number
+    is pressed
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 18 Mar 2009 15:59:54 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Mar 2009 13:27:10 +0200
 
 hildon-desktop (1:2.2.26-1) unstable; urgency=low
 
