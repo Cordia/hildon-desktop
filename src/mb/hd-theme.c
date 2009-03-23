@@ -124,12 +124,14 @@ static gboolean
 back_button_timeout (gpointer data)
 {
   BackButtonData        *bd = data;
-  MBWindowManagerClient *c;
-
-  c = bd->button->decor->parent_client;
+  MBWindowManagerClient *c = NULL;
 
   bd->timeout_handled = TRUE;
   bd->timeout_id = 0;
+
+  if (!bd->button)
+    return FALSE;
+
   /*
    * The button might be unrealized while we were waiting for the timeout.
    */
@@ -138,7 +140,8 @@ back_button_timeout (gpointer data)
   /*
    * We protect ourselves against the non-app windows.
    */
-  if (!HD_IS_APP (c))
+  if (bd->button->decor && (c = bd->button->decor->parent_client) &&
+      !HD_IS_APP (c))
     {
       g_warning ("Custom button on a something other than App.");
       goto finalize;

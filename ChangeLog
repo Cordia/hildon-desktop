@@ -1,3 +1,9 @@
+2009-03-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-theme.c (back_button_timeout): Add some NULL guards. The
+	original code was strangely brave in this respect. Should fix
+	NB#103447.
+
 2009-03-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-dialog.c (hd_dialog_request_geometry):
