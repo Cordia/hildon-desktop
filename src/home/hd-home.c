@@ -214,7 +214,7 @@ hd_home_back_button_clicked (ClutterActor *button,
   return FALSE;
 }
 
-static Bool
+static void
 hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
 {
   HdHome          *home = userdata;
@@ -234,11 +234,9 @@ hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
                                   CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_x));
 
   priv->last_x = xev->x;
-
-  return True;
 }
 
-static Bool
+static void
 hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 {
   HdHome *home = userdata;
@@ -273,11 +271,9 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 
   priv->cumulative_x = 0;
   priv->moved_over_threshold = FALSE;
-
-  return True;
 }
 
-static Bool
+static void
 hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 {
   HdHome *home = userdata;
@@ -288,7 +284,7 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
   guint32 unicode;
 
   if (STATE_NO_CALL_FROM_HOME (hd_render_manager_get_state ()))
-    return FALSE;
+    return;
 
 /*  g_debug ("%s, display: %p, keymap: %p", __FUNCTION__, display, keymap); */
 
@@ -330,8 +326,6 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
                                       G_TYPE_INVALID);
         }
     }
-
-  return TRUE;
 }
 
 static Bool
@@ -366,7 +360,7 @@ hd_home_desktop_press (XButtonEvent *xev, void *userdata)
   return True;
 }
 
-static Bool
+static void
 hd_property_notify_message (XPropertyEvent *xev, void *userdata)
 {
   HdHome          *home = userdata;
@@ -393,12 +387,10 @@ hd_property_notify_message (XPropertyEvent *xev, void *userdata)
             }
         }
     }
-
-  return True;
 }
 
 /* Called when a client message is sent to the root window. */
-static Bool
+static void
 root_window_client_message (XClientMessageEvent *event, HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
@@ -427,7 +419,7 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 	const char *service_name;
 
 	if (!client || !client->window)
-	  return False;
+	  return;
 
 	launcher_app = hd_comp_mgr_client_get_app (HD_COMP_MGR_CLIENT (client->cm_client));
 
@@ -435,7 +427,7 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 	  {
 	    g_warning ("Window %06x did not have an application associated with it\n",
 		       (int) client->window->xwindow);
-	    return True; /* we did handle it */
+	    return;
 	  }
 
 	service_name = hd_launcher_app_get_service (launcher_app);
@@ -446,7 +438,7 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 	  {
 	    g_warning ("Window %06x has no sane service name\n",
 		       (int) client->window->xwindow);
-	    return True; /* daft service name, don't get a loading pic */
+	    return; /* daft service name, don't get a loading pic */
 	  }
 
 	filename = g_strdup_printf ("%s/.cache/launch",
@@ -505,18 +497,16 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 
 	      gdk_pixbuf_unref (pixbuf);
 	    }
-	    return True;
+	    return;
 	  case 1:
 	    unlink (filename);
-	    return True;
+	    return;
 	  default:
 	    g_warning ("Unknown screenshot command.\n");
 	  }
 
 	g_free (filename);
       }
-
-  return False;
 }
 
 static ClutterActor *

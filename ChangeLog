@@ -1,3 +1,15 @@
+2009-03-24  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	Event handlers now return void and cannot stop processing
+	of further events.
+	Accoding to Kimmo:
+	Fixes NB#105014.
+	
+	* src/home/hd-home.c:
+	* src/mb/hd-animation-actor.c:
+	* src/mb/hd-note.c:
+	* src/util/hd-util.c:
+
 2009-03-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	105061 ROTATION: Incoming call dialog in home view is not

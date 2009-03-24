@@ -67,7 +67,7 @@ get_x_window_string_property (HdNote *self, HdAtoms atom_id)
   return ret != Success || type == None ? NULL : (char *)value;
 }
 
-static Bool
+static void
 resize_note (XConfigureEvent *xev, MBWindowManagerClient *client)
 {
   int n, s, w, e;
@@ -106,12 +106,10 @@ resize_note (XConfigureEvent *xev, MBWindowManagerClient *client)
     geom.y = wm->xdpy_height - geom.height;
 
   hd_note_request_geometry (client, &geom, MBWMClientReqGeomForced);
-
-  return True;
 }
 
 /* Called when a %HdIncomingEvent's X window property has changed. */
-static Bool
+static void
 x_window_property_changed (XPropertyEvent *event, HdNote *self)
 {
   HdCompMgr *cmgr;
@@ -126,7 +124,6 @@ x_window_property_changed (XPropertyEvent *event, HdNote *self)
   else if (event->atom == hd_comp_mgr_get_atom (cmgr,
                        HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_ICON))
     mb_wm_object_signal_emit (MB_WM_OBJECT (self), HdNoteSignalChanged);
-  return False;
 }
 
 static void

@@ -53,7 +53,7 @@ hd_animation_actor_request_geometry (MBWindowManagerClient *client,
 				     MBGeometry            *new_geometry,
 				     MBWMClientReqGeomType  flags);
 
-static Bool
+static void
 hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
 {
   HdAnimationActor         *self = HD_ANIMATION_ACTOR (userdata);
@@ -62,7 +62,7 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
   if (!client->window)
   {
       g_warning ("Stray client message: no window!\n");
-      return False;
+      return;
   }
 
   MBWMCompMgrClutterClient *cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
@@ -71,7 +71,7 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
   if (!actor)
   {
       g_warning ("Stray client message: no actor!\n");
-      return False;
+      return;
   }
   
   if (xev->message_type == show_atom)
@@ -229,10 +229,8 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
 	       xev->data.l[2],
 	       xev->data.l[3],
 	       xev->data.l[4]);
-      return False;
+      return;
   }
-
-  return True;
 }
 
 void
