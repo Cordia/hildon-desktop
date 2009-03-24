@@ -1,5 +1,8 @@
 2009-03-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	105061 ROTATION: Incoming call dialog in home view is not
+	       in portrait layout
+
 	Support portrait mode in home view.  A bit.
 	This is necessary to show dialogs in home view which request
 	portrait mode.
