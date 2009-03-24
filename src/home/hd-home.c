@@ -871,6 +871,7 @@ hd_home_update_layout (HdHome * home)
   switch (hd_render_manager_get_state())
     {
     case HDRM_STATE_HOME:
+    case HDRM_STATE_HOME_PORTRAIT:
       _hd_home_do_normal_layout(home);
       break;
     case HDRM_STATE_HOME_EDIT:

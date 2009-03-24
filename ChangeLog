@@ -1,3 +1,24 @@
+2009-03-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Support portrait mode in home view.  A bit.
+	This is necessary to show dialogs in home view which request
+	portrait mode.
+
+	* src/home/hd-render-manager.h:
+	  New state, HDRM_STATE_HOME_PORTRAIT, which is like HDRM_STATE_HOME.
+	  Added STATE_IS_PORTRAIT() and STATE_IS_PORTRAIT_CAPABLE().
+	* src/home/hd-render-manager.c:
+	  Added hd_render_manager_set_state_portrait() and *_unportrait().
+	  Handle HDRM_STATE_HOME_PORTRAIT.
+	* src/mb/hd-comp-mgr.c:
+	  Also switch between HOME and HOME_PORTRAIT.
+	* src/home/hd-home.c
+	* src/home/hd-home-view.c:
+	  Rotate the backgrounds back if we're going to portrait mode.
+	* src/util/hd-util.c:
+	  Create a modal blocker large enough to be ok both in portrait
+	  and landscape modest.
+
 2009-03-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-render-manager.c (hd_render_manager_set_visibilities):

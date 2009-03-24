@@ -118,6 +118,10 @@ static void hd_home_view_get_property (GObject      *object,
 static void hd_home_view_constructed (GObject *object);
 
 static void
+hd_home_view_rotate_background(ClutterActor *actor, GParamSpec *unused,
+                               ClutterActor *stage);
+
+static void
 hd_home_view_allocation_changed (HdHomeView    *home_view,
                                  GParamSpec *pspec,
                                  gpointer    user_data);
@@ -271,6 +275,9 @@ hd_home_view_constructed (GObject *object)
   clutter_actor_set_size (priv->background_container,
                           HD_COMP_MGR_LANDSCAPE_WIDTH,
                           HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
+                           G_CALLBACK(hd_home_view_rotate_background),
+                           priv->background_container);
   clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->background_container);
 
   priv->applets_container = clutter_group_new ();
@@ -1234,4 +1241,28 @@ hd_home_view_allocation_changed (HdHomeView    *view,
    * as it is not a child of ours */
   clutter_actor_get_allocation_geometry (CLUTTER_ACTOR(view), &geom);
   clutter_actor_set_position(priv->applets_container, geom.x, geom.y);
+}
+
+/* ClutterStage::notify::allocation handler to rotate a background
+ * container when we're going to or coming from portrait mode. */
+static void
+hd_home_view_rotate_background(ClutterActor *actor, GParamSpec *unused,
+                               ClutterActor *stage)
+{
+  guint w, h;
+
+  clutter_actor_get_size (stage, &w, &h);
+  if (w < h)
+    { /* -> portrait */
+      clutter_actor_set_anchor_point_from_gravity (actor,
+                                                   CLUTTER_GRAVITY_SOUTH_WEST);
+      clutter_actor_set_rotation (actor, CLUTTER_Z_AXIS, 90, 0, 0, 0);
+    }
+  else
+    { /* -> landscape */
+      clutter_actor_set_anchor_point_from_gravity (actor,
+                                                   CLUTTER_GRAVITY_NORTH_WEST);
+      clutter_actor_set_rotation (actor, CLUTTER_Z_AXIS, 0, 0, 0, 0);
+    }
+  clutter_actor_set_size(actor, w, h);
 }

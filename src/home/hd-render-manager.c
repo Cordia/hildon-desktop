@@ -64,8 +64,10 @@ hd_render_manager_state_get_type (void)
         { HDRM_STATE_HOME,           "HDRM_STATE_HOME",           "Home" },
         { HDRM_STATE_HOME_EDIT,      "HDRM_STATE_HOME_EDIT",      "Home edit" },
         { HDRM_STATE_HOME_EDIT_DLG,  "HDRM_STATE_HOME_EDIT_DLG",  "Home edit dialog" },
+        { HDRM_STATE_HOME_PORTRAIT,  "HDRM_STATE_HOME_PORTRAIT",  "Home in portrait mode" },
         { HDRM_STATE_APP,            "HDRM_STATE_APP",            "Application" },
         { HDRM_STATE_APP_FULLSCREEN, "HDRM_STATE_APP_FULLSCREEN", "Application fullscreen" },
+        { HDRM_STATE_APP_PORTRAIT,   "HDRM_STATE_APP_PORTRAIT",   "Application in portrait mode" },
         { HDRM_STATE_TASK_NAV,       "HDRM_STATE_TASK_NAV",       "Task switcher" },
         { HDRM_STATE_LAUNCHER,       "HDRM_STATE_LAUNCHER",       "Task launcher" },
         { 0, NULL, NULL }
@@ -666,17 +668,16 @@ hd_render_manager_set_input_viewport()
       /* Block status area?  If so refer to the client geometry,
        * because we might be right after a place_titlebar_elements()
        * which could just have moved it. */
-      if ((priv->state == HDRM_STATE_APP_PORTRAIT
-	   && priv->status_area
-           && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area)) ||
+      if ((STATE_IS_PORTRAIT (priv->state) && priv->status_area
+           && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area))
 	  /* also in the case of "dialog blur": */
-	  (priv->state == HDRM_STATE_APP
-	   && priv->status_area
-           && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area)
-	   /* FIXME: the following check does not work when there are
-	    * two levels of dialogs */
-           && (priv->current_blur == HDRM_BLUR_BACKGROUND ||
-	       priv->current_blur == HDRM_BLUR_HOME)))
+	  || (priv->state == HDRM_STATE_APP
+              && priv->status_area
+              && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area)
+              /* FIXME: the following check does not work when there are
+               * two levels of dialogs */
+              && (priv->current_blur == HDRM_BLUR_BACKGROUND ||
+                  priv->current_blur == HDRM_BLUR_HOME)))
         {
           g_assert(priv->status_area_client);
           const MBGeometry *src = &priv->status_area_client->frame_geometry;
@@ -721,6 +722,7 @@ void hd_render_manager_sync_clutter_before ()
           visible_top_left = HDRM_BUTTON_LAUNCHER;
         else
           visible_top_left = HDRM_BUTTON_TASK_NAV;
+      case HDRM_STATE_HOME_PORTRAIT: /* Fallen truth */
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         hd_render_manager_set_blur(HDRM_BLUR_NONE);
@@ -1185,33 +1187,55 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
       /* we always need to restack here */
       /*hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));*/
+      /* then why is it commented out? */
 
-      /*
-       * Coming not from portrait mode going to APP state.
-       * Consider APP_PORTRAIT state instead.  Needs to check
-       * after restacking because should_be_portrait() needs
-       * visibilities to be sorted out.
-       */
-      if (oldstate != HDRM_STATE_APP_PORTRAIT && state == HDRM_STATE_APP
+      /* Divert state change if going to some portrait-capable mode.
+       * Allow for APP_PORTRAIT <=> HOME_PORTRAIT too. */
+      if ((   (oldstate != HDRM_STATE_APP_PORTRAIT  && state == HDRM_STATE_APP)
+           || (oldstate != HDRM_STATE_HOME_PORTRAIT && state == HDRM_STATE_HOME))
           && hd_comp_mgr_should_be_portrait (priv->comp_mgr))
         {
           priv->in_set_state = FALSE;
-          hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+          hd_render_manager_set_state (state == HDRM_STATE_APP
+                                       ? HDRM_STATE_APP_PORTRAIT
+                                       : HDRM_STATE_HOME_PORTRAIT);
           return;
         }
 
       hd_render_manager_sync_clutter_before();
 
       /* Switch between portrait <=> landscape modes. */
-      if (state == HDRM_STATE_APP_PORTRAIT)
+      if (!!STATE_IS_PORTRAIT (oldstate) == !!STATE_IS_PORTRAIT (state))
+        /* Don't change orientation. */;
+      else if (STATE_IS_PORTRAIT (state))
         hd_util_change_screen_orientation (wm, TRUE);
-      else if (oldstate == HDRM_STATE_APP_PORTRAIT)
+      else if (STATE_IS_PORTRAIT (oldstate))
         hd_util_change_screen_orientation (wm, FALSE);
 
       /* Signal the state has changed. */
       g_object_notify (G_OBJECT (the_render_manager), "state");
     }
   priv->in_set_state = FALSE;
+}
+
+/* Upgrade the current state to portrait. */
+void hd_render_manager_set_state_portrait (void)
+{
+  g_assert (STATE_IS_PORTRAIT_CAPABLE (the_render_manager->priv->state));
+  if (the_render_manager->priv->state == HDRM_STATE_APP)
+    hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+  else
+    hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+}
+
+/* ...and the opposit. */
+void hd_render_manager_set_state_unportrait (void)
+{
+  g_assert (STATE_IS_PORTRAIT (the_render_manager->priv->state));
+  if (the_render_manager->priv->state == HDRM_STATE_APP_PORTRAIT)
+    hd_render_manager_set_state (HDRM_STATE_APP);
+  else
+    hd_render_manager_set_state (HDRM_STATE_HOME);
 }
 
 /* Returns whether set_state() is in progress. */
@@ -1235,6 +1259,7 @@ static const char *hd_render_manager_state_str(HDRMStateEnum state)
     case HDRM_STATE_HOME : return "HDRM_STATE_HOME";
     case HDRM_STATE_HOME_EDIT : return "HDRM_STATE_HOME_EDIT";
     case HDRM_STATE_HOME_EDIT_DLG : return "HDRM_STATE_HOME_EDIT_DLG";
+    case HDRM_STATE_HOME_PORTRAIT : return "HDRM_STATE_HOME_PORTRAIT";
     case HDRM_STATE_APP : return "HDRM_STATE_APP";
     case HDRM_STATE_APP_FULLSCREEN : return "HDRM_STATE_APP_FULLSCREEN";
     case HDRM_STATE_APP_PORTRAIT: return "HDRM_STATE_APP_PORTRAIT";
@@ -1969,11 +1994,8 @@ void hd_render_manager_place_titlebar_elements (void)
     clutter_actor_set_x(priv->operator, x + HD_COMP_MGR_OPERATOR_PADDING);
 
   if (STATE_ONE_OF(priv->state, HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT))
-    {
-      /* Otherwise we don't show a title. */
-      /* g_debug("application title at %u", x); */
-      mb_adjust_dialog_title_position(MB_WM_COMP_MGR(priv->comp_mgr)->wm, x);
-    }
+    /* Otherwise we don't show a title. */
+    mb_adjust_dialog_title_position(MB_WM_COMP_MGR(priv->comp_mgr)->wm, x);
 
   hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
 }

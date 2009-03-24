@@ -87,6 +87,7 @@ typedef enum
   HDRM_STATE_TASK_NAV       = 1 << 6,
   HDRM_STATE_LAUNCHER       = 1 << 7,
   HDRM_STATE_APP_PORTRAIT   = 1 << 8,
+  HDRM_STATE_HOME_PORTRAIT  = 1 << 9,
 } HDRMStateEnum;
 
 /* Does the desktop need to be above apps? */
@@ -96,8 +97,8 @@ typedef enum
  * (focused) because otherwise hardware keyboard (quick dialing and contacts)
  * won't work in switcher/launcher views. */
 #define STATE_NEED_DESKTOP(s) \
-  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_EDIT | \
-                    HDRM_STATE_HOME_EDIT_DLG | \
+  STATE_ONE_OF((s), HDRM_STATE_HOME  | HDRM_STATE_HOME_PORTRAIT | \
+                    HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | \
                     HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
 
 #define STATE_NEED_GRAB(s) \
@@ -111,19 +112,25 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_FULLSCREEN | \
                     HDRM_STATE_APP_PORTRAIT)
 
+#define STATE_IS_PORTRAIT_CAPABLE(s) \
+  STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_HOME)
+
+#define STATE_IS_PORTRAIT(s) \
+  STATE_ONE_OF((s), HDRM_STATE_APP_PORTRAIT | HDRM_STATE_HOME_PORTRAIT)
+
 #define STATE_IS_EDIT_MODE(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG)
 
 #define STATE_SHOW_OPERATOR(s) \
-  STATE_ONE_OF((s), HDRM_STATE_HOME)
+  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT)
 
 /* Whether to show app title or not */
 #define STATE_SHOW_TITLE(s) \
   STATE_ONE_OF((s), HDRM_STATE_APP)
 
 #define STATE_SHOW_STATUS_AREA(s) \
-  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_APP | \
-                    HDRM_STATE_APP_PORTRAIT)
+  STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT | \
+                    HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT)
 
 /* Are we in a state where we should blur the buttons + status menu?
  * Task Navigator + launcher zoom out, so are a bad idea. for HOME_EDIT
@@ -191,6 +198,8 @@ void hd_render_manager_add_to_front_group(ClutterActor *a);
 
 void hd_render_manager_set_state (HDRMStateEnum state);
 HDRMStateEnum hd_render_manager_get_state(void);
+void hd_render_manager_set_state_portrait (void);
+void hd_render_manager_set_state_unportrait (void);
 gboolean hd_render_manager_is_changing_state(void);
 const char *hd_render_manager_get_state_str(void);
 gboolean hd_render_manager_in_transition(void);

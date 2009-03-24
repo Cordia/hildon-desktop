@@ -6,6 +6,8 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
 
+#include "hd-comp-mgr.h"
+
 void *
 hd_util_get_win_prop_data_and_validate (Display   *xdpy,
 					Window     xwin,
@@ -89,12 +91,14 @@ hd_util_modal_blocker_realize(MBWindowManagerClient *client)
       attr.event_mask        = MBWMChildMask|ButtonPressMask|ButtonReleaseMask|
 	                       ExposureMask;
 
+      /* Create a WIDTHxWIDTH large blocker because we may enter
+       * portrait mode unexpectedly. */
       client->xwin_modal_blocker =
 	XCreateWindow (wm->xdpy,
 		       wm->root_win->xwindow,
 		       0, 0,
-		       wm->xdpy_width,
-		       wm->xdpy_height,
+                       HD_COMP_MGR_LANDSCAPE_WIDTH,
+                       HD_COMP_MGR_LANDSCAPE_WIDTH,
 		       0,
 		       CopyFromParent,
 		       InputOnly,

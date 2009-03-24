@@ -97,7 +97,7 @@ struct HdCompMgrPrivate
 
   HdCompMgrClient       *current_hclient;
 
-  /* Clients who need to block the Tasksk button. */
+  /* Clients who need to block the Task button. */
   GHashTable            *tasks_button_blockers;
 
   /* Track changes to the PORTRAIT properties. */
@@ -703,15 +703,15 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
            !cc->priv->portrait_not_supported, cc->priv->portrait_requested);
 
   /* Switch HDRM state if we need to. */
-  if (hd_render_manager_get_state() == HDRM_STATE_APP_PORTRAIT)
+  if (STATE_IS_PORTRAIT (hd_render_manager_get_state()))
     { /* Portrait => landscape? */
       if (!*value && !hd_comp_mgr_should_be_portrait (hmgr))
-        hd_render_manager_set_state(HDRM_STATE_APP);
+        hd_render_manager_set_state_unportrait ();
     }
-  else if (hd_render_manager_get_state() == HDRM_STATE_APP)
+  else if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state()))
     { /* Landscape => portrait? */
       if (*value && hd_comp_mgr_should_be_portrait (hmgr))
-        hd_render_manager_set_state(HDRM_STATE_APP_PORTRAIT);
+        hd_render_manager_set_state_portrait ();
     }
 
 out1:
@@ -1994,17 +1994,19 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
        * switch to/from portrait mode because of a new window. */
       if (!hd_render_manager_is_changing_state ())
         {
-          /* If we're switching state we're leaving either APP or PORTRAIT
-           * mode, none of which we want to interfere with. */
-          if (hd_render_manager_get_state () == HDRM_STATE_APP)
+          /*
+           * Change state if necessate:
+           * APP <=> APP_PORTRAIT and HOME <=> HOME_PORTRAIT
+           */
+          if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state ()))
             { /* Landscape -> portrait? */
               if (hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
-                hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+                hd_render_manager_set_state_portrait ();
             }
-          else if (hd_render_manager_get_state () == HDRM_STATE_APP_PORTRAIT)
+          else if (STATE_IS_PORTRAIT(hd_render_manager_get_state ()))
             { /* Portrait -> landscape? */
               if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
-                hd_render_manager_set_state (HDRM_STATE_APP);
+                hd_render_manager_set_state_unportrait ();
             }
         }
     }
