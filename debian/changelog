@@ -27,7 +27,6 @@ hildon-desktop (1:2.2.27-1) unstable; urgency=low
   * Fixes: NB#105921 - Task switcher is not accessible after the missed call
     event when call UI is opened
   Marc:
-  * Fixes: NB#106507 - Misc improvements to prestarting sequence.
   * Fixes: NB#106673 - Track the windows (including dialogs) for each app so
     the HdCompMgr can tell HdAppMgr when an app has disappeared.
   * Fixes: NB#106105 - Applications doesn't have default icon
