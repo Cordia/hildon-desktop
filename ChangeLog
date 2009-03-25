@@ -1,5 +1,7 @@
 2009-03-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.29
+
 	Reverted Marc's patch for NB#106507 because it broke background
 	killing.
 

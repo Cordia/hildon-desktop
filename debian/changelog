@@ -1,6 +1,8 @@
-hildon-desktop (1:2.2.29-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.29-1) unstable; urgency=low
 
-  * writeme
+  * Reverted Marc's patch for NB#106507 because it broke background
+    killing.
+  * Fixes: NB#103508 - handle replacing of stack root correctly
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 25 Mar 2009 09:20:08 +0200
 
