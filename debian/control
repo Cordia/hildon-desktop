@@ -12,10 +12,10 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, hildon-theme | hildon-theme-devel (
 Description: Hildon desktop for Fremantle
  Hildon desktop for Fremantle.
 
-Package: hildon-desktop-dbg (= ${binary:Version})
+Package: hildon-desktop-dbg
 Section: devel
 Architecture: any
 Priority: extra
-Depends: hildon-desktop
+Depends: hildon-desktop (= ${binary:Version})
 Description: Debug symbols for Hildon desktop
  Debug symbols for Hildon desktop.
