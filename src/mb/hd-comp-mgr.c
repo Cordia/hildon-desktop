@@ -1238,6 +1238,36 @@ hd_comp_mgr_hook_update_area(HdCompMgr *hmgr, ClutterActor *actor)
     }
 }
 
+static void
+fix_transiency (MBWindowManagerClient *client)
+{
+  MBWindowManager       *wm = client->wmref;
+  MBWMClientWindow      *win = client->window;
+
+  if (win->xwin_transient_for
+      && win->xwin_transient_for != win->xwindow
+      && win->xwin_transient_for != wm->root_win->xwindow)
+    {
+      MBWindowManagerClient *trans_parent;
+
+      trans_parent = mb_wm_managed_client_from_xwindow (wm,
+                      win->xwin_transient_for);
+
+      if (trans_parent)
+        {
+          g_debug("%s: setting %lx transient to %lx\n", __FUNCTION__,
+                 win->xwindow, win->xwin_transient_for);
+          mb_wm_client_add_transient (trans_parent, client);
+        }
+      
+      /* this change can affect stacking order */
+      mb_wm_client_stacking_mark_dirty (client);
+    }
+  else
+    g_debug("%s: DO NOTHING %lx is transient to %lx\n", __FUNCTION__,
+                 win->xwindow, win->xwin_transient_for);
+}
+
 /* returns HdApp of client that was replaced, or NULL */
 static void
 hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
@@ -1271,7 +1301,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
 
       win_group = win->xwin_group;
       app->stack_index = (int)*prop;
-      g_debug ("%s: STACK INDEX %d", __func__, app->stack_index);
+      g_debug ("%s: STACK INDEX %d\n", __func__, app->stack_index);
 
       mb_wm_stack_enumerate (wm, c_tmp)
         if (c_tmp != client &&
@@ -1289,7 +1319,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
       if (app->stack_index > 0 && old_leader &&
 	  (!last_follower || last_follower->stack_index < app->stack_index))
         {
-          g_debug ("%s: %p is NEW SECONDARY OF THE STACK", __FUNCTION__, app);
+          g_debug ("%s: %p is NEW SECONDARY OF THE STACK\n", __FUNCTION__, app);
           app->leader = old_leader;
 
           app->leader->followers = g_list_append (old_leader->followers,
@@ -1312,7 +1342,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
           if (old_leader->stack_index == app->stack_index)
           {
             /* drop the old leader from the stack if we replace it */
-            g_debug ("%s: DROPPING OLD LEADER %p OUT OF THE STACK", __func__,
+            g_debug ("%s: DROPPING OLD LEADER %p OUT OF THE STACK\n", __func__,
 		     app);
             app->followers = old_leader->followers;
             old_leader->followers = NULL;
@@ -1323,11 +1353,17 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
           else
           {
             /* the new leader is now a follower */
-            g_debug ("%s: OLD LEADER %p IS NOW A FOLLOWER", __func__, app);
+            g_debug ("%s: OLD LEADER %p IS NOW A FOLLOWER\n", __func__, app);
             app->followers = g_list_prepend (old_leader->followers,
                                              old_leader);
             old_leader->followers = NULL;
             old_leader->leader = app;
+            fix_transiency ((MBWindowManagerClient*)old_leader);
+
+            /* This forces the decors to be redone, taking into account the
+             * stack index. */
+            mb_wm_client_theme_change ((MBWindowManagerClient*)old_leader);
+            mb_wm_client_theme_change ((MBWindowManagerClient*)app);
           }
         }
       else if (old_leader && app->stack_index > old_leader->stack_index)
@@ -1362,7 +1398,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
 
           if (!f)
           {
-            g_debug ("%s: %p is FIRST FOLLOWER OF THE STACK", __func__, app);
+            g_debug ("%s: %p is FIRST FOLLOWER OF THE STACK\n", __func__, app);
             old_leader->followers = g_list_append (old_leader->followers, app);
 	    *add_to_tn = app;
           }
@@ -1370,7 +1406,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
           {
 	    if (f != app)
 	    {
-              g_debug ("%s: %p REPLACES A FOLLOWER OF THE STACK",
+              g_debug ("%s: %p REPLACES A FOLLOWER OF THE STACK\n",
 		       __func__, app);
               old_leader->followers
                 = g_list_insert_before (old_leader->followers, flink, app);
@@ -1382,13 +1418,13 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
               f->stack_index = -1; /* mark it non-stackable */
 	    }
 	    else
-	      g_debug ("%s: %p is the SAME CLIENT", __FUNCTION__, app);
+	      g_debug ("%s: %p is the SAME CLIENT\n", __FUNCTION__, app);
 	    *replaced = f;
           }
           else if (f->stack_index > app->stack_index)
           {
             g_debug ("%s: %p PRECEEDS (index %d) A FOLLOWER (with index %d)"
-	             " OF THE STACK", __func__, app, app->stack_index,
+	             " OF THE STACK\n", __func__, app, app->stack_index,
 		     f->stack_index);
             old_leader->followers
                 = g_list_insert_before (old_leader->followers, flink, app);
@@ -1398,7 +1434,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
             if (flink->next)
 	    {
               g_debug ("%s: %p PRECEEDS (index %d) A FOLLOWER (with index %d)"
-	             " OF THE STACK", __func__, app, app->stack_index,
+	             " OF THE STACK\n", __func__, app, app->stack_index,
 		     HD_APP (flink->next->data)->stack_index);
               old_leader->followers
                  = g_list_insert_before (old_leader->followers, flink->next,
@@ -1406,7 +1442,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
 	    }
 	    else
 	    {
-              g_debug ("%s: %p FOLLOWS LAST FOLLOWER OF THE STACK", __func__,
+              g_debug ("%s: %p FOLLOWS LAST FOLLOWER OF THE STACK\n", __func__,
 		       app);
               old_leader->followers = g_list_append (old_leader->followers,
                                                      app);
@@ -1416,7 +1452,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
         }
       else  /* we are the first window in the stack */
         {
-          g_debug ("%s: %p is FIRST WINDOW OF THE STACK", __FUNCTION__, app);
+          g_debug ("%s: %p is FIRST WINDOW OF THE STACK\n", __FUNCTION__, app);
           app->leader = app;
         }
     }

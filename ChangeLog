@@ -1,5 +1,12 @@
 2009-03-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_handle_stackable): When a stack
+	leader is replaces and becomes a secondary, fix its transiency. Also
+	re-theme both of the windows to get the titlebar buttons right.
+	Requires libmatchbox2 != 0.2.22-1. Fixes: NB#103508
+
+2009-03-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
 	Release 2.2.28
 
 2009-03-24  Thomas Thurman  <thomas.thurman@collabora.co.uk>

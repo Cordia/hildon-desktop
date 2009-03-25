@@ -16,6 +16,6 @@ Package: hildon-desktop-dbg
 Section: devel
 Architecture: any
 Priority: extra
-Depends: hildon-desktop (= ${binary:Version})
+Depends: hildon-desktop
 Description: Debug symbols for Hildon desktop
  Debug symbols for Hildon desktop.
