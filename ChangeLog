@@ -1,3 +1,7 @@
+2009-03-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.28
+
 2009-03-24  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	Event handlers now return void and cannot stop processing
