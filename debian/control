@@ -12,7 +12,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, hildon-theme | hildon-theme-devel (
 Description: Hildon desktop for Fremantle
  Hildon desktop for Fremantle.
 
-Package: hildon-desktop-dbg
+Package: hildon-desktop-dbg (= ${binary:Version})
 Section: devel
 Architecture: any
 Priority: extra
