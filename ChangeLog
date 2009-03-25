@@ -1,5 +1,8 @@
 2009-03-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Reverted Marc's patch for NB#106507 because it broke background
+	killing.
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_handle_stackable): When a stack
 	leader is replaced and becomes a secondary, fix its transiency. Also
 	re-theme both of the windows to get the titlebar buttons right.
