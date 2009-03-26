@@ -1,5 +1,10 @@
 2009-03-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/mb/hd-theme.c (construct_buttons, back_button_press_handler):
+	Reference back button for the press handler when installing the press
+	handler, not when calling it (when it can be already destroyed). Fixes
+	a crash with the current libmatchbox2.
+
 	Revert reversion of Marc's patch, wasn't an issue after all.
 
 2009-03-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
