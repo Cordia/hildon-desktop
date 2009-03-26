@@ -128,7 +128,7 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define LOWMEM_PROC_NOTIFY_HIGH "/proc/sys/vm/lowmem_notify_high_pages"
 #define LOWMEM_PROC_NR_DECAY    "/proc/sys/vm/lowmem_nr_decay_pages"
 
-#define STATE_CHECK_INTERVAL      (3)
+#define STATE_CHECK_INTERVAL      (1)
 
 #define PRESTART_ENV_VAR          "HILDON_DESKTOP_APPS_PRESTART"
 #define NSIZE                     ((size_t)(-1))
@@ -450,6 +450,11 @@ hd_app_mgr_add_to_queue (HdAppMgrQueue queue, HdLauncherApp *app)
 
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
 
+  /* Check if app's already there. */
+  GList *link = g_queue_find (priv->queues[queue], app);
+  if (link)
+    return;
+
   g_queue_insert_sorted (priv->queues[queue],
                          g_object_ref (app),
                          _hd_app_mgr_compare_app_priority,
@@ -686,6 +691,9 @@ hd_app_mgr_app_closed (HdLauncherApp *app)
   g_debug ("%s: app %s closed\n", __FUNCTION__,
       hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
 
+  if (hd_launcher_app_get_state (app) == HD_APP_STATE_INACTIVE)
+    return;
+
   if (hd_launcher_app_get_state (app) == HD_APP_STATE_HIBERNATING)
     {
       hd_launcher_app_set_pid (app, 0);
@@ -702,11 +710,11 @@ hd_app_mgr_app_closed (HdLauncherApp *app)
         HD_APP_PRESTART_ALWAYS)
     {
       hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
-      hd_app_mgr_state_check ();
     }
 
   hd_launcher_app_set_pid (app, 0);
   hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
+  hd_app_mgr_state_check ();
 }
 
 static void
@@ -1083,8 +1091,11 @@ hd_app_mgr_state_check (void)
   if (priv->state_check_looping)
     return;
 
-  /* If not, call into it to see if we need looping. */
-  hd_app_mgr_state_check_loop (NULL);
+  /* If not, start looping. */
+  priv->state_check_looping = TRUE;
+  g_timeout_add_seconds (STATE_CHECK_INTERVAL,
+                         hd_app_mgr_state_check_loop,
+                         NULL);
 }
 
 /*
@@ -1161,15 +1172,7 @@ hd_app_mgr_state_check_loop (gpointer data)
    * changes in memory conditions. If we're already looping, return if we
    * need to loop. If not, and we need to loop, start the loop.
    */
-  if (!priv->state_check_looping && loop)
-    {
-      g_timeout_add_seconds (STATE_CHECK_INTERVAL,
-                             hd_app_mgr_state_check_loop,
-                             NULL);
-      priv->state_check_looping = TRUE;
-    }
-  else if (!loop)
-    priv->state_check_looping = FALSE;
+  priv->state_check_looping = loop;
 
   return loop;
 }

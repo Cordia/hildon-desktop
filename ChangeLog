@@ -1,3 +1,7 @@
+2009-03-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Revert reversion of Marc's patch, wasn't an issue after all.
+
 2009-03-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.29
