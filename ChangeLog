@@ -1,5 +1,12 @@
 2009-03-26  Gordon Williams <gordon.williams@collabora.co.uk>
 
+        * src/tidy/tidy-highlight.c (added)
+        * src/tidy/tidy-highlight.h (Added)
+        * src/tidy/Makefile.am: Added extra tidy glass for blurring task
+          launcher icons. Not used in task launcher yet.
+
+2009-03-26  Gordon Williams <gordon.williams@collabora.co.uk>
+
         * src/mb/hd-decor.c
         * src/home/hd-title-bar.c
         * src/home/hd-title-bar.h: Changing the margin between the title and

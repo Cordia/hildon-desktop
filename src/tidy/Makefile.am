@@ -28,6 +28,7 @@ source_h = \
 	$(top_srcdir)/src/tidy/tidy-blur-group.h 	\
 	$(top_srcdir)/src/tidy/tidy-finger-scroll.h	\
 	$(top_srcdir)/src/tidy/tidy-frame.h	\
+	$(top_srcdir)/src/tidy/tidy-highlight.h		\
 	$(top_srcdir)/src/tidy/tidy-interval.h		\
 	$(top_srcdir)/src/tidy/tidy-mem-texture.h	\
 	$(top_srcdir)/src/tidy/tidy-scroll-bar.h	\
@@ -50,6 +51,7 @@ source_c = \
 	tidy-blur-group.c \
 	tidy-finger-scroll.c \
 	tidy-frame.c \
+	tidy-highlight.c \
 	tidy-interval.c \
 	tidy-mem-texture.c \
 	tidy-scroll-bar.c \
