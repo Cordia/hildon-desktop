@@ -1,5 +1,10 @@
 2009-03-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_get_app): Replace
+	g_return_val_if_fail with an if.
+	(hd_comp_mgr_client_property_changed): Enhance NULL checks in an
+	attempt to fix one of the crashes in NB#108204.
+
 	* src/mb/hd-theme.c (construct_buttons, back_button_press_handler):
 	Reference back button for the press handler when installing the press
 	handler, not when calling it (when it can be already destroyed). Fixes

@@ -408,7 +408,7 @@ hd_comp_mgr_client_get_actor (HdCompMgrClient *hclient)
 HdLauncherApp *
 hd_comp_mgr_client_get_app (HdCompMgrClient *hclient)
 {
-  g_return_val_if_fail(hclient, NULL);
+  if (!hclient) return NULL;
   return hclient->priv->app;
 }
 
@@ -634,7 +634,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   HdCompMgrClient *cc;
   MBWindowManagerClient *c;
 
-  g_return_val_if_fail (event->type == PropertyNotify, True);
+  if (event->type != PropertyNotify) return True;
 
   pok = hd_comp_mgr_get_atom (hmgr, HD_ATOM_WM_PORTRAIT_OK);
   prq = hd_comp_mgr_get_atom (hmgr, HD_ATOM_WM_PORTRAIT_REQUESTED);
@@ -666,7 +666,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
         return False;
       current_app =
         hd_comp_mgr_client_get_app (hd_comp_mgr_get_current_client (hmgr));
-      if (app == current_app)
+      if (!current_app || app == current_app)
         return False;
 
       if (event->state == PropertyNewValue)
