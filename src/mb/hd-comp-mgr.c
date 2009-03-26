@@ -1163,13 +1163,13 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
       if (!CLUTTER_ACTOR_IS_VISIBLE(parent))
         return;
       /* if we're a child of a blur group, tell it that it has changed */
-      if (TIDY_IS_BLUR_GROUP(parent) &&
-          tidy_blur_group_source_buffered(parent))
+      if (TIDY_IS_BLUR_GROUP(parent))
         {
           /* we don't update blur on every change of
-           * an application now as it causes
-           * a flicker. */
-          /* tidy_blur_group_set_source_changed(parent); */
+           * an application now as it causes a flicker, so
+           * instead we just hint that next time we become
+           * unblurred, we need to recalculate. */
+          tidy_blur_group_hint_source_changed(parent);
           blur_update = TRUE;
         }
       parent = clutter_actor_get_parent(parent);
@@ -1259,7 +1259,7 @@ fix_transiency (MBWindowManagerClient *client)
                  win->xwindow, win->xwin_transient_for);
           mb_wm_client_add_transient (trans_parent, client);
         }
-      
+
       /* this change can affect stacking order */
       mb_wm_client_stacking_mark_dirty (client);
     }

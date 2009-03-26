@@ -1,3 +1,19 @@
+2009-03-26  Gordon Williams <gordon.williams@collabora.co.uk>
+
+        * src/mb/hd-decor.c
+        * src/home/hd-title-bar.c
+        * src/home/hd-title-bar.h: Changing the margin between the title and
+          the progress indicator to 8px        
+        * data/transitions.ini: Martin's latest values, extra entries for
+          task launcher glow that will appear soon          
+        * src/mb/hd-comp-mgr.c
+        * src/home/hd-home-view.c
+        * src/tidy/tidy-blur-group.h
+        * src/tidy/tidy-blur-group.c: Improvements to blurring code, and
+          fixes to update what is blurred   
+        * src/tidy/tidy-sub-texture.h 
+        * src/tidy/tidy-sub-texture.c: Tidying some code up    
+
 2009-03-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_get_app): Replace

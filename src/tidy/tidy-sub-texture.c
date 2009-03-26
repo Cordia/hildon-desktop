@@ -1,6 +1,6 @@
 /* Created by Gordon Williams <gordon.williams@collabora.co.uk>
  *
- * This is like TidySubTexture, but it allows a small region of the
+ * This is like ClutterCloneTexture, but it allows a small region of the
  * texture to be used */
 
 #ifdef HAVE_CONFIG_H
@@ -326,8 +326,6 @@ tidy_sub_texture_new (ClutterTexture *texture)
  * Retrieves the parent #ClutterTexture used by @sub.
  *
  * Return value: a #ClutterTexture actor, or %NULL
- *
- * Since: 0.2
  */
 ClutterTexture *
 tidy_sub_texture_get_parent_texture (TidySubTexture *sub)
@@ -343,8 +341,6 @@ tidy_sub_texture_get_parent_texture (TidySubTexture *sub)
  * @texture: a #ClutterTexture or %NULL
  *
  * Sets the parent texture subd by the #TidySubTexture.
- *
- * Since: 0.2
  */
 void
 tidy_sub_texture_set_parent_texture (TidySubTexture *sub,

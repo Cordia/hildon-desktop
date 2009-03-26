@@ -5,7 +5,7 @@
  *
  * Authored By Gordon Williams <gordon.williams@collabora.co.uk>
  *
- * Copyright (C) 2006 OpenedHand
+ * Copyright (C) 2006 Nokia
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

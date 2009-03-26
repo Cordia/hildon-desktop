@@ -48,6 +48,7 @@ gboolean tidy_blur_group_source_buffered(ClutterActor *blur_group);
 void tidy_blur_group_set_use_alpha(ClutterActor *blur_group, gboolean alpha);
 void tidy_blur_group_set_use_mirror(ClutterActor *blur_group, gboolean mirror);
 void tidy_blur_group_set_source_changed(ClutterActor *blur_group);
+void tidy_blur_group_hint_source_changed(ClutterActor *blur_group);
 
 
 G_END_DECLS

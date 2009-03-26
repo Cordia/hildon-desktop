@@ -279,7 +279,7 @@ hd_decor_create_actors(HdDecor *decor)
         {
           x = clutter_actor_get_x(CLUTTER_ACTOR(decor->title_actor)) +
               clutter_actor_get_width(CLUTTER_ACTOR(decor->title_actor)) +
-              HD_DECOR_TITLE_MARGIN;
+              HD_TITLE_BAR_PROGRESS_MARGIN;
         }
       clutter_container_add_actor(CLUTTER_CONTAINER(actor),
                                   decor->progress_texture);

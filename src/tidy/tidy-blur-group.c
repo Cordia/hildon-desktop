@@ -37,17 +37,47 @@
 const char *BLUR_FRAGMENT_SHADER =
 "precision lowp float;\n"
 "varying mediump vec2  tex_coord;\n"
-"uniform mediump sampler2D tex;\n"
-"uniform mediump float blurx;\n"
-"uniform mediump float blury;\n"
+"varying mediump vec2  tex_coord_a;\n"
+"varying mediump vec2  tex_coord_b;\n"
+"uniform lowp sampler2D tex;\n"
 "void main () {\n"
-"  mediump vec4 color = \n"
-"       texture2D (tex, vec2(tex_coord.x        , tex_coord.y - blury)) + \n"
-"       texture2D (tex, vec2(tex_coord.x        , tex_coord.y + blury)) + \n"
-"       texture2D (tex, vec2(tex_coord.x - blurx, tex_coord.y)) + \n"
-"       texture2D (tex, vec2(tex_coord.x + blurx, tex_coord.y)); \n"
-"  gl_FragColor = color * 0.25;\n"
+"  lowp vec4 color = \n"
+"       texture2D (tex, vec2(tex_coord_a.x, tex_coord_a.y)) * 0.125 + \n"
+"       texture2D (tex, vec2(tex_coord_a.x, tex_coord_b.y)) * 0.125 + \n"
+"       texture2D (tex, vec2(tex_coord_b.x, tex_coord_b.y)) * 0.125 + \n"
+"       texture2D (tex, vec2(tex_coord_b.x, tex_coord_a.y)) * 0.125 + \n"
+"       texture2D (tex, vec2(tex_coord.x, tex_coord.y)) * 0.5; \n"
+"  gl_FragColor = color;\n"
 "}\n";
+const char *BLUR_VERTEX_SHADER =
+  "/* Per vertex attributes */\n"
+    "attribute vec4     vertex_attrib;\n"
+    "attribute vec4     tex_coord_attrib;\n"
+    "attribute vec4     color_attrib;\n"
+    "\n"
+    "/* Transformation matrices */\n"
+    "uniform mat4       modelview_matrix;\n"
+    "uniform mat4       mvp_matrix; /* combined modelview and projection matrix */\n"
+    "uniform mat4       texture_matrix;\n"
+    "uniform mediump float blurx;\n"
+    "uniform mediump float blury;\n"
+    "\n"
+    "/* Outputs to the fragment shader */\n"
+    "varying lowp vec4       frag_color;\n"
+    "varying mediump vec2    tex_coord;\n"
+    "varying mediump vec2    tex_coord_a;\n"
+    "varying mediump vec2    tex_coord_b;\n"
+    "\n"
+    "void\n"
+    "main (void)\n"
+    "{\n"
+    "  gl_Position = mvp_matrix * vertex_attrib;\n"
+    "  vec4 transformed_tex_coord = texture_matrix * tex_coord_attrib;\n"
+    "  tex_coord = transformed_tex_coord.st / transformed_tex_coord.q;\n"
+    "  tex_coord_a = tex_coord - vec2(blurx, blury);\n"
+    "  tex_coord_b = tex_coord + vec2(blurx, blury);\n"
+    "  frag_color = color_attrib;\n"
+  "}\n";
 const char *SATURATE_FRAGMENT_SHADER =
 "precision lowp float;\n"
 "varying lowp    vec4  frag_color;\n"
@@ -65,6 +95,7 @@ const char *SATURATE_FRAGMENT_SHADER =
 "}\n";
 #else
 const char *BLUR_FRAGMENT_SHADER = "";
+const char *BLUR_VERTEX_SHADER = "";
 const char *SATURATE_FRAGMENT_SHADER = "";
 #endif /* HAS_GLES */
 
@@ -129,67 +160,46 @@ gboolean tidy_blur_group_notify_modified_real(ClutterActor          *actor,
   return TRUE;
 }
 
+static void tidy_blur_group_check_shader(TidyBlurGroup *group,
+                                         ClutterShader **shader,
+                                         const char* fragment_source,
+                                         const char* vertex_source)
+{
+  TidyBlurGroupPrivate *priv = group->priv;
+  if (!*shader)
+   {
+     GError           *error = NULL;
+     char             *old_locale;
+#if GLSL_LOCALE_FIX
+      old_locale = g_strdup( setlocale (LC_ALL, NULL) );
+      setlocale (LC_NUMERIC, "C");
+#endif
+      *shader = clutter_shader_new();
+      if (fragment_source)
+        clutter_shader_set_fragment_source (*shader, fragment_source, -1);
+      if (vertex_source)
+        clutter_shader_set_vertex_source (*shader, vertex_source, -1);
+      clutter_shader_compile (*shader, &error);
+
+      if (error)
+      {
+        g_warning ("unable to load shader: %s\n", error->message);
+        g_error_free (error);
+        priv->use_shader = FALSE;
+      }
+
+#if GLSL_LOCALE_FIX
+      setlocale (LC_ALL, old_locale);
+      g_free (old_locale);
+#endif
+   }
+}
+
 static void tidy_blur_group_check_shaders(TidyBlurGroup *group)
 {
   TidyBlurGroupPrivate *priv = group->priv;
-  if (!priv->use_shader)
-    return;
-  /* if we have no shader, so attempt to create one */
-  if (!priv->shader_blur)
-    {
-      GError           *error = NULL;
-      char             *old_locale;
-
-#if GLSL_LOCALE_FIX
-      old_locale = g_strdup( setlocale (LC_ALL, NULL) );
-      setlocale (LC_NUMERIC, "C");
-#endif
-
-      priv->shader_blur = clutter_shader_new();
-      clutter_shader_set_fragment_source (priv->shader_blur,
-                                          BLUR_FRAGMENT_SHADER, -1);
-      clutter_shader_compile (priv->shader_blur, &error);
-
-      if (error)
-        {
-          g_warning ("unable to load blur shader: %s\n", error->message);
-          g_error_free (error);
-          priv->use_shader = FALSE;
-        }
-
-#if GLSL_LOCALE_FIX
-      setlocale (LC_ALL, old_locale);
-      g_free (old_locale);
-#endif
-    }
-
-  if (!priv->shader_saturate)
-    {
-      GError           *error = NULL;
-      char             *old_locale;
-
-#if GLSL_LOCALE_FIX
-      old_locale = g_strdup( setlocale (LC_ALL, NULL) );
-      setlocale (LC_NUMERIC, "C");
-#endif
-
-      priv->shader_saturate = clutter_shader_new();
-      clutter_shader_set_fragment_source (priv->shader_saturate,
-                                          SATURATE_FRAGMENT_SHADER, -1);
-      clutter_shader_compile (priv->shader_saturate, &error);
-
-      if (error)
-        {
-          g_warning ("unable to load saturation shader: %s\n", error->message);
-          g_error_free (error);
-          priv->use_shader = FALSE;
-        }
-
-#if GLSL_LOCALE_FIX
-      setlocale (LC_ALL, old_locale);
-      g_free (old_locale);
-#endif
-    }
+  tidy_blur_group_check_shader(group, &priv->shader_blur, BLUR_FRAGMENT_SHADER, BLUR_VERTEX_SHADER);
+  tidy_blur_group_check_shader(group, &priv->shader_saturate, SATURATE_FRAGMENT_SHADER, 0);
 }
 
 static gboolean
@@ -277,6 +287,7 @@ tidy_blur_group_paint (ClutterActor *actor)
    just render directly without the texture */
   if (!tidy_blur_group_source_buffered(actor))
     {
+      priv->current_blur_step = 0;
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
       return;
     }
@@ -338,8 +349,8 @@ tidy_blur_group_paint (ClutterActor *actor)
 
       priv->tex_a = cogl_texture_new_with_size(
                 tex_width, tex_height, 0, FALSE /*mipmap*/,
-                priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_4444 :
-                                  COGL_PIXEL_FORMAT_RGB_565);
+                priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
+                                  COGL_PIXEL_FORMAT_RGB_888);
       cogl_texture_set_filters(priv->tex_a, CGL_NEAREST, CGL_NEAREST);
       priv->fbo_a = cogl_offscreen_new_to_texture (priv->tex_a);
     }
@@ -347,8 +358,8 @@ tidy_blur_group_paint (ClutterActor *actor)
     {
       priv->tex_b = cogl_texture_new_with_size(
                 tex_width, tex_height, 0, 0,
-                priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_4444 :
-                                  COGL_PIXEL_FORMAT_RGB_565);
+                priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
+                                  COGL_PIXEL_FORMAT_RGB_888);
       cogl_texture_set_filters(priv->tex_b, CGL_NEAREST, CGL_NEAREST);
       priv->fbo_b = cogl_offscreen_new_to_texture (priv->tex_b);
     }
@@ -358,6 +369,8 @@ tidy_blur_group_paint (ClutterActor *actor)
     {
       cogl_draw_buffer(COGL_OFFSCREEN_BUFFER, priv->fbo_a);
       cogl_push_matrix();
+      /* translate a bit to let bilinear filter smooth out intermediate pixels */
+      cogl_translatex(-CFX_ONE/2,-CFX_ONE/2,0);
       cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height);
 
       cogl_paint_init(&bgcol);
@@ -819,6 +832,24 @@ void tidy_blur_group_set_source_changed(ClutterActor *blur_group)
   priv->current_blur_step = 0;
   clutter_actor_queue_redraw(blur_group);
 }
+
+/**
+ * tidy_blur_group_hint_source_changed:
+ *
+ * Notifies the blur group that it needs to update next time it becomes
+ * unblurred.
+ */
+void tidy_blur_group_hint_source_changed(ClutterActor *blur_group)
+{
+  TidyBlurGroupPrivate *priv;
+
+  if (!TIDY_IS_BLUR_GROUP(blur_group))
+    return;
+
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
+  priv->source_changed = TRUE;
+}
+
 
 /**
  * tidy_blur_group_source_buffered:

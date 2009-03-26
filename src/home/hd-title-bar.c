@@ -794,7 +794,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
 
       x = clutter_actor_get_x(CLUTTER_ACTOR(priv->title)) +
           (int)pango_units_to_double(logical_rect.width) +
-          HD_TITLE_BAR_TITLE_MARGIN;
+          HD_TITLE_BAR_PROGRESS_MARGIN;
       if (x > max_x) x = max_x;
 
       clutter_actor_set_position(priv->progress_texture,

@@ -71,6 +71,8 @@ typedef enum {
                              HDTB_VIS_BTN_DONE,
 } HdTitleBarVisEnum;
 
+#define HD_TITLE_BAR_PROGRESS_MARGIN (8)
+
 GType hd_title_bar_get_type (void) G_GNUC_CONST;
 
 void hd_title_bar_set_state(HdTitleBar *bar,
