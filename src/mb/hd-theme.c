@@ -166,7 +166,6 @@ back_button_press_handler (MBWindowManager   *wm,
 {
   BackButtonData *bd = userdata;
 
-  mb_wm_object_ref (MB_WM_OBJECT(button));
   /*
    * The user might released outside the back button and pressed the button
    * again.
@@ -249,6 +248,8 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 
 	      bd = g_new0 (BackButtonData, 1);
 	      bd->button = MB_WM_DECOR_BUTTON(button);
+              /* reference back button for the press handler */
+	      mb_wm_object_ref (MB_WM_OBJECT (button));
 
 	      mb_wm_decor_button_set_user_data (MB_WM_DECOR_BUTTON(button), bd,
 						back_button_data_destroy);
