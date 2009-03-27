@@ -1,6 +1,6 @@
-hildon-desktop (1:2.2.31-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.31-1) unstable; urgency=low
 
-  * writeme
+  * Trap X errors in hd_comp_mgr_setup_input_viewport.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 27 Mar 2009 09:41:50 +0200
 

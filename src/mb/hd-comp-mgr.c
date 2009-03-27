@@ -775,6 +775,8 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
   Display           *xdpy = wm->xdpy;
   ClutterActor      *stage;
 
+  mb_wm_util_trap_x_errors ();
+
   overlay = XCompositeGetOverlayWindow (xdpy, wm->root_win->xwindow);
 
   XSelectInput (xdpy,
@@ -857,6 +859,9 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
                               region);
 
   XFixesDestroyRegion (xdpy, region);
+
+  if (mb_wm_util_untrap_x_errors ())
+    g_warning ("%s: X errors", __FUNCTION__);
 }
 
 static void
