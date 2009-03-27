@@ -1,5 +1,16 @@
 2009-03-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#98202 Version conflict dialog is appeared in background while the
+		 restoring is going on.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
+	  Don't place confirmation notes in the front group,
+	  because that group is in front of everything else,
+	  and if the confirmation note has a transient it
+	  would be behind the note.
+
+2009-03-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* tests/test-portrait-win.c:
 	  Numerous enhancementes.
 

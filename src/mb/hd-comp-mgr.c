@@ -1640,7 +1640,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                                       HD_NOTE (c));
       else if (c->transient_for)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
-      else
+      else if (HD_NOTE (c)->note_type != HdNoteTypeConfirmation)
         {
           /* Notes need to be pulled out right infront of the blur group
            * manually, as they are not given focus */
