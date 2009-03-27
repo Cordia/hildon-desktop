@@ -382,7 +382,7 @@
 2009-03-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client):
-	  Fix sigsegv that happened on Rover after closing web browser
+	  Fix sigsegv that happened on the device after closing web browser
 	opened from RSS reader
 
 2009-03-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
@@ -559,7 +559,7 @@
 2009-03-10  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/util/hd-transition.c: added check for null dereference
-	that just crashed my rover.
+	that just crashed my device.
 
 2009-03-10  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
