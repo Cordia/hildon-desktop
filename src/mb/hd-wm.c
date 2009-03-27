@@ -238,13 +238,12 @@ hd_wm_client_responding (MBWindowManager *wm,
     {
       char buf[200];
       const char *name;
-      GtkWidget *banner;
 
       /* TODO: get the localised name for application */
       name = mb_wm_client_get_name (client);
       snprintf (buf, 200, _("tana_ib_apkil_responded"),
 	        name ? name : "NO NAME");
-      banner = hildon_banner_show_information (NULL, NULL, buf);
+      hildon_banner_show_information (NULL, NULL, buf);
 
       gtk_dialog_response (GTK_DIALOG (hdwm->priv->hung_client_dialog),
 			   GTK_RESPONSE_REJECT);
