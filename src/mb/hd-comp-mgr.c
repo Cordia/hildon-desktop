@@ -1590,7 +1590,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       HdHomeApplet * applet  = HD_HOME_APPLET (c);
       char         * applet_id = applet->applet_id;
 
-      if (strcmp (OPERATOR_APPLET_ID, applet_id) != 0)
+      if (priv->home && strcmp (OPERATOR_APPLET_ID, applet_id) != 0)
         {
           /* Normal applet */
           g_object_set_data_full (G_OBJECT (actor), "HD-applet-id",
@@ -1598,7 +1598,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
           hd_home_add_applet (HD_HOME (priv->home), actor);
         }
-      else
+      else if (priv->home)
         {
           /* Special operator applet */
 
