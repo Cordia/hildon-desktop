@@ -326,7 +326,6 @@ tidy_highlight_init (TidyHighlight *self)
   priv->amount = 0;
   priv->color = white;
 
-#ifndef __i386__
   priv->shader = clutter_shader_new();
   clutter_shader_set_fragment_source (priv->shader, HIGHLIGHT_FRAGMENT_SHADER, -1);
   clutter_shader_compile (priv->shader, &error);
@@ -338,7 +337,6 @@ tidy_highlight_init (TidyHighlight *self)
     clutter_shader_release(priv->shader);
     priv->shader = 0;
   }
-#endif
 }
 
 /**
