@@ -35,6 +35,10 @@
 
 2009-03-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.31
+
+2009-03-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_setup_input_viewport): Trap X
 	errors.
 
