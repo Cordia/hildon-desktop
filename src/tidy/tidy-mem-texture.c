@@ -439,6 +439,7 @@ void tidy_mem_texture_damage(TidyMemTexture *texture,
           if (mod.height+mod.y > tile->pos.height)
             mod.height = tile->pos.height - mod.y;
 
+          /* FIXME: width and height are unsigned, i.e. always >= 0 */
           if (tile->modified.width>=0 && tile->modified.height>=0)
             {
               /* if we already have damage, extend damaged area */
