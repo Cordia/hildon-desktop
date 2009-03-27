@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.31-1~unreleased) unstable; urgency=low
+
+  * writeme
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 27 Mar 2009 09:41:50 +0200
+
 hildon-desktop (1:2.2.30-1) unstable; urgency=low
 
   Reverted reversion of Marc's patch:
