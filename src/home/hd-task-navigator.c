@@ -2107,6 +2107,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
 
   /* Find @apthumb for @win.  We cannot use find_by_apiwin() because
    * we need @li to be able to remove @apthumb from @Thumbnails. */
+  apthumb = NULL;
   for_each_appthumb (li, apthumb)
     if (apthumb->apwin == win)
       break;
@@ -2270,6 +2271,7 @@ tnote_changed (HdNote * hdnote, int unused1, TNote * tnote)
   GList *li;
   Thumbnail *thumb;
 
+  thumb = NULL;
   for_each_thumbnail (li, thumb)
     if (thumb->tnote == tnote)
       break;
@@ -2505,6 +2507,7 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
   g_return_if_fail (hdnote != NULL);
 
   /* Find @thumb for @hdnote. */
+  thumb = NULL;
   for_each_thumbnail (li, thumb)
     if (thumb->tnote && thumb->tnote->hdnote == hdnote)
       break;
