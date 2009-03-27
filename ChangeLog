@@ -3,6 +3,8 @@
 	Coverity found issues:
 	* src/mb/hd-decor.c (hd_decor_create_actors): Don't use 'client'
 	before its NULL check.
+	(hd_decor_create_actors): Remove dead code, check for title==NULL when
+	it cannot be.
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Add check for
 	possible NULL deref with priv->home==NULL.
 	* src/mb/hd-theme.c (construct_buttons): Avoid NULL dereference.
