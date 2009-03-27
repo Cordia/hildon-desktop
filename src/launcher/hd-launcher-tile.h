@@ -22,7 +22,7 @@
  */
 
 /*
- * A HdLauncherTile is a ClutterActor that displays an icon in a
+ * A HdLauncherTile is a ClutterGroup that displays an icon in a
  * HdLauncherGrid for launching an app or switching to a different
  * grid.
  *
@@ -32,7 +32,7 @@
 #ifndef __HD_LAUNCHER_TILE_H__
 #define __HD_LAUNCHER_TILE_H__
 
-#include <clutter/clutter-actor.h>
+#include <clutter/clutter.h>
 
 G_BEGIN_DECLS
 
@@ -49,14 +49,14 @@ typedef struct _HdLauncherTileClass     HdLauncherTileClass;
 
 struct _HdLauncherTile
 {
-  ClutterActor parent_instance;
+  ClutterGroup parent_instance;
 
   HdLauncherTilePrivate *priv;
 };
 
 struct _HdLauncherTileClass
 {
-  ClutterActorClass parent_class;
+  ClutterGroupClass parent_class;
 };
 
 GType              hd_launcher_tile_get_type      (void) G_GNUC_CONST;
@@ -74,9 +74,12 @@ void hd_launcher_tile_set_text      (HdLauncherTile *tile,
 ClutterActor *hd_launcher_tile_get_icon (HdLauncherTile *tile);
 ClutterActor *hd_launcher_tile_get_label (HdLauncherTile *tile);
 
+void hd_launcher_tile_reset(HdLauncherTile *tile);
+
 /* Fixed size */
 #define HD_LAUNCHER_TILE_HEIGHT (100)
 #define HD_LAUNCHER_TILE_WIDTH  (142)
+#define HD_LAUNCHER_TILE_ICON_SIZE (64)
 
 G_END_DECLS
 

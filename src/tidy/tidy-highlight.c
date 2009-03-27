@@ -17,6 +17,7 @@ enum
   PROP_PARENT_TEXTURE,
 };
 
+/* Do our highlight with 2 rings of 8 samples */
   const char *HIGHLIGHT_FRAGMENT_SHADER =
   "precision lowp float;\n"
   "varying mediump vec2 tex_coord;\n"
@@ -25,21 +26,29 @@ enum
   "uniform mediump float blurx;\n"
   "uniform mediump float blury;\n"
   "void main () {\n"
+  "  mediump float ax = blurx*0.354; \n"
+  "  mediump float ay = blury*0.354; \n"
   "  mediump float bx = blurx*0.5; \n"
   "  mediump float by = blury*0.5; \n"
+  "  mediump float cx = blurx*0.707; \n"
+  "  mediump float cy = blury*0.707; \n"
   "  lowp float alpha = \n"
+  "       texture2D (tex, vec2(tex_coord.x-ax, tex_coord.y-ay)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+ax, tex_coord.y+ay)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x-ax, tex_coord.y+ay)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+ax, tex_coord.y-ay)).a * 0.125 + \n"
   "       texture2D (tex, vec2(tex_coord.x, tex_coord.y-by)).a * 0.125 + \n"
   "       texture2D (tex, vec2(tex_coord.x, tex_coord.y+by)).a * 0.125 + \n"
   "       texture2D (tex, vec2(tex_coord.x-bx, tex_coord.y)).a * 0.125 + \n"
   "       texture2D (tex, vec2(tex_coord.x+bx, tex_coord.y)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y-blury)).a * 0.09375 + \n"
-  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y+blury)).a * 0.09375 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-blurx, tex_coord.y)).a * 0.09375 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+blurx, tex_coord.y)).a * 0.09375 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-blurx, tex_coord.y-blury)).a * 0.03125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+blurx, tex_coord.y+blury)).a * 0.03125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-blurx, tex_coord.y+blury)).a * 0.03125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+blurx, tex_coord.y-blury)).a * 0.03125;\n"
+  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y-blury)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y+blury)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x-blurx, tex_coord.y)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+blurx, tex_coord.y)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x-cx, tex_coord.y-cy)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+cx, tex_coord.y+cy)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x-cx, tex_coord.y+cy)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+cx, tex_coord.y-cy)).a * 0.125;\n"
   "  lowp vec4 color = frag_color; \n"
   "  color.a = color.a * alpha; \n"
   "  gl_FragColor = color;\n"
@@ -318,7 +327,6 @@ static void
 tidy_highlight_init (TidyHighlight *self)
 {
   TidyHighlightPrivate *priv;
-  GError           *error = NULL;
   ClutterColor     white = {0xFF, 0xFF, 0xFF, 0xFF};
 
   self->priv = priv = CLUTTER_HIGHLIGHT_GET_PRIVATE (self);
@@ -326,17 +334,24 @@ tidy_highlight_init (TidyHighlight *self)
   priv->amount = 0;
   priv->color = white;
 
-  priv->shader = clutter_shader_new();
-  clutter_shader_set_fragment_source (priv->shader, HIGHLIGHT_FRAGMENT_SHADER, -1);
-  clutter_shader_compile (priv->shader, &error);
-
-  if (error)
+#if CLUTTER_COGL_HAS_GLES
+  /* We can't use shaders on x86/GL because they're different (and Xephyr
+   * just returns blackness for them */
   {
-    g_warning ("unable to load shader: %s\n", error->message);
-    g_error_free (error);
-    clutter_shader_release(priv->shader);
-    priv->shader = 0;
+    GError           *error = NULL;
+    priv->shader = clutter_shader_new();
+    clutter_shader_set_fragment_source (priv->shader, HIGHLIGHT_FRAGMENT_SHADER, -1);
+    clutter_shader_compile (priv->shader, &error);
+
+    if (error)
+    {
+      g_warning ("unable to load shader: %s\n", error->message);
+      g_error_free (error);
+      clutter_shader_release(priv->shader);
+      priv->shader = 0;
+    }
   }
+#endif
 }
 
 /**

@@ -663,6 +663,8 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
       priv->transition_type == HD_LAUNCHER_PAGE_TRANSITION_LAUNCH &&
       trans_type == HD_LAUNCHER_PAGE_TRANSITION_OUT)
     return;
+  /* Reset all the tiles in the grid, so they don't have any blurring */
+  hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid));
 
   priv->transition_type = trans_type;
   switch (priv->transition_type) {

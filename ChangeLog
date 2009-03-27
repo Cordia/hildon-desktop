@@ -1,3 +1,14 @@
+2009-03-27  Gordon Williams <gordon.williams@collabora.co.uk>
+
+        * src/launcher/hd-launcher-page.c
+        * src/launcher/hd-launcher-grid.c
+        * src/launcher/hd-launcher-grid.h
+        * src/launcher/hd-launcher-tile.c
+        * src/launcher/hd-launcher-tile.h: Added glow effect to task launcher 
+          items. Refactored HdLauncherTile a bit to save code.
+        * src/tidy/tidy-highlight.c: Added more samples for improved blur 
+        * data/transitions.ini: Speeded up glow
+
 2009-03-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#98202 Version conflict dialog is appeared in background while the

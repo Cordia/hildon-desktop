@@ -27,6 +27,7 @@
 
 #include "hd-launcher.h"
 #include "hd-launcher-tile.h"
+#include "hd-launcher-grid.h"
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
@@ -34,6 +35,8 @@
 #include <stdlib.h>
 
 #include "hd-gtk-style.h"
+#include "tidy/tidy-highlight.h"
+#include "hd-transition.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 #define HD_PARAM_READWRITE (G_PARAM_READWRITE | \
@@ -50,6 +53,9 @@ struct _HdLauncherTilePrivate
 
   ClutterActor *icon;
   ClutterActor *label;
+  TidyHighlight *icon_glow;
+  ClutterTimeline *glow_timeline;
+  float glow_amount;
 
   /* We need to know if there's been scrolling. */
   gboolean is_pressed;
@@ -86,28 +92,15 @@ static void hd_launcher_tile_set_property (GObject      *gobject,
                                             const GValue *value,
                                             GParamSpec   *pspec);
 /* ClutterActor */
-static void hd_launcher_tile_get_preferred_width (ClutterActor *actor,
-                                                  ClutterUnit   for_height,
-                                                  ClutterUnit  *min_width_p,
-                                                  ClutterUnit *natural_width_p);
-static void hd_launcher_tile_get_preferred_height (ClutterActor *actor,
-                                                   ClutterUnit   for_width,
-                                                   ClutterUnit  *min_height_p,
-                                                   ClutterUnit  *natural_height_p);
-static void hd_launcher_tile_allocate (ClutterActor          *actor,
-                                       const ClutterActorBox *box,
-                                       gboolean               origin_changed);
-static void hd_launcher_tile_paint (ClutterActor *actor);
-static void hd_launcher_tile_pick (ClutterActor       *actor,
-                                   const ClutterColor *pick_color);
-static void hd_launcher_tile_show (ClutterActor *actor);
-static void hd_launcher_tile_hide (ClutterActor *actor);
 static gboolean hd_launcher_tile_button_press (ClutterActor       *actor,
                                                ClutterButtonEvent *event);
 static gboolean hd_launcher_tile_button_release (ClutterActor       *actor,
                                                  ClutterButtonEvent *event);
+static void hd_launcher_on_glow_frame(ClutterTimeline *timeline,
+                                      gint frame_num,
+                                      ClutterActor *actor);
 
-G_DEFINE_TYPE (HdLauncherTile, hd_launcher_tile, CLUTTER_TYPE_ACTOR);
+G_DEFINE_TYPE (HdLauncherTile, hd_launcher_tile, CLUTTER_TYPE_GROUP);
 
 static void
 hd_launcher_tile_class_init (HdLauncherTileClass *klass)
@@ -122,15 +115,8 @@ hd_launcher_tile_class_init (HdLauncherTileClass *klass)
   gobject_class->set_property = hd_launcher_tile_set_property;
   gobject_class->finalize     = hd_launcher_tile_finalize;
 
-  actor_class->get_preferred_width  = hd_launcher_tile_get_preferred_width;
-  actor_class->get_preferred_height = hd_launcher_tile_get_preferred_height;
-  actor_class->allocate             = hd_launcher_tile_allocate;
-  actor_class->paint                = hd_launcher_tile_paint;
-  actor_class->pick                 = hd_launcher_tile_pick;
   actor_class->button_press_event   = hd_launcher_tile_button_press;
   actor_class->button_release_event = hd_launcher_tile_button_release;
-  actor_class->show                 = hd_launcher_tile_show;
-  actor_class->hide                 = hd_launcher_tile_hide;
 
   pspec = g_param_spec_string ("icon-name",
                                "Icon Name",
@@ -161,6 +147,14 @@ hd_launcher_tile_init (HdLauncherTile *tile)
   tile->priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (tile), TRUE);
+  clutter_actor_set_size(CLUTTER_ACTOR(tile),
+      HD_LAUNCHER_TILE_WIDTH,
+      HD_LAUNCHER_TILE_HEIGHT);
+  clutter_actor_show(CLUTTER_ACTOR(tile));
+
+  tile->priv->glow_timeline = clutter_timeline_new_for_duration(200);
+  g_signal_connect(tile->priv->glow_timeline, "new-frame",
+                   G_CALLBACK (hd_launcher_on_glow_frame), tile);
 }
 
 HdLauncherTile *
@@ -236,7 +230,6 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
                                 const gchar *icon_name)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
-  guint size = 64;
   GtkIconTheme *icon_theme;
   GtkIconInfo *info;
 
@@ -258,14 +251,16 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
     }
 
   icon_theme = gtk_icon_theme_get_default();
-  info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name, size,
+  info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name,
+                                    HD_LAUNCHER_TILE_ICON_SIZE,
                                     GTK_ICON_LOOKUP_NO_SVG);
   if (info == NULL)
     {
       /* Try to get the default icon. */
       g_free (priv->icon_name);
       priv->icon_name = g_strdup (HD_LAUNCHER_DEFAULT_ICON);
-      info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name, size,
+      info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name,
+                                        HD_LAUNCHER_TILE_ICON_SIZE,
                                         GTK_ICON_LOOKUP_NO_SVG);
     }
   if (info == NULL)
@@ -276,10 +271,29 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
 
   const gchar *fname = gtk_icon_info_get_filename(info);
   priv->icon = clutter_texture_new_from_file(fname, NULL);
-  clutter_actor_set_size (priv->icon, size, size);
-  clutter_actor_set_parent (priv->icon, CLUTTER_ACTOR (tile));
+
+  clutter_actor_set_size (priv->icon,
+      HD_LAUNCHER_TILE_ICON_SIZE,
+      HD_LAUNCHER_TILE_ICON_SIZE);
+  clutter_actor_set_position (priv->icon,
+      (HD_LAUNCHER_TILE_WIDTH - HD_LAUNCHER_TILE_ICON_SIZE) / 2,
+      HILDON_MARGIN_HALF);
+  clutter_container_add_actor (CLUTTER_CONTAINER(tile), priv->icon);
 
   gtk_icon_info_free(info);
+
+  priv->icon_glow = tidy_highlight_new(CLUTTER_TEXTURE(priv->icon));
+  clutter_actor_set_size (CLUTTER_ACTOR(priv->icon_glow),
+        HD_LAUNCHER_TILE_ICON_SIZE,
+        HD_LAUNCHER_TILE_ICON_SIZE);
+  clutter_actor_set_position (CLUTTER_ACTOR(priv->icon_glow),
+        (HD_LAUNCHER_TILE_WIDTH - HD_LAUNCHER_TILE_ICON_SIZE) / 2,
+        HILDON_MARGIN_HALF);
+  clutter_container_add_actor (CLUTTER_CONTAINER(tile),
+                               CLUTTER_ACTOR(priv->icon_glow));
+  clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->icon_glow));
+
+  clutter_actor_hide(CLUTTER_ACTOR(priv->icon_glow));
 }
 
 void
@@ -289,6 +303,8 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
   ClutterColor text_color;
   gchar *font_string;
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
+  ClutterUnit label_width;
+  guint label_height, label_width_px;
 
   if (!text)
     return;
@@ -321,10 +337,24 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
                                PANGO_ALIGN_CENTER);
   clutter_label_set_line_wrap_mode (CLUTTER_LABEL (priv->label),
                                     PANGO_WRAP_CHAR);
-  clutter_actor_set_parent (priv->label, CLUTTER_ACTOR (tile));
-  clutter_actor_set_clip (priv->label, 0, 0,
-              HD_LAUNCHER_TILE_WIDTH,
-              HD_LAUNCHER_TILE_HEIGHT - (64 + (HILDON_MARGIN_HALF * 2)));
+
+  label_height = HD_LAUNCHER_TILE_HEIGHT - (64 + (HILDON_MARGIN_HALF * 2));
+
+  clutter_actor_get_preferred_width (priv->label,
+    CLUTTER_UNITS_FROM_DEVICE(label_height),
+                              NULL, &label_width);
+  label_width_px = MIN (CLUTTER_UNITS_TO_DEVICE(label_width),
+                        HD_LAUNCHER_TILE_WIDTH);
+
+  clutter_actor_set_size(priv->label, label_width_px, label_height);
+  clutter_actor_set_position(priv->label,
+      (HD_LAUNCHER_TILE_WIDTH - label_width_px) / 2,
+      HD_LAUNCHER_TILE_HEIGHT - label_height);
+  clutter_container_add_actor (CLUTTER_CONTAINER(tile), priv->label);
+
+  if (CLUTTER_UNITS_TO_DEVICE(label_width) > HD_LAUNCHER_TILE_WIDTH)
+    clutter_actor_set_clip (priv->label, 0, 0,
+                  HD_LAUNCHER_TILE_WIDTH, label_height);
 
   g_free (font_string);
 }
@@ -354,139 +384,55 @@ hd_launcher_tile_set_property (GObject      *gobject,
 }
 
 static void
-hd_launcher_tile_get_preferred_width (ClutterActor *actor,
-                                      ClutterUnit   for_height,
-                                      ClutterUnit  *min_width_p,
-                                      ClutterUnit  *natural_width_p)
-{
-  if (min_width_p)
-    *min_width_p = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_TILE_WIDTH);
-
-  if (natural_width_p)
-    *natural_width_p = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_TILE_WIDTH);
-}
-
-static void
-hd_launcher_tile_get_preferred_height (ClutterActor *actor,
-                                       ClutterUnit   for_width,
-                                       ClutterUnit  *min_height_p,
-                                       ClutterUnit  *natural_height_p)
-{
-  if (min_height_p)
-    *min_height_p = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_TILE_HEIGHT);
-
-  if (natural_height_p)
-    *natural_height_p = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_TILE_HEIGHT);
-}
-
-static void
-hd_launcher_tile_allocate (ClutterActor          *actor,
-                           const ClutterActorBox *box,
-                           gboolean               origin_changed)
-{
-  HdLauncherTilePrivate *priv;
-  ClutterActor *icon, *label;
-  ClutterActorClass *parent_class;
-
-  /* chain up to get the allocation stored */
-  parent_class = CLUTTER_ACTOR_CLASS (hd_launcher_tile_parent_class);
-  parent_class->allocate (actor, box, origin_changed);
-
-  priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
-  icon  = priv->icon;
-  label = priv->label;
-
-  if (icon)
-  {
-    guint x1, y1;
-    ClutterActorBox icon_box;
-
-    x1 = ((HD_LAUNCHER_TILE_WIDTH - 64) / 2);
-    y1 = HILDON_MARGIN_HALF;
-    icon_box.x1 = CLUTTER_UNITS_FROM_DEVICE (x1);
-    icon_box.y1 = CLUTTER_UNITS_FROM_DEVICE (y1);
-    icon_box.x2 = CLUTTER_UNITS_FROM_DEVICE (x1 + 64);
-    icon_box.y2 = CLUTTER_UNITS_FROM_DEVICE (y1 + 64);
-
-    clutter_actor_allocate (icon, &icon_box, origin_changed);
-  }
-
-  if (label)
-  {
-    ClutterActorBox label_box;
-    ClutterUnit label_width;
-    guint label_height, label_width_px;
-
-    label_height = HD_LAUNCHER_TILE_HEIGHT - (64 + (HILDON_MARGIN_HALF * 2));
-
-    clutter_actor_get_preferred_width (label,
-      CLUTTER_UNITS_FROM_DEVICE(label_height),
-                                NULL, &label_width);
-    label_width_px = MIN (CLUTTER_UNITS_TO_DEVICE(label_width),
-                          HD_LAUNCHER_TILE_WIDTH);
-
-    label_box.x1 = CLUTTER_UNITS_FROM_DEVICE ((HD_LAUNCHER_TILE_WIDTH - label_width_px) / 2);
-    label_box.y1 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_TILE_HEIGHT - label_height);
-    label_box.x2 = CLUTTER_UNITS_FROM_DEVICE (((HD_LAUNCHER_TILE_WIDTH - label_width_px) / 2) + label_width_px);
-    label_box.y2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_TILE_HEIGHT);
-
-    clutter_actor_allocate (label, &label_box, origin_changed);
-  }
-}
-
-static void
-hd_launcher_tile_paint (ClutterActor *actor)
+hd_launcher_on_glow_frame(ClutterTimeline *timeline,
+                          gint frame_num,
+                          ClutterActor *actor)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
 
-  if (priv->icon && CLUTTER_ACTOR_IS_VISIBLE (priv->icon))
-    clutter_actor_paint (priv->icon);
+  priv->glow_amount = frame_num / (float)clutter_timeline_get_n_frames(timeline);
+  if (priv->icon_glow)
+    tidy_highlight_set_amount(priv->icon_glow, priv->glow_amount*12);
 
-  if (priv->label && CLUTTER_ACTOR_IS_VISIBLE (priv->label))
-    clutter_actor_paint (priv->label);
+  if (priv->glow_amount != 0)
+    clutter_actor_show(CLUTTER_ACTOR(priv->icon_glow));
+  else
+    clutter_actor_hide(CLUTTER_ACTOR(priv->icon_glow));
 }
 
 static void
-hd_launcher_tile_pick (ClutterActor       *actor,
-                       const ClutterColor *pick_color)
+hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
 {
-  HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
+  HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
+  ClutterColor glow_col = {0xFF, 0xFF, 0x7F, 0xFF};
+  gint n_frames;
 
-  CLUTTER_ACTOR_CLASS (hd_launcher_tile_parent_class)->pick (actor, pick_color);
+  clutter_timeline_stop(priv->glow_timeline);
 
-  if (priv->label && CLUTTER_ACTOR_IS_VISIBLE (priv->label))
-    clutter_actor_paint (priv->label);
+  /* If we're already there, skip */
+  if ((glow && priv->glow_amount==1) ||
+      (!glow && priv->glow_amount==0))
+    return;
 
-  if (priv->icon && CLUTTER_ACTOR_IS_VISIBLE (priv->icon))
-    clutter_actor_paint (priv->icon);
-}
+  clutter_timeline_set_duration(priv->glow_timeline,
+          hd_transition_get_int("launcher",
+              glow ? "glow_duration_in" : "glow_duration_out",
+              500));
 
-static void
-hd_launcher_tile_show (ClutterActor *actor)
-{
-  HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
+  clutter_timeline_set_direction(priv->glow_timeline,
+       glow ? CLUTTER_TIMELINE_FORWARD : CLUTTER_TIMELINE_BACKWARD);
 
-  if (priv->icon)
-    clutter_actor_show (priv->icon);
+  /* Set our start position based on how much glow we had previously */
+  n_frames = clutter_timeline_get_n_frames(priv->glow_timeline);
+  clutter_timeline_advance(priv->glow_timeline,
+      (int)(priv->glow_amount*n_frames));
 
-  if (priv->label)
-    clutter_actor_show (priv->label);
+  /* set our glow colour from the theme */
+  hd_gtk_style_get_text_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL,
+                              &glow_col);
+  tidy_highlight_set_color(priv->icon_glow, &glow_col);
 
-  CLUTTER_ACTOR_SET_FLAGS (actor, CLUTTER_ACTOR_MAPPED);
-}
-
-static void
-hd_launcher_tile_hide (ClutterActor *actor)
-{
-  HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
-
-  CLUTTER_ACTOR_UNSET_FLAGS (actor, CLUTTER_ACTOR_MAPPED);
-
-  if (priv->icon)
-    clutter_actor_hide (priv->icon);
-
-  if (priv->label)
-    clutter_actor_hide (priv->label);
+  clutter_timeline_start(priv->glow_timeline);
 }
 
 static gboolean
@@ -500,6 +446,10 @@ hd_launcher_tile_button_press (ClutterActor       *actor,
       priv->is_pressed = TRUE;
       priv->x_press_pos = event->x;
       priv->y_press_pos = event->y;
+
+      /* Unglow everything else, but glow this tile */
+      hd_launcher_grid_reset( HD_LAUNCHER_GRID(clutter_actor_get_parent(actor)) );
+      hd_launcher_tile_set_glow(HD_LAUNCHER_TILE(actor), TRUE);
 
       return TRUE;
     }
@@ -535,10 +485,20 @@ hd_launcher_tile_finalize (GObject *gobject)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (gobject);
 
+  clutter_timeline_stop(priv->glow_timeline);
+  g_object_unref(priv->glow_timeline);
   clutter_actor_destroy (priv->label);
+  clutter_actor_destroy (CLUTTER_ACTOR(priv->icon_glow));
   clutter_actor_destroy (priv->icon);
   g_free (priv->icon_name);
   g_free (priv->text);
 
   G_OBJECT_CLASS (hd_launcher_tile_parent_class)->finalize (gobject);
+}
+
+/* Reset this tile to the state it should be in when first shown */
+void hd_launcher_tile_reset(HdLauncherTile *tile)
+{
+  /* remove glow */
+  hd_launcher_tile_set_glow(tile, FALSE);
 }

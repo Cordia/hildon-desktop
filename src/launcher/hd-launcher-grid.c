@@ -706,6 +706,27 @@ static float sexy_overshoot(float x)
   return (smooth_ramp*1.1)*converge + (1-converge);
 }
 
+/* Reset the grid before it is shown */
+void
+hd_launcher_grid_reset(HdLauncherGrid *grid)
+{
+  HdLauncherGridPrivate *priv;
+  GList *l;
+
+  g_return_if_fail (HD_IS_LAUNCHER_GRID (grid));
+
+  priv = grid->priv;
+  l = priv->tiles;
+
+  while (l)
+    {
+      HdLauncherTile *tile = l->data;
+
+      hd_launcher_tile_reset(tile);
+      l = l->next;
+    }
+}
+
 void
 hd_launcher_grid_transition(HdLauncherGrid *grid,
                             HdLauncherPage *page,
