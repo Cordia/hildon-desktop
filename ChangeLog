@@ -1,5 +1,11 @@
 2009-03-27  Gordon Williams <gordon.williams@collabora.co.uk>
 
+        * tests/test-launcher.c (removed)
+        * tests/Makefile.am: Removed launcher test (as ir wouldn't have worked
+          in a long time anyway)
+
+2009-03-27  Gordon Williams <gordon.williams@collabora.co.uk>
+
         * src/launcher/hd-launcher-page.c
         * src/launcher/hd-launcher-grid.c
         * src/launcher/hd-launcher-grid.h
