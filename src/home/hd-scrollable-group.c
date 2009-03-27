@@ -266,18 +266,18 @@ hd_scrollable_group_parent_changed (ClutterActor * actor,
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (actor);
   ClutterFixed width, height;
 
-  width = height = 0;
   /*
    * Set up our #TidyAdjustment:s according to our parent's size.
    * Since we're scrolling in the parent (a kind of #TidyScrollView)
    * its size is a page for the #TidyAdjustment:s.  Also set the
-   * "upper" bounds for pick() and eventually "clicked" to work.
-   * If we didn't and the user doesn't set our real estate we would
-   * not receive any pointer events.
+   * "upper" bounds for pick() to work.  If we didn't and the user
+   * doesn't set our real estate either we would not receive any
+   * pointer events.
    */
+  width = height = 0; /* Make coverity and kuzak happy. */
   clutter_actor_get_size (clutter_actor_get_parent (actor),
                           (guint *)&width, (guint *)&height);
-  width = CLUTTER_INT_TO_FIXED (width);
+  width  = CLUTTER_INT_TO_FIXED (width);
   height = CLUTTER_INT_TO_FIXED (height);
   tidy_adjustment_set_valuesx (priv->horizontal.adjustment,
                                0, 0, width, 1, 1, width);

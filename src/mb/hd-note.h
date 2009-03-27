@@ -72,17 +72,18 @@ struct HdNote
 
   HdNoteType      note_type;
 
-  /* mb_wm_main_context_x_event_handler_add() ID,
-   * only relevant for HdNoteTypeIncomingEvent:s. */
-  unsigned long   property_changed_cb_id;
+  /* For Info:s (hd_util_modal_blocker_realize()) */
+  unsigned long   modal_blocker_cb_id;
 
   /* For Banner:s, Info:s and Confirmation:s,
    * which are sized to fill the screen,
    * to know when to resize. */
   unsigned long   screen_size_changed_cb_id;
 
-  /* For hd_util_modal_blocker_realize(). */
-  unsigned long   modal_blocker_cb_id;
+  /* For IncomingEvent:s: property cache and signal id.
+   * The strings in the cache are X-allocated. */
+  char *properties[5];
+  unsigned long   property_changed_cb_id;
 };
 
 struct HdNoteClass
@@ -91,9 +92,11 @@ struct HdNoteClass
 };
 
 MBWindowManagerClient* hd_note_new (MBWindowManager *wm, MBWMClientWindow *win);
-char *hd_note_get_destination (HdNote *self);
-char *hd_note_get_summary (HdNote *self);
-char *hd_note_get_icon (HdNote *self);
+const char *hd_note_get_destination (HdNote *self);
+const char *hd_note_get_message (HdNote *self);
+const char *hd_note_get_summary (HdNote *self);
+const char *hd_note_get_time (HdNote *self);
+const char *hd_note_get_icon (HdNote *self);
 
 int hd_note_class_type (void);
 

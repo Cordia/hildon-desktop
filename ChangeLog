@@ -1,3 +1,33 @@
+2009-03-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Task Navigation Specification 2.0 update.
+
+	NB#106694 Sometimes close button is not shown on the incoming event
+		   notification.
+	NB#101730 Title of thumbnails in switcher area is not clear.
+	NB#98762  The "X" in switcher thumbnails should be themed properly
+
+	* src/mb/hd-atoms.h
+	* src/mb/hd-atoms.c:
+	  Added atoms to communicate the incoming event notification's
+	  time and message body (secondary text).
+	* src/mb/hd-note.h
+	* src/mb/hd-note.c:
+	  Cache the property values.  Notifications to work will need
+	  a newer hildon-home now.
+	* src/home/hd-task-navigator.c:
+	  Little 150KiB change.  Don't use /var/tmp/app-screenshots anymore
+	  but X-Maemo-Switcher-Icon of .desktop files.
+	* src/mb/hd-comp-mgr.c:
+	  Now notification actors needn't be reparented because
+	  the navigator doesn't use it anymore.
+	* configure.ac:
+	  Changed -std=c99 to -std=gnu99.
+	* TODO: update
+	* src/home/hd-switcher.c
+	* src/home/hd-scrollable-group.c:
+	  Cosmetic fixes.
+
 2009-03-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_setup_input_viewport): Trap X

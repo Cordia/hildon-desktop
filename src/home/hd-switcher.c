@@ -689,8 +689,8 @@ hd_switcher_add_dialog_explicit (HdSwitcher *switcher, MBWindowManagerClient *mb
   /* Zoom in the application @dialog belongs to if this is a confirmation
    * note.  This is to support closing applications that want to show a
    * confirmation before closing. */
-  if (hd_render_manager_get_state()==HDRM_STATE_TASK_NAV)
-  if (HD_IS_NOTE (mbwmc) && HD_NOTE(mbwmc)->note_type == HdNoteTypeConfirmation)
+  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV
+        && HD_IS_CONFIRMATION_NOTE (mbwmc))
       hd_switcher_item_selected (switcher, parent);
 }
 

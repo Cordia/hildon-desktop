@@ -1636,14 +1636,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   else if (ctype == MBWMClientTypeNote)
     {
       if (HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
-        {
-          /* Unparent @actor from its desktop and leave it
-           * up to the swithcer to show it wherever it wants. */
-          ClutterActor *parent = clutter_actor_get_parent (actor);
-          clutter_container_remove_actor (CLUTTER_CONTAINER (parent), actor);
-          hd_switcher_add_notification (priv->switcher_group,
-                                        HD_NOTE (c));
-        }
+        hd_switcher_add_notification (priv->switcher_group,
+                                      HD_NOTE (c));
       else if (c->transient_for)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
       else

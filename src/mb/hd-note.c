@@ -41,6 +41,17 @@ static Bool hd_note_request_geometry (MBWindowManagerClient *client,
 				      MBGeometry            *new_geometry,
 				      MBWMClientReqGeomType  flags);
 
+/* Properties of an IncomingEvent that can be queried, we cache
+ * and notice if change. */
+static HdAtoms IEProperties[] =
+{
+  HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_ICON,
+  HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_TIME,
+  HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY,
+  HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_MESSAGE,
+  HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION,
+};
+
 /* Returns the value of a #MBWMCompMgr string property of @self or %NULL
  * if the client doesn't have such property or it can't be retrieved.
  * If the return value is not %NULL it must be XFree()d by the caller. */
@@ -112,18 +123,22 @@ resize_note (XConfigureEvent *xev, MBWindowManagerClient *client)
 static void
 x_window_property_changed (XPropertyEvent *event, HdNote *self)
 {
-  HdCompMgr *cmgr;
+  guint i;
+  HdCompMgr *cmgr = HD_COMP_MGR (MB_WM_CLIENT (self)->wmref->comp_mgr);
 
-  /* Emit a signal if the changed property is the notification's summary
-   * or icon.  This is used to update custom #ClutterActor:s derived from
-   * this #HdNote. */
-  cmgr = HD_COMP_MGR (MB_WM_CLIENT (self)->wmref->comp_mgr);
-  if (event->atom == hd_comp_mgr_get_atom (cmgr,
-                    HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY))
-    mb_wm_object_signal_emit (MB_WM_OBJECT (self), HdNoteSignalChanged);
-  else if (event->atom == hd_comp_mgr_get_atom (cmgr,
-                       HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_ICON))
-    mb_wm_object_signal_emit (MB_WM_OBJECT (self), HdNoteSignalChanged);
+  /* Do we recognize the changed property? */
+  for (i = 0; i < G_N_ELEMENTS (IEProperties); i++)
+    {
+      if (event->atom != hd_comp_mgr_get_atom (cmgr, IEProperties[i]))
+        continue;
+
+      /* Invalidate the cache and emit a signal. */
+      if (self->properties[i])
+        XFree (self->properties[i]);
+      self->properties[i] = NULL;
+      mb_wm_object_signal_emit (MB_WM_OBJECT (self), HdNoteSignalChanged);
+      break;
+    }
 }
 
 static void
@@ -147,23 +162,32 @@ hd_note_class_init (MBWMObjectClass *klass)
 static void
 hd_note_destroy (MBWMObject *this)
 {
-  if (HD_NOTE (this)->note_type == HdNoteTypeIncomingEvent)
-    mb_wm_main_context_x_event_handler_remove (
-                                MB_WM_CLIENT (this)->wmref->main_ctx,
-                                PropertyNotify,
-                                HD_NOTE (this)->property_changed_cb_id);
-  if (HD_NOTE (this)->note_type == HdNoteTypeBanner
-      || HD_NOTE (this)->note_type == HdNoteTypeInfo
-      || HD_NOTE (this)->note_type == HdNoteTypeConfirmation)
-    mb_wm_main_context_x_event_handler_remove (
-                                MB_WM_CLIENT (this)->wmref->main_ctx,
-                                ConfigureNotify,
-                                HD_NOTE (this)->screen_size_changed_cb_id);
-  if (HD_NOTE (this)->note_type == HdNoteTypeInfo)
+  HdNote *note = HD_NOTE (this);
+
+  if (note->note_type == HdNoteTypeInfo)
     mb_wm_main_context_x_event_handler_remove (
                                 MB_WM_CLIENT (this)->wmref->main_ctx,
                                 ButtonRelease,
-                                HD_NOTE (this)->modal_blocker_cb_id);
+                                note->modal_blocker_cb_id);
+  if (note->note_type == HdNoteTypeBanner
+      || note->note_type == HdNoteTypeInfo
+      || note->note_type == HdNoteTypeConfirmation)
+    mb_wm_main_context_x_event_handler_remove (
+                                MB_WM_CLIENT (this)->wmref->main_ctx,
+                                ConfigureNotify,
+                                note->screen_size_changed_cb_id);
+  if (note->note_type == HdNoteTypeIncomingEvent)
+    {
+      guint i;
+
+      mb_wm_main_context_x_event_handler_remove (
+                                  MB_WM_CLIENT (this)->wmref->main_ctx,
+                                  PropertyNotify,
+                                  note->property_changed_cb_id);
+      for (i = 0; i < G_N_ELEMENTS (IEProperties); i++)
+        if (note->properties[i])
+          XFree (note->properties[i]);
+    }
 }
 
 static int
@@ -399,23 +423,20 @@ hd_note_new (MBWindowManager *wm, MBWMClientWindow *win)
   return client;
 }
 
-char *hd_note_get_destination (HdNote *self)
-{
-  mbwm_return_val_if_fail (self->note_type == HdNoteTypeIncomingEvent, NULL);
-  return get_x_window_string_property (self,
-                   HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION);
+/* Define an accessor function that caches @IEProperties[@prop]'s value
+ * in #HdNote.properties and returns it, which must not be XFree()d. */
+#define DEFINE_ACCESSOR(prop, field)                                          \
+const char *hd_note_get_##field (HdNote *self)                                \
+{                                                                             \
+  mbwm_return_val_if_fail (self->note_type == HdNoteTypeIncomingEvent, NULL); \
+  if (!self->properties[prop])                                                \
+    self->properties[prop] = get_x_window_string_property (self,              \
+                IEProperties[prop]);                                          \
+  return self->properties[prop];                                              \
 }
 
-char *hd_note_get_summary (HdNote *self)
-{
-  mbwm_return_val_if_fail (self->note_type == HdNoteTypeIncomingEvent, NULL);
-  return get_x_window_string_property (self,
-                    HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY);
-}
-
-char *hd_note_get_icon (HdNote *self)
-{
-  mbwm_return_val_if_fail (self->note_type == HdNoteTypeIncomingEvent, NULL);
-  return get_x_window_string_property (self,
-                       HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_ICON);
-}
+DEFINE_ACCESSOR(0, icon);
+DEFINE_ACCESSOR(1, time);
+DEFINE_ACCESSOR(2, summary);
+DEFINE_ACCESSOR(3, message);
+DEFINE_ACCESSOR(4, destination);
