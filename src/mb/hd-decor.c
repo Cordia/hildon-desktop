@@ -192,7 +192,7 @@ hd_decor_create_actors(HdDecor *decor)
   MBWMDecor         *mb_decor = MB_WM_DECOR (decor);
   ClutterActor      *actor = hd_decor_get_actor(decor);
   MBWindowManagerClient  *client = mb_decor->parent_client;
-  MBWMClientType          c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
+  MBWMClientType          c_type;
   MBWMXmlClient     *c;
   MBWMXmlDecor      *d;
   ClutterGeometry   /*geo, */area;
@@ -200,6 +200,8 @@ hd_decor_create_actors(HdDecor *decor)
 
   if (!client)
     return;
+
+  c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
 
   if (!((c = mb_wm_xml_client_find_by_type
                       (client->wmref->theme->xml_clients, c_type)) &&

@@ -1,9 +1,12 @@
 2009-03-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Coverity found issues:
+	* src/mb/hd-decor.c (hd_decor_create_actors): Don't use 'client'
+	before its NULL check.
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Add check for
-	possible NULL deref with priv->home==NULL, found by Coverity.
-	* src/mb/hd-theme.c (construct_buttons): Avoid Coverity-found NULL
-	dereference.
+	possible NULL deref with priv->home==NULL.
+	* src/mb/hd-theme.c (construct_buttons): Avoid NULL dereference.
+
 	* src/home/hd-home.c (root_window_client_message): Plug a memory leak
 	by using break instead of return in the switch.
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify): Remove transiency
