@@ -500,7 +500,7 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 	    return;
 	  case 1:
 	    unlink (filename);
-	    return;
+	    break;
 	  default:
 	    g_warning ("Unknown screenshot command.\n");
 	  }

@@ -1,3 +1,11 @@
+2009-03-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-home.c (root_window_client_message): Plug a memory leak
+	by using break instead of return in the switch.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify): Remove transiency
+	from a stackable secondary before libmatchbox2 starts to unmap them.
+	Also, fix the transiency of the window above if any. Fixes: NB#103836
+
 2009-03-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-notification.c: deleted, never used

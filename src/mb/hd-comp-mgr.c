@@ -1837,7 +1837,40 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
     }
 
-  if (HD_IS_INCOMING_EVENT_NOTE(c))
+  if (HD_IS_APP (c) && HD_APP (c)->stack_index > 0 &&
+      HD_APP (c)->leader != HD_APP (c))
+    {
+      GList *l;
+      g_debug ("%s: detransitise stackable %lx\n", __FUNCTION__,
+               c->window->xwindow);
+      /* stackable window: detransitise if it is not the leader, so we
+       * don't unmap the secondaries above us */
+      mb_wm_client_detransitise (MB_WM_CLIENT (c));
+      
+      l = g_list_find (HD_APP (c)->leader->followers, c);
+      if (l && l->next)
+      {
+        /* remove link to the window above, so that it is not unmapped
+         * by libmatchbox2 */
+        mb_wm_client_detransitise (MB_WM_CLIENT (l->next->data));
+        /* add link from that window to the window below */
+        if (l->prev)
+          {
+            g_debug("%s: re-link stackable %lx to secondary\n", __FUNCTION__,
+                   MB_WM_CLIENT (l->next->data)->window->xwindow);
+            mb_wm_client_add_transient (MB_WM_CLIENT (l->prev->data),
+                                        MB_WM_CLIENT (l->next->data));
+          }
+        else
+          {
+            g_debug("%s: re-link stackable %lx to leader\n", __FUNCTION__,
+                   MB_WM_CLIENT (l->next->data)->window->xwindow);
+            mb_wm_client_add_transient (MB_WM_CLIENT (HD_APP (c)->leader),
+                                        MB_WM_CLIENT (l->next->data));
+          }
+      }
+    }
+  else if (HD_IS_INCOMING_EVENT_NOTE(c))
     {
       hd_switcher_remove_notification (priv->switcher_group,
                                        HD_NOTE (c));
