@@ -5,7 +5,21 @@
 
 static GtkWidget *Subverter;
 
-static GtkWidget *fancy(GtkWidget *w)
+static gboolean fancycycy(GtkWidget *w, GdkEventKey *e, GtkWindow *win)
+{
+  gboolean wtf;
+
+  g_signal_emit_by_name(win, "key-press-event", e, &wtf);
+  return FALSE;
+}
+
+static GtkWidget *fancycy(GtkWidget *w, GtkWindow *win)
+{
+  g_signal_connect(w, "key-press-event", G_CALLBACK(fancycycy), win);
+  return w;
+}
+
+static GtkWidget *fancy(GtkWidget *w, GtkWindow *win)
 {
   if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(Subverter)))
     {
@@ -17,7 +31,7 @@ static GtkWidget *fancy(GtkWidget *w)
                gdk_x11_xatom_to_atom(XA_CARDINAL), 32,
                GDK_PROP_MODE_REPLACE, (gpointer)&no, 1);
     }
-  return w;
+  return fancycy(w, win);
 }
 
 static void fos_cb(GtkToggleButton *self, GtkWindow *win)
@@ -37,13 +51,84 @@ static gboolean idiot_cb(gpointer entry)
   return TRUE;
 }
 
+static HildonAppMenu *mkmenu(GtkWindow *win)
+{
+  static const gchar *const labels[] =
+    { "Time", "goes", "by", "so", "slowly", NULL };
+  guint i;
+  GtkWidget *menu, *button;
+
+  menu = fancycy(hildon_app_menu_new(), win);
+  for (i = 0; labels[i]; i++)
+    {
+      button = hildon_gtk_button_new(
+                       HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
+      gtk_button_set_label(GTK_BUTTON (button), labels[i]);
+      hildon_app_menu_append(HILDON_APP_MENU(menu), GTK_BUTTON(button));
+    }
+  gtk_widget_show_all(menu);
+
+  return HILDON_APP_MENU(menu);
+}
+
+static gboolean boo_hit_cb(GtkWidget *w, GdkEventKey *e, GtkWindow *win)
+{
+  if (e->keyval == 'm')
+    {
+      static gboolean ismax;
+      static GtkAllocation restore_size;
+
+      if (!ismax)
+        {
+          restore_size = w->allocation;
+          gtk_widget_set_size_request(w,
+                                      GTK_WIDGET(win)->allocation.width,
+                                      GTK_WIDGET(win)->allocation.height);
+        }
+      else
+        gtk_widget_set_size_request(w, restore_size.width, restore_size.height);
+      ismax = !ismax;
+    }
+  else if (e->keyval == 'f')
+    {
+      static gboolean isfull;
+
+      if (isfull)
+        gtk_window_unfullscreen(GTK_WINDOW(w));
+      else
+        gtk_window_fullscreen(GTK_WINDOW(w));
+      isfull = !isfull;
+    }
+
+  return FALSE;
+}
+
+static void boo_boo_cb(GtkDialog *dlg, gint response)
+{
+  if (response == GTK_RESPONSE_NO)
+    {
+      GtkWidget *dada;
+
+      g_signal_stop_emission_by_name (dlg, "response");
+      dada = gtk_message_dialog_new(GTK_WINDOW (dlg), GTK_DIALOG_MODAL,
+                                    GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+                                    "Boo! Boo!");
+      gtk_dialog_run(GTK_DIALOG(dada));
+      gtk_widget_destroy(dada);
+    }
+}
+
 static void boo_cb(GtkWindow *win)
 {
+  static guint i = 1;
   GtkWidget *dlg;
 
   dlg = fancy(gtk_message_dialog_new(win, GTK_DIALOG_MODAL,
-                                     GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-                                     "Boo!"));
+                                     GTK_MESSAGE_INFO, GTK_BUTTONS_YES_NO,
+                                     "Boo!"), win);
+  gtk_window_set_title(GTK_WINDOW(dlg), g_strdup_printf("Csapo %u", i++));
+  g_signal_connect(dlg, "key-press-event", G_CALLBACK(boo_hit_cb), win);
+  g_signal_connect(dlg, "response", G_CALLBACK(boo_boo_cb), NULL);
   gtk_dialog_run(GTK_DIALOG(dlg));
   gtk_widget_destroy(dlg);
 }
@@ -52,7 +137,7 @@ static void bee_cb(GtkWindow *win)
 {
   GtkWidget *dlg;
 
-  dlg = fancy(hildon_note_new_information(win, "Bee!"));
+  dlg = fancy(hildon_note_new_information(win, "Bee!"), win);
   gtk_dialog_run(GTK_DIALOG(dlg));
   gtk_widget_destroy(dlg);
 }
@@ -66,24 +151,32 @@ static void moo_cb(GtkWindow *win)
 {
   GtkWidget *dlg;
 
-  dlg = hildon_note_new_confirmation_add_buttons(win,
+  dlg = fancy(hildon_note_new_confirmation_add_buttons(win,
     "Moo?",
     "Moo!", 1,
     "Ooo...", 0,
-    NULL, NULL);
+    NULL, NULL), win);
   gtk_dialog_run(GTK_DIALOG(dlg));
   gtk_widget_destroy(dlg);
 }
 
 static void hee_cb(GtkWindow *win)
 {
-  GtkWidget *newin, *menu, *menu_item;
+  gulong id;
+  GtkWidget *newin, *menu, *menu_item, *vbox, *w;
 
   newin = hildon_stackable_window_new();
   gtk_window_set_title(GTK_WINDOW(newin),
                        "Hejj ha en egyszer osember lennek");
-  gtk_container_add(GTK_CONTAINER(newin),
+
+  vbox = gtk_vbox_new(FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(newin), vbox);
+
+  gtk_container_add(GTK_CONTAINER(vbox),
            gtk_label_new("Bunkosbottal bunkoznam le a sok bugris bunkot"));
+  w = gtk_entry_new();
+  id = g_timeout_add(1000, idiot_cb, w);
+  gtk_container_add(GTK_CONTAINER(vbox), w);
 
   menu = gtk_menu_new();
   menu_item = gtk_menu_item_new_with_label("Die, my darling");
@@ -93,7 +186,10 @@ static void hee_cb(GtkWindow *win)
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
   hildon_window_set_main_menu(HILDON_WINDOW(newin), GTK_MENU(menu));
 
-  gtk_widget_show_all(fancy(newin));
+  gtk_widget_show_all(fancy(newin, win));
+  g_signal_connect_swapped(newin, "destroy",
+                           G_CALLBACK(g_source_remove),
+                           GINT_TO_POINTER(id));
 }
 
 static gboolean hit_cb(GtkWindow *win, GdkEventKey *e, GtkContainer *bin)
@@ -143,36 +239,16 @@ static gboolean hit_cb(GtkWindow *win, GdkEventKey *e, GtkContainer *bin)
   return TRUE;
 }
 
-static HildonAppMenu *create_menu(void)
-{
-  static const gchar *const labels[] =
-    { "Time", "so", "goes", "slowly", "by", NULL };
-  guint i;
-  GtkWidget *menu, *button;
-
-  menu = hildon_app_menu_new();
-  for (i = 0; labels[i]; i++)
-    {
-      button = hildon_gtk_button_new(
-                       HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
-      gtk_button_set_label(GTK_BUTTON (button), labels[i]);
-      hildon_app_menu_append(HILDON_APP_MENU(menu), GTK_BUTTON(button));
-    }
-  gtk_widget_show_all(menu);
-
-  return HILDON_APP_MENU(menu);
-}
-
 int main(int argc, char const *argv[])
 {
   GtkWidget *win, *vbox, *hbox, *w;
 
   gtk_init(NULL, NULL);
   win = hildon_stackable_window_new();
-  gtk_window_set_title(GTK_WINDOW(win), "Portrait window");
-  hildon_stackable_window_set_main_menu(HILDON_STACKABLE_WINDOW(win),
-                                        create_menu());
+  gtk_window_set_title(GTK_WINDOW(win), "Look, a window!");
   g_signal_connect(win, "destroy", G_CALLBACK(exit), NULL);
+  hildon_stackable_window_set_main_menu(HILDON_STACKABLE_WINDOW(win),
+                                        mkmenu(GTK_WINDOW(win)));
   init_portrait(win, argv);
 
   vbox = gtk_vbox_new(FALSE, 0);
