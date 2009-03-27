@@ -36,8 +36,8 @@ Switcher:
 - Be more sensible differentiating clicks vs. scroll attempts.
   (It should be the same usability-wise as pannable areas.)
 - Make the switcher's and launcher's scrollbar hildon-like
+- Center thumbnail titles vertically.
 
 - Do we really need clutter_actor_get_parent() to g_object_ref(actor)?
 - We use linked lists all over the place and take the lists's length
   and the nth element many times.
-- Remove hd-notification.c.

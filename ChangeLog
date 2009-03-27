@@ -1,3 +1,12 @@
+2009-03-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-notification.c: deleted, never used
+	* src/home/hd-notification.h: deleted
+	* src/home/Makefile.am
+	* data/qgn_home_close.png: deleted, tasw doesn't need it anymore
+	* data/Makefile.am
+	* TODO
+
 2009-03-27  Gordon Williams <gordon.williams@collabora.co.uk>
 
         * tests/test-launcher.c (removed)
