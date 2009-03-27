@@ -1,5 +1,7 @@
 2009-03-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/mb/hd-theme.c (construct_buttons): Avoid Coverity-found NULL
+	dereference.
 	* src/home/hd-home.c (root_window_client_message): Plug a memory leak
 	by using break instead of return in the switch.
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify): Remove transiency

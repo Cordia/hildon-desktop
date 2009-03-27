@@ -224,7 +224,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
       stack_i = app->stack_index;
     }
 
-  if (d)
+  if (d && app)
     {
       MBWMList * l = d->buttons;
 
@@ -295,7 +295,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 	  l = l->next;
 	}
     }
-  else
+  else if (!d)
     {
       if (stack_i == 0)
 	{
