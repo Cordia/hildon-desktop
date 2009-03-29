@@ -92,6 +92,9 @@ struct HdCompMgrPrivate
 
   gboolean               stack_sync      : 1;
 
+  /* Do Not Disturb flag */
+  gboolean               do_not_disturb_flag : 1;
+
   MBWindowManagerClient *status_area_client;
   MBWindowManagerClient *status_menu_client;
 
@@ -136,6 +139,8 @@ struct HdCompMgrClientPrivate
 
 HdLauncherApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
                                                HdCompMgr *hmgr);
+
+static void hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr);
 
 static MBWMCompMgrClient *
 hd_comp_mgr_client_new (MBWindowManagerClient * client)
@@ -628,7 +633,7 @@ Bool
 hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
 {
   static guint32 no[] = { 0 }, idontcare[] = { -1 };
-  Atom pok, prq, killable, able_to_hibernate;
+  Atom pok, prq, killable, able_to_hibernate, dnd;
   guint32 *value;
   MBWindowManager *wm;
   HdCompMgrClient *cc;
@@ -641,6 +646,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   killable = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APP_KILLABLE);
   able_to_hibernate = hd_comp_mgr_get_atom (hmgr,
                           HD_ATOM_HILDON_ABLE_TO_HIBERNATE);
+  dnd = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_DO_NOT_DISTURB);
 
   wm = MB_WM_COMP_MGR (hmgr)->wm;
 
@@ -675,6 +681,12 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
         hd_app_mgr_hibernatable (app, FALSE);
 
       return False;
+    }
+
+  if (event->atom == dnd)
+    {
+      hd_comp_mgr_check_do_not_disturb_flag (hmgr);
+      return FALSE;
     }
 
   if (event->atom != pok && event->atom != prq)
@@ -1489,11 +1501,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   /* discard notification previews if in switcher */
   if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
     {
-      MBWindowManagerClient *current_app = hd_wm_determine_current_app (mgr->wm);
-
-      if ((current_app && current_app->window &&
-           mb_wm_client_window_is_state_set (current_app->window,
-                                             MBWMClientWindowEWMHStateFullscreen)) ||
+      if (priv->do_not_disturb_flag ||
           STATE_DISCARD_PREVIEW_NOTE (hd_render_manager_get_state()))
         {
           g_debug ("%s. Discard notification", __FUNCTION__);
@@ -1501,6 +1509,30 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           mb_wm_client_deliver_delete (c);
           return;
         }
+    }
+
+  /* Discard notification banners if do not disturb flag is set 
+   * and the dnd override flag is not set on the information banner */
+  if (priv->do_not_disturb_flag && HD_IS_BANNER_NOTE (c))
+    {
+      guint32 *value;
+      gboolean dnd_override = hd_comp_mgr_get_atom (HD_COMP_MGR (mgr),
+                                                    HD_ATOM_HILDON_DO_NOT_DISTURB_OVERRIDE);
+
+      value = hd_util_get_win_prop_data_and_validate (c->wmref->xdpy, c->window->xwindow,
+                                                      dnd_override, XA_INTEGER,
+                                                      32, 1, NULL);
+
+      if (!value || *value != 1)
+        {
+          g_debug ("%s. Discard information banner (Do not Disturb flag set)", __FUNCTION__);
+          mb_wm_client_hide (c);
+          mb_wm_client_deliver_delete (c);
+          return;
+        }
+
+      if (value)
+        XFree (value);
     }
 
   /* #MBWMCompMgrClutterClient already has an actor, now it's time
@@ -2058,6 +2090,8 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
 
       hd_render_manager_restack();
 
+      hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
+
       /* Now that HDRM has sorted out the visibilities see if we need to
        * switch to/from portrait mode because of a new window. */
       if (!hd_render_manager_is_changing_state ())
@@ -2228,6 +2262,39 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
     }
 
   return any_requests;
+}
+
+static void
+hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr)
+{
+  HdCompMgrPrivate *priv = hmgr->priv;
+  MBWindowManager *wm;
+  Window xwindow;
+  Atom dnd;
+  guint32 *value;
+  gboolean do_not_disturb_flag;
+ 
+  wm = MB_WM_COMP_MGR (hmgr)->wm;
+  xwindow = hd_wm_current_app_is (NULL, 0);
+
+  dnd = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_DO_NOT_DISTURB);
+
+  value = hd_util_get_win_prop_data_and_validate (wm->xdpy, xwindow,
+                                                  dnd, XA_INTEGER,
+                                                  32, 1, NULL);
+
+  do_not_disturb_flag = (value && *value == 1);
+
+  /* Check change */
+  if (priv->do_not_disturb_flag != do_not_disturb_flag)
+    {
+      priv->do_not_disturb_flag = do_not_disturb_flag;
+
+      /* FIXME: Call mce (?) to block/release auto locks */
+    }
+
+  if (value)
+    XFree (value);
 }
 
 Atom
