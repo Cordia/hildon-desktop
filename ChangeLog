@@ -1,3 +1,9 @@
+2009-03-30  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/mb/hd-desktop.c (hd_desktop_stack): Set
+	_HILDON_APPLET_ON_CURRENT_DESKTOP property only when desktop is really
+	visible. Fixes: NB#108527
+
 2009-03-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/util/hd-transition.c, src/mb/hd-comp-mgr.c,

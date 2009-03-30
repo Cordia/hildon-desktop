@@ -298,16 +298,25 @@ hd_desktop_stack (MBWindowManagerClient *client,
   for (a = applets; a; a = a->next)
     {
       MBWindowManagerClient *wm_client = MB_WM_COMP_MGR_CLIENT (a->data)->wm_client;
-      unsigned char on_desktop = 1;
+      guint32 on_desktop = 1;
       mb_wm_client_stack (wm_client, flags);
-      XChangeProperty (wm_client->wmref->xdpy,
-                       wm_client->window->xwindow,
-                       hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP),
-                       XA_CARDINAL,
-                       32,
-                       PropModeReplace,
-                       &on_desktop,
-                       1);
+      if (STATE_NEED_DESKTOP (hd_render_manager_get_state ()))
+        {
+          XChangeProperty (wm_client->wmref->xdpy,
+                           wm_client->window->xwindow,
+                           hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP),
+                           XA_CARDINAL,
+                           32,
+                           PropModeReplace,
+                           (const guchar *) &on_desktop,
+                           1);
+        }
+      else
+        {
+          XDeleteProperty (wm_client->wmref->xdpy,
+                           wm_client->window->xwindow,
+                           hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP));
+        }
     }
   g_slist_free (applets);
 
