@@ -190,10 +190,6 @@ struct _HdRenderManagerPrivate {
 
   gboolean            in_set_state;
   gboolean            queued_redraw;
-
-  /* has_fullscreen if and only if set_visibilities() finds a
-   * MBWMClientWindowEWMHStateFullscreen client in the client stack. */
-  gboolean            has_fullscreen;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -778,16 +774,6 @@ void hd_render_manager_sync_clutter_before ()
     clutter_actor_show(priv->operator);
   else
     clutter_actor_hide(priv->operator);
-
-  if (STATE_SHOW_STATUS_AREA(priv->state) && priv->status_area
-      && (!priv->has_fullscreen || !STATE_IS_APP(priv->state)))
-    {
-      clutter_actor_show(priv->status_area);
-      clutter_actor_raise_top(priv->status_area);
-    }
-  else if (priv->status_area)
-      clutter_actor_hide(priv->status_area);
-
 
   /* Set button state */
   switch (visible_top_left)
@@ -1814,6 +1800,7 @@ void hd_render_manager_set_visibilities()
   ClutterGeometry fullscreen_geo = {0, 0, HDRM_WIDTH, HDRM_HEIGHT};
   MBWindowManager *wm;
   MBWindowManagerClient *c;
+  gboolean has_fullscreen;
 
   priv = the_render_manager->priv;
   /* first append all the top elements... */
@@ -1866,9 +1853,9 @@ void hd_render_manager_set_visibilities()
   blockers = 0;
 
   /* Do we have a fullscreen client visible? */
-  priv->has_fullscreen = FALSE;
+  has_fullscreen = FALSE;
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
-  for (c = wm->stack_top; c && !priv->has_fullscreen; c = c->stacked_below)
+  for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
     {
       if (c->cm_client && c->desktop >= 0) /* FIXME: should check against
                                               current desktop? */
@@ -1879,7 +1866,7 @@ void hd_render_manager_set_visibilities()
             {
               g_object_unref(actor);
               if (c->window)
-                priv->has_fullscreen |= c->window->ewmh_state &
+                has_fullscreen |= c->window->ewmh_state &
                   MBWMClientWindowEWMHStateFullscreen;
             }
         }
@@ -1889,7 +1876,7 @@ void hd_render_manager_set_visibilities()
    * and move SA out of the way.  BTW blur_front is implcitly
    * shown by clutter when reparented. */
   c = priv->status_area_client;
-  if (priv->has_fullscreen)
+  if (has_fullscreen)
     {
       clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
       if (c && c->frame_geometry.y >= 0)

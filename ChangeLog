@@ -1,5 +1,19 @@
 2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#107503 ROTATION: status bar disappearing
+
+	Actually this bug had nothing to do with rotation.
+	It was cause by: keylock mapped -> we have a fullscreen client
+	-> change state (to portrait) -> sync_clutter hided SA because of
+	the fullscreen -> keylock unmapped -> state is NOT changed and
+	the stack is not restacked -> SA remained hidden.
+
+	* src/home/hd-render-manager.c (hd_render_manager_sync_clutter_before):
+	  Don't show/hide the status area here, it's enough to do it during
+	  restacking.
+
+2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/home/hd-task-navigator.c:
 	  * Don't update the HDRM from add_window().  This made the Tasks
 	    button hidden when a non-portrait mode application launched
