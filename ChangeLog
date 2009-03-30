@@ -28,6 +28,13 @@
 
 2009-03-30  Gordon Williams <gordon.williams@collabora.co.uk>
 
+        * src/tidy/tidy-blur-group.c: Comment to help make code less cryptic
+        * src/tidy/tidy-mem-texture.c: Fix covertity finding about unsigned
+        numbers that causes 'if' clause to be true.
+        * src/home/hd-render-manager.c: Removed un-needed debug printing
+
+2009-03-30  Gordon Williams <gordon.williams@collabora.co.uk>
+
         * src/mb/hd-decor.c: Handle X errors in hd_decor_window_is_waiting
         in case Window happens to be invalid. Fixed NB#108480
         * src/home/hd-render-manager.c (hd_render_manager_actor_opaque): 
@@ -215,7 +222,7 @@
 
         * src/tidy/tidy-highlight.c (added)
         * src/tidy/tidy-highlight.h (Added)
-        * src/tidy/Makefile.am: Added extra tidy glass for blurring task
+        * src/tidy/Makefile.am: Added extra tidy class for blurring task
           launcher icons. Not used in task launcher yet.
 
 2009-03-26  Gordon Williams <gordon.williams@collabora.co.uk>

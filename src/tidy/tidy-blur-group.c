@@ -533,7 +533,9 @@ tidy_blur_group_paint (ClutterActor *actor)
               v->ty = -v->ty;
             if (v->ty > CFX_ONE)
               v->ty = CFX_ONE*2 - v->ty;
-            /* Colour value... */
+            /* Colour value...
+             * 'edge' is the distance from the edge (almost) - it is whichever
+             * is the smallest out of the distances to all 4 edges. */
             edge = MAX(MIN(x, MIN(y, MIN(VIGNETTE_TILES-x, VIGNETTE_TILES-y))),
                        VIGNETTE_COLOURS-1);
             c = priv->vignette_colours[edge];

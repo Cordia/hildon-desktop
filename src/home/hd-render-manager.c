@@ -1175,9 +1175,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if (STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
         {
           gboolean show = STATE_NEED_DESKTOP(state);
-          g_debug("%s: show_desktop %s",
-                  __FUNCTION__, show?"TRUE":"FALSE");
-
+          /*g_debug("%s: show_desktop %s",
+                  __FUNCTION__, show?"TRUE":"FALSE");*/
           mb_wm_handle_show_desktop(wm, show);
         }
 
