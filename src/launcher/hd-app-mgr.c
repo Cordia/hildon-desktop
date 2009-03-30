@@ -653,7 +653,9 @@ hd_app_mgr_kill (HdLauncherApp *app)
       return FALSE;
     }
 
-  if (kill (pid, SIGTERM) != 0)
+  if (pid < 0)
+    g_critical ("Oops, almost killed everyone!");
+  else if (kill (pid, SIGTERM) != 0)
     return FALSE;
 
   hd_app_mgr_app_closed (app);

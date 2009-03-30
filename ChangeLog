@@ -1,5 +1,10 @@
 2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_kill):
+	  Don't attempt to kill() if pid get < 0 by any accident.
+
+2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#107503 ROTATION: status bar disappearing
 
 	Actually this bug had nothing to do with rotation.
