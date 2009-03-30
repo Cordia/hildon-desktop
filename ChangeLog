@@ -1,5 +1,11 @@
 2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* debian/rules:
+	  Recognize the "dolog" DEB_BUILD_OPTIONS parameter
+	  to NOT G_DEBUG_DISABLE.
+
+2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/launcher/hd-app-mgr.c (hd_app_mgr_kill):
 	  Don't attempt to kill() if pid get < 0 by any accident.
 
