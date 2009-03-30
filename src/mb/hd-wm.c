@@ -223,6 +223,15 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
   return NULL;
 }
 
+static gboolean
+show_info_note (gpointer data)
+{
+  gchar *s = data;
+  hildon_banner_show_information (NULL, NULL, s);
+  g_free (s);
+  return FALSE;
+}
+
 static Bool
 hd_wm_client_responding (MBWindowManager *wm,
 			 MBWindowManagerClient *client)
@@ -243,7 +252,10 @@ hd_wm_client_responding (MBWindowManager *wm,
       name = mb_wm_client_get_name (client);
       snprintf (buf, 200, _("tana_ib_apkil_responded"),
 	        name ? name : "NO NAME");
-      hildon_banner_show_information (NULL, NULL, buf);
+
+      /* have to show the banner in idle, otherwise this can cause a lock-up
+       * in libxcb (see NB#106919) */
+      g_idle_add (show_info_note, g_strdup (buf));
 
       gtk_dialog_response (GTK_DIALOG (hdwm->priv->hung_client_dialog),
 			   GTK_RESPONSE_REJECT);

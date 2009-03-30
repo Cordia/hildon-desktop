@@ -3,6 +3,7 @@ hildon-desktop (1:2.2.32-1~unreleased) unstable; urgency=low
   Kimmo:
   * Fixes: NB#103836 - Call handling view is not displayed when a call is
     initiated from Dialpad
+  * Fixes: NB#106919 - Device freezes when tapped outside of Geotagging dialog
   Adam:
   * Fixes: NB#98202 - Version conflict dialog is appeared in background while
     the restoring is going on.

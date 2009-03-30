@@ -1,3 +1,9 @@
+2009-03-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-wm.c (show_info_note): New idle handler.
+	(hd_wm_client_responding): Show the information banner in an idle
+	handler, otherwise this can cause a lockup in libxcb. Fixes: NB#106919
+
 2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* debian/rules:
