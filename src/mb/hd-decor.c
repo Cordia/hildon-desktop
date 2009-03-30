@@ -115,7 +115,9 @@ hd_decor_window_is_waiting (MBWindowManager *wm, Window w)
   unsigned long nitems_return;
   unsigned long bytes_after_return;
   unsigned char* prop_return = NULL;
+  int result = 0;
 
+  mb_wm_util_trap_x_errors();
   XGetWindowProperty (wm->xdpy, w,
                       progress_indicator,
                       0, G_MAXLONG,
@@ -126,17 +128,14 @@ hd_decor_window_is_waiting (MBWindowManager *wm, Window w)
                       &nitems_return,
                       &bytes_after_return,
                       &prop_return);
-
   if (prop_return)
     {
-      int result = prop_return[0];
-
+      result = prop_return[0];
       XFree (prop_return);
-
-      return result;
     }
-  else
-    return 0;
+  mb_wm_util_untrap_x_errors();
+
+  return result;
 }
 
 static

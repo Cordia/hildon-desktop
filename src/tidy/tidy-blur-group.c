@@ -534,11 +534,8 @@ tidy_blur_group_paint (ClutterActor *actor)
             if (v->ty > CFX_ONE)
               v->ty = CFX_ONE*2 - v->ty;
             /* Colour value... */
-
-            /* FIXME: Coverity says 'edge' can get value 6 and overrun the
-             * static array vignette_colours which has only 4 elements */
-
-            edge = MIN(x, MIN(y, MIN(VIGNETTE_TILES-x, VIGNETTE_TILES-y)));
+            edge = MAX(MIN(x, MIN(y, MIN(VIGNETTE_TILES-x, VIGNETTE_TILES-y))),
+                       VIGNETTE_COLOURS-1);
             c = priv->vignette_colours[edge];
             v->color.red = col.red * c / 255;
             v->color.green = col.green * c / 255;

@@ -1756,6 +1756,9 @@ gboolean hd_render_manager_actor_opaque(ClutterActor *actor)
   MBWindowManager *wm;
   MBWindowManagerClient *wm_client;
 
+  if (!actor)
+    return FALSE;
+
   /* First off, try and find out from the actor if it is opaque or not */
   if (CLUTTER_IS_GROUP(actor) &&
       clutter_group_get_n_children(CLUTTER_GROUP(actor))==1)
@@ -1771,9 +1774,12 @@ gboolean hd_render_manager_actor_opaque(ClutterActor *actor)
         }
     }
   /* this is ugly and slow, but is hopefully just a fallback... */
+  if (!the_render_manager->priv->comp_mgr)
+    return FALSE;
   wm = MB_WM_COMP_MGR(the_render_manager->priv->comp_mgr)->wm;
   wm_client = hd_render_manager_get_wm_client_from_actor(actor);
-  return wm_client &&
+  return wm &&
+         wm_client &&
          !wm_client->is_argb32 &&
          !mb_wm_theme_is_client_shaped(wm->theme, wm_client);
 }

@@ -1,3 +1,16 @@
+2009-03-30  Gordon Williams <gordon.williams@collabora.co.uk>
+
+        * src/mb/hd-decor.c: Handle X errors in hd_decor_window_is_waiting
+        in case Window happens to be invalid. Fixed NB#108480
+        * src/home/hd-render-manager.c (hd_render_manager_actor_opaque): 
+        Extra checks to attempt to avoid NB#107681 (we have no clear way to
+        reproduce, so can't test)
+        * src/tidy/tidy-blur-group.c: avoided coverity error with hard-coded
+        cap on size of variable
+        * src/mb/hd-animation-actor.h
+        * src/mb/hd-animation-actor.c: Some changes from NB#107323 to give 
+        the warnings. This is not a fix yet though.
+
 2009-03-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-wm.c (show_info_note): New idle handler.
