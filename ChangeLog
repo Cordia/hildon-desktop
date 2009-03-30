@@ -1,3 +1,11 @@
+2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c:
+	  * Don't update the HDRM from add_window().  This made the Tasks
+	    button hidden when a non-portrait mode application launched
+	    in front of a portrait one.
+	  * Fix task switche layout when going there from that state.
+
 2009-03-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c: White space and over 80 char lines fixed.

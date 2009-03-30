@@ -2201,8 +2201,8 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
 
   layout (apthumb->thwin);
 
-  /* Sync the Tasks button. */
-  hd_render_manager_update();
+  /* Do NOT sync the Tasks button because we may get it wrong and it's
+   * done somewhere in the mist anyway.*/
 }
 
 /* Remove @dialog from its application's thumbnail
@@ -2623,6 +2623,8 @@ screen_size_changed (void)
       setup_prison (apthumb);
     }
 
+  /* Relayout the inners of appthumbs. */
+  Thumbsize = NULL;
   layout_thumbs (NULL);
 }
 /* Callbacks }}} */
