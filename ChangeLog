@@ -1,3 +1,10 @@
+2009-03-30  Gordon Williams <gordon.williams@collabora.co.uk>
+
+        * src/tidy/tidy-blur-group.c: Comment to help make code less cryptic
+        * src/tidy/tidy-mem-texture.c: Fix covertity finding about unsigned
+        numbers that causes 'if' clause to be true.
+        * src/home/hd-render-manager.c: Removed un-needed debug printing
+
 2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-render-manager.c (hd_render_manager_sync_clutter_before):
@@ -25,13 +32,6 @@
 	* src/a11y/home/Makefile.am
 	Added MB2_CFLAGS, required to compile a11y support after 2009-03-23
 	configure.ac changes
-
-2009-03-30  Gordon Williams <gordon.williams@collabora.co.uk>
-
-        * src/tidy/tidy-blur-group.c: Comment to help make code less cryptic
-        * src/tidy/tidy-mem-texture.c: Fix covertity finding about unsigned
-        numbers that causes 'if' clause to be true.
-        * src/home/hd-render-manager.c: Removed un-needed debug printing
 
 2009-03-30  Gordon Williams <gordon.williams@collabora.co.uk>
 
