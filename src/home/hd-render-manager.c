@@ -1147,7 +1147,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                 hd_task_navigator_zoom_out (priv->task_nav, actor, NULL, NULL);
               else
                 hd_task_navigator_enter (priv->task_nav);
-              g_object_unref (actor);
             }
           else /* TODO can @mbclient be NULL at all? */
             hd_task_navigator_enter (priv->task_nav);
@@ -1335,7 +1334,6 @@ void hd_render_manager_return_windows()
                     blur_changed = TRUE;
                   clutter_actor_reparent(actor, desktop);
                 }
-              g_object_unref(actor);
             }
         }
 
@@ -1432,7 +1430,6 @@ void hd_render_manager_restack()
                       parent == CLUTTER_ACTOR(priv->app_top))
                     clutter_actor_reparent(actor, desktop);
                 }
-              g_object_unref(actor);
             }
         }
     }
@@ -1540,7 +1537,8 @@ void hd_render_manager_restack()
       ClutterActor *a = 0;
 
       if (c->cm_client)
-        a = mb_wm_comp_mgr_clutter_client_get_actor(MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
+        a = mb_wm_comp_mgr_clutter_client_get_actor(
+                MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
       g_debug("WM[%d] : %s %s %s", i,
           c->name?c->name:"?",
           (a && clutter_actor_get_name(a)) ?  clutter_actor_get_name(a) : "?",
@@ -1743,7 +1741,6 @@ hd_render_manager_get_wm_client_from_actor(ClutterActor *actor)
     if (c->cm_client) {
       ClutterActor *cactor = mb_wm_comp_mgr_clutter_client_get_actor(
                                MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
-      g_object_unref(cactor);
       if (actor == cactor)
         return c;
     }
@@ -1870,7 +1867,6 @@ void hd_render_manager_set_visibilities()
               MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
           if (actor && CLUTTER_ACTOR_IS_VISIBLE(actor))
             {
-              g_object_unref(actor);
               if (c->window)
                 has_fullscreen |= c->window->ewmh_state &
                   MBWMClientWindowEWMHStateFullscreen;
@@ -1934,7 +1930,6 @@ gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c)
     return FALSE;
   if (!(a  = mb_wm_comp_mgr_clutter_client_get_actor(cc)))
     return FALSE;
-  g_object_unref(a);
 
   /*
    * It is necessary to check the parents because sometimes

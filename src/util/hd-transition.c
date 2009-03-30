@@ -212,9 +212,6 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
             }
         }
     }
-
-  if (actor)
-    g_object_unref(actor);
 }
 
 static void
@@ -234,9 +231,6 @@ on_fade_timeline_new_frame(ClutterTimeline *timeline,
     amt = 1-amt;
 
   clutter_actor_set_opacity(actor, (int)(255*amt));
-
-  if (actor)
-    g_object_unref(actor);
 }
 
 static void
@@ -298,9 +292,6 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
     else
       if (data->particles[i])
 	clutter_actor_hide( data->particles[i] );
-
-  if (actor)
-    g_object_unref(actor);
 }
 
 static void
@@ -356,8 +347,6 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
                CLUTTER_FLOAT_TO_FIXED( -corner_x / scale ),
                CLUTTER_FLOAT_TO_FIXED( -corner_y / scale ));
     }
-  if (actor)
-    g_object_unref(actor);
 }
 
 static void
@@ -419,11 +408,6 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
             clutter_actor_hide(main_actor);*/
         }
     }
-
-  if (subview_actor)
-    g_object_unref(subview_actor);
-  if (main_actor)
-    g_object_unref(main_actor);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -470,8 +454,6 @@ on_screen_size_changed (ClutterActor *stage, GParamSpec *unused,
   clutter_actor_set_position (actor,
                               data->geo.x + data->geo.width/2,
                               data->geo.y + data->geo.height/2);
-
-  g_object_unref (actor);
 }
 
 static void

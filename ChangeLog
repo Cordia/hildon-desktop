@@ -1,3 +1,12 @@
+2009-03-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/util/hd-transition.c, src/mb/hd-comp-mgr.c,
+	src/util/hd-transition.c, src/home/hd-switcher.c,
+	src/home/hd-render-manager.c: Adjust behaviour for the new
+	mb_wm_comp_mgr_clutter_client_get_actor semantics (no reference).
+	* src/mb/hd-comp-mgr.[ch] (hd_comp_mgr_client_get_actor): Removed as
+	unused.
+
 2009-03-30  Alejandro Pinheiro <apinheiro@igalia.com>
 
 	* src/a11y/launcher/Makefile.am

@@ -684,6 +684,7 @@ hd_switcher_add_dialog_explicit (HdSwitcher *switcher, MBWindowManagerClient *mb
 
   parent = mb_wm_comp_mgr_clutter_client_get_actor (
        MB_WM_COMP_MGR_CLUTTER_CLIENT (transfor->cm_client));
+  g_object_ref (parent);
   hd_task_navigator_add_dialog (priv->task_nav, parent, dialog);
 
   /* Zoom in the application @dialog belongs to if this is a confirmation
