@@ -1,3 +1,8 @@
+2009-03-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c: White space and over 80 char lines fixed.
+	(hd_comp_mgr_unmap_notify): Handle the stackable leader as well.
+
 2009-03-30  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Implement Do not disturb flag.

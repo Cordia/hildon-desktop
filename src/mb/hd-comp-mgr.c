@@ -431,15 +431,18 @@ static void hd_comp_mgr_class_init (MBWMObjectClass *klass);
 static void hd_comp_mgr_destroy (MBWMObject *obj);
 static void hd_comp_mgr_register_client (MBWMCompMgr *mgr,
                                          MBWindowManagerClient *c);
-static void hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c);
+static void hd_comp_mgr_unregister_client (MBWMCompMgr *mgr,
+                                           MBWindowManagerClient *c);
 static void hd_comp_mgr_map_notify
                         (MBWMCompMgr *mgr, MBWindowManagerClient *c);
 static void hd_comp_mgr_unmap_notify
                         (MBWMCompMgr *mgr, MBWindowManagerClient *c);
 static void hd_comp_mgr_turn_on (MBWMCompMgr *mgr);
-static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c, MBWMCompMgrClientEvent event);
+static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c,
+                                MBWMCompMgrClientEvent event);
 static void hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor);
-static Bool hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr);
+static Bool hd_comp_mgr_client_property_changed (XPropertyEvent *event,
+                                                 HdCompMgr *hmgr);
 static HdCompMgrClient *hd_comp_mgr_get_current_client (HdCompMgr *hmgr);
 
 int
@@ -964,15 +967,17 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * If the actor is an application, remove it also to the switcher
    */
   if (hclient->priv->app &&
-      (hd_launcher_app_get_state (hclient->priv->app) == HD_APP_STATE_HIBERNATING) &&
-      !g_hash_table_lookup (priv->hibernating_apps, (gpointer) hclient->priv->hibernation_key))
+      (hd_launcher_app_get_state (hclient->priv->app)
+       == HD_APP_STATE_HIBERNATING) &&
+      !g_hash_table_lookup (priv->hibernating_apps,
+                            (gpointer) hclient->priv->hibernation_key))
     {
       /*
        * We want to hold onto the CM client object, so we can continue using
        * the actor.
        */
       mb_wm_comp_mgr_clutter_client_set_flags (cclient,
-                                               MBWMCompMgrClutterClientDontUpdate);
+                                MBWMCompMgrClutterClientDontUpdate);
       mb_wm_object_ref (MB_WM_OBJECT (cclient));
 
       g_hash_table_insert (priv->hibernating_apps,
@@ -996,7 +1001,8 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 	          || (app->leader == app && !app->leader->followers) ||
 	          /* or a secondary window on top of the stack: */
 	          (app->leader != NULL &&
-	           app->leader->followers && app == g_list_last (app->leader->followers)->data))
+	           app->leader->followers &&
+                   app == g_list_last (app->leader->followers)->data))
 	        topmost = 1;
 	      else
 	        topmost = 0;
@@ -1101,8 +1107,8 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       /* Unregister applet from HomeView */
       if (applet)
         {
-          HdHomeView * view = g_object_get_data (G_OBJECT (applet), "HD-HomeView");
-
+          HdHomeView *view = g_object_get_data (G_OBJECT (applet),
+                                                "HD-HomeView");
           if (HD_IS_HOME_VIEW (view))
             hd_home_view_unregister_applet (view, applet);
 
@@ -1494,7 +1500,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   guint                      hkey;
   MBWMClientType             ctype;
 
-  /*g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));*/
+  /*g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c,
+             MB_WM_CLIENT_CLIENT_TYPE (c));*/
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
     return;
 
@@ -1517,15 +1524,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       guint32 *value;
       gboolean dnd_override = hd_comp_mgr_get_atom (HD_COMP_MGR (mgr),
-                                                    HD_ATOM_HILDON_DO_NOT_DISTURB_OVERRIDE);
+                                HD_ATOM_HILDON_DO_NOT_DISTURB_OVERRIDE);
 
-      value = hd_util_get_win_prop_data_and_validate (c->wmref->xdpy, c->window->xwindow,
-                                                      dnd_override, XA_INTEGER,
-                                                      32, 1, NULL);
+      value = hd_util_get_win_prop_data_and_validate (c->wmref->xdpy,
+                c->window->xwindow, dnd_override, XA_INTEGER, 32, 1, NULL);
 
       if (!value || *value != 1)
         {
-          g_debug ("%s. Discard information banner (Do not Disturb flag set)", __FUNCTION__);
+          g_debug ("%s. Discard information banner (Do not Disturb flag set)",
+                   __FUNCTION__);
           mb_wm_client_hide (c);
           mb_wm_client_deliver_delete (c);
           return;
@@ -1626,8 +1633,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         {
           /* Normal applet */
           g_object_set_data_full (G_OBJECT (actor), "HD-applet-id",
-                                  g_strdup (applet_id), (GDestroyNotify) g_free);
-
+                                  g_strdup (applet_id),
+                                  (GDestroyNotify) g_free);
           hd_home_add_applet (HD_HOME (priv->home), actor);
         }
       else if (priv->home)
@@ -1678,7 +1685,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
            * manually, as they are not given focus */
           hd_render_manager_add_to_front_group(actor);
         }
-      /* Send dbus request to mce to turn display backlight on for banner notes */
+      /* Send dbus request to mce to turn display backlight on for banner
+       * notes */
       if (priv->mce_proxy && HD_IS_BANNER_NOTE (c))
         {
           g_debug ("%s. Call %s",
@@ -1873,7 +1881,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       HD_APP (c)->leader != HD_APP (c))
     {
       GList *l;
-      g_debug ("%s: detransitise stackable %lx\n", __FUNCTION__,
+      g_debug ("%s: detransitise stackable secondary %lx\n", __FUNCTION__,
                c->window->xwindow);
       /* stackable window: detransitise if it is not the leader, so we
        * don't unmap the secondaries above us */
@@ -1882,7 +1890,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       l = g_list_find (HD_APP (c)->leader->followers, c);
       if (l && l->next)
       {
-        /* remove link to the window above, so that it is not unmapped
+        /* remove link from the window above, so that it is not unmapped
          * by libmatchbox2 */
         mb_wm_client_detransitise (MB_WM_CLIENT (l->next->data));
         /* add link from that window to the window below */
@@ -1901,6 +1909,19 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                                         MB_WM_CLIENT (l->next->data));
           }
       }
+    }
+  else if (HD_IS_APP (c) && HD_APP (c)->stack_index >= 0 &&
+           HD_APP (c)->leader == HD_APP (c))
+    {
+      g_debug ("%s: detransitise stackable leader %lx\n", __FUNCTION__,
+               c->window->xwindow);
+      if (HD_APP (c)->followers)
+        {
+          /* remove link from the first secondary, so that it is not unmapped
+           * by libmatchbox2 */
+          mb_wm_client_detransitise (
+                MB_WM_CLIENT (HD_APP (c)->followers->data));
+        }
     }
   else if (HD_IS_INCOMING_EVENT_NOTE(c))
     {
@@ -2026,23 +2047,6 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
     {
       if (parent_klass->restack)
 	parent_klass->restack (mgr);
-
-      /*MBWindowManager *wm = mgr->wm;
-      MBWindowManagerClient *c = wm->stack_bottom;
-      int i = 0;
-      while (c)
-        {
-          ClutterActor *a = 0;
-
-          if (c->cm_client)
-            a = mb_wm_comp_mgr_clutter_client_get_actor(MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
-          g_debug("%s: STACK %d : %s %s %s", __FUNCTION__, i,
-              c->name?c->name:"?",
-              (a && clutter_actor_get_name(a)) ?  clutter_actor_get_name(a) : "?",
-              (wm->desktop==c) ? "DESKTOP" : "");
-          i++;
-          c = c->stacked_above;
-        }*/
 
       /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed. */
       if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop)
@@ -2257,7 +2261,8 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
             /* @cs is visible and doesn't support portrait layout. */
             /* Visibility had to be rechecked because @cs may not be visible. */
             return FALSE;
-          any_requests |= HD_COMP_MGR_CLIENT (ct->cm_client)->priv->portrait_requested;
+          any_requests |=
+                HD_COMP_MGR_CLIENT (ct->cm_client)->priv->portrait_requested;
         }
     }
 
