@@ -7,6 +7,9 @@ hildon-desktop (1:2.2.32-1~unreleased) unstable; urgency=low
   Adam:
   * Fixes: NB#98202 - Version conflict dialog is appeared in background while
     the restoring is going on.
+  Jan Arne:
+  * Fixes: NB#108527 - Home applets' visibility property is not changed when
+    application opens over them
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 27 Mar 2009 12:52:59 +0200
 
