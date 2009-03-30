@@ -775,6 +775,17 @@ void hd_render_manager_sync_clutter_before ()
   else
     clutter_actor_hide(priv->operator);
 
+  if (priv->status_area)
+    {
+      if (STATE_SHOW_STATUS_AREA(priv->state))
+        {
+          clutter_actor_show(priv->status_area);
+          clutter_actor_raise_top(priv->status_area);
+        }
+      else
+        clutter_actor_hide(priv->status_area);
+    }
+
   /* Set button state */
   switch (visible_top_left)
   {

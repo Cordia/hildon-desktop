@@ -1,3 +1,9 @@
+2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-render-manager.c (hd_render_manager_sync_clutter_before):
+	  Regression fix.  Don't show the status area in launcher view.
+	  Nor in any other states it's not supposed to be there.
+
 2009-03-30  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/mb/hd-desktop.c (hd_desktop_stack): Set
