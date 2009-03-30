@@ -131,7 +131,7 @@ hildon_desktop_a11y_init (void)
 {
   if (!_should_enable_a11y ())
     {
-      g_debug ("Current % doesn't allow a11y support. Avoiding load a11y modules",
+      g_debug ("Current %s doesn't allow a11y support. Avoiding load a11y modules",
                ENV_VAR);
       return;
     }

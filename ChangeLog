@@ -1,3 +1,10 @@
+2009-03-30  Alejandro Pinheiro <apinheiro@igalia.com>
+
+	* src/a11y/launcher/Makefile.am
+	* src/a11y/home/Makefile.am
+	Added MB2_CFLAGS, required to compile a11y support after 2009-03-23
+	configure.ac changes
+
 2009-03-30  Gordon Williams <gordon.williams@collabora.co.uk>
 
         * src/mb/hd-decor.c: Handle X errors in hd_decor_window_is_waiting

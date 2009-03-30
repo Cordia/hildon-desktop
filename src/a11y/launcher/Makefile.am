@@ -1,4 +1,4 @@
-INCLUDES = @HD_INCS@ $(HD_CFLAGS) -D_XOPEN_SOURCE=500
+INCLUDES = @HD_INCS@ $(HD_CFLAGS) $(MB2_CFLAGS) -D_XOPEN_SOURCE=500
 
 hdalauncher_h = 	hda-launcher.h		\
 			hda-launcher-grid.h	\
