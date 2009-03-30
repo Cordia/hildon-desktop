@@ -8,8 +8,10 @@ else
 ENABLE_A11Y =
 endif
 
-ifeq (,$(findstring dolog,$(DEB_BUILD_OPTIONS)))
+ifeq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 CFLAGS += -DG_DEBUG_DISABLE
+else
+CFLAGS += -O0
 endif
 
 DEB_CONFIGURE_EXTRA_FLAGS += \

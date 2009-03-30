@@ -1,8 +1,8 @@
 2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* debian/rules:
-	  Recognize the "dolog" DEB_BUILD_OPTIONS parameter
-	  to NOT G_DEBUG_DISABLE.
+	  Recognize the "debug" DEB_BUILD_OPTIONS parameter
+	  to enable g_debug() and compile with -O0.
 
 2009-03-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
