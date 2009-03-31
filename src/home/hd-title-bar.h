@@ -79,8 +79,6 @@ void hd_title_bar_set_state(HdTitleBar *bar,
                             HdTitleBarVisEnum button);
 HdTitleBarVisEnum hd_title_bar_get_state(HdTitleBar *bar);
 void
-hd_title_bar_set_show(HdTitleBar *bar, gboolean show);
-void
 hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm);
 gboolean
 hd_title_bar_is_title_bar_decor(HdTitleBar *bar, MBWMDecor *decor);

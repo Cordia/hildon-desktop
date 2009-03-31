@@ -82,12 +82,11 @@ typedef enum
                                          mode) - but when the dialogs close we
                                          want to return to HOME_EDIT state. This
                                          has no grab so dialogs work. */
+  HDRM_STATE_HOME_PORTRAIT  = 1 << 3,
   HDRM_STATE_APP            = 1 << 4, /* app frontmost */
-  HDRM_STATE_APP_FULLSCREEN = 1 << 5, /* app frontmost and over everything */
+  HDRM_STATE_APP_PORTRAIT   = 1 << 5,
   HDRM_STATE_TASK_NAV       = 1 << 6,
   HDRM_STATE_LAUNCHER       = 1 << 7,
-  HDRM_STATE_APP_PORTRAIT   = 1 << 8,
-  HDRM_STATE_HOME_PORTRAIT  = 1 << 9,
 } HDRMStateEnum;
 
 /* Does the desktop need to be above apps? */
@@ -109,9 +108,9 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
 
 #define STATE_IS_APP(s) \
-  STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_FULLSCREEN | \
-                    HDRM_STATE_APP_PORTRAIT)
+  STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT)
 
+/* Can switch to portrait mode? */
 #define STATE_IS_PORTRAIT_CAPABLE(s) \
   STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_HOME)
 
@@ -124,13 +123,13 @@ typedef enum
 #define STATE_SHOW_OPERATOR(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT)
 
-/* Whether to show app title or not */
-#define STATE_SHOW_TITLE(s) \
-  STATE_ONE_OF((s), HDRM_STATE_APP)
-
 #define STATE_SHOW_STATUS_AREA(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT | \
                     HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT)
+
+/* Show applets in the background? */
+#define STATE_SHOW_APPLETS(s) \
+  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
 
 /* Are we in a state where we should blur the buttons + status menu?
  * Task Navigator + launcher zoom out, so are a bad idea. for HOME_EDIT
@@ -142,10 +141,6 @@ typedef enum
 /* States to move the home applets out to the front in */
 #define STATE_HOME_FRONT(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
-
-/* Show applets in the background? */
-#define STATE_SHOW_APPLETS(s) \
-  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
 
 #define STATE_IN_EDIT_MODE(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))

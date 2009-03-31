@@ -1,5 +1,18 @@
 2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Cleanups in the states.
+
+	* home/hd-title-bar.h
+	* home/hd-title-bar.c:
+	  Removed empty hd_title_bar_set_show().
+	* home/hd-render-manager.h:
+	  Removed ineffective STATE_SHOW_TITLE.
+	  Removed unused STATE_APP_FULLSCREEN.
+	* home/hd-render-manager.c:
+	  Updated accordingly.
+
+2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Don't show applets in the background in switcher and launcher views.
 
 	* src/home/hd-render-manager.h:

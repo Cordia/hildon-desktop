@@ -66,7 +66,6 @@ hd_render_manager_state_get_type (void)
         { HDRM_STATE_HOME_EDIT_DLG,  "HDRM_STATE_HOME_EDIT_DLG",  "Home edit dialog" },
         { HDRM_STATE_HOME_PORTRAIT,  "HDRM_STATE_HOME_PORTRAIT",  "Home in portrait mode" },
         { HDRM_STATE_APP,            "HDRM_STATE_APP",            "Application" },
-        { HDRM_STATE_APP_FULLSCREEN, "HDRM_STATE_APP_FULLSCREEN", "Application fullscreen" },
         { HDRM_STATE_APP_PORTRAIT,   "HDRM_STATE_APP_PORTRAIT",   "Application in portrait mode" },
         { HDRM_STATE_TASK_NAV,       "HDRM_STATE_TASK_NAV",       "Task switcher" },
         { HDRM_STATE_LAUNCHER,       "HDRM_STATE_LAUNCHER",       "Task launcher" },
@@ -740,11 +739,6 @@ void hd_render_manager_sync_clutter_before ()
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
         hd_render_manager_set_blur(HDRM_BLUR_NONE | HDRM_SHOW_TASK_NAV);
         break;
-      case HDRM_STATE_APP_FULLSCREEN:
-        visible_top_left = HDRM_BUTTON_NONE;
-        visible_top_right = HDRM_BUTTON_NONE;
-        hd_render_manager_set_blur(HDRM_BLUR_NONE);
-        break;
       case HDRM_STATE_TASK_NAV:
         visible_top_left = HDRM_BUTTON_LAUNCHER;
         visible_top_right = HDRM_BUTTON_NONE;
@@ -767,8 +761,6 @@ void hd_render_manager_sync_clutter_before ()
   clutter_actor_show(CLUTTER_ACTOR(priv->front));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->app_top));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->front));
-
-  hd_title_bar_set_show(priv->title_bar, STATE_SHOW_TITLE(priv->state));
 
   if (STATE_SHOW_OPERATOR(priv->state))
     clutter_actor_show(priv->operator);
@@ -1258,7 +1250,6 @@ static const char *hd_render_manager_state_str(HDRMStateEnum state)
     case HDRM_STATE_HOME_EDIT_DLG : return "HDRM_STATE_HOME_EDIT_DLG";
     case HDRM_STATE_HOME_PORTRAIT : return "HDRM_STATE_HOME_PORTRAIT";
     case HDRM_STATE_APP : return "HDRM_STATE_APP";
-    case HDRM_STATE_APP_FULLSCREEN : return "HDRM_STATE_APP_FULLSCREEN";
     case HDRM_STATE_APP_PORTRAIT: return "HDRM_STATE_APP_PORTRAIT";
     case HDRM_STATE_TASK_NAV : return "HDRM_STATE_TASK_NAV";
     case HDRM_STATE_LAUNCHER : return "HDRM_STATE_LAUNCHER";

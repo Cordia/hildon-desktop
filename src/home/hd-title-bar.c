@@ -487,15 +487,6 @@ HdTitleBarVisEnum hd_title_bar_get_state(HdTitleBar *bar)
 }
 
 void
-hd_title_bar_set_show(HdTitleBar *bar, gboolean show)
-{
- /* if (show)
-    clutter_actor_show(CLUTTER_ACTOR(bar));
-  else
-    clutter_actor_hide(CLUTTER_ACTOR(bar));*/
-}
-
-void
 hd_title_bar_left_pressed(HdTitleBar *bar, gboolean pressed)
 {
   HdTitleBarPrivate *priv;
