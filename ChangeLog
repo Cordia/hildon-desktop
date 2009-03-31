@@ -1,3 +1,8 @@
+2009-03-31  Gordon Williams <gordon.williams@collabora.co.uk>
+
+        * src/tidy/tidy-blur-group.c: Changes to fix blank/garbled screen on
+        landscape->portrait transition (when background blurred), NB#107951
+
 2009-03-31  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.32

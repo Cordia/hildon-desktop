@@ -287,7 +287,10 @@ tidy_blur_group_paint (ClutterActor *actor)
    just render directly without the texture */
   if (!tidy_blur_group_source_buffered(actor))
     {
+      /* set our buffer as damaged, so next time it gets re-created */
       priv->current_blur_step = 0;
+      priv->source_changed = TRUE;
+      /* render direct */
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
       return;
     }
@@ -339,6 +342,8 @@ tidy_blur_group_paint (ClutterActor *actor)
         priv->fbo_b = 0;
         priv->tex_b = 0;
       }
+    priv->current_blur_step = 0;
+    priv->source_changed = TRUE;
   }
   /* create the texture + offscreen buffer if they didn't exist.
    * We can specify mipmapping here, but we don't need it */
