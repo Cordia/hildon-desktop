@@ -2653,8 +2653,6 @@ new_effect (ClutterTimeline ** timelinep, guint duration)
   return effect;
 }
 
-static void cb(void) { g_warning("FLYING"); }
-
 /* The object we create is initially hidden. */
 static void
 hd_task_navigator_init (HdTaskNavigator * self)
@@ -2699,7 +2697,6 @@ hd_task_navigator_init (HdTaskNavigator * self)
   /* Effect timelines */
   Fly_effect  = new_effect (&Fly_effect_timeline,  FLY_EFFECT_DURATION);
   Zoom_effect = new_effect (&Zoom_effect_timeline, ZOOM_EFFECT_DURATION);
-  g_signal_connect(Fly_effect_timeline, "new-frame", G_CALLBACK(cb), NULL);
 
   /* Master pieces */
   SystemFont = resolve_logical_font ("SystemFont");

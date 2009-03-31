@@ -1,3 +1,8 @@
+2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c:
+	  Remove offending g_warning() accidentally left in.
+
 2009-03-31  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/mb/hd-app-menu.c (hd_app_menu_request_geometry):
