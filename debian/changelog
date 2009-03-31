@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.32-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.32-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#103836 - Call handling view is not displayed when a call is
@@ -7,11 +7,20 @@ hildon-desktop (1:2.2.32-1~unreleased) unstable; urgency=low
   Adam:
   * Fixes: NB#98202 - Version conflict dialog is appeared in background while
     the restoring is going on.
+  * Fixes: NB#107503 - ROTATION: status bar disappearing
+  * Fixes: NB#106694 - Sometimes close button is not shown on the incoming event
+    notification.
+  * Fixes: NB#101730 - Title of thumbnails in switcher area is not clear.
+  * Fixes: NB#98762 - The "X" in switcher thumbnails should be themed properly
   Jan Arne:
   * Fixes: NB#108527 - Home applets' visibility property is not changed when
     application opens over them
+  * Implement Do not disturb flag.
+  Gordon:
+  * Fixes: NB#108480 - Desktop crashes when try closing applications after the
+    touch screen lock
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 27 Mar 2009 12:52:59 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 31 Mar 2009 09:09:52 +0300
 
 hildon-desktop (1:2.2.31-1) unstable; urgency=low
 
