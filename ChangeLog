@@ -1,5 +1,10 @@
 2009-03-31  Gordon Williams <gordon.williams@collabora.co.uk>
 
+        * src/mb/hd-comp-mgr.c: Check that an actor's stage is valid. It may
+         not be if it has no parent
+
+2009-03-31  Gordon Williams <gordon.williams@collabora.co.uk>
+
         * src/tidy/tidy-highlight.c: Now cache the pixel shader so it isn't 
           loaded once per icon
         * src/mb/hd-animation-actor.c

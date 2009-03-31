@@ -127,7 +127,7 @@ struct HdCompMgrClientPrivate
    * that it is transient for.  This case the flags in this structure
    * are cached values.  The validity of the cache is delimited by the
    * timestamp.  This is used to decide whether it is necessary to
-   * recalculate the inherited flags of a client.  
+   * recalculate the inherited flags of a client.
    */
   gboolean              portrait_supported;
   gboolean              portrait_supported_inherited;
@@ -1242,8 +1242,11 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
             area.x, area.y, area.width, area.height);*/
 
     /* Queue a redraw, but without updating the whole area */
-    clutter_stage_set_damaged_area(stage, area);
-    hd_render_manager_queue_delay_redraw();
+    if (stage)
+      {
+        clutter_stage_set_damaged_area(stage, area);
+        hd_render_manager_queue_delay_redraw();
+      }
   }
 }
 
@@ -1528,7 +1531,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         }
     }
 
-  /* Discard notification banners if do not disturb flag is set 
+  /* Discard notification banners if do not disturb flag is set
    * and the dnd override flag is not set on the information banner */
   if (priv->do_not_disturb_flag && HD_IS_BANNER_NOTE (c))
     {
@@ -1914,7 +1917,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       /* stackable window: detransitise if it is not the leader, so we
        * don't unmap the secondaries above us */
       mb_wm_client_detransitise (MB_WM_CLIENT (c));
-      
+
       l = g_list_find (HD_APP (c)->leader->followers, c);
       if (l && l->next)
       {
@@ -2347,7 +2350,7 @@ hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr)
   Atom dnd;
   guint32 *value;
   gboolean do_not_disturb_flag;
- 
+
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   xwindow = hd_wm_current_app_is (NULL, 0);
 
