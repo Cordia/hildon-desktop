@@ -143,6 +143,10 @@ typedef enum
 #define STATE_HOME_FRONT(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
 
+/* Show applets in the background? */
+#define STATE_SHOW_APPLETS(s) \
+  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
+
 #define STATE_IN_EDIT_MODE(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
 

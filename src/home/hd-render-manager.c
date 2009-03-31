@@ -828,20 +828,6 @@ void hd_render_manager_sync_clutter_before ()
       hd_render_manager_blurred_changed();
     }
 
-  if (STATE_HOME_FRONT(priv->state))
-    {
-      clutter_actor_reparent(
-          hd_home_get_front(priv->home),
-          CLUTTER_ACTOR(priv->blur_front));
-      clutter_actor_lower_bottom(hd_home_get_front(priv->home));
-    }
-  else
-    {
-      clutter_actor_reparent(
-          hd_home_get_front(priv->home),
-          CLUTTER_ACTOR(priv->home));
-    }
-
   hd_title_bar_set_state(priv->title_bar, btn_state);
   hd_render_manager_place_titlebar_elements();
 
@@ -1131,6 +1117,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
   if (state != priv->state)
     {
+      ClutterActor *home_front;
       HDRMStateEnum oldstate = priv->state;
       priv->state = state;
 
@@ -1171,6 +1158,21 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         hd_launcher_show();
       if (oldstate == HDRM_STATE_LAUNCHER)
         hd_launcher_hide();
+
+      home_front = hd_home_get_front (priv->home);
+      if (STATE_HOME_FRONT (priv->state))
+        {
+          clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->blur_front));
+          clutter_actor_lower_bottom (home_front);
+        }
+      else
+        clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->home));
+
+      /* Hide/show applets. */
+      if (STATE_SHOW_APPLETS (priv->state))
+        clutter_actor_show (home_front);
+      else
+        clutter_actor_hide (home_front);
 
       if (STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
         {

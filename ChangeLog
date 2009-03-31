@@ -1,3 +1,16 @@
+2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Don't show applets in the background in switcher and launcher views.
+
+	* src/home/hd-render-manager.h:
+	  Added STATE_SHOW_APPLETS().
+	* src/home/hd-render-manager.c (hd_render_manager_set_state,
+	  hd_render_manager_sync_clutter_before):
+	  Hide/show HdHome's front container (which contains all applet
+	  containers).  Also moved the code that moved the front back
+	  and forth from sync_clutter to set_state because it seems to
+	  have a better place there.
+
 2009-03-31  Gordon Williams <gordon.williams@collabora.co.uk>
 
         * src/mb/hd-comp-mgr.c: Check that an actor's stage is valid. It may
