@@ -2,6 +2,7 @@
 
 	* src/mb/hd-app-menu.c (hd_app_menu_request_geometry):
 	honour size and position requests.
+	Fixes NB#94957.
 
 2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
