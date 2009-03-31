@@ -322,7 +322,7 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
       XFree (prop);
     }
   else
-    priv->portrait_supported = priv->portrait_supported_inherited = TRUE;
+    priv->portrait_supported_inherited = TRUE;
 
   prop = hd_util_get_win_prop_data_and_validate (
                        wm_client->wmref->xdpy,
@@ -331,10 +331,11 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
                        XA_CARDINAL, 32, 1, NULL);
   if (prop)
     {
-      priv->portrait_requested = *prop;
+      priv->portrait_requested = *prop != 0;
       XFree (prop);
     }
-  priv->portrait_requested_inherited = TRUE;
+  else
+    priv->portrait_requested_inherited = TRUE;
 
   g_debug ("portrait properties of %p: supported=%d requested=%d", wm_client,
            priv->portrait_supported_inherited
@@ -626,9 +627,9 @@ hd_comp_mgr_get_current_client (HdCompMgr *hmgr)
 Bool
 hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
 {
-  static guint32 idontcare[] = { -1 };
+  static gint32 idontcare[] = { -1 };
   Atom pok, prq, killable, able_to_hibernate, dnd;
-  guint32 *value;
+  gint32 *value;
   MBWindowManager *wm;
   HdCompMgrClient *cc;
   MBWindowManagerClient *c;
@@ -2264,7 +2265,13 @@ hd_comp_mgr_update_clients_portrait_flags (MBWindowManagerClient *cs,
        || hcmgrcs->priv->portrait_requested_inherited)
       && hcmgrcs->priv->portrait_timestamp != now)
     { /* @cs has outdated flags */
-      if (cs->transient_for)
+      if (  !hcmgrcs->priv->portrait_requested_inherited
+          && hcmgrcs->priv->portrait_requested
+          && hcmgrcs->priv->portrait_supported_inherited)
+        /* Add some crap to the pile: if you request but don't say
+         * you support you do. */
+        hcmgrcs->priv->portrait_supported = TRUE;
+      else if (cs->transient_for)
         { /* Get the parent's and copy them. */
           hcmgrct = hd_comp_mgr_update_clients_portrait_flags (cs->transient_for,
                                                                now);
@@ -2273,6 +2280,9 @@ hd_comp_mgr_update_clients_portrait_flags (MBWindowManagerClient *cs,
           if (hcmgrcs->priv->portrait_requested_inherited)
             hcmgrcs->priv->portrait_requested = hcmgrct->priv->portrait_requested;
         }
+      else /* Set them just to be safe. */
+        hcmgrcs->priv->portrait_supported = hcmgrcs->priv->portrait_requested
+          = FALSE;
       hcmgrcs->priv->portrait_timestamp = now;
     }
   return hcmgrcs;
@@ -2303,6 +2313,13 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
           & (HdWmClientTypeAppMenu | MBWMClientTypeMenu))
         /* Menus are not transient for their window nor they claim
          * portrait layout support.  Let's just assume they can. */
+        continue;
+      if (MB_WM_CLIENT_CLIENT_TYPE (c)
+          & (HdWmClientTypeStatusMenu | HdWmClientTypeHomeApplet))
+        /* Make exceptions for the power menu and applets. */
+        continue;
+      if (HD_IS_BANNER_NOTE (c))
+        /* Assume it for now. */
         continue;
       if (hd_comp_mgr_is_client_screensaver (c))
         continue;

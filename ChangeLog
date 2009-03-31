@@ -1,5 +1,11 @@
 2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/mb/hd-comp-mgr.c:
+	  Let us entertain ourselves with another change and don't assume
+	  portrait mode support by default.
+
+2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#108599 _HILDON_PORTRAIT_MODE_SUPPORT not inherited with transiency
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait):
