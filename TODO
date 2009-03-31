@@ -26,8 +26,6 @@
 - Implement support for speech bubbles in Contacts applets.
 
 Notifications:
-- Don't show incoming event notification previews
-  if the do not disturb flag is set.
 - Use ATOM:ic property values in hd-note.c.
 
 Switcher:
@@ -37,7 +35,3 @@ Switcher:
   (It should be the same usability-wise as pannable areas.)
 - Make the switcher's and launcher's scrollbar hildon-like
 - Center thumbnail titles vertically.
-
-- Do we really need clutter_actor_get_parent() to g_object_ref(actor)?
-- We use linked lists all over the place and take the lists's length
-  and the nth element many times.
