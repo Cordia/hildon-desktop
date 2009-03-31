@@ -2390,6 +2390,8 @@ add_nothumb (TNote * tnote)
   nothumb->message = set_label_text_and_color (clutter_label_new (),
                                     hd_note_get_message (tnote->hdnote),
                                     &DefaultTextColor);
+  clutter_label_set_font_name (CLUTTER_LABEL (nothumb->message),
+                               SmallSystemFont);
   clutter_label_set_line_wrap (CLUTTER_LABEL (nothumb->message), TRUE);
   g_signal_connect (nothumb->message, "notify::allocation",
                     G_CALLBACK (clip_on_resize), NULL);

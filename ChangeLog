@@ -1,5 +1,10 @@
 2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-task-navigator.c (add_nothumb):
+	  Don't forget to set the font of the notification text.
+
+2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/mb/hd-comp-mgr.c:
 	  Let us entertain ourselves with another change and don't assume
 	  portrait mode support by default.
