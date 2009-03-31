@@ -2280,9 +2280,6 @@ hd_comp_mgr_update_clients_portrait_flags (MBWindowManagerClient *cs,
           if (hcmgrcs->priv->portrait_requested_inherited)
             hcmgrcs->priv->portrait_requested = hcmgrct->priv->portrait_requested;
         }
-      else /* Set them just to be safe. */
-        hcmgrcs->priv->portrait_supported = hcmgrcs->priv->portrait_requested
-          = FALSE;
       hcmgrcs->priv->portrait_timestamp = now;
     }
   return hcmgrcs;
