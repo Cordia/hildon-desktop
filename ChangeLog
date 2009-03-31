@@ -1,3 +1,11 @@
+2009-03-31  Gordon Williams <gordon.williams@collabora.co.uk>
+
+        * src/tidy/tidy-highlight.c: Now cache the pixel shader so it isn't 
+          loaded once per icon
+        * src/mb/hd-animation-actor.c
+        * src/mb/hd-animation-actor.h: Removed warnings code for NB#107323,
+          as it didn't play well with the fix in libmatchbox
+
 2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c:

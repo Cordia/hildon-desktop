@@ -39,12 +39,10 @@ struct HdAnimationActor
 {
   MBWMClientApp    parent;
 
+  unsigned int     show : 1;
+
   unsigned long    client_message_handler_id;
-
   unsigned long    actor_destroy_handler_id;
-
-  gpointer         parent_actor;
-  unsigned long    parent_actor_destroy_handler_id;
 };
 
 struct HdAnimationActorClass

@@ -238,6 +238,7 @@ tidy_highlight_dispose (GObject *object)
     g_object_unref (priv->parent_texture);
 
   priv->parent_texture = NULL;
+  /* TODO: handle disposal of cached shader? */
 
   G_OBJECT_CLASS (tidy_highlight_parent_class)->dispose (object);
 }
@@ -338,18 +339,28 @@ tidy_highlight_init (TidyHighlight *self)
   /* We can't use shaders on x86/GL because they're different (and Xephyr
    * just returns blackness for them */
   {
-    GError           *error = NULL;
-    priv->shader = clutter_shader_new();
-    clutter_shader_set_fragment_source (priv->shader, HIGHLIGHT_FRAGMENT_SHADER, -1);
-    clutter_shader_compile (priv->shader, &error);
+    static ClutterShader *cached_shader = 0;
+    GError               *error = NULL;
+    if (cached_shader)
+      {
+        priv->shader = cached_shader;
+      }
+    else
+      {
+        priv->shader = clutter_shader_new();
+        clutter_shader_set_fragment_source (priv->shader, HIGHLIGHT_FRAGMENT_SHADER, -1);
+        clutter_shader_compile (priv->shader, &error);
 
-    if (error)
-    {
-      g_warning ("unable to load shader: %s\n", error->message);
-      g_error_free (error);
-      clutter_shader_release(priv->shader);
-      priv->shader = 0;
-    }
+        if (error)
+        {
+          g_warning ("unable to load shader: %s\n", error->message);
+          g_error_free (error);
+          clutter_shader_release(priv->shader);
+          priv->shader = 0;
+        }
+
+        cached_shader = priv->shader;
+      }
   }
 #endif
 }

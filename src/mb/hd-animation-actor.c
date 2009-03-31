@@ -52,12 +52,10 @@ static Bool
 hd_animation_actor_request_geometry (MBWindowManagerClient *client,
 				     MBGeometry            *new_geometry,
 				     MBWMClientReqGeomType  flags);
+
 static void
 hd_animation_actor_destroy_cb (ClutterActor *actor,
                                gpointer user_data);
-static void
-hd_animation_actor_parent_destroy_cb (ClutterActor *actor,
-                                      gpointer user_data);
 
 static void
 hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
@@ -74,7 +72,7 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
   MBWMCompMgrClutterClient *cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
   ClutterActor             *actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
-  if (!actor)
+  if (!CLUTTER_IS_ACTOR(actor))
   {
       g_warning ("Stray client message: no actor!\n");
       return;
@@ -87,6 +85,9 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
 
       CM_DEBUG ("AnimationActor %p: show(show=%d, opacity=%d)\n",
 	       	self, show, opacity);
+
+      self->show = show;
+
       if (show)
           clutter_actor_show (actor);
       else
@@ -181,28 +182,6 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
       CM_DEBUG ("AnimationActor %p: parent(win=%lu)\n",
                self, win);
 
-      /* perserve actor's visibility over the unparenting/reparenting */
-
-      gboolean show = CLUTTER_ACTOR_IS_VISIBLE (actor);
-
-       /* Disconnect parent's "destroy" handler: to be extra careful,
-        * this is decoupled from the code above, because the actor may
-        * have been re-parented (if parented at all) since the last
-        * "set parent" XClientMessage by an unknowing third party.
-        * Just in case, disconnect the "destroy" signal handler from the
-        *  object it was connected to, not the last known parent.
-        */
-
-       if (self->parent_actor_destroy_handler_id)
-       {
-
-         g_signal_handler_disconnect (self->parent_actor,
-                                      self->parent_actor_destroy_handler_id);
-
-         self->parent_actor = NULL;
-         self->parent_actor_destroy_handler_id = 0;
-       }
-
        /* Disconnect actor's "destroy" handler */
 
        if (self->actor_destroy_handler_id)
@@ -213,7 +192,6 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
        }
 
        /* Unparent the actor */
-
       ClutterActor *parent = clutter_actor_get_parent (actor);
       if (parent)
         {
@@ -254,17 +232,10 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
                                    "destroy",
                                    G_CALLBACK (hd_animation_actor_destroy_cb),
                                    client);
-
-            self->parent_actor = parent;
-            self->parent_actor_destroy_handler_id =
-                 g_signal_connect (parent,
-                                   "destroy",
-                                   G_CALLBACK (hd_animation_actor_parent_destroy_cb),
-                                   client);
          }
       }
 
-      if (show)
+      if (self->show)
           clutter_actor_show (actor);
       else
           clutter_actor_hide (actor);
@@ -294,6 +265,8 @@ hd_animation_actor_show (MBWindowManagerClient *client)
   mb_wm_comp_mgr_clutter_client_set_flags (cclient,
                                            MBWMCompMgrClutterClientDontShow|
                                            MBWMCompMgrClutterClientDontPosition);
+
+
 }
 
 // -------------------------------------------------------------
@@ -359,7 +332,6 @@ hd_animation_actor_realize (MBWindowManagerClient *client)
 
   /* Set the ready atom on the window -- everything is in place to receive
    * ClientMessage events. */
-
   long val = 1;
   XChangeProperty (wm->xdpy, window,
 		   ready_atom,
@@ -402,16 +374,6 @@ hd_animation_actor_destroy (MBWMObject *this)
                                                    self->client_message_handler_id);
     }
 
-    if (self->parent_actor_destroy_handler_id)
-    {
-
-      g_signal_handler_disconnect (self->parent_actor,
-                                   self->parent_actor_destroy_handler_id);
-
-      self->parent_actor = NULL;
-      self->parent_actor_destroy_handler_id = 0;
-    }
-
     if (self->actor_destroy_handler_id)
     {
       MBWMCompMgrClutterClient *cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
@@ -419,8 +381,9 @@ hd_animation_actor_destroy (MBWMObject *this)
       if (cclient)
       {
           ClutterActor             *actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-          g_signal_handler_disconnect (actor,
-                                       self->actor_destroy_handler_id);
+	  if (actor)
+             g_signal_handler_disconnect (actor,
+                                          self->actor_destroy_handler_id);
       }
     }
 }
@@ -460,28 +423,6 @@ hd_animation_actor_init (MBWMObject *this, va_list vap)
 }
 
 static void
-hd_animation_actor_parent_destroy_cb (ClutterActor *actor,
-				      gpointer user_data)
-{
-    MBWindowManagerClient *client = MB_WM_CLIENT (user_data);
-
-    MBWMCompMgrClutterClient *cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
-    ClutterActor             *child = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-
-    g_warning ("Parent actor %p destroyed while referenced by client %p actor %p!",
-	       actor, client, child);
-
-    /* Everything is most likely broken at this point already, but
-     * let's prevent further accessed to now destroyed actor by
-     * g_signal_handler_disconnect() calls.
-     */
-
-    HdAnimationActor *self = HD_ANIMATION_ACTOR (user_data);
-    self->parent_actor_destroy_handler_id = 0;
-    self->parent_actor = NULL;
-}
-
-static void
 hd_animation_actor_destroy_cb (ClutterActor *actor,
 			       gpointer user_data)
 {
@@ -489,7 +430,7 @@ hd_animation_actor_destroy_cb (ClutterActor *actor,
 
     MBWMCompMgrClutterClient *cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
 
-    g_warning ("Animation actor destroyed while parented: client=%p cclient=%p actor=%p",
+    g_warning ("Animation actor destroyed while in use: client=%p cclient=%p actor=%p",
 	       client, cclient, actor);
 
     /* Everything is most likely broken at this point already, but
