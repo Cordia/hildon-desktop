@@ -1871,8 +1871,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
 
   /* if we are in home_edit_dlg mode, check and see if there is stuff
-   * that would spoil our grab now - and if not, return to home_edit mode.
-   * TODO: could this code be modified to set blur correctly? */
+   * that would spoil our grab now - and if not, return to home_edit mode */
   if (hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT_DLG)
     {
       gboolean grab_spoil = FALSE;
@@ -1992,8 +1991,17 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
             HdApp *app = HD_APP (c);
             if (app->stack_index > 0 && app->leader != app)
               {
+                /* Find the next window to transition to. We haven't yet been
+                 * removed from the stack so want the window second from the
+                 * top */
+                MBWindowManagerClient *next = MB_WM_CLIENT(app->leader);
+                if (app->leader->followers &&
+                    g_list_last(app->leader->followers)->prev)
+                  next = MB_WM_CLIENT(
+                      g_list_last(app->leader->followers)->prev->data);
+                /* Start actual transition */
                 hd_transition_subview(hmgr, c,
-                                      MB_WM_CLIENT(app->leader),
+                                      next,
                                       MBWMCompMgrClientEventUnmap);
               }
             else
@@ -2020,9 +2028,20 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
              * window goes from Fullscreen to Windowed */
             HdApp *app = HD_APP (c);
             if (app->stack_index > 0 && !app->map_effect_before)
-              hd_transition_subview(hmgr, c,
-                                    MB_WM_CLIENT(app->leader),
-                                    MBWMCompMgrClientEventMap);
+              {
+                /* Find the window to transition from (we have already been
+                 * added to the stack, so the window is second from the
+                 * top of the stack */
+                MBWindowManagerClient *next = MB_WM_CLIENT(app->leader);
+                if (app->leader->followers &&
+                    g_list_last(app->leader->followers)->prev)
+                  next = MB_WM_CLIENT(
+                      g_list_last(app->leader->followers)->prev->data);
+                /* Start actual transition */
+                hd_transition_subview(hmgr, c,
+                                      next,
+                                      MBWMCompMgrClientEventMap);
+              }
             /* We're now showing this app, so remove our app
              * starting screen if we had one */
             hd_launcher_window_created();

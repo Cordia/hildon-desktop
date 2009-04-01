@@ -240,7 +240,7 @@ hd_launcher_item_get_id (HdLauncherItem *item)
 GQuark
 hd_launcher_item_get_id_quark (HdLauncherItem *item)
 {
-  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), NULL);
+  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), 0);
 
   return item->priv->id_quark;
 }

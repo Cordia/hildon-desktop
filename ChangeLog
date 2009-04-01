@@ -1,3 +1,10 @@
+2009-04-01  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher-item.c: Fix warning when g_return/etc are
+	  turned on
+	* src/mb/hd-comp-mgr.c: NB#107883 - subview animations are wrong for
+	  stacked windows. Also removed TODO that got done
+
 2009-03-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c
