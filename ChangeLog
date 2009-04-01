@@ -6,7 +6,7 @@
         * debian/control
         * src/mb/hd-comp-mgr.c: Move setting of HD-MBWMCompMgrClutterClient
         in actor to the MBWMCompMgrClutterClient itself - removing the risk
-        of a pointer dangling to a destroyed class.
+        of a pointer dangling to a destroyed class. Fixed NB#107681
 
 2009-04-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
