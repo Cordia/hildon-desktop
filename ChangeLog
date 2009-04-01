@@ -1,5 +1,12 @@
 2009-04-01  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/util/hd-transition.c: Added correct g_object_ref and unref for
+	  actors used in the transition.
+	* src/mb/hd-theme.c: Added removal of callback if a button was freed 
+	  before the timeout happened.
+
+2009-04-01  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/launcher/hd-launcher-item.c: Fix warning when g_return/etc are
 	  turned on
 	* src/mb/hd-comp-mgr.c: NB#107883 - subview animations are wrong for

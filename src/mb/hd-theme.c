@@ -108,18 +108,6 @@ typedef struct _BackButtonData
   gboolean         timeout_handled : 1;
 } BackButtonData;
 
-static void
-back_button_data_free (BackButtonData *bd)
-{
-  g_free (bd);
-}
-
-static void
-back_button_data_destroy (MBWMDecorButton *button, void *bd)
-{
-  back_button_data_free (bd);
-}
-
 static gboolean
 back_button_timeout (gpointer data)
 {
@@ -157,6 +145,29 @@ back_button_timeout (gpointer data)
 finalize:
   mb_wm_object_unref (MB_WM_OBJECT(bd->button));
   return FALSE;
+}
+
+static void
+back_button_data_free (BackButtonData *bd)
+{
+  g_free (bd);
+}
+
+static void
+back_button_data_destroy (MBWMDecorButton *button, void *data)
+{
+  BackButtonData        *bd = data;
+
+  /* Kill our timeout if we had one, but we need to
+   * call it anyway */
+  if (bd->timeout_id)
+    {
+      g_source_remove( bd->timeout_id );
+      bd->timeout_id = 0;
+      back_button_timeout(data);
+    }
+
+  back_button_data_free (bd);
 }
 
 static void

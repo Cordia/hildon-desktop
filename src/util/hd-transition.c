@@ -50,8 +50,10 @@ typedef struct _HDEffectData
   MBWMCompMgrClientEvent   event;
   ClutterTimeline          *timeline;
   MBWMCompMgrClutterClient *cclient;
+  ClutterActor             *cclient_actor;
   /* In subview transitions, this is the ORIGINAL (non-subview) view */
   MBWMCompMgrClutterClient *cclient2;
+  ClutterActor             *cclient2_actor;
   HdCompMgr                *hmgr;
   /* original/expected position of application/menu */
   ClutterGeometry           geo;
@@ -143,7 +145,7 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
 
   float overshoot;
 
-  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+  actor = data->cclient_actor;
   if (!CLUTTER_IS_ACTOR(actor))
     return;
 
@@ -221,7 +223,7 @@ on_fade_timeline_new_frame(ClutterTimeline *timeline,
   float amt;
   ClutterActor *actor;
 
-  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+  actor = data->cclient_actor;
   if (!CLUTTER_IS_ACTOR(actor))
     return;
 
@@ -244,7 +246,7 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
   float particle_opacity, particle_radius;
   gint i;
 
-  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+  actor = data->cclient_actor;
   if (!CLUTTER_IS_ACTOR(actor))
     return;
 
@@ -302,7 +304,7 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
   ClutterActor *actor;
   guint width, height;
 
-  actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+  actor = data->cclient_actor;
   if (!CLUTTER_IS_ACTOR(actor))
     return;
 
@@ -358,9 +360,9 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
   ClutterActor *subview_actor = 0, *main_actor = 0;
 
   if (data->cclient)
-    subview_actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
+    subview_actor = data->cclient_actor;
   if (data->cclient2)
-    main_actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient2);
+    main_actor = data->cclient2_actor;
 
   n_frames = clutter_timeline_get_n_frames(timeline);
   amt = frame_num / (float)n_frames;
@@ -461,24 +463,26 @@ hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
 {
   gint i;
   HdCompMgr *hmgr = HD_COMP_MGR (data->hmgr);
-  ClutterActor *actor;
 
   if (data->cclient)
     {
       mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient,
                                         MBWMCompMgrClutterClientDontUpdate |
                                         MBWMCompMgrClutterClientEffectRunning);
-      actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
 
       mb_wm_object_unref (MB_WM_OBJECT (data->cclient));
 
-      if (data->event == MBWMCompMgrClientEventUnmap && actor)
+      if (data->event == MBWMCompMgrClientEventUnmap && data->cclient_actor)
         {
-          ClutterActor *parent = clutter_actor_get_parent(actor);
+          ClutterActor *parent = clutter_actor_get_parent(data->cclient_actor);
           if (CLUTTER_IS_CONTAINER(parent))
-            clutter_container_remove_actor( CLUTTER_CONTAINER(parent), actor );
+            clutter_container_remove_actor(
+                CLUTTER_CONTAINER(parent), data->cclient_actor );
         }
     }
+
+  if (data->cclient_actor)
+    g_object_unref(data->cclient_actor);
 
   if (data->cclient2)
     {
@@ -487,6 +491,9 @@ hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
                                         MBWMCompMgrClutterClientEffectRunning);
       mb_wm_object_unref (MB_WM_OBJECT (data->cclient2));
     }
+
+  if (data->cclient2_actor)
+    g_object_unref(data->cclient2_actor);
 
 /*   dump_clutter_tree (CLUTTER_CONTAINER (clutter_stage_get_default()), 0); */
 
@@ -529,6 +536,7 @@ hd_transition_popup(HdCompMgr                  *mgr,
   data = g_new0 (HDEffectData, 1);
   data->event = event;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+  data->cclient_actor = g_object_ref (actor);
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline =
         g_object_ref( hd_transition_timeline_new("popup", event, 250) );
@@ -576,6 +584,8 @@ hd_transition_fade(HdCompMgr                  *mgr,
   data = g_new0 (HDEffectData, 1);
   data->event = event;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+  data->cclient_actor = g_object_ref (
+      mb_wm_comp_mgr_clutter_client_get_actor( data->cclient ) );
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline =
         g_object_ref( hd_transition_timeline_new("fade", event, 250) );
@@ -647,6 +657,7 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   data = g_new0 (HDEffectData, 1);
   data->event = MBWMCompMgrClientEventUnmap;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+  data->cclient_actor = g_object_ref (actor);
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline = g_object_ref(
                 clutter_timeline_new_for_duration (
@@ -707,6 +718,8 @@ hd_transition_notification(HdCompMgr                  *mgr,
   data = g_new0 (HDEffectData, 1);
   data->event = event;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+  data->cclient_actor = g_object_ref (
+      mb_wm_comp_mgr_clutter_client_get_actor( data->cclient ) );
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline =
         g_object_ref( hd_transition_timeline_new("notification", event, 500) );
@@ -755,7 +768,11 @@ hd_transition_subview(HdCompMgr                  *mgr,
   data = g_new0 (HDEffectData, 1);
   data->event = event;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient_subview));
+  data->cclient_actor = g_object_ref (
+      mb_wm_comp_mgr_clutter_client_get_actor( data->cclient ) );
   data->cclient2 = mb_wm_object_ref (MB_WM_OBJECT (cclient_mainview));
+  data->cclient2_actor = g_object_ref (
+      mb_wm_comp_mgr_clutter_client_get_actor( data->cclient2 ) );
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline =
         g_object_ref( hd_transition_timeline_new("subview", event, 250) );
