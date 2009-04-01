@@ -295,7 +295,7 @@ main (int argc, char **argv)
   signal (SIGUSR1, dump_debug_info_sighand);
   signal (SIGHUP,  relaunch);
 
-  /* 
+  /*
   g_log_set_always_fatal (G_LOG_LEVEL_ERROR    |
 			  G_LOG_LEVEL_CRITICAL |
 			  G_LOG_LEVEL_WARNING);
@@ -328,6 +328,9 @@ main (int argc, char **argv)
    * assumptions about the number of benign UnmapNotifies the window
    * manager will see when reparenting "client" windows. */
   clutter_init (&argc, &argv);
+  /* Disable mipmapping of text, as it is seldom scaled down and this
+   * saves us memory/bandwidth/update speed */
+  clutter_set_use_mipmapped_text(FALSE);
 
 #ifndef DISABLE_A11Y
   hildon_desktop_a11y_init ();

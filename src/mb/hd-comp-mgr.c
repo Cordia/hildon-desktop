@@ -1095,8 +1095,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                   app->stack_index = -1;
 		}
           g_object_set_data (G_OBJECT (actor),
-                             "HD-MBWMCompMgrClutterClient", NULL);
-          g_object_set_data (G_OBJECT (actor),
                              "HD-ApplicationId", NULL);
         }
     }
@@ -1575,8 +1573,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   hclient = HD_COMP_MGR_CLIENT (cclient);
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
-  g_object_set_data (G_OBJECT (actor),
-		     "HD-MBWMCompMgrClutterClient", cclient);
   if (hclient->priv->app)
     g_object_set_data (G_OBJECT (actor),
            "HD-ApplicationId",

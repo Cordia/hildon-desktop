@@ -1,3 +1,13 @@
+2009-04-01  Gordon Williams <gordon.williams@collabora.co.uk>
+
+        * src/main.c: Right after initialisation, tell clutter not to mipmap
+        fonts. Findings of NB#105969 show this is much faster, and we don't
+        need it.
+        * debian/control
+        * src/mb/hd-comp-mgr.c: Move setting of HD-MBWMCompMgrClutterClient
+        in actor to the MBWMCompMgrClutterClient itself - removing the risk
+        of a pointer dangling to a destroyed class.
+
 2009-04-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* configure.ac: Move -DG_DISABLE_CHECKS to debian/rules.
