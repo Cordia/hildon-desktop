@@ -1113,18 +1113,15 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       HDRMStateEnum oldstate = priv->state;
       priv->state = state;
 
-      /* Make everything reactive again if we switched state, or we risk
-       * getting into a mode where nothing works */
-      /*hd_render_manager_set_reactive(TRUE);*/
-
-      if (STATE_NEED_TASK_NAV(state) &&
-          !STATE_NEED_TASK_NAV(oldstate))
+      if (STATE_NEED_TASK_NAV(state) && !STATE_NEED_TASK_NAV(oldstate))
         {
           MBWindowManagerClient *mbclient;
           MBWMCompMgrClutterClient *cmgrcc;
+
           /* We want to return all of our windows at this point, as the
            * task navigator will want to grab them */
           hd_render_manager_return_windows();
+
           /* Are we in application view?  Then zoom out, otherwise just enter
            * the navigator without animation. */
           if ((mbclient = mb_wm_get_visible_main_client (wm)) &&
@@ -1143,8 +1140,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
           hd_wm_current_app_is (wm, 0);
         }
-      if (STATE_NEED_TASK_NAV(oldstate) &&
-          !STATE_NEED_TASK_NAV(state))
+      if (STATE_NEED_TASK_NAV(oldstate) && !STATE_NEED_TASK_NAV(state))
         hd_task_navigator_exit(priv->task_nav);
       if (state == HDRM_STATE_LAUNCHER)
         hd_launcher_show();
