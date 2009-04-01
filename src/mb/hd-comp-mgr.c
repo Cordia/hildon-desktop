@@ -59,20 +59,7 @@
 #include <signal.h>
 #include <math.h>
 
-/* TODO Is it a TODO? */
-#define HIBERNATION_TIMEMOUT 3000 /* as suggested by 31410#10 */
-
 #define OPERATOR_APPLET_ID "_HILDON_OPERATOR_APPLET"
-
-/* We need to check whether @c neither is maximized nor is the systemui's
- * because these things pop up on startup and then don't go away,
- * leaving us with a needlessly blurred background. We don't blur for
- * fullscreen dialogs either because hdrm will put anything fullscreen
- * into the blur box (and we don't want to waste cycles needlessly
- * blurring anyway) */
-#define BLUR_FOR_WINDOW(c) \
-              (!hd_comp_mgr_ignore_window(c) \
-               && !HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->frame_geometry))
 
 struct HdCompMgrPrivate
 {

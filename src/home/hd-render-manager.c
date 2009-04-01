@@ -1152,7 +1152,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         hd_launcher_hide();
 
       home_front = hd_home_get_front (priv->home);
-      if (STATE_HOME_FRONT (priv->state))
+      if (STATE_HOME_FRONT (state))
         {
           clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->blur_front));
           clutter_actor_lower_bottom (home_front);
@@ -1161,18 +1161,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->home));
 
       /* Hide/show applets. */
-      if (STATE_SHOW_APPLETS (priv->state))
+      if (STATE_SHOW_APPLETS (state))
         clutter_actor_show (home_front);
       else
         clutter_actor_hide (home_front);
 
       if (STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
-        {
-          gboolean show = STATE_NEED_DESKTOP(state);
-          /*g_debug("%s: show_desktop %s",
-                  __FUNCTION__, show?"TRUE":"FALSE");*/
-          mb_wm_handle_show_desktop(wm, show);
-        }
+        mb_wm_handle_show_desktop(wm, STATE_NEED_DESKTOP(state));
 
       /* we always need to restack here */
       /*hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));*/
