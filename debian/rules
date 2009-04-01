@@ -14,6 +14,8 @@ else
 CFLAGS += -O0
 endif
 
+CFLAGS += -DG_DISABLE_CHECKS
+
 DEB_CONFIGURE_EXTRA_FLAGS += \
 	$(ENABLE_A11Y) \
 	--enable-static-mb2=yes
