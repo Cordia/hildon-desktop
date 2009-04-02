@@ -977,7 +977,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 			   (gpointer) hclient->priv->hibernation_key,
 			   hclient);
 
-      g_object_ref (actor);
       hd_switcher_hibernate_window_actor (priv->switcher_group,
 					  actor);
     }
@@ -1030,8 +1029,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                     clutter_actor_show (pactor);
 		    g_debug ("%s: REPLACE ACTOR %p WITH %p", __func__, actor,
 			     pactor);
-                    g_object_ref (actor);
-                    g_object_ref (pactor);
                     hd_switcher_replace_window_actor (priv->switcher_group,
                                                       actor, pactor);
 		  }
@@ -1048,7 +1045,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                    * just remove the actor from the switcher.
                    * NOTE The test above breaks if the client changed
                    * the flag after it's been mapped. */
-                  g_object_ref (actor);
                   hd_switcher_remove_window_actor (priv->switcher_group,
                                                    actor);
 
@@ -1087,13 +1083,11 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea)
     {
-      g_object_ref (actor);
       hd_home_remove_status_area (HD_HOME (priv->home), actor);
       priv->status_area_client = NULL;
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusMenu)
     {
-      g_object_ref (actor);
       hd_home_remove_status_menu (HD_HOME (priv->home), actor);
       priv->status_menu_client = NULL;
     }
@@ -1631,13 +1625,11 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           g_object_set_data_full (G_OBJECT (actor), "HD-applet-id",
                                   g_strdup (applet_id),
                                   (GDestroyNotify) g_free);
-          g_object_ref (actor);
           hd_home_add_applet (HD_HOME (priv->home), actor);
         }
       else if (priv->home)
         {
           /* Special operator applet */
-          g_object_ref (actor);
           hd_home_set_operator_applet (HD_HOME (priv->home), actor);
         }
       return;
@@ -1653,7 +1645,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       if (STATE_ONE_OF(hd_render_manager_get_state(),
                        HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
         hd_render_manager_set_state(HDRM_STATE_HOME);
-      g_object_ref (actor);
       hd_home_add_status_menu (HD_HOME (priv->home), actor);
       priv->status_menu_client = c;
       return;
@@ -1677,14 +1668,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                                       HD_NOTE (c));
       else if (c->transient_for)
         {
-          g_object_ref (actor);
           hd_switcher_add_dialog (priv->switcher_group, c, actor);
         }
       else if (HD_NOTE (c)->note_type != HdNoteTypeConfirmation)
         {
           /* Notes need to be pulled out right infront of the blur group
            * manually, as they are not given focus */
-          g_object_ref (actor);
           hd_render_manager_add_to_front_group(actor);
         }
       /* Send dbus request to mce to turn display backlight on for banner
@@ -1703,7 +1692,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       if (c->transient_for)
         {
-          g_object_ref (actor);
           hd_switcher_add_dialog (priv->switcher_group, c, actor);
         }
       return;
@@ -1715,7 +1703,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       if ((transfor = hd_comp_mgr_get_client_transient_for (c)) != NULL)
         {
-          g_object_ref (actor);
           hd_switcher_add_dialog_explicit (HD_SWITCHER (priv->switcher_group),
                                            c, actor, transfor);
         }
@@ -1734,8 +1721,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       ClutterActor *actor_h;
       cclient_h = MB_WM_COMP_MGR_CLUTTER_CLIENT (hclient_h);
       actor_h = mb_wm_comp_mgr_clutter_client_get_actor (cclient_h);
-      g_object_ref (actor_h);
-      g_object_ref (actor);
       hd_switcher_replace_window_actor (priv->switcher_group,
                                         actor_h, actor);
       mb_wm_object_unref (MB_WM_OBJECT (hclient_h));
@@ -1808,8 +1793,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       {
         g_debug ("%s: REPLACE ACTOR %p WITH %p", __func__, old_actor,
                actor);
-        g_object_ref (old_actor);
-        g_object_ref (actor);
         hd_switcher_replace_window_actor (priv->switcher_group,
                                         old_actor, actor);
         clutter_actor_hide (old_actor);
@@ -1826,7 +1809,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   else if (add_to_tn)
     {
       g_debug ("%s: ADD ACTOR %p", __func__, actor);
-      g_object_ref (actor);
       hd_switcher_add_window_actor (priv->switcher_group, actor);
       /* and make sure we're in app mode and not transitioning as
        * we'll want to show this new app right away*/
@@ -1846,7 +1828,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
              "or secondary acting as leader\n");
              */
       g_debug ("%s: ADD CLUTTER ACTOR %p", __func__, actor);
-      g_object_ref (actor);
       hd_switcher_add_window_actor (priv->switcher_group, actor);
       /* and make sure we're in app mode and not transitioning as
        * we'll want to show this new app right away*/
@@ -1956,7 +1937,6 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
       if (actor)
         {
-          g_object_ref (actor);
           hd_switcher_remove_dialog (priv->switcher_group, actor);
         }
     }
@@ -2194,7 +2174,6 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
       ClutterActor * actor;
 
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cc);
-      g_object_ref (actor);
 
       hd_switcher_remove_window_actor (priv->switcher_group, actor);
 
