@@ -1,6 +1,8 @@
-hildon-desktop (1:2.2.34-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.34-1) unstable; urgency=low
 
-  * writeme
+  Gordon:
+  * Removed un-needed and unmatched g_object_refs that caused clutter actors
+    for windows not to be freed.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  2 Apr 2009 10:23:04 +0300
 
