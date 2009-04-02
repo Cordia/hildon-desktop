@@ -1,5 +1,8 @@
 hildon-desktop (1:2.2.32-1) unstable; urgency=low
 
+  Gabriel:
+  * Skip over home.plugins during the RFS deletion of $HOME/.config/hildon-desktop
+    Completes the fix for NB#102054
   Kimmo:
   * Fixes: NB#103836 - Call handling view is not displayed when a call is
     initiated from Dialpad
