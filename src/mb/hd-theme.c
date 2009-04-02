@@ -216,8 +216,6 @@ back_button_release_handler (MBWindowManager   *wm,
 
   c = button->decor->parent_client;
   mb_wm_client_deliver_delete (c);
-
-  mb_wm_object_unref (MB_WM_OBJECT(button));
 }
 
 static void
