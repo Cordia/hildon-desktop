@@ -1,3 +1,9 @@
+2009-04-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-task-navigator.c: Added missing object_ref
+	  for dialogs (original ref may have been in hd-switcher
+	  perviously)
+
 2009-04-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-transition.c (on_subview_timeline_new_frame):

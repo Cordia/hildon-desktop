@@ -1480,14 +1480,14 @@ create_thwin (Thumbnail * thumb)
   thumb->plate = clutter_group_new ();
   clutter_actor_set_name (thumb->plate, "plate");
   clutter_container_add (CLUTTER_CONTAINER (thumb->plate),
-                         thumb->frame.all, thumb->title, thumb->close, NULL); 
+                         thumb->frame.all, thumb->title, thumb->close, NULL);
 
   /* .thwin */
   thumb->thwin = clutter_group_new ();
   clutter_actor_set_name (thumb->thwin, "thumbnail");
   clutter_actor_set_reactive (thumb->thwin, TRUE);
   clutter_container_add (CLUTTER_CONTAINER (thumb->thwin),
-                         thumb->plate, thumb->prison, NULL); 
+                         thumb->plate, thumb->prison, NULL);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator_area),
                                thumb->thwin);
 }
@@ -2257,7 +2257,7 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
   /* Add @dialog to @apthumb->dialogs. */
   if (!apthumb->dialogs)
     apthumb->dialogs = g_ptr_array_new ();
-  g_ptr_array_add (apthumb->dialogs, dialog);
+  g_ptr_array_add (apthumb->dialogs, g_object_ref(dialog));
 }
 /* Add/remove windows }}} */
 /* }}} */
