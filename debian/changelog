@@ -1,8 +1,26 @@
-hildon-desktop (1:2.2.32-1) unstable; urgency=low
+hildon-desktop (1:2.2.33-1) unstable; urgency=low
+
+  Gordon:
+  * Fixes: NB#107883 - subview animations are wrong for stacked windows.
+  * Fixes: NB#107681 - hildon-desktop crashes
+  * Fixes: NB#107951 - Portrait mode seems to be distorted immediately after
+    rotation.
+
+  Adam:
+  * Fixes: NB#108599 - _HILDON_PORTRAIT_MODE_SUPPORT not inherited with
+    transiency
+
+  Thomas:
+  * Fixes: NB#94957 - honour size and position requests.
 
   Gabriel:
-  * Skip over home.plugins during the RFS deletion of $HOME/.config/hildon-desktop
-    Completes the fix for NB#102054
+  * Skip over home.plugins during the RFS deletion of
+    $HOME/.config/hildon-desktop. Completes the fix for NB#102054
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  2 Apr 2009 10:01:31 +0300
+
+hildon-desktop (1:2.2.32-1) unstable; urgency=low
+
   Kimmo:
   * Fixes: NB#103836 - Call handling view is not displayed when a call is
     initiated from Dialpad
