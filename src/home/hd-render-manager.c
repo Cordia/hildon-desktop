@@ -1835,7 +1835,19 @@ void hd_render_manager_set_visibilities()
                 blockers = g_list_prepend(blockers, g_memdup(&geo, sizeof(geo)));
             }
           else
-            clutter_actor_hide(child);
+            { /* Not visible, hide it... */
+#ifdef __i386__
+              MBWMCompMgrClutterClient *cc;
+
+              /* ...unless it's running an effect.   Somebody could research
+               * why it isn't necessary on the device. */
+              cc = g_object_get_data(G_OBJECT(child),
+                                     "HD-MBWMCompMgrClutterClient");
+              if (!cc || !(mb_wm_comp_mgr_clutter_client_get_flags(cc)
+                           & MBWMCompMgrClutterClientEffectRunning))
+#endif
+                clutter_actor_hide(child);
+            }
         }
     }
 

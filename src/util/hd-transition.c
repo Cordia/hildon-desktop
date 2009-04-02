@@ -399,15 +399,15 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
       if (subview_actor)
         {
           clutter_actor_set_anchor_pointu(subview_actor, 0, 0);
-    /*      if (data->event == MBWMCompMgrClientEventUnmap)
-            clutter_actor_hide(subview_actor);*/
+          if (data->event == MBWMCompMgrClientEventUnmap)
+            clutter_actor_hide(subview_actor);
         }
       if (main_actor)
         {
           clutter_actor_set_anchor_pointu(main_actor, 0, 0);
           /* hide the correct actor - as we overrode the visibility test in hdrm */
-        /*  if (data->event == MBWMCompMgrClientEventMap)
-            clutter_actor_hide(main_actor);*/
+          if (data->event == MBWMCompMgrClientEventMap)
+            clutter_actor_hide(main_actor);
         }
     }
 }
