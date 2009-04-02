@@ -541,7 +541,7 @@ tidy_blur_group_paint (ClutterActor *actor)
             /* Colour value...
              * 'edge' is the distance from the edge (almost) - it is whichever
              * is the smallest out of the distances to all 4 edges. */
-            edge = MAX(MIN(x, MIN(y, MIN(VIGNETTE_TILES-x, VIGNETTE_TILES-y))),
+            edge = MIN(MIN(x, MIN(y, MIN(VIGNETTE_TILES-x, VIGNETTE_TILES-y))),
                        VIGNETTE_COLOURS-1);
             c = priv->vignette_colours[edge];
             v->color.red = col.red * c / 255;
