@@ -847,7 +847,6 @@ hd_app_mgr_wakeup   (HdLauncherApp *app)
   if (res) {
     hd_app_mgr_remove_from_queue (QUEUE_HIBERNATED, app);
     hd_app_mgr_request_app_pid (app);
-    hd_launcher_app_set_state (app, HD_APP_STATE_LOADING);
   }
 
   return res;

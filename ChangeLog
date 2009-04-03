@@ -1,3 +1,13 @@
+2009-04-03  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Wait until the real app appears before hiding the switcher when waking up
+	an hibernated application.
+	Fixes: NB#106572
+
+	* src/home/hd-switcher.c:
+	* src/home/hd-task-navigator.c:
+	* src/launcher/hd-app-mgr.c:
+
 2009-04-03  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-title-bar.c: Fixed copy/paste bug

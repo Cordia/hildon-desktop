@@ -559,12 +559,12 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       return;
     }
 
-  hd_render_manager_set_state(HDRM_STATE_APP);
-  hd_render_manager_stop_transition();
-
   if (!hd_comp_mgr_client_is_hibernating (hclient))
     {
       MBWindowManagerClient *c;
+
+      hd_render_manager_set_state(HDRM_STATE_APP);
+      hd_render_manager_stop_transition();
 
       c = MB_WM_COMP_MGR_CLIENT(hclient)->wm_client;
       g_debug("hd_switcher_zoom_in_complete: calling "
@@ -576,7 +576,6 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       g_debug("hd_switcher_zoom_in_complete: calling "
               "hd_comp_mgr_wakeup_client comp_mgr=%p hclient=%p\n",
               priv->comp_mgr, hclient);
-      hd_switcher_remove_window_actor (switcher, actor);
       hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
     }
 

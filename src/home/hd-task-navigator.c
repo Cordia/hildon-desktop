@@ -1679,7 +1679,6 @@ find_dialog (guint * idxp, ClutterActor * dialog, gboolean for_removal)
 static void
 zoom_in_complete (ClutterActor * navigator, ClutterActor * apwin)
 {
-  clutter_actor_hide (navigator);
   g_signal_emit_by_name (Navigator, "zoom-in-complete", apwin);
 
 #if 0 /* TODO may not be needed anymore */
