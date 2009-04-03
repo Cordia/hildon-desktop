@@ -54,6 +54,7 @@ enum
   BTN_SEPARATOR_STATUS,
   BTN_SEPARATOR_RIGHT,
   BTN_SWITCHER,
+  BTN_SWITCHER_FG, /* duplicate of BTN_SWITCHER that appears in foreground */
   BTN_SWITCHER_HIGHLIGHT,
   BTN_SWITCHER_PRESSED,
   BTN_LAUNCHER,
@@ -78,6 +79,7 @@ static const char *const BTN_FILENAMES[BTN_COUNT] = {
     HD_THEME_IMG_SEPARATOR,
     HD_THEME_IMG_SEPARATOR,
     HD_THEME_IMG_TASK_SWITCHER,
+    HD_THEME_IMG_TASK_SWITCHER,
     HD_THEME_IMG_TASK_SWITCHER_HIGHLIGHT,
     HD_THEME_IMG_TASK_SWITCHER_PRESSED,
     HD_THEME_IMG_TASK_LAUNCHER,
@@ -101,6 +103,7 @@ static const char *const BTN_LABELS[BTN_COUNT * 2] = {
     NULL, NULL,  // BTN_SEPARATOR_STATUS,
     NULL, NULL,  // BTN_SEPARATOR_RIGHT,
     NULL, NULL,  // BTN_SWITCHER,
+    NULL, NULL,  // BTN_SWITCHER_FG,
     NULL, NULL,  // BTN_SWITCHER_HIGHLIGHT,
     NULL, NULL,  // BTN_SWITCHER_PRESSED,
     NULL, NULL,  // BTN_LAUNCHER,
@@ -113,60 +116,51 @@ static const char *const BTN_LABELS[BTN_COUNT * 2] = {
     "hildon-libs", "wdgt_bd_done",
 };
 
-static const gboolean ALIGN_RIGHT[BTN_COUNT] = {
-   FALSE, // BTN_BG_ATTACHED = 0,
-   FALSE, // BTN_BG_LEFT_END,
-   TRUE,  // BTN_BG_RIGHT_END,
-   FALSE, // BTN_BG_LEFT_PRESSED,
-   FALSE, // BTN_BG_LEFT_ATTACHED_PRESSED,
-   TRUE,  // BTN_BG_RIGHT_PRESSED,
-   FALSE, // BTN_SEPARATOR_LEFT,
-   FALSE, // BTN_SEPARATOR_STATUS,
-   FALSE, // BTN_SEPARATOR_RIGHT,
-   FALSE, // BTN_SWITCHER,
-   FALSE, // BTN_SWITCHER_HIGHLIGHT,
-   FALSE, // BTN_SWITCHER_PRESSED,
-   FALSE, // BTN_LAUNCHER,
-   FALSE, // BTN_LAUNCHER_PRESSED,
-   TRUE,  // BTN_BACK,
-   TRUE,  // BTN_BACK_PRESSED,
-   TRUE,  // BTN_CLOSE,
-   TRUE,  // BTN_CLOSE_PRESSED,
-   FALSE, // BTN_MENU,
-   TRUE, // BTN_DONE,
+enum {
+  BTN_FLAG_ALIGN_RIGHT = 1,
+
+  /* We try and set sizes for what we can, because if we get images
+     * we couldn't load, they won't show properly otherwise */
+  BTN_FLAG_SET_SIZE = 2,
+
+  /* should this be a member of the 'foreground' group, so it can
+   * be pulled out above the blur if needed */
+  BTN_FLAG_FOREGROUND = 4,
 };
 
-/* We try and set sizes for what we can, because if we get images
- * we couldn't load, they won't show properly otherwise
- */
-static const gboolean SET_SIZE[BTN_COUNT] = {
-   TRUE, // BTN_BG_ATTACHED = 0,
-   TRUE, // BTN_BG_LEFT_END,
-   TRUE,  // BTN_BG_RIGHT_END,
-   TRUE, // BTN_BG_LEFT_PRESSED,
-   TRUE, // BTN_BG_LEFT_ATTACHED_PRESSED,
-   TRUE,  // BTN_BG_RIGHT_PRESSED,
-   FALSE, // BTN_SEPARATOR_LEFT,
-   FALSE, // BTN_SEPARATOR_STATUS,
-   FALSE, // BTN_SEPARATOR_RIGHT,
-   TRUE, // BTN_SWITCHER,
-   TRUE, // BTN_SWITCHER_HIGHLIGHT,
-   TRUE, // BTN_SWITCHER_PRESSED,
-   TRUE, // BTN_LAUNCHER,
-   TRUE, // BTN_LAUNCHER_PRESSED,
-   TRUE,  // BTN_BACK,
-   TRUE,  // BTN_BACK_PRESSED,
-   TRUE,  // BTN_CLOSE,
-   TRUE,  // BTN_CLOSE_PRESSED,
-   FALSE, // BTN_MENU,
-   FALSE, // BTN_DONE,
+static const gboolean BTN_FLAGS[BTN_COUNT] = {
+   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_BG_ATTACHED = 0,
+   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_BG_LEFT_END,
+   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_BG_RIGHT_END,
+   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_BG_LEFT_PRESSED,
+   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_BG_LEFT_ATTACHED_PRESSED,
+   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_BG_RIGHT_PRESSED,
+   BTN_FLAG_FOREGROUND, // BTN_SEPARATOR_LEFT,
+   0, // BTN_SEPARATOR_STATUS,
+   0, // BTN_SEPARATOR_RIGHT,
+   BTN_FLAG_SET_SIZE, // BTN_SWITCHER,
+   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_SWITCHER_FG,
+   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_SWITCHER_HIGHLIGHT,
+   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_SWITCHER_PRESSED,
+   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_LAUNCHER,
+   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_LAUNCHER_PRESSED,
+   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_BACK,
+   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_BACK_PRESSED,
+   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_CLOSE,
+   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_CLOSE_PRESSED,
+   0, // BTN_MENU,
+   BTN_FLAG_ALIGN_RIGHT, // BTN_DONE,
 };
 
 struct _HdTitleBarPrivate
 {
   /* All the images we need for buttons */
   ClutterActor          *buttons[BTN_COUNT];
+  /* Container to hold 'foreground' items that might need to be
+   * shown above the blur (if the dialog titles are blurred) */
+  ClutterGroup          *foreground;
 
+  /* Stretched image for the title background */
   ClutterActor          *title_bg;
   ClutterLabel          *title;
   /* Pulsing animation for switcher */
@@ -236,11 +230,21 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_actor_set_position(actor, 0, 0);
   clutter_actor_set_size(actor,
                     HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_TOP_MARGIN);
+  clutter_actor_set_name(CLUTTER_ACTOR(priv->foreground), "HdTitleBar");
+
+
+  priv->foreground = CLUTTER_GROUP(clutter_group_new());
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->foreground), FALSE);
+  clutter_actor_set_name(CLUTTER_ACTOR(priv->foreground),
+      "HdTitleBar::foreground");
+  clutter_container_add_actor(CLUTTER_CONTAINER(bar),
+      CLUTTER_ACTOR(priv->foreground));
 
   /* Title background */
   priv->title_bg = hd_clutter_cache_get_texture(
       HD_THEME_IMG_TITLE_BAR, TRUE);
-  clutter_container_add_actor(CLUTTER_CONTAINER(bar), CLUTTER_ACTOR(priv->title_bg));
+  clutter_container_add_actor(CLUTTER_CONTAINER(bar),
+      CLUTTER_ACTOR(priv->title_bg));
 
   /* Load every button we need */
   for (i=0;i<BTN_COUNT;i++)
@@ -276,12 +280,17 @@ hd_title_bar_init (HdTitleBar *bar)
       /* The position of left-aligned buttons is (0, 0) by default,
        * and right aligned ones will be placed on the initial
        * stage_allocation_changed(). */
-      clutter_container_add_actor(CLUTTER_CONTAINER(bar), priv->buttons[i]);
+      if (BTN_FLAGS[i] & BTN_FLAG_FOREGROUND)
+        clutter_container_add_actor(CLUTTER_CONTAINER(priv->foreground),
+            priv->buttons[i]);
+      else
+        clutter_container_add_actor(CLUTTER_CONTAINER(bar),
+            priv->buttons[i]);
       clutter_actor_hide(priv->buttons[i]);
 
-      if (SET_SIZE[i])
+      if (BTN_FLAGS[i] & BTN_FLAG_SET_SIZE)
         {
-          if (!ALIGN_RIGHT[i])
+          if (!BTN_FLAGS[i] & BTN_FLAG_ALIGN_RIGHT)
             clutter_actor_set_size(priv->buttons[i],
               HD_COMP_MGR_TOP_LEFT_BTN_WIDTH,
               HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT);
@@ -313,6 +322,10 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_label_set_use_markup(priv->title, TRUE);
   clutter_container_add_actor(CLUTTER_CONTAINER(bar), CLUTTER_ACTOR(priv->title));
   clutter_actor_hide(CLUTTER_ACTOR(priv->title));
+
+  /* Make sure the 'foreground' is in the right place */
+  clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->foreground));
+  clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->title_bg));
 
   /* Create timeline animation */
   priv->switcher_timeline =
@@ -360,6 +373,7 @@ hd_title_bar_dispose (GObject *obj)
   for (i=0;i<BTN_COUNT;i++)
     clutter_actor_destroy(priv->buttons[i]);
   clutter_actor_destroy(priv->progress_texture);
+  clutter_actor_destroy(CLUTTER_ACTOR(priv->foreground));
   g_object_unref(priv->progress_timeline);
   /* TODO: unref others - or do we care as we are a singleton? */
 }
@@ -442,6 +456,16 @@ void hd_title_bar_set_state(HdTitleBar *bar,
       clutter_actor_hide(priv->buttons[BTN_SWITCHER_HIGHLIGHT]);
     }
 
+  if ((button & HDTB_VIS_BTN_SWITCHER) &&
+      (button & HDTB_VIS_FOREGROUND))
+    {
+      clutter_actor_show(priv->buttons[BTN_SWITCHER_FG]);
+    }
+  else
+    {
+      clutter_actor_hide(priv->buttons[BTN_SWITCHER_FG]);
+    }
+
   if (button & HDTB_VIS_BTN_BACK)
     {
       clutter_actor_show(priv->buttons[BTN_BACK]);
@@ -474,6 +498,30 @@ void hd_title_bar_set_state(HdTitleBar *bar,
     }
 
   hd_title_bar_set_full_width(bar, button & HDTB_VIS_FULL_WIDTH);
+
+  if (button & HDTB_VIS_FOREGROUND)
+    {
+      ClutterActor *front = CLUTTER_ACTOR(hd_render_manager_get_front_group());
+      if (clutter_actor_get_parent(CLUTTER_ACTOR(priv->foreground)) != front)
+        {
+          clutter_actor_reparent(CLUTTER_ACTOR(priv->foreground),
+                                 CLUTTER_ACTOR(front));
+          clutter_actor_raise_top(CLUTTER_ACTOR(priv->foreground));
+        }
+    }
+  else
+    {
+      if (clutter_actor_get_parent(CLUTTER_ACTOR(priv->foreground)) !=
+          CLUTTER_ACTOR(bar))
+        {
+          clutter_actor_reparent(CLUTTER_ACTOR(priv->foreground),
+                                 CLUTTER_ACTOR(bar));
+          /* we need to lower this below other buttons, but above the
+           * main title background */
+          clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->foreground));
+          clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->title_bg));
+        }
+    }
 }
 
 HdTitleBarVisEnum hd_title_bar_get_state(HdTitleBar *bar)
@@ -533,6 +581,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
 
   if (full_size)
     {
+      /* If we want the full-size opaque background */
       clutter_actor_hide(priv->buttons[BTN_BG_LEFT_END]);
       clutter_actor_hide(priv->buttons[BTN_BG_RIGHT_END]);
       clutter_actor_hide(priv->buttons[BTN_BG_ATTACHED]);
@@ -547,7 +596,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
           clutter_actor_show(priv->buttons[BTN_SEPARATOR_LEFT]);
           if (CLUTTER_ACTOR_IS_VISIBLE (priv->buttons[BTN_MENU]))
             clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_LEFT],
-                                clutter_actor_get_width (priv->buttons[BTN_MENU]) -
+                                clutter_actor_get_width(priv->buttons[BTN_MENU]) -
                                 clutter_actor_get_width(priv->buttons[BTN_SEPARATOR_LEFT]));
           else
             clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_LEFT],
@@ -582,12 +631,15 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
         clutter_actor_hide(priv->buttons[BTN_SEPARATOR_RIGHT]);
     }
   else
-    {
-      gint left_width = 0;
-
+    { /* !full_size */
+      clutter_actor_hide(priv->title_bg);
       clutter_actor_hide(priv->progress_texture);
       clutter_timeline_stop(priv->progress_timeline);
-
+    }
+  /* If we want the slightly translucent 'tab-style' background */
+  if ((!full_size) || (priv->state & HDTB_VIS_FOREGROUND))
+    {
+      gint left_width = 0;
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
         left_width = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
 
@@ -603,7 +655,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
 
       clutter_actor_hide(priv->buttons[BTN_SEPARATOR_STATUS]);
       clutter_actor_hide(priv->buttons[BTN_SEPARATOR_RIGHT]);
-      clutter_actor_hide(priv->title_bg);
+
 
       /* move the rounded actor to the furthest right we want it
        * (edge of status area or button) */
@@ -856,6 +908,15 @@ hd_title_bar_is_title_bar_decor(HdTitleBar *bar, MBWMDecor *decor)
          (MB_WM_CLIENT_CLIENT_TYPE(decor->parent_client) == MBWMClientTypeApp);
 }
 
+ClutterGroup *
+hd_title_bar_get_foreground_group(HdTitleBar *bar)
+{
+  if (!HD_IS_TITLE_BAR(bar))
+    return 0;
+
+  return bar->priv->foreground;
+}
+
 void
 hd_title_bar_set_switcher_pulse(HdTitleBar *bar, gboolean pulse)
 {
@@ -920,7 +981,7 @@ hd_title_bar_stage_allocation_changed (HdTitleBar *bar, GParamSpec *unused,
 
   wscr = HD_COMP_MGR_SCREEN_WIDTH;
   for (i = 0; i < BTN_COUNT; i++)
-    if (ALIGN_RIGHT[i])
+    if (BTN_FLAGS[i] & BTN_FLAG_ALIGN_RIGHT)
       clutter_actor_set_x(priv->buttons[i],
                           wscr - clutter_actor_get_width(priv->buttons[i]));
 }

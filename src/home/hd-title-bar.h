@@ -62,6 +62,10 @@ typedef enum {
   HDTB_VIS_FULL_WIDTH      = 64,
   HDTB_VIS_BTN_SWITCHER_HIGHLIGHT = 128,
 
+  /* do we want a 'foreground' part shown out the front of the blur?
+   * As in when a non-system-modal dialog blurs the background */
+  HDTB_VIS_FOREGROUND      = 256,
+
 
   HDTB_VIS_BTN_LEFT_MASK   = HDTB_VIS_BTN_LAUNCHER |
                              HDTB_VIS_BTN_SWITCHER |
@@ -82,6 +86,10 @@ void
 hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm);
 gboolean
 hd_title_bar_is_title_bar_decor(HdTitleBar *bar, MBWMDecor *decor);
+/* Get the foreground group - we need to put the status area in this so it
+ * gets displayed unblurred when non-system-modal dialogs are up*/
+ClutterGroup *
+hd_title_bar_get_foreground_group(HdTitleBar *bar);
 
 /* Whether to show pulsing animation for task switcher button
  * (for when notifications arrive) or not */

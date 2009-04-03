@@ -127,10 +127,11 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |                                         --> home_get_front (!STATE_HOME_FRONT)
  *       |                      --> apps (not app_top)
  *       |                      --> blur_front (STATE_BLUR_BUTTONS)
- *       |                                        ---> button_menu
- *       |                                         --> status_area
+ *       |                                        ---> home_get_front (STATE_HOME_FRONT)
+ *       |                                         --> button_menu
  *       |                                         --> title_bar
- *       |                                         --> home_get_front (STATE_HOME_FRONT)
+ *       |                                               ---> title_bar::foreground (!HDTB_VIS_FOREGROUND)
+ *       |                                                   --->status_area
  *       |
  *       --> task_nav_container --> task_nav
  *       |
@@ -138,8 +139,10 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |
  *       --> app_top           ---> dialogs
  *       |
- *       --> front             ---> status_menu
- *                              --> blur_front (!STATE_BLUR_BUTTONS)
+ *       --> front             ---> blur_front (!STATE_BLUR_BUTTONS)
+ *                              --> status_menu
+ *                                                ---> title_bar::foreground (HDTB_VIS_FOREGROUND)
+ *                                                           --->status_area
  *
  */
 
@@ -910,7 +913,8 @@ void hd_render_manager_set_status_area (ClutterActor *item)
       cc = g_object_get_data(G_OBJECT(item), "HD-MBWMCompMgrClutterClient");
       priv->status_area_client = cc->wm_client;
       priv->status_area = g_object_ref(item);
-      clutter_actor_reparent(priv->status_area, CLUTTER_ACTOR(priv->blur_front));
+      clutter_actor_reparent(priv->status_area,
+          CLUTTER_ACTOR(hd_title_bar_get_foreground_group(priv->title_bar)));
       g_signal_connect(item, "notify::allocation",
                        G_CALLBACK(hd_render_manager_place_titlebar_elements),
                        NULL);
@@ -1161,11 +1165,20 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       home_front = hd_home_get_front (priv->home);
       if (STATE_HOME_FRONT (state))
         {
-          clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->blur_front));
+          if (clutter_actor_get_parent(home_front) !=
+              CLUTTER_ACTOR (priv->blur_front))
+            {
+              clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->blur_front));
+              hd_render_manager_blurred_changed();
+            }
           clutter_actor_lower_bottom (home_front);
         }
-      else
-        clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->home));
+      else if (clutter_actor_get_parent(home_front) !=
+               CLUTTER_ACTOR (priv->home))
+        {
+          clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->home));
+          hd_render_manager_blurred_changed();
+        }
 
       /* Hide/show applets.  Must be be done after reparenting @home_front
        * because clutter_actor_reparent() shows the actor. */
@@ -1565,9 +1578,11 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   HDRMBlurEnum blur_flags;
+  HdTitleBarVisEnum title_flags;
   MBWindowManager *wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   MBWindowManagerClient *c;
   gboolean blur = FALSE;
+  gboolean system_modal = FALSE;
 
   /* Now look through the MBWM stack and see if we need to blur or not.
    * This happens when we have a dialog/menu in front of the main app */
@@ -1596,19 +1611,29 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
               c->window->geometry.width, c->window->geometry.height,
               c->name?c->name:"(null)");*/
           blur=TRUE;
+          if (hd_util_is_client_system_modal(c))
+            system_modal = TRUE;
           break;
         }
     }
 
   blur_flags = priv->current_blur;
+  title_flags = hd_title_bar_get_state(priv->title_bar);
 
   if (blur)
     blur_flags = blur_flags | HDRM_BLUR_BACKGROUND;
   else
     blur_flags = blur_flags & ~HDRM_BLUR_BACKGROUND;
 
+  if (blur && !system_modal)
+    title_flags |= HDTB_VIS_FOREGROUND;
+  else
+    title_flags &= ~HDTB_VIS_FOREGROUND;
+
   if (blur_flags !=  priv->current_blur)
     hd_render_manager_set_blur(blur_flags);
+
+  hd_title_bar_set_state(priv->title_bar, title_flags);
 
   hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
 }
