@@ -1,6 +1,6 @@
-hildon-desktop (1:2.2.35-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.35-1) unstable; urgency=low
 
-  * writeme
+  * Some regression fixes from Gordon and Adam.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  2 Apr 2009 13:25:33 +0300
 
