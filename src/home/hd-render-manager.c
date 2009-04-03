@@ -151,7 +151,6 @@ struct _HdRenderManagerPrivate {
   HDRMStateEnum state;
 
   TidyBlurGroup *home_blur;
-  ClutterGroup  *task_nav_container;
   ClutterGroup  *app_top;
   ClutterGroup  *front;
   ClutterGroup  *blur_front;
@@ -268,26 +267,46 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
 
   priv->comp_mgr = hdcompmgr;
 
-  priv->launcher = g_object_ref(launcher_group);
+  /* Task switcher widget: anchor it at the centre so it is zoomed in
+   * the middle when blurred. */
+  priv->task_nav = task_nav;
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->task_nav), FALSE);
+  clutter_actor_set_position(CLUTTER_ACTOR(priv->task_nav), 0, 0);
+  clutter_actor_set_size (CLUTTER_ACTOR(priv->task_nav),
+                          HD_COMP_MGR_LANDSCAPE_WIDTH,
+                          HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  clutter_container_add_actor(CLUTTER_CONTAINER(the_render_manager),
+                              CLUTTER_ACTOR(priv->task_nav));
+  clutter_actor_move_anchor_point_from_gravity(CLUTTER_ACTOR(priv->task_nav),
+                                               CLUTTER_GRAVITY_CENTER);
+
+  /* Add the launcher widget. */
+  priv->launcher = launcher_group;
   clutter_container_add_actor(CLUTTER_CONTAINER(the_render_manager),
 		              priv->launcher);
 
-  priv->home = g_object_ref(home);
+  /* These must be below tasw and talu. */
+  clutter_actor_lower_bottom (CLUTTER_ACTOR (priv->app_top));
+  clutter_actor_lower_bottom (CLUTTER_ACTOR (priv->front));
+
+  /* HdHome */
+  priv->home = home;
   g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->home);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
                               CLUTTER_ACTOR(priv->home));
+
+  /* Edit button */
   priv->button_edit = g_object_ref(hd_home_get_edit_button(priv->home));
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               priv->button_edit);
-  hd_render_manager_set_operator(g_object_ref(hd_home_get_operator(priv->home)));
+
+  /* Operator */
+  hd_render_manager_set_operator(hd_home_get_operator(priv->home));
   clutter_actor_reparent(priv->operator, CLUTTER_ACTOR(priv->blur_front));
 
-  priv->task_nav = g_object_ref(task_nav);
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->task_nav_container),
-                              CLUTTER_ACTOR(priv->task_nav));
-
-  priv->title_bar = g_object_ref(g_object_new(HD_TYPE_TITLE_BAR, NULL));
+  /* HdTitleBar */
+  priv->title_bar = g_object_new(HD_TYPE_TITLE_BAR, NULL);
   g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->title_bar);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
@@ -296,8 +315,8 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   g_signal_connect (priv->button_back,
                     "button-release-event",
                     G_CALLBACK (hd_launcher_back_button_clicked),
-                    hd_launcher_get());
-  g_signal_connect (hd_render_manager_get_button(HDRM_BUTTON_BACK),
+                    launcher);
+  g_signal_connect (priv->button_back,
                     "button-release-event",
                     G_CALLBACK (hd_home_back_button_clicked),
                     home);
@@ -389,24 +408,6 @@ hd_render_manager_init (HdRenderManager *self)
                            G_CALLBACK(stage_allocation_changed), priv->home_blur);
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->home_blur));
-
-  priv->task_nav_container = CLUTTER_GROUP(clutter_group_new());
-  clutter_actor_set_name(CLUTTER_ACTOR(priv->task_nav_container),
-                         "HdRenderManager:task_nav_container");
-  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->task_nav_container), FALSE);
-  clutter_actor_set_size (CLUTTER_ACTOR(priv->task_nav_container),
-                          HD_COMP_MGR_LANDSCAPE_WIDTH,
-                          HD_COMP_MGR_LANDSCAPE_HEIGHT);
-  /* we set the anchor point this way, so when we zoom we zoom from the
-   * middle */
-  clutter_actor_set_anchor_point_from_gravity(
-                          CLUTTER_ACTOR(priv->task_nav_container),
-                          CLUTTER_GRAVITY_CENTER);
-  clutter_actor_set_position (CLUTTER_ACTOR(priv->task_nav_container),
-                              HD_COMP_MGR_LANDSCAPE_WIDTH/2,
-                              HD_COMP_MGR_LANDSCAPE_HEIGHT/2);
-  clutter_container_add_actor(CLUTTER_CONTAINER(self),
-                              CLUTTER_ACTOR(priv->task_nav_container));
 
   priv->app_top = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->app_top),
@@ -505,13 +506,12 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
                                  priv->home_zoom.current);
 
   task_opacity = priv->task_nav_opacity.current*255;
-  clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav_container),
-                            task_opacity);
+  clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav), task_opacity);
   if (task_opacity==0)
-    clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav_container));
+    clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav));
   else
-    clutter_actor_show(CLUTTER_ACTOR(priv->task_nav_container));
-  clutter_actor_set_scale(CLUTTER_ACTOR(priv->task_nav_container),
+    clutter_actor_show(CLUTTER_ACTOR(priv->task_nav));
+  clutter_actor_set_scale(CLUTTER_ACTOR(priv->task_nav),
                           priv->task_nav_zoom.current,
                           priv->task_nav_zoom.current);
 }
@@ -737,7 +737,7 @@ void hd_render_manager_sync_clutter_before ()
         /* Fall through */
       case HDRM_STATE_APP_PORTRAIT:
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
-        hd_render_manager_set_blur(HDRM_BLUR_NONE | HDRM_SHOW_TASK_NAV);
+        hd_render_manager_set_blur(HDRM_BLUR_NONE);
         break;
       case HDRM_STATE_TASK_NAV:
         visible_top_left = HDRM_BUTTON_LAUNCHER;
@@ -1113,40 +1113,51 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       HDRMStateEnum oldstate = priv->state;
       priv->state = state;
 
-      if (STATE_NEED_TASK_NAV(state) && !STATE_NEED_TASK_NAV(oldstate))
+      /* Enter or leave the task switcher. */
+      if (state == HDRM_STATE_TASK_NAV)
         {
-          MBWindowManagerClient *mbclient;
-          MBWMCompMgrClutterClient *cmgrcc;
-
-          /* We want to return all of our windows at this point, as the
-           * task navigator will want to grab them */
-          hd_render_manager_return_windows();
-
-          /* Are we in application view?  Then zoom out, otherwise just enter
-           * the navigator without animation. */
-          if ((mbclient = mb_wm_get_visible_main_client (wm)) &&
-              (cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (mbclient->cm_client)))
+          /* Zoom out if possible.  Otherwise if not coming from launcher
+           * scroll it back to the top. */
+          if (STATE_IS_APP(oldstate))
             {
               ClutterActor *actor;
-              actor = mb_wm_comp_mgr_clutter_client_get_actor (cmgrcc);
-              if (CLUTTER_ACTOR_IS_VISIBLE (actor)
-                  && hd_task_navigator_has_window (priv->task_nav, actor))
-                hd_task_navigator_zoom_out (priv->task_nav, actor, NULL, NULL);
-              else
-                hd_task_navigator_enter (priv->task_nav);
-            }
-          else /* TODO can @mbclient be NULL at all? */
-            hd_task_navigator_enter (priv->task_nav);
+              MBWindowManagerClient *mbwmc;
+              MBWMCompMgrClutterClient *cmgrcc;
 
-          hd_wm_current_app_is (wm, 0);
+              /* This beautiful code seems to survive everything. */
+              if ((mbwmc = mb_wm_get_visible_main_client(wm)) &&
+                  (cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT(mbwmc->cm_client)) &&
+                  (actor = mb_wm_comp_mgr_clutter_client_get_actor(cmgrcc)) &&
+                  CLUTTER_ACTOR_IS_VISIBLE(actor) &&
+                  hd_task_navigator_has_window(priv->task_nav, actor))
+                {
+                  /* Make the tasw fully opaque as it might have been made
+                   * transparent while exiting it. */
+                  hd_render_manager_return_windows();
+                  clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav), 255);
+                  range_set(&priv->task_nav_opacity, 1);
+                  hd_task_navigator_zoom_out(priv->task_nav, actor, NULL, NULL);
+                }
+            }
+          else if (oldstate != HDRM_STATE_LAUNCHER)
+            hd_task_navigator_scroll_back(priv->task_nav);
         }
-      if (STATE_NEED_TASK_NAV(oldstate) && !STATE_NEED_TASK_NAV(state))
-        hd_task_navigator_exit(priv->task_nav);
+      if (STATE_ONE_OF(state | oldstate, HDRM_STATE_TASK_NAV))
+        /* Stop breathing the Tasks button when entering/leaving the switcher. */
+        hd_title_bar_set_switcher_pulse(priv->title_bar, FALSE);
+
+      /* Enter/leave the launcher. */
       if (state == HDRM_STATE_LAUNCHER)
         hd_launcher_show();
       if (oldstate == HDRM_STATE_LAUNCHER)
         hd_launcher_hide();
 
+      /* Reset CURRENT_APP_WIN when entering tasw/talu. */
+      if (STATE_ONE_OF(state, HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER)
+          && !STATE_ONE_OF(oldstate, HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER))
+        hd_wm_current_app_is (wm, 0);
+
+      /* Move the applets out to the front. */
       home_front = hd_home_get_front (priv->home);
       if (STATE_HOME_FRONT (state))
         {
@@ -1156,7 +1167,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       else
         clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->home));
 
-      /* Hide/show applets. */
+      /* Hide/show applets.  Must be be done after reparenting @home_front
+       * because clutter_actor_reparent() shows the actor. */
       if (STATE_SHOW_APPLETS (state))
         clutter_actor_show (home_front);
       else

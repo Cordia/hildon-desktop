@@ -36,8 +36,7 @@ gboolean hd_task_navigator_has_window (HdTaskNavigator * self,
 ClutterActor *hd_task_navigator_find_app_actor (HdTaskNavigator *self,
                                                 const gchar *id);
 
-void hd_task_navigator_enter     (HdTaskNavigator *self);
-void hd_task_navigator_exit      (HdTaskNavigator *self);
+void hd_task_navigator_scroll_back (HdTaskNavigator *self);
 
 void hd_task_navigator_zoom_in   (HdTaskNavigator *self,
                                   ClutterActor *win,

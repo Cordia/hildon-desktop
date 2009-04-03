@@ -989,53 +989,11 @@ hd_task_navigator_find_app_actor (HdTaskNavigator *self, const gchar *id)
   return NULL;
 }
 
-/* Enters the navigator without animation (modulo background blurring). */
+/* Scroll @Navigator_area to the top. */
 void
-hd_task_navigator_enter (HdTaskNavigator * self)
+hd_task_navigator_scroll_back (HdTaskNavigator * self)
 {
-  /* Reset the position of @Scroller, which may have been changed when
-   * we zoomed in last time.  Also scroll @Navigator_area to the top. */
-  clutter_actor_set_scale (Scroller, 1, 1);
-  clutter_actor_set_position (Scroller, 0, 0);
   hd_scrollable_group_set_viewport_y (Navigator_area, 0);
-  clutter_actor_show (Navigator);
-  hd_title_bar_set_switcher_pulse (
-                      HD_TITLE_BAR (hd_render_manager_get_title_bar ()),
-                      FALSE);
-}
-
-/* Leaves the navigator without a single word.
- * It's up to you what's left on the screen. */
-void
-hd_task_navigator_exit (HdTaskNavigator *self)
-{
-  /* Finish in-progress animations, allowing for the final placement
-   * of the involved actors. */
-  if (animation_in_progress (Zoom_effect))
-    {
-      /*
-       * Make sure add_effect_closure()s are not called.
-       * For the @Zoom_effect they are %HdSwitcher's
-       * and we don't want to call them when zooming
-       * is cancellced.
-       */
-      g_signal_handlers_disconnect_matched (Zoom_effect_timeline,
-                                            G_SIGNAL_MATCH_FUNC, 0, 0, NULL,
-                                            call_effect_closure, NULL);
-      stop_animation (Zoom_effect_timeline);
-      g_assert (!animation_in_progress (Zoom_effect));
-    }
-
-  if (animation_in_progress (Fly_effect))
-    {
-      stop_animation (Fly_effect_timeline);
-      g_assert (!animation_in_progress (Fly_effect));
-    }
-
-  clutter_actor_hide (CLUTTER_ACTOR (self));
-  hd_title_bar_set_switcher_pulse (
-                      HD_TITLE_BAR (hd_render_manager_get_title_bar ()),
-                      FALSE);
 }
 
 /* Updates our #HdScrollableGroup's idea about @Navigator_area's height. */
@@ -1751,16 +1709,9 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
   gdouble xscale, yscale;
   const Thumbnail *apthumb;
 
-  if (!hd_task_navigator_is_active (self))
-    {
-      g_critical ("attempt to zoom in from an inactive navigator");
-      goto damage_control;
-    }
+  g_assert (hd_task_navigator_is_active (self));
   if (!(apthumb = find_by_apwin (win)))
-    {
-      hd_task_navigator_exit (self);
-      goto damage_control;
-    }
+    goto damage_control;
 
   /*
    * Zoom the navigator itself so that when the effect is complete
@@ -1795,12 +1746,9 @@ damage_control:
     fun (win, funparam);
 }
 
-/*
- * Zoom out of @win to the navigator.  @win must have previously been added,
- * and is taken immedeately from its current parent.  Unless @fun is %NULL
- * @fun(@win, @funparam) is executed when the effect completes.  Only to be
- * called when the navigator is not active.
- */
+/* Show the navigator and zoom out of @win into it.  @win must have previously
+ * been added,  Unless @fun is %NULL @fun(@win, @funparam) is executed when the
+ * effect completes. */
 void
 hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
                             ClutterEffectCompleteFunc fun, gpointer funparam)
@@ -1809,19 +1757,10 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   gdouble sxprison, syprison, sxscroller, syscroller;
   gint yarea, xthumb, ythumb, xprison, yprison, xscroller, yscroller;
 
-  if (hd_task_navigator_is_active (self))
-    {
-      g_critical ("attempt to zoom out of an already active navigator");
-      goto damage_control;
-    }
-  if (!(apthumb = find_by_apwin (win)))
-    {
-      hd_task_navigator_enter (self);
-      goto damage_control;
-    }
-
   /* Our "show" callback will grab the butts of @win. */
   clutter_actor_show (Navigator);
+  if (!(apthumb = find_by_apwin (win)))
+    goto damage_control;
 
   /* @xthumb, @ythumb := intended real position of @apthumb */
   g_assert (Thumbsize != NULL);
@@ -2545,36 +2484,54 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
 /* Callbacks {{{ */
 G_DEFINE_TYPE (HdTaskNavigator, hd_task_navigator, CLUTTER_TYPE_GROUP);
 
-/* @Swither's "show" handler. */
-static gboolean
+/* @Navigator's "show" handler. */
+static void
 navigator_shown (ClutterActor * navigator, gpointer unused)
 {
   GList *li;
   Thumbnail *thumb;
 
-  /* Get the render manager to put all windows back. */
-  hd_render_manager_return_windows();
+  /* Reset the position of @Scroller, which may have been changed when
+   * we zoomed in last time.  If the caller wants to zoom_out() it will
+   * set them up properly. */
+  clutter_actor_set_scale (Scroller, 1, 1);
+  clutter_actor_set_position (Scroller, 0, 0);
 
   /* Take all application windows we know about into our care
    * because we are responsible for showing them now. */
   for_each_appthumb (li, thumb)
     claim_win (thumb);
-
-  return FALSE;
 }
 
 /* @Navigator's "hide" handler. */
-static gboolean
+static void
 navigator_hidden (ClutterActor * navigator, gpointer unused)
 {
   GList *li;
   Thumbnail *thumb;
 
-  /* Undo navigator_show(). */
+  /* Finish in-progress animations, allowing for the final placement
+   * of the involved actors. */
+  if (animation_in_progress (Zoom_effect))
+    {
+      /* Make sure add_effect_closure()s are not called.  For the @Zoom_effect
+       * they are %HdSwitcher's and we don't want to call them when zooming
+       * is cancellced. */
+      g_signal_handlers_disconnect_matched (Zoom_effect_timeline,
+                                            G_SIGNAL_MATCH_FUNC, 0, 0, NULL,
+                                            call_effect_closure, NULL);
+      stop_animation (Zoom_effect_timeline);
+      g_assert (!animation_in_progress (Zoom_effect));
+    }
+  if (animation_in_progress (Fly_effect))
+    {
+      stop_animation (Fly_effect_timeline);
+      g_assert (!animation_in_progress (Fly_effect));
+    }
+
+  /* Undo navigator_shown(). */
   for_each_appthumb (li, thumb)
     release_win (thumb);
-
-  return FALSE;
 }
 
 /* Called when you click the navigator outside thumbnails and notifications,
@@ -2659,16 +2616,14 @@ hd_task_navigator_init (HdTaskNavigator * self)
 {
   Navigator = CLUTTER_ACTOR (self);
   clutter_actor_set_reactive (Navigator, TRUE);
-  clutter_actor_set_visibility_detect(Navigator, FALSE);
   g_signal_connect (Navigator, "show", G_CALLBACK (navigator_shown),  NULL);
   g_signal_connect (Navigator, "hide", G_CALLBACK (navigator_hidden), NULL);
 
   /* Actor hierarchy */
+  /* Turn off visibility detection for @Scroller to it won't be clipped by it. */
   Scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_actor_set_name (Scroller, "Scroller");
   clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
-  /* Set this so the small scroller isn't clipped by the clutter
-   * visibility detection code. */
   clutter_actor_set_visibility_detect(Scroller, FALSE);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), Scroller);
 

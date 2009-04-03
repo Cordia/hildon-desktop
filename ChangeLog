@@ -1,3 +1,20 @@
+2009-04-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Little spring clean up in the state machine.
+
+	* src/home/hd-render-manager.c:
+	  hd_render_manager_create(): removed task_nav_container,
+	    manipulate HdTaskNavigator directly.
+	  hd_render_manager_sync_clutter_before():
+	    Don't show nor animate the showing of tasw (which is otherwise
+	    hidden) when switching to APP state.
+	  hd_render_manager_set_state():
+	    Cleanup to be more readable.
+	* src/home/hd-task-navigator.h
+	* src/home/hd-task-navigator.c:
+	  Removed the _enter() and _exit() functions,
+	  _show() and _hide() are enough.
+
 2009-04-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.35
