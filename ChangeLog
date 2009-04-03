@@ -1,3 +1,9 @@
+2009-04-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-transition.c (hd_transition_subview):
+	  Don't do this transition effect if not in APP state.
+	  Doing it in tasw view is not very nice.
+
 2009-04-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-task-navigator.c: Added missing object_ref
