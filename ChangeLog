@@ -1,3 +1,8 @@
+2009-04-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-wm.c (hd_wm_client_responding): Fix the FIXME about not
+	returning anything from the function.
+
 2009-04-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Little spring clean up in the state machine.

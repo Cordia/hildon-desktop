@@ -62,7 +62,7 @@ static void hd_wm_class_init (MBWMObjectClass *klass);
 static MBWindowManagerClient* hd_wm_client_new (MBWindowManager *,
 						MBWMClientWindow *);
 static MBWMCompMgr * hd_wm_comp_mgr_new (MBWindowManager *wm);
-static Bool hd_wm_client_responding (MBWindowManager *wm,
+static void hd_wm_client_responding (MBWindowManager *wm,
 				     MBWindowManagerClient *c);
 static Bool hd_wm_client_hang (MBWindowManager *wm,
 			       MBWindowManagerClient *c);
@@ -232,7 +232,7 @@ show_info_note (gpointer data)
   return FALSE;
 }
 
-static Bool
+static void
 hd_wm_client_responding (MBWindowManager *wm,
 			 MBWindowManagerClient *client)
 {
@@ -261,11 +261,6 @@ hd_wm_client_responding (MBWindowManager *wm,
       gtk_dialog_response (GTK_DIALOG (hdwm->priv->hung_client_dialog),
 			   GTK_RESPONSE_REJECT);
     }
-
-  /* FIXME Not sure that this function should return anything. Internally a.t.m
-   * mbwm2 doesn't interpret the return value, and I'm not sure what it could
-   * mean later? */
-  return True;
 }
 
 static GtkWidget*
