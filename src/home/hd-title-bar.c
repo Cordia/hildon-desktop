@@ -230,7 +230,7 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_actor_set_position(actor, 0, 0);
   clutter_actor_set_size(actor,
                     HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_TOP_MARGIN);
-  clutter_actor_set_name(CLUTTER_ACTOR(priv->foreground), "HdTitleBar");
+  clutter_actor_set_name(CLUTTER_ACTOR(actor), "HdTitleBar");
 
 
   priv->foreground = CLUTTER_GROUP(clutter_group_new());

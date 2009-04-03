@@ -1,5 +1,9 @@
 2009-04-03  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/home/hd-title-bar.c: Fixed copy/paste bug
+
+2009-04-03  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Changes for NB#107013 - top-left button shouldn't be blurred for
 	non-system-modal dialogs
 
