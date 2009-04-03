@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.36-1~unreleased) unstable; urgency=low
+
+  * writeme
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  3 Apr 2009 13:08:12 +0300
+
 hildon-desktop (1:2.2.35-1) unstable; urgency=low
 
   * Some regression fixes from Gordon and Adam.
