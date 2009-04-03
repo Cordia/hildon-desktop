@@ -1,3 +1,11 @@
+2009-04-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home.c (show_edit_button_template,
+	  hide_edit_button_template, hd_home_init, hd_home_show_edit_button,
+	  hd_home_edit_button_move_completed, hd_home_hide_edit_button): Add
+	  a dismissal transition for the edit button. Ease the animation
+	  curves.
+
 2009-04-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-wm.c (hd_wm_client_responding): Fix the FIXME about not

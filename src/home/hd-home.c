@@ -102,7 +102,8 @@ struct _HdHomePrivate
 {
   MBWMCompMgrClutter    *comp_mgr;
 
-  ClutterEffectTemplate *edit_button_template;
+  ClutterEffectTemplate *show_edit_button_template;
+  ClutterEffectTemplate *hide_edit_button_template;
 
   ClutterActor          *edit_group; /* An overlay group for edit mode */
   ClutterActor          *edit_button;
@@ -704,12 +705,12 @@ hd_home_init (HdHome *self)
   guint result;
   GError *error = NULL;
 
-  priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-						   HD_TYPE_HOME, HdHomePrivate);
+  priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME, HdHomePrivate);
 
-  priv->edit_button_template =
-    clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
-					      CLUTTER_ALPHA_RAMP_INC);
+  priv->show_edit_button_template = clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
+                                                                              CLUTTER_ALPHA_SINE_INC);
+  priv->hide_edit_button_template = clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
+                                                                              CLUTTER_ALPHA_SINE_INC);
 
   /* Listen to gconf notifications */
   gconf_client_add_dir (gconf_client_get_default (),
@@ -967,11 +968,6 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
     }
 }
 
-static void
-hd_home_edit_button_move_completed (HdHome *home)
-{
-}
-
 static gboolean
 hd_home_edit_button_timeout (gpointer data)
 {
@@ -1010,11 +1006,11 @@ hd_home_show_edit_button (HdHome *home)
 
   /*g_debug ("moving edit button from %d, %d to %d, 0", x, -button_height, x);*/
 
-  timeline = clutter_effect_move (priv->edit_button_template,
+  timeline = clutter_effect_move (priv->show_edit_button_template,
                                   CLUTTER_ACTOR (priv->edit_button),
                                   x, 0,
-                                  (ClutterEffectCompleteFunc)
-                                  hd_home_edit_button_move_completed, home);
+                                  NULL,
+                                  NULL);
 
   priv->edit_button_cb =
     g_timeout_add (HDH_EDIT_BUTTON_TIMEOUT, hd_home_edit_button_timeout, home);
@@ -1022,22 +1018,40 @@ hd_home_show_edit_button (HdHome *home)
   clutter_timeline_start (timeline);
 }
 
+static void
+hd_home_edit_button_move_completed (HdHome *home)
+{
+  hd_render_manager_set_visible(HDRM_BUTTON_EDIT, FALSE);
+}
+
 void
 hd_home_hide_edit_button (HdHome *home)
 {
   HdHomePrivate   *priv = home->priv;
+  guint            button_width, button_height;
+  ClutterTimeline *timeline;
+  gint             x;
 
   if (!hd_render_manager_get_visible(HDRM_BUTTON_EDIT))
     return;
 
-  /*g_debug ("%s: Hiding button", __FUNCTION__);*/
-
-  hd_render_manager_set_visible(HDRM_BUTTON_EDIT, FALSE);
   if (priv->edit_button_cb)
     {
       g_source_remove (priv->edit_button_cb);
       priv->edit_button_cb = 0;
     }
+
+  clutter_actor_get_size (priv->edit_button, &button_width, &button_height);
+
+  x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
+
+  timeline = clutter_effect_move (priv->hide_edit_button_template,
+                                  CLUTTER_ACTOR (priv->edit_button),
+                                  x, -button_height,
+                                  (ClutterEffectCompleteFunc) hd_home_edit_button_move_completed,
+                                  home);
+
+  clutter_timeline_start (timeline);
 }
 
 ClutterActor*
