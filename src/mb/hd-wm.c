@@ -243,6 +243,7 @@ hd_wm_client_responding (MBWindowManager *wm,
   /* If we are currently telling the user that the client is not responding
    * then we force a cancelation of that dialog.
    */
+  /* FIXME: show the banner only if the dialog is really visible */
   if (hdwm->priv->hung_client_dialog)
     {
       char buf[200];
