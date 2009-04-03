@@ -8,7 +8,8 @@
 	to raise the top-left button above the blur. Refactored a few arrays
 	of bools into an array of flags.
 	* src/home/hd-render-manager.c:	update_blur now tells the title bar
-	if it should render the top-left button above the blur
+	if it should render the top-left button above the blur. status area is
+	now added to the foreground group of hd-title-bar
 
 2009-04-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
