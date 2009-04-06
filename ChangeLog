@@ -1,5 +1,6 @@
 2009-04-06  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fix for NB#109714 (highlight on launcher not disappearing)
 	* data/transitions.ini: Refactoring, tweaking of transition times 
 	  for glow effect
 	* src/launcher/hd-launcher.h
