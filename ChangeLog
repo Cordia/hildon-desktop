@@ -1,5 +1,12 @@
 2009-04-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/util/hd-transition.c (on_close_timeline_new_frame):
+	  Regression fix.  The particles in the close animation
+	  appear to have been positioned randomly.  Now they should
+	  dance in a circle.
+
+2009-04-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* tests/test-large-window-stack.c:
 	  New test program to see how hd likes massive window stacking.
 	* tests/test-portrait-win.c: Improved.

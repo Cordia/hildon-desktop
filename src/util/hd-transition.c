@@ -278,9 +278,8 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
     if (data->particles[i] && (amtp > 0) && (amtp < 1))
       {
         /* space particles equally and rotate once */
-        float ang = i * 15 +
-                    amtp * 3.141592f / 2;
-        float radius = particle_radius * i / HDCM_UNMAP_PARTICLES;
+        float ang = 2*M_PI * i/HDCM_UNMAP_PARTICLES + M_PI/2 * amtp;
+        float radius = particle_radius;
         /* twinkle effect */
         float opacity = particle_opacity * ((1-cos(amt*50+i)) * 0.5f);
         clutter_actor_show( data->particles[i] );
@@ -288,8 +287,8 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
                 (int)(255 * opacity));
 
         clutter_actor_set_positionu(data->particles[i],
-                CLUTTER_FLOAT_TO_FIXED(centrex + sin(ang) * radius),
-                CLUTTER_FLOAT_TO_FIXED(centrey + cos(ang) * radius));
+                CLUTTER_FLOAT_TO_FIXED(centrex + cos(ang) * radius),
+                CLUTTER_FLOAT_TO_FIXED(centrey + sin(ang) * radius));
       }
     else
       if (data->particles[i])
