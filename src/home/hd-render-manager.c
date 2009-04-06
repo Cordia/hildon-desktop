@@ -1144,7 +1144,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                 {
                   /* Make the tasw fully opaque as it might have been made
                    * transparent while exiting it. */
-                  hd_render_manager_return_windows();
                   clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav), 255);
                   range_set(&priv->task_nav_opacity, 1);
                   hd_task_navigator_zoom_out(priv->task_nav, actor, NULL, NULL);
@@ -1326,48 +1325,6 @@ gboolean hd_render_manager_in_transition(void)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   return clutter_timeline_is_playing(priv->timeline_blur);
-}
-
-void hd_render_manager_return_windows()
-{
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
-  MBWindowManager *wm;
-  MBWindowManagerClient *c;
-  gboolean      blur_changed = FALSE;
-
-  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
-  c = wm->stack_bottom;
-
-  /* Order and choose which window actors will be visible */
-  while (c)
-    {
-      if (!(MB_WM_CLIENT_CLIENT_TYPE (c) & HdWmClientTypeHomeApplet)
-          && c->cm_client && c->desktop >= 0)
-        {
-          ClutterActor *actor;
-          ClutterActor *desktop = mb_wm_comp_mgr_clutter_get_nth_desktop(
-              MB_WM_COMP_MGR_CLUTTER(priv->comp_mgr), c->desktop);
-          actor = mb_wm_comp_mgr_clutter_client_get_actor(
-              MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
-          if (actor)
-            {
-              ClutterActor *parent = clutter_actor_get_parent(actor);
-              /* else we put it back into the arena */
-              if (parent == CLUTTER_ACTOR(priv->app_top) ||
-                  parent == CLUTTER_ACTOR(priv->home_blur))
-                {
-                  if (parent == CLUTTER_ACTOR(priv->home_blur))
-                    blur_changed = TRUE;
-                  clutter_actor_reparent(actor, desktop);
-                }
-            }
-        }
-
-      c = c->stacked_above;
-    }
-
-  if (blur_changed)
-    hd_render_manager_blurred_changed();
 }
 
 /* Return @actor, an actor of a %HdApp to HDRM's care. */

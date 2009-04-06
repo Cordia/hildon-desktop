@@ -1795,7 +1795,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                actor);
         hd_switcher_replace_window_actor (priv->switcher_group,
                                         old_actor, actor);
-        clutter_actor_hide (old_actor);
         /* and make sure we're in app mode and not transitioning as
          * we'll want to show this new app right away*/
         if (!STATE_IS_APP(hd_render_manager_get_state()))
