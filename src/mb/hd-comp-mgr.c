@@ -77,7 +77,9 @@ struct HdCompMgrPrivate
 
   DBusConnection        *dbus_connection;
 
-  gboolean               stack_sync      : 1;
+  /* g_idle_add() event source, set by hd_comp_mgr_sync_stacking()
+   * to call hd_comp_mgr_restack() some time. */
+  guint                  stack_sync;
 
   /* Do Not Disturb flag */
   gboolean               do_not_disturb_flag : 1;
@@ -459,7 +461,7 @@ hd_comp_mgr_class_init (MBWMObjectClass *klass)
   cm_klass->turn_on           = hd_comp_mgr_turn_on;
   cm_klass->map_notify        = hd_comp_mgr_map_notify;
   cm_klass->unmap_notify      = hd_comp_mgr_unmap_notify;
-  cm_klass->restack           = hd_comp_mgr_restack;
+  cm_klass->restack           = (void (*)(MBWMCompMgr*))hd_comp_mgr_restack;
 
   clutter_klass->client_new   = hd_comp_mgr_client_new;
 
@@ -599,6 +601,9 @@ hd_comp_mgr_destroy (MBWMObject *obj)
       g_object_unref (priv->mce_proxy);
       priv->mce_proxy = NULL;
     }
+
+  if (priv->stack_sync)
+    g_source_remove (priv->stack_sync);
 }
 
 static HdCompMgrClient *
@@ -2034,7 +2039,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
       (event == MBWMCompMgrClientEventUnmap) ? c : NULL);
 }
 
-void
+gboolean
 hd_comp_mgr_restack (MBWMCompMgr * mgr)
 {
   HdCompMgrPrivate         * priv = HD_COMP_MGR (mgr)->priv;
@@ -2043,109 +2048,111 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
 
   /* g_debug ("%s", __FUNCTION__); */
 
-  /* Hide the Edit button if it is currently shown */
-  if (priv->home)
-    hd_home_hide_edit_button (HD_HOME (priv->home));
-
   /*
    * We use the parent class restack() method to do the stacking, but as our
    * switcher shares actors with the CM, we cannot run this when the switcher
    * is showing, or an unmap effect is in progress; instead we set a flag, and
    * let the switcher request stack sync when it closes.
    */
-
-  if (STATE_NEED_TASK_NAV(hd_render_manager_get_state()))
+  if (priv->stack_sync)
     {
-      priv->stack_sync = TRUE;
+      g_source_remove (priv->stack_sync);
+      priv->stack_sync = 0;
     }
-  else
+
+  if (STATE_NEED_TASK_NAV (hd_render_manager_get_state()))
+    return FALSE;
+
+  /* Hide the Edit button if it is currently shown */
+  if (priv->home)
+    hd_home_hide_edit_button (HD_HOME (priv->home));
+
+  if (parent_klass->restack)
+    parent_klass->restack (mgr);
+
+  /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed. */
+  if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop)
     {
-      if (parent_klass->restack)
-	parent_klass->restack (mgr);
+      MBWindowManagerClient *current_client =
+                              hd_wm_determine_current_app (mgr->wm);
 
-      /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed. */
-      if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop)
+      HdCompMgrClient *new_current_hclient =
+        HD_COMP_MGR_CLIENT (current_client->cm_client);
+      if (new_current_hclient != priv->current_hclient)
         {
-          MBWindowManagerClient *current_client =
-                                  hd_wm_determine_current_app (mgr->wm);
+          HdLauncherApp *old_current_app;
+          HdLauncherApp *new_current_app;
 
-          HdCompMgrClient *new_current_hclient =
-            HD_COMP_MGR_CLIENT (current_client->cm_client);
-          if (new_current_hclient != priv->current_hclient)
+          /* Switch the hibernatable state for the new current client. */
+          if (priv->current_hclient &&
+              hd_comp_mgr_client_can_hibernate (priv->current_hclient))
             {
-              HdLauncherApp *old_current_app;
-              HdLauncherApp *new_current_app;
-
-              /* Switch the hibernatable state for the new current client. */
-              if (priv->current_hclient &&
-                  hd_comp_mgr_client_can_hibernate (priv->current_hclient))
-                {
-                  old_current_app =
-                    hd_comp_mgr_client_get_app (priv->current_hclient);
-                  if (old_current_app)
-                    hd_app_mgr_hibernatable (old_current_app, TRUE);
-                }
-
-              if (new_current_hclient)
-                {
-                  new_current_app =
-                    hd_comp_mgr_client_get_app (new_current_hclient);
-                  if (new_current_app)
-                    hd_app_mgr_hibernatable (new_current_app, FALSE);
-                }
-
-              priv->current_hclient = new_current_hclient;
+              old_current_app =
+                hd_comp_mgr_client_get_app (priv->current_hclient);
+              if (old_current_app)
+                hd_app_mgr_hibernatable (old_current_app, TRUE);
             }
 
-          hd_wm_current_app_is (mgr->wm, current_client->window->xwindow);
-          /* If we have an app as the current client and we're not in
-           * app mode - enter app mode. */
-          if (!(MB_WM_CLIENT_CLIENT_TYPE(current_client) &
-                                         MBWMClientTypeDesktop) &&
-              !STATE_IS_APP(hd_render_manager_get_state()))
-            hd_render_manager_set_state(HDRM_STATE_APP);
+          if (new_current_hclient)
+            {
+              new_current_app =
+                hd_comp_mgr_client_get_app (new_current_hclient);
+              if (new_current_app)
+                hd_app_mgr_hibernatable (new_current_app, FALSE);
+            }
 
+          priv->current_hclient = new_current_hclient;
         }
 
-      hd_render_manager_restack();
+      hd_wm_current_app_is (mgr->wm, current_client->window->xwindow);
+      /* If we have an app as the current client and we're not in
+       * app mode - enter app mode. */
+      if (!(MB_WM_CLIENT_CLIENT_TYPE(current_client) &
+                                     MBWMClientTypeDesktop) &&
+          !STATE_IS_APP(hd_render_manager_get_state()))
+        hd_render_manager_set_state(HDRM_STATE_APP);
 
-      hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
+    }
 
-      /* Now that HDRM has sorted out the visibilities see if we need to
-       * switch to/from portrait mode because of a new window. */
-      if (!hd_render_manager_is_changing_state ())
-        {
-          /*
-           * Change state if necessate:
-           * APP <=> APP_PORTRAIT and HOME <=> HOME_PORTRAIT
-           */
-          if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state ()))
-            { /* Landscape -> portrait? */
-              if (hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
-                hd_render_manager_set_state_portrait ();
-            }
-          else if (STATE_IS_PORTRAIT(hd_render_manager_get_state ()))
-            { /* Portrait -> landscape? */
-              if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
-                hd_render_manager_set_state_unportrait ();
-            }
+  hd_render_manager_restack();
+
+  hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
+
+  /* Now that HDRM has sorted out the visibilities see if we need to
+   * switch to/from portrait mode because of a new window. */
+  if (!hd_render_manager_is_changing_state ())
+    {
+      /*
+       * Change state if necessate:
+       * APP <=> APP_PORTRAIT and HOME <=> HOME_PORTRAIT
+       */
+      if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state ()))
+        { /* Landscape -> portrait? */
+          if (hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
+            hd_render_manager_set_state_portrait ();
+        }
+      else if (STATE_IS_PORTRAIT(hd_render_manager_get_state ()))
+        { /* Portrait -> landscape? */
+          if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
+            hd_render_manager_set_state_unportrait ();
         }
     }
+
+  return FALSE;
 }
 
+/* Do a restack some time.  Used in cases when multiple parties
+ * want restacking, not knowing about each other. */
 void
 hd_comp_mgr_sync_stacking (HdCompMgr * hmgr)
 {
   HdCompMgrPrivate * priv = hmgr->priv;
 
-  /*
-   * If the stack_sync flag is set, force restacking of the CM actors
-   */
-  if (priv->stack_sync)
-    {
-      priv->stack_sync = FALSE;
-      hd_comp_mgr_restack (MB_WM_COMP_MGR (hmgr));
-    }
+  if (!priv->stack_sync)
+    /* We need higher priority than idles usually have because
+     * the effect has higher priority too and it could starve us. */
+    priv->stack_sync = g_idle_add_full (0, (GSourceFunc)hd_comp_mgr_restack,
+                                        hmgr, NULL);
 }
 
 static void

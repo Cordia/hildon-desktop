@@ -1,5 +1,23 @@
 2009-04-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Try to restack less.  Fixes doubly set CURRENT_APP_WINDOW
+	(ie. is-topmost) after task switching.
+
+	* src/mb/hd-comp-mgr.c:
+	  The unused hd_comp_mgr_sync_stacking() got new meaning
+	  to schedule a restack when idle.
+	* src/mb/hd-comp-mgr.h:
+	  Changed the signature of hd_comp_mgr_restack() to be usable
+	  as an idle function.
+	* src/home/hd-render-manager.h:
+	  Corrected STATE_NEED_TASK_NAV() to not include the launcher.
+	* src/home/hd-render-manager.c (hd_render_manager_update_blur_state):
+	  Use it.
+	* src/home/hd-switcher.c (hd_switcher_zoom_in_complete):
+	  Likewise.  We used to restack 3 times.
+
+2009-04-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/home/hd-render-manager.c (hd_render_manager_set_state):
 	  Removed hd_render_manager_return_windows() as it shouldn't be
 	  necessary anymore.

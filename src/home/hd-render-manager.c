@@ -1125,7 +1125,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       priv->state = state;
 
       /* Enter or leave the task switcher. */
-      if (state == HDRM_STATE_TASK_NAV)
+      if (STATE_NEED_TASK_NAV (state))
         {
           /* Zoom out if possible.  Otherwise if not coming from launcher
            * scroll it back to the top. */
@@ -1599,7 +1599,8 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
 
   hd_title_bar_set_state(priv->title_bar, title_flags);
 
-  hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
+  /* TODO Things break if we don't restack, but why? */
+  hd_comp_mgr_sync_stacking (priv->comp_mgr);
 }
 
 /* This is called when we are in the launcher subview so that we can blur and

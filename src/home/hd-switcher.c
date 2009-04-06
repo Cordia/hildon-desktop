@@ -580,7 +580,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
     }
 
   /* make sure everything is in the correct order */
-  hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));
+  hd_comp_mgr_sync_stacking (HD_COMP_MGR (priv->comp_mgr));
 }
 
 static void
