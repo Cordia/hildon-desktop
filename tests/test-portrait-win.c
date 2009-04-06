@@ -160,20 +160,35 @@ static void moo_cb(GtkWindow *win)
   gtk_widget_destroy(dlg);
 }
 
+static void hee_cb(GtkWindow *win);
+static gboolean hee_hee_cb(GtkWindow *win)
+{
+  hee_cb(win);
+  return TRUE;
+}
+
 static void hee_cb(GtkWindow *win)
 {
+  static guint counter;
   gulong id;
+  char str[4];
   GtkWidget *newin, *menu, *menu_item, *vbox, *w;
 
   newin = hildon_stackable_window_new();
   gtk_window_set_title(GTK_WINDOW(newin),
                        "Hejj ha en egyszer osember lennek");
+  gtk_widget_add_events(GTK_WIDGET(newin), GDK_BUTTON_PRESS_MASK);
+  g_signal_connect(newin, "button-press-event", G_CALLBACK(hee_hee_cb), NULL);
 
   vbox = gtk_vbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(newin), vbox);
 
   gtk_container_add(GTK_CONTAINER(vbox),
            gtk_label_new("Bunkosbottal bunkoznam le a sok bugris bunkot"));
+
+  sprintf(str, "%u.", counter++);
+  gtk_container_add(GTK_CONTAINER(vbox), gtk_label_new(str));
+
   w = gtk_entry_new();
   id = g_timeout_add(1000, idiot_cb, w);
   gtk_container_add(GTK_CONTAINER(vbox), w);

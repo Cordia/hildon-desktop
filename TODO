@@ -24,6 +24,7 @@
   Window property _HILDON_WM_WINDOW_PROGRESS_INDICATOR (int), values 0 (off)
   and 1 (on). Other values can be used in future if needed.
 - Implement support for speech bubbles in Contacts applets.
+- reread transitions.ini ONLY IF IT HAS CHANGED
 
 Notifications:
 - Use ATOM:ic property values in hd-note.c.

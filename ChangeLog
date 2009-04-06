@@ -1,5 +1,13 @@
 2009-04-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* tests/test-large-window-stack.c:
+	  New test program to see how hd likes massive window stacking.
+	* tests/test-portrait-win.c: Improved.
+	* tests/Makefile.am
+	* TODO: TODO added
+
+2009-04-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Try to restack less.  Fixes doubly set CURRENT_APP_WINDOW
 	(ie. is-topmost) after task switching.
 
