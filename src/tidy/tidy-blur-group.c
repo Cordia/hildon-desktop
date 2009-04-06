@@ -499,6 +499,7 @@ tidy_blur_group_paint (ClutterActor *actor)
   else
     {
       gint vignette_amt;
+      float edge_expand;
 
       /* draw a 7x7 grid with 5x5 unmirrored, and the edges mirrored so
        * we don't see dark edges when we zoom out */
@@ -506,6 +507,10 @@ tidy_blur_group_paint (ClutterActor *actor)
       CoglTextureVertex grid[(VIGNETTE_TILES+1)*(VIGNETTE_TILES+1)];
       CoglTextureVertex *v = grid;
       gint x,y;
+
+      /* work out how much we must expand our mirrored edges to get to the
+       * edge of the screen */
+      edge_expand = (VIGNETTE_TILES-2)*(1-priv->zoom)*0.5f;
 
       vignette_amt = (int)((1-priv->zoom)*2048);
       if (vignette_amt<0) vignette_amt = 0;
@@ -519,10 +524,10 @@ tidy_blur_group_paint (ClutterActor *actor)
             gint c = 255;
             gint edge;
             /* we don't want full-size tiles for the edges - just half-size */
-            if (x==0) fx = 0.5f;
-            if (x==VIGNETTE_TILES) fx = VIGNETTE_TILES-0.5f;
-            if (y==0) fy = 0.5f;
-            if (y==VIGNETTE_TILES) fy = VIGNETTE_TILES-0.5f;
+            if (x==0) fx = edge_expand;
+            if (x==VIGNETTE_TILES) fx = VIGNETTE_TILES-edge_expand;
+            if (y==0) fy = edge_expand;
+            if (y==VIGNETTE_TILES) fy = VIGNETTE_TILES-edge_expand;
             /* work out vertex coords */
             v->x = mx+(zx*(fx*2-VIGNETTE_TILES)/(VIGNETTE_TILES-2));
             v->y = my+(zy*(fy*2-VIGNETTE_TILES)/(VIGNETTE_TILES-2));

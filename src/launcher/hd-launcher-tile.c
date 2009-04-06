@@ -56,11 +56,10 @@ struct _HdLauncherTilePrivate
   TidyHighlight *icon_glow;
   ClutterTimeline *glow_timeline;
   float glow_amount;
+  float glow_radius; // radius of glow - loaded from transitions.ini
 
   /* We need to know if there's been scrolling. */
   gboolean is_pressed;
-  gint x_press_pos;
-  gint y_press_pos;
 };
 
 enum
@@ -284,11 +283,12 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
 
   priv->icon_glow = tidy_highlight_new(CLUTTER_TEXTURE(priv->icon));
   clutter_actor_set_size (CLUTTER_ACTOR(priv->icon_glow),
-        HD_LAUNCHER_TILE_ICON_SIZE,
-        HD_LAUNCHER_TILE_ICON_SIZE);
+        HD_LAUNCHER_TILE_GLOW_SIZE,
+        HD_LAUNCHER_TILE_GLOW_SIZE);
   clutter_actor_set_position (CLUTTER_ACTOR(priv->icon_glow),
-        (HD_LAUNCHER_TILE_WIDTH - HD_LAUNCHER_TILE_ICON_SIZE) / 2,
-        HILDON_MARGIN_HALF);
+        (HD_LAUNCHER_TILE_WIDTH - HD_LAUNCHER_TILE_GLOW_SIZE) / 2,
+        HILDON_MARGIN_HALF +
+        (HD_LAUNCHER_TILE_ICON_SIZE - HD_LAUNCHER_TILE_GLOW_SIZE) / 2);
   clutter_container_add_actor (CLUTTER_CONTAINER(tile),
                                CLUTTER_ACTOR(priv->icon_glow));
   clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->icon_glow));
@@ -392,7 +392,8 @@ hd_launcher_on_glow_frame(ClutterTimeline *timeline,
 
   priv->glow_amount = frame_num / (float)clutter_timeline_get_n_frames(timeline);
   if (priv->icon_glow)
-    tidy_highlight_set_amount(priv->icon_glow, priv->glow_amount*12);
+    tidy_highlight_set_amount(priv->icon_glow,
+        priv->glow_amount * priv->glow_radius);
 
   if (priv->glow_amount != 0)
     clutter_actor_show(CLUTTER_ACTOR(priv->icon_glow));
@@ -415,8 +416,8 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
     return;
 
   clutter_timeline_set_duration(priv->glow_timeline,
-          hd_transition_get_int("launcher",
-              glow ? "glow_duration_in" : "glow_duration_out",
+          hd_transition_get_int("launcher_glow",
+              glow ? "duration_in" : "duration_out",
               500));
 
   clutter_timeline_set_direction(priv->glow_timeline,
@@ -431,6 +432,8 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
   hd_gtk_style_get_text_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL,
                               &glow_col);
   tidy_highlight_set_color(priv->icon_glow, &glow_col);
+  /* load our glow radius */
+  priv->glow_radius = hd_transition_get_double("launcher_glow", "radius", 8);
 
   clutter_timeline_start(priv->glow_timeline);
 }
@@ -443,13 +446,10 @@ hd_launcher_tile_button_press (ClutterActor       *actor,
     {
       HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
 
-      priv->is_pressed = TRUE;
-      priv->x_press_pos = event->x;
-      priv->y_press_pos = event->y;
-
       /* Unglow everything else, but glow this tile */
-      hd_launcher_grid_reset( HD_LAUNCHER_GRID(clutter_actor_get_parent(actor)) );
       hd_launcher_tile_set_glow(HD_LAUNCHER_TILE(actor), TRUE);
+      /* Set the 'pressed' flag */
+      priv->is_pressed = TRUE;
 
       return TRUE;
     }
@@ -465,9 +465,7 @@ hd_launcher_tile_button_release (ClutterActor       *actor,
     {
       HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
 
-      if (!(priv->is_pressed &&
-           (abs(priv->x_press_pos - event->x) < 20) &&
-           (abs(priv->y_press_pos - event->y) < 20)))
+      if (!priv->is_pressed)
         return FALSE;
 
       priv->is_pressed = FALSE;
@@ -499,6 +497,8 @@ hd_launcher_tile_finalize (GObject *gobject)
 /* Reset this tile to the state it should be in when first shown */
 void hd_launcher_tile_reset(HdLauncherTile *tile)
 {
+  HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   /* remove glow */
   hd_launcher_tile_set_glow(tile, FALSE);
+  priv->is_pressed = FALSE;
 }

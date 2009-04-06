@@ -35,6 +35,7 @@
 #include <tidy/tidy-scroll-bar.h>
 #include <tidy/tidy-adjustment.h>
 #include <hildon/hildon-defines.h>
+#include <math.h>
 
 #include "hd-transition.h"
 #include "hildon-desktop.h"
@@ -72,6 +73,11 @@ struct _HdLauncherPagePrivate
    * is playing right after saying _start() - so we have a boolean to figure
    * out for ourselves */
   gboolean         transition_playing;
+  /* When the user clicks and drags more than a certain amount, we want
+   * to deselect what they had clicked on - so we must keep track of
+   * movement */
+  gint drag_distance;
+  gint drag_last_x, drag_last_y;
 };
 
 enum
@@ -193,6 +199,56 @@ hd_launcher_page_init (HdLauncherPage *page)
   clutter_actor_set_reactive (CLUTTER_ACTOR (page), FALSE);
 }
 
+static gboolean
+captured_event_cb (TidyFingerScroll *scroll,
+                 ClutterEvent *event,
+                 HdLauncherPage *page)
+{
+  HdLauncherPagePrivate *priv;
+
+  if (!HD_IS_LAUNCHER_PAGE(page))
+    return FALSE;
+  priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
+
+  if (event->type == CLUTTER_BUTTON_PRESS)
+    {
+      ClutterButtonEvent *bevent = (ClutterButtonEvent *)event;
+      priv->drag_distance = 0.0f;
+      priv->drag_last_x = bevent->x;
+      priv->drag_last_y = bevent->y;
+    }
+
+  return FALSE;
+}
+
+static gboolean
+motion_event_cb (TidyFingerScroll *scroll,
+                 ClutterMotionEvent *event,
+                 HdLauncherPage *page)
+{
+  HdLauncherPagePrivate *priv;
+  gint dx, dy;
+
+  if (!HD_IS_LAUNCHER_PAGE(page))
+    return FALSE;
+
+  priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
+
+  dx = priv->drag_last_x - event->x;
+  dy = priv->drag_last_y - event->y;
+  priv->drag_last_x = event->x;
+  priv->drag_last_y = event->y;
+  priv->drag_distance += (int)sqrt(dx*dx + dy*dy);
+
+  /* If we dragged too far, deselect (and de-glow) */
+  if (priv->drag_distance > HD_LAUNCHER_TILE_MAX_DRAG)
+    {
+      hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid));
+    }
+
+  return FALSE;
+}
+
 static void
 hd_launcher_page_constructed (GObject *object)
 {
@@ -229,6 +285,17 @@ hd_launcher_page_constructed (GObject *object)
   g_signal_connect (priv->transition, "completed",
                     G_CALLBACK (hd_launcher_page_transition_end), object);
   priv->transition_playing = FALSE;
+
+  /* Add callbacks for de-selecting an icon after the user has moved
+   * their finger more than a certain amount */
+  g_signal_connect (priv->scroller,
+                    "captured-event",
+                    G_CALLBACK (captured_event_cb),
+                    object);
+  g_signal_connect (priv->scroller,
+                    "motion-event",
+                    G_CALLBACK (motion_event_cb),
+                    object);
 }
 
 ClutterActor *
@@ -665,6 +732,7 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
     return;
   /* Reset all the tiles in the grid, so they don't have any blurring */
   hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid));
+  hd_launcher_load_blur_amounts();
 
   priv->transition_type = trans_type;
   switch (priv->transition_type) {

@@ -33,22 +33,22 @@ enum
   "  mediump float cx = blurx*0.707; \n"
   "  mediump float cy = blury*0.707; \n"
   "  lowp float alpha = \n"
-  "       texture2D (tex, vec2(tex_coord.x-ax, tex_coord.y-ay)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+ax, tex_coord.y+ay)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-ax, tex_coord.y+ay)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+ax, tex_coord.y-ay)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y-by)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y+by)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-bx, tex_coord.y)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+bx, tex_coord.y)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y-blury)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y+blury)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-blurx, tex_coord.y)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+blurx, tex_coord.y)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-cx, tex_coord.y-cy)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+cx, tex_coord.y+cy)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-cx, tex_coord.y+cy)).a * 0.125 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+cx, tex_coord.y-cy)).a * 0.125;\n"
+  "       texture2D (tex, vec2(tex_coord.x-ax, tex_coord.y-ay)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+ax, tex_coord.y+ay)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x-ax, tex_coord.y+ay)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+ax, tex_coord.y-ay)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y-by)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y+by)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x-bx, tex_coord.y)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+bx, tex_coord.y)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y-blury)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y+blury)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x-blurx, tex_coord.y)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+blurx, tex_coord.y)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x-cx, tex_coord.y-cy)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+cx, tex_coord.y+cy)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x-cx, tex_coord.y+cy)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x+cx, tex_coord.y-cy)).a * 0.0675;\n"
   "  lowp vec4 color = frag_color; \n"
   "  color.a = color.a * alpha; \n"
   "  gl_FragColor = color;\n"
@@ -147,11 +147,13 @@ tidy_highlight_paint (ClutterActor *self)
   ClutterColor                 col = { 0xff, 0xff, 0xff, 0xff };
   CoglHandle                   cogl_texture;
   guint                        tex_width, tex_height;
+  ClutterFixed                 overlapx, overlapy;
+  CoglTextureVertex            verts[4];
 
   priv = TIDY_HIGHLIGHT (self)->priv;
 
   /* no need to paint stuff if we don't have a texture to sub */
-  if (!priv->parent_texture)
+  if (!priv->parent_texture || !priv->shader)
     return;
 
   /* parent texture may have been hidden, there for need to make sure its
@@ -184,11 +186,39 @@ tidy_highlight_paint (ClutterActor *self)
                                      priv->amount / tex_height);
     }
 
+
+  /* if we're bigger than the texture, make us 1:1 by just extending
+   * our edges outside those of the texture. We have to do this with
+   * cogl_texture_polygon not cogl_rectangle, because clutter thinks
+   * that we want to repeat rectangles and messes everything up */
+  overlapx = CLUTTER_FLOAT_TO_FIXED(
+      ((x_2 - x_1) - tex_width) / (float)(tex_width*2));
+  overlapy = CLUTTER_FLOAT_TO_FIXED(
+      ((y_2 - y_1) - tex_height) / (float)(tex_height*2));
+
+  verts[0].x = 0;
+  verts[0].y = 0;
+  verts[0].z = 0;
+  verts[0].tx = -overlapx;
+  verts[0].ty = -overlapy;
+  verts[1].x = CLUTTER_INT_TO_FIXED (x_2 - x_1);
+  verts[1].y = 0;
+  verts[1].z = 0;
+  verts[1].tx = CFX_ONE+overlapx;
+  verts[1].ty = -overlapy;
+  verts[2].x = CLUTTER_INT_TO_FIXED (x_2 - x_1);
+  verts[2].y = CLUTTER_INT_TO_FIXED (y_2 - y_1);
+  verts[2].z = 0;
+  verts[2].tx = CFX_ONE+overlapx;
+  verts[2].ty = CFX_ONE+overlapy;
+  verts[3].x = 0;
+  verts[3].y = CLUTTER_INT_TO_FIXED (y_2 - y_1);
+  verts[3].z = 0;
+  verts[3].tx = -overlapx;
+  verts[3].ty = CFX_ONE+overlapy;
+
   /* Parent paint translated us into position */
-  cogl_texture_rectangle (cogl_texture, 0, 0,
-			  CLUTTER_INT_TO_FIXED (x_2 - x_1),
-			  CLUTTER_INT_TO_FIXED (y_2 - y_1),
-			  0, 0, CFX_ONE, CFX_ONE);
+  cogl_texture_polygon (cogl_texture, 4, verts, FALSE);
 
   if (priv->shader)
     clutter_shader_set_is_enabled (priv->shader, FALSE);

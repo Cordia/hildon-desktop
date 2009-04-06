@@ -46,6 +46,7 @@
 #include "hd-gtk-style.h"
 #include "hd-theme.h"
 #include "hd-clutter-cache.h"
+#include "hd-transition.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 
@@ -64,6 +65,13 @@ struct _HdLauncherPrivate
   ClutterVertex launch_position; /* where were we clicked? */
 
   HdLauncherTree *tree;
+
+  /* Values loaded from transitions.ini that are used to specify blur amounts */
+  float blur_saturation;
+  float blur_brightness;
+  float blur_opacity;
+  float blur_zoom;
+  float blur_radius;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -315,22 +323,41 @@ ClutterActor *hd_launcher_get_group (void)
   return priv->group;
 }
 
+/* Load the values we need for blurring */
+void
+hd_launcher_load_blur_amounts()
+{
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+  priv->blur_saturation = hd_transition_get_double("launcher", "saturation", 0.3);
+  priv->blur_brightness = hd_transition_get_double("launcher", "brightness", 0.3);
+  priv->blur_opacity = hd_transition_get_double("launcher", "opacity", 1);
+  priv->blur_zoom = hd_transition_get_double("launcher", "zoom", 0.875);
+  priv->blur_radius = hd_transition_get_double("launcher", "radius", 5);
+}
+
 /* sets blur amount for transitions involving blurring out the top view */
 void
 hd_launcher_set_top_blur (float amount, float opacity)
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+  float real_opacity;
+  float smooth_amount;
 
   if (amount<0) amount=0;
   if (amount>1) amount=1;
+  smooth_amount = hd_transition_smooth_ramp(amount);
 
-  tidy_blur_group_set_blur(priv->top_blur, amount*5.0f);
-  tidy_blur_group_set_saturation(priv->top_blur, 1.0f - amount*0.7f);
-  tidy_blur_group_set_brightness(priv->top_blur, 1.0f - amount*0.7f);
+  tidy_blur_group_set_blur(priv->top_blur,
+      amount * priv->blur_radius);
+  tidy_blur_group_set_saturation(priv->top_blur,
+      1.0f - amount*(1.0f - priv->blur_saturation));
+  tidy_blur_group_set_brightness(priv->top_blur,
+      1.0f - amount*(1.0f - priv->blur_brightness));
   tidy_blur_group_set_zoom(priv->top_blur,
-                        (15.0f + cos(amount*3.141592f)) / 16);
+      1.0f - smooth_amount*(1.0f - priv->blur_zoom));
 
-  clutter_actor_set_opacity(priv->top_blur, (int)(255*opacity));
+  real_opacity = 1.0f - amount*(1.0f - priv->blur_opacity);
+  clutter_actor_set_opacity(priv->top_blur, (int)(255*real_opacity*opacity));
 }
 
 static void

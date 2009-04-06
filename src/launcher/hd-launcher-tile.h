@@ -80,6 +80,11 @@ void hd_launcher_tile_reset(HdLauncherTile *tile);
 #define HD_LAUNCHER_TILE_HEIGHT (100)
 #define HD_LAUNCHER_TILE_WIDTH  (142)
 #define HD_LAUNCHER_TILE_ICON_SIZE (64)
+/* The glow is a little bigger than the icon, so we don't get clipped edges*/
+#define HD_LAUNCHER_TILE_GLOW_SIZE (80)
+/* Maximum amount we can drag without deselecting the currently
+ * pressed tile */
+#define HD_LAUNCHER_TILE_MAX_DRAG (40)
 
 G_END_DECLS
 

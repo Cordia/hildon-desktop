@@ -277,10 +277,10 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
   for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
     if (data->particles[i] && (amtp > 0) && (amtp < 1))
       {
-        /* space particles equally and rotate once */
+        /* space particles semi-randomly and rotate once */
         float ang = i * 15 +
                     amtp * 3.141592f / 2;
-        float radius = particle_radius * i / HDCM_UNMAP_PARTICLES;
+        float radius = particle_radius * (i+1) / HDCM_UNMAP_PARTICLES;
         /* twinkle effect */
         float opacity = particle_opacity * ((1-cos(amt*50+i)) * 0.5f);
         clutter_actor_show( data->particles[i] );

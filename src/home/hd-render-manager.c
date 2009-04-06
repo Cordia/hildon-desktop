@@ -567,7 +567,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 {
   HdRenderManagerPrivate *priv;
   gboolean blur_home;
-  gboolean more;
+  int zoom_multiply = 1;
 
   priv = the_render_manager->priv;
 
@@ -586,7 +586,8 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   range_next(&priv->task_nav_opacity, 0);
   range_next(&priv->task_nav_zoom, 1);
 
-  more = blur & HDRM_BLUR_MORE;
+  if (blur & HDRM_BLUR_MORE)
+    zoom_multiply++;
 
   blur_home = blur & (HDRM_BLUR_BACKGROUND | HDRM_BLUR_HOME);
 
@@ -594,19 +595,19 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   if (blur_home)
     {
       priv->home_saturation.b =
-              hd_transition_get_double("blur","home_saturation", 1);
+              hd_transition_get_double("home","saturation", 1);
       priv->home_brightness.b =
-              hd_transition_get_double("blur","home_brightness", 1);
+              hd_transition_get_double("home","brightness", 1);
       priv->home_radius.b =
-              hd_transition_get_double("blur",
-                  more?"home_radius_more":"home_radius", 8);
+              hd_transition_get_double("home",
+                  (blur & HDRM_BLUR_MORE)?"radius_more":"radius", 8);
     }
 
   if (blur & HDRM_ZOOM_HOME)
     {
       priv->home_zoom.b =
-              hd_transition_get_double("blur",
-                  more?"home_zoom_more":"home_zoom", 1);
+              hd_transition_get_double("home", "zoom", 1);
+      priv->home_zoom.b = 1 - (1-priv->home_zoom.b)*zoom_multiply;
     }
 
   if (blur & HDRM_SHOW_TASK_NAV)
@@ -616,8 +617,8 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   if (blur & HDRM_ZOOM_TASK_NAV)
     {
       priv->task_nav_zoom.b =
-              hd_transition_get_double("blur",
-                  more?"task_nav_zoom_more":"task_nav_zoom", 1);
+              hd_transition_get_double("task_nav", "zoom", 1);
+      priv->task_nav_zoom.b = 1 - (1-priv->task_nav_zoom.b)*zoom_multiply;
     }
 
   /* no point animating if everything is already right */
