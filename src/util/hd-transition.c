@@ -466,12 +466,11 @@ hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
 
   if (data->cclient)
     {
+      HD_COMP_MGR_CLIENT (data->cclient)->effect = NULL;
       mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient,
                                         MBWMCompMgrClutterClientDontUpdate |
                                         MBWMCompMgrClutterClientEffectRunning);
-
       mb_wm_object_unref (MB_WM_OBJECT (data->cclient));
-
       if (data->event == MBWMCompMgrClientEventUnmap && data->cclient_actor)
         {
           ClutterActor *parent = clutter_actor_get_parent(data->cclient_actor);
@@ -486,6 +485,7 @@ hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
 
   if (data->cclient2)
     {
+      HD_COMP_MGR_CLIENT (data->cclient2)->effect = NULL;
       mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient2,
                                         MBWMCompMgrClutterClientDontUpdate |
                                         MBWMCompMgrClutterClientEffectRunning);
@@ -747,8 +747,15 @@ hd_transition_subview(HdCompMgr                  *mgr,
 {
   MBWMCompMgrClutterClient * cclient_subview;
   MBWMCompMgrClutterClient * cclient_mainview;
+  gboolean                   mainview_in_trans, subview_in_trans;
   HDEffectData             * data;
 
+  if (subview == mainview)
+    { /* This happens sometimes for unknown reason. */
+      g_critical ("hd_transition_subview: mainview == subview == %p",
+                  subview);
+      return;
+    }
   if (!subview || !subview->cm_client || !mainview || !mainview->cm_client
       || !STATE_IS_APP(hd_render_manager_get_state()))
     return;
@@ -756,11 +763,82 @@ hd_transition_subview(HdCompMgr                  *mgr,
   cclient_subview = MB_WM_COMP_MGR_CLUTTER_CLIENT (subview->cm_client);
   cclient_mainview = MB_WM_COMP_MGR_CLUTTER_CLIENT (mainview->cm_client);
 
-  if ((mb_wm_comp_mgr_clutter_client_get_flags (cclient_subview) &
-      MBWMCompMgrClutterClientEffectRunning) ||
-      (mb_wm_comp_mgr_clutter_client_get_flags (cclient_mainview) &
-            MBWMCompMgrClutterClientEffectRunning))
+  /*
+   * Handle views which are already in transition.
+   * Two special cases are handled:
+   * the client pushes a series of windows or it pops a series of windows.
+   * The transitions would overlap but we can replace the finally-to-be-shown
+   * actor, making it smooth.
+   *
+   * NOTE We exploit that currently only this transition sets
+   * %HdCompMgrClient::effect and we use it to recognize ongoing
+   * subview transitions.
+   */
+  subview_in_trans = mb_wm_comp_mgr_clutter_client_get_flags (cclient_subview)
+    & MBWMCompMgrClutterClientEffectRunning;
+  mainview_in_trans = mb_wm_comp_mgr_clutter_client_get_flags (cclient_mainview)
+    & MBWMCompMgrClutterClientEffectRunning;
+  if (subview_in_trans && mainview_in_trans)
     return;
+  if (mainview_in_trans)
+    { /* Is the mainview we want to leave sliding in? */
+      if (event == MBWMCompMgrClientEventMap
+          && (data = HD_COMP_MGR_CLIENT (cclient_mainview)->effect)
+          && data->event == MBWMCompMgrClientEventMap
+          && data->cclient == cclient_mainview)
+        {
+          /* Replace the effect's subview with ours. */
+          /* Release @cclient and @cclient_actor. */
+          clutter_actor_hide (data->cclient_actor);
+          clutter_actor_set_anchor_pointu (data->cclient_actor, 0, 0);
+          g_object_unref (data->cclient_actor);
+          HD_COMP_MGR_CLIENT (data->cclient)->effect = NULL;
+          mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient,
+                                      MBWMCompMgrClutterClientDontUpdate |
+                                      MBWMCompMgrClutterClientEffectRunning);
+          mb_wm_object_unref (MB_WM_OBJECT (data->cclient));
+
+          /* Set @cclient_subview. */
+          data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient_subview));
+          data->cclient_actor = g_object_ref (
+              mb_wm_comp_mgr_clutter_client_get_actor (cclient_subview));
+          mb_wm_comp_mgr_clutter_client_set_flags (cclient_subview,
+                                      MBWMCompMgrClutterClientDontUpdate |
+                                      MBWMCompMgrClutterClientEffectRunning);
+          HD_COMP_MGR_CLIENT (cclient_subview)->effect = data;
+        }
+      return;
+    }
+  if (subview_in_trans) /* This is almost the same code. */
+    { /* Is the subview we want to leave sliding in? */
+      if (event == MBWMCompMgrClientEventUnmap
+          && (data = HD_COMP_MGR_CLIENT (cclient_subview)->effect)
+          && data->event == MBWMCompMgrClientEventUnmap
+          && data->cclient2 == cclient_subview)
+        {
+          ClutterActor *o;
+
+          /* Replace the effect's mainview with ours. */
+          /* Release @cclient2 and @cclient2_actor. */
+          clutter_actor_hide (data->cclient2_actor);
+          clutter_actor_set_anchor_pointu (data->cclient2_actor, 0, 0);
+          g_object_unref (o = data->cclient2_actor);
+          HD_COMP_MGR_CLIENT (data->cclient2)->effect = NULL;
+          mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient2,
+                                      MBWMCompMgrClutterClientDontUpdate |
+                                      MBWMCompMgrClutterClientEffectRunning);
+          mb_wm_object_unref (MB_WM_OBJECT (data->cclient2));
+
+          /* Set @cclient_mainview. */
+          data->cclient2 = mb_wm_object_ref (MB_WM_OBJECT (cclient_mainview));
+          data->cclient2_actor = g_object_ref (
+              mb_wm_comp_mgr_clutter_client_get_actor (cclient_mainview));
+          mb_wm_comp_mgr_clutter_client_set_flags (cclient_mainview,
+                                      MBWMCompMgrClutterClientEffectRunning);
+          HD_COMP_MGR_CLIENT (cclient_mainview)->effect = data;
+        }
+      return;
+    }
 
   /* Need to store also pointer to the manager, as by the time
    * the effect finishes, the back pointer in the cm_client to
@@ -791,15 +869,33 @@ hd_transition_subview(HdCompMgr                  *mgr,
                                  * to stop them permanently so workaround
                                  * it by not disabling them. */
                                 MBWMCompMgrClutterClientEffectRunning);
+
   hd_comp_mgr_set_effect_running(mgr, TRUE);
+  HD_COMP_MGR_CLIENT (cclient_mainview)->effect = data;
+  HD_COMP_MGR_CLIENT (cclient_subview)->effect  = data;
 
   /* first call to stop flicker */
   on_subview_timeline_new_frame(data->timeline, 0, data);
   clutter_timeline_start (data->timeline);
 }
 
+/* Returns whether @actor will last only as long as the effect
+ * (if it has any) takes.  Currently only subview transitions
+ * are considered. */
+gboolean
+hd_transition_actor_will_go_away (ClutterActor *actor)
+{
+  HdCompMgrClient *hcmgrc;
 
-/* Tell play() now it's free to play. */
+  if (!(hcmgrc = g_object_get_data(G_OBJECT(actor),
+                                   "HD-MBWMCompMgrClutterClient")))
+    return FALSE;
+  if (!hcmgrc->effect || hcmgrc->effect->event != MBWMCompMgrClientEventUnmap)
+    return FALSE;
+  return hcmgrc->effect->cclient == MB_WM_COMP_MGR_CLUTTER_CLIENT (hcmgrc);
+}
+
+/* Tell hd_transition_play_sound() it's free to play now. */
 static void
 play_finished (ca_context *ctx, uint32_t id, int error_code, void * is_playing)
 {

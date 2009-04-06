@@ -1,3 +1,22 @@
+2009-04-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Visibility and subview transition fixes.
+
+	* src/mb/hd-comp-mgr.h:
+	  Added HdCompMgrClient::effect for hd-transition.
+	* src/util/hd-transition.h:
+	  Added hd_transition_actor_will_go_away().
+	* src/util/hd-transition.c (hd_transition_subview, hd_transition_completed):
+	  If multiple subview transitions would overlap replace the actors.
+	  This is necessary when the client maps a lot of stackable windows
+	  at once.  In particular, it help keeping visibilities right when
+	  we start managing such clients at startup.
+	* src/home/hd-render-manager.c:
+	  Added visibility-related debug prints.
+	  Added workaround not to hide HdHome when it should be shown.
+	    This is necessary when a large window stack is pulled down at once.
+	  Use hd_transition_actor_will_go_away().
+
 2009-04-03  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Wait until the real app appears before hiding the switcher when waking up

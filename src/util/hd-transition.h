@@ -59,6 +59,9 @@ hd_transition_subview(HdCompMgr                  *mgr,
                       MBWindowManagerClient      *mainview,
                       MBWMCompMgrClientEvent     event);
 
+gboolean
+hd_transition_actor_will_go_away (ClutterActor *actor);
+
 void
 hd_transition_play_sound(const gchar           *fname);
 

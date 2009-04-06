@@ -45,9 +45,16 @@
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
 /* This is to dump debug information to the console to help see whether the
- * order of clutter actors matches that of matchbox
-#define STACKING_DEBUG 1
-*/
+ * order of clutter actors matches that of matchbox. */
+//#define STACKING_DEBUG 1
+
+/* And this one is to help debugging visibility-related problems
+ * ie. when stacking is all right but but you cannot see what you want. */
+#if 0
+# define VISIBILITY       g_debug
+#else
+# define VISIBILITY(...)  /* NOP */
+#endif
 
 /* ------------------------------------------------------------------------- */
 #define I_(str) (g_intern_static_string ((str)))
@@ -1678,6 +1685,9 @@ hd_render_manager_is_visible(GList *blockers,
       ClutterGeometry blocker = *(ClutterGeometry*)blockers->data;
       guint rect_b, blocker_b;
 
+      VISIBILITY ("RECT %dx%d%+d%+d BLOCKER %dx%d%+d%+d",
+                  MBWM_GEOMETRY(&rect), MBWM_GEOMETRY(&blocker));
+
       /* If rect does not fit inside blocker in the X axis... */
       if (!(blocker.x <= rect.x &&
             rect.x+rect.width <= blocker.x+blocker.width))
@@ -1821,12 +1831,13 @@ void hd_render_manager_append_geo_cb(ClutterActor *actor, gpointer data)
       ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
       clutter_actor_get_geometry(actor, geo);
       *list = g_list_prepend(*list, geo);
+      VISIBILITY ("BLOCKER %dx%d%+d%+d", MBWM_GEOMETRY(geo));
     }
 }
 
 static
 void hd_render_manager_set_visibilities()
-{
+{ VISIBILITY ("SET VISIBILITIES");
   HdRenderManagerPrivate *priv;
   GList *blockers = 0;
   GList *it;
@@ -1863,30 +1874,41 @@ void hd_render_manager_set_visibilities()
           ClutterGeometry geo;
           clutter_actor_get_geometry(child, &geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
+          VISIBILITY ("IS %p VISIBLE?", child);
           if (hd_render_manager_is_visible(blockers, geo))
             {
+              VISIBILITY ("IS");
               clutter_actor_show(child);
 
               /* Add the geometry to our list of blockers and go to next... */
               if (hd_render_manager_actor_opaque(child))
-                blockers = g_list_prepend(blockers, g_memdup(&geo, sizeof(geo)));
+                {
+                  blockers = g_list_prepend(blockers, g_memdup(&geo, sizeof(geo)));
+                  VISIBILITY ("MORE BLOCKER %dx%d%+d%+d", MBWM_GEOMETRY(&geo));
+                }
             }
           else
-            { /* Not visible, hide it... */
+            { /* Not visible, hide it unless... */
+              VISIBILITY ("ISNT");
 #ifdef __i386__
-              MBWMCompMgrClutterClient *cc;
-
-              /* ...unless it's running an effect.   Somebody could research
-               * why it isn't necessary on the device. */
-              cc = g_object_get_data(G_OBJECT(child),
-                                     "HD-MBWMCompMgrClutterClient");
-              if (!cc || !(mb_wm_comp_mgr_clutter_client_get_flags(cc)
-                           & MBWMCompMgrClutterClientEffectRunning))
+              /* On the device the flicker we can avoid with this check
+               * upon subview->mainview transition is not visible. */
+              if (!hd_transition_actor_will_go_away(child))
 #endif
                 clutter_actor_hide(child);
             }
         }
     }
+
+  /* Sometimes we make a mistake because of the trasition effects.
+   * One particular case is when a window stack with lots of windows
+   * is dumped altogether. */
+  if (STATE_NEED_DESKTOP (priv->state))
+    if (!CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (priv->home)))
+      {
+        g_critical ("i've got wrong the visibilities :(");
+        clutter_actor_show (CLUTTER_ACTOR (priv->home));
+      }
 
   /* now free blockers */
   it = g_list_first(blockers);

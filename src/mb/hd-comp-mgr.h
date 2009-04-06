@@ -67,6 +67,13 @@ struct HdCompMgrClient
   MBWMCompMgrClutterClient    parent;
 
   HdCompMgrClientPrivate     *priv;
+
+  /*
+   * hd-transition.c may choose to store context information of the currently
+   * running effect involving this client.  If not this field is %NULL,
+   * but that doesn't mean the client is not participating in an effect.
+   */
+  struct _HDEffectData *effect;
 };
 
 struct HdCompMgrClientClass
