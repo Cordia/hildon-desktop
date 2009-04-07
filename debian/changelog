@@ -10,6 +10,7 @@ hildon-desktop (1:2.2.36-1) unstable; urgency=low
   Gordon:
   * Fixes: NB#109714 - Application icon in task launcher remains in pressed
     state.
+  * Three levels of zoom.
 
   Marc:
   * Fixes: NB#106572 - After bg-kill, when tapped on the bg-killed application
