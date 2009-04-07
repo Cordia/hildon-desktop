@@ -844,6 +844,10 @@ void hd_render_manager_sync_clutter_before ()
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport */
   hd_render_manager_set_input_viewport();
+
+  /* as soon as we start a transition, set out left-hand button to be
+   * not pressed (used when home->switcher causes change of button style) */
+  hd_title_bar_left_pressed(priv->title_bar, FALSE);
 }
 
 /* The syncing with clutter that is done after a transition ends */
@@ -851,8 +855,6 @@ static
 void hd_render_manager_sync_clutter_after ()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
-
-  hd_title_bar_left_pressed(priv->title_bar, FALSE);
 
   if (STATE_BLUR_BUTTONS(priv->state) &&
       clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) !=
