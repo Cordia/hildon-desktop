@@ -1,5 +1,13 @@
 2009-04-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#109009 desktop crashed when gridcombobox is launched
+
+	* src/mb/hd-wm.c (hd_wm_client_new):
+	  Create HdApp:s from for unknown client types.
+	  libmatchbox created MBWMClientApp:s but all of hd expects HdApp:s.
+
+2009-04-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Improved close application animation in tasw.
 	Now it should look the same as in maximized case.
 

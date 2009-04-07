@@ -155,8 +155,16 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
   MBWindowManagerClass *wm_class =
     MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
 
-  if (win->override_redirect && wm_class)
-    return wm_class->client_new (wm, win);
+  if (win->override_redirect                                                  ||
+      win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DOCK]           ||
+      win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_MENU]           ||
+      win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU]     ||
+      win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DROPDOWN_MENU]  ||
+      win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_TOOLBAR]        ||
+      win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_INPUT])
+    /* Pass to libmatchbox the types we don't want to handle.
+     * We'll handle the unknowns. */
+    return wm_class ?  wm_class->client_new (wm, win) : NULL;
   else if (win->net_type ==
       hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_TYPE_HOME_APPLET))
     {
@@ -213,14 +221,26 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
     }
   else if (win->net_type == hd_comp_mgr_get_atom (hmgr,
                           HD_ATOM_HILDON_WM_WINDOW_TYPE_REMOTE_TEXTURE))
-      {
-        g_debug ("### is remote texture ###");
-        return hd_remote_texture_new (wm, win);
-      }
-  else if (wm_class)
-    return wm_class->client_new (wm, win);
-
-  return NULL;
+    {
+      g_debug ("### is remote texture ###");
+      return hd_remote_texture_new (wm, win);
+    }
+  else
+    {
+      /* All of hildon-desktop relies on %MBWMClientTypeApp:s being
+       * represented by %HdApp:s.  Don't let them down. */
+      char * name = XGetAtomName (wm->xdpy, win->net_type);
+      if (name)
+        {
+          g_warning ("### unhandled window type %s (%lx) ###",
+                     name, win->xwindow);
+          XFree (name);
+        }
+      else
+        g_warning ("### unhandled window type [no net_type] (%lx) ###",
+                   win->xwindow);
+      return hd_app_new (wm, win);
+    }
 }
 
 static gboolean
