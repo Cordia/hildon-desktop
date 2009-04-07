@@ -1,3 +1,15 @@
+2009-04-07  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Move HdAppMgr initialization to main() so it can know about closing up,
+	and then kill all prestarted apps.
+	Fixes: NB#105817
+
+	* src/launcher/hd-app-mgr.c: Added hd_app_mgr_stop to stop all prestarted
+	apps (and further clean up if necessary).
+	* src/launcher/hd-app-mgr.h:
+	* src/main.c: Handle SIGTERM, exit gtk's main loop when received.
+	* src/mb/hd-comp-mgr.c: Pass the render manager to the app mgr.
+
 2009-04-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.36

@@ -41,6 +41,7 @@
 #include "hd-wm.h"
 #include "hd-theme.h"
 #include "hd-util.h"
+#include "launcher/hd-app-mgr.h"
 
 #ifndef DISABLE_A11Y
 #include "hildon-desktop-a11y.h"
@@ -286,6 +287,11 @@ try_to_relaunch (Display *dpy)
   g_free (matepath);
 }
 
+static void
+terminating (int unused)
+{
+  gtk_main_quit ();
+}
 
 typedef enum
 {
@@ -327,9 +333,11 @@ main (int argc, char **argv)
 {
   Display * dpy = NULL;
   MBWindowManager *wm;
+  HdAppMgr *app_mgr;
 
   signal (SIGUSR1, dump_debug_info_sighand);
   signal (SIGHUP,  relaunch);
+  signal (SIGTERM, terminating);
 
   /* fast float calculations */
   hd_fpu_set_mode (OSSO_FPU_FAST);
@@ -415,6 +423,8 @@ main (int argc, char **argv)
 
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 
+  app_mgr = hd_app_mgr_get ();
+
   /* NB: we call gtk_main as opposed to clutter_main or mb_wm_main_loop
    * because it does the most extra magic, such as supporting quit functions
    * that the others don't. Except for adding the clutter_x11_add_filter
@@ -423,6 +433,10 @@ main (int argc, char **argv)
   gtk_main ();
 
   mb_wm_object_unref (MB_WM_OBJECT (wm));
+
+  hd_app_mgr_stop ();
+  g_object_unref (app_mgr);
+  signal (SIGTERM, SIG_DFL);
 
 #if MBWM_WANT_DEBUG
   mb_wm_object_dump ();

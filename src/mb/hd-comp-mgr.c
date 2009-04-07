@@ -517,8 +517,11 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   clutter_container_add_actor(CLUTTER_CONTAINER (stage),
                               CLUTTER_ACTOR(priv->render_manager));
 
-  /* App manager must be created before switcher, but after render manager */
-  priv->app_mgr = hd_app_mgr_get ();
+  /* Pass the render manager to the app mgr so it knows when it can't
+   * prestart apps.
+   */
+  priv->app_mgr = g_object_ref (hd_app_mgr_get ());
+  hd_app_mgr_set_render_manager (G_OBJECT (priv->render_manager));
 
   /* NB -- home must be constructed before constructing the switcher;
    */
@@ -589,6 +592,11 @@ hd_comp_mgr_destroy (MBWMObject *obj)
     g_hash_table_destroy (priv->shown_apps);
   if (priv->hibernating_apps)
     g_hash_table_destroy (priv->hibernating_apps);
+  if (priv->app_mgr)
+    {
+      g_object_unref (priv->app_mgr);
+      priv->app_mgr = NULL;
+    }
   g_object_unref( priv->render_manager );
 
   mb_wm_main_context_x_event_handler_remove (

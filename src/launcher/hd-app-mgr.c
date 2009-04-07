@@ -100,7 +100,7 @@ struct _HdAppMgrPrivate
   gboolean bg_killing:1;
   gboolean lowmem:1;
   gboolean init_done:1;
-  gboolean launcher_shown:1;
+  gboolean prestarting_stopped:1;
 };
 
 #define HD_APP_MGR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -293,11 +293,6 @@ hd_app_mgr_init (HdAppMgr *self)
   for (int i = 0; i < NUM_QUEUES; i++)
     priv->queues[i] = g_queue_new ();
 
-  /* Connect to state changes. */
-  g_signal_connect (hd_render_manager_get (), "notify::state",
-                    G_CALLBACK (hd_app_mgr_hdrm_state_change),
-                    priv);
-
   /* TODO: Move handling of HdLauncherTree here. */
   priv->tree = g_object_ref (hd_launcher_get_tree ());
   g_signal_connect (priv->tree, "finished",
@@ -392,6 +387,38 @@ hd_app_mgr_init (HdAppMgr *self)
     }
   else
     g_warning ("%s: Failed to proxy system dbus.\n", __FUNCTION__);
+}
+
+void
+hd_app_mgr_set_render_manager (GObject *rendermgr)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+
+  /* Connect to state changes. */
+  g_signal_connect (rendermgr, "notify::state",
+                    G_CALLBACK (hd_app_mgr_hdrm_state_change),
+                    priv);
+}
+
+static void
+_hd_app_mgr_kill_prestarted (HdLauncherApp *app, gpointer user_data)
+{
+  hd_app_mgr_kill (app);
+}
+
+/* Called when exiting main() to close all prestarted apps. */
+void
+hd_app_mgr_stop ()
+{
+  if (!the_app_mgr)
+    return;
+
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (the_app_mgr);
+
+  priv->prestarting_stopped = TRUE;
+  g_queue_foreach (priv->queues[QUEUE_PRESTARTED],
+                   (GFunc)_hd_app_mgr_kill_prestarted,
+                   NULL);
 }
 
 static void
@@ -1076,9 +1103,9 @@ hd_app_mgr_hdrm_state_change (gpointer hdrm,
                               HdAppMgrPrivate *priv)
 {
   gboolean launcher = hd_render_manager_get_state () == HDRM_STATE_LAUNCHER;
-  if (launcher != priv->launcher_shown)
+  if (launcher != priv->prestarting_stopped)
     {
-      priv->launcher_shown = launcher;
+      priv->prestarting_stopped = launcher;
       hd_app_mgr_state_check ();
     }
 }
@@ -1159,7 +1186,7 @@ hd_app_mgr_state_check_loop (gpointer data)
       /* priv->init_done &&
       !priv->lowmem &&
       !priv->bg_killing && */
-      !priv->launcher_shown &&
+      !priv->prestarting_stopped &&
       !g_queue_is_empty (priv->queues[QUEUE_PRESTARTABLE]) &&
       hd_app_mgr_can_prestart ())
     {

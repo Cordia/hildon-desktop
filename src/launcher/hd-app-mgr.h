@@ -60,7 +60,8 @@ struct _HdAppMgrClass
 
 GType hd_app_mgr_get_type (void) G_GNUC_CONST;
 
-HdAppMgr   *hd_app_mgr_get (void);
+HdAppMgr   *hd_app_mgr_get  (void);
+void        hd_app_mgr_stop (void);
 
 gboolean hd_app_mgr_launch       (HdLauncherApp *app);
 gboolean hd_app_mgr_relaunch     (HdLauncherApp *app);
@@ -82,6 +83,8 @@ HdLauncherApp *hd_app_mgr_match_window (const char *res_name,
                                         const char *res_class);
 
 void hd_app_mgr_dump_app_list (gboolean only_running);
+
+void hd_app_mgr_set_render_manager (GObject *rendermgr);
 
 G_END_DECLS
 
