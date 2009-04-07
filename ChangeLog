@@ -1,6 +1,13 @@
 2009-04-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.36
+	
+2009-04-07  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c: Now do 3 levels of zoom, based on
+	  whether we came from switcher or not.
+	* src/tidy/tidy-blur-group.c: Fix for 'can't compile vertex shader'
+	  in scratchbox
 
 2009-04-07  Gordon Williams <gordon.williams@collabora.co.uk>
 

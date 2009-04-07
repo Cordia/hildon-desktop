@@ -166,7 +166,7 @@ static void tidy_blur_group_check_shader(TidyBlurGroup *group,
                                          const char* vertex_source)
 {
   TidyBlurGroupPrivate *priv = group->priv;
-  if (!*shader)
+  if (priv->use_shader && !*shader)
    {
      GError           *error = NULL;
      char             *old_locale;

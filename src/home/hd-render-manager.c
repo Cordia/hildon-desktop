@@ -109,10 +109,10 @@ typedef enum
   HDRM_BLUR_NONE = 0,
   HDRM_BLUR_HOME = 1,
   HDRM_SHOW_TASK_NAV = 2,
-  HDRM_ZOOM_HOME = 4,
-  HDRM_ZOOM_TASK_NAV = 8,
-  HDRM_BLUR_MORE = 16,
-  HDRM_BLUR_BACKGROUND = 32, /* like BLUR_HOME, but for dialogs, etc */
+  HDRM_BLUR_BACKGROUND = 4, /* like BLUR_HOME, but for dialogs, etc */
+  HDRM_ZOOM_FOR_LAUNCHER = 16,
+  HDRM_ZOOM_FOR_LAUNCHER_SUBMENU = 32,
+  HDRM_ZOOM_FOR_TASK_NAV = 64,
 } HDRMBlurEnum;
 
 #define HDRM_WIDTH  HD_COMP_MGR_SCREEN_WIDTH
@@ -159,6 +159,7 @@ typedef struct _Range {
 
 struct _HdRenderManagerPrivate {
   HDRMStateEnum state;
+  HDRMStateEnum previous_state;
 
   TidyBlurGroup *home_blur;
   ClutterGroup  *app_top;
@@ -406,6 +407,7 @@ hd_render_manager_init (HdRenderManager *self)
                            G_CALLBACK(stage_allocation_changed), self);
 
   priv->state = HDRM_STATE_UNDEFINED;
+  priv->previous_state = HDRM_STATE_UNDEFINED;
   priv->current_blur = HDRM_BLUR_NONE;
 
   priv->home_blur = TIDY_BLUR_GROUP(tidy_blur_group_new());
@@ -567,7 +569,8 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 {
   HdRenderManagerPrivate *priv;
   gboolean blur_home;
-  int zoom_multiply = 1;
+  gint zoom_task_nav = 0;
+  gint zoom_home = 0;
 
   priv = the_render_manager->priv;
 
@@ -586,8 +589,12 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   range_next(&priv->task_nav_opacity, 0);
   range_next(&priv->task_nav_zoom, 1);
 
-  if (blur & HDRM_BLUR_MORE)
-    zoom_multiply++;
+  /* work out how much we need to zoom various things */
+  zoom_task_nav += (blur & HDRM_ZOOM_FOR_LAUNCHER) ? 1 : 0;
+  zoom_task_nav += (blur & HDRM_ZOOM_FOR_LAUNCHER_SUBMENU) ? 1 : 0;
+  zoom_home += (blur & HDRM_ZOOM_FOR_LAUNCHER) ? 1 : 0;
+  zoom_home += (blur & HDRM_ZOOM_FOR_LAUNCHER_SUBMENU) ? 1 : 0;
+  zoom_home += (blur & HDRM_ZOOM_FOR_TASK_NAV) ? 1 : 0;
 
   blur_home = blur & (HDRM_BLUR_BACKGROUND | HDRM_BLUR_HOME);
 
@@ -600,25 +607,25 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
               hd_transition_get_double("home","brightness", 1);
       priv->home_radius.b =
               hd_transition_get_double("home",
-                  (blur & HDRM_BLUR_MORE)?"radius_more":"radius", 8);
+                  (zoom_home)?"radius_more":"radius", 8);
     }
 
-  if (blur & HDRM_ZOOM_HOME)
+  if (zoom_home)
     {
       priv->home_zoom.b =
               hd_transition_get_double("home", "zoom", 1);
-      priv->home_zoom.b = 1 - (1-priv->home_zoom.b)*zoom_multiply;
+      priv->home_zoom.b = 1 - (1-priv->home_zoom.b)*zoom_home;
     }
 
   if (blur & HDRM_SHOW_TASK_NAV)
     {
       priv->task_nav_opacity.b = 1;
     }
-  if (blur & HDRM_ZOOM_TASK_NAV)
+  if (zoom_task_nav)
     {
       priv->task_nav_zoom.b =
               hd_transition_get_double("task_nav", "zoom", 1);
-      priv->task_nav_zoom.b = 1 - (1-priv->task_nav_zoom.b)*zoom_multiply;
+      priv->task_nav_zoom.b = 1 - (1-priv->task_nav_zoom.b)*zoom_task_nav;
     }
 
   /* no point animating if everything is already right */
@@ -754,7 +761,9 @@ void hd_render_manager_sync_clutter_before ()
         visible_top_left = HDRM_BUTTON_LAUNCHER;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        hd_render_manager_set_blur(HDRM_BLUR_HOME | HDRM_ZOOM_HOME | HDRM_SHOW_TASK_NAV);
+        hd_render_manager_set_blur(HDRM_BLUR_HOME |
+                                   HDRM_ZOOM_FOR_TASK_NAV |
+                                   HDRM_SHOW_TASK_NAV);
         break;
       case HDRM_STATE_LAUNCHER:
         visible_top_left = HDRM_BUTTON_NONE;
@@ -763,7 +772,9 @@ void hd_render_manager_sync_clutter_before ()
         clutter_actor_show(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(
             HDRM_BLUR_HOME |
-            HDRM_ZOOM_HOME | HDRM_ZOOM_TASK_NAV );
+            HDRM_ZOOM_FOR_LAUNCHER |
+            ((priv->previous_state==HDRM_STATE_TASK_NAV)?
+                HDRM_ZOOM_FOR_TASK_NAV : 0) );
         break;
     }
 
@@ -1125,6 +1136,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
     {
       ClutterActor *home_front;
       HDRMStateEnum oldstate = priv->state;
+      priv->previous_state = priv->state;
       priv->state = state;
 
       /* Enter or leave the task switcher. */
@@ -1615,9 +1627,11 @@ void hd_render_manager_set_launcher_subview(gboolean subview)
   g_debug("%s: %s", __FUNCTION__, subview ? "SUBVIEW":"MAIN");
 
   if (subview)
-    hd_render_manager_set_blur(priv->current_blur | HDRM_BLUR_MORE);
+    hd_render_manager_set_blur(priv->current_blur |
+        HDRM_ZOOM_FOR_LAUNCHER_SUBMENU);
   else
-    hd_render_manager_set_blur(priv->current_blur & ~HDRM_BLUR_MORE);
+    hd_render_manager_set_blur(priv->current_blur &
+        ~HDRM_ZOOM_FOR_LAUNCHER_SUBMENU);
 }
 
 /* Sets whether any of the buttons will actually be set to do anything */
