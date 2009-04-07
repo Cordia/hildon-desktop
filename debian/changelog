@@ -1,8 +1,22 @@
-hildon-desktop (1:2.2.36-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.36-1) unstable; urgency=low
 
-  * writeme
+  Kimmo:
+  * Added libcail-dev to build dependencies for a11y.
+  * Now using fast floats using a patch from Leonid.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  3 Apr 2009 13:08:12 +0300
+  Adam:
+  * Fixes: NB#109009 - desktop crashed when gridcombobox is launched
+
+  Gordon:
+  * Fixes: NB#109714 - Application icon in task launcher remains in pressed
+    state.
+
+  Marc:
+  * Fixes: NB#106572 - After bg-kill, when tapped on the bg-killed application
+    in switcher view, the application which was not bg-killed is shown in
+    foreground before the actual application is launched.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 07 Apr 2009 17:43:37 +0300
 
 hildon-desktop (1:2.2.35-1) unstable; urgency=low
 

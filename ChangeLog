@@ -1,3 +1,7 @@
+2009-04-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.36
+
 2009-04-07  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c: Make top-left button unselected
@@ -94,7 +98,8 @@
 	  Added HdCompMgrClient::effect for hd-transition.
 	* src/util/hd-transition.h:
 	  Added hd_transition_actor_will_go_away().
-	* src/util/hd-transition.c (hd_transition_subview, hd_transition_completed):
+	* src/util/hd-transition.c (hd_transition_subview,
+	  hd_transition_completed):
 	  If multiple subview transitions would overlap replace the actors.
 	  This is necessary when the client maps a lot of stackable windows
 	  at once.  In particular, it help keeping visibilities right when
@@ -107,8 +112,8 @@
 
 2009-04-03  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
-	Wait until the real app appears before hiding the switcher when waking up
-	an hibernated application.
+	Wait until the real app appears before hiding the switcher when waking
+	up an hibernated application.
 	Fixes: NB#106572
 
 	* src/home/hd-switcher.c:
