@@ -40,9 +40,6 @@
 
 #include "hd-app.h"
 
-#define HDCM_UNMAP_PARTICLES 8
-
-#define HD_EFFECT_PARTICLE "white-particle.png"
 #define HDCM_NOTIFICATION_END_SIZE 32
 
 typedef struct _HDEffectData
@@ -615,7 +612,6 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   HDEffectData             * data;
   ClutterGeometry            geo;
   ClutterContainer         * parent;
-  gchar                    * fname;
   gint                       i;
 
   /* proper app close animation */
@@ -680,11 +676,10 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   clutter_actor_lower_bottom(actor);
   clutter_actor_move_anchor_point_from_gravity(actor, CLUTTER_GRAVITY_CENTER);
 
-  fname = g_build_filename (HD_DATADIR, HD_EFFECT_PARTICLE, NULL);
-
   for (i = 0; i < HDCM_UNMAP_PARTICLES; ++i)
     {
-      data->particles[i] = hd_clutter_cache_get_texture(fname, FALSE);
+      data->particles[i] = hd_clutter_cache_get_texture(HD_EFFECT_PARTICLE_PATH,
+                                                        FALSE);
       if (data->particles[i])
         {
           clutter_actor_set_anchor_point_from_gravity(data->particles[i],
@@ -694,7 +689,6 @@ hd_transition_close_app (HdCompMgr                  *mgr,
         }
     }
 
-  g_free (fname);
   hd_comp_mgr_set_effect_running(mgr, TRUE);
   clutter_timeline_start (data->timeline);
 

@@ -1,3 +1,13 @@
+2009-04-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Improved close application animation in tasw.
+	Now it should look the same as in maximized case.
+
+	* src/home/hd-task-navigator.c
+	* src/util/hd-transition.h:
+	  Made the parcile number and file name public.
+	* src/util/hd-transition.c
+
 2009-04-06  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fix for NB#109714 (highlight on launcher not disappearing)

@@ -60,6 +60,7 @@
 #include "hd-render-manager.h"
 #include "hd-title-bar.h"
 #include "hd-clutter-cache.h"
+#include "hd-transition.h"
 
 /* Standard definitions {{{ */
 #undef  G_LOG_DOMAIN
@@ -324,27 +325,66 @@ typedef struct
   void (*scale) (ClutterActor *actor, gdouble sx, gdouble sy);
 } Flyops;
 
+/* For resize_effect() and turnoff_effect(). */
+typedef struct
+{
+  /*
+   * @actor:                    The actor to be animated (refed).
+   *                            In case of turnoff_effect() it is
+   *                            a thwin.
+   * @new_frame_cb_id, @timeline_complete_cb_id:
+   *                            %ClutterTimeline signal handler IDs
+   */
+  ClutterActor *actor;
+  gulong new_frame_cb_id, timeline_complete_cb_id;
+
+  /* Effect-specific data */
+  union
+  {
+    struct
+    {
+      /*
+       * For resize_effect():
+       * @init_width, @init_height: @actor's size at the start of the effect
+       * @width_diff, @height_diff: how much to shring/grow in a frame
+       */
+      guint init_width, init_height;
+      gint  width_diff, height_diff;
+    };
+
+    struct
+    {
+      /*
+       * For turnoff_effect():
+       * @particles:                The little stars dancing in the background
+       *                            of the squeezing thumbnail.  @ang0 is the
+       *                            initial angle of a particle.
+       * @all_particles:            Container of all the particles.  Used to
+       *                            help positioning and setting and to set
+       *                            uniform opacity.
+       */
+      struct
+      {
+        gdouble ang0;
+        ClutterActor *particle;
+      } particles[HDCM_UNMAP_PARTICLES];
+      ClutterActor *all_particles;
+    };
+  };
+} EffectClosure;
+
 /* Used by add_effect_closure() to store what to call when the effect
  * completes. */
 typedef struct
 {
   /* @fun(@actor, @funparam) is what is called eventually.
    * @fun is not %NULL, @actor is g_object_ref()ed.
-   * @handler_id is the signal handler. */
+   * @handler_id identifies the signal handler. */
   ClutterEffectCompleteFunc    fun;
   ClutterActor                *actor;
   gpointer                     funparam;
   gulong                       handler_id;
-} EffectClosure;
-
-/* For resize_effect() */
-typedef struct
-{
-  ClutterActor *actor;
-  guint init_width, init_height;
-  gint  width_diff, height_diff;
-  gulong new_frame_cb_id, timeline_complete_cb_id;
-} ResizeEffectClosure;
+} EffectCompleteClosure;
 /* Clutter effect data structures }}} */
 /* Type definitions }}} */
 
@@ -403,7 +443,9 @@ static const GtkRequisition *Thumbsize;
 
 /*
  * Effect templates and their corresponding timelines.
- * -- @Fly_effect:  for moving thumbnails and notification windows around.
+ * -- @Fly_effect:  for moving thumbnails and notification windows around
+ *                  and closing the application thumbnail (it is important
+ *                  that they use the same template)
  * -- @Zoom_effect: for zooming in and out of application windows.
  */
 static ClutterTimeline *Fly_effect_timeline, *Zoom_effect_timeline;
@@ -700,109 +742,7 @@ resolve_logical_font (const gchar * logical_name)
 /* Fonts and colors }}} */
 
 /* Clutter utilities {{{ */
-/* Effect closures {{{ */
-/* add_effect_closure()'s #ClutterTimeline::completed handler. */
-static void
-call_effect_closure (ClutterTimeline * timeline, EffectClosure *closure)
-{
-  g_signal_handler_disconnect (timeline, closure->handler_id);
-  closure->fun (closure->actor, closure->funparam);
-  g_object_unref (closure->actor);
-  g_slice_free (EffectClosure, closure);
-}
-
-/* If @fun is not %NULL call it with @actor and @funparam when
- * @timeline is "completed".  Otherwise NOP. */
-static void
-add_effect_closure (ClutterTimeline * timeline,
-                    ClutterEffectCompleteFunc fun,
-                    ClutterActor * actor, gpointer funparam)
-{
-  EffectClosure *closure;
-
-  if (!fun)
-    return;
-
-  closure = g_slice_new (EffectClosure);
-  closure->fun        = fun;
-  closure->actor      = g_object_ref (actor);
-  closure->funparam   = funparam;
-  closure->handler_id = g_signal_connect (timeline, "completed",
-                                          G_CALLBACK (call_effect_closure),
-                                          closure);
-}
-/* Effect closures }}} */
-
-/* Resize effect {{{ */
-static void
-resize_effect_new_frame (ClutterTimeline * timeline, gint frame,
-                         ResizeEffectClosure * closure)
-{
-  gdouble now;
-
-  now = clutter_timeline_get_progress (timeline);
-  clutter_actor_set_size (closure->actor,
-                          closure->init_width  + closure->width_diff*now,
-                          closure->init_height + closure->height_diff*now);
-}
-
-static void
-resize_effect_complete (ClutterTimeline * timeline,
-                        ResizeEffectClosure * closure)
-{
-  g_signal_handler_disconnect (timeline, closure->new_frame_cb_id);
-  g_signal_handler_disconnect (timeline, closure->timeline_complete_cb_id);
-  g_slice_free (ResizeEffectClosure, closure);
-  g_object_unref (timeline);
-}
-
-static void
-resize_effect (ClutterTimeline * timeline, ClutterActor * actor,
-               guint final_width, guint final_height)
-{
-  ResizeEffectClosure *closure;
-
-  closure = g_slice_new(ResizeEffectClosure);
-
-  closure->actor = g_object_ref (actor);
-  clutter_actor_get_size (actor, &closure->init_width, &closure->init_height);
-  closure->width_diff  = final_width  - closure->init_width;
-  closure->height_diff = final_height - closure->init_height;
-
-  closure->new_frame_cb_id = g_signal_connect (timeline, "new-frame",
-                                   G_CALLBACK (resize_effect_new_frame),
-                                   closure);
-  closure->timeline_complete_cb_id = g_signal_connect (timeline, "completed",
-                                    G_CALLBACK (resize_effect_complete),
-                                    closure);
-
-  g_object_ref (timeline);
-  clutter_timeline_start (timeline);
-}
-/* Resize effect }}} */
-
-/* #ClutterActor::notify::allocation callback to clip @actor to its size
- * whenever it changes. */
-static void clip_on_resize (ClutterActor * actor)
-{
-  ClutterUnit width, height;
-
-  clutter_actor_get_sizeu (actor, &width, &height);
-  clutter_actor_set_clipu (actor, 0, 0, width, height);
-}
-
-/* Hide @actor and only show it after the flying animation finished.
- * Used when a new thing is created but you need to move other things
- * out of the way to make room for it. */
-static void
-show_when_complete (ClutterActor * actor)
-{
-  clutter_actor_hide (actor);
-  add_effect_closure (Fly_effect_timeline,
-                      (ClutterEffectCompleteFunc)clutter_actor_show,
-                      actor, NULL);
-}
-
+/* Animations {{{ */
 /* Returns whether we're in the middle of an animation,
  * when certain interactions may not be wise to allow. */
 static gboolean
@@ -842,7 +782,236 @@ need_to_animate (ClutterActor * actor)
   else
     return TRUE;
 }
+/* Animations }}} */
 
+/* Effects {{{ */
+/* General {{{ */
+/* Allocates an #EffectClosure and fills in the common fieilds.
+ * Adds signals to @timeline. */
+static EffectClosure *
+new_effect (ClutterTimeline * timeline, ClutterActor * actor,
+  void (*new_frame_fun)(ClutterTimeline *, gint frame, EffectClosure *),
+  void (*complete_fun)(ClutterTimeline *, EffectClosure *))
+{
+  EffectClosure *closure;
+
+  closure = g_slice_new(EffectClosure);
+  closure->actor = g_object_ref (actor);
+
+  closure->new_frame_cb_id = g_signal_connect (timeline, "new-frame",
+                                               G_CALLBACK (new_frame_fun),
+                                               closure);
+  closure->timeline_complete_cb_id = g_signal_connect (timeline, "completed",
+                                              G_CALLBACK (complete_fun),
+                                              closure);
+
+  g_object_ref (timeline);
+  clutter_timeline_start (timeline);
+
+  return closure;
+}
+
+/* Undoes new_effect().  Must be called at the end of animation. */
+static void
+free_effect (ClutterTimeline * timeline, EffectClosure * closure)
+{
+  g_signal_handler_disconnect (timeline, closure->new_frame_cb_id);
+  g_signal_handler_disconnect (timeline, closure->timeline_complete_cb_id);
+  g_object_unref (timeline);
+  g_object_unref (closure->actor);
+  g_slice_free (EffectClosure, closure);
+}
+/* General }}} */
+
+/* Resize effect {{{ */
+/* ClutterTimeline::new-frame callback for resize_effect(). */
+static void
+resize_effect_new_frame (ClutterTimeline * timeline, gint frame,
+                         EffectClosure * closure)
+{
+  gdouble now;
+
+  now = clutter_timeline_get_progress (timeline);
+  clutter_actor_set_size (closure->actor,
+                          closure->init_width  + closure->width_diff*now,
+                          closure->init_height + closure->height_diff*now);
+}
+
+/* During @timeline clutter_actor_set_size() @actor linearly
+ * to @final_width and @final_height. */
+static void
+resize_effect (ClutterTimeline * timeline, ClutterActor * actor,
+               guint final_width, guint final_height)
+{
+  EffectClosure *closure;
+
+  closure = new_effect (timeline, actor, resize_effect_new_frame, free_effect);
+  clutter_actor_get_size (actor, &closure->init_width, &closure->init_height);
+  closure->width_diff  = final_width  - closure->init_width;
+  closure->height_diff = final_height - closure->init_height;
+}
+/* Resize effect }}} */
+
+/* Boom effect {{{ */
+/* If @x0 <= @t <= @x1 returns the value of f(@t), where f()
+ * goes from (@x0, @y0) to (@x1, @y1) following a cosine curve.
+ * Do the math if you don't believe. */
+static __attribute__((const)) gdouble
+turnoff_fun (gdouble x0, gdouble y0, gdouble x1, gdouble y1, gdouble t)
+{
+  gdouble a, c, d;
+
+  d = cos (x1) / cos (x0);
+  c = (y1 - d) / (y0 - d);
+  a = (y0 - c) / cos (x0);
+  return a*cos(t) + c;
+}
+
+/* ClutterTimeline::new-frame callback for turnoff_effect(). */
+static void
+turnoff_effect_new_frame (ClutterTimeline * timeline, gint frame,
+                         EffectClosure * closure)
+{
+  gdouble now;
+
+  // thwin scale-y    0.0 .. 0.5 cosine 1.0 .. 0.1
+  // thwin scale-x    0.3 .. 0.8 cosine 1.0 .. 0.1
+  // thwin opacity    0.5 .. 1.0 linear 255 .. 0.0
+  // particle opacity 0.5 .. 1.0 sine   0.0 .. 1.0 .. 0.0
+  // particle radius  0.5 .. 1.0 cosine 8.0 .. 72
+  // particle angle   0.5 .. 1.0 linear 0.0 .. PI/2
+  now = clutter_timeline_get_progress (timeline);
+
+  /* @thwin */
+  if (now <= 0.8)
+    clutter_actor_set_scale (closure->actor,
+                 now <= 0.3 ? 1.0 : turnoff_fun (0.3, 1, 0.8, 0.1, now),
+                 now >= 0.5 ? 0.1 : turnoff_fun (0.0, 1, 0.5, 0.1, now));
+  if (0.5 <= now)
+    clutter_actor_set_opacity (closure->actor, 510 - 510*now);
+
+  /* @particles */
+  if (0.5 <= now)
+    {
+      guint i;
+      gdouble t, all_rad;
+
+      t = 2*now-1;
+      all_rad = turnoff_fun (0.5, 8, 1, 72, now);
+      for (i = 0; i < G_N_ELEMENTS (closure->particles); i++)
+        {
+          gdouble ang, rad;
+
+          ang = closure->particles[i].ang0 + M_PI/2 * t;
+          rad = all_rad * i/G_N_ELEMENTS (closure->particles);
+          clutter_actor_set_position (closure->particles[i].particle,
+                                      cos(ang)*rad, sin(ang)*rad);
+        }
+
+      clutter_actor_set_opacity (closure->all_particles, 255*sin(M_PI*t));
+      if (!CLUTTER_ACTOR_IS_VISIBLE (closure->all_particles))
+        clutter_actor_show (closure->all_particles);
+    }
+}
+
+/* ClutterTimeline::completed callback for turnoff_effect(). */
+static void
+turnoff_effect_complete (ClutterTimeline * timeline,
+                         EffectClosure * closure)
+{
+  clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator),
+                                  closure->all_particles);
+  free_effect (timeline, closure);
+}
+
+/*
+ * Do a TV-turned-off effect on @thwin: first squeeze it vertically,
+ * then horizontally.  At the same time it is horozontally scaled
+ * fade it out gradually and show little sparkles in the background.
+ * The sparkles are dancing in an every growing circle.  They fade in
+ * then fade out smoothly.
+ */
+static void
+turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
+{
+  guint i;
+  gint centerx, centery;
+  EffectClosure *closure;
+
+  closure = new_effect (timeline, thwin,
+                        turnoff_effect_new_frame,
+                        turnoff_effect_complete);
+
+  /* Scale @thwin in the middle. */
+  clutter_actor_move_anchor_point_from_gravity (thwin,
+                                                CLUTTER_GRAVITY_CENTER);
+
+  /* Create @closure->all_particles.  Place it at the center of @thwin
+   * and hide it initially because particles are shown later during the
+   * effect. */
+  clutter_actor_get_position (thwin,  &centerx, &centery);
+  centery -= hd_scrollable_group_get_viewport_y (Navigator_area);
+  closure->all_particles = clutter_group_new ();
+  clutter_actor_set_position (closure->all_particles, centerx, centery);
+  clutter_container_add_actor (CLUTTER_CONTAINER (Navigator),
+                               closure->all_particles);
+  clutter_actor_hide (closure->all_particles);
+
+  /* Create @closure->particles and add them to @closure->all_particles. */
+  for (i = 0; i < G_N_ELEMENTS (closure->particles); i++)
+    {
+      ClutterActor *particle;
+
+      particle = hd_clutter_cache_get_texture(HD_EFFECT_PARTICLE_PATH, FALSE);
+      clutter_actor_set_anchor_point_from_gravity (particle,
+                                                   CLUTTER_GRAVITY_CENTER);
+      clutter_container_add_actor (CLUTTER_CONTAINER (closure->all_particles),
+                                   particle);
+
+      /* All particles has an own initial angle from which they go half
+       * a circle until the end of animimation. */
+      closure->particles[i].ang0 = 2*M_PI * g_random_double ();
+      closure->particles[i].particle = particle;
+    }
+}
+/* Boom effect }}} */
+/* }}} */
+
+/* Effect closures {{{ */
+/* add_effect_closure()'s #ClutterTimeline::completed handler. */
+static void
+call_effect_closure (ClutterTimeline * timeline,
+                     EffectCompleteClosure *closure)
+{
+  g_signal_handler_disconnect (timeline, closure->handler_id);
+  closure->fun (closure->actor, closure->funparam);
+  g_object_unref (closure->actor);
+  g_slice_free (EffectCompleteClosure, closure);
+}
+
+/* If @fun is not %NULL call it with @actor and @funparam when
+ * @timeline is "completed".  Otherwise NOP. */
+static void
+add_effect_closure (ClutterTimeline * timeline,
+                    ClutterEffectCompleteFunc fun,
+                    ClutterActor * actor, gpointer funparam)
+{
+  EffectCompleteClosure *closure;
+
+  if (!fun)
+    return;
+
+  closure = g_slice_new (EffectCompleteClosure);
+  closure->fun        = fun;
+  closure->actor      = g_object_ref (actor);
+  closure->funparam   = funparam;
+  closure->handler_id = g_signal_connect (timeline, "completed",
+                                          G_CALLBACK (call_effect_closure),
+                                          closure);
+}
+/* Effect closures }}} */
+
+/* Effect wrappers {{{ */
 /* Translates @actor to @xpos and @ypos either smoothly or not, depending on
  * the circumstances.   Use when you know the new coordinates are different
  * from then current ones. */
@@ -908,6 +1077,19 @@ check_and_scale (ClutterActor * actor, gdouble sx_new, gdouble sy_new)
   if (fabs (sx_now - sx_new) > 0.0001 || fabs (sy_now - sy_new) > 0.0001)
     scale (actor, sx_new, sy_new);
 }
+/* Effect wrappers }}} */
+
+/* Misc {{{ */
+/* #ClutterActor::notify::allocation callback to clip @actor to its size
+ * whenever it changes.  Used to clip ClutterLabel:s to their allocated
+ * size. */
+static void clip_on_resize (ClutterActor * actor)
+{
+  ClutterUnit width, height;
+
+  clutter_actor_get_sizeu (actor, &width, &height);
+  clutter_actor_set_clipu (actor, 0, 0, width, height);
+}
 
 /* Utility function to set up or change a #ClutterLabel. */
 static ClutterActor *
@@ -925,6 +1107,19 @@ set_label_text_and_color (ClutterActor * label, const char * newtext,
     clutter_label_set_text (CLUTTER_LABEL (label), newtext);
   return label;
 }
+
+/* Hide @actor and only show it after the flying animation finished.
+ * Used when a new thing is created but you need to move other things
+ * out of the way to make room for it. */
+static void
+show_when_complete (ClutterActor * actor)
+{
+  clutter_actor_hide (actor);
+  add_effect_closure (Fly_effect_timeline,
+                      (ClutterEffectCompleteFunc)clutter_actor_show,
+                      actor, NULL);
+}
+/* Misc }}} */
 /* Clutter utilities }}} */
 
 /* Navigator utilities {{{ */
@@ -2080,14 +2275,9 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
                                  MBWMCompMgrClutterClientDontUpdate
                                | MBWMCompMgrClutterClientEffectRunning);
 
-      /* Like when closing in application view, the effect is to scale down
-       * vertically the thumbnail until its height becomes 0. */
-      clutter_actor_lower_bottom (apthumb->thwin);
-      clutter_actor_move_anchor_point_from_gravity (apthumb->thwin,
-                                                    CLUTTER_GRAVITY_CENTER);
-
       /* At the end of effect free @apthumb and release @cmgrcc. */
-      clutter_effect_scale (Fly_effect, apthumb->thwin, 1, 0, NULL, NULL);
+      clutter_actor_raise_top (apthumb->thwin);
+      turnoff_effect (Fly_effect_timeline, apthumb->thwin);
       add_effect_closure (Fly_effect_timeline,
                           (ClutterEffectCompleteFunc)appthumb_turned_off_1,
                           apthumb->thwin, apthumb);
@@ -2590,15 +2780,15 @@ screen_size_changed (void)
 /* Creates an effect template for @duration and also returns its timeline.
  * The timeline is usually needed to hook onto its "completed" signal. */
 static ClutterEffectTemplate *
-new_effect (ClutterTimeline ** timelinep, guint duration)
+new_animation (ClutterTimeline ** timelinep, guint duration)
 {
   ClutterEffectTemplate *effect;
 
   /*
    * It's necessary to do it this way because there's no way to retrieve
    * an effect's timeline after it's created.  Ask the template not to make
-   * copies of the timeline * but always use the very same one we provide,
-   * otherwise * it would have to be clutter_timeline_start()ed for every
+   * copies of the timeline but always use the very same one we provide,
+   * otherwise it would have to be clutter_timeline_start()ed for every
    * animation to get its signals.
    */
   *timelinep = clutter_timeline_new_for_duration (duration);
@@ -2649,8 +2839,8 @@ hd_task_navigator_init (HdTaskNavigator * self)
                    NULL);
 
   /* Effect timelines */
-  Fly_effect  = new_effect (&Fly_effect_timeline,  FLY_EFFECT_DURATION);
-  Zoom_effect = new_effect (&Zoom_effect_timeline, ZOOM_EFFECT_DURATION);
+  Fly_effect  = new_animation (&Fly_effect_timeline,  FLY_EFFECT_DURATION);
+  Zoom_effect = new_animation (&Zoom_effect_timeline, ZOOM_EFFECT_DURATION);
 
   /* Master pieces */
   SystemFont = resolve_logical_font ("SystemFont");
