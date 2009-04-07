@@ -286,6 +286,42 @@ try_to_relaunch (Display *dpy)
   g_free (matepath);
 }
 
+
+typedef enum
+{
+  OSSO_FPU_IEEE,    /* Usual processor mode, slow and accurate */
+  OSSO_FPU_FAST     /* Fast but a bit non-accurate mode        */
+} OSSO_FPU_MODE;
+
+static void hd_fpu_set_mode(OSSO_FPU_MODE mode)
+{
+#ifdef __arm__
+  if (OSSO_FPU_FAST == mode)
+  {
+    int tmp;
+    __asm__ volatile(
+        "fmrx       %[tmp], fpscr\n"
+        "orr        %[tmp], %[tmp], #(1 << 24)\n" /* flush-to-zero */
+        "orr        %[tmp], %[tmp], #(1 << 25)\n" /* default NaN */
+        "bic        %[tmp], %[tmp], #((1 << 15) | (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8))\n" /* clear exception bits */
+        "fmxr       fpscr, %[tmp]\n"
+        : [tmp] "=r" (tmp)
+      );
+  }
+  else
+  {
+    int tmp;
+    __asm__ volatile(
+        "fmrx       %[tmp], fpscr\n"
+        "bic        %[tmp], %[tmp], #(1 << 24)\n" /* flush-to-zero */
+        "bic        %[tmp], %[tmp], #(1 << 25)\n" /* default NaN */
+        "fmxr       fpscr, %[tmp]\n"
+        : [tmp] "=r" (tmp)
+      );
+  }
+#endif /* if __arm__ */
+}
+
 int
 main (int argc, char **argv)
 {
@@ -294,6 +330,9 @@ main (int argc, char **argv)
 
   signal (SIGUSR1, dump_debug_info_sighand);
   signal (SIGHUP,  relaunch);
+
+  /* fast float calculations */
+  hd_fpu_set_mode (OSSO_FPU_FAST);
 
   /*
   g_log_set_always_fatal (G_LOG_LEVEL_ERROR    |

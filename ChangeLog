@@ -1,3 +1,9 @@
+2009-04-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/main.c (hd_fpu_set_mode): New. Based on Leonid's patch for
+	NB#107185.
+	(main): Call hd_fpu_set_mode to set CPU for fast float calculations.
+
 2009-04-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#109009 desktop crashed when gridcombobox is launched
