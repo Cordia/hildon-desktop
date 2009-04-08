@@ -48,6 +48,8 @@
 #include "hd-clutter-cache.h"
 #include "hd-transition.h"
 
+#include <hildon/hildon-banner.h>
+
 #define I_(str) (g_intern_static_string ((str)))
 
 struct _HdLauncherPrivate
@@ -77,6 +79,8 @@ struct _HdLauncherPrivate
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
                                 HD_TYPE_LAUNCHER, HdLauncherPrivate))
 
+#define HD_LAUNCHER_LOADING_TIMEOUT (10)
+
 /* Signals */
 enum
 {
@@ -104,6 +108,7 @@ static void hd_launcher_populate_tree_finished (HdLauncherTree *tree,
                                                 gpointer data);
 static void hd_launcher_transition_new_frame(ClutterTimeline *timeline,
                                              gint frame_num, gpointer data);
+static gboolean hd_launcher_loading_timeout (gpointer data);
 
 /* We cannot #include "hd-transition.h" because it #include:s mb-wm.h,
  * which wants to #define _GNU_SOURCE unconditionally, but we already
@@ -540,6 +545,22 @@ _hd_launcher_transition_clicked(ClutterActor *actor,
   return TRUE;
 }
 
+static gboolean
+hd_launcher_loading_timeout (gpointer data)
+{
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (HD_LAUNCHER (data));
+
+  if (priv->launch_image)
+    {
+      _hd_launcher_transition_clicked (NULL, NULL, NULL);
+      GtkWidget* banner = hildon_banner_show_information (NULL, NULL,
+                            _("ckct_ib_application_loading_failed"));
+      hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
+    }
+
+  return FALSE;
+}
+
 /* Does the transition for the application launch */
 gboolean
 hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
@@ -659,6 +680,11 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
   clutter_actor_set_reactive ( priv->launch_image, TRUE );
   g_signal_connect (priv->launch_image, "button-release-event",
                     G_CALLBACK(_hd_launcher_transition_clicked), 0);
+
+  /* Consider the launching has failed if no window appears. */
+  g_timeout_add_seconds (HD_LAUNCHER_LOADING_TIMEOUT,
+                         hd_launcher_loading_timeout,
+                         (gpointer)launcher);
 
   /* Run the first step of the transition so we don't get flicker before
    * the timeline is called */

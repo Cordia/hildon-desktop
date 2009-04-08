@@ -1,3 +1,12 @@
+2009-04-08  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Close the loading screen and notify the user if launching an app doesn't
+	do anything for 10s.
+	Fixes: NB#100654
+
+	* src/launcher/hd-launcher.c: Added a timeout after which the loading screen
+	will be closed.
+
 2009-04-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c (create_thwin):
