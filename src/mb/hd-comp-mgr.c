@@ -699,8 +699,10 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
     goto out0;
 
   /* Get the client whose property changed. */
-  if (!(c = mb_wm_managed_client_from_xwindow (wm, event->window))
-      || !(cc = HD_COMP_MGR_CLIENT (c->cm_client)))
+  if (!(c = mb_wm_managed_client_from_xwindow (wm, event->window)))
+    /* Care about fullscreen clients. */
+    c = mb_wm_managed_client_from_frame (wm, event->window);
+  if (!c || !(cc = HD_COMP_MGR_CLIENT (c->cm_client)))
     goto out1;
 
   /* Process the property value. */

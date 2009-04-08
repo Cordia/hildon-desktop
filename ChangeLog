@@ -1,3 +1,8 @@
+2009-04-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed):
+	  Handle undecorated clients.
+
 2009-04-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-blur-group.c: Fix for NB#109907 - blurred background
