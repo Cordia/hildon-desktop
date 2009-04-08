@@ -1,3 +1,16 @@
+2009-04-08  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-page.h
+	* src/launcher/hd-launcher-tile.c
+	* src/launcher/hd-launcher.c: Added back button behaviour nearer
+	  the spec - clicking on dimmed areas goes 'back' - rather than
+	  to home.
+	* src/home/hd-render-manager.c: removed debug print
+	* src/home/hd-task-navigator.c: Now fade out only the title (not
+	  the 'plate') so we don't get such a flicker effect when zooming
+	  in to an app. fix NB#109969
+
 2009-04-08  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Correctly manage closing applications while they are hibernating.
