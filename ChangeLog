@@ -5,7 +5,7 @@
 	* src/launcher/hd-launcher-tile.c
 	* src/launcher/hd-launcher.c: Added back button behaviour nearer
 	  the spec - clicking on dimmed areas goes 'back' - rather than
-	  to home.
+	  to home. fix NB#109392, NB#105358
 	* src/home/hd-render-manager.c: removed debug print
 	* src/home/hd-task-navigator.c: Now fade out only the title (not
 	  the 'plate') so we don't get such a flicker effect when zooming
