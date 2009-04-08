@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.37-1~unreleased) unstable; urgency=low
 
-  * writeme
+  * Added dependency to clipboard-manager.
+  * Fixes: NB#93798 - Missing clipboard manager
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue,  7 Apr 2009 18:28:01 +0300
 
