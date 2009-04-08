@@ -128,8 +128,7 @@
 
 #define TITLE_LEFT_MARGIN         MARGIN_DEFAULT
 #define TITLE_RIGHT_MARGIN        MARGIN_HALF
-#define TITLE_BOTTOM_MARGIN       0
-#define TITLE_HEIGHT              (FRAME_TOP_HEIGHT-TITLE_BOTTOM_MARGIN)
+#define TITLE_HEIGHT              FRAME_TOP_HEIGHT
 
 #define PRISON_XPOS               FRAME_WIDTH
 #define PRISON_YPOS               FRAME_TOP_HEIGHT
@@ -238,6 +237,7 @@ typedef struct
    * -- @plate:       Groups the @title and the @frame graphics; used to fade
    *                  them all at once.
    * -- @title:       What to put in the thumbnail's title area.
+   *                  Centered vertically within TITLE_HEIGHT.
    * -- @close:       An invisible actor (graphics is part of the frame)
    *                  reacting to user taps to close the thumbnail.
    *                  Slightly reaches out of the thumbnail bounds.
@@ -1628,9 +1628,9 @@ create_thwin (Thumbnail * thumb)
   thumb->title = clutter_label_new ();
   clutter_label_set_font_name (CLUTTER_LABEL (thumb->title), SmallSystemFont);
   clutter_label_set_use_markup(CLUTTER_LABEL(thumb->title), TRUE);
-  clutter_actor_set_anchor_point_from_gravity (thumb->title,
-                                               CLUTTER_GRAVITY_SOUTH_WEST);
-  clutter_actor_set_position (thumb->title, TITLE_LEFT_MARGIN, TITLE_HEIGHT);
+  clutter_actor_set_anchor_point_from_gravity (thumb->title, CLUTTER_GRAVITY_WEST);
+  clutter_actor_set_position (thumb->title,
+                              TITLE_LEFT_MARGIN, TITLE_HEIGHT / 2);
   g_signal_connect (thumb->title, "notify::allocation",
                     G_CALLBACK (clip_on_resize), NULL);
   reset_thumb_title (thumb);

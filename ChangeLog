@@ -1,5 +1,10 @@
 2009-04-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-task-navigator.c (create_thwin):
+	  Center thumbnail titles vertically.
+
+2009-04-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#93876 When a currently running application is closed the view
 		 is not zooming out to the swicther view.
 
