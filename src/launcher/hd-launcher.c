@@ -528,7 +528,7 @@ _hd_launcher_transition_clicked(ClutterActor *actor,
 {
   hd_launcher_window_created();
   /* check to see if we had any apps, because we may want to change state... */
-  if (hd_render_manager_has_apps())
+  if (hd_task_navigator_has_apps())
     hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
   else
     hd_render_manager_set_state(HDRM_STATE_HOME);

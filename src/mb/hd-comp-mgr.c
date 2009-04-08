@@ -1059,13 +1059,11 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                    * NOTE The test above breaks if the client changed
                    * the flag after it's been mapped. */
                   hd_switcher_remove_window_actor (priv->switcher_group,
-                                                   actor);
+                                                   actor, cclient);
 
                   if (c->window->xwindow == hd_wm_current_app_is (NULL, 0))
                     /* We are in APP state and foreground application closed. */
-                    hd_render_manager_set_state (hd_render_manager_has_apps ()
-                                                 ? HDRM_STATE_TASK_NAV
-                                                 : HDRM_STATE_HOME);
+                    hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
                 }
 	      else if (app->leader == app && app->followers)
 	        {
@@ -1996,6 +1994,11 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                                       next,
                                       MBWMCompMgrClientEventUnmap);
               }
+            else if ((app->stack_index < 0
+                      || (app->leader == app && !app->followers))
+                     && hd_task_navigator_is_crowded ()
+                     && c->window->xwindow == hd_wm_current_app_is (NULL, 0))
+              hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
             else
               hd_transition_close_app (hmgr, c);
             app->map_effect_before = FALSE;
@@ -2189,7 +2192,7 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
 
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cc);
 
-      hd_switcher_remove_window_actor (priv->switcher_group, actor);
+      hd_switcher_remove_window_actor (priv->switcher_group, actor, cc);
 
       mb_wm_object_unref (MB_WM_OBJECT (cc));
     }

@@ -1,3 +1,32 @@
+2009-04-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#93876 When a currently running application is closed the view
+		 is not zooming out to the swicther view.
+
+	* src/home/hd-task-navigator.h:
+	  Changed hd_task_navigaotor_is/has_*() not to take $self,
+	  so they can be used anywhere.
+	* src/launcher/hd-launcher.c (_hd_launcher_transition_clicked):
+	  Updated for that.
+	* src/home/hd-task-navigator.c:
+	  Delay hd_task_navigator_remove_window() until zooming completes.
+	  Don't blow up if you try to remove an actor whose cmgrcc is
+	  already clear.
+	* src/home/hd-render-manager.h:
+	  Removed hd_render_manager_has_apps(),
+	  use hd_task_navigator_has_apps() instead.
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  Now you can safely go to TASK_NAV state anytime,
+	  hdrm_set_state() will take you to HOME if the switcher is empty.
+	  Also guard the ClutterClient while zooming in.
+	* src/home/hd-switcher.h
+	* src/home/hd-switcher.c:
+	  hd_switcher_remove_window_actor() changed to assure that the
+	  CompMgrClutterClient is not destroyed as long as HdTaskNavigator
+	  animates (if it chooses to).
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_effect):
+	  Go to TASK_NAV state.
+
 2009-04-07  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Move HdAppMgr initialization to main() so it can know about closing up,

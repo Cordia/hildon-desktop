@@ -773,7 +773,7 @@ stop_animation (ClutterTimeline * timeline)
 static gboolean
 need_to_animate (ClutterActor * actor)
 {
-  if (!hd_task_navigator_is_active (HD_TASK_NAVIGATOR (Navigator)))
+  if (!hd_task_navigator_is_active ())
     /* Navigator is not visible, animation wouldn't be seen. */
     return FALSE;
   else if (CLUTTER_IS_GROUP (actor))
@@ -1040,6 +1040,13 @@ check_and_move (ClutterActor * actor, gint xpos_new, gint ypos_new)
 static void
 resize (ClutterActor * actor, gint width, gint height)
 {
+  /*
+   * NOTE resize() alone won't cause animation_in_progress()
+   *      because it doesn't use %ClutterEffectTemplate:s.
+   *      However, in practice this is not a problem because
+   *      things are not resize()d if they don't move and move()
+   *      does cause animation_in_progress().
+   */
   if (need_to_animate (actor))
     resize_effect (Fly_effect_timeline, actor, width, height);
   else
@@ -1123,23 +1130,30 @@ show_when_complete (ClutterActor * actor)
 /* Clutter utilities }}} */
 
 /* Navigator utilities {{{ */
-/* Tells whether we're in switcher view view. */
+/* Tells whether the switcher is shown. */
 gboolean
-hd_task_navigator_is_active (HdTaskNavigator * self)
+hd_task_navigator_is_active (void)
 {
-  return CLUTTER_ACTOR_IS_VISIBLE (self);
+  return CLUTTER_ACTOR_IS_VISIBLE (Navigator);
 }
 
-/* Tells whether the navigator (@Navigator_area) is empty. */
+/* Tells whether the navigator is empty. */
 gboolean
-hd_task_navigator_is_empty (HdTaskNavigator * self)
+hd_task_navigator_is_empty (void)
 {
   return NThumbnails == 0;
 }
 
-/* Tells whether we have any applications */
+/* Returns whether at least thumbnails populate the switcher. */
 gboolean
-hd_task_navigator_has_apps (HdTaskNavigator * self)
+hd_task_navigator_is_crowded (void)
+{
+  return NThumbnails > 1;
+}
+
+/* Tells whether we have any application thumbnails. */
+gboolean
+hd_task_navigator_has_apps (void)
 {
   return Thumbnails && Thumbnails != Notifications;
 }
@@ -1147,7 +1161,7 @@ hd_task_navigator_has_apps (HdTaskNavigator * self)
 /* Tells whether we have any notification, either in the
  * notification area or shown in the title area of some thumbnail. */
 gboolean
-hd_task_navigator_has_notifications (HdTaskNavigator * self)
+hd_task_navigator_has_notifications (void)
 {
   return Notifications != NULL;
 }
@@ -1167,7 +1181,7 @@ hd_task_navigator_has_window (HdTaskNavigator * self, ClutterActor * win)
 }
 
 ClutterActor *
-hd_task_navigator_find_app_actor (HdTaskNavigator *self, const gchar *id)
+hd_task_navigator_find_app_actor (HdTaskNavigator * self, const gchar * id)
 {
   const GList *li;
   const Thumbnail *thumb;
@@ -1738,7 +1752,7 @@ need_to_load_video (Thumbnail * apthumb)
 static void
 claim_win (Thumbnail * apthumb)
 {
-  g_assert (hd_task_navigator_is_active (HD_TASK_NAVIGATOR (Navigator)));
+  g_assert (hd_task_navigator_is_active ());
 
   /*
    * Take @apthumb->apwin into our care even if there is a video screenshot.
@@ -1903,7 +1917,7 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
   gdouble xscale, yscale;
   const Thumbnail *apthumb;
 
-  g_assert (hd_task_navigator_is_active (self));
+  g_assert (hd_task_navigator_is_active ());
   if (!(apthumb = find_by_apwin (win)))
     goto damage_control;
 
@@ -2049,7 +2063,7 @@ hd_task_navigator_replace_window (HdTaskNavigator * self,
   apthumb->saved_title = NULL;
 
   /* Discard current .apwin. */
-  showing = hd_task_navigator_is_active (self);
+  showing = hd_task_navigator_is_active ();
   if (showing)
     hd_render_manager_return_app (apthumb->apwin);
   g_object_unref (apthumb->apwin);
@@ -2220,13 +2234,24 @@ appthumb_turned_off_2 (ClutterActor * unused,
                                  MBWMCompMgrClutterClientDontUpdate
                                | MBWMCompMgrClutterClientEffectRunning);
   mb_wm_object_unref (MB_WM_OBJECT (cmgrcc));
+  g_object_unref (Fly_effect);
+}
+
+/* add_effect_closure() callback to to resume a delayed remove_window(). */
+static void
+remove_window_later (ClutterActor * win, EffectCompleteClosure * closure)
+{
+  hd_task_navigator_remove_window (HD_TASK_NAVIGATOR (Navigator), win,
+                                   closure->fun, closure->funparam);
+  g_slice_free (EffectCompleteClosure, closure);
 }
 
 /*
  * Asks the navigator to forget about @win.  If @fun is not %NULL it is
  * called when @win is actually removed from the screen; this may take
  * some time if there is an effect.  If not, it is called immedeately
- * with @funparam.
+ * with @funparam.  If there is zooming in progress the operation is
+ * delayed until it's completed.
  */
 void
 hd_task_navigator_remove_window (HdTaskNavigator * self,
@@ -2237,6 +2262,20 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
   GList *li;
   Thumbnail *apthumb;
   ClutterActor *newborn;
+
+  /* Postpone? */
+  if (animation_in_progress (Zoom_effect))
+    { g_debug ("delayed");
+      EffectCompleteClosure *closure;
+
+      closure = g_slice_new (EffectCompleteClosure);
+      closure->fun = fun;
+      closure->funparam = funparam;
+      add_effect_closure (Zoom_effect_timeline,
+                          (ClutterEffectCompleteFunc)remove_window_later,
+                          win, closure);
+      return;
+    }
 
   /* Find @apthumb for @win.  We cannot use find_by_apiwin() because
    * we need @li to be able to remove @apthumb from @Thumbnails. */
@@ -2262,20 +2301,26 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
 
   /* If we're active let's do the TV-turned-off effect on @apthumb.
    * This effect is run in parallel with the flying effects. */
-  if (hd_task_navigator_is_active (self))
+  if (hd_task_navigator_is_active ())
     {
       MBWMCompMgrClutterClient *cmgrcc;
 
-      /* Hold a reference on @win's clutter client.
-       * This is taken from hd-comp-mgr.c:hd_comp_mgr_effect(). */
-      cmgrcc = g_object_get_data (G_OBJECT (apthumb->apwin),
-                                  "HD-MBWMCompMgrClutterClient");
+      /* Hold a reference on @win's clutter client. */
+      if (!(cmgrcc = g_object_get_data (G_OBJECT (apthumb->apwin),
+                                        "HD-MBWMCompMgrClutterClient")))
+        { /* No point in trying to animate, the actor is destroyed. */
+          g_critical ("cmgrcc is already unset for %p", apthumb->apwin);
+          goto damage_control;
+        }
+
       mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
       mb_wm_comp_mgr_clutter_client_set_flags (cmgrcc,
                                  MBWMCompMgrClutterClientDontUpdate
                                | MBWMCompMgrClutterClientEffectRunning);
 
-      /* At the end of effect free @apthumb and release @cmgrcc. */
+      /* Grab @Fly_effect so animation_in_progress() can return %TRUE.
+       * At the end of effect free @apthumb and release @cmgrcc. */
+      g_object_ref (Fly_effect);
       clutter_actor_raise_top (apthumb->thwin);
       turnoff_effect (Fly_effect_timeline, apthumb->thwin);
       add_effect_closure (Fly_effect_timeline,
@@ -2286,7 +2331,10 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
                           apthumb->thwin, cmgrcc);
     }
   else
-    free_thumb (apthumb);
+    {
+damage_control:
+      free_thumb (apthumb);
+    }
 
   /* Do all (TV, windows flying, add notification thumbnail) effects at once. */
   Thumbnails = g_list_delete_link (Thumbnails, li);
@@ -2318,7 +2366,7 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
 
   g_return_if_fail (!hd_task_navigator_has_window (self, win));
   apthumb = create_appthumb (win);
-  if (hd_task_navigator_is_active (self))
+  if (hd_task_navigator_is_active ())
     claim_win (apthumb);
 
   /* Add the @apthumb at the end of application thumbnails. */
@@ -2348,7 +2396,7 @@ hd_task_navigator_remove_dialog (HdTaskNavigator * self,
   g_object_unref (dialog);
   g_ptr_array_remove_index (apthumb->dialogs, i);
 
-  if (hd_task_navigator_is_active (self))
+  if (hd_task_navigator_is_active ())
     hd_render_manager_return_dialog (dialog);
 }
 
@@ -2379,7 +2427,7 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
       return;
 
   /* Claim @dialog now if we're active. */
-  if (hd_task_navigator_is_active (self))
+  if (hd_task_navigator_is_active ())
     clutter_actor_reparent (dialog, apthumb->windows);
 
   /* Add @dialog to @apthumb->dialogs. */
@@ -2660,7 +2708,7 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
     }
 
   /* Reset the highlighting if no more notifications left. */
-  if (!hd_task_navigator_has_notifications (self))
+  if (!hd_task_navigator_has_notifications ())
     hd_title_bar_set_switcher_pulse (
                       HD_TITLE_BAR (hd_render_manager_get_title_bar ()),
                       FALSE);
@@ -2703,12 +2751,8 @@ navigator_hidden (ClutterActor * navigator, gpointer unused)
    * of the involved actors. */
   if (animation_in_progress (Zoom_effect))
     {
-      /* Make sure add_effect_closure()s are not called.  For the @Zoom_effect
-       * they are %HdSwitcher's and we don't want to call them when zooming
-       * is cancellced. */
-      g_signal_handlers_disconnect_matched (Zoom_effect_timeline,
-                                            G_SIGNAL_MATCH_FUNC, 0, 0, NULL,
-                                            call_effect_closure, NULL);
+      /* %HdSwitcher must make sure it doesn't do silly things if the
+       * user cancelled the zooming. */
       stop_animation (Zoom_effect_timeline);
       g_assert (!animation_in_progress (Zoom_effect));
     }

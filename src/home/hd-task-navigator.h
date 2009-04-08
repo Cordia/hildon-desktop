@@ -27,10 +27,11 @@ struct _HdTaskNavigatorClass
 GType            hd_task_navigator_get_type  (void);
 HdTaskNavigator *hd_task_navigator_new       (void);
 
-gboolean hd_task_navigator_is_active  (HdTaskNavigator *self);
-gboolean hd_task_navigator_is_empty   (HdTaskNavigator *self);
-gboolean hd_task_navigator_has_apps   (HdTaskNavigator *self);
-gboolean hd_task_navigator_has_notifications (HdTaskNavigator * self);
+gboolean hd_task_navigator_is_active  (void);
+gboolean hd_task_navigator_is_empty   (void);
+gboolean hd_task_navigator_is_crowded (void);
+gboolean hd_task_navigator_has_apps   (void);
+gboolean hd_task_navigator_has_notifications (void);
 gboolean hd_task_navigator_has_window (HdTaskNavigator * self,
                                        ClutterActor * win);
 ClutterActor *hd_task_navigator_find_app_actor (HdTaskNavigator *self,

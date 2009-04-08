@@ -731,7 +731,7 @@ void hd_render_manager_sync_clutter_before ()
         g_error("%s: NEVER supposed to be in HDRM_STATE_UNDEFINED", __func__);
 	return;
       case HDRM_STATE_HOME:
-        if (hd_task_navigator_is_empty(priv->task_nav))
+        if (hd_task_navigator_is_empty())
           visible_top_left = HDRM_BUTTON_LAUNCHER;
         else
           visible_top_left = HDRM_BUTTON_TASK_NAV;
@@ -1091,17 +1091,18 @@ gboolean hd_render_manager_get_visible(HDRMButtonEnum button)
   return FALSE;
 }
 
-gboolean hd_render_manager_has_apps()
-{
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
-  return hd_task_navigator_has_apps(priv->task_nav);
-}
-
 /* FIXME: this should not be exposed */
 ClutterContainer *hd_render_manager_get_front_group(void)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   return CLUTTER_CONTAINER(priv->front);
+}
+
+/* #ClutterEffectCompleteFunc for hd_task_navigator_zoom_out(). */
+static void zoom_out_completed(ClutterActor *actor,
+                               MBWMCompMgrClutterClient *cmgrcc)
+{
+  mb_wm_object_unref(MB_WM_OBJECT(cmgrcc));
 }
 
 void hd_render_manager_set_state(HDRMStateEnum state)
@@ -1139,6 +1140,17 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       priv->previous_state = priv->state;
       priv->state = state;
 
+      /* Goto HOME instead of an empty swither.  This way the caller
+       * needn't care whether the switcher is empty, we'll do what
+       * it meant. */
+      if (state == HDRM_STATE_TASK_NAV && hd_task_navigator_is_empty())
+        {
+          state = priv->state = HDRM_STATE_HOME;
+          g_debug("you must have meant STATE %s -> STATE %s",
+                  hd_render_manager_state_str(oldstate),
+                  hd_render_manager_state_str(state));
+        }
+
       /* Enter or leave the task switcher. */
       if (STATE_NEED_TASK_NAV (state))
         {
@@ -1161,7 +1173,12 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                    * transparent while exiting it. */
                   clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav), 255);
                   range_set(&priv->task_nav_opacity, 1);
-                  hd_task_navigator_zoom_out(priv->task_nav, actor, NULL, NULL);
+
+                  /* Make sure @cmgrcc stays around as long as needed. */
+                  mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
+                  hd_task_navigator_zoom_out(priv->task_nav, actor,
+                          (ClutterEffectCompleteFunc)zoom_out_completed,
+                          cmgrcc);
                 }
             }
           else if (oldstate != HDRM_STATE_LAUNCHER)

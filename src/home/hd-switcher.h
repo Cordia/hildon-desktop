@@ -57,6 +57,10 @@ struct _HdSwitcher
   HdSwitcherPrivate    *priv;
 };
 
+/* Declare it so we don't have to #include further matchbox headers
+ * (which could break things). */
+struct MBWMCompMgrClutterClient;
+
 GType hd_switcher_get_type (void);
 
 void hd_switcher_add_window_actor    (HdSwitcher   * switcher,
@@ -69,7 +73,8 @@ void hd_switcher_add_dialog (HdSwitcher *switcher,
                              ClutterActor *dialog);
 
 void hd_switcher_remove_window_actor (HdSwitcher   * switcher,
-				      ClutterActor * actor);
+				      ClutterActor * actor,
+                                      struct MBWMCompMgrClutterClient * cmgrcc);
 void hd_switcher_remove_notification (HdSwitcher * switcher,
                                       HdNote * note);
 void hd_switcher_remove_dialog (HdSwitcher * switcher,

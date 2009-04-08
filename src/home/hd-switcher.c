@@ -6,6 +6,7 @@
  * Author:  Johan Bilien <johan.bilien@nokia.com>
  *          Tomas Frydrych <tf@o-hand.com>
  *          Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+ *          80% of this file should be cut and pasted to /dev/null
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -167,13 +168,8 @@ static void
 launcher_back_button_clicked (HdLauncher *launcher,
                               gpointer *data)
 {
-  HdSwitcherPrivate *priv = HD_SWITCHER (data)->priv;
-
   g_debug("launcher_back_button_clicked\n");
-  if (!hd_task_navigator_is_empty (priv->task_nav))
-    hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
-  else
-    hd_render_manager_set_state(HDRM_STATE_HOME);
+  hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
 }
 
 static void
@@ -367,9 +363,10 @@ hd_switcher_clicked (HdSwitcher *switcher)
       g_debug("hd_switcher_clicked: show switcher, switcher=%p\n", switcher);
       hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
     }
-  else if (hd_task_navigator_is_empty(priv->task_nav))
+  else if (hd_task_navigator_is_empty())
     hd_render_manager_set_state(HDRM_STATE_LAUNCHER);
-  else hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+  else
+    hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
 }
 
 static gboolean
@@ -495,7 +492,7 @@ hd_switcher_relaunch_app (HdSwitcher *switcher,
   HdSwitcherRelaunchAppData *cb_data;
 
   /* Get the actor for the window and act as if the user had selected it. */
-  actor = hd_task_navigator_find_app_actor ( priv->task_nav,
+  actor = hd_task_navigator_find_app_actor (priv->task_nav,
               hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
   if (!actor)
     {
@@ -526,9 +523,7 @@ static void
 hd_switcher_insufficient_memory(HdSwitcher *switcher,
                                 gpointer data)
 {
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-
-  if (hd_task_navigator_has_apps (priv->task_nav))
+  if (hd_task_navigator_has_apps ())
     hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME);
@@ -544,8 +539,12 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   HdCompMgrClient       *hclient;
 
-  g_debug("hd_switcher_zoom_in_complete: switcher=%p actor=%p\n", switcher,
-          actor);
+  g_debug ("hd_switcher_zoom_in_complete(%p)", actor);
+
+  if (hd_render_manager_get_state () != HDRM_STATE_TASK_NAV)
+    /* Don't do anything if the user exited the switcher
+     * during zooming. */
+    return;
 
   hclient = g_object_get_data (G_OBJECT (actor),
                                "HD-MBWMCompMgrClutterClient");
@@ -567,15 +566,12 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       hd_render_manager_stop_transition();
 
       c = MB_WM_COMP_MGR_CLIENT(hclient)->wm_client;
-      g_debug("hd_switcher_zoom_in_complete: calling "
-              "mb_wm_activate_client c=%p\n", c);
+      g_debug("mb_wm_activate_client(%p)", c);
       mb_wm_activate_client (c->wmref, c);
     }
   else
     {
-      g_debug("hd_switcher_zoom_in_complete: calling "
-              "hd_comp_mgr_wakeup_client comp_mgr=%p hclient=%p\n",
-              priv->comp_mgr, hclient);
+      g_debug("hd_comp_mgr_wakeup_client(%p)", hclient);
       hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
     }
 
@@ -701,21 +697,13 @@ hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
 }
 
 /* Called when a window or a notification is removed from the switcher.
- * Exit the switcher if it's become empty and set up the switcher button
- * appropriately. */
+ * Exit the switcher if it's become empty. */
 static void
-hd_switcher_something_removed (HdSwitcher * switcher)
+hd_switcher_something_removed (void)
 {
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-  gboolean           have_children;
-
-  have_children = !hd_task_navigator_is_empty(priv->task_nav);
-  if (!have_children &&
-      (hd_render_manager_get_state()==HDRM_STATE_TASK_NAV ||
-       STATE_IS_APP(hd_render_manager_get_state())))
-    {
-      hd_render_manager_set_state(HDRM_STATE_HOME);
-    }
+  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV
+      && !hd_task_navigator_has_apps ())
+    hd_render_manager_set_state (HDRM_STATE_HOME);
 }
 
 void
@@ -724,7 +712,7 @@ hd_switcher_remove_notification (HdSwitcher * switcher, HdNote * note)
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
   hd_task_navigator_remove_notification (priv->task_nav, note);
-  hd_switcher_something_removed (switcher);
+  hd_switcher_something_removed ();
 }
 
 void
@@ -735,26 +723,25 @@ hd_switcher_remove_dialog (HdSwitcher * switcher,
   hd_task_navigator_remove_dialog (priv->task_nav, dialog);
 }
 
-/* Called when #HdTaskNavigator has finished removing a thumbnail
- * from the navigator area. */
 static void
-hd_switcher_window_actor_removed (ClutterActor * unused, gpointer switcher)
+hd_switcher_window_removed (ClutterActor * unused,
+                            MBWMCompMgrClutterClient * cmgrcc)
 {
-  hd_switcher_something_removed (switcher);
+  mb_wm_object_unref (MB_WM_OBJECT (cmgrcc));
+  hd_switcher_something_removed ();
 }
 
 void
-hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor)
+hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor,
+                                 MBWMCompMgrClutterClient * cmgrcc)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-  hd_task_navigator_remove_window (priv->task_nav, actor,
-                                   hd_switcher_window_actor_removed,
-                                   switcher);
 
-  /* Go to HOME iff we are showing and just become empty. */
-  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV
-      && hd_task_navigator_is_empty(priv->task_nav))
-    hd_render_manager_set_state(HDRM_STATE_HOME);
+  /* Make sure @cmgrcc stays as long as %HdTaskNavigator animates. */
+  mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
+  hd_task_navigator_remove_window (priv->task_nav, actor,
+                  (ClutterEffectCompleteFunc)hd_switcher_window_removed,
+                  cmgrcc);
 }
 
 void
@@ -763,7 +750,6 @@ hd_switcher_replace_window_actor (HdSwitcher   * switcher,
 				  ClutterActor * new)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-
   hd_task_navigator_replace_window (priv->task_nav, old, new);
 }
 
@@ -772,7 +758,6 @@ hd_switcher_hibernate_window_actor (HdSwitcher   * switcher,
 				    ClutterActor * actor)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-
   hd_task_navigator_hibernate_window (priv->task_nav, actor);
 }
 
