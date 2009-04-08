@@ -7,7 +7,6 @@ hildon-desktop (1:2.2.37-1~unreleased) unstable; urgency=low
 hildon-desktop (1:2.2.36-1) unstable; urgency=low
 
   Kimmo:
-  * Added libcail-dev and libcail-common dependencies for a11y.
   * Now using fast floats using a patch from Leonid.
 
   Adam:
