@@ -1,7 +1,28 @@
-hildon-desktop (1:2.2.37-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.37-1) unstable; urgency=low
 
+  Kimmo:
   * Added dependency to clipboard-manager.
   * Fixes: NB#93798 - Missing clipboard manager
+
+  Gordon:
+  * Fixes: NB#109392 - Task Launcher view/sub group view is not closing if
+    tapped on dimmed edges.
+  * Fixes: NB#105358 - Tapping on dimmed area in task launcher should go to
+    previous level
+  * Fixes: NB#109969 - Transition while maximising the application in switcher
+    is not proper.
+
+  Marc:
+  * Fixes: NB#110391 - Desktop is crashing most of the times after bg-kill in
+    a mentioned scenario.
+  * Fixes: NB#100654 - Application startup failed note is not shown when the
+    application takes more than 10 seconds.
+  * Fixes: NB#105817 - prestarted applications must be stopped or closed with
+    desktop
+
+  Adam:
+  * Fixes: NB#93876 - When a currently running application is closed the view
+    is not zooming out to the swicther view.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue,  7 Apr 2009 18:28:01 +0300
 
