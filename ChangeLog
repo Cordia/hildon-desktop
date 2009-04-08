@@ -1,3 +1,11 @@
+2009-04-08  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Correctly manage closing applications while they are hibernating.
+
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-app-mgr.h:
+	* src/mb/hd-comp-mgr.c:
+
 2009-04-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Little clean up: be HdLauncher the launcher group.

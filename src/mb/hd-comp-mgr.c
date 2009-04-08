@@ -2193,6 +2193,14 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
 
       hd_switcher_remove_window_actor (priv->switcher_group, actor, cc);
 
+      g_hash_table_remove (priv->hibernating_apps,
+                           (gpointer)h_client->priv->hibernation_key);
+
+      if (h_client->priv->app)
+        {
+          hd_app_mgr_app_stop_hibernation (h_client->priv->app);
+        }
+
       mb_wm_object_unref (MB_WM_OBJECT (cc));
     }
   else
@@ -2209,12 +2217,12 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
         }
       else /* Either primary or a secondary who's lost its leader. */
         mb_wm_client_deliver_delete (c);
-    }
 
-  if (h_client->priv->app)
-    {
-      /* Notify HdAppMgr that the application has been closed. */
-      hd_app_mgr_app_closed (h_client->priv->app);
+      if (h_client->priv->app)
+        {
+          /* Notify HdAppMgr that the application has been closed. */
+          hd_app_mgr_app_closed (h_client->priv->app);
+        }
     }
 }
 

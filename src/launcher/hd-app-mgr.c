@@ -692,8 +692,8 @@ hd_app_mgr_kill (HdLauncherApp *app)
 void hd_app_mgr_app_opened (HdLauncherApp *app,
                             GPid pid)
 {
-  g_debug ("%s: app %s shown\n", __FUNCTION__,
-      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
+  g_debug ("%s: app %s shown, pid given: %d\n", __FUNCTION__,
+      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)), pid);
 
   hd_launcher_app_set_state (app, HD_APP_STATE_SHOWN);
 
@@ -720,9 +720,6 @@ hd_app_mgr_app_closed (HdLauncherApp *app)
   g_debug ("%s: app %s closed\n", __FUNCTION__,
       hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
 
-  if (hd_launcher_app_get_state (app) == HD_APP_STATE_INACTIVE)
-    return;
-
   if (hd_launcher_app_get_state (app) == HD_APP_STATE_HIBERNATING)
     {
       hd_launcher_app_set_pid (app, 0);
@@ -744,6 +741,14 @@ hd_app_mgr_app_closed (HdLauncherApp *app)
   hd_launcher_app_set_pid (app, 0);
   hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
   hd_app_mgr_state_check ();
+}
+
+/* Called when an hibernating app is closed in the switcher. */
+void
+hd_app_mgr_app_stop_hibernation (HdLauncherApp *app)
+{
+  hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
+  hd_app_mgr_app_closed (app);
 }
 
 static void
