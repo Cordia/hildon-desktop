@@ -280,12 +280,10 @@ tidy_blur_group_paint (ClutterActor *actor)
   TidyBlurGroup *container = TIDY_BLUR_GROUP(group);
   TidyBlurGroupPrivate *priv = container->priv;
 
-  if (!tidy_blur_group_children_visible(group))
-    return;
-
   /* If we are rendering normally then shortcut all this, and
    just render directly without the texture */
-  if (!tidy_blur_group_source_buffered(actor))
+  if (!tidy_blur_group_source_buffered(actor) ||
+      !tidy_blur_group_children_visible(group))
     {
       /* set our buffer as damaged, so next time it gets re-created */
       priv->current_blur_step = 0;
