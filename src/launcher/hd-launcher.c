@@ -102,6 +102,9 @@ static void hd_launcher_category_tile_clicked (HdLauncherTile *tile,
                                                gpointer data);
 static void hd_launcher_application_tile_clicked (HdLauncherTile *tile,
                                                   gpointer data);
+static gboolean hd_launcher_background_clicked (HdLauncher *self,
+                                                ClutterButtonEvent *event,
+                                                gpointer *data);
 static void hd_launcher_populate_tree_finished (HdLauncherTree *tree,
                                                 gpointer data);
 static void hd_launcher_transition_new_frame(ClutterTimeline *timeline,
@@ -193,6 +196,11 @@ static void hd_launcher_constructed (GObject *gobject)
   g_signal_connect (priv->tree, "finished",
                     G_CALLBACK (hd_launcher_populate_tree_finished),
                     NULL);
+
+  /* Add callback for clicked background */
+  clutter_actor_set_reactive ( self, TRUE );
+  g_signal_connect (self, "button-release-event",
+                    G_CALLBACK(hd_launcher_background_clicked), 0);
 
   /* Blurring for the top-level launcher */
   priv->top_blur = tidy_blur_group_new();
@@ -296,7 +304,7 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
     return FALSE;
 
   if (priv->active_page == top_page)
-    g_signal_emit (data, launcher_signals[HIDDEN], 0);
+    g_signal_emit (hd_launcher_get (), launcher_signals[HIDDEN], 0);
   else
     {
       hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
@@ -763,4 +771,21 @@ hd_launcher_transition_stop(void)
   g_datalist_foreach(&priv->pages,
                      _hd_launcher_transition_stop_foreach,
                      (gpointer)0);
+}
+
+static gboolean
+hd_launcher_background_clicked (HdLauncher *self,
+                                ClutterButtonEvent *event,
+                                gpointer *data)
+{
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+
+  /* We don't want to send a 'clicked' event if the user has dragged more
+   * than the allowed distance */
+  if (priv->active_page &&
+      hd_launcher_page_get_drag_distance(HD_LAUNCHER_PAGE(priv->active_page)) <
+                                         HD_LAUNCHER_TILE_MAX_DRAG)
+    hd_launcher_back_button_clicked(0, 0, 0);
+
+  return TRUE;
 }

@@ -894,3 +894,15 @@ ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page)
   adjust = tidy_scroll_bar_get_adjustment (TIDY_SCROLL_BAR(bar));
   return tidy_adjustment_get_valuex( adjust );
 }
+
+/* Return how far the user has dragged */
+float hd_launcher_page_get_drag_distance(HdLauncherPage *page)
+{
+  HdLauncherPagePrivate *priv;
+
+  if (!HD_IS_LAUNCHER_PAGE(page))
+      return 0;
+
+  priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
+  return priv->drag_distance;
+}

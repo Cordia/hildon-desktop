@@ -84,6 +84,7 @@ void hd_launcher_page_transition(HdLauncherPage *page,
                                  HdLauncherPageTransition trans_type);
 void hd_launcher_page_transition_stop(HdLauncherPage *page);
 ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page);
+float hd_launcher_page_get_drag_distance(HdLauncherPage *page);
 
 /* Fixed sizes.
  * FIXME: These should come from getting the screen size

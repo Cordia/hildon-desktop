@@ -1636,8 +1636,7 @@ void hd_render_manager_set_launcher_subview(gboolean subview)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  g_debug("%s: %s", __FUNCTION__, subview ? "SUBVIEW":"MAIN");
-
+  /*g_debug("%s: %s", __FUNCTION__, subview ? "SUBVIEW":"MAIN");*/
   if (subview)
     hd_render_manager_set_blur(priv->current_blur |
         HDRM_ZOOM_FOR_LAUNCHER_SUBMENU);

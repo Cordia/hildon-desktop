@@ -1799,7 +1799,7 @@ claim_win (Thumbnail * apthumb)
   /* Restore the opacity of the actors that have been faded out while zooming,
    * so we won't have trouble if we happen to to need to enter the navigator
    * directly. */
-  clutter_actor_set_opacity (apthumb->plate, 255);
+  clutter_actor_set_opacity (apthumb->title, 255);
 }
 
 /* Stop managing @apthumb's application window and give it back
@@ -1940,7 +1940,7 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
                        -xpos / xscale + apthumb->inapwin.x,
                        -ypos / yscale + apthumb->inapwin.y,
                        NULL, NULL);
-  clutter_effect_fade (Zoom_effect, apthumb->plate, 0, NULL, NULL);
+  clutter_effect_fade (Zoom_effect, apthumb->title, 0, NULL, NULL);
 
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)zoom_in_complete,
@@ -2007,8 +2007,8 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   clutter_effect_scale (Zoom_effect, Scroller, 1, 1, NULL, NULL);
   clutter_effect_move  (Zoom_effect, Scroller, 0, 0, NULL, NULL);
 
-  clutter_actor_set_opacity (apthumb->plate, 0);
-  clutter_effect_fade (Zoom_effect, apthumb->plate, 255, NULL, NULL);
+  clutter_actor_set_opacity (apthumb->title, 0);
+  clutter_effect_fade (Zoom_effect, apthumb->title, 255, NULL, NULL);
 
   add_effect_closure (Zoom_effect_timeline, fun, win, funparam);
   return;

@@ -466,7 +466,7 @@ hd_launcher_tile_button_release (ClutterActor       *actor,
       HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
 
       if (!priv->is_pressed)
-        return FALSE;
+        return TRUE;
 
       priv->is_pressed = FALSE;
 
