@@ -54,8 +54,6 @@
 
 struct _HdLauncherPrivate
 {
-  ClutterActor *group;
-
   GData *pages;
   ClutterActor *active_page;
   ClutterActor *top_blur; /* blurring applied to top page when in sub page */
@@ -95,7 +93,7 @@ enum
 
 static guint launcher_signals[LAST_SIGNAL] = {0, };
 
-G_DEFINE_TYPE (HdLauncher, hd_launcher, G_TYPE_OBJECT);
+G_DEFINE_TYPE (HdLauncher, hd_launcher, CLUTTER_TYPE_GROUP);
 
 /* Forward declarations */
 static void hd_launcher_constructed (GObject *gobject);
@@ -184,24 +182,23 @@ hd_launcher_init (HdLauncher *self)
 
 static void hd_launcher_constructed (GObject *gobject)
 {
+  ClutterActor *self = CLUTTER_ACTOR (gobject);
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (gobject);
+
+  clutter_actor_hide (self);
+  clutter_actor_set_size (self,
+                          HD_LAUNCHER_PAGE_WIDTH, HD_LAUNCHER_PAGE_WIDTH);
 
   priv->tree = hd_launcher_tree_new (NULL);
   g_signal_connect (priv->tree, "finished",
                     G_CALLBACK (hd_launcher_populate_tree_finished),
                     NULL);
 
-  priv->group = clutter_group_new ();
-  clutter_actor_hide(priv->group);
-  clutter_actor_set_size (priv->group, HD_LAUNCHER_PAGE_WIDTH,
-                                       HD_LAUNCHER_PAGE_WIDTH);
-
   /* Blurring for the top-level launcher */
   priv->top_blur = tidy_blur_group_new();
   clutter_actor_show(priv->top_blur);
   tidy_blur_group_set_use_alpha(priv->top_blur, TRUE);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->group),
-                               priv->top_blur);
+  clutter_container_add_actor (CLUTTER_CONTAINER (self), priv->top_blur);
 
   ClutterActor *top_page = hd_launcher_page_new (NULL, NULL);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->top_blur),
@@ -236,12 +233,6 @@ hd_launcher_dispose (GObject *gobject)
       priv->top_blur = NULL;
     }
 
-  if (priv->group)
-    {
-      clutter_actor_destroy (priv->group);
-      priv->group = NULL;
-    }
-
   g_datalist_clear (&priv->pages);
 
   G_OBJECT_CLASS (hd_launcher_parent_class)->dispose (gobject);
@@ -250,12 +241,13 @@ hd_launcher_dispose (GObject *gobject)
 void
 hd_launcher_show (void)
 {
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+  ClutterActor *self = CLUTTER_ACTOR (hd_launcher_get ());
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (self);
 
   ClutterActor *top_page = g_datalist_get_data (&priv->pages,
                                                 HD_LAUNCHER_ITEM_TOP_CATEGORY);
   priv->active_page = top_page;
-  clutter_actor_show (priv->group);
+  clutter_actor_show (self);
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
         HD_LAUNCHER_PAGE_TRANSITION_IN);
 }
@@ -287,9 +279,7 @@ hd_launcher_hide (void)
 void
 hd_launcher_hide_final (void)
 {
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-
-  clutter_actor_hide (priv->group);
+  clutter_actor_hide (CLUTTER_ACTOR (hd_launcher_get ()));
 }
 
 
@@ -319,13 +309,6 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
     }
 
   return FALSE;
-}
-
-ClutterActor *hd_launcher_get_group (void)
-{
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-
-  return priv->group;
 }
 
 /* Load the values we need for blurring */
@@ -435,7 +418,8 @@ typedef struct
 static void
 hd_launcher_create_page (HdLauncherItem *item, gpointer data)
 {
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+  ClutterActor *self = CLUTTER_ACTOR (hd_launcher_get ());
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (self);
   ClutterActor *newpage;
 
   if (hd_launcher_item_get_item_type (item) != HD_CATEGORY_LAUNCHER)
@@ -446,7 +430,7 @@ hd_launcher_create_page (HdLauncherItem *item, gpointer data)
                    hd_launcher_item_get_local_name (item));
 
   clutter_actor_hide (newpage);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->group), newpage);
+  clutter_container_add_actor (CLUTTER_CONTAINER (self), newpage);
 
   g_datalist_set_data (&priv->pages, hd_launcher_item_get_id (item), newpage);
 }

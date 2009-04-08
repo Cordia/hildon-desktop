@@ -170,7 +170,6 @@ struct _HdRenderManagerPrivate {
   /* external */
   HdCompMgr            *comp_mgr;
   HdTaskNavigator      *task_nav;
-  ClutterActor         *launcher;
   HdHome               *home;
   ClutterActor         *status_area;
   MBWindowManagerClient *status_area_client;
@@ -263,7 +262,6 @@ static inline gboolean range_equal(Range *range)
 
 HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
                                            HdLauncher *launcher,
-                                           ClutterActor *launcher_group,
                                            HdHome *home,
                                            HdTaskNavigator *task_nav
                                            )
@@ -292,9 +290,8 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
                                                CLUTTER_GRAVITY_CENTER);
 
   /* Add the launcher widget. */
-  priv->launcher = launcher_group;
   clutter_container_add_actor(CLUTTER_CONTAINER(the_render_manager),
-		              priv->launcher);
+                              CLUTTER_ACTOR(launcher));
 
   /* These must be below tasw and talu. */
   clutter_actor_lower_bottom (CLUTTER_ACTOR (priv->app_top));
@@ -345,7 +342,6 @@ static void
 hd_render_manager_finalize (GObject *gobject)
 {
   HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE(gobject);
-  g_object_unref(priv->launcher);
   g_object_unref(priv->home);
   g_object_unref(priv->task_nav);
   g_object_unref(priv->title_bar);
@@ -769,7 +765,6 @@ void hd_render_manager_sync_clutter_before ()
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_BACK;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        clutter_actor_show(CLUTTER_ACTOR(priv->launcher));
         hd_render_manager_set_blur(
             HDRM_BLUR_HOME |
             HDRM_ZOOM_FOR_LAUNCHER |

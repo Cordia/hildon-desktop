@@ -56,20 +56,19 @@ typedef struct _HdLauncherClass   HdLauncherClass;
 
 struct _HdLauncher
 {
-  GObject parent_instance;
+  ClutterGroup parent_instance;
 
   HdLauncherPrivate *priv;
 };
 
 struct _HdLauncherClass
 {
-  GObjectClass parent_class;
+  ClutterGroupClass parent_class;
 };
 
 GType hd_launcher_get_type (void) G_GNUC_CONST;
 
 HdLauncher   *hd_launcher_get (void);
-ClutterActor *hd_launcher_get_group (void);
 
 void          hd_launcher_show (void);
 void          hd_launcher_hide (void);

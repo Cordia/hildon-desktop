@@ -173,7 +173,6 @@ GType hd_render_manager_get_type       (void) G_GNUC_CONST;
 
 HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
 		                           HdLauncher *launcher,
-		                           ClutterActor *launcher_group,
 					   HdHome *home,
 					   HdTaskNavigator *task_nav);
 HdRenderManager *hd_render_manager_get (void);

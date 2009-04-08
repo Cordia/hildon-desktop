@@ -1,3 +1,13 @@
+2009-04-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Little clean up: be HdLauncher the launcher group.
+
+	* src/launcher/hd-launcher.c
+	* src/launcher/hd-launcher.h
+	* src/home/hd-render-manager.h
+	* src/home/hd-render-manager.c
+	* src/mb/hd-comp-mgr.c
+
 2009-04-08  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Close the loading screen and notify the user if launching an app doesn't

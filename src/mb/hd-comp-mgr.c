@@ -511,7 +511,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   priv->render_manager = hd_render_manager_create(hmgr,
 		                                  hd_launcher_get(),
-		                                  hd_launcher_get_group(),
 		                                  HD_HOME(priv->home),
 						  task_nav);
   clutter_container_add_actor(CLUTTER_CONTAINER (stage),
