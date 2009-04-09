@@ -1,3 +1,11 @@
+2009-04-09  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fix for NB#110586
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-page.h
+	* src/launcher/hd-launcher.c: Now reset the drag distance when the
+	user clicks anywhere in the launcher - not just in the launcher-page
+
 2009-04-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed):

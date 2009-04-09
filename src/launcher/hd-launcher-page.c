@@ -895,6 +895,17 @@ ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page)
   return tidy_adjustment_get_valuex( adjust );
 }
 
+void hd_launcher_page_set_drag_distance(HdLauncherPage *page, float d)
+{
+  HdLauncherPagePrivate *priv;
+
+  if (!HD_IS_LAUNCHER_PAGE(page))
+      return;
+
+  priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
+  priv->drag_distance = d;
+}
+
 /* Return how far the user has dragged */
 float hd_launcher_page_get_drag_distance(HdLauncherPage *page)
 {

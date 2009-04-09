@@ -102,6 +102,9 @@ static void hd_launcher_category_tile_clicked (HdLauncherTile *tile,
                                                gpointer data);
 static void hd_launcher_application_tile_clicked (HdLauncherTile *tile,
                                                   gpointer data);
+static gboolean hd_launcher_captured_event_cb (HdLauncher *launcher,
+                                               ClutterEvent *event,
+                                               gpointer data);
 static gboolean hd_launcher_background_clicked (HdLauncher *self,
                                                 ClutterButtonEvent *event,
                                                 gpointer *data);
@@ -199,6 +202,8 @@ static void hd_launcher_constructed (GObject *gobject)
 
   /* Add callback for clicked background */
   clutter_actor_set_reactive ( self, TRUE );
+  g_signal_connect (self, "captured-event",
+                    G_CALLBACK(hd_launcher_captured_event_cb), 0);
   g_signal_connect (self, "button-release-event",
                     G_CALLBACK(hd_launcher_background_clicked), 0);
 
@@ -771,6 +776,28 @@ hd_launcher_transition_stop(void)
   g_datalist_foreach(&priv->pages,
                      _hd_launcher_transition_stop_foreach,
                      (gpointer)0);
+}
+
+static gboolean
+hd_launcher_captured_event_cb (HdLauncher *launcher,
+                               ClutterEvent *event,
+                               gpointer data)
+{
+  HdLauncherPrivate *priv;
+
+  if (!HD_IS_LAUNCHER(launcher))
+    return FALSE;
+  priv = HD_LAUNCHER_GET_PRIVATE (launcher);
+
+  if (event->type == CLUTTER_BUTTON_PRESS)
+    {
+      /* we need this for when the user clicks outside the page */
+      if (priv->active_page)
+        hd_launcher_page_set_drag_distance(
+            HD_LAUNCHER_PAGE(priv->active_page), 0);
+    }
+
+  return FALSE;
 }
 
 static gboolean
