@@ -1296,7 +1296,7 @@ fix_transiency (MBWindowManagerClient *client)
 }
 
 /* returns HdApp of client that was replaced, or NULL */
-static void
+static int
 hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
 		              HdApp **replaced, HdApp **add_to_tn)
 {
@@ -1314,11 +1314,14 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
 
   stack_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_STACKABLE_WINDOW);
 
+  mb_wm_util_trap_x_errors ();
   XGetWindowProperty (wm->xdpy, win->xwindow,
                       stack_atom, 0, 1, False,
                       XA_INTEGER, &actual_type, &format,
                       &items, &left,
                       &prop);
+  if (mb_wm_util_untrap_x_errors ())
+    return 0;
 
   if (actual_type == XA_INTEGER)
     {
@@ -1489,6 +1492,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
 
   /* all stackables have stack_index >= 0 */
   g_assert (!app->leader || (app->leader && app->stack_index >= 0));
+  return 1;
 }
 
 static void
@@ -1742,7 +1746,11 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   int topmost;
   HdApp *app = HD_APP (c), *to_replace = NULL, *add_to_tn = NULL;
 
-  hd_comp_mgr_handle_stackable (c, &to_replace, &add_to_tn);
+  if (!hd_comp_mgr_handle_stackable (c, &to_replace, &add_to_tn))
+    {
+      g_warning ("%s: client %p is not valid anymore", __func__, c);
+      return;
+    }
 
   if (app->stack_index < 0 /* non-stackable */
       /* leader without followers: */
