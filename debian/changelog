@@ -1,7 +1,11 @@
-hildon-desktop (1:2.2.38-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.38-1) unstable; urgency=low
+
+  Kimmo:
+  * Fix crash (X error) in hd_comp_mgr_handle_stackable.
 
   Gordon:
-  * Fixes: NB#109907 - blurred background not updating correctly.
+  * Fixes: NB#110586 - Unable to go back to home view from task launcher if
+    the application icon pressed and moving away with out lifting the finger
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  9 Apr 2009 11:12:10 +0300
 

@@ -1,5 +1,7 @@
 2009-04-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.38
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_handle_stackable): Trap X error in
 	case XGetWindowProperty returns one and handle it in
 	hd_comp_mgr_map_notify.
