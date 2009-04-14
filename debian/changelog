@@ -1,8 +1,12 @@
-hildon-desktop (1:2.2.39-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.39-1) unstable; urgency=low
 
-  * writeme
+  Gordon:
+  * Fixes: NB#110685 - launcher spec says it should only close when the
+    edges are tapped - not when the blank space between the icons is tapped.
+  * Fixes: NB#110686 - top-left icon and status area appear over the VKB when
+    using the copy/paste window.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  9 Apr 2009 18:03:05 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 14 Apr 2009 13:32:26 +0300
 
 hildon-desktop (1:2.2.38-1) unstable; urgency=low
 
