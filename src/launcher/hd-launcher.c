@@ -808,10 +808,14 @@ hd_launcher_background_clicked (HdLauncher *self,
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
 
   /* We don't want to send a 'clicked' event if the user has dragged more
-   * than the allowed distance */
+   * than the allowed distance - or if they released while inbetween icons. */
   if (priv->active_page &&
-      hd_launcher_page_get_drag_distance(HD_LAUNCHER_PAGE(priv->active_page)) <
-                                         HD_LAUNCHER_TILE_MAX_DRAG)
+      (hd_launcher_page_get_drag_distance(HD_LAUNCHER_PAGE(priv->active_page)) <
+                                          HD_LAUNCHER_TILE_MAX_DRAG) &&
+      ((event->x < HD_LAUNCHER_BACK_LEFT_MARGIN) ||
+       (event->x > HD_COMP_MGR_SCREEN_WIDTH - HD_LAUNCHER_BACK_RIGHT_MARGIN) ||
+       (event->y < HD_LAUNCHER_BACK_TOP_MARGIN) ||
+       (event->y > HD_COMP_MGR_SCREEN_HEIGHT - HD_LAUNCHER_BACK_BOTTOM_MARGIN)))
     hd_launcher_back_button_clicked(0, 0, 0);
 
   return TRUE;

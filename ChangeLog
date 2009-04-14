@@ -1,3 +1,12 @@
+2009-04-14  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher.h
+	* src/launcher/hd-launcher.c: Fix for NB#110685 - launcher spec says
+	  it should only close when the edges are tapped - not when the blank
+	  space between the icons is tapped.
+	* src/home/hd-render-manager.c: Fix for NB#110686 - top-left icon and
+	  status area appear over the VKB when using the copy/paste window.
+
 2009-04-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.38

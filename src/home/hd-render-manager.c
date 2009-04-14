@@ -1582,8 +1582,17 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
       int c_type = MB_WM_CLIENT_CLIENT_TYPE(c);
       if (hd_comp_mgr_ignore_window(c) || c==ignore)
         continue;
-      if (c_type == MBWMClientTypeApp ||
-          c_type == MBWMClientTypeDesktop)
+      if (c_type == MBWMClientTypeApp)
+        {
+          /* If we have a fullscreen window then the top-left button and
+           * status area will not be visible - so we have the same situation
+           * as if the dialog were system modal */
+          if (c->window &&
+              HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->window->geometry))
+            system_modal = TRUE;
+          break;
+        }
+      if (c_type == MBWMClientTypeDesktop)
         break;
       if (c_type == MBWMClientTypeDialog ||
           c_type == MBWMClientTypeMenu ||
@@ -1592,9 +1601,15 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
           HD_IS_CONFIRMATION_NOTE (c))
         {
           /* If this is a dialog that is maximised, it will be put in the
-           * blur group - so do NOT blur the background. */
+           * blur group - so do NOT blur the background for this alone.
+           * Also this dialog is probably the VKB, which appears *over*
+           * the top-left icon - so it acts like a system modal blocker
+           * and we should not attempt to display unblurred top-left buttons */
           if (HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->window->geometry))
-            break;
+            {
+              system_modal = TRUE;
+              break;
+            }
 
           /*g_debug("%s: Blurring caused by window type %d, geo=%d,%d,%d,%d name '%s'",
               __FUNCTION__, c_type,
@@ -1604,7 +1619,6 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
           blur=TRUE;
           if (hd_util_is_client_system_modal(c))
             system_modal = TRUE;
-          break;
         }
     }
 

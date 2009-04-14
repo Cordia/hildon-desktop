@@ -94,6 +94,13 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
 gboolean
 hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item);
 
+/* left/right/top/bottom margin that is clicked on to go back */
+#define HD_LAUNCHER_BACK_LEFT_MARGIN (68) /* layout guide F */
+#define HD_LAUNCHER_BACK_RIGHT_MARGIN (68) /* layout guide F */
+#define HD_LAUNCHER_BACK_TOP_MARGIN (70) /* layout guide A */
+#define HD_LAUNCHER_BACK_BOTTOM_MARGIN (46) /* layout guide G */
+
+
 G_END_DECLS
 
 #endif /* __HD_LAUNCHER_H__ */
