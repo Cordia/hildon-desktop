@@ -933,7 +933,8 @@ hd_app_mgr_execute (const gchar *exec, GPid *pid)
   else
     exec_cmd = g_find_program_in_path (exec);
 
-  if (!g_shell_parse_argv (exec_cmd, &argc, &argv, &internal_error))
+  if (!exec_cmd ||
+      !g_shell_parse_argv (exec_cmd, &argc, &argv, &internal_error))
   {
     g_free (exec_cmd);
     if (argv)
@@ -1270,11 +1271,6 @@ hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id)
     return FALSE;
 
   app = HD_LAUNCHER_APP (item);
-
-  /* Start fancy launch transition.
-   * TODO: currently we have no idea where on the screen to animate
-   * from, so we use the centre */
-  hd_launcher_transition_app_start(0, app);
 
   return hd_app_mgr_launch (app);
 }

@@ -1,3 +1,16 @@
+2009-04-15  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Centralized showing the loading screen only as a response to the HdAppMgr
+	signal.
+	Fixes: NB#108072
+
+	* src/home/hd-switcher.c: Added handler for application-launched signal.
+	* src/launcher/hd-app-mgr.c: Removed directly showing the loading screen when
+	launching from dbus call.
+	* src/launcher/hd-launcher.c: Separated launching an app from showing the
+	loading screen.
+	* src/launcher/hd-launcher.h:
+
 2009-04-14  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.39

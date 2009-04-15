@@ -60,6 +60,7 @@ struct _HdLauncherPrivate
 
   /* Actor and timeline required for zoom in on application screenshot
    * for app start. */
+  HdLauncherTile *launch_tile;
   ClutterActor *launch_image;
   ClutterTimeline *launch_transition;
   ClutterVertex launch_position; /* where were we clicked? */
@@ -388,31 +389,18 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
   if (!hd_app_mgr_launch (app))
     return;
 
-  /* If the app has been already launched, send the relaunched signal
-   * and don't animate anything.
-   */
-  if (hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN)
-    {
-      g_signal_emit (hd_launcher_get (), launcher_signals[APP_RELAUNCHED],
-                     0, data, NULL);
-      return;
-    }
+  priv->launch_tile = tile;
 
-  /* If there's no launch transition, do the 'fall away' transition.
-   */
-  else if (!hd_launcher_transition_app_start (tile, app))
+  hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
+        HD_LAUNCHER_PAGE_TRANSITION_LAUNCH);
+  /* also do animation for the topmost pane if we had it... */
+  top_page = g_datalist_get_data (&priv->pages,
+                                   HD_LAUNCHER_ITEM_TOP_CATEGORY);
+  /* if we're not at the top page, we must transition that out too */
+  if (priv->active_page != top_page)
     {
-      hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
-            HD_LAUNCHER_PAGE_TRANSITION_LAUNCH);
-      /* also do animation for the topmost pane if we had it... */
-      top_page = g_datalist_get_data (&priv->pages,
-                                       HD_LAUNCHER_ITEM_TOP_CATEGORY);
-      /* if we're not at the top page, we must transition that out too */
-      if (priv->active_page != top_page)
-        {
-          hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
-                    HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK);
-        }
+      hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
+                HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK);
     }
 
   g_signal_emit (hd_launcher_get (), launcher_signals[APP_LAUNCHED],
@@ -560,11 +548,12 @@ hd_launcher_loading_timeout (gpointer data)
 
 /* Does the transition for the application launch */
 gboolean
-hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
+hd_launcher_transition_app_start (HdLauncherApp *item)
 {
   const gchar *loading_image = NULL;
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
+  HdLauncherTile *tile = priv->launch_tile;
   gboolean launch_anim = FALSE;
   const gchar *service_name = 0;
   gchar *cached_image = NULL;
@@ -646,6 +635,7 @@ hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item)
    * the tile that was clicked on */
   if (tile)
     {
+      priv->launch_tile = NULL;
       ClutterActor *icon;
       clutter_actor_get_positionu(CLUTTER_ACTOR(tile),
                 &priv->launch_position.x,

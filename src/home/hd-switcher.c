@@ -123,6 +123,9 @@ static void hd_switcher_launcher_cat_launched (HdLauncher *launcher,
                                                HdSwitcher *switcher);
 static void hd_switcher_launcher_cat_hidden (HdLauncher *launcher,
                                              HdSwitcher *switcher);
+static void hd_switcher_launch_app (HdSwitcher *switcher,
+                                    HdLauncherApp *app,
+                                    gpointer data);
 static void hd_switcher_relaunch_app (HdSwitcher *switcher,
                                       HdLauncherApp *app,
                                       gpointer data);
@@ -208,6 +211,9 @@ hd_switcher_constructed (GObject *object)
                     G_CALLBACK (hd_switcher_launcher_cat_hidden),
                     object);
   /* App manager events. */
+  g_signal_connect_swapped (hd_app_mgr_get (), "application-launched",
+                    G_CALLBACK (hd_switcher_launch_app),
+                    object);
   g_signal_connect_swapped (hd_app_mgr_get (), "application-relaunched",
                     G_CALLBACK (hd_switcher_relaunch_app),
                     object);
@@ -480,6 +486,14 @@ hd_switcher_relaunch_app_callback(HdSwitcherRelaunchAppData *data)
       hd_render_manager_get(),
       G_CALLBACK(hd_switcher_relaunch_app_callback),
       data);
+}
+
+static void
+hd_switcher_launch_app (HdSwitcher *switcher,
+                        HdLauncherApp *app,
+                        gpointer data)
+{
+  hd_launcher_transition_app_start (app);
 }
 
 static void

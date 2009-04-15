@@ -89,10 +89,10 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
                                  ClutterEvent *event,
                                  gpointer data);
 
-/* Exported so it can be called for hd-app-mgr when it gets a dbus call
- * to launch something */
+/* Exported so it can be called when something is launched from outside,
+ * like with a dbus call. */
 gboolean
-hd_launcher_transition_app_start (HdLauncherTile *tile, HdLauncherApp *item);
+hd_launcher_transition_app_start (HdLauncherApp *item);
 
 /* left/right/top/bottom margin that is clicked on to go back */
 #define HD_LAUNCHER_BACK_LEFT_MARGIN (68) /* layout guide F */
