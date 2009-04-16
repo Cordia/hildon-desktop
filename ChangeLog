@@ -1,3 +1,13 @@
+2009-04-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Handle (= don't crash) clients without STACKING_LAYER properly.
+
+	* src/mb/hd-comp-mgr.c:
+	  hd_comp_mgr_handle_stackable(): error handling improvement
+	  hd_comp_mgr_map_notify(): do not give up map_notify(),
+	    because then we'd crash in the switcher when the client
+	    is gone and Kimmo would be fast to find me.
+
 2009-04-15  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Centralized showing the loading screen only as a response to the HdAppMgr
