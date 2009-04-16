@@ -2,6 +2,7 @@
 
 	NB#108826 during drag and drop or panning , device is getting black
 	          screen , reboot is required to use any application
+	NB#109753 Tap and hold on any link received in mail - blanks ui completely
 
 	* src/home/hd-render-manager.c:
 	  hd_render_manager_append_geo_cb():
