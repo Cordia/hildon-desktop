@@ -1,3 +1,9 @@
+2009-04-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-theme.c (construct_buttons): In case decor is not yet
+	created (d == NULL), allow close button for non-stackables and
+	secondaries acting as the stack leader.
+
 2009-04-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#108826 during drag and drop or panning , device is getting black

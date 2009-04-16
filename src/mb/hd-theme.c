@@ -306,8 +306,9 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
     }
   else if (!d)
     {
-      if (stack_i == 0)
+      if (stack_i < 0 || (app && app->leader == app))
 	{
+          /* non-stackable or stack leader */
 	  button = hd_decor_button_new(wm,
                                        MBWMDecorButtonClose,
                                        MBWMDecorButtonPackEnd,
@@ -315,7 +316,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
                                        0,0,
                                        0);
 	}
-      else
+      else  /* stack secondary */
 	{
 	  BackButtonData *bd;
 
