@@ -61,7 +61,7 @@
 
 #define OPERATOR_APPLET_ID "_HILDON_OPERATOR_APPLET"
 
-#if 1
+#if 0
 # define PORTRAIT       g_debug
 #else
 # define PORTRAIT(...)  /* NOP */
