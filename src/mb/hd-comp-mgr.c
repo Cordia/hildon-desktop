@@ -61,6 +61,12 @@
 
 #define OPERATOR_APPLET_ID "_HILDON_OPERATOR_APPLET"
 
+#if 1
+# define PORTRAIT       g_debug
+#else
+# define PORTRAIT(...)  /* NOP */
+#endif
+
 struct HdCompMgrPrivate
 {
   MBWindowManagerClient *desktop;
@@ -2324,10 +2330,13 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
   /* Invalidate all cached, inherited portrait flags at once. */
   counter++;
 
+  PORTRAIT ("SHOULD BE PORTRAIT?", c);
   any_requests = FALSE;
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
     {
+      PORTRAIT ("CLIENT %p", c);
+      PORTRAIT ("IS IGNORABLE?");
       if (c == hmgr->priv->status_area_client)
         /* It'll be blocked anyway. */
         continue;
@@ -2347,19 +2356,20 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
         continue;
       if (hd_comp_mgr_ignore_window (c))
         continue;
-      if (!hd_render_manager_is_client_visible (c)
-          && !(c->window
-               && hd_wm_current_app_is (NULL, 0) == c->window->xwindow))
+      PORTRAIT ("IS VISIBLE OR CURRENT?");
+      if (!hd_render_manager_is_client_visible (c))
         /* Ignore invisibles except if it's the current application. */
         continue;
 
       /* Get @portrait_supported/requested updated. */
       hcmgrc = hd_comp_mgr_update_clients_portrait_flags (c, counter);
+      PORTRAIT ("SUPPORT IS %d", hcmgrc->priv->portrait_supported);
       if (!hcmgrc->priv->portrait_supported)
         return FALSE;
       any_requests |= hcmgrc->priv->portrait_requested;
     }
 
+  PORTRAIT ("SHOULD BE: %d", any_requests);
   return any_requests;
 }
 

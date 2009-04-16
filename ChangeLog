@@ -1,3 +1,14 @@
+2009-04-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-transition.c (hd_transition_popup):
+	  Don't be confused by fullscreen things and pop the bottom.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait):
+	  Removed an older condition that prevented fullscreen dialogs
+	  from causing rotation.  As a consequence fullscreen dialogs
+	  like the incoming call will be will be able to rotate not only
+	  in home view but in app view.  This is in relation with NB#11111.
+	  (no kidding i really own that bug)
+
 2009-04-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Changed launcher to UI specs.
