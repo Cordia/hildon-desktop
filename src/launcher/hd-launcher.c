@@ -426,9 +426,7 @@ hd_launcher_create_page (HdLauncherItem *item, gpointer data)
   if (hd_launcher_item_get_item_type (item) != HD_CATEGORY_LAUNCHER)
     return;
 
-  newpage = hd_launcher_page_new(
-                   hd_launcher_item_get_icon_name (item),
-                   hd_launcher_item_get_local_name (item));
+  newpage = hd_launcher_page_new(NULL, NULL);
 
   clutter_actor_hide (newpage);
   clutter_container_add_actor (CLUTTER_CONTAINER (self), newpage);

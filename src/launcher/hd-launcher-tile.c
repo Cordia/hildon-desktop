@@ -46,6 +46,8 @@
 
 #define HD_LAUNCHER_TILE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TILE, HdLauncherTilePrivate))
 
+#define HD_LAUNCHER_TILE_FONT "SmallSystemFont"
+
 struct _HdLauncherTilePrivate
 {
   gchar *icon_name;
@@ -301,10 +303,11 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
                            const gchar *text)
 {
   ClutterColor text_color;
-  gchar *font_string;
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   ClutterUnit label_width;
   guint label_height, label_width_px;
+  GtkStyle *style;
+  gchar *font_name;
 
   if (!text)
     return;
@@ -324,8 +327,15 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
   hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
                                GTK_STATE_NORMAL,
                                &text_color);
-  font_string = hd_gtk_style_get_font_string (HD_GTK_BUTTON_SINGLETON);
-  priv->label = clutter_label_new_full (font_string, priv->text, &text_color);
+  style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
+                                     HD_LAUNCHER_TILE_FONT,
+                                     NULL, G_TYPE_NONE);
+  if (style)
+    font_name = pango_font_description_to_string (style->font_desc);
+  else
+    font_name = g_strdup ("Nokia Sans 18px");
+
+  priv->label = clutter_label_new_full (font_name, priv->text, &text_color);
 
   /* FIXME: This is a huge work-around because clutter/pango do not
    * support setting ellipsize to NONE and wrap to FALSE.
@@ -356,7 +366,7 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
     clutter_actor_set_clip (priv->label, 0, 0,
                   HD_LAUNCHER_TILE_WIDTH, label_height);
 
-  g_free (font_string);
+  g_free (font_name);
 }
 
 static void

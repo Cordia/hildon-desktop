@@ -1,3 +1,11 @@
+2009-04-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Changed launcher to UI specs.
+	Fixes: NB#109134, 111112
+
+	* src/launcher/hd-launcher-tile.c: Use SmallSystemFont.
+	* src/launcher/hd-launcher.c: Don't display title and icon for subpages.
+
 2009-04-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-theme.c (construct_buttons): In case decor is not yet
