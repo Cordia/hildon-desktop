@@ -1,6 +1,19 @@
 hildon-desktop (1:2.2.40-1~unreleased) unstable; urgency=low
 
-  * writeme
+  Adam:
+  * Fixes: NB#108826 - during drag and drop or panning, device is getting
+    black screen, reboot is required to use any application
+  * Fixes: NB#109753 - Tap and hold on any link received in mail - blanks ui
+    completely
+  * Handle (= don't crash) clients without STACKING_LAYER property.
+
+  Marc:
+  * Fixes: NB#108072 - Centralized showing the loading screen only as a
+    response to the HdAppMgr signal.
+
+  Kimmo:
+  * Fix logic in construct_buttons when the decor hasn't been created yet.
+    This should fix the occasional disappearing close button problem.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 14 Apr 2009 13:35:58 +0300
 
