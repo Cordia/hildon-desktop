@@ -1,4 +1,18 @@
-2009-04-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-04-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#108826 during drag and drop or panning , device is getting black
+	          screen , reboot is required to use any application
+
+	* src/home/hd-render-manager.c:
+	  hd_render_manager_append_geo_cb():
+	    Don't allow blocker rectangles with negative position.
+	  hd_render_manager_is_visible():
+	    Fix integer propagation mistakes which caused some if()s to fail,
+	    thus some clients to block others which it shouldn't thus hiding
+	    the application actor behind the 1x1 window thus scaring the hell
+	    out of testers.
+
+2009-04-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Handle (= don't crash) clients without STACKING_LAYER properly.
 

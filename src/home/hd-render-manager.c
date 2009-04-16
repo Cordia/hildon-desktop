@@ -1683,14 +1683,21 @@ hd_render_manager_is_visible(GList *blockers,
   for (; blockers; blockers = blockers->next)
     {
       ClutterGeometry blocker = *(ClutterGeometry*)blockers->data;
-      guint rect_b, blocker_b;
+      gint rect_b, blocker_b;
 
       VISIBILITY ("RECT %dx%d%+d%+d BLOCKER %dx%d%+d%+d",
                   MBWM_GEOMETRY(&rect), MBWM_GEOMETRY(&blocker));
 
-      /* If rect does not fit inside blocker in the X axis... */
+      /*
+       * If rect does not fit inside blocker in the X axis...
+       * Beware that ClutterGeometry.x and .y are signed, while .width
+       * and .height are unsigned and the type propagation rules of C
+       * makes sure we'll have trouble because the result is unsigned.
+       * It's only significant, though when you compare signeds and
+       * unsigneds.
+       */
       if (!(blocker.x <= rect.x &&
-            rect.x+rect.width <= blocker.x+blocker.width))
+            rect.x+(gint)rect.width <= blocker.x+(gint)blocker.width))
         continue;
 
       /* Because most windows will go edge->edge, just do a very simplistic
@@ -1830,6 +1837,25 @@ void hd_render_manager_append_geo_cb(ClutterActor *actor, gpointer data)
     {
       ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
       clutter_actor_get_geometry(actor, geo);
+
+      /* Forget the offscreen parts of a blocker.  If it's completely
+       * offscreen forget about it altogether.  This will ensure that
+       * no blockers will have negative (x, y) coordinates. */
+      if (geo->x < 0)
+        {
+          if (-geo->x >= geo->width)
+            return;
+          geo->width += geo->x;
+          geo->x = 0;
+        }
+      if (geo->y < 0)
+        {
+          if (-geo->y >= geo->height)
+            return;
+          geo->height += geo->y;
+          geo->y = 0;
+        }
+
       *list = g_list_prepend(*list, geo);
       VISIBILITY ("BLOCKER %dx%d%+d%+d", MBWM_GEOMETRY(geo));
     }
