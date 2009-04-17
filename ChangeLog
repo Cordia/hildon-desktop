@@ -1,3 +1,10 @@
+2009-04-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Align launcher tiles to the left.
+	Fixes: NB#111643
+
+	* src/launcher/hd-launcher-grid.c:
+
 2009-04-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.41

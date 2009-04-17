@@ -412,9 +412,7 @@ _hd_launcher_grid_allocate_row (GList *l,
   ClutterActor *child;
   ClutterActorBox box;
   guint allocated = MIN (HD_LAUNCHER_GRID_MAX_COLUMNS, *remaining);
-  guint total_width = (allocated * HD_LAUNCHER_TILE_WIDTH) +
-                      (allocated > 1? h_spacing * (allocated - 1) : 0);
-  guint cur_x = (HD_LAUNCHER_GRID_WIDTH - total_width) / 2;
+  guint cur_x = 0;
   for (int i = 0; i < allocated; i++)
     {
       child = l->data;
@@ -450,16 +448,7 @@ hd_launcher_grid_allocate (ClutterActor          *actor,
   _hd_launcher_grid_count_children_and_rows (HD_LAUNCHER_GRID (actor),
       &n_visible_launchers, &n_rows);
 
-  if (n_rows < 3)
-    {
-      guint total_height = HD_LAUNCHER_TILE_HEIGHT * n_rows +
-                           (n_rows > 0 ? priv->v_spacing * (n_rows - 1) : 0);
-      cur_height = (HD_LAUNCHER_GRID_MIN_HEIGHT - total_height) / 2;
-    }
-  else
-    cur_height = 0;
-
-  /* in this second pass we allocate the launchers */
+  cur_height = 0;
   l = priv->tiles;
   while (l) {
     l = _hd_launcher_grid_allocate_row(l, &n_visible_launchers,
