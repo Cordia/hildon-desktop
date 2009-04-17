@@ -1,6 +1,12 @@
 2009-04-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fix for crashes that happen on hildon-desktop exit.
+	* src/launcher/hd-launcher-tile.c: Now destroy actors on dispose to
+	  avoid problems with clutter destroying children before finalize.
+
+2009-04-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fix for crashes that happen on hildon-desktop exit.
 
 	* src/home/hd-scrollable-group.c: Fix segfault on exit caused by call
 	to clutter_actor_get_size(0)

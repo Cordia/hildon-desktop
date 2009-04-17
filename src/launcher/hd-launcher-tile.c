@@ -83,6 +83,7 @@ static guint launcher_tile_signals[LAST_SIGNAL] = { 0, };
 
 /* Forward declarations */
 /*   GObject */
+static void hd_launcher_tile_dispose (GObject *gobject);
 static void hd_launcher_tile_finalize (GObject *gobject);
 static void hd_launcher_tile_get_property (GObject    *object,
                                            guint       property_id,
@@ -114,6 +115,7 @@ hd_launcher_tile_class_init (HdLauncherTileClass *klass)
 
   gobject_class->get_property = hd_launcher_tile_get_property;
   gobject_class->set_property = hd_launcher_tile_set_property;
+  gobject_class->dispose      = hd_launcher_tile_dispose;
   gobject_class->finalize     = hd_launcher_tile_finalize;
 
   actor_class->button_press_event   = hd_launcher_tile_button_press;
@@ -489,18 +491,39 @@ hd_launcher_tile_button_release (ClutterActor       *actor,
 }
 
 static void
+hd_launcher_tile_dispose (GObject *gobject)
+{
+  HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (gobject);
+
+  if (priv->glow_timeline)
+    {
+      clutter_timeline_stop(priv->glow_timeline);
+      g_object_unref(priv->glow_timeline);
+      priv->glow_timeline = 0;
+    }
+  if (priv->label)
+    {
+      clutter_actor_destroy (priv->label);
+      priv->label = 0;
+    }
+  if (priv->icon_glow)
+    {
+      clutter_actor_destroy (CLUTTER_ACTOR(priv->icon_glow));
+      priv->icon_glow = 0;
+    }
+  if (priv->icon)
+    {
+      clutter_actor_destroy (priv->icon);
+      priv->icon = 0;
+    }
+  G_OBJECT_CLASS (hd_launcher_tile_parent_class)->dispose (gobject);
+}
+
+static void
 hd_launcher_tile_finalize (GObject *gobject)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (gobject);
 
-  clutter_timeline_stop(priv->glow_timeline);
-  g_object_unref(priv->glow_timeline);
-  if (priv->label)
-    clutter_actor_destroy (priv->label);
-  if (priv->icon_glow)
-    clutter_actor_destroy (CLUTTER_ACTOR(priv->icon_glow));
-  if (priv->icon)
-    clutter_actor_destroy (priv->icon);
   g_free (priv->icon_name);
   g_free (priv->text);
 
