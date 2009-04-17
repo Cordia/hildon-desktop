@@ -265,6 +265,7 @@ hd_scrollable_group_parent_changed (ClutterActor * actor,
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (actor);
   ClutterFixed width, height;
+  ClutterActor *parent;
 
   /*
    * Set up our #TidyAdjustment:s according to our parent's size.
@@ -274,9 +275,11 @@ hd_scrollable_group_parent_changed (ClutterActor * actor,
    * doesn't set our real estate either we would not receive any
    * pointer events.
    */
-  width = height = 0; /* Make coverity and kuzak happy. */
-  clutter_actor_get_size (clutter_actor_get_parent (actor),
-                          (guint *)&width, (guint *)&height);
+  width = height = 0;
+  parent = clutter_actor_get_parent(actor);
+  if (parent)
+    clutter_actor_get_size (parent,
+                            (guint *)&width, (guint *)&height);
   width  = CLUTTER_INT_TO_FIXED (width);
   height = CLUTTER_INT_TO_FIXED (height);
   tidy_adjustment_set_valuesx (priv->horizontal.adjustment,
