@@ -1320,9 +1320,9 @@ _hd_app_mgr_request_app_pid_cb (DBusGProxy *proxy, guint pid,
 
   if (error)
     {
-      g_warning ("%s: Couldn't get pid for app %s because %s\n",
-                 __FUNCTION__, hd_launcher_app_get_service (app),
-                 error->message);
+      g_debug ("%s: Couldn't get pid for app %s because %s\n",
+               __FUNCTION__, hd_launcher_app_get_service (app),
+               error->message);
       return;
     }
 
