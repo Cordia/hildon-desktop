@@ -1,3 +1,7 @@
+2009-04-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.41
+
 2009-04-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fix for crashes that happen on hildon-desktop exit.

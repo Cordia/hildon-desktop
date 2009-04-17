@@ -1,6 +1,7 @@
-hildon-desktop (1:2.2.41-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.41-1) unstable; urgency=low
 
-  * writeme
+  Gordon:
+  * Fixes: NB#111579 - hildon desktop crash as a reaction for SIGTERM
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 17 Apr 2009 11:16:47 +0300
 
