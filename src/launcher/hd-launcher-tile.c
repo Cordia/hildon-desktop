@@ -495,9 +495,12 @@ hd_launcher_tile_finalize (GObject *gobject)
 
   clutter_timeline_stop(priv->glow_timeline);
   g_object_unref(priv->glow_timeline);
-  clutter_actor_destroy (priv->label);
-  clutter_actor_destroy (CLUTTER_ACTOR(priv->icon_glow));
-  clutter_actor_destroy (priv->icon);
+  if (priv->label)
+    clutter_actor_destroy (priv->label);
+  if (priv->icon_glow)
+    clutter_actor_destroy (CLUTTER_ACTOR(priv->icon_glow));
+  if (priv->icon)
+    clutter_actor_destroy (priv->icon);
   g_free (priv->icon_name);
   g_free (priv->text);
 

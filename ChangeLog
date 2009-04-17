@@ -1,8 +1,13 @@
 2009-04-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
-	* src/home/hd-scrollable-group.c: Fix segfault on exit. Fix for other
-	  crash that happens related to NB#110878
+	Fix for crashes that happen on hildon-desktop exit.
 
+	* src/home/hd-scrollable-group.c: Fix segfault on exit caused by call
+	to clutter_actor_get_size(0)
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-tile.c: Checks for non-NULL before 
+	  destroying actors.
+	  
 2009-04-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.40

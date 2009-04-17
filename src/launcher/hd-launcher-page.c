@@ -464,8 +464,10 @@ hd_launcher_page_finalize (GObject *gobject)
   g_object_ref(priv->transition);
   g_free (priv->icon_name);
   g_free (priv->text);
-  clutter_actor_destroy (priv->label);
-  clutter_actor_destroy (priv->icon);
+  if (priv->label)
+    clutter_actor_destroy (priv->label);
+  if (priv->icon)
+    clutter_actor_destroy (priv->icon);
   g_object_unref(priv->grid);
   clutter_actor_destroy (priv->scroller);
 
