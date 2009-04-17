@@ -889,7 +889,7 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
   XFixesDestroyRegion (xdpy, region);
 
   if (mb_wm_util_untrap_x_errors ())
-    g_warning ("%s: X errors", __FUNCTION__);
+    g_debug ("%s: X errors", __FUNCTION__);
 }
 
 static void
