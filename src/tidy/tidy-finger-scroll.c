@@ -195,6 +195,10 @@ motion_event_cb (ClutterActor *actor,
           ClutterFixed dx, dy;
           TidyAdjustment *hadjust, *vadjust;
 
+          guint mfreq = clutter_get_motion_events_frequency ();
+          guint fps = clutter_get_default_frame_rate ();
+          guint n_frames = fps / mfreq;
+
           tidy_scrollable_get_adjustments (TIDY_SCROLLABLE (child),
                                            &hadjust,
                                            &vadjust);
@@ -206,6 +210,8 @@ motion_event_cb (ClutterActor *actor,
           dy = CLUTTER_UNITS_TO_FIXED(motion->y - y) +
                tidy_adjustment_get_valuex (vadjust);
 
+          tidy_adjustment_interpolatex (hadjust, dx, n_frames, fps);
+          tidy_adjustment_interpolatex (vadjust, dy, n_frames, fps);
           tidy_adjustment_set_valuex (hadjust, dx);
           tidy_adjustment_set_valuex (vadjust, dy);
           clutter_actor_queue_redraw( actor );

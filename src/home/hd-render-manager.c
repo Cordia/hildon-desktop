@@ -976,24 +976,20 @@ void hd_render_manager_set_button (HDRMButtonEnum btn,
                                    ClutterActor *item)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
-  gboolean reparent = TRUE;
 
   switch (btn)
     {
       case HDRM_BUTTON_TASK_NAV:
         g_assert(!priv->button_task_nav);
         priv->button_task_nav = CLUTTER_ACTOR(g_object_ref(item));
-        reparent = FALSE;
         return; /* Don't reparent, it's fine where it is. */
       case HDRM_BUTTON_LAUNCHER:
         g_assert(!priv->button_launcher);
         priv->button_launcher = CLUTTER_ACTOR(g_object_ref(item));
-        reparent = FALSE;
         return; /* Likewise */
       case HDRM_BUTTON_BACK:
         g_assert(!priv->button_back);
         priv->button_back = CLUTTER_ACTOR(g_object_ref(item));
-        reparent = FALSE;
         break;
       case HDRM_BUTTON_EDIT:
         g_warning("%s: edit button must be set at creation time!", __FUNCTION__);
@@ -1002,15 +998,6 @@ void hd_render_manager_set_button (HDRMButtonEnum btn,
       default:
         g_warning("%s: Invalid Enum %d", __FUNCTION__, btn);
 	g_assert(FALSE);
-    }
-  if (reparent)
-    {
-      if (clutter_actor_get_parent(CLUTTER_ACTOR(item)))
-        clutter_actor_reparent(CLUTTER_ACTOR(item),
-                               CLUTTER_ACTOR(priv->blur_front));
-      else
-        clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
-                                    CLUTTER_ACTOR(item));
     }
 }
 
@@ -1573,7 +1560,7 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
   MBWindowManager *wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   MBWindowManagerClient *c;
   gboolean blur = FALSE;
-  gboolean system_modal = FALSE;
+  gboolean blur_buttons = FALSE;
 
   /* Now look through the MBWM stack and see if we need to blur or not.
    * This happens when we have a dialog/menu in front of the main app */
@@ -1585,11 +1572,11 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
       if (c_type == MBWMClientTypeApp)
         {
           /* If we have a fullscreen window then the top-left button and
-           * status area will not be visible - so we have the same situation
-           * as if the dialog were system modal */
+           * status area will not be visible - so we don't want them
+           * pulled out to the front. */
           if (c->window &&
               HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->window->geometry))
-            system_modal = TRUE;
+            blur_buttons = TRUE;
           break;
         }
       if (c_type == MBWMClientTypeDesktop)
@@ -1607,7 +1594,7 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
            * and we should not attempt to display unblurred top-left buttons */
           if (HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->window->geometry))
             {
-              system_modal = TRUE;
+              blur_buttons = TRUE;
               break;
             }
 
@@ -1617,8 +1604,8 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
               c->window->geometry.width, c->window->geometry.height,
               c->name?c->name:"(null)");*/
           blur=TRUE;
-          if (hd_util_is_client_system_modal(c))
-            system_modal = TRUE;
+          if (hd_util_client_has_modal_blocker(c))
+            blur_buttons = TRUE;
         }
     }
 
@@ -1630,7 +1617,7 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
   else
     blur_flags = blur_flags & ~HDRM_BLUR_BACKGROUND;
 
-  if (blur && !system_modal)
+  if (blur && !blur_buttons)
     title_flags |= HDTB_VIS_FOREGROUND;
   else
     title_flags &= ~HDTB_VIS_FOREGROUND;
@@ -1900,7 +1887,7 @@ void hd_render_manager_set_visibilities()
           ClutterGeometry geo;
           clutter_actor_get_geometry(child, &geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
-          VISIBILITY ("IS %p VISIBLE?", child);
+          VISIBILITY ("IS %p (%dx%d%+d%+d) VISIBLE?", child, MBWM_GEOMETRY(&geo));
           if (hd_render_manager_is_visible(blockers, geo))
             {
               VISIBILITY ("IS");

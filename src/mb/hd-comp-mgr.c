@@ -95,9 +95,6 @@ struct HdCompMgrPrivate
 
   HdCompMgrClient       *current_hclient;
 
-  /* Clients who need to block the Task button. */
-  GHashTable            *tasks_button_blockers;
-
   /* Track changes to the PORTRAIT properties. */
   unsigned long          property_changed_cb_id;
 
@@ -558,8 +555,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 			   NULL,
 			   (GDestroyNotify)mb_wm_object_unref);
 
-  priv->tasks_button_blockers = g_hash_table_new (NULL, NULL);
-
   /* Be notified about all X window property changes around here. */
   priv->property_changed_cb_id = mb_wm_main_context_x_event_handler_add (
                    cmgr->wm->main_ctx, None, PropertyNotify,
@@ -802,6 +797,18 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
   MBWindowManager   *wm = mgr->wm;
   Display           *xdpy = wm->xdpy;
   ClutterActor      *stage;
+  gboolean           allow_input_viewport;
+  MBWindowManagerClient *client;
+
+  /* check for windows that may have a modal blocker. If anything has one
+   * we should NOT grab any part of the screen. */
+  allow_input_viewport = TRUE;
+  for (client = wm->stack_top; client; client=client->stacked_below)
+    if (hd_util_client_has_modal_blocker(client))
+      {
+        allow_input_viewport = FALSE;
+        break;
+      }
 
   mb_wm_util_trap_x_errors ();
 
@@ -817,7 +824,7 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
                 PointerMotionMask );
 
   /*g_debug("%s: setting viewport", __FUNCTION__);*/
-  if (count > 0)
+  if (count > 0 && allow_input_viewport)
     {
       XRectangle *rectangle = g_new (XRectangle, count);
       guint      i;
@@ -832,22 +839,22 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
         }
       region = XFixesCreateRegion (wm->xdpy, rectangle, count);
       g_free (rectangle);
+
+      /* we must subtract the regions for any dialogs + notifications
+       * from this input mask... if we are in the position of showing
+       * any of them */
+      if (STATE_UNGRAB_NOTES(hd_render_manager_get_state()))
+        {
+          XserverRegion subtract;
+
+          subtract = hd_comp_mgr_get_foreground_region(hmgr,
+              MBWMClientTypeNote | MBWMClientTypeDialog);
+          XFixesSubtractRegion (wm->xdpy, region, region, subtract);
+          XFixesDestroyRegion (xdpy, subtract);
+        }
     }
   else
     region = XFixesCreateRegion (wm->xdpy, NULL, 0);
-
-  /* we must subtract the regions for any dialogs + notifications
-   * from this input mask... if we are in the position of showing
-   * any of them */
-  if (STATE_UNGRAB_NOTES(hd_render_manager_get_state()))
-    {
-      XserverRegion subtract;
-
-      subtract = hd_comp_mgr_get_foreground_region(hmgr,
-          MBWMClientTypeNote | MBWMClientTypeDialog);
-      XFixesSubtractRegion (wm->xdpy, region, region, subtract);
-      XFixesDestroyRegion (xdpy, subtract);
-    }
 
   XFixesSetWindowShapeRegion (xdpy,
                               overlay,
@@ -946,15 +953,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   /* In cases like the FKB, we don't get an unmap event, so we need to
    * update the state of blurring here. */
   hd_render_manager_update_blur_state(c);
-
-  /* FIXME: shouldn't this be in hd_comp_mgr_unmap_notify?
-   * hd_comp_mgr_unregister_client might not be called for all unmapped
-   * clients */
-  if (g_hash_table_remove (priv->tasks_button_blockers, c)
-      && g_hash_table_size (priv->tasks_button_blockers) == 0)
-    { /* Last system modal dialog being unmapped, undo evil. */
-      hd_render_manager_set_reactive(TRUE);
-    }
 
   /* Check if it's the last window for the app. */
   if (hclient->priv->app)
@@ -1618,29 +1616,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       if (STATE_ONE_OF(hd_render_manager_get_state(),
                        HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
         hd_render_manager_set_state(HDRM_STATE_HOME);
-
-  /* Do evil.  Do we need to block the Tasks button? */
-  if ((ctype == MBWMClientTypeDialog ||
-      (ctype == MBWMClientTypeNote &&
-       HD_NOTE (c)->note_type != HdNoteTypeIncomingEvent))
-      && hd_util_is_client_system_modal (c))
-    {
-      if (g_hash_table_size (priv->tasks_button_blockers) == 0)
-        { /* First system modal client, allow it to receive events and
-           * block the switcher buttons. */
-          hd_render_manager_set_reactive(FALSE);
-        }
-
-      /*
-       * Save the client's address and undo evil when the last of its
-       * kind is unregistered.  We need to do this way because maps
-       * and unmaps arrive unreliably, for example we don't get unmap
-       * notification for VKB.  In other cases we may receive two
-       * maps for the same client.
-       * FIXME: I'm sure the extra/missing maps and unmaps are our bugs... (KH)
-       */
-      g_hash_table_insert (priv->tasks_button_blockers, c, GINT_TO_POINTER(1));
-    }
 
   /* Hide status menu if any window except an applet is mapped */
   if (priv->status_menu_client &&

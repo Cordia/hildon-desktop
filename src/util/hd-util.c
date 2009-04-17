@@ -7,6 +7,8 @@
 #include <X11/extensions/Xrandr.h>
 
 #include "hd-comp-mgr.h"
+#include "hd-wm.h"
+#include "hd-note.h"
 
 void *
 hd_util_get_win_prop_data_and_validate (Display   *xdpy,
@@ -124,12 +126,24 @@ hd_util_modal_blocker_realize(MBWindowManagerClient *client)
 }
 
 Bool
-hd_util_is_client_system_modal (MBWindowManagerClient *c)
+hd_util_client_has_modal_blocker (MBWindowManagerClient *c)
 {
-  /* Note that we no longer require that a system-modal
-   * window be modal.
+  /* This is *almost* a system modal check, but we actually
+   * care if the client has modal blocker that means that
+   * h-d shouldn't allow the top-left buttons to work.
+   *
+   * Other clients exist that are not transient to anything
+   * but are not system modal (for example the Status Area)
    */
-  return 
+  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE(c);
+  return
+      ((c_type == MBWMClientTypeDialog) ||
+       (c_type == MBWMClientTypeMenu) ||
+       (c_type == HdWmClientTypeAppMenu) ||
+       (c_type == HdWmClientTypeStatusMenu) ||
+       (c_type == MBWMClientTypeNote &&
+        HD_NOTE (c)->note_type != HdNoteTypeIncomingEvent &&
+        HD_NOTE (c)->note_type != HdNoteTypeBanner)) &&
       !mb_wm_client_get_transient_for (c) &&
       mb_wm_get_modality_type (c->wmref) == MBWMModalitySystem;
 }

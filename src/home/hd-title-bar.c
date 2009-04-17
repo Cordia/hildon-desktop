@@ -54,7 +54,6 @@ enum
   BTN_SEPARATOR_STATUS,
   BTN_SEPARATOR_RIGHT,
   BTN_SWITCHER,
-  BTN_SWITCHER_FG, /* duplicate of BTN_SWITCHER that appears in foreground */
   BTN_SWITCHER_HIGHLIGHT,
   BTN_SWITCHER_PRESSED,
   BTN_LAUNCHER,
@@ -79,7 +78,6 @@ static const char *const BTN_FILENAMES[BTN_COUNT] = {
     HD_THEME_IMG_SEPARATOR,
     HD_THEME_IMG_SEPARATOR,
     HD_THEME_IMG_TASK_SWITCHER,
-    HD_THEME_IMG_TASK_SWITCHER,
     HD_THEME_IMG_TASK_SWITCHER_HIGHLIGHT,
     HD_THEME_IMG_TASK_SWITCHER_PRESSED,
     HD_THEME_IMG_TASK_LAUNCHER,
@@ -103,7 +101,6 @@ static const char *const BTN_LABELS[BTN_COUNT * 2] = {
     NULL, NULL,  // BTN_SEPARATOR_STATUS,
     NULL, NULL,  // BTN_SEPARATOR_RIGHT,
     NULL, NULL,  // BTN_SWITCHER,
-    NULL, NULL,  // BTN_SWITCHER_FG,
     NULL, NULL,  // BTN_SWITCHER_HIGHLIGHT,
     NULL, NULL,  // BTN_SWITCHER_PRESSED,
     NULL, NULL,  // BTN_LAUNCHER,
@@ -138,8 +135,7 @@ static const gboolean BTN_FLAGS[BTN_COUNT] = {
    BTN_FLAG_FOREGROUND, // BTN_SEPARATOR_LEFT,
    0, // BTN_SEPARATOR_STATUS,
    0, // BTN_SEPARATOR_RIGHT,
-   BTN_FLAG_SET_SIZE, // BTN_SWITCHER,
-   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_SWITCHER_FG,
+   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_SWITCHER,
    BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_SWITCHER_HIGHLIGHT,
    BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_SWITCHER_PRESSED,
    BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_LAUNCHER,
@@ -325,8 +321,7 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_actor_hide(CLUTTER_ACTOR(priv->title));
 
   /* Make sure the 'foreground' is in the right place */
-  clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->foreground));
-  clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->title_bg));
+  clutter_actor_raise_top(CLUTTER_ACTOR(priv->foreground));
 
   /* Create timeline animation */
   priv->switcher_timeline =
@@ -457,16 +452,6 @@ void hd_title_bar_set_state(HdTitleBar *bar,
       clutter_actor_hide(priv->buttons[BTN_SWITCHER_HIGHLIGHT]);
     }
 
-  if ((button & HDTB_VIS_BTN_SWITCHER) &&
-      (button & HDTB_VIS_FOREGROUND))
-    {
-      clutter_actor_show(priv->buttons[BTN_SWITCHER_FG]);
-    }
-  else
-    {
-      clutter_actor_hide(priv->buttons[BTN_SWITCHER_FG]);
-    }
-
   if (button & HDTB_VIS_BTN_BACK)
     {
       clutter_actor_show(priv->buttons[BTN_BACK]);
@@ -517,10 +502,7 @@ void hd_title_bar_set_state(HdTitleBar *bar,
         {
           clutter_actor_reparent(CLUTTER_ACTOR(priv->foreground),
                                  CLUTTER_ACTOR(bar));
-          /* we need to lower this below other buttons, but above the
-           * main title background */
-          clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->foreground));
-          clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->title_bg));
+          clutter_actor_raise_top(CLUTTER_ACTOR(priv->foreground));
         }
     }
 }
