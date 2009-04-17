@@ -234,7 +234,10 @@ hd_decor_create_actors(HdDecor *decor)
          * is there, it is used, otherwise use the traditional properties. */
         bar_title = CLUTTER_LABEL(clutter_label_new());
         clutter_label_set_color(bar_title, &white);
-        clutter_label_set_use_markup(bar_title, TRUE);
+
+        /* set Pango markup only if the string is XML fragment */
+        if (client->window->name_has_markup)
+          clutter_label_set_use_markup(bar_title, TRUE);
 
         decor->title_actor = CLUTTER_ACTOR(bar_title);
         clutter_container_add_actor(CLUTTER_CONTAINER(actor),

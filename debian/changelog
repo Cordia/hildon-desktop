@@ -14,6 +14,9 @@ hildon-desktop (1:2.2.40-1~unreleased) unstable; urgency=low
   Kimmo:
   * Fix logic in construct_buttons when the decor hasn't been created yet.
     This should fix the occasional disappearing close button problem.
+  * Fixes: NB#108303 - On title bars of few applets & appears as 'amp&;.
+  * Depend on new libmatchbox2 because of the new name_has_markup member in
+    window structure.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 14 Apr 2009 13:35:58 +0300
 

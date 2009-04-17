@@ -319,7 +319,8 @@ hd_title_bar_init (HdTitleBar *bar)
   /* Create the title */
   priv->title = CLUTTER_LABEL(clutter_label_new());
   clutter_label_set_color(priv->title, &white);
-  clutter_label_set_use_markup(priv->title, TRUE);
+  /* do not call clutter_label_set_use_markup() until we know whether 
+   * or not the text has markup */
   clutter_container_add_actor(CLUTTER_CONTAINER(bar), CLUTTER_ACTOR(priv->title));
   clutter_actor_hide(CLUTTER_ACTOR(priv->title));
 
@@ -806,6 +807,9 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
               d->font_units == MBWMXmlFontUnitsPoints ? "" : "px");
     clutter_label_set_font_name(priv->title, font_name);
     clutter_label_set_text(priv->title, title);
+
+    if (client->window->name_has_markup)
+      clutter_label_set_use_markup(priv->title, TRUE);
 
     h = clutter_actor_get_height(CLUTTER_ACTOR(priv->title));
     clutter_actor_set_width(CLUTTER_ACTOR(priv->title),

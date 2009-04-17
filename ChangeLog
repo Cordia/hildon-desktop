@@ -1,3 +1,11 @@
+2009-04-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-title-bar.c (hd_title_bar_init): Do not call
+	clutter_label_set_use_markup until we know about the title text.
+	(hd_title_bar_set_window): Use Pango markup only if the text has that.
+	* src/mb/hd-decor.c (hd_decor_create_actors): Use Pango markup only if
+	the text has that. Fixes: NB#108303
+
 2009-04-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-transition.c (hd_transition_popup):

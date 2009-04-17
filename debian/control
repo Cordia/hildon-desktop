@@ -2,7 +2,7 @@ Source: hildon-desktop
 Section: x11
 Priority: optional
 Maintainer: Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
-Build-Depends: cdbs (>= 0.4.21), debhelper (>= 4.1.0), pkg-config (>= 0.18), libmatchbox2-dev (>> 0.2.29-1), libclutter-0.8-dev (>> 0.8.2-0maemo13), libxdamage-dev, libxcomposite-dev, libxfixes-dev, libx11-dev, libdbus-1-dev, libxft-dev, libglib2.0-dev, libgtk2.0-dev, libgconf2-dev, libhildon1-dev, libhildondesktop1-dev (>= 2.1.6), libcanberra-dev, libxrandr-dev, upstart-dev, mce-dev
+Build-Depends: cdbs (>= 0.4.21), debhelper (>= 4.1.0), pkg-config (>= 0.18), libmatchbox2-dev (>> 0.2.32-1), libclutter-0.8-dev (>> 0.8.2-0maemo13), libxdamage-dev, libxcomposite-dev, libxfixes-dev, libx11-dev, libdbus-1-dev, libxft-dev, libglib2.0-dev, libgtk2.0-dev, libgconf2-dev, libhildon1-dev, libhildondesktop1-dev (>= 2.1.6), libcanberra-dev, libxrandr-dev, upstart-dev, mce-dev
 Standards-Version: 3.8.0
 
 Package: hildon-desktop
