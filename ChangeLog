@@ -1,5 +1,7 @@
 2009-04-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.40
+
 	* src/home/hd-title-bar.c (hd_title_bar_init): Do not call
 	clutter_label_set_use_markup until we know about the title text.
 	(hd_title_bar_set_window): Use Pango markup only if the text has that.

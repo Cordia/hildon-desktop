@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.40-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.40-1) unstable; urgency=low
 
   Adam:
   * Fixes: NB#108826 - during drag and drop or panning, device is getting
@@ -10,6 +10,7 @@ hildon-desktop (1:2.2.40-1~unreleased) unstable; urgency=low
   Marc:
   * Fixes: NB#108072 - Centralized showing the loading screen only as a
     response to the HdAppMgr signal.
+  * Fixes: NB#109134, NB#111112 - Changed launcher to UI specs.
 
   Kimmo:
   * Fix logic in construct_buttons when the decor hasn't been created yet.
@@ -18,7 +19,7 @@ hildon-desktop (1:2.2.40-1~unreleased) unstable; urgency=low
   * Depend on new libmatchbox2 because of the new name_has_markup member in
     window structure.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 14 Apr 2009 13:35:58 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 17 Apr 2009 11:03:26 +0300
 
 hildon-desktop (1:2.2.39-1) unstable; urgency=low
 
