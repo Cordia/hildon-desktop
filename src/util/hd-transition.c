@@ -910,8 +910,8 @@ hd_transition_play_sound (const gchar * fname)
     gint millisec;
 
     /* FIXME: Take this out when Bug 105635 is fixed */
-    g_warning("%s: Canberra sound disabled for speed reasons, %s",
-              __FUNCTION__, fname);
+    g_debug ("%s: Canberra sound disabled for speed reasons, %s",
+             __FUNCTION__, fname);
     return;
 
     /* Canberra uses threads. */
