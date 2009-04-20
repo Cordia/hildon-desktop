@@ -50,7 +50,7 @@
 
 /* And this one is to help debugging visibility-related problems
  * ie. when stacking is all right but but you cannot see what you want. */
-#if 0
+#if 1
 # define VISIBILITY       g_debug
 #else
 # define VISIBILITY(...)  /* NOP */
@@ -926,11 +926,19 @@ void hd_render_manager_set_status_area (ClutterActor *item)
     {
       MBWMCompMgrClient *cc;
 
+      /*
+       * Make the status area actor reactive.  Normally, this has no effect
+       * (ie. when the status area region is not in our input viewport).
+       * When it is in the viewport we put it there specifically to block
+       * access to the status menu.  If we don't make it reactive the click
+       * goes through to the background.  So prevent it.
+       */
       cc = g_object_get_data(G_OBJECT(item), "HD-MBWMCompMgrClutterClient");
       priv->status_area_client = cc->wm_client;
       priv->status_area = g_object_ref(item);
       clutter_actor_reparent(priv->status_area,
           CLUTTER_ACTOR(hd_title_bar_get_foreground_group(priv->title_bar)));
+      clutter_actor_set_reactive(priv->status_area, TRUE);
       g_signal_connect(item, "notify::allocation",
                        G_CALLBACK(hd_render_manager_place_titlebar_elements),
                        NULL);
