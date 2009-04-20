@@ -141,8 +141,13 @@
  * %FLY_EFFECT_DURATION:          Same for the flying animation, ie. when
  *                                the windows are repositioned.
  */
-#define ZOOM_EFFECT_DURATION      200
-#define FLY_EFFECT_DURATION       400
+#if 1
+# define ZOOM_EFFECT_DURATION      200
+# define FLY_EFFECT_DURATION       400
+#else
+# define ZOOM_EFFECT_DURATION      1000
+# define FLY_EFFECT_DURATION       1000
+#endif
 /* Standard definitions }}} */
 
 /* Macros {{{ */
@@ -2689,8 +2694,13 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
   for_each_thumbnail (li, thumb)
     if (thumb->tnote && thumb->tnote->hdnote == hdnote)
       break;
-
-  if (thumb == NULL || thumb->tnote == NULL)
+  if (!thumb || !thumb->tnote)
+    /*
+     * This used to be a grif().  Then that got disabled because it's evil.
+     * Now the check is resurrected because of Coverity.  Except that now
+     * we don't get a warning if this BOGUS condition occurrs.  Should i
+     * readd the warning?  I cannot be bothered.
+     */
     return;
 
   if (thumb_is_notification (thumb))
@@ -2726,7 +2736,7 @@ G_DEFINE_TYPE (HdTaskNavigator, hd_task_navigator, CLUTTER_TYPE_GROUP);
 /* @Navigator's "show" handler. */
 static void
 navigator_shown (ClutterActor * navigator, gpointer unused)
-{
+{ g_debug(__FUNCTION__);
   GList *li;
   Thumbnail *thumb;
 
@@ -2745,23 +2755,32 @@ navigator_shown (ClutterActor * navigator, gpointer unused)
 /* @Navigator's "hide" handler. */
 static void
 navigator_hidden (ClutterActor * navigator, gpointer unused)
-{
+{ g_debug(__FUNCTION__);
   GList *li;
   Thumbnail *thumb;
 
-  /* Finish in-progress animations, allowing for the final placement
-   * of the involved actors. */
+  /*
+   * Finish in-progress animations, allowing for the final placement of
+   * the involved actors.  The ordering is important in the intervention
+   * of zoom+close add_window.  In this case the sequence of event is
+   * thread1: zoom, thread2: add_window, exit, thread1: remove_window.
+   * When we stop the @Zoom_effect on exit (this function) it calls its
+   * remove_window closure.  We need to make sure the previous @Fly_effect
+   * is cancelled by this time, otherwise its last frame would override the
+   * new settings of layout_thumbs() (triggered by remove_window()).
+   * Yes, transiency is a lot of fun.
+   */
+  if (animation_in_progress (Fly_effect))
+    {
+      stop_animation (Fly_effect_timeline);
+      g_assert (!animation_in_progress (Fly_effect));
+    }
   if (animation_in_progress (Zoom_effect))
     {
       /* %HdSwitcher must make sure it doesn't do silly things if the
        * user cancelled the zooming. */
       stop_animation (Zoom_effect_timeline);
       g_assert (!animation_in_progress (Zoom_effect));
-    }
-  if (animation_in_progress (Fly_effect))
-    {
-      stop_animation (Fly_effect_timeline);
-      g_assert (!animation_in_progress (Fly_effect));
     }
 
   /* Undo navigator_shown(). */
