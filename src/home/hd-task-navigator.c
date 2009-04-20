@@ -143,7 +143,7 @@
  * %FLY_EFFECT_DURATION:          Same for the flying animation, ie. when
  *                                the windows are repositioned.
  */
-#if 0
+#if 1
 # define ZOOM_EFFECT_DURATION      200
 # define FLY_EFFECT_DURATION       400
 #else
