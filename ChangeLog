@@ -25,9 +25,10 @@
 
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#111773 ROTATION:CAll UI is hidden after tapping on status menu
+
 	* src/home/hd-render-manager (hd_render_manager_set_status_area):
 	  Block home background when blocking the status area.
-	  For NB#111773.
 
 2009-04-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
