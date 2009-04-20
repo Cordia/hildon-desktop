@@ -403,10 +403,13 @@ hd_launcher_on_glow_frame(ClutterTimeline *timeline,
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
 
-  priv->glow_amount = frame_num / (float)clutter_timeline_get_n_frames(timeline);
+  priv->glow_amount = frame_num /
+                      (float)clutter_timeline_get_n_frames(timeline);
   if (priv->icon_glow)
     tidy_highlight_set_amount(priv->icon_glow,
-        priv->glow_amount * priv->glow_radius);
+                              priv->glow_amount * priv->glow_radius);
+  else
+    return;
 
   if (priv->glow_amount != 0)
     clutter_actor_show(CLUTTER_ACTOR(priv->icon_glow));

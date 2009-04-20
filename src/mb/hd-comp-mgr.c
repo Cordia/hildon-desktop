@@ -1477,7 +1477,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
           }
 	  else  /* f->stack_index < app->stack_index */
 	  {
-            if (flink->next)
+            if (flink && flink->next)
 	    {
               g_debug ("%s: %p PRECEEDS (index %d) A FOLLOWER (with index %d)"
 	             " OF THE STACK\n", __func__, app, app->stack_index,

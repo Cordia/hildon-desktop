@@ -139,7 +139,7 @@ back_button_timeout (gpointer data)
    * We have to check if the button is still pressed. The user might released
    * the stylus outside the button.
    */
-  if (bd->button->state == MBWMDecorButtonStatePressed)
+  if (c && bd->button->state == MBWMDecorButtonStatePressed)
     hd_app_close_followers (HD_APP(c));
 
 finalize:
