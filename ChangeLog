@@ -1,8 +1,9 @@
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#111388 Thumb nails in switcher are overlaping.
+
 	* src/home/hd-task-navigator (navigator_hidden):
 	  Don't be confused if a thumbnail is added during zoom+close.
-	  Likely to fix NB#111388 but i haven't verified it.
 
 2009-04-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
