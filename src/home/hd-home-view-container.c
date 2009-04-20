@@ -123,7 +123,8 @@ backgrounds_dir_changed (GnomeVFSMonitorHandle    *handler,
       g_debug ("%s. %s %s.",
                __FUNCTION__,
                info_uri,
-               event_type == GNOME_VFS_MONITOR_EVENT_CREATED ? "created" : "changed");
+               event_type == GNOME_VFS_MONITOR_EVENT_CREATED ?
+                             "created" : "changed");
 
       filename = g_filename_from_uri (info_uri, NULL, NULL);
       basename = g_path_get_basename (filename);
@@ -133,11 +134,12 @@ backgrounds_dir_changed (GnomeVFSMonitorHandle    *handler,
         {
           guint id;
 
-          id = atoi (basename + 11) - 1; /* id is from 0 .. MAX_HOME_VIEWS - 1 */
+          id = atoi (basename + 11) - 1; /* id is from 0..MAX_HOME_VIEWS - 1 */
 
-          if (id >= 0 && id < MAX_HOME_VIEWS && priv->active_views[id])
+          if (id < MAX_HOME_VIEWS && priv->active_views[id])
             {
-              g_debug ("%s. Reload background %s for view %u.", __FUNCTION__, info_uri, id + 1);
+              g_debug ("%s. Reload background %s for view %u.", __FUNCTION__,
+                       info_uri, id + 1);
               hd_home_view_load_background (HD_HOME_VIEW (priv->views[id]));
             }
         }

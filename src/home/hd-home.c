@@ -570,7 +570,8 @@ hd_home_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->front), edit_group);
   clutter_actor_hide (edit_group);
 
-  priv->view_container = hd_home_view_container_new (HD_COMP_MGR (priv->comp_mgr),
+  priv->view_container = hd_home_view_container_new (
+                                                HD_COMP_MGR (priv->comp_mgr),
                                                 CLUTTER_ACTOR (object));
   clutter_actor_set_name (priv->view_container, "HdHome:view_container");
   clutter_container_add_actor (CLUTTER_CONTAINER (object), priv->view_container);
@@ -600,27 +601,34 @@ hd_home_constructed (GObject *object)
   style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
                                      NULL, NULL,
                                      GTK_TYPE_WIDGET);
-  gtk_style_lookup_color (style, HD_EDGE_INDICATION_COLOR, &color);
+  if (!gtk_style_lookup_color (style, HD_EDGE_INDICATION_COLOR, &color))
+    color.red = color.green = color.blue = 0;
   clr.red = color.red >> 8;
   clr.green = color.green >> 8;
   clr.blue = color.blue >> 8;
-  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_left), &clr);
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_left),
+                               &clr);
 
-  clutter_actor_set_size (priv->edge_indication_left, HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  clutter_actor_set_size (priv->edge_indication_left,
+                HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
   clutter_actor_set_position (priv->edge_indication_left, 0, 0);
   clutter_actor_hide (priv->edge_indication_left);
-  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group), priv->edge_indication_left);
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
+                               priv->edge_indication_left);
 
   priv->edge_indication_right = clutter_rectangle_new ();
   clutter_actor_set_name (priv->edge_indication_right, "HdHome:right_switch");
 
-  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_right), &clr);
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_right),
+                               &clr);
 
-  clutter_actor_set_size (priv->edge_indication_right, HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  clutter_actor_set_size (priv->edge_indication_right,
+                HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
   clutter_actor_set_position (priv->edge_indication_right,
-			      HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH, 0);
+		HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH, 0);
   clutter_actor_hide (priv->edge_indication_right);
-  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group), priv->edge_indication_right);
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
+                               priv->edge_indication_right);
 
   clutter_actor_lower_bottom (priv->view_container);
 

@@ -8,6 +8,14 @@
 	checking for c == NULL.
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_handle_stackable): Silence
 	Coverity by checking for flink == NULL in one case.
+	* src/home/hd-home.c (hd_home_constructed): Add check for the return
+	value of gtk_style_lookup_color to silence Coverity. Also white space
+	fixes.
+	* src/mb/hd-comp-mgr.c: Do not compile most of the debug dumping code
+	if g_debug is not compiled. Again to silence Coverity.
+	* src/home/hd-home-view-container.c (backgrounds_dir_changed): Do not
+	check whether an unsigned int is negative to silence Coverity. Also
+	white space fixes.
 
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 

@@ -2424,6 +2424,7 @@ hd_comp_mgr_get_desktop_client (HdCompMgr *hmgr)
   return priv->desktop;
 }
 
+#ifndef G_DEBUG_DISABLE
 static void
 dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
 {
@@ -2457,10 +2458,12 @@ dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
       g_string_truncate (indent, indent->len-1);
     }
 }
+#endif
 
 void
 hd_comp_mgr_dump_debug_info (const gchar *tag)
 {
+#ifndef G_DEBUG_DISABLE
   Window focus;
   MBWMRootWindow *root;
   MBWindowManagerClient *mbwmc;
@@ -2511,6 +2514,7 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
 
   dump_clutter_actor_tree (clutter_stage_get_default (), NULL);
   hd_app_mgr_dump_app_list (TRUE);
+#endif
 }
 
 void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running)
