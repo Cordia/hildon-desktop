@@ -19,7 +19,7 @@
 
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-	* src/home/hd-swticher.c (hd_switcher_something_removed):
+	* src/home/hd-switcher.c (hd_switcher_something_removed):
 	  Exit the switcher if it's become completely empty.
 	  Fixes the case when the switcher contains only notifications
 	  and you close one of them.
@@ -32,6 +32,25 @@
 	  This may happen if libmatchbox cannot find its theme (eg. accidentally
 	  you configure it with --prefix=/usr/local).
 	* TODO
+
+2009-04-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes NB#111517 and NB#108862
+	* src/util/hd-util.c
+	* src/util/hd-util.h: Modify hd_util_is_client_system_modal to instead
+	  return true only if the client has a modal blocker. Renamed to 
+	  hd_util_client_has_modal_blocker
+	* src/home/hd-render-manager.c: Removed un-needed code in set_button,
+	  changed for hd-util modifications 	  
+	* src/launcher/hd-launcher-tile.c: Remove reactivity on the launcher 
+	  tile as it is not required.
+	* src/home/hd-title-bar.c: Removed BTN_SWITCHER_FG as it turned out
+	  not to be needed. Fixes NB#111517 (Task switcher icon does not use
+	  pressed state).
+	* src/mb/hd-comp-mgr.c: Removed tasks_button_blockers, and instead
+	  move code to setup_input_viewport. Fixes NB#108862
+	* src/tidy/tidy-finger-scroll.c: Re-added smooth drag animation in 
+	  case this helps with task launcher subview speed at all.	
 
 2009-04-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
