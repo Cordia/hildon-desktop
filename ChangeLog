@@ -1,3 +1,19 @@
+2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-swticher.c (hd_switcher_something_removed):
+	  Exit the switcher if it's become completely empty.
+	  Fixes the case when the switcher contains only notifications
+	  and you close one of them.
+
+2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/main.c:
+	  Abort early if the compositor wasn't turned on, which hildon-desktop
+	  doesn't tolerate, and causes it to fail in the most mysterious ways.
+	  This may happen if libmatchbox cannot find its theme (eg. accidentally
+	  you configure it with --prefix=/usr/local).
+	* TODO
+
 2009-04-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Align launcher tiles to the left.

@@ -716,7 +716,7 @@ static void
 hd_switcher_something_removed (void)
 {
   if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV
-      && !hd_task_navigator_has_apps ())
+      && hd_task_navigator_is_empty ())
     hd_render_manager_set_state (HDRM_STATE_HOME);
 }
 
