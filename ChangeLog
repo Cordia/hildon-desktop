@@ -1,6 +1,12 @@
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c:
+	  Removed some old-time #if0-d code.  Let's not leave mess behind.
+	  This is my mum's birthday.
+
+2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c:
 	  Regression fix.  The blue background of notifications came
 	  to the foreground, making it impossible to read the message.
 	  But at least it's documented now why actor ordering is

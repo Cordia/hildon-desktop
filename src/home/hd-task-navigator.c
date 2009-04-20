@@ -971,8 +971,8 @@ turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
     {
       ClutterActor *particle;
 
-      particle =
-          hd_clutter_cache_get_texture(HD_THEME_IMG_CLOSING_PARTICLE, TRUE);
+      particle = hd_clutter_cache_get_texture (HD_THEME_IMG_CLOSING_PARTICLE,
+                                               TRUE);
       clutter_actor_set_anchor_point_from_gravity (particle,
                                                    CLUTTER_GRAVITY_CENTER);
       clutter_container_add_actor (CLUTTER_CONTAINER (closure->all_particles),
@@ -1823,13 +1823,6 @@ release_win (const Thumbnail * apthumb)
   if (apthumb->dialogs)
     g_ptr_array_foreach (apthumb->dialogs,
                          (GFunc)hd_render_manager_return_dialog, NULL);
-
-#if 0
-  /* If we don't hide after reparenting, having clicked the background
-   * of the switcher .apwin will be shown in home view.
-   * TODO May not be true anymore. */
-  clutter_actor_hide (apthumb->apwin);
-#endif
 }
 /* Child adoption }}} */
 
@@ -1901,18 +1894,6 @@ static void
 zoom_in_complete (ClutterActor * navigator, ClutterActor * apwin)
 {
   g_signal_emit_by_name (Navigator, "zoom-in-complete", apwin);
-
-#if 0 /* TODO may not be needed anymore */
-  /* To minimize confusion the navigator hides all application windows it
-   * knows about when it starts hiding.  Undo it for the one we have zoomed
-   * inte, because it is expected to be shown. */
-
-  const Thumbnail *thumb;
-
-  clutter_actor_show (apwin);
-  if ((thumb = find_by_apwin (apwin)) && thumb->dialogs)
-    g_ptr_array_foreach (thumb->dialogs, (GFunc)clutter_actor_show, NULL);
-#endif
 }
 
 /*
