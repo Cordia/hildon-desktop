@@ -680,8 +680,8 @@ hd_transition_close_app (HdCompMgr                  *mgr,
 
   for (i = 0; i < HDCM_UNMAP_PARTICLES; ++i)
     {
-      data->particles[i] = hd_clutter_cache_get_texture(HD_EFFECT_PARTICLE_PATH,
-                                                        FALSE);
+      data->particles[i] = hd_clutter_cache_get_texture(
+          HD_THEME_IMG_CLOSING_PARTICLE, TRUE);
       if (data->particles[i])
         {
           clutter_actor_set_anchor_point_from_gravity(data->particles[i],

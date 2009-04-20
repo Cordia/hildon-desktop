@@ -61,6 +61,7 @@
 #include "hd-title-bar.h"
 #include "hd-clutter-cache.h"
 #include "hd-transition.h"
+#include "hd-theme.h"
 
 /* Standard definitions {{{ */
 #undef  G_LOG_DOMAIN
@@ -967,7 +968,8 @@ turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
     {
       ClutterActor *particle;
 
-      particle = hd_clutter_cache_get_texture(HD_EFFECT_PARTICLE_PATH, FALSE);
+      particle =
+          hd_clutter_cache_get_texture(HD_THEME_IMG_CLOSING_PARTICLE, TRUE);
       clutter_actor_set_anchor_point_from_gravity (particle,
                                                    CLUTTER_GRAVITY_CENTER);
       clutter_container_add_actor (CLUTTER_CONTAINER (closure->all_particles),

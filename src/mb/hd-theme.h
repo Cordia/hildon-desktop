@@ -56,6 +56,9 @@
 #define HD_THEME_IMG_PROGRESS_FRAMES 8 /*frames in animation */
 #define HD_THEME_IMG_PROGRESS_FPS 5 /*frames per second */
 
+#define HD_THEME_IMG_CLOSING_PARTICLE "wmWhiteSparkle.png"
+/* sparkle when app closes */
+
 /* Edit Button */
 #define HD_THEME_IMG_EDIT_ICON "wmEditIcon.png"
 #define HD_THEME_IMG_BUTTON_LEFT_HALF "wmButtonLeftHalf.png"

@@ -1,3 +1,15 @@
+2009-04-20  Gordon Williams <gordon.williams@collabora.co.uk>
+	
+	NB#94184 - removing the closing effect particle from hildon-desktop 
+	and adding it to the theme
+	* src/mb/hd-theme.h: Add #define for CLOSING_PARTICLE
+	* src/util/hd-transition.h: Remove old particle #define
+	* src/util/hd-transition.c
+	* src/home/hd-task-navigator.c: Changes to load closing anim particle
+	from the theme.
+	* data/white-particle.png (Removed): as we use the particle from the
+	theme now	
+
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#111908 Task button doesn't respond when the image viewer is opened

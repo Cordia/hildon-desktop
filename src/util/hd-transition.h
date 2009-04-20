@@ -29,7 +29,6 @@
 /* The file name of the particle image used in close-app transitions
  * and the number of them to show in the transition. */
 #define HDCM_UNMAP_PARTICLES        8
-#define HD_EFFECT_PARTICLE_PATH     HD_DATADIR "/white-particle.png"
 
 float
 hd_transition_overshoot(float x);
