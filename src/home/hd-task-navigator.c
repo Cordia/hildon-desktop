@@ -12,15 +12,6 @@
  *       @Thumbnails          #ClutterGroup:s
  *
  * Thumbnail.thwin hierarchy:
- *   .prison                  #ClutterGroup
- *     .titlebar              #ClutterGroup
- *     .windows               #ClutterGroup         applications
- *       .apwin               #ClutterActor         applications
- *       .dialogs             #ClutterActor         applications
- *     .video                 #ClutterTexture       applications
- *     .icon                  #ClutterTexture       notifications
- *     .time                  #ClutterLabel         notifications
- *     .message               #ClutterLabel         notifications
  *   .plate                   #ClutterGroup
  *     .frames.all            #ClutterGroup
  *       .frames.north_west   #ClutterCloneTexture
@@ -34,6 +25,15 @@
  *       .frames.south_east   #ClutterCloneTexture
  *     .title                 #ClutterLabel
  *     .close                 #ClutterGroup
+ *   .prison                  #ClutterGroup
+ *     .titlebar              #ClutterGroup         applications
+ *     .windows               #ClutterGroup         applications
+ *       .apwin               #ClutterActor         applications
+ *       .dialogs             #ClutterActor         applications
+ *     .video                 #ClutterTexture       applications
+ *     .icon                  #ClutterTexture       notifications
+ *     .time                  #ClutterLabel         notifications
+ *     .message               #ClutterLabel         notifications
  * }}}
 */
 
@@ -143,7 +143,7 @@
  * %FLY_EFFECT_DURATION:          Same for the flying animation, ie. when
  *                                the windows are repositioned.
  */
-#if 1
+#if 0
 # define ZOOM_EFFECT_DURATION      200
 # define FLY_EFFECT_DURATION       400
 #else
@@ -238,9 +238,8 @@ typedef struct
 
   /*
    * -- @thwin:       @Navigator_area's thumbnail window and event responder.
-   * -- @prison:      In application thumbnails it clips, scales and positions
-   *                  @windows and its contents.  Otherwise it's just a simple
-   *                  container.
+   * -- @prison:      In application thumbnails it scales and positions @windows
+   *                  and its contents.  Otherwise it's just a simple container.
    * -- @plate:       Groups the @title and the @frame graphics; used to fade
    *                  them all at once.
    * -- @title:       What to put in the thumbnail's title area.
@@ -248,13 +247,10 @@ typedef struct
    * -- @close:       An invisible actor (graphics is part of the frame)
    *                  reacting to user taps to close the thumbnail.
    *                  Slightly reaches out of the thumbnail bounds.
-   * -- @titlebar:    An actor that looks like the original title bar, so
-   *                  we can fade it out properly
    * -- @frame:       Frame graphics.
    */
   ClutterActor        *thwin, *prison, *plate;
   ClutterActor        *title, *close;
-  ClutterActor        *titlebar;
   Thumbnail_frame      frame;
 
   union
@@ -269,6 +265,9 @@ typedef struct
        * -- @windows:     Just 0-dimension container for @apwin and @dialogs,
        *                  its sole purpose is to make it easier to hide them
        *                  when the %Thumbnail has a @video.
+       * -- @titlebar:    An actor that looks like the original title bar.
+       *                  Faded in/out when zooming in/out, but normally
+       *                  transparent or not visible at all.
        * -- @dialogs:     The application's dialogs, popup menus and whatsnot
        *                  if it has or had any earlier, otherwise %NULL.
        *                  They are shown along with .apwin.  Hidden if
@@ -286,7 +285,7 @@ typedef struct
        *                  Used in matching the appropriate TNote for this
        *                  application.
        */
-      ClutterActor        *apwin, *windows;
+      ClutterActor        *apwin, *windows, *titlebar;
       GPtrArray           *dialogs;
       MBGeometry           inapwin;
       gchar               *class_hint;
@@ -1660,25 +1659,13 @@ create_thwin (Thumbnail * thumb)
   clutter_container_add (CLUTTER_CONTAINER (thumb->plate),
                          thumb->frame.all, thumb->title, thumb->close, NULL);
 
-  /* .titlebar */
-  if (thumb_is_application(thumb))
-    {
-      thumb->titlebar = hd_title_bar_create_fake(
-          HD_TITLE_BAR(hd_render_manager_get_title_bar()) );
-      clutter_container_add_actor (CLUTTER_CONTAINER (thumb->prison),
-                                   thumb->titlebar);
-      /* if a window is fullscreen then we want the title bar below it */
-      clutter_actor_lower_bottom(thumb->titlebar);
-    }
-  else
-    thumb->titlebar = 0;
-
-  /* .thwin */
+  /* .thwin: it is important that .plate is ordered below .prison
+   * because of the center element of the frame. */
   thumb->thwin = clutter_group_new ();
   clutter_actor_set_name (thumb->thwin, "thumbnail");
   clutter_actor_set_reactive (thumb->thwin, TRUE);
   clutter_container_add (CLUTTER_CONTAINER (thumb->thwin),
-                         thumb->prison, thumb->plate, NULL);
+                         thumb->plate, thumb->prison, NULL);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator_area),
                                thumb->thwin);
 }
@@ -1820,10 +1807,11 @@ claim_win (Thumbnail * apthumb)
   if (!thumb_has_notification (apthumb))
     reset_thumb_title (apthumb);
 
-  /* Restore the opacity of the actors that have been faded out while zooming,
-   * so we won't have trouble if we happen to to need to enter the navigator
-   * directly. */
+  /* Restore the opacity/visibility of the actors that have been faded out
+   * while zooming, so we won't have trouble if we happen to to need to enter
+   * the navigator directly. */
   clutter_actor_set_opacity (apthumb->plate, 255);
+  clutter_actor_hide (apthumb->titlebar);
 }
 
 /* Stop managing @apthumb's application window and give it back
@@ -1964,7 +1952,12 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
                        -xpos / xscale + apthumb->inapwin.x,
                        -ypos / yscale + apthumb->inapwin.y,
                        NULL, NULL);
-  clutter_effect_fade (Zoom_effect, apthumb->plate, 0, NULL, NULL);
+
+  /* Crossfade .plate with .titlebar. */
+  clutter_actor_show (apthumb->titlebar);
+  clutter_actor_set_opacity (apthumb->titlebar, 0);
+  clutter_effect_fade (Zoom_effect, apthumb->titlebar, 255, NULL, NULL);
+  clutter_effect_fade (Zoom_effect, apthumb->plate,      0, NULL, NULL);
 
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)zoom_in_complete,
@@ -2031,8 +2024,12 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   clutter_effect_scale (Zoom_effect, Scroller, 1, 1, NULL, NULL);
   clutter_effect_move  (Zoom_effect, Scroller, 0, 0, NULL, NULL);
 
+  /* Crossfade .plate with .titlebar.  It's okay to leave .titlebar shown
+   * but transparent. */
   clutter_actor_set_opacity (apthumb->plate, 0);
-  clutter_effect_fade (Zoom_effect, apthumb->plate, 255, NULL, NULL);
+  clutter_effect_fade (Zoom_effect, apthumb->plate,    255, NULL, NULL);
+  clutter_effect_fade (Zoom_effect, apthumb->titlebar,   0, NULL, NULL);
+  clutter_actor_show (apthumb->titlebar);
 
   add_effect_closure (Zoom_effect_timeline, fun, win, funparam);
   return;
@@ -2131,12 +2128,6 @@ actor_to_client_window (ClutterActor * win, const HdCompMgrClient **hcmgrcp)
 static void
 setup_prison (const Thumbnail * apthumb)
 {
-  /* We no longer need to set clipping as we draw the plate *over* the
-   * app. It also allows us to insert the title bar into the prison
-   * without having it clipped. */
-  /*clutter_actor_set_clip (apthumb->prison,
-                          apthumb->inapwin.x,     apthumb->inapwin.y,
-                          apthumb->inapwin.width, apthumb->inapwin.height);*/
   clutter_actor_set_anchor_point (apthumb->prison,
                                   apthumb->inapwin.x, apthumb->inapwin.y);
 }
@@ -2196,9 +2187,7 @@ create_appthumb (ClutterActor * apwin)
   apthumb->apwin   = g_object_ref (apwin);
   apthumb->inapwin = mbwmcwin->geometry;
   if ((app = hd_comp_mgr_client_get_app (HD_COMP_MGR_CLIENT (hmgrc))) != NULL)
-    {
-      apthumb->video_fname = hd_launcher_app_get_switcher_icon (HD_LAUNCHER_APP (app));
-    }
+    apthumb->video_fname = hd_launcher_app_get_switcher_icon (HD_LAUNCHER_APP (app));
   if (XGetClassHint (mbwmcwin->wm->xdpy, mbwmcwin->xwindow, &xwinhint))
     {
       apthumb->class_hint = xwinhint.res_class;
@@ -2207,16 +2196,19 @@ create_appthumb (ClutterActor * apwin)
   else
     g_warning ("XGetClassHint(%lx): failed", mbwmcwin->xwindow);
 
-  /* .prison: clip @apwin's non-decoration area and anchor it
-   * where the area starts. */
-  apthumb->prison = clutter_group_new ();
-  setup_prison (apthumb);
+  /* .titlebar */
+  apthumb->titlebar = hd_title_bar_create_fake (NULL);
 
   /* .windows */
   apthumb->windows = clutter_group_new ();
   clutter_actor_set_name (apthumb->windows, "windows");
-  clutter_container_add_actor (CLUTTER_CONTAINER (apthumb->prison),
-                               apthumb->windows);
+
+  /* .prison: anchor @apwin where it should be.
+   * ie. let its (0, 0) coordinate be the top-left of @apwin. */
+  apthumb->prison = clutter_group_new ();
+  setup_prison (apthumb);
+  clutter_container_add (CLUTTER_CONTAINER (apthumb->prison),
+                         apthumb->titlebar, apthumb->windows, NULL);
 
   /* Do we have a notification for @apwin? */
   for_each_notification (li, nothumb)

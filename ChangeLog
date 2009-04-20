@@ -1,5 +1,13 @@
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-task-navigator.c:
+	  Regression fix.  The blue background of notifications came
+	  to the foreground, making it impossible to read the message.
+	  But at least it's documented now why actor ordering is
+	  significant.
+
+2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#111139 ROTATION: Screen flickers when received chat message in
 	          active call
 

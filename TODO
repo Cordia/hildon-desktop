@@ -33,8 +33,10 @@ Notifications:
 - Use ATOM:ic property values in hd-note.c.
 
 Switcher:
+- Clear notification when an app thumbnail is closed manually.
 - Make the switcher's and launcher's scrollbar hildon-like.
-- Crossfade the titlebar when zooming.
+- Zoom+fly: don't slow down at the end of zoom and don't start slowly
+- Fly+fly: change move(), resize(), scale() not to jump
 - Shadowed text in switcher (wishlist).
 - Get rid of HdSwitcher, now that there is the render manager
 - Be more sensible differentiating clicks vs. scroll attempts.
