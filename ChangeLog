@@ -1,3 +1,15 @@
+2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#111139 ROTATION: Screen flickers when received chat message in
+	          active call
+
+	hd though the 15x15-15-15 tklick window was still visible
+	(and it was a dialog) so it decided we should rotate back.
+
+	* src/home/hd-render-manager.c:
+	  hd_render_manager_restack(): don't put offscreen windows in app_top
+	  hd_render_manager_is_visible(): reject offscreen actors right away
+
 2009-04-20  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	NB#109969 - Maximise animation in task switcher had flickering

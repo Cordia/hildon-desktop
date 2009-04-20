@@ -50,7 +50,7 @@
 
 /* And this one is to help debugging visibility-related problems
  * ie. when stacking is all right but but you cannot see what you want. */
-#if 1
+#if 0
 # define VISIBILITY       g_debug
 #else
 # define VISIBILITY(...)  /* NOP */
@@ -1366,6 +1366,34 @@ void hd_render_manager_return_dialog(ClutterActor *actor)
   clutter_actor_hide (actor);
 }
 
+/*
+ * Clip the offscreen parts of a @geo, ensuring that it doesn't have negative
+ * (x, y) coordinates.  Returns %FALSE if it's completely offscreen, meaning
+ * you can ignore it.  NOTE that only the -x and the -y halfplanes are
+ * considered offscreen in this context.
+ */
+static gboolean
+hd_render_manager_clip_geo(ClutterGeometry *geo)
+{
+  if (geo->x < 0)
+    {
+      if (-geo->x >= geo->width)
+        return FALSE;
+      geo->width += geo->x;
+      geo->x = 0;
+    }
+
+  if (geo->y < 0)
+    {
+      if (-geo->y >= geo->height)
+        return FALSE;
+      geo->height += geo->y;
+      geo->y = 0;
+    }
+
+  return TRUE;
+}
+
 /* Called to restack the windows in the way we use for rendering... */
 void hd_render_manager_restack()
 {
@@ -1459,6 +1487,9 @@ void hd_render_manager_restack()
             gboolean maximized;
 
             clutter_actor_get_geometry(child, &geo);
+            if (!hd_render_manager_clip_geo(&geo))
+              /* It's neiteher maximized nor @app_top, it doesn't exist. */
+              continue;
             maximized = HD_COMP_MGR_CLIENT_IS_MAXIMIZED(geo);
             /* Maximized stuff should never be blurred (unless there
              * is nothing else) */
@@ -1674,6 +1705,9 @@ static gboolean
 hd_render_manager_is_visible(GList *blockers,
                              ClutterGeometry rect)
 {
+  if (!hd_render_manager_clip_geo(&rect))
+    return FALSE;
+
   /* clip for every block */
   for (; blockers; blockers = blockers->next)
     {
@@ -1833,24 +1867,8 @@ void hd_render_manager_append_geo_cb(ClutterActor *actor, gpointer data)
       ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
       clutter_actor_get_geometry(actor, geo);
 
-      /* Forget the offscreen parts of a blocker.  If it's completely
-       * offscreen forget about it altogether.  This will ensure that
-       * no blockers will have negative (x, y) coordinates. */
-      if (geo->x < 0)
-        {
-          if (-geo->x >= geo->width)
-            return;
-          geo->width += geo->x;
-          geo->x = 0;
-        }
-      if (geo->y < 0)
-        {
-          if (-geo->y >= geo->height)
-            return;
-          geo->height += geo->y;
-          geo->y = 0;
-        }
-
+      if (!hd_render_manager_clip_geo (geo))
+        return;
       *list = g_list_prepend(*list, geo);
       VISIBILITY ("BLOCKER %dx%d%+d%+d", MBWM_GEOMETRY(geo));
     }
