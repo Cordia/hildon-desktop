@@ -1,5 +1,19 @@
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#111908 Task button doesn't respond when the image viewer is opened
+	          for the second time.
+
+	HdLauncher remained visible after launching the app for the second time
+	because the launcher's private transition engine thought it's coming
+	from subview and didn't hide it end the end of transition.
+
+	* src/launcher/hd-launcher.c (hd_launcher_application_tile_clicked):
+	  Don't start a mistaken subview-out transition when the launcher
+	  is (to be) hidden. (An appropriate main-out transition is already
+	  in progress.)
+
+2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#111388 Thumb nails in switcher are overlaping.
 
 	* src/home/hd-task-navigator (navigator_hidden):

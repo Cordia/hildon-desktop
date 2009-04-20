@@ -396,8 +396,9 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
   /* also do animation for the topmost pane if we had it... */
   top_page = g_datalist_get_data (&priv->pages,
                                    HD_LAUNCHER_ITEM_TOP_CATEGORY);
-  /* if we're not at the top page, we must transition that out too */
-  if (priv->active_page != top_page)
+  /* if we're not at the top page, we must transition that out too.
+   * @active_page is reset to %NULL when we exit by launcher_hide(). */
+  if (priv->active_page && priv->active_page != top_page)
     {
       hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
                 HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK);
