@@ -1,8 +1,23 @@
-hildon-desktop (1:2.2.42-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.42-1) unstable; urgency=low
 
-  * writeme
+  Adam:
+  * Fixes: NB#111388 - Thumb nails in switcher are overlaping.
+  * Fixes: NB#111908 - Task button doesn't respond when the image viewer is
+    opened for the second time.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 17 Apr 2009 16:25:34 +0300
+  Marc:
+  * Fixes: NB#111643 - Align launcher tiles to the left.
+
+  Gordon:
+  * Fixes: NB#108862 - Task launcher/switcher cannot be selected when having
+    banner
+  * Fixes: NB#111517 - Task switcher icon does not use pressed state
+  * Fixes: NB#94184 - Remove icons from hildon-desktop
+
+  Kimmo:
+  * Silence a number of Coverity whines.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 20 Apr 2009 13:40:19 +0300
 
 hildon-desktop (1:2.2.41-1) unstable; urgency=low
 
