@@ -26,6 +26,7 @@
 #endif
 
 #include <matchbox/core/mb-wm-object.h>
+#include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
@@ -402,6 +403,7 @@ main (int argc, char **argv)
 
   mb_wm_rename_window (wm, wm->root_win->hidden_window, PACKAGE);
   mb_wm_init (wm);
+  g_assert (mb_wm_comp_mgr_enabled (wm->comp_mgr));
 
   mb_wm_keys_binding_add_with_spec (wm,
 				    "<alt>d",

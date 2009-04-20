@@ -33,8 +33,9 @@ Notifications:
 - Use ATOM:ic property values in hd-note.c.
 
 Switcher:
-- Shadowed text in switcher
+- Make the switcher's and launcher's scrollbar hildon-like.
+- Crossfade the titlebar when zooming.
+- Shadowed text in switcher (wishlist).
 - Get rid of HdSwitcher, now that there is the render manager
 - Be more sensible differentiating clicks vs. scroll attempts.
   (It should be the same usability-wise as pannable areas.)
-- Make the switcher's and launcher's scrollbar hildon-like
