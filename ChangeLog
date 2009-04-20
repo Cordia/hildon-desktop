@@ -1,3 +1,16 @@
+2009-04-20  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	NB#109969 - Maximise animation in task switcher had flickering
+	            as the title bar became suddenly visible
+	* src/home/hd-title-bar.h
+	* src/home/hd-title-bar.c: Added a function to return a copy of the
+	title bar that can be used for animations
+	* src/home/hd-task-navigator.c: Re-ordered plate and prison clutter
+	actors so that we can remove the clipping on the actor prison and
+	display a fake title bar in it. Fake title bar is now behind the
+	plate as it fades out, to produce a nice transition to the real
+	title bar.
+
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-render-manager (hd_render_manager_set_status_area):

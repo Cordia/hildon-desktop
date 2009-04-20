@@ -315,7 +315,7 @@ hd_title_bar_init (HdTitleBar *bar)
   /* Create the title */
   priv->title = CLUTTER_LABEL(clutter_label_new());
   clutter_label_set_color(priv->title, &white);
-  /* do not call clutter_label_set_use_markup() until we know whether 
+  /* do not call clutter_label_set_use_markup() until we know whether
    * or not the text has markup */
   clutter_container_add_actor(CLUTTER_CONTAINER(bar), CLUTTER_ACTOR(priv->title));
   clutter_actor_hide(CLUTTER_ACTOR(priv->title));
@@ -1040,3 +1040,18 @@ hd_title_bar_add_right_signals(HdTitleBar *bar, ClutterActor *actor)
                             G_CALLBACK (hd_title_bar_top_right_leave),
                             bar);
 }
+
+/* Create a fake version of the title bar that can be used in the switcher */
+ClutterActor *
+hd_title_bar_create_fake(HdTitleBar *bar)
+{
+  ClutterActor *group = clutter_group_new();
+  clutter_actor_set_name(group, "hd_title_bar_create_fake");
+  ClutterActor *title_bar = hd_clutter_cache_get_texture(
+      HD_THEME_IMG_TITLE_BAR, TRUE);
+  clutter_actor_set_width(title_bar,  HD_COMP_MGR_SCREEN_WIDTH);
+  clutter_container_add_actor(CLUTTER_CONTAINER(group), title_bar);
+
+  return CLUTTER_ACTOR(group);
+}
+
