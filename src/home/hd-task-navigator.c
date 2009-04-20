@@ -2689,7 +2689,9 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
   for_each_thumbnail (li, thumb)
     if (thumb->tnote && thumb->tnote->hdnote == hdnote)
       break;
-  g_return_if_fail (thumb != NULL);
+
+  if (thumb == NULL || thumb->tnote == NULL)
+    return;
 
   if (thumb_is_notification (thumb))
     { /* @hdinfo is displayed in a thumbnail on its own. */
