@@ -1,3 +1,14 @@
+2009-04-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-task-navigator.c (hd_task_navigator_remove_notification):
+	Fix Coverity issue when thumb->tnote == NULL.
+	* src/launcher/hd-launcher-tile.c (hd_launcher_on_glow_frame): Fix
+	Coverity issue when priv->icon_glow == NULL.
+	* src/mb/hd-theme.c (back_button_timeout): Silence Coverity by
+	checking for c == NULL.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_handle_stackable): Silence
+	Coverity by checking for flink == NULL in one case.
+
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-swticher.c (hd_switcher_something_removed):
