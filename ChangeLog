@@ -1,3 +1,12 @@
+2009-04-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Patch from Dafydd Harries for
+	/tmp/hildon-desktop/desktop-started.stamp
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Create
+	desktop-started.stamp file for startup sequence optimisations.
+	Fixes: NB#109797
+
 2009-04-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes NB#109314

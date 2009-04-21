@@ -56,10 +56,14 @@
 #include <mce/dbus-names.h>
 
 #include <sys/types.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <math.h>
+#include <unistd.h>
 
 #define OPERATOR_APPLET_ID "_HILDON_OPERATOR_APPLET"
+#define STAMP_DIR          "/tmp/hildon-desktop/"
+#define STAMP_FILE         STAMP_DIR "desktop-started.stamp"
 
 #if 0
 # define PORTRAIT       g_debug
@@ -1522,6 +1526,23 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   HdCompMgrClient          * hclient_h;
   guint                      hkey;
   MBWMClientType             ctype;
+  static gboolean            first_time = TRUE;
+
+  if (G_UNLIKELY (first_time == TRUE))
+    {
+      int fd = creat (STAMP_FILE, 0644);
+
+      if (fd >= 0)
+        {
+          close (fd);
+        }
+      else
+        {
+          g_debug ("failed to create stamp file " STAMP_FILE);
+        }
+
+      first_time = FALSE;
+    }
 
   /*g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c,
              MB_WM_CLIENT_CLIENT_TYPE (c));*/
