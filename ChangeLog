@@ -1,5 +1,12 @@
 2009-04-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes NB#109314
+	* src/util/hd-transition.c: Removed commented out code
+	* src/home/hd-render-manager.c: Modify position of blur_front to place
+	it below app_top, where it should have been previously
+
+2009-04-21  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-render-manager.c: Now treat an actor as non-opaque
 	if it is involved in an effect (stops flicker in some transitions)
 	* src/util/hd-transition.c: Make popup animation request geometry

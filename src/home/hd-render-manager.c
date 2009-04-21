@@ -143,10 +143,11 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |
  *       --> launcher
  *       |
+ *       --> blur_front (!STATE_BLUR_BUTTONS)
+ *       |
  *       --> app_top           ---> dialogs
  *       |
- *       --> front             ---> blur_front (!STATE_BLUR_BUTTONS)
- *                              --> status_menu
+ *       --> front             ---> status_menu
  *                                                ---> title_bar::foreground (HDTB_VIS_FOREGROUND)
  *                                                           --->status_area
  *
@@ -826,13 +827,15 @@ void hd_render_manager_sync_clutter_before ()
 
   if (!STATE_BLUR_BUTTONS(priv->state) &&
       clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) !=
-              CLUTTER_ACTOR(priv->front))
+              CLUTTER_ACTOR(the_render_manager))
     {
       /* raise the blur_front out of the blur group so we can still
        * see it unblurred */
       clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
-                             CLUTTER_ACTOR(priv->front));
-      clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->blur_front));
+                             CLUTTER_ACTOR(the_render_manager));
+      /* lower this below app_top */
+      clutter_actor_lower(CLUTTER_ACTOR(priv->blur_front),
+                          CLUTTER_ACTOR(priv->app_top));
       hd_render_manager_blurred_changed();
     }
 

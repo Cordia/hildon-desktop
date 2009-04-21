@@ -552,14 +552,6 @@ hd_transition_popup(HdCompMgr                  *mgr,
                               MBWMCompMgrClutterClientDontUpdate |
                               MBWMCompMgrClutterClientEffectRunning);
 
-#if 0 /* Kimmo doesn't like hacks ;) */
-  if (event == MBWMCompMgrClientEventUnmap) {
-    /* reparent our actor so it will be visible when we switch views */
-    clutter_actor_reparent(actor,
-        CLUTTER_ACTOR(hd_render_manager_get_front_group()));
-    clutter_actor_lower_bottom(actor);
-  }
-#endif
   hd_comp_mgr_set_effect_running(mgr, TRUE);
 
   /* Add actor for the background when we pop a bit too far */
