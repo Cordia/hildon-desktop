@@ -65,6 +65,30 @@ hd_util_get_win_prop_data_and_validate (Display   *xdpy,
   return NULL;
 }
 
+/* Returns the value of a #HdWm string property of @xwin or %NULL
+ * if the window doesn't have such property or it can't be retrieved.
+ * If the return value is not %NULL it must be XFree()d by the caller. */
+char *
+hd_util_get_x_window_string_property (MBWindowManager *wm, Window xwin,
+                                      HdAtoms atom_id)
+{
+  Atom type;
+  int format, ret;
+  unsigned char *value;
+  unsigned long items, left;
+
+  /* The return @type is %None if the property is missing. */
+  ret = XGetWindowProperty (wm->xdpy, xwin,
+                            hd_comp_mgr_get_atom (HD_COMP_MGR (wm->comp_mgr),
+                                                  atom_id),
+                            0, 999, False, XA_STRING, &type, &format,
+                            &items, &left, &value);
+  if (ret != Success)
+    g_warning ("%s: XGetWindowProperty(0x%lx, 0x%x): failed (%d)",
+               __FUNCTION__, xwin, atom_id, ret);
+  return ret != Success || type == None ? NULL : (char *)value;
+}
+
 static void
 hd_util_modal_blocker_release_handler (XButtonEvent    *xev,
                                        void            *userdata)

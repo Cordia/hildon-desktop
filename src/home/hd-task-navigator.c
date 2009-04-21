@@ -63,6 +63,7 @@
 #include "hd-clutter-cache.h"
 #include "hd-transition.h"
 #include "hd-theme.h"
+#include "hd-util.h"
 
 /* Standard definitions {{{ */
 #undef  G_LOG_DOMAIN
@@ -260,8 +261,7 @@ typedef struct
     {
       /*
        * -- @apwin:       The pristine application window, not to be touched.
-       *                  Hidden if we have a .video.  Its name is set to the
-       *                  client's class_hint unless it had a name already.
+       *                  Hidden if we have a .video.
        * -- @windows:     Just 0-dimension container for @apwin and @dialogs,
        *                  its sole purpose is to make it easier to hide them
        *                  when the %Thumbnail has a @video.
@@ -281,19 +281,21 @@ typedef struct
        *                  is removed while the client is still hibernated.
        *                  Cleared when the window actor is replaced, presumably
        *                  because it's woken up.
-       * -- @class_hint:  The client's XClassHint.res_class, to be XFree()d.
-       *                  Used in matching the appropriate TNote for this
-       *                  application.
+       * -- @nodest:      What notifications this thumbnails is destination for.
+       *                  Taken from the _HILDON_NOTIFICATION_THREAD property
+       *                  of the thumbnail's client or its WM_CLASS hint.
+       *                  Once checked not refreshed again.  Used in matching
+       *                  the appropriate TNote for this application.
        */
       ClutterActor        *apwin, *windows, *titlebar;
       GPtrArray           *dialogs;
       MBGeometry           inapwin;
-      gchar               *class_hint;
-      gchar               *saved_title;
+      gchar               *saved_title, *nodest;
 
       /*
        * -- @video_fname: Where to look for the last-frame video screenshot
-       *                  for this application.  Deduced from .class_hint.
+       *                  for this application.  Deduced from some property
+       *                  in the application's .desktop file.
        * -- @video_mtime: The last modification time of the image loaded as
        *                  .video.  Used to decide if it should be refreshed.
        * -- @video:       The downsampled texture of the image loaded from
@@ -1694,8 +1696,8 @@ free_thumb (Thumbnail * thumb)
         }
 
       g_free(thumb->saved_title);
-      if (thumb->class_hint)
-        XFree (thumb->class_hint);
+      if (thumb->nodest)
+        XFree (thumb->nodest);
     }
 
   g_free (thumb);
@@ -2133,6 +2135,7 @@ appthumb_close_clicked (const Thumbnail * apthumb)
 {
   if (animation_in_progress (Fly_effect) || animation_in_progress (Zoom_effect))
     /* Closing an application while it's zooming would crash us. */
+    /* Maybe not anymore but let's play safe. */
     return TRUE;
 
   /* Report a regular click on the thumbnail (and make %HdSwitcher zoom in)
@@ -2151,7 +2154,6 @@ static Thumbnail *
 create_appthumb (ClutterActor * apwin)
 {
   GList *li;
-  XClassHint xwinhint;
   Thumbnail *apthumb, *nothumb;
   const HdLauncherApp *app;
   const HdCompMgrClient *hmgrc;
@@ -2169,13 +2171,25 @@ create_appthumb (ClutterActor * apwin)
   apthumb->inapwin = mbwmcwin->geometry;
   if ((app = hd_comp_mgr_client_get_app (HD_COMP_MGR_CLIENT (hmgrc))) != NULL)
     apthumb->video_fname = hd_launcher_app_get_switcher_icon (HD_LAUNCHER_APP (app));
-  if (XGetClassHint (mbwmcwin->wm->xdpy, mbwmcwin->xwindow, &xwinhint))
+
+  /* .nodest: try the property first then fall back to the WM_CLASS hint.
+   * TODO This is temporary, just not to break the little functionality
+   *      we already have. */
+  apthumb->nodest = hd_util_get_x_window_string_property (
+                                           mbwmcwin->wm, mbwmcwin->xwindow,
+                                           HD_ATOM_NOTIFICATION_THREAD);
+  if (!apthumb->nodest)
     {
-      apthumb->class_hint = xwinhint.res_class;
-      XFree (xwinhint.res_name);
+      XClassHint xwinhint;
+
+      if (XGetClassHint (mbwmcwin->wm->xdpy, mbwmcwin->xwindow, &xwinhint))
+        {
+          apthumb->nodest = xwinhint.res_class;
+          XFree (xwinhint.res_name);
+        }
+      else
+        g_warning ("XGetClassHint(%lx): failed", mbwmcwin->xwindow);
     }
-  else
-    g_warning ("XGetClassHint(%lx): failed", mbwmcwin->xwindow);
 
   /* .titlebar */
   apthumb->titlebar = hd_title_bar_create_fake (NULL);
@@ -2443,7 +2457,7 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
 /* HdNote::HdNoteSignalChanged signal handler. */
 static Bool
 tnote_changed (HdNote * hdnote, int unused1, TNote * tnote)
-{
+{ g_debug(__FUNCTION__);
   GList *li;
   Thumbnail *thumb;
 
@@ -2522,7 +2536,7 @@ static gboolean
 tnote_matches_thumb (const TNote * tnote, const Thumbnail * thumb)
 {
   char const * dest = hd_note_get_destination (tnote->hdnote);
-  return dest && thumb->class_hint && !strcmp (dest, thumb->class_hint);
+  return dest && thumb->nodest && !strcmp (dest, thumb->nodest);
 }
 /* %TNote:s }}} */
 
@@ -2654,8 +2668,8 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
               /* hildon-home should have replaced the summary of the existing
                * %HdNote instead; the easy way out is adding the new one to the
                * @Navigator_area. */
-              g_critical ("%s: attempt to add more than one notification "
-                          "to `%s'", __FUNCTION__, apthumb->class_hint);
+              g_critical ("%s: attempt to add more than one notification",
+                          __FUNCTION__);
               break;
             }
 

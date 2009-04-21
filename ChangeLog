@@ -1,3 +1,17 @@
+2009-04-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Make the switcher understand _HILDON_NOTIFICATION_THREAD.
+
+	* src/home/hd-task-navigator.c
+	* src/mb/hd-note.c
+	* src/util/hd-util.h
+	* src/util/hd-util.c (hd_util_get_x_window_string_property):
+	  Taken from hd-note.c.
+	* src/mb/hd-atoms.h
+	* src/mb/hd-atoms.c:
+	  Atom added.
+	* TODO
+
 2009-04-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c:

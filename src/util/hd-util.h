@@ -7,6 +7,8 @@
 #include <glib.h>
 #include <matchbox/core/mb-wm.h>
 
+#include "hd-atoms.h"
+
 void * hd_util_get_win_prop_data_and_validate (Display   *xpdy,
 					       Window     xwin,
 					       Atom       prop,
@@ -14,6 +16,9 @@ void * hd_util_get_win_prop_data_and_validate (Display   *xpdy,
 					       gint       expected_format,
 					       gint       expected_n_items,
 					       gint      *n_items_ret);
+char * hd_util_get_x_window_string_property (MBWindowManager  *wm,
+                                             Window            xwin,
+                                             HdAtoms           atom_id);
 unsigned long hd_util_modal_blocker_realize(MBWindowManagerClient *client);
 Bool hd_util_client_has_modal_blocker (MBWindowManagerClient *c);
 gboolean hd_util_change_screen_orientation (MBWindowManager *wm,

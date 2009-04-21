@@ -52,30 +52,13 @@ static HdAtoms IEProperties[] =
   HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION,
 };
 
-/* Returns the value of a #MBWMCompMgr string property of @self or %NULL
- * if the client doesn't have such property or it can't be retrieved.
- * If the return value is not %NULL it must be XFree()d by the caller. */
 static char *
 get_x_window_string_property (HdNote *self, HdAtoms atom_id)
 {
-  Atom type;
-  int format, ret;
-  MBWindowManager *wm;
-  unsigned char *value;
-  unsigned long items, left;
-
-  /* The return @type is %None if the property is missing. */
-  wm = MB_WM_CLIENT (self)->wmref;
-  ret = XGetWindowProperty (wm->xdpy, MB_WM_CLIENT (self)->window->xwindow,
-                            hd_comp_mgr_get_atom (HD_COMP_MGR (wm->comp_mgr),
-                                                  atom_id),
-                            0, 999, False, XA_STRING, &type, &format,
-                            &items, &left, &value);
-  if (ret != Success)
-    g_warning ("%s: XGetWindowProperty(0x%lx, 0x%x): failed (%d)",
-               __FUNCTION__, MB_WM_CLIENT (self)->window->xwindow,
-               atom_id, ret);
-  return ret != Success || type == None ? NULL : (char *)value;
+  return hd_util_get_x_window_string_property (
+                                  MB_WM_CLIENT (self)->wmref,
+                                  MB_WM_CLIENT (self)->window->xwindow,
+                                  atom_id);
 }
 
 static void
