@@ -146,10 +146,15 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
   if (!CLUTTER_IS_ACTOR(actor))
     return;
 
-  pop_top = data->geo.y==0;
-  pop_bottom = data->geo.y+data->geo.height==HD_COMP_MGR_SCREEN_HEIGHT;
+  /* We need to get geometry each frame as often windows have
+   * a habit of changing size while they move */
+  ClutterGeometry geo;
+  clutter_actor_get_geometry(actor, &geo);
+
+  pop_top = geo.y==0;
+  pop_bottom = geo.y+geo.height==HD_COMP_MGR_SCREEN_HEIGHT;
   if (pop_top && pop_bottom)
-    pop_top = 0;
+    pop_top = FALSE;
   amt =  (float)clutter_timeline_get_progress(timeline);
   /* reverse if we're removing this */
   if (data->event == MBWMCompMgrClientEventUnmap)
@@ -159,26 +164,23 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
 
   if (pop_top)
     {
-      status_low = -data->geo.height;
-      status_high = data->geo.y;
+      status_low = -geo.height;
+      status_high = geo.y;
     }
   else if (pop_bottom)
     {
-      status_low = data->geo.y+data->geo.height;
-      status_high = data->geo.y;
+      status_low = geo.y+geo.height;
+      status_high = geo.y;
     }
   else
     {
-      status_low = data->geo.y;
-      status_high = data->geo.y;
+      status_low = geo.y;
+      status_high = geo.y;
     }
   status_pos = status_low*(1-overshoot) + status_high*overshoot;
 
-  /*clutter_actor_set_positionu(actor,
-                             CLUTTER_INT_TO_FIXED(data->geo.x),
-                             CLUTTER_FLOAT_TO_FIXED(status_pos));*/
   clutter_actor_set_anchor_pointu(actor, 0,
-      CLUTTER_INT_TO_FIXED(data->geo.y) - CLUTTER_FLOAT_TO_FIXED(status_pos));
+      CLUTTER_INT_TO_FIXED(geo.y) - CLUTTER_FLOAT_TO_FIXED(status_pos));
   clutter_actor_set_opacity(actor, (int)(255*amt));
 
   /* use a slither of filler to fill in the gap where the menu
@@ -187,7 +189,8 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
   if (filler)
     {
       if ((status_pos<=status_high && pop_top) ||
-          (status_pos>=status_high && !pop_top))
+          (status_pos>=status_high && pop_bottom) ||
+          !(pop_top || pop_bottom))
         clutter_actor_hide(filler);
       else
         {
@@ -196,19 +199,19 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
           if (pop_top)
             {
               clutter_actor_set_positionu(filler,
-                        CLUTTER_INT_TO_FIXED(data->geo.x),
+                        CLUTTER_INT_TO_FIXED(geo.x),
                         status_high);
               clutter_actor_set_sizeu(filler,
-                        CLUTTER_INT_TO_FIXED(data->geo.width),
+                        CLUTTER_INT_TO_FIXED(geo.width),
                         CLUTTER_FLOAT_TO_FIXED(status_pos-status_high));
             }
           else if (pop_bottom)
             {
               clutter_actor_set_positionu(filler,
-                        CLUTTER_INT_TO_FIXED(data->geo.x),
-                        CLUTTER_FLOAT_TO_FIXED(status_pos + data->geo.height));
+                        CLUTTER_INT_TO_FIXED(geo.x),
+                        CLUTTER_FLOAT_TO_FIXED(status_pos + geo.height));
               clutter_actor_set_sizeu(filler,
-                        CLUTTER_INT_TO_FIXED(data->geo.width),
+                        CLUTTER_INT_TO_FIXED(geo.width),
                         CLUTTER_FLOAT_TO_FIXED(status_high-status_pos));
             }
         }
@@ -548,6 +551,15 @@ hd_transition_popup(HdCompMgr                  *mgr,
   mb_wm_comp_mgr_clutter_client_set_flags (cclient,
                               MBWMCompMgrClutterClientDontUpdate |
                               MBWMCompMgrClutterClientEffectRunning);
+
+#if 0 /* Kimmo doesn't like hacks ;) */
+  if (event == MBWMCompMgrClientEventUnmap) {
+    /* reparent our actor so it will be visible when we switch views */
+    clutter_actor_reparent(actor,
+        CLUTTER_ACTOR(hd_render_manager_get_front_group()));
+    clutter_actor_lower_bottom(actor);
+  }
+#endif
   hd_comp_mgr_set_effect_running(mgr, TRUE);
 
   /* Add actor for the background when we pop a bit too far */

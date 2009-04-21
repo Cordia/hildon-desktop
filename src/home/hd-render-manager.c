@@ -135,7 +135,6 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |                      --> apps (not app_top)
  *       |                      --> blur_front (STATE_BLUR_BUTTONS)
  *       |                                        ---> home_get_front (STATE_HOME_FRONT)
- *       |                                         --> button_menu
  *       |                                         --> title_bar
  *       |                                               ---> title_bar::foreground (!HDTB_VIS_FOREGROUND)
  *       |                                                   --->status_area
@@ -1830,32 +1829,19 @@ gboolean hd_render_manager_actor_opaque(ClutterActor *actor)
   MBWindowManager *wm;
   MBWindowManagerClient *wm_client;
 
-  if (!actor)
+  if (!actor || !the_render_manager->priv->comp_mgr)
     return FALSE;
 
-  /* First off, try and find out from the actor if it is opaque or not */
-  if (CLUTTER_IS_GROUP(actor) &&
-      clutter_group_get_n_children(CLUTTER_GROUP(actor))==1)
-    {
-      ClutterActor *texture =
-                        clutter_group_get_nth_child(CLUTTER_GROUP(actor), 0);
-      if (CLUTTER_IS_TEXTURE(texture))
-        {
-          CoglHandle *tex = clutter_texture_get_cogl_texture(
-                              CLUTTER_TEXTURE(texture));
-          if (tex)
-            return (cogl_texture_get_format(tex) & COGL_A_BIT) == 0;
-        }
-    }
-  /* this is ugly and slow, but is hopefully just a fallback... */
-  if (!the_render_manager->priv->comp_mgr)
-    return FALSE;
   wm = MB_WM_COMP_MGR(the_render_manager->priv->comp_mgr)->wm;
   wm_client = hd_render_manager_get_wm_client_from_actor(actor);
   return wm &&
          wm_client &&
+         wm_client->cm_client &&
          !wm_client->is_argb32 &&
-         !mb_wm_theme_is_client_shaped(wm->theme, wm_client);
+         !mb_wm_theme_is_client_shaped(wm->theme, wm_client) &&
+         !(mb_wm_comp_mgr_clutter_client_get_flags(
+             MB_WM_COMP_MGR_CLUTTER_CLIENT(wm_client->cm_client)) &
+           MBWMCompMgrClutterClientEffectRunning);
 }
 
 static

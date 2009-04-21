@@ -1,3 +1,12 @@
+2009-04-21  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c: Now treat an actor as non-opaque
+	if it is involved in an effect (stops flicker in some transitions)
+	* src/util/hd-transition.c: Make popup animation request geometry
+	each frame (makes the fill-in fit even if the window is resized)	
+	* src/mb/hd-comp-mgr.c: Added popup animation for clients of type
+	HdWmClientTypeAppMenu
+
 2009-04-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Make the switcher understand _HILDON_NOTIFICATION_THREAD.
