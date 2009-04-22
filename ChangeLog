@@ -1,3 +1,10 @@
+2009-04-22  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Added Xsession script to wait until h-d is ready, for NB#109797.
+
+	* debian/hildon-desktop-wait:
+	* debian/rules:
+
 2009-04-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Remove the HdRenderManager::damage-redraw signal.

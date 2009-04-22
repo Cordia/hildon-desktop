@@ -28,4 +28,5 @@ makebuilddir/hildon-desktop::
 
 binary-install/hildon-desktop::
 	dh_installxsession -u 'post 05'
+	dh_installxsession --init-script='hildon-desktop-wait' -u 'post 21'
 

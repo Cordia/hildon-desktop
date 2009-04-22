@@ -1,0 +1,7 @@
+#!/bin/sh
+
+while [ ! -e /tmp/hildon-desktop/desktop-started.stamp ]
+do
+    sleep 1
+done
+
