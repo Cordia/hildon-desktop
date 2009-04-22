@@ -1,3 +1,9 @@
+2009-04-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-transition.c (hd_transition_subview):
+	  Removing MBWMCompMgrClutterClientDontUpdate workaround.
+	  (NB. the subview transition was broken already)
+
 2009-04-22  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Added Xsession script to wait until h-d is ready, for NB#109797.

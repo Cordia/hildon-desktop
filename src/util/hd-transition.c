@@ -834,6 +834,7 @@ hd_transition_subview(HdCompMgr                  *mgr,
           data->cclient2_actor = g_object_ref (
               mb_wm_comp_mgr_clutter_client_get_actor (cclient_mainview));
           mb_wm_comp_mgr_clutter_client_set_flags (cclient_mainview,
+                                      MBWMCompMgrClutterClientDontUpdate |
                                       MBWMCompMgrClutterClientEffectRunning);
           HD_COMP_MGR_CLIENT (cclient_mainview)->effect = data;
         }
@@ -865,9 +866,7 @@ hd_transition_subview(HdCompMgr                  *mgr,
                               MBWMCompMgrClutterClientDontUpdate |
                               MBWMCompMgrClutterClientEffectRunning);
   mb_wm_comp_mgr_clutter_client_set_flags (cclient_mainview,
-                                /* Stopping updates for main view seems
-                                 * to stop them permanently so workaround
-                                 * it by not disabling them. */
+                                MBWMCompMgrClutterClientDontUpdate |
                                 MBWMCompMgrClutterClientEffectRunning);
 
   hd_comp_mgr_set_effect_running(mgr, TRUE);
