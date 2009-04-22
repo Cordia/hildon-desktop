@@ -697,6 +697,9 @@ void tidy_blur_group_set_blur(ClutterActor *blur_group, float blur)
   if (priv->blur_step != step)
     {
       priv->blur_step = step;
+      if (step==0)
+        priv->current_blur_step = 0;
+
       if (CLUTTER_ACTOR_IS_VISIBLE(blur_group))
         clutter_actor_queue_redraw(blur_group);
     }
