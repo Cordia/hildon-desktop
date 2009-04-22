@@ -297,7 +297,8 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
                                        NULL, NULL, NULL);
 
   unicode = gdk_keyval_to_unicode (keyval);
-  if (g_unichar_isdigit (unicode))
+  if (g_unichar_isdigit (unicode) ||
+      unicode == '#' || unicode == '*' || unicode == '+')
     {
       char buffer[10] = {0,};
 

@@ -1,3 +1,10 @@
+2009-04-22  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#110893 - Dialpad is also opened by '#', '+' and '*' keys
+
+	* src/home/hd-home.c (hd_home_desktop_key_press): Call UI is also
+	launched by '#', '+' and '*' keys.
+
 2009-04-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-render-manager.c (hd_render_manager_actor_opaque):
