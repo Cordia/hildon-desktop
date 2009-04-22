@@ -120,7 +120,6 @@ typedef enum
 
 enum
 {
-  DAMAGE_REDRAW,
   TRANSITION_COMPLETE,
   LAST_SIGNAL
 };
@@ -204,8 +203,6 @@ struct _HdRenderManagerPrivate {
 static void
 stage_allocation_changed(ClutterActor *actor, GParamSpec *unused,
                          ClutterActor *stage);
-static void
-hd_render_manager_damage_redraw_notify(void);
 static void
 hd_render_manager_paint_notify(void);
 static void
@@ -360,13 +357,6 @@ hd_render_manager_class_init (HdRenderManagerClass *klass)
   gobject_class->set_property = hd_render_manager_set_property;
   gobject_class->finalize = hd_render_manager_finalize;
 
-  signals[DAMAGE_REDRAW] =
-      g_signal_new ("damage-redraw",
-                    G_TYPE_FROM_CLASS (klass),
-                    G_SIGNAL_RUN_CLEANUP,
-                    0, NULL, NULL,
-                    g_cclosure_marshal_VOID__VOID,
-                    G_TYPE_NONE, 0);
   signals[TRANSITION_COMPLETE] =
         g_signal_new ("transition-complete",
                       G_TYPE_FROM_CLASS (klass),
@@ -459,9 +449,6 @@ hd_render_manager_init (HdRenderManager *self)
                       G_CALLBACK (on_timeline_blur_completed), self);
   priv->timeline_playing = FALSE;
 
-  g_signal_connect (self, "damage-redraw",
-                    G_CALLBACK (hd_render_manager_damage_redraw_notify),
-                    0);
   g_signal_connect (self, "paint",
                       G_CALLBACK (hd_render_manager_paint_notify),
                       0);
@@ -542,21 +529,12 @@ on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
 /* -------------------------------------------------------------    PRIVATE  */
 /* ------------------------------------------------------------------------- */
 
-/* called on a damage_redraw signal, this will queue the screen to be redrawn.
- * We do this with signals so we can wait until all the update_area signals
- * have already come in. */
-static
-void hd_render_manager_damage_redraw_notify()
-{
-  ClutterActor *stage = clutter_stage_get_default();
-  clutter_actor_queue_redraw_damage(stage);
-}
-
 static
 void hd_render_manager_paint_notify()
 {
-  if (!the_render_manager)
-    return;
+  /* It is not necessary to check for !@the_render_manager
+   * because this signal handler is connected when it is created
+   * and @the_render_manager is never taken down. */
   the_render_manager->priv->queued_redraw = FALSE;
 }
 
@@ -1995,12 +1973,16 @@ void hd_render_manager_set_visibilities()
 
 void hd_render_manager_queue_delay_redraw()
 {
-  if (!the_render_manager)
+  if (G_UNLIKELY(!the_render_manager))
+    /* TODO Is it necessary to check? */
     return;
   if (!the_render_manager->priv->queued_redraw)
-    {
-      g_signal_emit (the_render_manager, signals[DAMAGE_REDRAW], 0);
+    { /* The flag is cleared when paint is complete. */
       the_render_manager->priv->queued_redraw = TRUE;
+
+      /* TODO We can use clutter_stage_queue_redraw_damage()
+       *       directlyif we never unset ->allow_redraw. */
+      clutter_actor_queue_redraw_damage(clutter_stage_get_default());
     }
 }
 

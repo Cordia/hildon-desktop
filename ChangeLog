@@ -1,3 +1,12 @@
+2009-04-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Remove the HdRenderManager::damage-redraw signal.
+	Left some comments for Gordon (or whoever feeling adventurous).
+
+	* src/home/hd-render-manager.c:
+	  hd_render_manager_queue_delay_redraw(): queue_redraw() directly
+	  hd_render_manager_paint_notify(): removed unnecessary check
+
 2009-04-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Patch from Dafydd Harries for
