@@ -1,5 +1,13 @@
 2009-04-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-render-manager.c (hd_render_manager_actor_opaque):
+	  Regression fix.  Unbroken subview->mainview transition.
+	  Reverting the change which declared actors under effect
+	  transparent, hence not blocking, thus showing something
+	  inappropriate in that transition.
+
+2009-04-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/util/hd-transition.c (hd_transition_subview):
 	  Removing MBWMCompMgrClutterClientDontUpdate workaround.
 	  (NB. the subview transition was broken already)

@@ -1810,19 +1810,16 @@ gboolean hd_render_manager_actor_opaque(ClutterActor *actor)
   MBWindowManager *wm;
   MBWindowManagerClient *wm_client;
 
+  /* this is ugly and slow, but is hopefully just a fallback... */
   if (!actor || !the_render_manager->priv->comp_mgr)
+    /* this check is most probably unnecessary */
     return FALSE;
-
   wm = MB_WM_COMP_MGR(the_render_manager->priv->comp_mgr)->wm;
   wm_client = hd_render_manager_get_wm_client_from_actor(actor);
   return wm &&
          wm_client &&
-         wm_client->cm_client &&
          !wm_client->is_argb32 &&
-         !mb_wm_theme_is_client_shaped(wm->theme, wm_client) &&
-         !(mb_wm_comp_mgr_clutter_client_get_flags(
-             MB_WM_COMP_MGR_CLUTTER_CLIENT(wm_client->cm_client)) &
-           MBWMCompMgrClutterClientEffectRunning);
+         !mb_wm_theme_is_client_shaped(wm->theme, wm_client);
 }
 
 static
