@@ -77,9 +77,6 @@ void          hd_launcher_transition_stop(void);
 
 /* Called when an app window has been created */
 void          hd_launcher_window_created (void);
-/* to be used by hd-launcher-page only */
-void          hd_launcher_load_blur_amounts(void);
-void          hd_launcher_set_top_blur (float amount, float opacity);
 
 HdLauncherTree *hd_launcher_get_tree (void);
 

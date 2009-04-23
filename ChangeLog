@@ -1,4 +1,14 @@
 2009-04-22  Gordon Williams <gordon.williams@collabora.co.uk>
+	
+	* src/launcher/hd-launcher.h
+	* src/launcher/hd-launcher.c	
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-grid.c: Fix NB#112743 (launcher icons now
+	centred). Remove all the subview blurring code, as apparently we don't
+	want to blur now. Also reposition scroller/icons so that now icons do
+	not clip against the top 70px when transitioning or scrolling.
+
+2009-04-22  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-blur-group.c: Fixes NB#107274, NB#111296. Force blur
 	group to recalculate if it was ever set to not blur (regardless of

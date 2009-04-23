@@ -391,7 +391,8 @@ hd_launcher_grid_get_preferred_height (ClutterActor *actor,
       _hd_launcher_grid_count_children_and_rows (HD_LAUNCHER_GRID (actor),
           &n_visible_launchers, &n_rows);
 
-        natural_height = HD_LAUNCHER_TILE_HEIGHT * n_rows +
+        natural_height = HD_LAUNCHER_PAGE_YMARGIN +
+                         HD_LAUNCHER_TILE_HEIGHT * n_rows +
                          (n_rows > 0 ? priv->v_spacing * (n_rows - 1) : 0);
         *natural_height_p = CLUTTER_UNITS_FROM_DEVICE (MAX (natural_height,
                                 HD_LAUNCHER_GRID_MIN_HEIGHT));
@@ -412,7 +413,11 @@ _hd_launcher_grid_allocate_row (GList *l,
   ClutterActor *child;
   ClutterActorBox box;
   guint allocated = MIN (HD_LAUNCHER_GRID_MAX_COLUMNS, *remaining);
-  guint cur_x = 0;
+  /* Figure out the starting X position needed to centre the icons */
+  guint icons_width = HD_LAUNCHER_TILE_WIDTH * allocated +
+                      h_spacing * (allocated-1);
+  guint cur_x = (HD_LAUNCHER_PAGE_WIDTH - icons_width) / 2;
+  /* for each icon in the row... */
   for (int i = 0; i < allocated; i++)
     {
       child = l->data;
@@ -448,7 +453,7 @@ hd_launcher_grid_allocate (ClutterActor          *actor,
   _hd_launcher_grid_count_children_and_rows (HD_LAUNCHER_GRID (actor),
       &n_visible_launchers, &n_rows);
 
-  cur_height = 0;
+  cur_height = HD_LAUNCHER_PAGE_YMARGIN;
   l = priv->tiles;
   while (l) {
     l = _hd_launcher_grid_allocate_row(l, &n_visible_launchers,
@@ -791,8 +796,9 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
                 if (label_amt<0) label_amt=0;
                 if (label_amt>1) label_amt=1;
                 depth = CLUTTER_UNITS_FROM_FLOAT(
-                                150 - 150*sexy_overshoot(tile_amt));
+                                150 * (1 - sexy_overshoot(tile_amt)));
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
+                clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255);
                 if (tile_icon)
                   clutter_actor_set_opacity(tile_icon, (int)(tile_amt*255));
                 if (tile_label)
@@ -801,30 +807,32 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
               }
             case HD_LAUNCHER_PAGE_TRANSITION_OUT:
             case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
-                depth = CLUTTER_UNITS_FROM_FLOAT(150*amount);
+                depth = CLUTTER_UNITS_FROM_FLOAT(100*amount);
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
-                if (tile_icon)
-                  clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*255));
-                if (tile_label)
-                  clutter_actor_set_opacity(tile_label, 255-(int)(amount*255));
+                clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255 - (int)(amount*255));
                 break;
             case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
               {
                 float tile_amt = amount*2 - d;
                 if (tile_amt<0) tile_amt = 0;
                 if (tile_amt>1) tile_amt = 1;
-                depth = CLUTTER_UNITS_FROM_FLOAT(-150*tile_amt);
+                depth = CLUTTER_UNITS_FROM_FLOAT(-100*tile_amt);
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
-                if (tile_icon)
-                  clutter_actor_set_opacity(tile_icon, 255 - (int)(amount*255));
-                if (tile_label)
-                  clutter_actor_set_opacity(tile_label, 255-(int)(amount*255));
+                clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255 - (int)(amount*255));
                 break;
               }
             /* We do't do anything for these now because we just use blur on
              * the whole group */
             case HD_LAUNCHER_PAGE_TRANSITION_BACK:
+                depth = CLUTTER_UNITS_FROM_FLOAT(-100*amount);
+                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
+                clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255 - (int)(amount*255));
+                break;
             case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
+                depth = CLUTTER_UNITS_FROM_FLOAT(-100*(1-amount));
+                clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
+                clutter_actor_set_opacity(CLUTTER_ACTOR(tile), (int)(amount*255));
+                break;
             case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
                 break;
           }

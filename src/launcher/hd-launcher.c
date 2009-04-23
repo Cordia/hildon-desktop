@@ -36,7 +36,6 @@
 
 #include <clutter/clutter.h>
 #include <tidy/tidy-finger-scroll.h>
-#include <tidy/tidy-blur-group.h>
 
 #include "hildon-desktop.h"
 #include "hd-launcher-page.h"
@@ -56,7 +55,6 @@ struct _HdLauncherPrivate
 {
   GData *pages;
   ClutterActor *active_page;
-  ClutterActor *top_blur; /* blurring applied to top page when in sub page */
 
   /* Actor and timeline required for zoom in on application screenshot
    * for app start. */
@@ -66,13 +64,6 @@ struct _HdLauncherPrivate
   ClutterVertex launch_position; /* where were we clicked? */
 
   HdLauncherTree *tree;
-
-  /* Values loaded from transitions.ini that are used to specify blur amounts */
-  float blur_saturation;
-  float blur_brightness;
-  float blur_opacity;
-  float blur_zoom;
-  float blur_radius;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -194,7 +185,7 @@ static void hd_launcher_constructed (GObject *gobject)
 
   clutter_actor_hide (self);
   clutter_actor_set_size (self,
-                          HD_LAUNCHER_PAGE_WIDTH, HD_LAUNCHER_PAGE_WIDTH);
+                          HD_LAUNCHER_PAGE_WIDTH, HD_LAUNCHER_PAGE_HEIGHT);
 
   priv->tree = hd_launcher_tree_new (NULL);
   g_signal_connect (priv->tree, "finished",
@@ -208,14 +199,8 @@ static void hd_launcher_constructed (GObject *gobject)
   g_signal_connect (self, "button-release-event",
                     G_CALLBACK(hd_launcher_background_clicked), 0);
 
-  /* Blurring for the top-level launcher */
-  priv->top_blur = tidy_blur_group_new();
-  clutter_actor_show(priv->top_blur);
-  tidy_blur_group_set_use_alpha(priv->top_blur, TRUE);
-  clutter_container_add_actor (CLUTTER_CONTAINER (self), priv->top_blur);
-
   ClutterActor *top_page = hd_launcher_page_new (NULL, NULL);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->top_blur),
+  clutter_container_add_actor (CLUTTER_CONTAINER (self),
                                top_page);
   clutter_actor_hide (top_page);
   priv->active_page = NULL;
@@ -240,12 +225,6 @@ hd_launcher_dispose (GObject *gobject)
 {
   HdLauncher *self = HD_LAUNCHER (gobject);
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (self);
-
-  if (priv->top_blur)
-    {
-      clutter_actor_destroy (priv->top_blur);
-      priv->top_blur = NULL;
-    }
 
   g_datalist_clear (&priv->pages);
 
@@ -325,43 +304,6 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
   return FALSE;
 }
 
-/* Load the values we need for blurring */
-void
-hd_launcher_load_blur_amounts()
-{
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-  priv->blur_saturation = hd_transition_get_double("launcher", "saturation", 0.3);
-  priv->blur_brightness = hd_transition_get_double("launcher", "brightness", 0.3);
-  priv->blur_opacity = hd_transition_get_double("launcher", "opacity", 1);
-  priv->blur_zoom = hd_transition_get_double("launcher", "zoom", 0.875);
-  priv->blur_radius = hd_transition_get_double("launcher", "radius", 5);
-}
-
-/* sets blur amount for transitions involving blurring out the top view */
-void
-hd_launcher_set_top_blur (float amount, float opacity)
-{
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-  float real_opacity;
-  float smooth_amount;
-
-  if (amount<0) amount=0;
-  if (amount>1) amount=1;
-  smooth_amount = hd_transition_smooth_ramp(amount);
-
-  tidy_blur_group_set_blur(priv->top_blur,
-      amount * priv->blur_radius);
-  tidy_blur_group_set_saturation(priv->top_blur,
-      1.0f - amount*(1.0f - priv->blur_saturation));
-  tidy_blur_group_set_brightness(priv->top_blur,
-      1.0f - amount*(1.0f - priv->blur_brightness));
-  tidy_blur_group_set_zoom(priv->top_blur,
-      1.0f - smooth_amount*(1.0f - priv->blur_zoom));
-
-  real_opacity = 1.0f - amount*(1.0f - priv->blur_opacity);
-  clutter_actor_set_opacity(priv->top_blur, (int)(255*real_opacity*opacity));
-}
-
 static void
 hd_launcher_category_tile_clicked (HdLauncherTile *tile, gpointer data)
 {
@@ -431,7 +373,6 @@ hd_launcher_create_page (HdLauncherItem *item, gpointer data)
 
   clutter_actor_hide (newpage);
   clutter_container_add_actor (CLUTTER_CONTAINER (self), newpage);
-
   g_datalist_set_data (&priv->pages, hd_launcher_item_get_id (item), newpage);
 }
 
@@ -634,6 +575,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
    * the tile that was clicked on */
   if (tile)
     {
+      ClutterActor *parent;
       priv->launch_tile = NULL;
       ClutterActor *icon;
       clutter_actor_get_positionu(CLUTTER_ACTOR(tile),
@@ -650,14 +592,23 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
           priv->launch_position.x += offs.x + size.x/2;
           priv->launch_position.y += offs.y + size.y/2;
         }
+      /* add the X and Y offsets from all parents */
+      parent = clutter_actor_get_parent(CLUTTER_ACTOR(tile));
+      while (parent && !CLUTTER_IS_STAGE(parent)) {
+        ClutterFixed x,y;
+        clutter_actor_get_positionu(parent, &x, &y);
+        priv->launch_position.x += x;
+        priv->launch_position.y += y;
+        parent = clutter_actor_get_parent(parent);
+      }
     }
   /* append scroller movement */
-  priv->launch_position.y += CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_YMARGIN);
   if (priv->active_page)
     priv->launch_position.y -=
         hd_launcher_page_get_scroll_y(HD_LAUNCHER_PAGE(priv->active_page));
   /* all because the tidy- stuff breaks clutter's nice 'get absolute position'
    * code... */
+
 
   clutter_actor_set_name(priv->launch_image,
                          "HdLauncher:launch_image");

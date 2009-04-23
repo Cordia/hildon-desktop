@@ -550,6 +550,8 @@ hd_launcher_page_allocate (ClutterActor          *actor,
           NULL, NULL,
           &label_width, &label_height);
 
+      /* If we have a label or icon, we want to leave room for them.
+       * If not, fill the screen. */
       x1 = (HD_LAUNCHER_PAGE_WIDTH - CLUTTER_UNITS_TO_DEVICE (label_width)) / 2;
       y1 = ((HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN -
               CLUTTER_UNITS_TO_DEVICE (label_height))/2) +
@@ -564,7 +566,8 @@ hd_launcher_page_allocate (ClutterActor          *actor,
     {
       /* The scroller */
       nbox.x1 = CLUTTER_UNITS_FROM_DEVICE (0);
-      nbox.y1 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_YMARGIN);
+      nbox.y1 = CLUTTER_UNITS_FROM_DEVICE (
+          (priv->icon || priv->label) ? HD_LAUNCHER_PAGE_YMARGIN : 0);
       nbox.x2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_WIDTH);
       nbox.y2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_HEIGHT);
       clutter_actor_allocate (priv->scroller, &nbox, origin_changed);
@@ -734,27 +737,20 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
     return;
   /* Reset all the tiles in the grid, so they don't have any blurring */
   hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid));
-  hd_launcher_load_blur_amounts();
 
   priv->transition_type = trans_type;
   switch (priv->transition_type) {
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
-         clutter_actor_show(CLUTTER_ACTOR(page));
-         hd_launcher_set_top_blur(0, 1);
-         break;
     case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
+    case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
+         clutter_actor_show(CLUTTER_ACTOR(page));
          clutter_actor_show(CLUTTER_ACTOR(page));
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
-         /* already shown */
-         break;
-    case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
-         /* already shown */
-         break;
-    case HD_LAUNCHER_PAGE_TRANSITION_BACK:
-    case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
+    case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
+    case HD_LAUNCHER_PAGE_TRANSITION_BACK:
          /* already shown */
          break;
   }
@@ -832,15 +828,11 @@ hd_launcher_page_new_frame(ClutterTimeline *timeline,
           clutter_actor_set_opacity(priv->label, 255-(int)(255*amt));
         break;
     case HD_LAUNCHER_PAGE_TRANSITION_BACK:
-        hd_launcher_set_top_blur(amt,
-                    1-(HD_LAUNCHER_PAGE_SUB_OPACITY * amt));
-        break;
     case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
-        hd_launcher_set_top_blur(1-amt,
-                    1-(HD_LAUNCHER_PAGE_SUB_OPACITY * (1-amt)));
+        /* Everything is done in the grid here */
         break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
-        hd_launcher_set_top_blur(1, 1-amt);
+        /* nothing to do here as we're already hidden */
         break;
       }
 }
@@ -864,16 +856,16 @@ hd_launcher_page_transition_end(ClutterTimeline *timeline,
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
     case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
     case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
-    case HD_LAUNCHER_PAGE_TRANSITION_BACK:
-    case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
          /* already shown */
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
+    case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
     case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
          clutter_actor_hide(CLUTTER_ACTOR(page));
          hd_launcher_hide_final();
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
+    case HD_LAUNCHER_PAGE_TRANSITION_BACK:
          clutter_actor_hide(CLUTTER_ACTOR(page));
          break;
   }
