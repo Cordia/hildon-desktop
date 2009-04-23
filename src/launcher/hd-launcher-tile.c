@@ -422,6 +422,7 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   ClutterColor glow_col = {0xFF, 0xFF, 0x7F, 0xFF};
+  float glow_brightness;
   gint n_frames;
 
   clutter_timeline_stop(priv->glow_timeline);
@@ -445,11 +446,14 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
       (int)(priv->glow_amount*n_frames));
 
   /* set our glow colour from the theme */
+  glow_brightness = hd_transition_get_double("launcher_glow", "brightness", 1);
   hd_gtk_style_get_text_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL,
                               &glow_col);
+  glow_col.alpha = (int)(glow_col.alpha * glow_brightness);
   tidy_highlight_set_color(priv->icon_glow, &glow_col);
   /* load our glow radius */
   priv->glow_radius = hd_transition_get_double("launcher_glow", "radius", 8);
+
 
   clutter_timeline_start(priv->glow_timeline);
 }

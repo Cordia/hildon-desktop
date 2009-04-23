@@ -1,5 +1,13 @@
 2009-04-23  Gordon Williams <gordon.williams@collabora.co.uk>
 
+ 	* src/launcher/hd-launcher-tile.c: Now load brightness value for tile
+	* src/tidy/tidy-highlight.c: Changed blur pattern to smooth out blur
+	* src/mb/hd-comp-mgr.h: Adjusted Operator spacing to Spec v2.2
+	* data/transitions.ini: Removed unused items, added brightness option,
+	  raised saturation back to 0.8 at Martin's request
+
+2009-04-23  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/launcher/hd-launcher-grid.c: Fix so that un-filled lines
 	are left-justified again.
 

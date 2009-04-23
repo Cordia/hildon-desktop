@@ -48,7 +48,7 @@ G_BEGIN_DECLS
 #define HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH         112
 #define HD_COMP_MGR_TOP_RIGHT_BTN_HEIGHT        HD_COMP_MGR_TOP_MARGIN
 #define HD_COMP_MGR_STATUS_MENU_WIDTH           688
-#define HD_COMP_MGR_OPERATOR_PADDING            10 /* XXX match specs */
+#define HD_COMP_MGR_OPERATOR_PADDING            16 /* specs v2.2 */
 
 typedef struct HdCompMgrClientClass   HdCompMgrClientClass;
 typedef struct HdCompMgrClient        HdCompMgrClient;

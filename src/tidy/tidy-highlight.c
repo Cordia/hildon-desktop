@@ -17,7 +17,8 @@ enum
   PROP_PARENT_TEXTURE,
 };
 
-/* Do our highlight with 2 rings of 8 samples */
+/* Do our highlight with 2 rings. Outer ring of 12 samples,
+ * inner ring of 4 */
   const char *HIGHLIGHT_FRAGMENT_SHADER =
   "precision lowp float;\n"
   "varying mediump vec2 tex_coord;\n"
@@ -33,22 +34,22 @@ enum
   "  mediump float cx = blurx*0.707; \n"
   "  mediump float cy = blury*0.707; \n"
   "  lowp float alpha = \n"
-  "       texture2D (tex, vec2(tex_coord.x-ax, tex_coord.y-ay)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+ax, tex_coord.y+ay)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-ax, tex_coord.y+ay)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+ax, tex_coord.y-ay)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y-by)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y+by)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-bx, tex_coord.y)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+bx, tex_coord.y)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y-blury)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x, tex_coord.y+blury)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-blurx, tex_coord.y)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+blurx, tex_coord.y)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-cx, tex_coord.y-cy)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+cx, tex_coord.y+cy)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x-cx, tex_coord.y+cy)).a * 0.0675 + \n"
-  "       texture2D (tex, vec2(tex_coord.x+cx, tex_coord.y-cy)).a * 0.0675;\n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*1.0000, tex_coord.y + blury*0.0000)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*0.8660, tex_coord.y + blury*0.5000)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*0.5000, tex_coord.y + blury*0.8660)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*0.0000, tex_coord.y + blury*1.0000)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*-0.5000, tex_coord.y + blury*0.8660)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*-0.8660, tex_coord.y + blury*0.5000)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*-1.0000, tex_coord.y + blury*0.0000)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*-0.8660, tex_coord.y + blury*-0.5000)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*-0.5000, tex_coord.y + blury*-0.8660)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*-0.0000, tex_coord.y + blury*-1.0000)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*0.5000, tex_coord.y + blury*-0.8661)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*0.8660, tex_coord.y + blury*-0.5000)).a * 0.0675 + \n"
+  "       texture2D (tex, vec2(tex_coord.x - blurx*0.3, tex_coord.y - blury*0.3)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x - blurx*0.3, tex_coord.y + blury*0.3)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*0.3, tex_coord.y + blury*0.3)).a * 0.125 + \n"
+  "       texture2D (tex, vec2(tex_coord.x + blurx*0.3, tex_coord.y - blury*0.3)).a * 0.125; \n"
   "  lowp vec4 color = frag_color; \n"
   "  color.a = color.a * alpha; \n"
   "  gl_FragColor = color;\n"
