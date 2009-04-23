@@ -414,8 +414,8 @@ _hd_launcher_grid_allocate_row (GList *l,
   ClutterActorBox box;
   guint allocated = MIN (HD_LAUNCHER_GRID_MAX_COLUMNS, *remaining);
   /* Figure out the starting X position needed to centre the icons */
-  guint icons_width = HD_LAUNCHER_TILE_WIDTH * allocated +
-                      h_spacing * (allocated-1);
+  guint icons_width = HD_LAUNCHER_TILE_WIDTH * HD_LAUNCHER_GRID_MAX_COLUMNS +
+                      h_spacing * (HD_LAUNCHER_GRID_MAX_COLUMNS-1);
   guint cur_x = (HD_LAUNCHER_PAGE_WIDTH - icons_width) / 2;
   /* for each icon in the row... */
   for (int i = 0; i < allocated; i++)
