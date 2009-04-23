@@ -1,3 +1,10 @@
+2009-04-23  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#112122 - Edit Button Tweaking
+
+	* src/home/hd-home.c (hd_home_create_edit_button): Reduce the width of
+	the edit button.
+
 2009-04-23  Gordon Williams <gordon.williams@collabora.co.uk>
 
  	* src/launcher/hd-launcher-tile.c: Now load brightness value for tile

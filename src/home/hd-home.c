@@ -526,7 +526,7 @@ hd_home_create_edit_button (void)
   icon = hd_clutter_cache_get_texture (HD_THEME_IMG_EDIT_ICON, TRUE);
 
   /* Cut out the half of the texture */
-  geom.width = clutter_actor_get_width (icon) / 2;
+  geom.width = clutter_actor_get_width (icon) / 4;
   geom.height = clutter_actor_get_height (icon);
   bg_center = hd_clutter_cache_get_sub_texture (HD_THEME_IMG_LEFT_ATTACHED, TRUE, &geom);
 
