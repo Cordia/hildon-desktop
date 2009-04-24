@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include "hildon-desktop.h"
 #include "hd-app-mgr.h"
 #include "hd-app-mgr-glue.h"
 #include <errno.h>
@@ -82,7 +83,10 @@ struct _HdAppMgrPrivate
   DBusGProxy *dbus_proxy;
   DBusGProxy *dbus_sys_proxy;
 
-  /* Each one of these lists contain different HdLauncherApps. */
+  /* All the running apps we know about. */
+  GList *running_apps;
+
+  /* Each one of these lists contain different HdRunningApps. */
   GQueue *queues[NUM_QUEUES];
 
   /* Is the state check already looping? */
@@ -112,6 +116,7 @@ enum
   APP_LAUNCHED,
   APP_RELAUNCHED,
   APP_SHOWN,
+  APP_LOADING_FAIL,
   NOT_ENOUGH_MEMORY,
 
   LAST_SIGNAL
@@ -129,6 +134,8 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define LOWMEM_PROC_NR_DECAY    "/proc/sys/vm/lowmem_nr_decay_pages"
 
 #define STATE_CHECK_INTERVAL      (1)
+#define LOADING_TIMEOUT           (10)
+
 
 #define PRESTART_ENV_VAR          "HILDON_DESKTOP_APPS_PRESTART"
 #define NSIZE                     ((size_t)(-1))
@@ -171,20 +178,23 @@ static void hd_app_mgr_dispose (GObject *gobject);
 static void hd_app_mgr_populate_tree_finished (HdLauncherTree *tree,
                                                gpointer data);
 
-gboolean hd_app_mgr_start     (HdLauncherApp *app);
-gboolean hd_app_mgr_prestart  (HdLauncherApp *app);
-gboolean hd_app_mgr_hibernate (HdLauncherApp *app);
+gboolean hd_app_mgr_start     (HdRunningApp *app);
+gboolean hd_app_mgr_relaunch  (HdRunningApp *app);
+gboolean hd_app_mgr_prestart  (HdRunningApp *app);
+gboolean hd_app_mgr_hibernate (HdRunningApp *app);
 static gboolean hd_app_mgr_service_top (const gchar *service,
                                         const gchar *param);
 static gboolean  hd_app_mgr_execute (const gchar *exec, GPid *pid);
 
+void hd_app_mgr_prestartable     (HdRunningApp *app, gboolean prestartable);
+
 static void hd_app_mgr_add_to_queue (HdAppMgrQueue queue,
-                                     HdLauncherApp *app);
+                                     HdRunningApp *app);
 static void hd_app_mgr_remove_from_queue (HdAppMgrQueue queue,
-                                          HdLauncherApp *app);
+                                          HdRunningApp *app);
 static void hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
                                    HdAppMgrQueue queue_to,
-                                   HdLauncherApp *app);
+                                   HdRunningApp *app);
 
 static size_t   hd_app_mgr_read_lowmem (const gchar *filename);
 static HdAppMgrPrestartMode
@@ -212,7 +222,8 @@ static DBusHandlerResult hd_app_mgr_signal_handler (DBusConnection *conn,
                                                     DBusMessage *msg,
                                                     void *data);
 
-static void hd_app_mgr_request_app_pid (HdLauncherApp *app);
+static void     hd_app_mgr_request_app_pid (HdRunningApp *app);
+static gboolean hd_app_mgr_loading_timeout (HdRunningApp *app);
 
 /* The HdLauncher singleton */
 static HdAppMgr *the_app_mgr = NULL;
@@ -250,6 +261,13 @@ hd_app_mgr_class_init (HdAppMgrClass *klass)
                   G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
   app_mgr_signals[APP_SHOWN] =
     g_signal_new (I_("application-appeared"),
+                  HD_TYPE_APP_MGR,
+                  G_SIGNAL_RUN_FIRST,
+                  0, NULL, NULL,
+                  g_cclosure_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
+  app_mgr_signals[APP_LOADING_FAIL] =
+    g_signal_new (I_("application-loading-fail"),
                   HD_TYPE_APP_MGR,
                   G_SIGNAL_RUN_FIRST,
                   0, NULL, NULL,
@@ -294,10 +312,12 @@ hd_app_mgr_init (HdAppMgr *self)
     priv->queues[i] = g_queue_new ();
 
   /* TODO: Move handling of HdLauncherTree here. */
-  priv->tree = g_object_ref (hd_launcher_get_tree ());
+  priv->tree = hd_launcher_tree_new (NULL);
   g_signal_connect (priv->tree, "finished",
                     G_CALLBACK (hd_app_mgr_populate_tree_finished),
                     self);
+  if (!hd_disable_threads())
+    hd_launcher_tree_populate (priv->tree);
 
   /* Start memory limits. */
   priv->notify_low_pages = hd_app_mgr_read_lowmem (LOWMEM_PROC_NOTIFY_LOW);
@@ -401,7 +421,7 @@ hd_app_mgr_set_render_manager (GObject *rendermgr)
 }
 
 static void
-_hd_app_mgr_kill_prestarted (HdLauncherApp *app, gpointer user_data)
+_hd_app_mgr_kill_prestarted (HdRunningApp *app, gpointer user_data)
 {
   hd_app_mgr_kill (app);
 }
@@ -445,6 +465,13 @@ hd_app_mgr_dispose (GObject *gobject)
       priv->tree = NULL;
     }
 
+  if (priv->running_apps)
+    {
+      g_list_foreach (priv->running_apps, (GFunc)g_object_unref, NULL);
+      g_list_free (priv->running_apps);
+      priv->running_apps = NULL;
+    }
+
   for (int i = 0; i < NUM_QUEUES; i++)
     {
       if (priv->queues[i])
@@ -463,14 +490,26 @@ _hd_app_mgr_compare_app_priority (gconstpointer a,
                                   gconstpointer b,
                                   gpointer user_data)
 {
-  gint a_priority = hd_launcher_app_get_priority (HD_LAUNCHER_APP (a));
-  gint b_priority = hd_launcher_app_get_priority (HD_LAUNCHER_APP (b));
+  HdRunningApp *a_rapp = HD_RUNNING_APP (a);
+  HdRunningApp *b_rapp = HD_RUNNING_APP (b);
+  HdLauncherApp *a_launcher = hd_running_app_get_launcher_app (a_rapp);
+  HdLauncherApp *b_launcher = hd_running_app_get_launcher_app (b_rapp);
+
+  if (!a_launcher && !b_launcher)
+    return 0;
+  if (!a_launcher)
+    return -1;
+  if (!b_launcher)
+    return 1;
+
+  gint a_priority = hd_launcher_app_get_priority (a_launcher);
+  gint b_priority = hd_launcher_app_get_priority (b_launcher);
 
   return b_priority - a_priority;
 }
 
 static void
-hd_app_mgr_add_to_queue (HdAppMgrQueue queue, HdLauncherApp *app)
+hd_app_mgr_add_to_queue (HdAppMgrQueue queue, HdRunningApp *app)
 {
   if (!app)
     return;
@@ -489,7 +528,7 @@ hd_app_mgr_add_to_queue (HdAppMgrQueue queue, HdLauncherApp *app)
 }
 
 static void
-hd_app_mgr_remove_from_queue (HdAppMgrQueue queue, HdLauncherApp *app)
+hd_app_mgr_remove_from_queue (HdAppMgrQueue queue, HdRunningApp *app)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   GList *link = g_queue_find (priv->queues[queue], app);
@@ -504,7 +543,7 @@ hd_app_mgr_remove_from_queue (HdAppMgrQueue queue, HdLauncherApp *app)
 static void
 hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
                        HdAppMgrQueue queue_to,
-                       HdLauncherApp *app)
+                       HdRunningApp *app)
 {
   if (!app)
     return;
@@ -525,7 +564,7 @@ hd_app_mgr_move_queue (HdAppMgrQueue queue_from,
     hd_app_mgr_add_to_queue (queue_to, app);
 }
 
-void hd_app_mgr_prestartable (HdLauncherApp *app, gboolean prestartable)
+void hd_app_mgr_prestartable (HdRunningApp *app, gboolean prestartable)
 {
   if (prestartable)
     hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
@@ -533,15 +572,16 @@ void hd_app_mgr_prestartable (HdLauncherApp *app, gboolean prestartable)
     hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
 }
 
-void hd_app_mgr_hibernatable (HdLauncherApp *app, gboolean hibernatable)
+void hd_app_mgr_hibernatable (HdRunningApp *app, gboolean hibernatable)
 {
   /* We can only hibernate apps that have a dbus service.
    */
-  if (!hd_launcher_app_get_service (app))
+  HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
+  if (!launcher || !hd_launcher_app_get_service (launcher))
     return;
 
   g_debug ("%s: Making app %s %s hibernatable", __FUNCTION__,
-      hd_launcher_app_get_service (app),
+      hd_launcher_app_get_service (launcher),
       hibernatable ? "really" : "not");
 
   if (hibernatable)
@@ -552,17 +592,45 @@ void hd_app_mgr_hibernatable (HdLauncherApp *app, gboolean hibernatable)
 
 /* Application management */
 
+static gint
+_hd_app_mgr_compare_app_launcher (HdRunningApp *a,
+                                  HdLauncherApp *b)
+{
+  HdLauncherApp *a_launcher = hd_running_app_get_launcher_app (a);
+
+  if (a_launcher == b)
+    return 0;
+
+  return -1;
+}
+
 /* This function either:
  * - Relaunches an app if already running.
  * - Wakes up an app if it's hibernating.
  * - Starts the app if not running.
  */
 gboolean
-hd_app_mgr_launch (HdLauncherApp *app)
+hd_app_mgr_launch (HdLauncherApp *launcher)
 {
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   gboolean result = FALSE;
-  HdLauncherAppState state = hd_launcher_app_get_state (app);
+  HdRunningApp *app = NULL;
+  HdRunningAppState state;
+  GList *link = NULL;
 
+  /* Find if we already have a running app for this launcher. */
+  link = g_list_find_custom (priv->running_apps, launcher,
+                             (GCompareFunc)_hd_app_mgr_compare_app_launcher);
+  if (link)
+    /* We already have a running app for this one. */
+    app = HD_RUNNING_APP (link->data);
+  else
+    {
+      /* We need to create a new running app for it. */
+      app = hd_running_app_new (launcher);
+    }
+
+  state = hd_running_app_get_state (app);
   switch (state)
   {
     case HD_APP_STATE_INACTIVE:
@@ -580,14 +648,41 @@ hd_app_mgr_launch (HdLauncherApp *app)
       result = FALSE;
   }
 
+  if (!link)
+    {
+      /* We just created this running app, so add to list or get rid of it. */
+      if (result)
+        priv->running_apps = g_list_prepend (priv->running_apps, app);
+      else
+        g_object_unref (app);
+    }
+  if (!result)
+    {
+      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LOADING_FAIL],
+          0, launcher, NULL);
+    }
+  else if (state != HD_APP_STATE_SHOWN)
+    {
+      /* Start a loading timer. */
+      time_t now;
+      time (&now);
+      hd_running_app_set_last_launch (app, now);
+      g_timeout_add_seconds (LOADING_TIMEOUT,
+                             (GSourceFunc)hd_app_mgr_loading_timeout,
+                             g_object_ref (app));
+    }
   return result;
 }
 
 gboolean
-hd_app_mgr_start (HdLauncherApp *app)
+hd_app_mgr_start (HdRunningApp *app)
 {
   gboolean result = FALSE;
-  const gchar *service = hd_launcher_app_get_service (app);
+  HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
+  if (!launcher)
+    return FALSE;
+
+  const gchar *service = hd_launcher_app_get_service (launcher);
   const gchar *exec;
 
   if (!hd_app_mgr_can_launch ())
@@ -603,11 +698,6 @@ hd_app_mgr_start (HdLauncherApp *app)
       result = hd_app_mgr_service_top (service, NULL);
       if (result)
         {
-          if (!hd_launcher_app_get_pid (app))
-            /* It's likely to fail because the service hasn't been
-             * registered, but anyways. */
-            hd_app_mgr_request_app_pid (app);
-
           /* As the app has been manually launched, stop considering it
            * for prestarting.
            */
@@ -616,27 +706,27 @@ hd_app_mgr_start (HdLauncherApp *app)
     }
   else
     {
-      exec = hd_launcher_app_get_exec (app);
+      exec = hd_launcher_app_get_exec (launcher);
       if (exec)
         {
           GPid pid = 0;
           result = hd_app_mgr_execute (exec, &pid);
           if (result)
-            hd_launcher_app_set_pid (app, pid);
+            hd_running_app_set_pid (app, pid);
         }
     }
 
   if (result)
     {
-      hd_launcher_app_set_state (app, HD_APP_STATE_LOADING);
+      hd_running_app_set_state (app, HD_APP_STATE_LOADING);
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LAUNCHED],
-          0, app, NULL);
+          0, launcher, NULL);
     }
   return result;
 }
 
 gboolean
-hd_app_mgr_relaunch (HdLauncherApp *app)
+hd_app_mgr_relaunch (HdRunningApp *app)
 {
   /* we have to call hd_app_mgr_service_top when we relaunch an app,
    * but we can't do it straight away because the change in focus pulls
@@ -644,10 +734,35 @@ hd_app_mgr_relaunch (HdLauncherApp *app)
    * hd_app_mgr_relaunch_set_top after the task navigator has zoomed in
    * on the application. */
 
+  HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
+  if (launcher)
   g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_RELAUNCHED],
-      0, app, NULL);
+        0, launcher, NULL);
 
   return TRUE;
+}
+
+static gboolean
+hd_app_mgr_loading_timeout (HdRunningApp *app)
+{
+  time_t now;
+  time (&now);
+  if (hd_running_app_get_state (app) == HD_APP_STATE_LOADING &&
+      difftime (now, hd_running_app_get_last_launch (app)) >= LOADING_TIMEOUT)
+    {
+      /* If application hasn't appeared after this long, consider it
+       * closed.
+       */
+      HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
+      hd_app_mgr_app_closed (app);
+
+      /* Tell the world, so something can be shown to the user. */
+      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LOADING_FAIL],
+          0, launcher, NULL);
+    }
+
+  g_object_unref (app);
+  return FALSE;
 }
 
 gboolean
@@ -666,45 +781,49 @@ hd_app_mgr_relaunch_set_top (HdLauncherApp *app)
 }
 
 gboolean
-hd_app_mgr_kill (HdLauncherApp *app)
+hd_app_mgr_kill (HdRunningApp *app)
 {
-  GPid pid = hd_launcher_app_get_pid (app);
+  GPid pid = hd_running_app_get_pid (app);
 
-  if (!hd_launcher_app_is_executing (app))
+  if (!hd_running_app_is_executing (app))
     return FALSE;
 
-  if (!pid)
+  if (pid <= 0)
     {
       g_warning ("%s: No pid for app %s\n", __FUNCTION__,
           hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
       return FALSE;
     }
 
-  if (pid < 0)
-    g_critical ("Oops, almost killed everyone!");
-  else if (kill (pid, SIGTERM) != 0)
+  if (kill (pid, SIGTERM) != 0)
     return FALSE;
 
   hd_app_mgr_app_closed (app);
   return TRUE;
 }
 
-void hd_app_mgr_app_opened (HdLauncherApp *app,
-                            GPid pid)
+void
+hd_app_mgr_kill_all (void)
 {
-  g_debug ("%s: app %s shown, pid given: %d\n", __FUNCTION__,
-      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)), pid);
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+  GList *apps = priv->running_apps;
+  while (apps)
+    {
+      hd_app_mgr_kill (apps->data);
+      apps = apps->next;
+    }
+}
 
-  hd_launcher_app_set_state (app, HD_APP_STATE_SHOWN);
-
-  /* If we didn't have a pid, get the one from the window. */
-  if (!hd_launcher_app_get_pid (app))
-    hd_launcher_app_set_pid (app, pid);
+void hd_app_mgr_app_opened (HdRunningApp *app)
+{
+  HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
+  hd_running_app_set_state (app, HD_APP_STATE_SHOWN);
 
   /* Signal that the app has appeared.
    */
-  g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_SHOWN],
-                 0, app, NULL);
+  if (launcher)
+    g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_SHOWN],
+                   0, launcher, NULL);
 
   /* Remove it from prestarting lists, just in case it has been launched
    * from somewhere else.
@@ -715,14 +834,15 @@ void hd_app_mgr_app_opened (HdLauncherApp *app,
 }
 
 void
-hd_app_mgr_app_closed (HdLauncherApp *app)
+hd_app_mgr_app_closed (HdRunningApp *app)
 {
-  g_debug ("%s: app %s closed\n", __FUNCTION__,
-      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+  HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
 
-  if (hd_launcher_app_get_state (app) == HD_APP_STATE_HIBERNATING)
+  if (hd_running_app_get_state (app) == HD_APP_STATE_HIBERNATING)
     {
-      hd_launcher_app_set_pid (app, 0);
+      hd_running_app_set_pid (app, 0);
+      hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
       return;
     }
 
@@ -731,44 +851,107 @@ hd_app_mgr_app_closed (HdLauncherApp *app)
   hd_app_mgr_remove_from_queue (QUEUE_HIBERNATED, app);
   hd_app_mgr_remove_from_queue (QUEUE_HIBERNATABLE, app);
 
-  /* Add to prestartable and check state if always-on. */
-  if (hd_launcher_app_get_prestart_mode (app) ==
-        HD_APP_PRESTART_ALWAYS)
-    {
-      hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
-    }
+  hd_running_app_set_pid (app, 0);
+  hd_running_app_set_state (app, HD_APP_STATE_INACTIVE);
 
-  hd_launcher_app_set_pid (app, 0);
-  hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
-  hd_app_mgr_state_check ();
+  if (launcher &&
+      hd_launcher_app_get_prestart_mode (launcher) == HD_APP_PRESTART_ALWAYS)
+    {
+      /* Add it to prestartable so it will be prestarted again. */
+      hd_app_mgr_add_to_queue (QUEUE_PRESTARTABLE, app);
+      hd_app_mgr_state_check ();
+    }
+  else
+    {
+      /* Take it out of the list of running apps. */
+      GList *link = g_list_find (priv->running_apps, app);
+      if (link)
+        {
+          g_object_unref (app);
+          priv->running_apps = g_list_delete_link (priv->running_apps, link);
+        }
+    }
 }
 
 /* Called when an hibernating app is closed in the switcher. */
 void
-hd_app_mgr_app_stop_hibernation (HdLauncherApp *app)
+hd_app_mgr_app_stop_hibernation (HdRunningApp *app)
 {
-  hd_launcher_app_set_state (app, HD_APP_STATE_INACTIVE);
+  hd_running_app_set_state (app, HD_APP_STATE_INACTIVE);
   hd_app_mgr_app_closed (app);
-}
-
-static void
-_hd_app_mgr_collect_prestarted (HdLauncherItem *item, HdAppMgrPrivate *priv)
-{
-  if (hd_launcher_item_get_item_type (item) == HD_APPLICATION_LAUNCHER)
-    {
-      HdLauncherApp *app = HD_LAUNCHER_APP (item);
-      if (hd_launcher_app_get_prestart_mode (app) == HD_APP_PRESTART_ALWAYS)
-        hd_app_mgr_prestartable (app, TRUE);
-    }
 }
 
 static void
 hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (HD_APP_MGR (data));
+  /* We need to copy thess lists because we'll be modifying them. */
+  GList *apps = g_list_copy (priv->running_apps);
   GList *items = hd_launcher_tree_get_items (tree, NULL);
 
-  g_list_foreach (items, (GFunc)_hd_app_mgr_collect_prestarted, priv);
+  /* First, traverse the already running apps to see if their HdLauncherApp
+   * info has changed.
+   */
+  for (; apps; apps = apps->next)
+    {
+      HdRunningApp *app = apps->data;
+      HdLauncherApp *old, *new;
+      old = hd_running_app_get_launcher_app (app);
+      if (!old)
+        /* TODO? Try to recognize newly installed but already running apps? */
+        continue;
+
+      new = HD_LAUNCHER_APP (hd_launcher_tree_find_item (tree,
+                                 hd_running_app_get_id (app)));
+      hd_running_app_set_launcher_app (app, new);
+      if (old && !new)
+        {
+          /* The .desktop file no longer exists, but the app could be running. */
+          HdRunningAppState state = hd_running_app_get_state (app);
+          if (state == HD_APP_STATE_PRESTARTED)
+            /* Kill it, as it shouldn't be prestarted. */
+            hd_app_mgr_kill (app);
+          else if (state == HD_APP_STATE_INACTIVE)
+            /* What's it doing here? */
+            hd_app_mgr_app_closed (app);
+        }
+      if (old && new)
+        {
+          /* If the old was prestarted and the new one isn't, kill it. */
+          if (hd_running_app_get_state (app) == HD_APP_STATE_PRESTARTED &&
+              hd_launcher_app_get_prestart_mode (new) == HD_APP_PRESTART_NONE)
+            hd_app_mgr_kill (app);
+        }
+    }
+
+  g_list_free (apps);
+
+  /* Now we need to look if we have new prestarted apps. */
+  for (; items; items = items->next)
+    {
+      HdLauncherApp *launcher;
+      GList *link = NULL;
+
+      if (hd_launcher_item_get_item_type (HD_LAUNCHER_ITEM (items->data)) !=
+                                          HD_APPLICATION_LAUNCHER)
+        continue;
+
+      launcher = HD_LAUNCHER_APP (items->data);
+      if (hd_launcher_app_get_prestart_mode(launcher) != HD_APP_PRESTART_ALWAYS)
+        continue;
+
+      /* Look if we already have a running app for it. */
+      link = g_list_find_custom (priv->running_apps, launcher,
+                                 (GCompareFunc)_hd_app_mgr_compare_app_launcher);
+      if (link)
+        /* We dealt with it before. */
+        continue;
+
+      /* Create a new running app for it. */
+      HdRunningApp *app = hd_running_app_new (launcher);
+      priv->running_apps = g_list_prepend (priv->running_apps, app);
+      hd_app_mgr_prestartable (app, TRUE);
+    }
 
   hd_app_mgr_state_check ();
 }
@@ -777,12 +960,12 @@ static void
 _hd_app_mgr_prestart_cb (DBusGProxy *proxy, guint result,
                         GError *error, gpointer data)
 {
-  HdLauncherApp *app = HD_LAUNCHER_APP (data);
+  HdRunningApp *app = HD_RUNNING_APP (data);
 
   if (error || !result)
     {
       g_warning ("%s: Couldn't prestart service %s, error: %s\n",
-          __FUNCTION__, hd_launcher_app_get_service (app),
+          __FUNCTION__, hd_running_app_get_service (app),
           error ? error->message : "no result");
       /* TODO: Check number of times this has been tried and stop after
        * a while.
@@ -791,21 +974,21 @@ _hd_app_mgr_prestart_cb (DBusGProxy *proxy, guint result,
   else
     {
       g_debug ("%s: %s prestarted\n", __FUNCTION__,
-          hd_launcher_app_get_service (app));
-      hd_launcher_app_set_state (app, HD_APP_STATE_PRESTARTED);
+          hd_running_app_get_service (app));
+      hd_running_app_set_state (app, HD_APP_STATE_PRESTARTED);
       hd_app_mgr_add_to_queue (QUEUE_PRESTARTED, app);
-      if (!hd_launcher_app_get_pid (app))
+      if (!hd_running_app_get_pid (app))
         hd_app_mgr_request_app_pid (app);
     }
 }
 
 gboolean
-hd_app_mgr_prestart (HdLauncherApp *app)
+hd_app_mgr_prestart (HdRunningApp *app)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
-  const gchar *service = hd_launcher_app_get_service (app);
+  const gchar *service = hd_running_app_get_service (app);
 
-  if (hd_launcher_app_is_executing (app))
+  if (hd_running_app_is_executing (app))
     return TRUE;
 
   if (!service)
@@ -827,9 +1010,9 @@ hd_app_mgr_prestart (HdLauncherApp *app)
 }
 
 gboolean
-hd_app_mgr_hibernate (HdLauncherApp *app)
+hd_app_mgr_hibernate (HdRunningApp *app)
 {
-  const gchar *service = hd_launcher_app_get_service (app);
+  const gchar *service = hd_running_app_get_service (app);
 
   if (!service)
     /* Can't hibernate a non-dbus app. */
@@ -838,7 +1021,7 @@ hd_app_mgr_hibernate (HdLauncherApp *app)
   g_debug ("%s: service %s\n", __FUNCTION__, service);
   if (hd_app_mgr_kill (app))
     {
-      hd_launcher_app_set_state (app, HD_APP_STATE_HIBERNATING);
+      hd_running_app_set_state (app, HD_APP_STATE_HIBERNATING);
       hd_app_mgr_move_queue (QUEUE_HIBERNATABLE, QUEUE_HIBERNATED, app);
     }
   else
@@ -852,13 +1035,13 @@ hd_app_mgr_hibernate (HdLauncherApp *app)
 }
 
 gboolean
-hd_app_mgr_wakeup   (HdLauncherApp *app)
+hd_app_mgr_wakeup   (HdRunningApp *app)
 {
   gboolean res = FALSE;
-  const gchar *service = hd_launcher_app_get_service (app);
+  const gchar *service = hd_running_app_get_service (app);
 
   /* If the app is not hibernating, do nothing. */
-  if (hd_launcher_app_get_state (app) != HD_APP_STATE_HIBERNATING)
+  if (hd_running_app_get_state (app) != HD_APP_STATE_HIBERNATING)
     return TRUE;
 
   if (!service)
@@ -1154,7 +1337,7 @@ hd_app_mgr_state_check_loop (gpointer data)
       /* If there are prestarted apps, kill one of them. */
       if (!g_queue_is_empty (priv->queues[QUEUE_PRESTARTED]))
         {
-          HdLauncherApp *app = g_queue_peek_tail (priv->queues[QUEUE_PRESTARTED]);
+          HdRunningApp *app = g_queue_peek_tail (priv->queues[QUEUE_PRESTARTED]);
           hd_app_mgr_kill (app);
           if (!g_queue_is_empty (priv->queues[QUEUE_PRESTARTED]))
             loop = TRUE;
@@ -1167,7 +1350,7 @@ hd_app_mgr_state_check_loop (gpointer data)
       /* TODO: Hibernate an app and loop. */
       if (!g_queue_is_empty (priv->queues[QUEUE_HIBERNATABLE]))
         {
-          HdLauncherApp *app = g_queue_peek_tail (priv->queues[QUEUE_HIBERNATABLE]);
+          HdRunningApp *app = g_queue_peek_tail (priv->queues[QUEUE_HIBERNATABLE]);
           hd_app_mgr_hibernate (app);
           if (!g_queue_is_empty (priv->queues[QUEUE_HIBERNATABLE]))
             loop = TRUE;
@@ -1196,7 +1379,7 @@ hd_app_mgr_state_check_loop (gpointer data)
       !g_queue_is_empty (priv->queues[QUEUE_PRESTARTABLE]) &&
       hd_app_mgr_can_prestart ())
     {
-      HdLauncherApp *app = g_queue_peek_head (priv->queues[QUEUE_PRESTARTABLE]);
+      HdRunningApp *app = g_queue_peek_head (priv->queues[QUEUE_PRESTARTABLE]);
       hd_app_mgr_prestart (app);
       if (!g_queue_is_empty (priv->queues[QUEUE_PRESTARTABLE]))
         loop = TRUE;
@@ -1218,7 +1401,7 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
                                     const char *new_owner,
                                     gpointer data)
 {
-  GList *items;
+  GList *apps;
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
 
   /* Check only connections and disconnections. */
@@ -1226,35 +1409,34 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
     return;
 
   /* Check if the service is one we want always on. */
-  items = hd_launcher_tree_get_items(priv->tree, NULL);
-  while (items)
+  apps = priv->running_apps;
+  while (apps)
     {
-      HdLauncherItem *item = items->data;
+      HdRunningApp *app = HD_RUNNING_APP (apps->data);
 
-      if (hd_launcher_item_get_item_type (item) == HD_APPLICATION_LAUNCHER)
+      if (!hd_running_app_is_executing (app))
+        goto next;
+
+      if (!g_strcmp0 (name, hd_running_app_get_service (app)))
         {
-          HdLauncherApp *app = HD_LAUNCHER_APP (item);
+          if (!new_owner[0])
+            { /* Disconnection */
+              g_debug ("%s: App %s has fallen\n", __FUNCTION__,
+              hd_running_app_get_id (app));
 
-          if (!g_strcmp0 (name, hd_launcher_app_get_service (app)))
-            {
-              if (!new_owner[0])
-                { /* Disconnection */
-                  g_debug ("%s: App %s has fallen\n", __FUNCTION__,
-                      hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
-
-                  /* We have the correct app, deal accordingly. */
-                  hd_app_mgr_app_closed (app);
-                }
-              else
-                { /* Connection */
-                  if (!hd_launcher_app_get_pid (app))
-                    hd_app_mgr_request_app_pid (app);
-                }
-              break;
+              /* We have the correct app, deal accordingly. */
+              hd_app_mgr_app_closed (app);
             }
+          else
+            { /* Connection */
+          if (!hd_running_app_get_pid (app))
+                hd_app_mgr_request_app_pid (app);
+            }
+          break;
         }
 
-      items = g_list_next (items);
+      next:
+      apps = g_list_next (apps);
     }
 }
 
@@ -1316,31 +1498,31 @@ static void
 _hd_app_mgr_request_app_pid_cb (DBusGProxy *proxy, guint pid,
     GError *error, gpointer data)
 {
-  HdLauncherApp *app = HD_LAUNCHER_APP (data);
+  HdRunningApp *app = HD_RUNNING_APP (data);
 
   if (error)
     {
-      g_debug ("%s: Couldn't get pid for app %s because %s\n",
-               __FUNCTION__, hd_launcher_app_get_service (app),
+      g_warning ("%s: Couldn't get pid for service %s because %s\n",
+                 __FUNCTION__, hd_running_app_get_service (app),
                error->message);
       return;
     }
 
   g_debug ("%s: Got pid %d for %s\n", __FUNCTION__,
-           pid, hd_launcher_app_get_service (app));
-  hd_launcher_app_set_pid (app, pid);
+           pid, hd_running_app_get_service (app));
+  hd_running_app_set_pid (app, pid);
 }
 
 static void
-hd_app_mgr_request_app_pid (HdLauncherApp *app)
+hd_app_mgr_request_app_pid (HdRunningApp *app)
 {
   DBusGProxy *proxy = (HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get()))->dbus_proxy;
-  const gchar *service = hd_launcher_app_get_service (app);
+  const gchar *service = hd_running_app_get_service (app);
 
   if (!service)
     {
       g_warning ("%s: Can't get the pid for a non-dbus app.\n", __FUNCTION__);
-      hd_launcher_app_set_pid (app, 0);
+      hd_running_app_set_pid (app, 0);
     }
 
   org_freedesktop_DBus_get_connection_unix_process_id_async (proxy,
@@ -1348,12 +1530,67 @@ hd_app_mgr_request_app_pid (HdLauncherApp *app)
       _hd_app_mgr_request_app_pid_cb, (gpointer)app);
 }
 
-HdLauncherApp *
+HdRunningApp *
 hd_app_mgr_match_window (const char *res_name,
-                         const char *res_class)
+                         const char *res_class,
+                         GPid pid)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
-  GList *apps = hd_launcher_tree_get_items (priv->tree, NULL);
+  HdRunningApp *app = NULL;
+  HdLauncherApp *launcher = NULL;
+  GList *link = priv->running_apps;
+
+  /* First we need to look if there's already a running app for this. */
+  while (link)
+    {
+      app = HD_RUNNING_APP (link->data);
+      launcher = hd_running_app_get_launcher_app (app);
+
+      /* If we know the running app's pid and it's the same, we found it. */
+      GPid app_pid = hd_running_app_get_pid (app);
+      if (app_pid && (app_pid == pid))
+        return app;
+
+      /* Now we look if the app's launcher matches the window. */
+      if (launcher)
+        {
+          if (hd_launcher_app_match_window (launcher, res_name, res_class))
+            {
+              /* Now we have a good pid. */
+              /* TODO: Not really, many times WM reports an incorrect pid,
+               * so we only use this if we don't already have one. */
+              if (!app_pid)
+                hd_running_app_set_pid (app, pid);
+              return app;
+            }
+        }
+
+      /* Next. */
+      link = link->next;
+    }
+
+  /*
+   * We didn't find any perfectly matching app, so try to see if we have
+   * any loading one.
+   * TODO: Review the wiseness of this move.
+   */
+  link = priv->running_apps;
+  while (link)
+    {
+      app = HD_RUNNING_APP (link->data);
+      if (hd_running_app_get_state (app) == HD_APP_STATE_LOADING)
+        {
+          return app;
+        }
+
+      link = link->next;
+    }
+
+  /* Well, there wasn't any already running app, so we'll have to look for
+   * a launcher that matches.
+   */
+  GList *launchers = hd_launcher_tree_get_items (priv->tree, NULL);
+  app = NULL;
   HdLauncherApp *result = NULL;
 
   if (!res_name && !res_class)
@@ -1362,73 +1599,60 @@ hd_app_mgr_match_window (const char *res_name,
       return NULL;
     }
 
-  while (apps)
+  while (launchers)
     {
-      HdLauncherApp *app;
-
       /* Filter non-applications. */
-      if (hd_launcher_item_get_item_type (HD_LAUNCHER_ITEM (apps->data)) !=
+      if (hd_launcher_item_get_item_type (HD_LAUNCHER_ITEM (launchers->data)) !=
           HD_APPLICATION_LAUNCHER)
         goto next;
 
-      app = HD_LAUNCHER_APP (apps->data);
-
-      /* First try to match the explicit WM_CLASS. */
-      if (res_class &&
-          hd_launcher_app_get_wm_class (app) &&
-          g_strcmp0 (hd_launcher_app_get_wm_class (app), res_class) == 0)
+      launcher = HD_LAUNCHER_APP (launchers->data);
+      if (hd_launcher_app_match_window (launcher, res_name, res_class))
         {
-          result = app;
-          break;
-        }
-
-      /* Now try the app's id with the class name, ignoring case. */
-      if (res_class &&
-          g_ascii_strncasecmp (res_class,
-              hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)),
-              strlen (res_class)) == 0)
-        {
-          result = app;
-          break;
-        }
-
-      /* Try the executable as a last resource. */
-      if (res_name &&
-          g_strcmp0 (res_name, hd_launcher_app_get_exec (app)) == 0)
-        {
-          result = app;
+          result = launcher;
           break;
         }
 
       next:
-        apps = g_list_next (apps);
+      launchers = g_list_next (launchers);
     }
 
-  return result;
+  if (result)
+    {
+      /* Let's make a new running app for it. */
+      app = hd_running_app_new (result);
+      hd_running_app_set_pid (app, pid);
+      priv->running_apps = g_list_prepend (priv->running_apps, app);
+    }
+
+  return app;
+}
+
+HdLauncherTree *
+hd_app_mgr_get_tree ()
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+  return priv->tree;
 }
 
 void
 hd_app_mgr_dump_app_list (gboolean only_running)
 {
-  GList *apps;
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+  GList *apps = priv->running_apps;
 
-  g_debug ("List of launched applications:");
-  apps = hd_launcher_tree_get_items (hd_launcher_get_tree(), NULL);
+  g_debug ("%s:\n", __FUNCTION__);
   for (; apps; apps = apps->next)
     {
-      HdLauncherApp *app;
+      HdRunningApp *app = HD_RUNNING_APP (apps->data);
 
-      if (hd_launcher_item_get_item_type (apps->data) != HD_APPLICATION_LAUNCHER)
-        continue;
-
-      app = HD_LAUNCHER_APP (apps->data);
-      if (!only_running || hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN)
+      if (!only_running || hd_running_app_get_state (app) == HD_APP_STATE_SHOWN)
         {
-          g_debug("app=%p, pid=%d, wm_class=%s, service=%s, state=%d",
-                  app, hd_launcher_app_get_pid (app),
-                  hd_launcher_app_get_wm_class (app),
-                  hd_launcher_app_get_service (app),
-                  hd_launcher_app_get_state (app));
+          g_debug("\tapp=%p, id=%s, pid=%d, state=%d\n",
+                  app,
+                  hd_running_app_get_id (app),
+                  hd_running_app_get_pid (app),
+                  hd_running_app_get_state (app));
         }
     }
 }

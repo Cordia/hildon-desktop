@@ -76,27 +76,11 @@ typedef enum {
 
 HdLauncherAppPrestartMode  hd_launcher_app_get_prestart_mode (HdLauncherApp *item);
 
-/* TODO: Once we have integrated libgnome-menu, HdLauncherApp will contain
- * only our maemo-specific data.
- */
-
-typedef enum {
-  HD_APP_STATE_INACTIVE = 0,
-  HD_APP_STATE_HIBERNATING,
-  HD_APP_STATE_PRESTARTED,
-  HD_APP_STATE_LOADING,
-  HD_APP_STATE_SHOWN
-} HdLauncherAppState;
-
-HdLauncherAppState hd_launcher_app_get_state (HdLauncherApp *app);
-void               hd_launcher_app_set_state (HdLauncherApp *app,
-                                              HdLauncherAppState state);
-gboolean hd_launcher_app_is_executing     (HdLauncherApp *app);
-
-GPid hd_launcher_app_get_pid (HdLauncherApp *app);
-void hd_launcher_app_set_pid (HdLauncherApp *app, GPid pid);
-
 gint hd_launcher_app_get_priority (HdLauncherApp *app);
+
+gboolean hd_launcher_app_match_window (HdLauncherApp *app,
+                                       const gchar *res_name,
+                                       const gchar *res_class);
 
 G_END_DECLS
 

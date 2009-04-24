@@ -18,6 +18,7 @@ hd-app-mgr-glue.h: hd-app-mgr-dbus.xml
 
 launcher_h = \
 	hd-app-mgr.h      \
+	hd-running-app.h		\
 	hd-launcher-tree.h		\
 	hd-launcher-item.h		\
 	hd-launcher-cat.h		\
@@ -29,6 +30,7 @@ launcher_h = \
 
 launcher_c = \
 	hd-app-mgr.c      \
+	hd-running-app.c		\
 	hd-launcher-tree.c		\
 	hd-launcher-item.c		\
 	hd-launcher-cat.c		\

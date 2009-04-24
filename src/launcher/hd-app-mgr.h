@@ -31,7 +31,9 @@
 
 #include <glib-object.h>
 
+#include "launcher/hd-running-app.h"
 #include "launcher/hd-launcher-app.h"
+#include "launcher/hd-launcher-tree.h"
 
 G_BEGIN_DECLS
 
@@ -63,25 +65,27 @@ GType hd_app_mgr_get_type (void) G_GNUC_CONST;
 HdAppMgr   *hd_app_mgr_get  (void);
 void        hd_app_mgr_stop (void);
 
+/* Launching from .desktop files.*/
 gboolean hd_app_mgr_launch       (HdLauncherApp *app);
-gboolean hd_app_mgr_relaunch     (HdLauncherApp *app);
-gboolean hd_app_mgr_relaunch_set_top (HdLauncherApp *app);
-gboolean hd_app_mgr_wakeup       (HdLauncherApp *app);
-gboolean hd_app_mgr_kill         (HdLauncherApp *app);
-
-void hd_app_mgr_app_opened (HdLauncherApp *app,
-                            GPid pid);
-void hd_app_mgr_app_closed (HdLauncherApp *app);
-void hd_app_mgr_app_stop_hibernation (HdLauncherApp *app);
-
 gboolean hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id);
+gboolean hd_app_mgr_relaunch_set_top (HdLauncherApp *app);
 
-void hd_app_mgr_prestartable     (HdLauncherApp *app, gboolean prestartable);
-void hd_app_mgr_hibernatable     (HdLauncherApp *app, gboolean hibernatable);
+/* Controlling running apps. */
+gboolean hd_app_mgr_wakeup       (HdRunningApp *app);
+gboolean hd_app_mgr_kill         (HdRunningApp *app);
+void     hd_app_mgr_kill_all     (void);
+void     hd_app_mgr_hibernatable (HdRunningApp *app, gboolean hibernatable);
+void     hd_app_mgr_app_stop_hibernation (HdRunningApp *app);
 
 /* Window matching */
-HdLauncherApp *hd_app_mgr_match_window (const char *res_name,
-                                        const char *res_class);
+HdRunningApp *hd_app_mgr_match_window (const char *res_name,
+                                       const char *res_class,
+                                       GPid pid);
+void hd_app_mgr_app_opened (HdRunningApp *app);
+void hd_app_mgr_app_closed (HdRunningApp *app);
+
+/* Application list. */
+HdLauncherTree *hd_app_mgr_get_tree (void);
 
 void hd_app_mgr_dump_app_list (gboolean only_running);
 

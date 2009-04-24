@@ -1,3 +1,26 @@
+2009-04-24  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Separated run-time data on applications from HdLauncherApp to HdRunningApp,
+	in preparation for libgnome-menu integration.
+	Moved handling of loading timeout to HdAppMgr.
+	Fixes: NB#111844, NB#112105
+
+	* src/home/hd-home.c:
+	* src/home/hd-switcher.c: Added handling of application-loading-fail.
+	* src/home/hd-task-navigator.c:
+	* src/launcher/Makefile.am:
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-app-mgr.h:
+	* src/launcher/hd-launcher-app.c: Removed run-time information.
+	* src/launcher/hd-launcher-app.h:
+	* src/launcher/hd-launcher.c: Removed loading timeout.
+	* src/launcher/hd-launcher.h:
+	* src/launcher/hd-running-app.c: Created for keeping run-time data on
+	applications.
+	* src/launcher/hd-running-app.h:
+	* src/mb/hd-comp-mgr.c: HdCompMgrClient now points to a HdRunningApp.
+	* src/mb/hd-comp-mgr.h:
+
 2009-04-24  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#111290 - Tapping on the center of the title area does not

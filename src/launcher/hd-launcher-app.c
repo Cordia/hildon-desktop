@@ -30,13 +30,7 @@
 #include "hildon-desktop.h"
 #include "hd-launcher-app.h"
 
-#include <errno.h>
-#include <fcntl.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/resource.h>
-
-#include <dbus/dbus.h>
 
 /* desktop entry keys */
 #define HD_DESKTOP_ENTRY_EXEC           "Exec"
@@ -63,9 +57,6 @@ struct _HdLauncherAppPrivate
 
   HdLauncherAppPrestartMode prestart_mode;
 
-  HdLauncherAppState state;
-
-  GPid pid;
   gint priority;
 };
 
@@ -86,7 +77,7 @@ hd_launcher_app_finalize (GObject *gobject)
   g_free (priv->switcher_icon);
   g_free (priv->wm_class);
 
-  G_OBJECT_CLASS (hd_launcher_app_parent_class)->dispose (gobject);
+  G_OBJECT_CLASS (hd_launcher_app_parent_class)->finalize (gobject);
 }
 
 static void
@@ -248,43 +239,40 @@ hd_launcher_app_get_prestart_mode (HdLauncherApp *item)
   return item->priv->prestart_mode;
 }
 
-HdLauncherAppState
-hd_launcher_app_get_state (HdLauncherApp *app)
-{
-  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  return priv->state;
-}
-void
-hd_launcher_app_set_state (HdLauncherApp *app, HdLauncherAppState state)
-{
-  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  priv->state = state;
-}
-
-gboolean
-hd_launcher_app_is_executing (HdLauncherApp *app)
-{
-  return (hd_launcher_app_get_state (app) == HD_APP_STATE_PRESTARTED ||
-          hd_launcher_app_get_state (app) == HD_APP_STATE_SHOWN);
-}
-
-GPid
-hd_launcher_app_get_pid (HdLauncherApp *app)
-{
-  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  return priv->pid;
-}
-
-void
-hd_launcher_app_set_pid (HdLauncherApp *app, GPid pid)
-{
-  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
-  priv->pid = pid;
-}
-
 gint
 hd_launcher_app_get_priority (HdLauncherApp *app)
 {
   HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
   return priv->priority;
+}
+
+gboolean hd_launcher_app_match_window (HdLauncherApp *app,
+                                       const gchar *res_name,
+                                       const gchar *res_class)
+{
+  g_return_val_if_fail(app, FALSE);
+
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+
+  if (!res_name && !res_class)
+    return FALSE;
+
+  if (res_class &&
+      priv->wm_class &&
+      g_strcmp0 (priv->wm_class, res_class) == 0)
+    return TRUE;
+
+  /* Now try the app's id with the class name, ignoring case. */
+  if (res_class &&
+      g_ascii_strncasecmp (res_class,
+          hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)),
+          strlen (res_class)) == 0)
+    return TRUE;
+
+  /* Try the executable as a last resource. */
+  if (res_name &&
+      g_strcmp0 (res_name, priv->exec) == 0)
+    return TRUE;
+
+  return FALSE;
 }

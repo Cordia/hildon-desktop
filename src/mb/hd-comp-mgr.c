@@ -112,7 +112,7 @@ struct HdCompMgrPrivate
 
 struct HdCompMgrClientPrivate
 {
-  HdLauncherApp *app;
+  HdRunningApp *app;
 
   guint                 hibernation_key;
   gboolean              can_hibernate : 1;
@@ -132,7 +132,7 @@ struct HdCompMgrClientPrivate
   guint                 portrait_timestamp;
 };
 
-HdLauncherApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
+HdRunningApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
                                                HdCompMgr *hmgr);
 
 static void hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr);
@@ -200,14 +200,14 @@ hd_comp_mgr_client_process_hibernation_prop (HdCompMgrClient * hc)
     XFree (hibernable);
 }
 
-HdLauncherApp *
+HdRunningApp *
 hd_comp_mgr_client_get_app_key (HdCompMgrClient *client, HdCompMgr *hmgr)
 {
   MBWindowManagerClient *wm_client;
   MBWindowManager       *wm;
   XClassHint             class_hint;
   Status                 status = 0;
-  HdLauncherApp          *app = NULL;
+  HdRunningApp          *app = NULL;
   HdCompMgrClientPrivate *priv = client->priv;
 
   wm = MB_WM_COMP_MGR (hmgr)->wm;
@@ -223,7 +223,8 @@ hd_comp_mgr_client_get_app_key (HdCompMgrClient *client, HdCompMgr *hmgr)
     goto out;
 
   app = hd_app_mgr_match_window (class_hint.res_name,
-                                 class_hint.res_class);
+                                 class_hint.res_class,
+                                 wm_client->window->pid);
 
   if (app)
     {
@@ -251,12 +252,12 @@ hd_comp_mgr_client_get_app_key (HdCompMgrClient *client, HdCompMgr *hmgr)
         }
 
       key = g_strdup_printf ("%s/%s/%s/%d",
-              hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)),
+              hd_running_app_get_id (app),
               class_hint.res_class ? class_hint.res_class : "",
               role ? role : "",
               level);
       g_debug ("%s: app %s, window key: %s\n", __FUNCTION__,
-                hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)),
+                hd_running_app_get_id (app),
                 key);
       priv->hibernation_key = g_str_hash (key);
       if (role)
@@ -281,7 +282,7 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
   HdCompMgrClientPrivate *priv;
   HdCompMgr              *hmgr;
   MBWindowManagerClient  *wm_client = MB_WM_COMP_MGR_CLIENT (obj)->wm_client;
-  HdLauncherApp          *app;
+  HdRunningApp          *app;
   guint32                *prop;
 
   hmgr = HD_COMP_MGR (wm_client->wmref->comp_mgr);
@@ -291,18 +292,17 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
   app = hd_comp_mgr_client_get_app_key (client, hmgr);
   if (app)
     {
-      GQuark appid = hd_launcher_item_get_id_quark (HD_LAUNCHER_ITEM (app));
       priv->app = g_object_ref (app);
       hd_comp_mgr_client_process_hibernation_prop (client);
 
       /* Look up if there were already windows for this app. */
       guint windows = (guint)g_hash_table_lookup (hmgr->priv->shown_apps,
-                                           (gpointer)appid);
+                                                  (gpointer)app);
       if (!windows)
-        hd_app_mgr_app_opened (app, wm_client->window->pid);
+        hd_app_mgr_app_opened (app);
 
       g_hash_table_insert (hmgr->priv->shown_apps,
-                           (gpointer)appid,
+                           (gpointer)app,
                            (gpointer)++windows);
     }
 
@@ -385,7 +385,7 @@ hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient)
   HdCompMgrClientPrivate * priv = hclient->priv;
 
   if (priv->app)
-    return (hd_launcher_app_get_state (priv->app) == HD_APP_STATE_HIBERNATING);
+    return (hd_running_app_get_state (priv->app) == HD_APP_STATE_HIBERNATING);
 
   return FALSE;
 }
@@ -398,19 +398,30 @@ hd_comp_mgr_client_can_hibernate (HdCompMgrClient *hclient)
   return priv->can_hibernate;
 }
 
-HdLauncherApp *
+HdRunningApp *
 hd_comp_mgr_client_get_app (HdCompMgrClient *hclient)
 {
   if (!hclient) return NULL;
   return hclient->priv->app;
 }
 
+HdLauncherApp *
+hd_comp_mgr_client_get_launcher (HdCompMgrClient *hclient)
+{
+  if (!hclient || !hclient->priv->app) return NULL;
+  return hd_running_app_get_launcher_app(hclient->priv->app);
+}
+
 const gchar *
 hd_comp_mgr_client_get_app_local_name (HdCompMgrClient *hclient)
 {
-  HdLauncherApp *app = hclient->priv->app;
+  HdRunningApp *app = hclient->priv->app;
   if (app)
-    return hd_launcher_item_get_local_name (HD_LAUNCHER_ITEM (app));
+    {
+      HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
+      if (launcher)
+        return hd_launcher_item_get_local_name (HD_LAUNCHER_ITEM (launcher));
+    }
   return NULL;
 }
 
@@ -652,7 +663,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   if (event->atom == killable ||
       event->atom == able_to_hibernate)
     {
-      HdLauncherApp *app, *current_app;
+      HdRunningApp *app, *current_app;
       c = mb_wm_managed_client_from_xwindow (wm, event->window);
       if (!c || !c->cm_client)
         return False;
@@ -961,20 +972,19 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   /* Check if it's the last window for the app. */
   if (hclient->priv->app)
     {
-      GQuark appid = hd_launcher_item_get_id_quark (
-                      HD_LAUNCHER_ITEM (hclient->priv->app));
+      HdRunningApp *app = hclient->priv->app;
       guint windows = (guint)g_hash_table_lookup (priv->shown_apps,
-                                                  (gpointer)appid);
+                                                  (gpointer)app);
       if (--windows == 0)
         {
-          hd_app_mgr_app_closed (hclient->priv->app);
-          g_hash_table_remove (priv->shown_apps, (gpointer)appid);
+          hd_app_mgr_app_closed (app);
+          g_hash_table_remove (priv->shown_apps, (gpointer)app);
         }
       else
         {
           g_hash_table_insert (priv->shown_apps,
-                               (gpointer)appid,
-                               (gpointer) windows);
+                               (gpointer)app,
+                               (gpointer)windows);
         }
     }
 
@@ -982,7 +992,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * If the actor is an application, remove it also to the switcher
    */
   if (hclient->priv->app &&
-      (hd_launcher_app_get_state (hclient->priv->app)
+      (hd_running_app_get_state (hclient->priv->app)
        == HD_APP_STATE_HIBERNATING) &&
       !g_hash_table_lookup (priv->hibernating_apps,
                             (gpointer) hclient->priv->hibernation_key))
@@ -1609,8 +1619,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (hclient->priv->app)
     g_object_set_data (G_OBJECT (actor),
            "HD-ApplicationId",
-           (gchar *)hd_launcher_item_get_id (
-                       HD_LAUNCHER_ITEM (hclient->priv->app)));
+           (gchar *)hd_running_app_get_id (hclient->priv->app));
 
   hd_comp_mgr_hook_update_area(HD_COMP_MGR (mgr), actor);
 
@@ -2111,8 +2120,8 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
         HD_COMP_MGR_CLIENT (current_client->cm_client);
       if (new_current_hclient != priv->current_hclient)
         {
-          HdLauncherApp *old_current_app;
-          HdLauncherApp *new_current_app;
+          HdRunningApp *old_current_app;
+          HdRunningApp *new_current_app;
 
           /* Switch the hibernatable state for the new current client. */
           if (priv->current_hclient &&
@@ -2262,23 +2271,7 @@ hd_comp_mgr_wakeup_client (HdCompMgr *hmgr, HdCompMgrClient *hclient)
 void
 hd_comp_mgr_kill_all_apps (HdCompMgr *hmgr)
 {
-  GList *apps;
-
-  apps = hd_launcher_tree_get_items (hd_launcher_get_tree(), NULL);
-  for (; apps; apps = apps->next)
-    {
-      HdLauncherApp *app;
-
-      if (hd_launcher_item_get_item_type (apps->data)
-          != HD_APPLICATION_LAUNCHER)
-        continue;
-
-      app = HD_LAUNCHER_APP (apps->data);
-      if (hd_launcher_app_get_state (app) != HD_APP_STATE_SHOWN)
-        continue;
-
-      hd_app_mgr_kill (app);
-    }
+  hd_app_mgr_kill_all ();
 }
 
 /* Update the inherited portrait flags of @cs if they were calculated

@@ -2169,7 +2169,7 @@ create_appthumb (ClutterActor * apwin)
   /* @apwin related fields */
   apthumb->apwin   = g_object_ref (apwin);
   apthumb->inapwin = mbwmcwin->geometry;
-  if ((app = hd_comp_mgr_client_get_app (HD_COMP_MGR_CLIENT (hmgrc))) != NULL)
+  if ((app = hd_comp_mgr_client_get_launcher (HD_COMP_MGR_CLIENT (hmgrc))) != NULL)
     apthumb->video_fname = hd_launcher_app_get_switcher_icon (HD_LAUNCHER_APP (app));
 
   /* .nodest: try the property first then fall back to the WM_CLASS hint.

@@ -129,6 +129,9 @@ static void hd_switcher_launch_app (HdSwitcher *switcher,
 static void hd_switcher_relaunch_app (HdSwitcher *switcher,
                                       HdLauncherApp *app,
                                       gpointer data);
+static void hd_switcher_loading_fail (HdSwitcher *switcher,
+                                      HdLauncherApp *app,
+                                      gpointer data);
 static void hd_switcher_insufficient_memory(HdSwitcher *switcher,
                                             gpointer data);
 
@@ -216,6 +219,9 @@ hd_switcher_constructed (GObject *object)
                     object);
   g_signal_connect_swapped (hd_app_mgr_get (), "application-relaunched",
                     G_CALLBACK (hd_switcher_relaunch_app),
+                    object);
+  g_signal_connect_swapped (hd_app_mgr_get (), "application-loading-fail",
+                    G_CALLBACK (hd_switcher_loading_fail),
                     object);
   g_signal_connect_swapped (hd_app_mgr_get (), "not-enough-memory",
                     G_CALLBACK (hd_switcher_insufficient_memory),
@@ -527,6 +533,20 @@ hd_switcher_relaunch_app (HdSwitcher *switcher,
   /* Go to the task switcher view. After this is done, we'll do
    * our zoom in on the app view the callback above */
   hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+}
+
+/*
+ * Called when HdAppMgr couldn't load an application.
+ */
+static void
+hd_switcher_loading_fail (HdSwitcher *switcher,
+                          HdLauncherApp *app,
+                          gpointer data)
+{
+  hd_launcher_stop_loading_transition ();
+  GtkWidget* banner = hildon_banner_show_information (NULL, NULL,
+                        _("ckct_ib_application_loading_failed"));
+  hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
 }
 
 /*

@@ -423,7 +423,7 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 	if (!client || !client->window)
 	  return;
 
-	launcher_app = hd_comp_mgr_client_get_app (HD_COMP_MGR_CLIENT (client->cm_client));
+	launcher_app = hd_comp_mgr_client_get_launcher (HD_COMP_MGR_CLIENT (client->cm_client));
 
 	if (!launcher_app)
 	  {
