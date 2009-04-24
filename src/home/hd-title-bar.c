@@ -242,6 +242,9 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_container_add_actor(CLUTTER_CONTAINER(bar),
       CLUTTER_ACTOR(priv->title_bg));
 
+  hd_title_bar_add_left_signals(bar, priv->title_bg);
+  clutter_actor_set_reactive (priv->title_bg, FALSE);
+
   /* Load every button we need */
   for (i=0;i<BTN_COUNT;i++)
     {
@@ -880,9 +883,15 @@ hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm)
     }
 
   if (STATE_IS_EDIT_MODE(hd_render_manager_get_state()))
-    hd_title_bar_set_for_edit_mode(bar);
+    {
+      hd_title_bar_set_for_edit_mode(bar);
+      clutter_actor_set_reactive (bar->priv->title_bg, TRUE);
+    }
   else
-    hd_title_bar_set_window(bar, client);
+    {
+      hd_title_bar_set_window(bar, client);
+      clutter_actor_set_reactive (bar->priv->title_bg, FALSE);
+    }
 }
 
 /* Is the given decor one we should consider for a title bar? */

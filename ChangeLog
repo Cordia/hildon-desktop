@@ -1,3 +1,11 @@
+2009-04-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#111290 - Tapping on the center of the title area does not
+	opens the Home layout mode menu
+
+	* src/home/hd-title-bar.c (hd_title_bar_init, hd_title_bar_update):
+	Also open Home layout mode menu when center of title area is pressed.
+
 2009-04-24  Laszlo Pere  <lpere@blumsoft.eu>
 
 	Fixes: NB#98233 - back button segfault
