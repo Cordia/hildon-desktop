@@ -189,6 +189,12 @@ back_button_press_handler (MBWindowManager   *wm,
     mb_wm_object_unref (MB_WM_OBJECT(bd->button));
   }
 
+  /*
+   * The timeout function need a reference for the button, it will unreference
+   * it.
+   */
+  mb_wm_object_ref (MB_WM_OBJECT(button));
+  
   bd->timeout_id =
     g_timeout_add_full (G_PRIORITY_HIGH_IDLE,
 			BACK_BUTTON_TIMEOUT, back_button_timeout, bd, NULL);

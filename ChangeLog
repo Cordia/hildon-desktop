@@ -1,3 +1,9 @@
+2009-04-24  Laszlo Pere  <lpere@blumsoft.eu>
+
+	Fixes: NB#98233 - back button segfault
+
+	* src/mb/hd-theme.c: Adding a reference for the timeout function.
+
 2009-04-23  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#112122 - Edit Button Tweaking
