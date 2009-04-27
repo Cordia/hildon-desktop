@@ -343,30 +343,49 @@ typedef struct
    * @actor:                    The actor to be animated (refed).
    *                            In case of turnoff_effect() it is
    *                            a thwin.
+   * @timeline:                 Used when one wants to cancel an effect
+   *                            outside of the timeline.
    * @new_frame_cb_id, @timeline_complete_cb_id:
    *                            %ClutterTimeline signal handler IDs
+   *                            @new_frame_cb_id can be 0.
+   * @frame_fun:                Just about any value that can identify
+   *                            an effect.  Typically the effect's
+   *                            new-frame callback.  Can be %NULL.
    */
   ClutterActor *actor;
+  ClutterTimeline *timeline;
   gulong new_frame_cb_id, timeline_complete_cb_id;
+  gconstpointer effectid;
 
-  /* Effect-specific data */
+  /* Effect-specific context */
   union
   {
+    /*
+     * For linear_effect()s. In each frame a number of properties of @actor
+     * is changed lineraly, such as width and height.  Each property has its
+     * own structure.  The number of properties that can be controlled by
+     * such an effect is limited by the the number of elements in the array.
+     */
     struct
     {
       /*
-       * For resize_effect():
-       * @init_width, @init_height: @actor's size at the start of the effect
-       * @width_diff, @height_diff: how much to shring/grow in a frame
+       * @init:             The property's value at the start of the effect.
+       * @diff:             By the end of effect how much the property should
+       *                    be different with regards to @init.
        */
-      guint init_width, init_height;
-      gint  width_diff, height_diff;
+      gfloat init, diff;
+    } linear[2];
+
+    /* This is used by resize_effect() on __armel__. */
+    struct
+    { /* The final dimensions of @actor. */
+      guint width, height;
     };
 
+    /* For turnoff_effect() */
     struct
     {
       /*
-       * For turnoff_effect():
        * @particles:                The little stars dancing in the background
        *                            of the squeezing thumbnail.  @ang0 is the
        *                            initial angle of a particle.
@@ -454,13 +473,24 @@ static const GtkRequisition *Thumbsize;
 
 /*
  * Effect templates and their corresponding timelines.
- * -- @Fly_effect:  for moving thumbnails and notification windows around
- *                  and closing the application thumbnail (it is important
- *                  that they use the same template)
- * -- @Zoom_effect: for zooming in and out of application windows.
+ * -- @Fly_effect:  For moving thumbnails and notification windows around
+ *                  and closing the application thumbnail.  It is important
+ *                  that they use the same template.  At the moment we don't
+ *                  use the effect template, but it is kept around for the
+ *                  day we may.
+ * -- @Zoom_effect: For zooming in and out of application windows.
  */
 static ClutterTimeline *Fly_effect_timeline, *Zoom_effect_timeline;
 static ClutterEffectTemplate *Fly_effect, *Zoom_effect;
+
+/*
+ * The list of currently running effects created with new_effect().
+ * Practically these are all effects used for flying.  Used to learn
+ * if a particular effect is already running and if so change it,
+ * rather than dumbly adding a new effect and create races between
+ * then two of them.  Contains pointers to %EffectClosure:s.
+ */
+static GPtrArray *Effects;
 
 /* gtkrc articles */
 static const gchar *SystemFont, *SmallSystemFont;
@@ -754,14 +784,11 @@ resolve_logical_font (const gchar * logical_name)
 
 /* Clutter utilities {{{ */
 /* Animations {{{ */
-/* Returns whether we're in the middle of an animation,
- * when certain interactions may not be wise to allow. */
-static gboolean
-animation_in_progress (ClutterEffectTemplate *effect)
+/* Is @timeline doing doing anything? */
+static inline gboolean
+animation_in_progress (ClutterTimeline * timeline)
 {
-  /* The template is referenced by every effect, therefore
-   * if it's not referenced by anyone we're not flying. */
-  return G_OBJECT (effect)->ref_count > 1;
+  return clutter_timeline_is_playing (timeline);
 }
 
 /* Stop activities on @timeline as if it were completed normally. */
@@ -770,13 +797,19 @@ stop_animation (ClutterTimeline * timeline)
 {
   guint nframes;
 
-  /* Fake "new-frame" and "complete" signals, clutter_timeline_advance()
-   * emits neither of them in this case. */
+  /*
+   * Fake "new-frame" and "complete" signals, clutter_timeline_advance()
+   * emits neither of them in this case.  Get the timeline out of playing
+   * state first, so remove_window() won't defer (again).  We don't use
+   * clutter_timline_stop() because that's equivalent to pause()+rewind(),
+   * but we need the rewind afterwards.
+   */
+  clutter_timeline_pause (timeline);
   nframes = clutter_timeline_get_n_frames (timeline);
   clutter_timeline_advance (timeline, nframes);
   g_signal_emit_by_name (timeline, "new-frame", NULL, nframes);
   g_signal_emit_by_name (timeline, "completed", NULL);
-  clutter_timeline_stop (timeline);
+  clutter_timeline_rewind (timeline);
 }
 
 /* Tells whether we should bother with animation or just setting the
@@ -795,38 +828,79 @@ need_to_animate (ClutterActor * actor)
 }
 /* Animations }}} */
 
-/* Effects {{{ */
+/* Effects infrastructure {{{ */
 /* General {{{ */
-/* Allocates an #EffectClosure and fills in the common fieilds.
+/* Returns whether @actos has an effect with @frame_fun.  Effects can use it
+ * to recognize themselves and modify the existing one rather than starting
+ * a new. */
+static EffectClosure *
+has_effect (ClutterActor * actor, gconstpointer effectid)
+{
+  guint i;
+  EffectClosure *closure;
+
+  if (!Effects)
+    return NULL;
+
+  /* Find @actor and @frame_fun in @Effects. */
+  for (i = 0; i < Effects->len; i++)
+    {
+      closure = g_ptr_array_index (Effects, i);
+      if (closure->actor == actor && closure->effectid == effectid)
+        return closure;
+    }
+
+  return NULL;
+}
+
+/* Allocates an #EffectClosure and fills in the common fields.
  * Adds signals to @timeline. */
 static EffectClosure *
 new_effect (ClutterTimeline * timeline, ClutterActor * actor,
-  void (*new_frame_fun)(ClutterTimeline *, gint frame, EffectClosure *),
+  void (*frame_fun)(ClutterTimeline *, gint, EffectClosure *),
   void (*complete_fun)(ClutterTimeline *, EffectClosure *))
 {
   EffectClosure *closure;
 
-  closure = g_slice_new(EffectClosure);
+  closure = g_slice_new (EffectClosure);
   closure->actor = g_object_ref (actor);
 
-  closure->new_frame_cb_id = g_signal_connect (timeline, "new-frame",
-                                               G_CALLBACK (new_frame_fun),
-                                               closure);
+  if (frame_fun)
+    closure->new_frame_cb_id = g_signal_connect (timeline, "new-frame",
+                                                 G_CALLBACK (frame_fun),
+                                                 closure);
+  else
+    closure->new_frame_cb_id = 0;
   closure->timeline_complete_cb_id = g_signal_connect (timeline, "completed",
                                               G_CALLBACK (complete_fun),
                                               closure);
 
-  g_object_ref (timeline);
+  closure->timeline = g_object_ref (timeline);
   clutter_timeline_start (timeline);
+
+  /* Register @closure in @Effects. */
+  if (G_UNLIKELY (!Effects))
+    Effects = g_ptr_array_new ();
+  closure->effectid = frame_fun;
+  g_ptr_array_add (Effects, closure);
 
   return closure;
 }
 
-/* Undoes new_effect().  Must be called at the end of animation. */
+/* Undoes new_effect().  Must be called at the end of effect.
+ * If @timeline is still running the effect is cancelled
+ * without further ado. */
 static void
 free_effect (ClutterTimeline * timeline, EffectClosure * closure)
 {
-  g_signal_handler_disconnect (timeline, closure->new_frame_cb_id);
+  if (!Effects) /* I'd love to tease kuzak with a grif(:) */
+    g_critical ("no Effects");
+  else if (!g_ptr_array_remove_fast (Effects, closure))
+    g_critical ("closure not in Effects");
+  g_assert (timeline == closure->timeline);
+
+  if (closure->new_frame_cb_id)
+    g_signal_handler_disconnect (timeline, closure->new_frame_cb_id);
   g_signal_handler_disconnect (timeline, closure->timeline_complete_cb_id);
   g_object_unref (timeline);
   g_object_unref (closure->actor);
@@ -834,40 +908,288 @@ free_effect (ClutterTimeline * timeline, EffectClosure * closure)
 }
 /* General }}} */
 
-/* Resize effect {{{ */
-/* ClutterTimeline::new-frame callback for resize_effect(). */
-static void
-resize_effect_new_frame (ClutterTimeline * timeline, gint frame,
-                         EffectClosure * closure)
+/* Linear effects {{{ */
+/*
+ * Start or continue a linear effect on @actor during which one or more
+ * properties of @actor are changed linearly depending on the current
+ * progress of @timeline.  If @actor doesn't have a @frame_fun effect yet,
+ * it starts a new one.  The named parameters have the same meaning as
+ * in new_effect().  The varadic argument list should be pairs of %gdouble:s
+ * teminated by a NAN.  Each pair describes the endpoint values of a property.
+ * If an effect is already running it is altered such that by the end of
+ * @timline the properties will reach their final intended values without
+ * jumping.  In @frame_fun the current value of the properties can be
+ * queried with linear_effect_value().
+ */
+static EffectClosure *
+linear_effect (ClutterTimeline * timeline, ClutterActor * actor,
+               void (*frame_fun)(ClutterTimeline *, gint, EffectClosure *),
+               void (*complete_fun)(ClutterTimeline *, EffectClosure *),
+               ...)
 {
-  gdouble now;
-
-  now = clutter_timeline_get_progress (timeline);
-  clutter_actor_set_size (closure->actor,
-                          closure->init_width  + closure->width_diff*now,
-                          closure->init_height + closure->height_diff*now);
-}
-
-/* During @timeline clutter_actor_set_size() @actor linearly
- * to @final_width and @final_height. */
-static void
-resize_effect (ClutterTimeline * timeline, ClutterActor * actor,
-               guint final_width, guint final_height)
-{
+  guint i;
+  va_list list;
+  gfloat init, final;
   EffectClosure *closure;
 
-  closure = new_effect (timeline, actor, resize_effect_new_frame, free_effect);
-  clutter_actor_get_size (actor, &closure->init_width, &closure->init_height);
-  closure->width_diff  = final_width  - closure->init_width;
-  closure->height_diff = final_height - closure->init_height;
+  va_start (list, complete_fun);
+  if (G_LIKELY (!(closure = has_effect (actor, frame_fun))))
+    {
+      /* @init and @diff are parameters of the line. */
+      closure = new_effect (timeline, actor, frame_fun, complete_fun);
+      for (i = 0; !isnanf (init = va_arg (list, gdouble)); i++)
+        { g_assert (i < G_N_ELEMENTS (closure->linear));
+          closure->linear[i].init = init;
+          closure->linear[i].diff = va_arg (list, gdouble) - init;
+        }
+    }
+  else
+    {
+      /*
+       * Calculate @init2 and @diff2 from equations:
+       * init1 + diff1*now  == init2 + diff2*now,
+       * final2             == init2 + diff2.
+       */
+      gfloat now = clutter_timeline_get_progress (timeline);
+      for (i = 0; !isnanf (init = va_arg (list, gdouble)); i++)
+        { g_assert (i < G_N_ELEMENTS (closure->linear));
+          final = va_arg (list, gdouble);
+          closure->linear[i].diff = (final-init) / (1-now);
+          closure->linear[i].init = final - closure->linear[i].diff;
+        }
+    }
+  va_end (list);
+
+  return closure;
 }
-/* Resize effect }}} */
+
+/* Return the value of @which property at @now. */
+static inline gfloat __attribute__((pure))
+linear_effect_value (const EffectClosure * closure, guint which, gfloat now)
+{ g_assert (which < G_N_ELEMENTS (closure->linear));
+  return closure->linear[which].init + closure->linear[which].diff*now;
+}
+/* Linear effects }}} */
+
+/* Effect closures {{{ */
+/* add_effect_closure()'s #ClutterTimeline::completed handler. */
+static void
+call_effect_closure (ClutterTimeline * timeline,
+                     EffectCompleteClosure *closure)
+{
+  g_signal_handler_disconnect (timeline, closure->handler_id);
+  closure->fun (closure->actor, closure->funparam);
+  g_object_unref (closure->actor);
+  g_slice_free (EffectCompleteClosure, closure);
+}
+
+/* If @fun is not %NULL call it with @actor and @funparam when
+ * @timeline is "completed".  Otherwise NOP. */
+static void
+add_effect_closure (ClutterTimeline * timeline,
+                    ClutterEffectCompleteFunc fun,
+                    ClutterActor * actor, gpointer funparam)
+{
+  EffectCompleteClosure *closure;
+
+  if (!fun)
+    return;
+
+  closure = g_slice_new (EffectCompleteClosure);
+  closure->fun        = fun;
+  closure->actor      = g_object_ref (actor);
+  closure->funparam   = funparam;
+  closure->handler_id = g_signal_connect (timeline, "completed",
+                                          G_CALLBACK (call_effect_closure),
+                                          closure);
+}
+/* Effect closures }}} */
+/* }}} */
+
+/* RMS effects {{{ */
+/*
+ * In this section we define RMS effects: move, resize, scale.
+ * In purpose they are similar to clutter_effect_move() etc.
+ * but additionally their destination can be changed on the go,
+ * allowing for smooth animations.  This is permitted by the
+ * linear_effect() machinery.
+ *
+ * Here we define:
+ * -- check_and_move(),   move(),   move_effect()
+ * -- check_and_resize(), resize(), resize_effect()
+ * -- check_and_scale(),  scale(),  scale_effect()
+ *
+ * Where:
+ * -- RMS_effect(@timeline, @actor, @x, @y):
+ *    Start an effect that sees @actor to @x and @y.  If @actor already
+ *    has such an effect divert it to end up at this destination.
+ * -- RMS(@actor, @x, @y):
+ *    See @actor to @x and @y, either animated or not.  For animation
+ *    it uses @Fly_effect_timeline.  We don't animate when the switcher
+ *    is not active, we just drop @actor where it is destined to.
+ * -- check_and_RMS(@actor, @x, @y):
+ *    Like RMS but don't do anything if @actor's already at @x and @y.
+ *    Cancels the already running effect if any.  This saves an effect
+ *    when we would otherwise animate.
+ */
+
+/* This beautiful macro defines effect() and effect_effect().
+ * @clutter_get_fun must have a signature (#ClutterActor, ptype*, ptype*),
+ * while @clutter_set_fun is (#ClutterActor, ptype, ptype). */
+#define DEFINE_RMS_EFFECT(effect, ptype,                            \
+                          clutter_get_fun, clutter_set_fun)         \
+/* @effect's %ClutterTimeline::new-frame callback. */               \
+static void                                                         \
+effect##_effect_frame (ClutterTimeline * timeline, gint frame,      \
+                       EffectClosure * closure)                     \
+{                                                                   \
+  gfloat now = clutter_timeline_get_progress (timeline);            \
+  clutter_set_fun (closure->actor,                                  \
+                   linear_effect_value (closure, 0, now),           \
+                   linear_effect_value (closure, 1, now));          \
+}                                                                   \
+                                                                    \
+static void                                                         \
+effect##_effect (ClutterTimeline * timeline, ClutterActor * actor,  \
+                 ptype final1, ptype final2)                        \
+{                                                                   \
+  ptype init1, init2;                                               \
+                                                                    \
+  clutter_get_fun (actor, &init1, &init2);                          \
+  linear_effect (timeline, actor,                                   \
+                 effect##_effect_frame, free_effect,                \
+                 (gdouble)init1, (gdouble)final1,                   \
+                 (gdouble)init2, (gdouble)final2,                   \
+                 NAN);                                              \
+}                                                                   \
+                                                                    \
+static void                                                         \
+effect (ClutterActor * actor, ptype final1, ptype final2)           \
+{                                                                   \
+  if (need_to_animate (actor))                                      \
+    effect##_effect (Fly_effect_timeline, actor, final1, final2);   \
+  else                                                              \
+    clutter_set_fun (actor, final1, final2);                        \
+}
+
+DEFINE_RMS_EFFECT(move, gint,
+                  clutter_actor_get_position, clutter_actor_set_position);
+static void
+check_and_move (ClutterActor * actor, gint xpos_new, gint ypos_new)
+{
+  EffectClosure *closure;
+  gint xpos_now, ypos_now;
+
+  clutter_actor_get_position (actor, &xpos_now, &ypos_now);
+  if (xpos_now != xpos_new || ypos_now != ypos_new)
+    move (actor, xpos_new, ypos_new);
+  else if ((closure = has_effect (actor, move_effect_frame)) != NULL)
+    free_effect (closure->timeline, closure);
+}
+
+/* On the gadget (or maybe in general if we're accelerated) we can't
+ * resize continously because it blocks all effects and doesn't come
+ * about anyway.  It's so even if we don't clip_on_resize(). */
+#ifdef __i386__
+DEFINE_RMS_EFFECT(resize, guint,
+                  clutter_actor_get_size, clutter_actor_set_size);
+static void
+check_and_resize (ClutterActor * actor, gint width_new, gint height_new)
+{
+  EffectClosure *closure;
+  guint width_now, height_now;
+
+  clutter_actor_get_size (actor, &width_now, &height_now);
+  if (width_now != width_new || height_now != height_new)
+    resize (actor, width_new, height_new);
+  else if ((closure = has_effect (actor, resize_effect_frame)) != NULL)
+    free_effect (closure->timeline, closure);
+}
+#else /* __armel__ */
+static void resize_effect_complete (ClutterTimeline * timeline,
+                                    EffectClosure * closure)
+{
+  clutter_actor_set_size (closure->actor, closure->width, closure->height);
+  free_effect (timeline, closure);
+}
+
+static void
+resize_effect (ClutterTimeline * timeline, ClutterActor * actor,
+                 guint wfinal, guint hfinal)
+{
+  guint width, height;
+  EffectClosure *closure;
+
+  closure = has_effect (actor, resize_effect);
+  clutter_actor_get_size (actor, &width, &height);
+
+  /* Resize now if the final dimension is shorter than the current.
+   * Otherwise postpone until the end of effect and don't do anything
+   * meanwhile. */
+  if (wfinal < width && hfinal < height)
+    {
+      clutter_actor_set_size (actor, wfinal, hfinal);
+      if (closure)
+        free_effect (timeline, closure);
+      return;
+    }
+  else if (wfinal < width)
+    clutter_actor_set_width (actor, wfinal);
+  else if (hfinal < height)
+    clutter_actor_set_height (actor, hfinal);
+
+  if (!closure)
+    closure = new_effect (timeline, actor, NULL, resize_effect_complete);
+  closure->width  = wfinal;
+  closure->height = hfinal;
+  clutter_timeline_start (timeline);
+}
+
+static void
+resize (ClutterActor * actor, guint width, guint height)
+{
+  if (need_to_animate (actor))
+    resize_effect (Fly_effect_timeline, actor, width, height);
+  else
+    clutter_actor_set_size (actor, width, height);
+}
+
+static void
+check_and_resize (ClutterActor * actor, gint width_new, gint height_new)
+{
+  EffectClosure *closure;
+  guint width_now, height_now;
+
+  clutter_actor_get_size (actor, &width_now, &height_now);
+  if (width_now != width_new || height_now != height_new)
+    resize (actor, width_new, height_new);
+  else if ((closure = has_effect (actor, resize_effect)) != NULL)
+    free_effect (closure->timeline, closure);
+}
+#endif /* __armel__ */
+
+DEFINE_RMS_EFFECT(scale, gdouble,
+                  clutter_actor_get_scale, clutter_actor_set_scale);
+static void
+check_and_scale (ClutterActor * actor, gdouble sx_new, gdouble sy_new)
+{
+  EffectClosure *closure;
+  gdouble sx_now, sy_now;
+
+  /* Beware the rounding errors. */
+  clutter_actor_get_scale (actor, &sx_now, &sy_now);
+  if (fabs (sx_now - sx_new) > 0.0001 || fabs (sy_now - sy_new) > 0.0001)
+    scale (actor, sx_new, sy_new);
+  else if ((closure = has_effect (actor, scale_effect_frame)) != NULL)
+    free_effect (closure->timeline, closure);
+}
+/* RMS effects }}} */
 
 /* Boom effect {{{ */
 /* If @x0 <= @t <= @x1 returns the value of f(@t), where f()
  * goes from (@x0, @y0) to (@x1, @y1) following a cosine curve.
  * Do the math if you don't believe. */
-static __attribute__((const)) gdouble
+static inline __attribute__((const)) gdouble
 turnoff_fun (gdouble x0, gdouble y0, gdouble x1, gdouble y1, gdouble t)
 {
   gdouble a, c, d;
@@ -880,8 +1202,8 @@ turnoff_fun (gdouble x0, gdouble y0, gdouble x1, gdouble y1, gdouble t)
 
 /* ClutterTimeline::new-frame callback for turnoff_effect(). */
 static void
-turnoff_effect_new_frame (ClutterTimeline * timeline, gint frame,
-                         EffectClosure * closure)
+turnoff_effect_frame (ClutterTimeline * timeline, gint frame,
+                      EffectClosure * closure)
 {
   gdouble now;
 
@@ -950,7 +1272,7 @@ turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
   EffectClosure *closure;
 
   closure = new_effect (timeline, thwin,
-                        turnoff_effect_new_frame,
+                        turnoff_effect_frame,
                         turnoff_effect_complete);
 
   /* Scale @thwin in the middle. */
@@ -987,116 +1309,6 @@ turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
     }
 }
 /* Boom effect }}} */
-/* }}} */
-
-/* Effect closures {{{ */
-/* add_effect_closure()'s #ClutterTimeline::completed handler. */
-static void
-call_effect_closure (ClutterTimeline * timeline,
-                     EffectCompleteClosure *closure)
-{
-  g_signal_handler_disconnect (timeline, closure->handler_id);
-  closure->fun (closure->actor, closure->funparam);
-  g_object_unref (closure->actor);
-  g_slice_free (EffectCompleteClosure, closure);
-}
-
-/* If @fun is not %NULL call it with @actor and @funparam when
- * @timeline is "completed".  Otherwise NOP. */
-static void
-add_effect_closure (ClutterTimeline * timeline,
-                    ClutterEffectCompleteFunc fun,
-                    ClutterActor * actor, gpointer funparam)
-{
-  EffectCompleteClosure *closure;
-
-  if (!fun)
-    return;
-
-  closure = g_slice_new (EffectCompleteClosure);
-  closure->fun        = fun;
-  closure->actor      = g_object_ref (actor);
-  closure->funparam   = funparam;
-  closure->handler_id = g_signal_connect (timeline, "completed",
-                                          G_CALLBACK (call_effect_closure),
-                                          closure);
-}
-/* Effect closures }}} */
-
-/* Effect wrappers {{{ */
-/* Translates @actor to @xpos and @ypos either smoothly or not, depending on
- * the circumstances.   Use when you know the new coordinates are different
- * from then current ones. */
-static void
-move (ClutterActor * actor, gint xpos, gint ypos)
-{
-  if (need_to_animate (actor))
-    clutter_effect_move (Fly_effect, actor, xpos, ypos, NULL, NULL);
-  else
-    clutter_actor_set_position (actor, xpos, ypos);
-}
-
-/* Like move(), except that it does nothing if @actor's current coordinates
- * are the same as the new ones.  Used to make sure no animation takes effect
- * in such a case. */
-static void
-check_and_move (ClutterActor * actor, gint xpos_new, gint ypos_new)
-{
-  gint xpos_now, ypos_now;
-
-  clutter_actor_get_position (actor, &xpos_now, &ypos_now);
-  if (xpos_now != xpos_new || ypos_now != ypos_new)
-    move (actor, xpos_new, ypos_new);
-}
-
-static void
-resize (ClutterActor * actor, gint width, gint height)
-{
-  /*
-   * NOTE resize() alone won't cause animation_in_progress()
-   *      because it doesn't use %ClutterEffectTemplate:s.
-   *      However, in practice this is not a problem because
-   *      things are not resize()d if they don't move and move()
-   *      does cause animation_in_progress().
-   */
-  if (need_to_animate (actor))
-    resize_effect (Fly_effect_timeline, actor, width, height);
-  else
-    clutter_actor_set_size (actor, width, height);
-}
-
-static void
-check_and_resize (ClutterActor * actor, gint width_new, gint height_new)
-{
-  guint width_now, height_now;
-
-  clutter_actor_get_size (actor, &width_now, &height_now);
-  if (width_now != width_new || height_now != height_new)
-    resize (actor, width_new, height_new);
-}
-
-/* Like move() but scales @actor instead of moving it. */
-static void
-scale (ClutterActor * actor, gdouble xscale, gdouble yscale)
-{
-  if (need_to_animate (actor))
-    clutter_effect_scale (Fly_effect, actor, xscale, yscale, NULL, NULL);
-  else
-    clutter_actor_set_scale (actor, xscale, yscale);
-}
-
-/* Like check_and_move() with respect to move(). */
-static void
-check_and_scale (ClutterActor * actor, gdouble sx_new, gdouble sy_new)
-{
-  gdouble sx_now, sy_now;
-
-  /* Beware rounding errors */
-  clutter_actor_get_scale (actor, &sx_now, &sy_now);
-  if (fabs (sx_now - sx_new) > 0.0001 || fabs (sy_now - sy_new) > 0.0001)
-    scale (actor, sx_new, sy_new);
-}
-/* Effect wrappers }}} */
 
 /* Misc {{{ */
 /* #ClutterActor::notify::allocation callback to clip @actor to its size
@@ -1241,7 +1453,7 @@ set_navigator_height (guint hnavigator)
  * possible subject to common subexpression evaluation by the
  * compiler.
  */
-static gint __attribute__ ((const))
+static inline gint __attribute__ ((const))
 layout_fun (gint total, gint term1, gint term2, gint factor)
 {
   /* Make sure all terms and factors are int:s because the result of
@@ -1406,7 +1618,7 @@ layout_thumbs (ClutterActor * newborn)
       hprison = Thumbsize->height - (FRAME_TOP_HEIGHT + FRAME_BOTTOM_HEIGHT);
 
       if (thumb_is_notification (thumb))
-        { /* Boring details of layout out the inners of a nothumb. */
+        { /* Boring details of laying out the inners of a nothumb. */
           gboolean change;
           guint isize, x, y;
 
@@ -1492,7 +1704,7 @@ layout (ClutterActor * newborn)
    * update, but we rely on the current state of matters. */
   set_navigator_height (layout_thumbs (newborn));
 
-  if (newborn && animation_in_progress (Fly_effect))
+  if (newborn && animation_in_progress (Fly_effect_timeline))
     show_when_complete (newborn);
 }
 /* Layout engine }}} */
@@ -2119,7 +2331,8 @@ setup_prison (const Thumbnail * apthumb)
 static gboolean
 appthumb_clicked (const Thumbnail * apthumb)
 {
-  if (animation_in_progress (Fly_effect) || animation_in_progress (Zoom_effect))
+  if (animation_in_progress (Fly_effect_timeline)
+      || animation_in_progress (Zoom_effect_timeline))
     /* Clicking on the thumbnail while it's zooming would result in multiple
      * delivery of "thumbnail-clicked". */
     return TRUE;
@@ -2133,7 +2346,8 @@ appthumb_clicked (const Thumbnail * apthumb)
 static gboolean
 appthumb_close_clicked (const Thumbnail * apthumb)
 {
-  if (animation_in_progress (Fly_effect) || animation_in_progress (Zoom_effect))
+  if (animation_in_progress (Fly_effect_timeline)
+      || animation_in_progress (Zoom_effect_timeline))
     /* Closing an application while it's zooming would crash us. */
     /* Maybe not anymore but let's play safe. */
     return TRUE;
@@ -2161,7 +2375,7 @@ create_appthumb (ClutterActor * apwin)
 
   /* We're just in a MapNotify, it shouldn't happen. */
   mbwmcwin = actor_to_client_window (apwin, &hmgrc);
-  assert (mbwmcwin != NULL);
+  g_assert (mbwmcwin != NULL);
 
   apthumb = g_new0 (Thumbnail, 1);
   apthumb->type = APPLICATION;
@@ -2248,7 +2462,6 @@ appthumb_turned_off_2 (ClutterActor * unused,
                                  MBWMCompMgrClutterClientDontUpdate
                                | MBWMCompMgrClutterClientEffectRunning);
   mb_wm_object_unref (MB_WM_OBJECT (cmgrcc));
-  g_object_unref (Fly_effect);
 }
 
 /* add_effect_closure() callback to to resume a delayed remove_window(). */
@@ -2278,7 +2491,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
   ClutterActor *newborn;
 
   /* Postpone? */
-  if (animation_in_progress (Zoom_effect))
+  if (animation_in_progress (Zoom_effect_timeline))
     { g_debug ("delayed");
       EffectCompleteClosure *closure;
 
@@ -2332,9 +2545,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
                                  MBWMCompMgrClutterClientDontUpdate
                                | MBWMCompMgrClutterClientEffectRunning);
 
-      /* Grab @Fly_effect so animation_in_progress() can return %TRUE.
-       * At the end of effect free @apthumb and release @cmgrcc. */
-      g_object_ref (Fly_effect);
+      /* At the end of effect free @apthumb and release @cmgrcc. */
       clutter_actor_raise_top (apthumb->thwin);
       turnoff_effect (Fly_effect_timeline, apthumb->thwin);
       add_effect_closure (Fly_effect_timeline,
@@ -2356,7 +2567,7 @@ damage_control:
   layout (newborn);
 
   /* Arrange for calling @fun(@funparam) if/when appropriate. */
-  if (animation_in_progress (Fly_effect))
+  if (animation_in_progress (Fly_effect_timeline))
     add_effect_closure (Fly_effect_timeline,
                         fun, CLUTTER_ACTOR (self), funparam);
   else if (fun)
@@ -2392,7 +2603,7 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
   layout (apthumb->thwin);
 
   /* Do NOT sync the Tasks button because we may get it wrong and it's
-   * done somewhere in the mist anyway.*/
+   * done somewhere in the mist anyway. */
 }
 
 /* Remove @dialog from its application's thumbnail
@@ -2768,28 +2979,19 @@ navigator_hidden (ClutterActor * navigator, gpointer unused)
   GList *li;
   Thumbnail *thumb;
 
-  /*
-   * Finish in-progress animations, allowing for the final placement of
-   * the involved actors.  The ordering is important in the intervention
-   * of zoom+close add_window.  In this case the sequence of event is
-   * thread1: zoom, thread2: add_window, exit, thread1: remove_window.
-   * When we stop the @Zoom_effect on exit (this function) it calls its
-   * remove_window closure.  We need to make sure the previous @Fly_effect
-   * is cancelled by this time, otherwise its last frame would override the
-   * new settings of layout_thumbs() (triggered by remove_window()).
-   * Yes, transiency is a lot of fun.
-   */
-  if (animation_in_progress (Fly_effect))
-    {
-      stop_animation (Fly_effect_timeline);
-      g_assert (!animation_in_progress (Fly_effect));
-    }
-  if (animation_in_progress (Zoom_effect))
+  /* Finish in-progress animations, allowing for the final placement of
+   * the involved actors. */
+  if (animation_in_progress (Zoom_effect_timeline))
     {
       /* %HdSwitcher must make sure it doesn't do silly things if the
        * user cancelled the zooming. */
       stop_animation (Zoom_effect_timeline);
-      g_assert (!animation_in_progress (Zoom_effect));
+      g_assert (!animation_in_progress (Zoom_effect_timeline));
+    }
+  if (animation_in_progress (Fly_effect_timeline))
+    {
+      stop_animation (Fly_effect_timeline);
+      g_assert (!animation_in_progress (Fly_effect_timeline));
     }
 
   /* Undo navigator_shown(). */

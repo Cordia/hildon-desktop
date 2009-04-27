@@ -1,3 +1,12 @@
+2009-04-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#111388 Thumb nails in switcher are overlaping.
+
+	* src/home/hd-task-navigator.c:
+	  Problem caused by concurrent animation (attempts).
+	  Made them more robust, for example the thumbnails
+	  can change direction while flying now.
+
 2009-04-27  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#111113, NB#110729 - Settings not stored on restart
