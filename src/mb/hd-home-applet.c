@@ -139,6 +139,8 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
     }
   else
     {
+      GError *error = NULL;
+
       time (&applet->modified);
 
       modified = g_strdup_printf ("%ld", applet->modified);
@@ -146,7 +148,24 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
       gconf_client_set_string (gconf_client,
                                modified_key,
                                modified,
-                               NULL);
+                               &error);
+      if (G_UNLIKELY (error))
+        {
+          g_warning ("%s. Could not set GConf key/value. %s",
+                     __FUNCTION__,
+                     error->message);
+          g_clear_error (&error);
+        }
+
+      gconf_client_suggest_sync (gconf_client,
+                                 &error);
+      if (G_UNLIKELY (error))
+        {
+          g_warning ("%s. Could not sync GConf. %s",
+                     __FUNCTION__,
+                     error->message);
+          g_clear_error (&error);
+        }
     }
 
   g_free (modified_key);

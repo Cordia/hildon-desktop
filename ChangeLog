@@ -1,3 +1,15 @@
+2009-04-27  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#111113, NB#110729 - Settings not stored on restart
+
+	* src/home/hd-home-view-container.c
+	  (hd_home_view_container_set_current_view):
+	* src/home/hd-home-view.c (hd_home_view_applet_press,
+	  hd_home_view_store_applet_position, hd_home_view_move_applet):
+	* src/home/hd-home.c (hd_home_add_applet):
+	* src/mb/hd-home-applet.c (hd_home_applet_init): Add GConf error
+	  handling and sync call.
+
 2009-04-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.43

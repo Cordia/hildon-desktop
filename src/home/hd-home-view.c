@@ -611,13 +611,11 @@ hd_home_view_applet_press (ClutterActor       *applet,
 			   HdHomeView         *view)
 {
   HdHomeViewPrivate *priv = view->priv;
-  GConfClient *client = gconf_client_get_default ();
   gchar *modified_key, *modified;
   HdHomeApplet *wm_applet;
   MBWindowManagerClient *desktop_client;
   HdHomeViewAppletData *data;
-
-/*  g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y); */
+  GError *error = NULL;
 
   /* Get all pointer events */
   clutter_grab_pointer (applet);
@@ -641,12 +639,29 @@ hd_home_view_applet_press (ClutterActor       *applet,
   modified = g_strdup_printf ("%ld", wm_applet->modified);
   modified_key = g_strdup_printf (GCONF_KEY_MODIFIED, wm_applet->applet_id);
 
-  gconf_client_set_string (client,
+  gconf_client_set_string (priv->gconf_client,
                            modified_key,
                            modified,
-                           NULL);
+                           &error);
+  if (G_UNLIKELY (error))
+    {
+      g_warning ("%s. Could not set GConf key/value. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_clear_error (&error);
+    }
   g_free (modified);
-  g_object_unref (client);
+
+  gconf_client_suggest_sync (priv->gconf_client,
+                             &error);
+  if (G_UNLIKELY (error))
+    {
+      g_warning ("%s. Could not sync GConf. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_clear_error (&error);
+    }
+
 
   mb_wm_client_stacking_mark_dirty (desktop_client);
 
@@ -714,12 +729,22 @@ hd_home_view_store_applet_position (HdHomeView   *view,
                          GCONF_VALUE_INT,
                          position_value,
                          &error);
-  if (error)
+  if (G_UNLIKELY (error))
     {
       g_warning ("Could not store new applet position for applet %s to GConf. %s",
                  applet_id,
                  error->message);
-      g_error_free (error);
+      g_clear_error (&error);
+    }
+
+  gconf_client_suggest_sync (priv->gconf_client,
+                             &error);
+  if (G_UNLIKELY (error))
+    {
+      g_warning ("%s. Could not sync GConf. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_clear_error (&error);
     }
 
   g_free (position_key);
@@ -1053,7 +1078,6 @@ hd_home_view_move_applet (HdHomeView   *view,
   HdHomeViewPrivate *priv = view->priv;
   HdHomeViewAppletData *data;
   HdHomeApplet *wm_applet;
-  GConfClient *gconf_client;
   gchar *position_key, *view_key;
   GError *error = NULL;
   MBWindowManagerClient *desktop_client;
@@ -1065,9 +1089,8 @@ hd_home_view_move_applet (HdHomeView   *view,
   wm_applet->view_id = hd_home_view_get_view_id (new_view);
 
   /* Reset position in GConf*/
-  gconf_client = gconf_client_get_default ();
   position_key = g_strdup_printf (GCONF_KEY_POSITION, wm_applet->applet_id);
-  gconf_client_unset (gconf_client, position_key, &error);
+  gconf_client_unset (priv->gconf_client, position_key, &error);
   if (G_UNLIKELY (error))
     {
       g_warning ("Could not unset GConf key %s. %s", position_key, error->message);
@@ -1077,18 +1100,28 @@ hd_home_view_move_applet (HdHomeView   *view,
 
   /* Update view in GConf */
   view_key = g_strdup_printf (GCONF_KEY_VIEW, wm_applet->applet_id);
-  gconf_client_set_int (gconf_client,
+  gconf_client_set_int (priv->gconf_client,
                         view_key,
                         wm_applet->view_id + 1,
                         &error);
   if (G_UNLIKELY (error))
     {
-      g_warning ("Could not set GConf key %s. %s", view_key, error->message);
-      error = (g_error_free (error), NULL);
+      g_warning ("%s. Could not set GConf key/value. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_clear_error (&error);
     }
   g_free (view_key);
 
-  g_object_unref (gconf_client);
+  gconf_client_suggest_sync (priv->gconf_client,
+                             &error);
+  if (G_UNLIKELY (error))
+    {
+      g_warning ("%s. Could not sync GConf. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_clear_error (&error);
+    }
 
   /* Unregister from old view */
   hd_home_view_unregister_applet (view, applet);

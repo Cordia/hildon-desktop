@@ -947,10 +947,31 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
     view_id--;
   else
     {
+      GError *error = NULL;
+
       view_id = hd_home_get_current_view_id (home);
 
       /* from 0 to 3 */
-      gconf_client_set_int (client, view_key, view_id + 1, NULL);
+      gconf_client_set_int (client, view_key, view_id + 1, &error);
+
+      if (G_UNLIKELY (error))
+        {
+          g_warning ("%s. Could not set GConf key/value. %s",
+                     __FUNCTION__,
+                     error->message);
+          g_clear_error (&error);
+        }
+      g_free (view_key);
+
+      gconf_client_suggest_sync (client,
+                                 &error);
+      if (G_UNLIKELY (error))
+        {
+          g_warning ("%s. Could not sync GConf. %s",
+                     __FUNCTION__,
+                     error->message);
+          g_clear_error (&error);
+        }
     }
 
   wm_applet->view_id = view_id;

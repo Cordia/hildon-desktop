@@ -615,7 +615,18 @@ hd_home_view_container_set_current_view (HdHomeViewContainer *container,
       g_warning ("Could not store current view to GConf (%s). %s",
                  HD_GCONF_KEY_VIEWS_CURRENT,
                  error->message);
-      error = (g_error_free (error), NULL);
+      g_clear_error (&error);
+    }
+
+  /* Sync GConf */
+  gconf_client_suggest_sync (priv->gconf_client,
+                             &error);
+
+  if (error)
+    {
+      g_warning ("Could not sync GConf. %s",
+                 error->message);
+      g_clear_error (&error);
     }
 
   /* Set _NET_DESKTOP porperty to root window */
