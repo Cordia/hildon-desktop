@@ -1,12 +1,40 @@
-hildon-desktop (1:2.2.43-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.43-1) unstable; urgency=low
 
-  * writeme
   Laszlo:
   * Fixes: NB#98233 - Back button crash.
   * Fixes: NB#106208 - Wrong window shown after pushing 2 windows
   * Fixes: NB#112368 - Crash when hildon-desktop killed.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 20 Apr 2009 13:48:28 +0300
+  Marc:
+  * Fixes: NB#111844 - 'Unable to load' info note showing when launching apps
+  * Fixes: NB#112105 - Not able to launch camera, "Unable to load" information
+    banner is displayed in certain scenario
+  * Fixes: NB#109797 - detect desktop readiness during device boot
+
+  Jan Arne:
+  * Fixes: NB#111290 - Tapping on the center of the title area does not opens
+    the Home layout mode menu
+  * Fixes: NB#112122 - Menu Button Tweaking
+  * Fixes: NB#110893 - '*', '+' and '#' are not passed to the dialpad
+
+  Gordon:
+  * Fixes: NB#112743 - Task Launcher icon grid not positioned according to
+    latests layout specs
+  * Fixes: NB#107274 - NP: Audio- Clock application is displaying in the
+    background
+  * Fixes: NB#111296 - Applets are not visible in background in layout mode.
+  * Fixes: NB#109314 - Transition of dialogs in layout mode is not proper
+    while closing.
+  * Fixes: NB#109969 - Transition while maximising the application in switcher
+    is not proper.
+
+  Adam:
+  * Make the switcher understand _HILDON_NOTIFICATION_THREAD.
+  * Fixes: NB#111139 - ROTATION: Screen flickers when received chat message in
+    active call
+  * Fixes: NB#111773 - ROTATION:CAll UI is hidden after tapping on status menu
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 27 Apr 2009 11:14:58 +0300
 
 hildon-desktop (1:2.2.42-1) unstable; urgency=low
 
