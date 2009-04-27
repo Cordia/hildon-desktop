@@ -4,6 +4,7 @@ hildon-desktop (1:2.2.43-1~unreleased) unstable; urgency=low
   Laszlo:
   * Fixes: NB#98233 - Back button crash.
   * Fixes: NB#106208 - Wrong window shown after pushing 2 windows
+  * Fixes: NB#112368 - Crash when hildon-desktop killed.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 20 Apr 2009 13:48:28 +0300
 

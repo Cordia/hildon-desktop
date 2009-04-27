@@ -157,6 +157,7 @@ typedef struct _Range {
 } Range;
 
 struct _HdRenderManagerPrivate {
+  gboolean      disposed;
   HDRMStateEnum state;
   HDRMStateEnum previous_state;
 
@@ -271,6 +272,7 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
         g_object_new (HD_TYPE_RENDER_MANAGER, NULL)));
   priv = the_render_manager->priv;
 
+  priv->disposed = FALSE;
   priv->comp_mgr = hdcompmgr;
 
   /* Task switcher widget: anchor it at the centre so it is zoomed in
@@ -346,6 +348,19 @@ hd_render_manager_finalize (GObject *gobject)
 }
 
 static void
+hd_render_manager_dispose (GObject *gobject)
+{
+  HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE(gobject);
+  /* We run dispose only once. */
+  if (priv->disposed)
+    return;
+
+  priv->disposed = TRUE;
+  G_OBJECT_CLASS(hd_render_manager_parent_class)->dispose(gobject);
+}
+
+
+static void
 hd_render_manager_class_init (HdRenderManagerClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
@@ -355,7 +370,8 @@ hd_render_manager_class_init (HdRenderManagerClass *klass)
 
   gobject_class->get_property = hd_render_manager_get_property;
   gobject_class->set_property = hd_render_manager_set_property;
-  gobject_class->finalize = hd_render_manager_finalize;
+  gobject_class->finalize     = hd_render_manager_finalize;
+  gobject_class->dispose      = hd_render_manager_dispose;
 
   signals[TRANSITION_COMPLETE] =
         g_signal_new ("transition-complete",
@@ -1332,6 +1348,13 @@ gboolean hd_render_manager_in_transition(void)
 /* Return @actor, an actor of a %HdApp to HDRM's care. */
 void hd_render_manager_return_app(ClutterActor *actor)
 {
+  HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE (
+		  the_render_manager);
+
+  if (priv->disposed) {
+    return;
+  }
+
   clutter_actor_reparent(actor,
                          CLUTTER_ACTOR(the_render_manager->priv->home_blur));
   clutter_actor_lower_bottom(actor);

@@ -1,3 +1,9 @@
+2009-04-24  Laszlo Pere  <lpere@blumsoft.eu>
+
+	Fixes: NB#112368 - crash when hildon-desktop killed
+
+	* src/home/hd-render-manager: A dispose function added.
+
 2009-04-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixed according to Laszlo's investigation:
