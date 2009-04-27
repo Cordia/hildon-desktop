@@ -1,3 +1,12 @@
+2009-04-27  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Handle maemo-launcher ApplicationDied signal, informing the user.
+	For NB#101726.
+
+	* src/home/hd-switcher.c:
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-launcher-item.c:
+
 2009-04-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#111388 Thumb nails in switcher are overlaping.

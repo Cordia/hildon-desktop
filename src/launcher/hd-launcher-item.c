@@ -248,7 +248,7 @@ hd_launcher_item_get_id_quark (HdLauncherItem *item)
 const gchar *
 hd_launcher_item_get_name (HdLauncherItem *item)
 {
-  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), NULL);
+  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), "");
 
   return item->priv->name;
 }

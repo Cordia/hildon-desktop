@@ -132,6 +132,9 @@ static void hd_switcher_relaunch_app (HdSwitcher *switcher,
 static void hd_switcher_loading_fail (HdSwitcher *switcher,
                                       HdLauncherApp *app,
                                       gpointer data);
+static void hd_switcher_app_crashed (HdSwitcher *switcher,
+                                     HdLauncherApp *app,
+                                     gpointer data);
 static void hd_switcher_insufficient_memory(HdSwitcher *switcher,
                                             gpointer data);
 
@@ -222,6 +225,9 @@ hd_switcher_constructed (GObject *object)
                     object);
   g_signal_connect_swapped (hd_app_mgr_get (), "application-loading-fail",
                     G_CALLBACK (hd_switcher_loading_fail),
+                    object);
+  g_signal_connect_swapped (hd_app_mgr_get (), "application-crashed",
+                    G_CALLBACK (hd_switcher_app_crashed),
                     object);
   g_signal_connect_swapped (hd_app_mgr_get (), "not-enough-memory",
                     G_CALLBACK (hd_switcher_insufficient_memory),
@@ -547,6 +553,23 @@ hd_switcher_loading_fail (HdSwitcher *switcher,
   GtkWidget* banner = hildon_banner_show_information (NULL, NULL,
                         _("ckct_ib_application_loading_failed"));
   hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
+}
+
+/*
+ * Called when HdAppMgr says an app crashed.
+ */
+static void
+hd_switcher_app_crashed (HdSwitcher *switcher,
+                         HdLauncherApp *app,
+                         gpointer data)
+{
+  gchar *text;
+
+  text = g_strdup_printf (dgettext("ke-recv", "memr_ni_application_closed_no_resources"),
+      app ? hd_launcher_item_get_local_name (HD_LAUNCHER_ITEM (app)) : "");
+  GtkWidget* banner = hildon_banner_show_information (NULL, NULL, text);
+  hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
+  g_free (text);
 }
 
 /*

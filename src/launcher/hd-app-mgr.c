@@ -117,6 +117,7 @@ enum
   APP_RELAUNCHED,
   APP_SHOWN,
   APP_LOADING_FAIL,
+  APP_CRASHED,
   NOT_ENOUGH_MEMORY,
 
   LAST_SIGNAL
@@ -172,6 +173,10 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define INIT_DONE_SIGNAL_PATH      "/com/nokia/startup/signal"
 #define INIT_DONE_SIGNAL_NAME      "init_done"
 
+#define MAEMO_LAUNCHER_IFACE "org.maemo.launcher"
+#define MAEMO_LAUNCHER_PATH  "/org/maemo/launcher"
+#define MAEMO_LAUNCHER_APP_DIED_SIGNAL_NAME "ApplicationDied"
+
 /* Forward declarations */
 static void hd_app_mgr_dispose (GObject *gobject);
 
@@ -218,6 +223,9 @@ static void hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
                                                 const char *old_owner,
                                                 const char *new_owner,
                                                 gpointer data);
+static DBusHandlerResult hd_app_mgr_dbus_app_died (DBusConnection *conn,
+                                                   DBusMessage *msg,
+                                                   void *data);
 static DBusHandlerResult hd_app_mgr_signal_handler (DBusConnection *conn,
                                                     DBusMessage *msg,
                                                     void *data);
@@ -268,6 +276,13 @@ hd_app_mgr_class_init (HdAppMgrClass *klass)
                   G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
   app_mgr_signals[APP_LOADING_FAIL] =
     g_signal_new (I_("application-loading-fail"),
+                  HD_TYPE_APP_MGR,
+                  G_SIGNAL_RUN_FIRST,
+                  0, NULL, NULL,
+                  g_cclosure_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1, HD_TYPE_LAUNCHER_APP);
+  app_mgr_signals[APP_CRASHED] =
+    g_signal_new (I_("application-crashed"),
                   HD_TYPE_APP_MGR,
                   G_SIGNAL_RUN_FIRST,
                   0, NULL, NULL,
@@ -369,6 +384,13 @@ hd_app_mgr_init (HdAppMgr *self)
         }
       else
         g_warning ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
+
+      /* Connect to the maemo launcher dbus interface. */
+      hd_app_mgr_add_signal_match (priv->dbus_proxy,
+                                   MAEMO_LAUNCHER_IFACE);
+      dbus_connection_add_filter (dbus_g_connection_get_connection (connection),
+                                  hd_app_mgr_dbus_app_died,
+                                  self, NULL);
     }
   else
     g_warning ("%s: Failed to proxy session dbus.\n", __FUNCTION__);
@@ -1438,6 +1460,65 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
       next:
       apps = g_list_next (apps);
     }
+}
+
+static gint
+_hd_app_mgr_compare_launcher_exec (HdLauncherItem *item,
+                                   gchar *filename)
+{
+  HdLauncherApp *launcher;
+
+  if (hd_launcher_item_get_item_type (item) != HD_APPLICATION_LAUNCHER)
+    return -1;
+
+  launcher = HD_LAUNCHER_APP (item);
+  return g_strcmp0 (hd_launcher_app_get_exec (launcher), filename);
+}
+
+static DBusHandlerResult hd_app_mgr_dbus_app_died (DBusConnection *conn,
+                                                   DBusMessage *msg,
+                                                   void *data)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+  HdLauncherApp *launcher = NULL;
+  GList *link;
+  gchar *filename;
+  GPid pid;
+  gint status;
+  DBusError err;
+
+  if (!dbus_message_is_signal (msg,
+                               MAEMO_LAUNCHER_IFACE,
+                               MAEMO_LAUNCHER_APP_DIED_SIGNAL_NAME))
+    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+  dbus_error_init(&err);
+
+  dbus_message_get_args(msg, &err,
+                        DBUS_TYPE_STRING, &filename,
+                        DBUS_TYPE_INT32, &pid,
+                        DBUS_TYPE_INT32, &status,
+                        DBUS_TYPE_INVALID);
+
+  if (dbus_error_is_set(&err))
+  {
+      g_warning ("%s: Error getting message args: %s\n",
+                 __FUNCTION__, err.message);
+      dbus_error_free (&err);
+      return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+  }
+
+  /* Find which app died. */
+  link = g_list_find_custom (hd_launcher_tree_get_items (priv->tree, NULL),
+                             (gconstpointer)filename,
+                             (GCompareFunc)_hd_app_mgr_compare_launcher_exec);
+  if (link)
+      launcher = link->data;
+
+  g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_CRASHED],
+            0, launcher, NULL);
+
+  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
 gboolean
