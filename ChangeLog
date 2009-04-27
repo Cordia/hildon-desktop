@@ -1,7 +1,13 @@
+2009-04-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixed according to Laszlo's investigation:
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_handle_stackable): Refresh window
+	theme in both of the 'preceeds a follower' case. Fixes: NB#106208
+
 2009-04-24  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
-	Separated run-time data on applications from HdLauncherApp to HdRunningApp,
-	in preparation for libgnome-menu integration.
+	Separated run-time data on applications from HdLauncherApp to
+	HdRunningApp, in preparation for libgnome-menu integration.
 	Moved handling of loading timeout to HdAppMgr.
 	Fixes: NB#111844, NB#112105
 

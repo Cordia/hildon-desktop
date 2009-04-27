@@ -1488,6 +1488,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
 		     f->stack_index);
             old_leader->followers
                 = g_list_insert_before (old_leader->followers, flink, app);
+            mb_wm_client_theme_change ((MBWindowManagerClient*)app);
           }
 	  else  /* f->stack_index < app->stack_index */
 	  {
@@ -1499,6 +1500,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
               old_leader->followers
                  = g_list_insert_before (old_leader->followers, flink->next,
 				         app);
+              mb_wm_client_theme_change ((MBWindowManagerClient*)app);
 	    }
 	    else
 	    {
