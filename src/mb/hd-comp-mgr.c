@@ -1393,6 +1393,12 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
         {
           GList *l;
 
+          if (app == old_leader)
+            /* ... like killing app->followers */
+            g_critical ("%s: app == old_leader == %p, "
+                        "i'm about to do silly things",
+                        __FUNCTION__, app);
+
           app->leader = app;
           for (l = old_leader->followers; l; l = l->next)
           {
@@ -1539,6 +1545,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   guint                      hkey;
   MBWMClientType             ctype;
   static gboolean            first_time = TRUE;
+
+  g_debug ("%s: 0x%lx", __FUNCTION__, c && c->window ? c->window->xwindow : 0);
 
   if (G_UNLIKELY (first_time == TRUE))
     {
@@ -1888,6 +1896,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   MBWMCompMgrClutterClient *cclient;
   MBWindowManagerClient    *transfor = 0;
 
+  g_debug ("%s: 0x%lx", __FUNCTION__, c && c->window ? c->window->xwindow : 0);
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
 
   /* if we are in home_edit_dlg mode, check and see if there is stuff

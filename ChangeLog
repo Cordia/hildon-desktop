@@ -1,3 +1,7 @@
+2009-04-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c: Adding helpful debug prints.
+
 2009-04-28  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#112273 - Hildon-home customization features are broken in
