@@ -154,14 +154,17 @@
 /* Standard definitions }}} */
 
 /* Macros {{{ */
-#define for_each_thumbnail(li, thumb)     \
-  for ((li) = Thumbnails; (li) && ((thumb) = li->data); \
+#define for_each_thumbnail(li, thumb)                                   \
+  for ((li) = Thumbnails;                                               \
+       (li) ? ((thumb) = li->data) : ((thumb) = NULL);                  \
        (li) = (li)->next)
-#define for_each_appthumb(li, thumb)      \
-  for ((li) = Thumbnails; (li) != Notifications && ((thumb) = li->data); \
+#define for_each_appthumb(li, thumb)                                    \
+  for ((li) = Thumbnails;                                               \
+       (li) != Notifications ? ((thumb) = li->data) : ((thumb) = NULL); \
        (li) = (li)->next)
-#define for_each_notification(li, thumb)  \
-  for ((li) = Notifications; (li) && ((thumb) = li->data); \
+#define for_each_notification(li, thumb)                                \
+  for ((li) = Notifications;                                            \
+       (li) ? ((thumb) = li->data) : ((thumb) = NULL);                  \
        (li) = (li)->next)
 
 #define thumb_is_application(thumb)  ((thumb)->type == APPLICATION)
@@ -1574,6 +1577,7 @@ layout_thumbs (ClutterActor * newborn)
       guint wprison, hprison;
 
       /* If it's a new row re/set @ythumb and @xthumb. */
+      g_assert (lout.cells_per_row > 0);
       if (!(i % lout.cells_per_row))
         {
           if (i == 0)
@@ -1741,7 +1745,7 @@ reset_thumb_title (Thumbnail * thumb)
                             ? &ReversedTextColor : &DefaultTextColor);
 }
 
-/* Dress a %Thumbnails: create @thumb->frame.all and populate it
+/* Dress a %Thumbnail: create @thumb->frame.all and populate it
  * with frame graphics. */
 static void
 create_thumb_frame (Thumbnail * thumb)
@@ -2512,7 +2516,9 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
       break;
   if (!apthumb)
     { /* Code bloat is your enemy, right? */
-      g_critical("%s: window actor %p not found", __FUNCTION__, win);
+      g_critical ("%s: window actor %p not found.  This is most likely "
+                  "not a switcher bug, but indicates a stacking problem. "
+                  "See? Good.", __FUNCTION__, win);
       return;
     }
 
@@ -2672,7 +2678,6 @@ tnote_changed (HdNote * hdnote, int unused1, TNote * tnote)
   GList *li;
   Thumbnail *thumb;
 
-  thumb = NULL;
   for_each_thumbnail (li, thumb)
     if (thumb->tnote == tnote)
       break;
@@ -2910,17 +2915,11 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
   g_return_if_fail (hdnote != NULL);
 
   /* Find @thumb for @hdnote. */
-  thumb = NULL;
   for_each_thumbnail (li, thumb)
     if (thumb->tnote && thumb->tnote->hdnote == hdnote)
       break;
   if (!thumb || !thumb->tnote)
-    /*
-     * This used to be a grif().  Then that got disabled because it's evil.
-     * Now the check is resurrected because of Coverity.  Except that now
-     * we don't get a warning if this BOGUS condition occurrs.  Should i
-     * readd the warning?  I cannot be bothered.
-     */
+    /* This would be a bug somewhere, but who cares. */
     return;
 
   if (thumb_is_notification (thumb))

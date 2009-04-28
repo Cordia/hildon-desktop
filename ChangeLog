@@ -1,3 +1,15 @@
+2009-04-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#113103 Desktop crashes when camera application is closed
+	NB#111831 zero division crashes in hd-task-navigator.c:layout_thumbs
+
+	* src/home/hd-task-navigator:
+	  Behave when someone tries to remove a nonexisting thumbnail.
+	  This is a bug somewhere else but we don't crash at least.
+
+	BTW we forgot to celebrate that hd-task-navigator.c
+	is over 3000 lines now (and weights more than 100 kilobytes).
+
 2009-04-27  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Handle maemo-launcher ApplicationDied signal, informing the user.
