@@ -1,3 +1,18 @@
+2009-04-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c
+	* src/home/hd-home.h
+	* src/home/hd-home.c: Partial fix for NB#109445, full fix for 
+	  NB#111647, NB#109899, NB#109258. Make sure that when we leave
+	  the HOME_EDIT_DLG state, we close any dialogs that might have	  
+	  been open in it.
+	* src/home/hd-render-manager.h: Now make sure we don't grab the
+	  area covered by notifications in the HOME_EDIT_DLG state. This
+	  isn't really needed it turns out, but it is good practice.
+	* src/tidy/tidy-blur-group.c: Small tweak to allow multiple blur
+	  passes each frame (makes unblurring less visible when what is
+	  blurred changes)
+
 2009-04-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#113103 Desktop crashes when camera application is closed

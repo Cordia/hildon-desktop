@@ -1214,9 +1214,10 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if (STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
         mb_wm_handle_show_desktop(wm, STATE_NEED_DESKTOP(state));
 
-      /* we always need to restack here */
-      /*hd_comp_mgr_restack(MB_WM_COMP_MGR(priv->comp_mgr));*/
-      /* then why is it commented out? */
+      /* if we have moved away from the home edit dialog mode, then
+       * we must make sure there are no home edit dialogs left around */
+      if (oldstate == HDRM_STATE_HOME_EDIT_DLG)
+        hd_home_remove_dialogs(priv->home);
 
       /* Divert state change if going to some portrait-capable mode.
        * Allow for APP_PORTRAIT <=> HOME_PORTRAIT too. */

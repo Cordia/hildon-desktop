@@ -162,7 +162,7 @@ typedef enum
  * them from the grab area */
 #define STATE_UNGRAB_NOTES(s) \
   (STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_HOME | \
-                     HDRM_STATE_HOME_EDIT))
+                     HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
 
 #define STATE_NO_CALL_FROM_HOME(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | \

@@ -30,6 +30,10 @@
 #define VIGNETTE_TILES 7
 #define VIGNETTE_COLOURS ((VIGNETTE_TILES)/2 + 1)
 
+/* How many steps can we perform per frame - we don't want too many or
+ * we get really slow */
+#define MAX_STEPS_PER_FRAME 2
+
 /* The OpenGL fragment shader used to do blur and desaturation.
  * We use 3 samples here arranged in a rough triangle. We need
  * 2 versions as GLES and GL use slightly different syntax */
@@ -272,6 +276,7 @@ tidy_blur_group_paint (ClutterActor *actor)
   ClutterColor    col = { 0xff, 0xff, 0xff, 0xff };
   ClutterColor    bgcol = { 0x00, 0x00, 0x00, 0x00 };
   gint            x_1, y_1, x_2, y_2;
+  gint            steps_this_frame = 0;
 
   if (!TIDY_IS_BLUR_GROUP(actor))
     return;
@@ -391,8 +396,11 @@ tidy_blur_group_paint (ClutterActor *actor)
       /* If we're still not blurred enough, ask to be rendered again... */
       if (priv->current_blur_step != priv->blur_step)
         clutter_actor_queue_redraw(actor);
+      steps_this_frame++;
     }
-  else if (priv->current_blur_step < priv->blur_step)
+
+  while (priv->current_blur_step < priv->blur_step &&
+         steps_this_frame<MAX_STEPS_PER_FRAME)
     {
       /* blur one texture into the other */
       cogl_draw_buffer(COGL_OFFSCREEN_BUFFER,
@@ -429,6 +437,7 @@ tidy_blur_group_paint (ClutterActor *actor)
 
       //g_debug("Blurred to %d", priv->current_blur_step);
       priv->current_blur_step++;
+      steps_this_frame++;
       priv->max_blur_step = priv->current_blur_step;
       priv->current_is_a = !priv->current_is_a;
       /* We've destroyed our source image, so next time we've zoomed out we

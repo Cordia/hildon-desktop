@@ -93,12 +93,15 @@ void hd_home_update_layout (HdHome * home);
 
 void hd_home_set_reactive (HdHome   *home,
                            gboolean  reactive);
+/* Remove any hildon-home dialogs that are showing */
+void hd_home_remove_dialogs(HdHome *home);
 
 /* Added as signal in hd-render-manager */
 gboolean
 hd_home_back_button_clicked (ClutterActor *button,
                              ClutterEvent *event,
                              HdHome       *home);
+
 
 G_END_DECLS
 
