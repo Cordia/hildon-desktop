@@ -2077,10 +2077,7 @@ void hd_render_manager_place_titlebar_elements (void)
     /* Don't update @x since operator and app title are not shown at once. */
     clutter_actor_set_x(priv->operator, x + HD_COMP_MGR_OPERATOR_PADDING);
 
-  if (STATE_ONE_OF(priv->state, HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT))
-    /* Otherwise we don't show a title. */
-    mb_adjust_dialog_title_position(MB_WM_COMP_MGR(priv->comp_mgr)->wm, x);
-
+  /* Force title bar to update the title/progress indicator position */
   hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
 }
 

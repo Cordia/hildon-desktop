@@ -1,5 +1,12 @@
 2009-04-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/home/hd-render-manager.c: Remove call to 
+	  mb_adjust_dialog_title_position (as we never paid attention to 
+	  it anyway). This stops theme change which causes dialog title
+	  flickering sometimes
+
+2009-04-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-render-manager.c
 	* src/home/hd-home.h
 	* src/home/hd-home.c: Partial fix for NB#109445, full fix for 
