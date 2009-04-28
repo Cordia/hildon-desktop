@@ -673,8 +673,8 @@ hd_render_manager_set_input_viewport()
        * which could just have moved it. */
       if ((STATE_IS_PORTRAIT (priv->state) && priv->status_area
            && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area))
-	  /* also in the case of "dialog blur": */
-	  || (priv->state == HDRM_STATE_APP
+         /* also in the case of "dialog blur": */
+         || (priv->state == HDRM_STATE_APP
               && priv->status_area
               && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area)
               /* FIXME: the following check does not work when there are
@@ -842,6 +842,14 @@ void hd_render_manager_sync_clutter_before ()
   /* Make sure we hide the edit button if it's not required */
   if (priv->state != HDRM_STATE_HOME)
     hd_home_hide_edit_button(priv->home);
+
+  /* We need to check visibilities after we change between app state and not,
+   * because currently we move status area right out of the way if we don't
+   * think it's visible (to make it non-clickable). A fullscreen app->home
+   * transition tends to leave the status area off the screen. NB#112996 */
+  if (STATE_IS_APP(priv->state) !=
+      STATE_IS_APP(priv->previous_state))
+      hd_render_manager_set_visibilities();
 
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport */

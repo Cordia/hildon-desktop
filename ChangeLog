@@ -1,3 +1,10 @@
+2009-04-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c: Added a set_visibilities call if the
+	state changes from app mode to non-app mode, to solve problem with
+	status menu having been moved off of the screen because it was
+	deemed not to be visible. Fixes NB#112996
+
 2009-04-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c: Adding helpful debug prints.
