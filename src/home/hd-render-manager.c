@@ -1134,7 +1134,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       priv->previous_state = priv->state;
       priv->state = state;
 
-      /* Goto HOME instead of an empty swither.  This way the caller
+      /* Goto HOME instead of an empty switcher.  This way the caller
        * needn't care whether the switcher is empty, we'll do what
        * it meant. */
       if (state == HDRM_STATE_TASK_NAV && hd_task_navigator_is_empty())
@@ -1915,10 +1915,16 @@ void hd_render_manager_set_visibilities()
       if (child != CLUTTER_ACTOR(priv->blur_front))
         {
           ClutterGeometry geo;
+          /* If we're not showing windows, we still want to show the home
+           * view */
+          gboolean show_window = show_windows ?
+                                    TRUE :
+                                    child==CLUTTER_ACTOR(priv->home);
+
           clutter_actor_get_geometry(child, &geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
           VISIBILITY ("IS %p (%dx%d%+d%+d) VISIBLE?", child, MBWM_GEOMETRY(&geo));
-          if (show_windows && hd_render_manager_is_visible(blockers, geo))
+          if (show_window && hd_render_manager_is_visible(blockers, geo))
             {
               VISIBILITY ("IS");
               clutter_actor_show(child);
@@ -1963,21 +1969,25 @@ void hd_render_manager_set_visibilities()
   g_list_free(blockers);
   blockers = 0;
 
-  /* Do we have a fullscreen client visible? */
+  /* Do we have a fullscreen client totally filling
+   * the screen? */
   has_fullscreen = FALSE;
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
-  for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
+  if (STATE_IS_APP(priv->state))
     {
-      if (c->cm_client && c->desktop >= 0) /* FIXME: should check against
-                                              current desktop? */
+      for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
         {
-          ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor(
-              MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
-          if (actor && CLUTTER_ACTOR_IS_VISIBLE(actor))
+          if (c->cm_client && c->desktop >= 0) /* FIXME: should check against
+                                                  current desktop? */
             {
-              if (c->window)
-                has_fullscreen |= c->window->ewmh_state &
-                  MBWMClientWindowEWMHStateFullscreen;
+              ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor(
+                  MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
+              if (actor && CLUTTER_ACTOR_IS_VISIBLE(actor))
+                {
+                  if (c->window)
+                    has_fullscreen |= c->window->ewmh_state &
+                      MBWMClientWindowEWMHStateFullscreen;
+                }
             }
         }
     }

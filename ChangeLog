@@ -1,3 +1,12 @@
+2009-04-29  Gordon Williams <gordon.williams@collabora.co.uk>
+	
+	Fixes: NB#113697 - dbus call is able to hide status area and button
+	
+	* src/home/hd-render-manager.c: We now make sure not to hide HdHome if
+	  we're not showing windows (fixes critical message). When we check
+	  for fullscreen windows, make sure we only check in app mode, not in
+	  all modes.
+
 2009-04-29  Laszlo Pere  <lpere@blumsoft.eu>
 
 	Fixes: NB#109022 - Hildon banner gets blurred
@@ -5,7 +14,7 @@
 	* src/mb/hd-comp-mgr.c: Non confirmation notes put to the top even if
 	  they have a transient parent.
 
-2009-04-28  Gordon Williams <gordon.williams@collabora.co.uk>
+2009-04-29  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Screen rotation transition implementation, and regression fix
 	* src/util/hd-transition.h	
