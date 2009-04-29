@@ -213,6 +213,11 @@ hd_comp_mgr_client_get_app_key (HdCompMgrClient *client, HdCompMgr *hmgr)
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   wm_client = MB_WM_COMP_MGR_CLIENT (client)->wm_client;
 
+  /* We only lookup the app for main windows and dialogs. */
+  if (MB_WM_CLIENT_CLIENT_TYPE (wm_client) != MBWMClientTypeApp &&
+      MB_WM_CLIENT_CLIENT_TYPE (wm_client) != MBWMClientTypeDialog)
+    return NULL;
+
   memset(&class_hint, 0, sizeof(XClassHint));
 
   mb_wm_util_trap_x_errors ();

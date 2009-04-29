@@ -1,3 +1,10 @@
+2009-04-29  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Improved matching and handling of windows with unknown applications.
+
+	* src/launcher/hd-app-mgr.c:
+	* src/mb/hd-comp-mgr.c:
+
 2009-04-29  Gordon Williams <gordon.williams@collabora.co.uk>
 	
 	Fixes: NB#113697 - dbus call is able to hide status area and button

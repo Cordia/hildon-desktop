@@ -452,15 +452,19 @@ _hd_app_mgr_kill_prestarted (HdRunningApp *app, gpointer user_data)
 void
 hd_app_mgr_stop ()
 {
+  GQueue *prestarted;
+
   if (!the_app_mgr)
     return;
 
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (the_app_mgr);
 
   priv->prestarting_stopped = TRUE;
-  g_queue_foreach (priv->queues[QUEUE_PRESTARTED],
+  prestarted = g_queue_copy (priv->queues[QUEUE_PRESTARTED]);
+  g_queue_foreach (prestarted,
                    (GFunc)_hd_app_mgr_kill_prestarted,
                    NULL);
+  g_queue_free (prestarted);
 }
 
 static void
@@ -828,12 +832,16 @@ void
 hd_app_mgr_kill_all (void)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
-  GList *apps = priv->running_apps;
+  /* We need to make a copy because the list is going to be changed. */
+  GList *apps = g_list_copy(priv->running_apps);
   while (apps)
     {
-      hd_app_mgr_kill (apps->data);
+      /* We only kill the shown apps. */
+      if (hd_running_app_get_state (apps->data) == HD_APP_STATE_SHOWN)
+        hd_app_mgr_kill (apps->data);
       apps = apps->next;
     }
+  g_list_free(apps);
 }
 
 void hd_app_mgr_app_opened (HdRunningApp *app)
@@ -959,7 +967,8 @@ hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
         continue;
 
       launcher = HD_LAUNCHER_APP (items->data);
-      if (hd_launcher_app_get_prestart_mode(launcher) != HD_APP_PRESTART_ALWAYS)
+      if (priv->prestart_mode == PRESTART_NEVER ||
+          hd_launcher_app_get_prestart_mode(launcher) != HD_APP_PRESTART_ALWAYS)
         continue;
 
       /* Look if we already have a running app for it. */
@@ -1619,9 +1628,10 @@ hd_app_mgr_match_window (const char *res_name,
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   HdRunningApp *app = NULL;
   HdLauncherApp *launcher = NULL;
-  GList *link = priv->running_apps;
+  GList *link = NULL;
 
   /* First we need to look if there's already a running app for this. */
+  link = priv->running_apps;
   while (link)
     {
       app = HD_RUNNING_APP (link->data);
@@ -1638,8 +1648,6 @@ hd_app_mgr_match_window (const char *res_name,
           if (hd_launcher_app_match_window (launcher, res_name, res_class))
             {
               /* Now we have a good pid. */
-              /* TODO: Not really, many times WM reports an incorrect pid,
-               * so we only use this if we don't already have one. */
               if (!app_pid)
                 hd_running_app_set_pid (app, pid);
               return app;
@@ -1648,6 +1656,36 @@ hd_app_mgr_match_window (const char *res_name,
 
       /* Next. */
       link = link->next;
+    }
+
+  /* Well, there wasn't any already running app, so we'll have to look for
+   * a launcher that matches.
+   */
+  GList *launchers = hd_launcher_tree_get_items (priv->tree, NULL);
+  app = NULL;
+
+  if (res_name || res_class)
+    {
+      while (launchers)
+        {
+          /* Filter non-applications. */
+          if (hd_launcher_item_get_item_type (HD_LAUNCHER_ITEM (launchers->data)) !=
+              HD_APPLICATION_LAUNCHER)
+            goto next;
+
+          launcher = HD_LAUNCHER_APP (launchers->data);
+          if (hd_launcher_app_match_window (launcher, res_name, res_class))
+            {
+              /* Let's make a new running app for it. */
+              app = hd_running_app_new (launcher);
+              hd_running_app_set_pid (app, pid);
+              priv->running_apps = g_list_prepend (priv->running_apps, app);
+              return app;
+            }
+
+          next:
+          launchers = g_list_next (launchers);
+        }
     }
 
   /*
@@ -1661,50 +1699,21 @@ hd_app_mgr_match_window (const char *res_name,
       app = HD_RUNNING_APP (link->data);
       if (hd_running_app_get_state (app) == HD_APP_STATE_LOADING)
         {
+          if (!hd_running_app_get_pid (app))
+            hd_running_app_set_pid (app, pid);
           return app;
         }
 
       link = link->next;
     }
 
-  /* Well, there wasn't any already running app, so we'll have to look for
-   * a launcher that matches.
+  /* What? We haven't found any yet?
+   * Well, let's just make one for this one and keep the pid in case we
+   * have to kill it
    */
-  GList *launchers = hd_launcher_tree_get_items (priv->tree, NULL);
-  app = NULL;
-  HdLauncherApp *result = NULL;
-
-  if (!res_name && !res_class)
-    {
-      g_warning ("%s: Can't match windows with no WM_CLASS set.\n", __FUNCTION__);
-      return NULL;
-    }
-
-  while (launchers)
-    {
-      /* Filter non-applications. */
-      if (hd_launcher_item_get_item_type (HD_LAUNCHER_ITEM (launchers->data)) !=
-          HD_APPLICATION_LAUNCHER)
-        goto next;
-
-      launcher = HD_LAUNCHER_APP (launchers->data);
-      if (hd_launcher_app_match_window (launcher, res_name, res_class))
-        {
-          result = launcher;
-          break;
-        }
-
-      next:
-      launchers = g_list_next (launchers);
-    }
-
-  if (result)
-    {
-      /* Let's make a new running app for it. */
-      app = hd_running_app_new (result);
-      hd_running_app_set_pid (app, pid);
-      priv->running_apps = g_list_prepend (priv->running_apps, app);
-    }
+  app = hd_running_app_new (NULL);
+  hd_running_app_set_pid (app, pid);
+  priv->running_apps = g_list_prepend (priv->running_apps, app);
 
   return app;
 }
