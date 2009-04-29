@@ -1714,15 +1714,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       if (HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
         hd_switcher_add_notification (priv->switcher_group,
                                       HD_NOTE (c));
-      else if (c->transient_for)
-        {
-          hd_switcher_add_dialog (priv->switcher_group, c, actor);
-        }
       else if (HD_NOTE (c)->note_type != HdNoteTypeConfirmation)
         {
           /* Notes need to be pulled out right infront of the blur group
            * manually, as they are not given focus */
           hd_render_manager_add_to_front_group(actor);
+        }
+      else if (c->transient_for)
+        {
+          hd_switcher_add_dialog (priv->switcher_group, c, actor);
         }
       /* Send dbus request to mce to turn display backlight on for banner
        * notes */

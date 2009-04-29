@@ -1,3 +1,10 @@
+2009-04-29  Laszlo Pere  <lpere@blumsoft.eu>
+
+	Fixes: NB#109022 - Hildon banner gets blurred
+
+	* src/mb/hd-comp-mgr.c: Non confirmation notes put to the top even if
+	  they have a transient parent.
+
 2009-04-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Screen rotation transition implementation, and regression fix

@@ -7,6 +7,9 @@ hildon-desktop (1:2.2.44-1~unreleased) unstable; urgency=low
   * Add dependency to ke-recv-l10n-mr | ke-recv-l10n-mr0 due to
     memr_ti_close_applications string.
 
+  Laszlo:
+  * Fixes: NB#109022 - Hildon banner gets blurred
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 27 Apr 2009 17:26:43 +0300
 
 hildon-desktop (1:2.2.43-1) unstable; urgency=low
