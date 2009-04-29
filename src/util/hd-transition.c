@@ -54,6 +54,8 @@ typedef struct _HDEffectData
   HdCompMgr                *hmgr;
   /* original/expected position of application/menu */
   ClutterGeometry           geo;
+  /* used in rotate_screen to set the direction (and amount) of movement */
+  float                     angle;
   /* Any extra particles if they are used for this effect */
   ClutterActor             *particles[HDCM_UNMAP_PARTICLES];
 } HDEffectData;
@@ -82,6 +84,18 @@ float
 hd_transition_smooth_ramp(float amt)
 {
   return (1.0f - cos(amt*3.141592)) * 0.5f;
+}
+
+static float
+hd_transition_ease_in(float amt)
+{
+  return (1.0f - cos(amt*3.141592*0.5));
+}
+
+static float
+hd_transition_ease_out(float amt)
+{
+  return cos((1-amt)*3.141592*0.5);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -414,6 +428,30 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
     }
 }
 
+static void
+on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
+                                    gint frame_num, HDEffectData *data)
+{
+  float amt, angle;
+  gint n_frames;
+  ClutterActor *actor;
+
+  n_frames = clutter_timeline_get_n_frames(timeline);
+  amt = frame_num / (float)n_frames;
+  if (data->event == MBWMCompMgrClientEventMap)
+    amt = hd_transition_ease_in(amt);
+  else
+    amt = hd_transition_ease_out(1-amt);
+  angle = data->angle * amt;
+
+  actor = CLUTTER_ACTOR(hd_render_manager_get());
+  clutter_actor_set_rotation(actor, CLUTTER_Z_AXIS, angle,
+      HD_COMP_MGR_SCREEN_WIDTH/2, HD_COMP_MGR_SCREEN_HEIGHT/2, 0);
+  /* use this actor to dim out the screen */
+  clutter_actor_raise_top(data->particles[0]);
+  clutter_actor_set_opacity(data->particles[0], (int)(amt*255));
+}
+
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -501,7 +539,8 @@ hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
 
   g_object_unref ( timeline );
 
-  hd_comp_mgr_set_effect_running(hmgr, FALSE);
+  if (hmgr)
+    hd_comp_mgr_set_effect_running(hmgr, FALSE);
 
   for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
     if (data->particles[i])
@@ -875,6 +914,51 @@ hd_transition_subview(HdCompMgr                  *mgr,
 
   /* first call to stop flicker */
   on_subview_timeline_new_frame(data->timeline, 0, data);
+  clutter_timeline_start (data->timeline);
+}
+
+/* Start a transition for the rotation
+ * (moving into/out of blanking depending on first_part)
+ */
+void
+hd_transition_rotate_screen(gboolean first_part,
+                            gboolean goto_portrait,
+                            GCallback finished_callback,
+                            gpointer finished_callback_data)
+{
+  ClutterColor black = {0x00, 0x00, 0x00, 0xFF};
+  HDEffectData *data = g_new0 (HDEffectData, 1);
+  data->event = first_part ? MBWMCompMgrClientEventMap :
+                             MBWMCompMgrClientEventUnmap;
+  data->timeline =
+        g_object_ref( hd_transition_timeline_new("rotate", data->event, 300) );
+
+  g_signal_connect (data->timeline, "new-frame",
+                        G_CALLBACK (on_rotate_screen_timeline_new_frame), data);
+  g_signal_connect (data->timeline, "completed",
+                         G_CALLBACK (hd_transition_completed), data);
+  if (finished_callback)
+    g_signal_connect_swapped (data->timeline, "completed",
+                          G_CALLBACK (finished_callback), finished_callback_data);
+
+  data->angle = hd_transition_get_double("rotate", "angle", 40);
+  /* Set the direction of movement - we want to rotate backwards if we
+   * go back to landscape as it looks better */
+  if (first_part == goto_portrait)
+    data->angle *= -1;
+  /* Add the actor we use to dim out the screen */
+  data->particles[0] = clutter_rectangle_new();
+  clutter_actor_set_size(data->particles[0],
+      HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_SCREEN_HEIGHT);
+  clutter_container_add_actor(
+            CLUTTER_CONTAINER(clutter_stage_get_default()),
+            data->particles[0]);
+  clutter_rectangle_set_color(CLUTTER_RECTANGLE(data->particles[0]),
+                              &black);
+  clutter_actor_show(data->particles[0]);
+
+  /* stop flicker by calling the first frame directly */
+  on_rotate_screen_timeline_new_frame(data->timeline, 0, data);
   clutter_timeline_start (data->timeline);
 }
 

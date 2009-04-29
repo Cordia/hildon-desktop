@@ -1881,6 +1881,7 @@ void hd_render_manager_set_visibilities()
   MBWindowManager *wm;
   MBWindowManagerClient *c;
   gboolean has_fullscreen;
+  gboolean show_windows = TRUE;
 
   priv = the_render_manager->priv;
   /* first append all the top elements... */
@@ -1897,6 +1898,13 @@ void hd_render_manager_set_visibilities()
     {
       clutter_actor_hide(CLUTTER_ACTOR(priv->home_blur));
     }
+  /* If we are in the task navigator, we don't want to show any of our windows.
+   * This is because the task navigator will only grab the very top window of
+   * a window stack, leaving the rest here. If we apply normal visibility
+   * checking then we inadvertantly make the next window on the stack visible
+   * in the background. */
+  if (hd_task_navigator_is_active())
+    show_windows = FALSE;
   /* Then work BACKWARDS through the other items, working out if they are
    * visible or not */
   n_elements = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
@@ -1910,7 +1918,7 @@ void hd_render_manager_set_visibilities()
           clutter_actor_get_geometry(child, &geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
           VISIBILITY ("IS %p (%dx%d%+d%+d) VISIBLE?", child, MBWM_GEOMETRY(&geo));
-          if (hd_render_manager_is_visible(blockers, geo))
+          if (show_windows && hd_render_manager_is_visible(blockers, geo))
             {
               VISIBILITY ("IS");
               clutter_actor_show(child);

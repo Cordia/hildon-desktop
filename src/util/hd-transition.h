@@ -63,6 +63,12 @@ hd_transition_subview(HdCompMgr                  *mgr,
                       MBWindowManagerClient      *mainview,
                       MBWMCompMgrClientEvent     event);
 
+void
+hd_transition_rotate_screen(gboolean first_part,
+                            gboolean goto_portrait,
+                            GCallback finished_callback,
+                            gpointer finished_callback_data);
+
 gboolean
 hd_transition_actor_will_go_away (ClutterActor *actor);
 

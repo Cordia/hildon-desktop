@@ -9,6 +9,8 @@
 #include "hd-comp-mgr.h"
 #include "hd-wm.h"
 #include "hd-note.h"
+#include "hd-transition.h"
+#include "hd-render-manager.h"
 
 void *
 hd_util_get_win_prop_data_and_validate (Display   *xdpy,
@@ -175,9 +177,9 @@ hd_util_client_has_modal_blocker (MBWindowManagerClient *c)
 /* Change the screen's orientation by rotating 90 degrees
  * (portrait mode) or going back to landscape.
  * Returns whether the orientation has actually changed. */
-gboolean
-hd_util_change_screen_orientation (MBWindowManager *wm,
-                                   gboolean goto_portrait)
+static gboolean
+hd_util_change_screen_orientation_real (MBWindowManager *wm,
+                                        gboolean goto_portrait)
 {
   Status ret;
   Time cfgtime;
@@ -226,4 +228,77 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
     }
   else
     return TRUE;
+}
+
+/* Data needed for screen rotation transitions. To do this, we:
+ *  [state 0] Start a rotation animation that fades to black
+ *  [state 1] Hide rendering and fire the state change (then wait)
+ *  [state 2] Start rotation that fades back from black
+ */
+typedef struct _ChangeScreenOrientationData {
+  MBWindowManager *wm;
+  gboolean goto_portrait;
+  gint state;
+} ChangeScreenOrientationData;
+
+static gboolean
+hd_util_change_screen_orientation_cb(ChangeScreenOrientationData *data)
+{
+  switch (data->state)
+    {
+      case 0:
+        data->state++;
+        /* Start screen rotation and fade to black */
+        hd_transition_rotate_screen(
+              TRUE, data->goto_portrait,
+              G_CALLBACK(hd_util_change_screen_orientation_cb), data);
+        break;
+      case 1:
+        data->state++;
+        hd_util_change_screen_orientation_real(data->wm, data->goto_portrait);
+        /* wait for the screen change. During this period, blank the
+         * screen by hiding hd_render_manager. Note that we could wait until
+         * redraws have finished here, but currently X blanks us for a set
+         * time period anyway - and this way it is easier to get rotation
+         * speeds sorted.  */
+        clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
+            g_timeout_add(
+                hd_transition_get_int("rotate", "duration_blanking", 500),
+                (GSourceFunc)hd_util_change_screen_orientation_cb, data);
+        break;
+      case 2:
+        g_free(data);
+        /* fade back in, after re-showing the render manager */
+        clutter_actor_show(CLUTTER_ACTOR(hd_render_manager_get()));
+        hd_transition_rotate_screen(FALSE, data->goto_portrait, 0, 0);
+        break;
+      default:
+        g_critical("%s: out of bounds state", __FUNCTION__);
+    }
+
+  return FALSE;
+}
+
+/* Change the screen's orientation by rotating 90 degrees
+ * (portrait mode) or going back to landscape.
+ * Returns whether the orientation has actually changed. */
+gboolean
+hd_util_change_screen_orientation (MBWindowManager *wm,
+                                   gboolean goto_portrait)
+{
+  if (goto_portrait == (HD_COMP_MGR_SCREEN_HEIGHT > HD_COMP_MGR_SCREEN_WIDTH))
+    {
+      g_warning("%s: already in %s mode", __FUNCTION__,
+                goto_portrait?"Portrait":"Landscape");
+      return FALSE;
+    }
+
+  ChangeScreenOrientationData *data =
+    g_malloc(sizeof(ChangeScreenOrientationData));
+  data->wm = wm;
+  data->goto_portrait = goto_portrait;
+  data->state = 0;
+  hd_util_change_screen_orientation_cb(data);
+
+  return TRUE;
 }

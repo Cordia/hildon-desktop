@@ -1,5 +1,18 @@
 2009-04-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Screen rotation transition implementation, and regression fix
+	* src/util/hd-transition.h	
+	* src/util/hd-transition.c: Added function to rotate and dim the screen
+	* src/util/hd-util.c: Now, when rotate is called, do it in 4 steps:
+	  rotate transition, XRandr call, wait, final rotate transition. 
+	* data/transitions.ini: initial timings for rotate transitions added,
+	  and put in a lot of comments
+	* src/home/hd-render-manager.c: Fix for regression with stackable 
+	  windows if in task navigator. Now we don't make any background 
+	  windows visible if the task navigator is active.
+
+2009-04-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-render-manager.c: Added a set_visibilities call if the
 	state changes from app mode to non-app mode, to solve problem with
 	status menu having been moved off of the screen because it was
