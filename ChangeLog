@@ -1,3 +1,12 @@
+2009-04-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Added AppMgr.Prestart D-Bus API to stop/restart prestarting apps.
+	Fixes: NB#114068
+
+	* src/launcher/hd-app-mgr-dbus.xml:
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-app-mgr.h:
+
 2009-04-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#114058 Blank status area is shown on the incoming call view in

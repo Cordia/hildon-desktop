@@ -70,6 +70,10 @@ gboolean hd_app_mgr_launch       (HdLauncherApp *app);
 gboolean hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id);
 gboolean hd_app_mgr_relaunch_set_top (HdLauncherApp *app);
 
+/* D-Bus API */
+gboolean hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id);
+gboolean hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable);
+
 /* Controlling running apps. */
 gboolean hd_app_mgr_wakeup       (HdRunningApp *app);
 gboolean hd_app_mgr_kill         (HdRunningApp *app);

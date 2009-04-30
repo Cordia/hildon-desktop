@@ -11,5 +11,12 @@
 
       <arg type="s" name="application" direction="in" />
     </method>
+
+    <method name="Prestart">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_app_mgr_dbus_prestart"/>
+
+      <arg type="b" name="enable" direction="in" />
+    </method>
+
   </interface>
 </node>

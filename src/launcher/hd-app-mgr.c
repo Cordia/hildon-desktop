@@ -233,6 +233,8 @@ static DBusHandlerResult hd_app_mgr_signal_handler (DBusConnection *conn,
 static void     hd_app_mgr_request_app_pid (HdRunningApp *app);
 static gboolean hd_app_mgr_loading_timeout (HdRunningApp *app);
 
+static void hd_app_mgr_kill_all_prestarted (void);
+
 /* The HdLauncher singleton */
 static HdAppMgr *the_app_mgr = NULL;
 
@@ -448,23 +450,27 @@ _hd_app_mgr_kill_prestarted (HdRunningApp *app, gpointer user_data)
   hd_app_mgr_kill (app);
 }
 
-/* Called when exiting main() to close all prestarted apps. */
-void
-hd_app_mgr_stop ()
+static void
+hd_app_mgr_kill_all_prestarted ()
 {
   GQueue *prestarted;
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
 
-  if (!the_app_mgr)
-    return;
-
-  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (the_app_mgr);
-
-  priv->prestarting_stopped = TRUE;
   prestarted = g_queue_copy (priv->queues[QUEUE_PRESTARTED]);
   g_queue_foreach (prestarted,
                    (GFunc)_hd_app_mgr_kill_prestarted,
                    NULL);
   g_queue_free (prestarted);
+}
+
+/* Called when exiting main() to close all prestarted apps. */
+void
+hd_app_mgr_stop ()
+{
+  if (!the_app_mgr)
+    return;
+
+  hd_app_mgr_kill_all_prestarted ();
 }
 
 static void
@@ -1545,6 +1551,25 @@ hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id)
   app = HD_LAUNCHER_APP (item);
 
   return hd_app_mgr_launch (app);
+}
+
+gboolean
+hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
+
+  if (enable)
+    {
+      priv->prestarting_stopped = FALSE;
+      hd_app_mgr_state_check ();
+    }
+  else
+    {
+      priv->prestarting_stopped = TRUE;
+      hd_app_mgr_kill_all_prestarted ();
+    }
+
+  return TRUE;
 }
 
 static DBusHandlerResult
