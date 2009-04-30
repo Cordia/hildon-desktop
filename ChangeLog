@@ -1,3 +1,12 @@
+2009-04-30  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#113685 - Div0 - this fixes a single occurance. There 
+	may be others. Fixes will be included in clutter shortly to make
+	it produce warnings when scale is set to 0.
+
+	* src/launcher/hd-launcher.c: Modified launching animation to start
+	window from a small size rather than 0 size.
+
 2009-04-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Fixes: NB#113825 - Task launcher labels should be hardcoded to white

@@ -655,7 +655,7 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
   HdLauncher *page = HD_LAUNCHER(data);
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (page);
   gint frames;
-  float amt;
+  float amt, zoom;
   ClutterFixed mx,my,zx,zy;
   guint width, height;
 
@@ -665,7 +665,7 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
   frames = clutter_timeline_get_n_frames(timeline);
   amt = frame_num / (float)frames;
 
-  amt = (1 - cos(amt * 3.141592)) * 0.5f;
+  zoom = 0.05 + (1 - cos(amt * 3.141592)) * 0.475f;
 
   if (!priv->launch_image)
     return;
@@ -673,17 +673,17 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
   clutter_actor_get_size(priv->launch_image, &width, &height);
   /* mid-position of actor */
   mx = CLUTTER_FLOAT_TO_FIXED(
-                width*0.5f*amt +
-                CLUTTER_FIXED_TO_FLOAT(priv->launch_position.x)*(1-amt));
+                width*0.5f*zoom +
+                CLUTTER_FIXED_TO_FLOAT(priv->launch_position.x)*(1-zoom));
   my = CLUTTER_FLOAT_TO_FIXED(
-                height*0.5f*amt +
-                CLUTTER_FIXED_TO_FLOAT(priv->launch_position.y)*(1-amt));
+                height*0.5f*zoom +
+                CLUTTER_FIXED_TO_FLOAT(priv->launch_position.y)*(1-zoom));
   /* size of actor */
-  zx = CLUTTER_FLOAT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH*amt*0.5f);
-  zy = CLUTTER_FLOAT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT*amt*0.5f);
+  zx = CLUTTER_FLOAT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH*zoom*0.5f);
+  zy = CLUTTER_FLOAT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT*zoom*0.5f);
 
   clutter_actor_set_positionu(priv->launch_image, mx-zx, my-zy);
-  clutter_actor_set_scale(priv->launch_image, amt, amt);
+  clutter_actor_set_scale(priv->launch_image, zoom, zoom);
 }
 
 HdLauncherTree *
