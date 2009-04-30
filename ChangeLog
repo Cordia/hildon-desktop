@@ -1,5 +1,14 @@
 2009-04-30  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes issue where app launch animation from shortcut was longer than
+	animation from launcher.
+	* data/transitions.ini: Changed launch animation length to that of the 
+	  window opening animation
+	* src/launcher/hd-launcher.c: Load window opening animation duration 
+	  from [launcher_launch] in transitions.ini
+
+2009-04-30  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Fixes: NB#114008 - Task launcher side margins not big enough
 
 	* src/launcher/hd-launcher.h: Made constant names more obvious

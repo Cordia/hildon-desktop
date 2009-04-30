@@ -614,6 +614,9 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   g_signal_connect (priv->launch_image, "button-release-event",
                     G_CALLBACK(_hd_launcher_transition_clicked), 0);
 
+  clutter_timeline_set_duration(priv->launch_transition,
+                                hd_transition_get_int("launcher_launch",
+                                                      "duration", 200));
   /* Run the first step of the transition so we don't get flicker before
    * the timeline is called */
   hd_launcher_transition_new_frame(priv->launch_transition,
