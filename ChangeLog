@@ -1,5 +1,8 @@
 2009-04-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#114058 Blank status area is shown on the incoming call view in
+	          portrait mode.
+
 	Regression fix.  When we received a call in home view & portrait mode
 	the status area remained visible.
 
