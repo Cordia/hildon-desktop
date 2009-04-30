@@ -36,6 +36,7 @@ Switcher:
 - Make the switcher's and launcher's scrollbar hildon-like.
 - Be more sensible differentiating clicks vs. scroll attempts.
   (It should be the same usability-wise as pannable areas.)
+- dismiss and panning area
 - Zoom+fly: don't slow down at the end of zoom and don't start slowly
 - Fly+fly: change move(), resize(), scale() not to jump
 - Shadowed text in switcher (wishlist).
