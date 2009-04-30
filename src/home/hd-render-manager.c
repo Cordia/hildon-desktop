@@ -1969,35 +1969,29 @@ void hd_render_manager_set_visibilities()
   g_list_free(blockers);
   blockers = 0;
 
-  /* Do we have a fullscreen client totally filling
-   * the screen? */
+  /* Do we have a fullscreen client totally filling the screen? */
+  /* This is voodo.  Please insert a comment here that explains
+   * why to consider the state. */
   has_fullscreen = FALSE;
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
-  if (STATE_IS_APP(priv->state))
-    {
-      for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
-        {
-          if (c->cm_client && c->desktop >= 0) /* FIXME: should check against
-                                                  current desktop? */
-            {
-              ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor(
-                  MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
-              if (actor && CLUTTER_ACTOR_IS_VISIBLE(actor))
-                {
-                  if (c->window)
-                    has_fullscreen |= c->window->ewmh_state &
-                      MBWMClientWindowEWMHStateFullscreen;
-                }
-            }
-        }
-    }
+  if (STATE_IS_APP(priv->state) || priv->state == HDRM_STATE_HOME)
+    for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
+      {
+        if (!c->cm_client || c->desktop < 0 || !c->window)
+          /* It's probably an unnecessary check. */
+          continue;
+        if (!hd_render_manager_is_client_visible(c))
+          continue;
+        has_fullscreen |= c->window->ewmh_state
+          & MBWMClientWindowEWMHStateFullscreen;
+      }
 
   /* If we have a fullscreen something hide the blur_front
    * and move SA out of the way.  BTW blur_front is implcitly
    * shown by clutter when reparented. */
   c = priv->status_area_client;
   if (has_fullscreen)
-    {
+    { VISIBILITY ("SA GO AWAY");
       clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
       if (c && c->frame_geometry.y >= 0)
         { /* Move SA out of the way. */
@@ -2007,7 +2001,7 @@ void hd_render_manager_set_visibilities()
         }
     }
   else
-    {
+    { VISIBILITY ("SA COME BACK");
       clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
       if (c && c->frame_geometry.y < 0)
         { /* Restore the position of SA. */

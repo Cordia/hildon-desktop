@@ -1,3 +1,13 @@
+2009-04-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Regression fix.  When we received a call in home view & portrait mode
+	the status area remained visible.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_visibilities):
+	  Search for fullscreen clients not only in app but in home view.
+	  We can have fullscreen dialogs (like the incoming call dialog)
+	  in home view.
+
 2009-04-29  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Improved matching and handling of windows with unknown applications.
