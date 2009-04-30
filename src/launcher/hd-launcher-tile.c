@@ -336,7 +336,7 @@ void
 hd_launcher_tile_set_text (HdLauncherTile *tile,
                            const gchar *text)
 {
-  ClutterColor text_color;
+  ClutterColor text_color = {0xFF, 0xFF, 0xFF, 0xFF};
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   ClutterUnit label_width;
   guint label_height, label_width_px;
@@ -358,9 +358,6 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
       clutter_actor_destroy (priv->label);
     }
 
-  hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
-                               GTK_STATE_NORMAL,
-                               &text_color);
   style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
                                      HD_LAUNCHER_TILE_FONT,
                                      NULL, G_TYPE_NONE);
