@@ -1,3 +1,7 @@
+2009-04-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.44
+
 2009-04-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Added AppMgr.Prestart D-Bus API to stop/restart prestarting apps.

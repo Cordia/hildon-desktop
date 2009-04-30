@@ -1,7 +1,15 @@
-hildon-desktop (1:2.2.44-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.44-1) unstable; urgency=low
+
+  Marc:
+  * Fixes: NB#114068 - prestarted applications shall be started and stopped
+    based on dbus message
 
   Jan Arne:
-  * Fixes: NB#111113, NB#110729 - Settings not stored on restart
+  * Fixes: NB#111113 - Some times widgets and shortcuts are getting overlapped
+    if device is restarted
+  * Fixes: NB#110729 - Home screens do not retain after reboot.
+  * Fixes: NB#112273 - Hildon-home customization features are broken in latest
+    CP build.
 
   Kimmo:
   * Add dependency to ke-recv-l10n-mr | ke-recv-l10n-mr0 due to
@@ -10,7 +18,27 @@ hildon-desktop (1:2.2.44-1~unreleased) unstable; urgency=low
   Laszlo:
   * Fixes: NB#109022 - Hildon banner gets blurred
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 27 Apr 2009 17:26:43 +0300
+  Adam:
+  * Fixes: NB#111388 - Thumb nails in switcher are overlaping.
+  * Fixes: NB#113103 - Desktop crashes when camera application is closed
+  * Fixes: NB#111831 - zero division crashes in
+    hd-task-navigator.c:layout_thumbs
+  * Fixes: NB#114058 - Blank status area is shown on the incoming call view in
+    portrait mode.
+
+  Gordon:
+  * Fixes: NB#111647 - Camera is not coming in to foreground if opened while
+    any dialog is opened in layout mode
+  * Fixes: NB#109899 - Desktop menu items(layout mode) are displayed in normal
+    mode in certain scenario
+  * Fixes: NB#109258 - Calling screen is going into background after accepting
+    VoIP call in Add widget screen.
+  * Fix for the occasional titlebar flickering.
+  * Fixes: NB#112996 - Status menu icons disappears with certian scenario
+  * Fixes: NB#113697 - hildon status bar & application launcher icon dissapear
+    after exit_app_view
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 30 Apr 2009 14:20:25 +0300
 
 hildon-desktop (1:2.2.43-1) unstable; urgency=low
 
