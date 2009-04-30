@@ -445,7 +445,8 @@ on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
   angle = data->angle * amt;
 
   actor = CLUTTER_ACTOR(hd_render_manager_get());
-  clutter_actor_set_rotation(actor, CLUTTER_Z_AXIS, angle,
+  clutter_actor_set_rotation(actor, CLUTTER_Z_AXIS,
+                             frame_num < n_frames ? angle : 0,
       HD_COMP_MGR_SCREEN_WIDTH/2, HD_COMP_MGR_SCREEN_HEIGHT/2, 0);
   /* use this actor to dim out the screen */
   clutter_actor_raise_top(data->particles[0]);

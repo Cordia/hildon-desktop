@@ -1,3 +1,12 @@
+2009-04-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Regression fix.  Rotating back and forth makes the thumbnail titles
+	in switcher disappear.
+
+	* src/util/hd-transition.c (on_rotate_screen_timeline_new_frame):
+	  At the last frame of the animation rotate hdrm to angle=0.
+	  Otherwise it remains slightly tilted.
+
 2009-04-30  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#113685 - Div0 - this fixes a single occurance. There 
