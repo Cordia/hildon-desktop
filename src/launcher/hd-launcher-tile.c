@@ -57,6 +57,9 @@ struct _HdLauncherTilePrivate
   ClutterActor *label;
   TidyHighlight *icon_glow;
   ClutterTimeline *glow_timeline;
+
+  ClutterActor *click_area;
+
   float glow_amount;
   float glow_radius; // radius of glow - loaded from transitions.ini
 
@@ -94,13 +97,14 @@ static void hd_launcher_tile_set_property (GObject      *gobject,
                                             const GValue *value,
                                             GParamSpec   *pspec);
 /* ClutterActor */
-static gboolean hd_launcher_tile_button_press (ClutterActor       *actor,
-                                               ClutterButtonEvent *event);
-static gboolean hd_launcher_tile_button_release (ClutterActor       *actor,
-                                                 ClutterButtonEvent *event);
+static gboolean hd_launcher_tile_button_press (ClutterActor       *actor);
+static gboolean hd_launcher_tile_button_release (ClutterActor       *actor);
 static void hd_launcher_on_glow_frame(ClutterTimeline *timeline,
                                       gint frame_num,
                                       ClutterActor *actor);
+static void hd_launcher_tile_allocate (ClutterActor          *self,
+                                       const ClutterActorBox *box,
+                                       gboolean       absolute_origin_changed);
 
 G_DEFINE_TYPE (HdLauncherTile, hd_launcher_tile, CLUTTER_TYPE_GROUP);
 
@@ -118,8 +122,7 @@ hd_launcher_tile_class_init (HdLauncherTileClass *klass)
   gobject_class->dispose      = hd_launcher_tile_dispose;
   gobject_class->finalize     = hd_launcher_tile_finalize;
 
-  actor_class->button_press_event   = hd_launcher_tile_button_press;
-  actor_class->button_release_event = hd_launcher_tile_button_release;
+  actor_class->allocate = hd_launcher_tile_allocate;
 
   pspec = g_param_spec_string ("icon-name",
                                "Icon Name",
@@ -147,13 +150,42 @@ hd_launcher_tile_class_init (HdLauncherTileClass *klass)
 static void
 hd_launcher_tile_init (HdLauncherTile *tile)
 {
-  tile->priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
+  HdLauncherTilePrivate *priv =
+        tile->priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
 
-  clutter_actor_set_reactive (CLUTTER_ACTOR (tile), TRUE);
+
+  clutter_actor_set_name(CLUTTER_ACTOR(tile), "HdLauncherTile");
   clutter_actor_set_size(CLUTTER_ACTOR(tile),
       HD_LAUNCHER_TILE_WIDTH,
       HD_LAUNCHER_TILE_HEIGHT);
   clutter_actor_show(CLUTTER_ACTOR(tile));
+
+  /* We have a 'click area' because when the tile is near the side of the
+   * screen, the click area is actually clipped to the margins. This
+   * is done on an overridden allocate function.
+   *
+   * It's good that we can make this actor a rectangle and see exactly
+   * where the user is allowed to click - but to make it not draw anything
+   * but still be selectable */
+  if (TRUE)
+    priv->click_area = clutter_group_new();
+  else
+    {
+      ClutterColor red = {0xFF, 0x00, 0x00, 0x3F};
+      priv->click_area = clutter_rectangle_new_with_color(&red);
+    }
+
+  clutter_actor_set_name(priv->click_area, "HdLauncherTile::click_area");
+  clutter_actor_set_reactive(priv->click_area, TRUE);
+  clutter_actor_set_position(priv->click_area, 0, 0);
+  clutter_actor_set_size(priv->click_area,
+      HD_LAUNCHER_TILE_WIDTH, HD_LAUNCHER_TILE_HEIGHT);
+  clutter_container_add_actor(CLUTTER_CONTAINER(tile), priv->click_area);
+
+  g_signal_connect_swapped(priv->click_area, "button-press-event",
+                           G_CALLBACK (hd_launcher_tile_button_press), tile);
+  g_signal_connect_swapped(priv->click_area, "button-release-event",
+                           G_CALLBACK (hd_launcher_tile_button_release), tile);
 
   tile->priv->glow_timeline = clutter_timeline_new_for_duration(200);
   g_signal_connect(tile->priv->glow_timeline, "new-frame",
@@ -286,7 +318,6 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
   gtk_icon_info_free(info);
 
   priv->icon_glow = tidy_highlight_new(CLUTTER_TEXTURE(priv->icon));
-  clutter_actor_set_reactive (CLUTTER_ACTOR (priv->icon_glow), FALSE);
   clutter_actor_set_size (CLUTTER_ACTOR(priv->icon_glow),
         HD_LAUNCHER_TILE_GLOW_SIZE,
         HD_LAUNCHER_TILE_GLOW_SIZE);
@@ -339,6 +370,7 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
     font_name = g_strdup ("Nokia Sans 18px");
 
   priv->label = clutter_label_new_full (font_name, priv->text, &text_color);
+  clutter_actor_set_name(priv->label, "HdLauncherTile::label");
 
   /* FIXME: This is a huge work-around because clutter/pango do not
    * support setting ellipsize to NONE and wrap to FALSE.
@@ -459,43 +491,31 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
 }
 
 static gboolean
-hd_launcher_tile_button_press (ClutterActor       *actor,
-                               ClutterButtonEvent *event)
+hd_launcher_tile_button_press (ClutterActor       *actor)
 {
-  if (event->button == 1)
-    {
-      HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
+  HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
 
-      /* Unglow everything else, but glow this tile */
-      hd_launcher_tile_set_glow(HD_LAUNCHER_TILE(actor), TRUE);
-      /* Set the 'pressed' flag */
-      priv->is_pressed = TRUE;
+  /* Unglow everything else, but glow this tile */
+  hd_launcher_tile_set_glow(HD_LAUNCHER_TILE(actor), TRUE);
+  /* Set the 'pressed' flag */
+  priv->is_pressed = TRUE;
 
-      return TRUE;
-    }
-
-  return FALSE;
+  return TRUE;
 }
 
 static gboolean
-hd_launcher_tile_button_release (ClutterActor       *actor,
-                                 ClutterButtonEvent *event)
+hd_launcher_tile_button_release (ClutterActor       *actor)
 {
-  if (event->button == 1)
-    {
-      HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
+  HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
 
-      if (!priv->is_pressed)
-        return TRUE;
+  if (!priv->is_pressed)
+    return TRUE;
 
-      priv->is_pressed = FALSE;
+  priv->is_pressed = FALSE;
 
-      g_signal_emit (actor, launcher_tile_signals[CLICKED], 0);
+  g_signal_emit (actor, launcher_tile_signals[CLICKED], 0);
 
-      return TRUE;
-    }
-
-  return FALSE;
+  return TRUE;
 }
 
 static void
@@ -536,6 +556,34 @@ hd_launcher_tile_finalize (GObject *gobject)
   g_free (priv->text);
 
   G_OBJECT_CLASS (hd_launcher_tile_parent_class)->finalize (gobject);
+}
+
+static void
+hd_launcher_tile_allocate (ClutterActor          *self,
+                           const ClutterActorBox *box,
+                           gboolean               absolute_origin_changed)
+{
+  HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (self);
+  gint right_margin = HD_LAUNCHER_PAGE_WIDTH-HD_LAUNCHER_RIGHT_MARGIN;
+  gint box_x1 = CLUTTER_UNITS_TO_INT(box->x1);
+  gint box_x2 = CLUTTER_UNITS_TO_INT(box->x2);
+  /* Set our default click area - we position our icons HILDON_MARGIN_DEFAULT
+   * apart, so make us extend sideways a bit so there are no gaps */
+  gint xmin = -HILDON_MARGIN_DEFAULT/2;
+  gint xmax = HD_LAUNCHER_TILE_WIDTH + HILDON_MARGIN_DEFAULT/2;
+
+  /* When this tile is moved around, set our click area up so that
+   * it is clipped to the margins */
+  if (box_x1 < HD_LAUNCHER_LEFT_MARGIN)
+    xmin = HD_LAUNCHER_LEFT_MARGIN - box_x1;
+  if (box_x2 > right_margin)
+    xmax = HD_LAUNCHER_TILE_WIDTH - (box_x2 - right_margin);
+
+  clutter_actor_set_x(priv->click_area, xmin);
+  clutter_actor_set_width(priv->click_area, xmax-xmin);
+
+  CLUTTER_ACTOR_CLASS (hd_launcher_tile_parent_class)->allocate (
+      self, box, absolute_origin_changed);
 }
 
 /* Reset this tile to the state it should be in when first shown */

@@ -1,3 +1,13 @@
+2009-04-30  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#114008 - Task launcher side margins not big enough
+
+	* src/launcher/hd-launcher.h: Made constant names more obvious
+	* src/launcher/hd-launcher-tile.c
+	* src/launcher/hd-launcher.c: Now work out when a tile is clicked
+	  using a clutter actor for the click area (that is clipped to
+	  the launcher margins as per spec).	
+
 2009-04-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.44
