@@ -1,3 +1,13 @@
+2009-05-01  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fix issue where app(with dialog)->switcher->app->switcher->original
+	app would remove blur behind the dialog.
+
+	* src/home/hd-render-manager.c
+	* src/home/hd-switcher.c: Move call to update blurring from hdrm to
+	  switcher, as previous call to update blur state was done before the
+	  task navigator had finished zooming in.	
+
 2009-04-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Regression fix.  Rotating back and forth makes the thumbnail titles

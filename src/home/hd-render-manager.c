@@ -877,13 +877,6 @@ void hd_render_manager_sync_clutter_after ()
       hd_render_manager_blurred_changed();
     }
 
-  /* If we've gone back to the app state, make
-   * sure we blur the right things (fix problem where going from
-   * task launcher->app breaks blur)
-   */
-  if (STATE_IS_APP(priv->state))
-    hd_render_manager_update_blur_state(0);
-
   /* The launcher transition should hide the launcher, so we shouldn't
    * need this.
   if (priv->state != HDRM_STATE_LAUNCHER)
