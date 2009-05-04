@@ -1,3 +1,10 @@
+2009-05-04  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.46
+
+	* src/home/hd-home.c (hd_home_add_applet): Do not free 'view_key'
+	twice, it makes HD abort. 
+
 2009-05-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#111183 Random desktop crash observed from task switcher.

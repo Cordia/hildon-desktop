@@ -934,10 +934,12 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   MBWMCompMgrClient *cclient;
   HdHomeApplet *wm_applet;
 
-  cclient = g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient");
+  cclient = g_object_get_data (G_OBJECT (applet),
+                               "HD-MBWMCompMgrClutterClient");
   wm_applet = (HdHomeApplet *) cclient->wm_client;
 
-  view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view", wm_applet->applet_id);
+  view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view",
+                              wm_applet->applet_id);
 
   view_id = gconf_client_get_int (client,
                                   view_key,
@@ -961,7 +963,6 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
                      error->message);
           g_clear_error (&error);
         }
-      g_free (view_key);
 
       gconf_client_suggest_sync (client,
                                  &error);
@@ -988,8 +989,8 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
     {
       ClutterActor *view;
 
-      view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
-                                              view_id);
+      view = hd_home_view_container_get_view (
+                      HD_HOME_VIEW_CONTAINER (priv->view_container), view_id);
       hd_home_view_add_applet (HD_HOME_VIEW (view), applet, FALSE);
     }
   else
