@@ -607,6 +607,8 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
                                "HD-MBWMCompMgrClutterClient");
   if (!hclient)
     {
+      /* This may happen if the client was unmapped while we were zooming in.
+       * The cmgrcc is destroyed and it's pointer is cleared from the actor. */
       g_warning("%s: Actor that has just been zoomed in on has no "
                 "HD-MBWMCompMgrClutterClient", __FUNCTION__);
       /* this is a real problem - not a normal use case, so just return
@@ -619,12 +621,26 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
     {
       MBWindowManagerClient *c;
 
-      hd_render_manager_set_state(HDRM_STATE_APP);
-      hd_render_manager_stop_transition();
+      if ((c = MB_WM_COMP_MGR_CLIENT(hclient)->wm_client) != NULL)
+        {
+          g_debug("mb_wm_activate_client(%p)", c);
 
-      c = MB_WM_COMP_MGR_CLIENT(hclient)->wm_client;
-      g_debug("mb_wm_activate_client(%p)", c);
-      mb_wm_activate_client (c->wmref, c);
+          hd_render_manager_set_state(HDRM_STATE_APP);
+          hd_render_manager_stop_transition();
+
+          mb_wm_activate_client (c->wmref, c);
+        }
+      else
+        {
+          /*
+           * A possible reason for this to happen is that the client has been 
+           * unregistered (this wm_client is cleared) but somebody still holds
+           * a reference to it (eg. a hash table, so it hasn't been destroyed).
+           * Treat it as if cmgrcc was NULL.
+           */
+          g_warning("%s: cclient->wm_client == NULL", __FUNCTION__);
+          hd_render_manager_set_state(HDRM_STATE_HOME);
+        }
     }
   else
     {
