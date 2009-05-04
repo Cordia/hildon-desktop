@@ -1660,7 +1660,23 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         || HD_IS_INFO_NOTE (c) || HD_IS_CONFIRMATION_NOTE (c))
       if (STATE_ONE_OF(hd_render_manager_get_state(),
                        HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
-        hd_render_manager_set_state(HDRM_STATE_HOME);
+        {
+          hd_render_manager_set_state(HDRM_STATE_HOME);
+          if (HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->window->geometry))
+            /*
+             * So we are in switcher view and want to get to home view
+             * to show a dialog or something.  hdrm_set_visibilities()
+             * is smart enough to leave alone dialogs (normally they
+             * are in app_top) but the case with maximized clients is
+             * different and they are subject to the regular checking.
+             * This checking would fail because the transition from
+             * switcher to home view is, well, a transition and it
+             * takes time, during which set_visibilities() refuses
+             * to show windows, even dialogs, if they are in home_blur.
+             * Soooo, let's stop the transition and problem solved.
+             */
+            hd_render_manager_stop_transition();
+        }
 
   /* Hide status menu if any window except an applet is mapped */
   if (priv->status_menu_client &&

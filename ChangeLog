@@ -1,3 +1,16 @@
+2009-05-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#114411 Sometimes incoming call dialog not shown while device
+		  in potrait mode but can hear the sound. also status menu
+		  shown empty when this happens
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
+	  Another 1-line-change-15-lines-comment fix.  Don't play the
+	  unblurring transition when we try to go to home view from switcher
+	  view because a maximized dialog, because set_visibilities()
+	  refuses to show these kind of actors as long as the switcher
+	  is visible in the background.
+
 2009-05-04  Laszlo Pere  <lpere@blumsoft.eu>
 
 	Fixes: NB#113689 - Mouse not working in the fullscreen application in
