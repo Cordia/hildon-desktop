@@ -488,11 +488,21 @@ hd_switcher_relaunch_app_callback(HdSwitcherRelaunchAppData *data)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (data->switcher)->priv;
 
-  g_signal_connect_swapped(priv->task_nav, "zoom-in-complete",
-          G_CALLBACK(hd_switcher_relaunched_app_callback),
-          data);
+  /*
+   * This is supposed to be called when a launcher->switcher blur transition
+   * is complete.  However, we might not be in switcher state because...
+   * of several reaons.  One of them is that a window was just mapped during
+   * the transition and our state is APP now.  Anyway, tana doesn't tolerate
+   * (for reasons of pedantry) requests for zooming in inappropriate states.
+   */
+  if (hd_render_manager_get_state () == HDRM_STATE_TASK_NAV)
+    {
+      g_signal_connect_swapped(priv->task_nav, "zoom-in-complete",
+              G_CALLBACK(hd_switcher_relaunched_app_callback),
+              data);
 
-  hd_switcher_item_selected (data->switcher, data->actor);
+      hd_switcher_item_selected (data->switcher, data->actor);
+    }
 
   g_signal_handlers_disconnect_by_func(
       hd_render_manager_get(),

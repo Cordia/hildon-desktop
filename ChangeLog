@@ -1,3 +1,10 @@
+2009-05-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#112824 Task button and status area disappears in a mentioned scenario.
+
+	* src/home/hd-switcher.c (hd_switcher_relaunch_app_callback):
+	  Be prepared for interrupted launcher->switcher blurring transition.
+
 2009-05-04  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.46
