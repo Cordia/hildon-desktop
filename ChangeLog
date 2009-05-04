@@ -1,3 +1,11 @@
+2009-05-04  Laszlo Pere  <lpere@blumsoft.eu>
+
+	Fixes: NB#113689 - Mouse not working in the fullscreen application in
+	the upper left corner.
+
+	* src/mb/hd-render-manager.c: Hiding the task navigator button with the
+	  blur_front group.
+
 2009-05-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#112824 Task button and status area disappears in a mentioned scenario.

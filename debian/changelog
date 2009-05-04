@@ -2,6 +2,10 @@ hildon-desktop (1:2.2.47-1~unreleased) unstable; urgency=low
 
   * writeme
 
+  Laszlo:
+  * Fixes: NB#113689 - Mouse not working in the fullscreen application in
+    the upper left corner.
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  4 May 2009 10:37:55 +0300
 
 hildon-desktop (1:2.2.46-1) unstable; urgency=low
