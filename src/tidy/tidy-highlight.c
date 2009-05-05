@@ -165,7 +165,7 @@ tidy_highlight_paint (ClutterActor *self)
     clutter_actor_realize (parent_texture);
 
   col = priv->color;
-  col.alpha = clutter_actor_get_paint_opacity (self);
+  col.alpha = col.alpha * clutter_actor_get_paint_opacity (self) / 256;
   cogl_color (&col);
 
   clutter_actor_get_allocation_coords (self, &x_1, &y_1, &x_2, &y_2);

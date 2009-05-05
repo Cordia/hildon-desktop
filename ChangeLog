@@ -1,3 +1,13 @@
+2009-05-05  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-transition.c: Re-enabled sounds as NB#105635 appears to
+	  have been fixed now. Added easing to opacity in 'fade' transiton,
+	  and modified ramp/easing functions to produce the exact values at
+	  endpoints (fix for inaccuracies in PI/sin/cos)
+	* src/tidy/tidy-highlight.c: Now use alpha value from the colour,
+	  which allows [launcher_glow]brightness to work in transitions.ini
+	* data/transitions.ini: MartinG's latest transition values
+
 2009-05-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/mb/hd-desktop.c:

@@ -83,19 +83,25 @@ hd_transition_overshoot(float x)
 float
 hd_transition_smooth_ramp(float amt)
 {
-  return (1.0f - cos(amt*3.141592)) * 0.5f;
+  if (amt>0 && amt<1)
+    return (1.0f - cos(amt*3.141592)) * 0.5f;
+  return amt;
 }
 
 static float
 hd_transition_ease_in(float amt)
 {
-  return (1.0f - cos(amt*3.141592*0.5));
+  if (amt>0 && amt<1)
+    return (1.0f - cos(amt*3.141592*0.5));
+  return amt;
 }
 
 static float
 hd_transition_ease_out(float amt)
 {
-  return cos((1-amt)*3.141592*0.5);
+  if (amt>0 && amt<1)
+    return cos((1-amt)*3.141592*0.5);
+  return 1-amt;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -247,6 +253,7 @@ on_fade_timeline_new_frame(ClutterTimeline *timeline,
   /* reverse if we're removing this */
   if (data->event == MBWMCompMgrClientEventUnmap)
     amt = 1-amt;
+  amt = hd_transition_smooth_ramp(amt);
 
   clutter_actor_set_opacity(actor, (int)(255*amt));
 }
@@ -997,11 +1004,6 @@ hd_transition_play_sound (const gchar * fname)
     GTimer *timer;
     gint millisec;
 
-    /* FIXME: Take this out when Bug 105635 is fixed */
-    g_debug ("%s: Canberra sound disabled for speed reasons, %s",
-             __FUNCTION__, fname);
-    return;
-
     /* Canberra uses threads. */
     if (hd_disable_threads())
       return;
@@ -1043,7 +1045,7 @@ hd_transition_play_sound (const gchar * fname)
     g_timer_destroy(timer);
 
     if (millisec > 100) /* [Bug 105635] */
-      g_debug("%s: ca_context_play_full is blocking for %d ms to play %s",
+      g_warning("%s: ca_context_play_full is blocking for %d ms to play %s",
           __FUNCTION__, millisec, fname);
 
 }
