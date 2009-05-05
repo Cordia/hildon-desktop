@@ -1,3 +1,11 @@
+2009-05-05  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#114409 - Launcher and application view dismissible when
+	                   tapped inbetween the icons.
+	                   	
+	* src/launcher/hd-launcher-grid.c: Add an actor to block clicks
+	  between rows of icons
+
 2009-05-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Problem fix: when two browser windows are open (say bookmarks

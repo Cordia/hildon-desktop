@@ -40,6 +40,7 @@
 
 #include <math.h>
 
+#include "hd-launcher.h"
 #include "hd-launcher-item.h"
 #include "hd-comp-mgr.h"
 
@@ -64,6 +65,9 @@ struct _HdLauncherGridPrivate
 {
   /* list of actors */
   GList *tiles;
+  /* list of 'blocker' actors that block presses
+   * on the empty rows of pixels between the icons */
+  GList *blockers;
 
   guint h_spacing;
   guint v_spacing;
@@ -446,6 +450,13 @@ hd_launcher_grid_allocate (ClutterActor          *actor,
   GList *l;
   guint cur_height, n_visible_launchers, n_rows;
 
+  /* Free our list of 'blocker' actors that we use to block mouse clicks */
+  g_list_foreach(priv->blockers,
+                 (GFunc) clutter_actor_destroy,
+                 NULL);
+  g_list_free(priv->blockers);
+  priv->blockers = NULL;
+
   /* chain up to save the allocation */
   parent_class = CLUTTER_ACTOR_CLASS (hd_launcher_grid_parent_class);
   parent_class->allocate (actor, box, origin_changed);
@@ -456,9 +467,30 @@ hd_launcher_grid_allocate (ClutterActor          *actor,
   cur_height = HD_LAUNCHER_PAGE_YMARGIN;
   l = priv->tiles;
   while (l) {
+    /* Allocate all icons on this row */
     l = _hd_launcher_grid_allocate_row(l, &n_visible_launchers,
                                        cur_height, priv->h_spacing,
                                        origin_changed);
+    if (l)
+      {
+        /* If there is another row, we must create an actor that
+         * goes between the two rows that will grab the clicks that
+         * would have gone between them and dismissed the launcher  */
+        ClutterActorBox box;
+        ClutterActor *blocker = clutter_group_new();
+        clutter_actor_set_name(blocker, "HdLauncherGrid::blocker");
+        clutter_actor_show(blocker);
+        clutter_actor_set_reactive(blocker, TRUE);
+        box.x1 = CLUTTER_UNITS_FROM_INT(HD_LAUNCHER_LEFT_MARGIN);
+        box.y1 = CLUTTER_UNITS_FROM_INT(cur_height + HD_LAUNCHER_TILE_HEIGHT);
+        box.x2 = CLUTTER_UNITS_FROM_INT(
+            HD_LAUNCHER_GRID_WIDTH - HD_LAUNCHER_RIGHT_MARGIN);
+        box.y2 = CLUTTER_UNITS_FROM_INT(cur_height +
+            HD_LAUNCHER_TILE_HEIGHT + priv->v_spacing);
+        clutter_actor_allocate(blocker, &box, origin_changed);
+
+        priv->blockers = g_list_prepend(priv->blockers, blocker);
+      }
     cur_height += HD_LAUNCHER_TILE_HEIGHT + priv->v_spacing;
   }
 }
@@ -519,6 +551,15 @@ hd_launcher_grid_pick (ClutterActor       *actor,
       if (CLUTTER_ACTOR_IS_VISIBLE (child))
         clutter_actor_paint (child);
     }
+  /* render blocking areas to stop clicks through to the background */
+  for (l = priv->blockers; l != NULL; l = l->next)
+    {
+      ClutterActor *child = l->data;
+
+      if (CLUTTER_ACTOR_IS_VISIBLE (child))
+        clutter_actor_paint (child);
+    }
+
 
   cogl_pop_matrix ();
 }
@@ -556,6 +597,12 @@ hd_launcher_grid_dispose (GObject *gobject)
                   (GFunc) clutter_actor_destroy,
                   NULL);
   g_list_free (priv->tiles);
+
+  g_list_foreach(priv->blockers,
+                 (GFunc) clutter_actor_destroy,
+                 NULL);
+  g_list_free(priv->blockers);
+  priv->blockers = NULL;
 
   G_OBJECT_CLASS (hd_launcher_grid_parent_class)->dispose (gobject);
 }
