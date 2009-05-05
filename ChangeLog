@@ -1,3 +1,10 @@
+2009-05-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/mb/hd-desktop.c:
+	* src/mb/hd-desktop.h: Remove update of theme update related code,
+	which sets GConf keys for backgrounds. This is handled in hildon-home
+	now.
+
 2009-05-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#114411 Sometimes incoming call dialog not shown while device
