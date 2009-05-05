@@ -1,3 +1,18 @@
+2009-05-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Problem fix: when two browser windows are open (say bookmarks
+	and a web page) and you close the web page you end up in app
+	view with a ghost window (not) showing.
+
+	This is because the browser maps a window while we're in switcher
+	view.  Then we go to app view and while the transition between
+	states is still ongoing it destroys that window and set_visibilities()
+	cannot restore the visibility of the correct actor because the
+	task navigator is still showing.
+
+	* src/mb/hd-wm.c (hd_wm_client_activate):
+	  Don't animate TASK_NAV -> APP.  Related to NB#111744.
+
 2009-05-05  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-transition.c: Re-enabled sounds as NB#105635 appears to

@@ -2183,7 +2183,6 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
                                      MBWMClientTypeDesktop) &&
           !STATE_IS_APP(hd_render_manager_get_state()))
         hd_render_manager_set_state(HDRM_STATE_APP);
-
     }
 
   hd_render_manager_restack();

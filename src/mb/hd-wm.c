@@ -356,7 +356,14 @@ hd_wm_client_activate (
   }
   else if (HD_IS_APP (c))
     if (!STATE_IS_APP(hd_render_manager_get_state () ))
-      hd_render_manager_set_state (HDRM_STATE_APP);
+      {
+        gboolean wastasw = hd_render_manager_get_state() == HDRM_STATE_TASK_NAV;
+        hd_render_manager_set_state (HDRM_STATE_APP);
+        if (wastasw)
+          /* Roughly for the same reason as in hd-comp-mgr.c,
+           * see "let's stop the transition and problem solved". */
+          hd_render_manager_stop_transition ();
+      }
 	
   return wm_class->client_activate (wm, c);
 }
