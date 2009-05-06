@@ -1,3 +1,12 @@
+2009-05-06  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Don't send launcher menu loading finished signal if there's nothing
+	to load.
+	Fixes: NB#105130
+
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-launcher-tree.c:
+
 2009-05-06  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#104959, NB#110247 - Multiple layers of launcher visible

@@ -993,13 +993,6 @@ hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
       hd_app_mgr_prestartable (app, TRUE);
     }
 
-  if (G_LIKELY(the_app_mgr != NULL))
-    /*
-     * The menu was empty, hd_launcher_tree_populate() singnalled finish
-     * early on, before the app mgr is constructed.  We cannot start
-     * state checking because it needs the object.  Probably it would be
-     * pointless anyway, but somebody could fix it maybe.
-     */
     hd_app_mgr_state_check ();
 }
 

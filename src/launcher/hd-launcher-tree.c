@@ -446,7 +446,6 @@ hd_launcher_tree_populate (HdLauncherTree *tree)
   if (!priv->root)
     {
       g_warning ("%s: Menu at %s is empty", __FUNCTION__, priv->menu_path);
-      g_signal_emit (tree, tree_signals[FINISHED], 0);
       return;
     }
 
