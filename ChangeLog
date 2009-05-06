@@ -1,5 +1,17 @@
 2009-05-06  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#104959, NB#110247 - Multiple layers of launcher visible
+	                              at once
+
+	* src/launcher/hd-launcher.c: Fix for the case where there is no
+	active launcher page and we are unable to go back.
+	* src/launcher/hd-launcher-page.c: Make sure that if an animation is
+	started while another is ongoing, we properly stop the current 
+	animation first. This should fix the above bugs, but as there are no
+	exact steps to reproduce I am unable to be sure.
+
+2009-05-06  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-title-bar.c: Now make sure all items in the title bar
 	  use TitleTextColor (makes sure home edit mode text is the correct
 	  Colour)

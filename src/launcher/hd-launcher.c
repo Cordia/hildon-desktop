@@ -291,10 +291,12 @@ hd_launcher_back_button_clicked (ClutterActor *actor,
     g_signal_emit (hd_launcher_get (), launcher_signals[HIDDEN], 0);
   else
     {
-      hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
-        HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB);
-      hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
-        HD_LAUNCHER_PAGE_TRANSITION_FORWARD);
+      if (priv->active_page)
+        hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
+          HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB);
+      if (top_page)
+        hd_launcher_page_transition(HD_LAUNCHER_PAGE(top_page),
+          HD_LAUNCHER_PAGE_TRANSITION_FORWARD);
       priv->active_page = top_page;
       g_signal_emit (hd_launcher_get (), launcher_signals[CAT_HIDDEN],
                      0, NULL);
@@ -772,8 +774,9 @@ hd_launcher_background_clicked (HdLauncher *self,
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
 
   /* We don't want to send a 'clicked' event if the user has dragged more
-   * than the allowed distance - or if they released while inbetween icons. */
-  if (priv->active_page &&
+   * than the allowed distance - or if they released while inbetween icons.
+   * If we have no page, just allow any click to take us back. */
+  if (!priv->active_page ||
       (hd_launcher_page_get_drag_distance(HD_LAUNCHER_PAGE(priv->active_page)) <
                                           HD_LAUNCHER_TILE_MAX_DRAG))
     hd_launcher_back_button_clicked(0, 0, 0);

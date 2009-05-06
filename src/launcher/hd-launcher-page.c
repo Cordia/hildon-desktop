@@ -735,6 +735,9 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
       priv->transition_type == HD_LAUNCHER_PAGE_TRANSITION_LAUNCH &&
       trans_type == HD_LAUNCHER_PAGE_TRANSITION_OUT)
     return;
+  /* if we were already playing, stop the animation */
+  if (priv->transition_playing)
+    hd_launcher_page_transition_stop(page);
   /* Reset all the tiles in the grid, so they don't have any blurring */
   hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid));
 
