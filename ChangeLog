@@ -1,5 +1,11 @@
 2009-05-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
+	  Regression fix.  Information notes weren't added to the switcher
+	  thumbnail.
+
+2009-05-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Learn to deal with entirely missing menus.
 
 	* src/launcher/hd-app-mgr.c:

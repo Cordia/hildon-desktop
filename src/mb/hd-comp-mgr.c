@@ -1732,26 +1732,18 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (ctype == MBWMClientTypeNote)
     {
-      if (HD_NOTE (c)->note_type == HdNoteTypeIncomingEvent)
+      if (HD_IS_BANNER_NOTE (c) || HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c))
+        hd_render_manager_add_to_front_group(actor);
+      if (HD_IS_INCOMING_EVENT_NOTE (c))
         hd_switcher_add_notification (priv->switcher_group,
                                       HD_NOTE (c));
-      else if (HD_NOTE (c)->note_type != HdNoteTypeConfirmation)
-        {
-          /* Notes need to be pulled out right infront of the blur group
-           * manually, as they are not given focus */
-          hd_render_manager_add_to_front_group(actor);
-        }
-      else if (c->transient_for)
-        {
-          hd_switcher_add_dialog (priv->switcher_group, c, actor);
-        }
-      /* Send dbus request to mce to turn display backlight on for banner
-       * notes */
-      if (priv->mce_proxy && HD_IS_BANNER_NOTE (c))
-        {
-          g_debug ("%s. Call %s",
-                   __FUNCTION__,
-                   MCE_DISPLAY_ON_REQ);
+      if (!HD_IS_INCOMING_EVENT_NOTE (c)
+          && !HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c)
+          && c->transient_for)
+        hd_switcher_add_dialog (priv->switcher_group, c, actor);
+      if (HD_IS_BANNER_NOTE (c) && priv->mce_proxy)
+        { /* Turn display backlight on for banner notes. */
+          g_debug ("%s. Call %s", __FUNCTION__, MCE_DISPLAY_ON_REQ);
           dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
                                       G_TYPE_INVALID, G_TYPE_INVALID);
         }
