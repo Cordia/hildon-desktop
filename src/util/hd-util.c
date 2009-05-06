@@ -230,75 +230,115 @@ hd_util_change_screen_orientation_real (MBWindowManager *wm,
     return TRUE;
 }
 
-/* Data needed for screen rotation transitions. To do this, we:
- *  [state 0] Start a rotation animation that fades to black
- *  [state 1] Hide rendering and fire the state change (then wait)
- *  [state 2] Start rotation that fades back from black
- */
-typedef struct _ChangeScreenOrientationData {
+/* To be documented */
+static struct
+{
   MBWindowManager *wm;
-  gboolean goto_portrait;
-  gint state;
-} ChangeScreenOrientationData;
+
+  enum
+  {
+    GOTO_LANDSCAPE,
+    GOTO_PORTRAIT,
+  } direction, new_direction;
+
+  enum
+  {
+    IDLE,
+    FADE_OUT,
+    WAITING,
+    FADE_IN,
+  } phase;
+} Orientation_change;
 
 static gboolean
-hd_util_change_screen_orientation_cb(ChangeScreenOrientationData *data)
+hd_util_change_screen_orientation_cb (gpointer unused)
 {
-  switch (data->state)
+  g_debug ("%s: phase=%d, new_direction=%d, direction=%d",
+           __FUNCTION__, Orientation_change.phase,
+           Orientation_change.new_direction, Orientation_change.direction);
+  switch (Orientation_change.phase)
     {
-      case 0:
-        data->state++;
-        /* Start screen rotation and fade to black */
+      case IDLE:
+        /* Fade to black ((c) Metallica) */
+        Orientation_change.phase = FADE_OUT;
+        Orientation_change.direction = Orientation_change.new_direction;
         hd_transition_rotate_screen(
-              TRUE, data->goto_portrait,
-              G_CALLBACK(hd_util_change_screen_orientation_cb), data);
+                TRUE, Orientation_change.direction == GOTO_PORTRAIT,
+                G_CALLBACK(hd_util_change_screen_orientation_cb), NULL);
         break;
-      case 1:
-        data->state++;
-        hd_util_change_screen_orientation_real(data->wm, data->goto_portrait);
-        /* wait for the screen change. During this period, blank the
-         * screen by hiding hd_render_manager. Note that we could wait until
-         * redraws have finished here, but currently X blanks us for a set
-         * time period anyway - and this way it is easier to get rotation
-         * speeds sorted.  */
-        clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
+      case FADE_OUT:
+        if (Orientation_change.direction == Orientation_change.new_direction)
+          {
+            /*
+             * Wait for the screen change. During this period, blank the
+             * screen by hiding hd_render_manager. Note that we could wait
+             * until redraws have finished here, but currently X blanks us
+             * for a set time period anyway - and this way it is easier
+             * to get rotation speeds sorted.
+             */
+            Orientation_change.phase = WAITING;
+            clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
+            hd_util_change_screen_orientation_real(Orientation_change.wm,
+                         Orientation_change.direction == GOTO_PORTRAIT);
             g_timeout_add(
-                hd_transition_get_int("rotate", "duration_blanking", 500),
-                (GSourceFunc)hd_util_change_screen_orientation_cb, data);
+              hd_transition_get_int("rotate", "duration_blanking", 500),
+              hd_util_change_screen_orientation_cb, NULL);
+            break;
+          }
+        else
+          Orientation_change.direction = Orientation_change.new_direction;
+        /* Fall through */
+      case WAITING:
+        if (Orientation_change.direction == Orientation_change.new_direction)
+          { /* Fade back in */
+            Orientation_change.phase = FADE_IN;
+            clutter_actor_show(CLUTTER_ACTOR(hd_render_manager_get()));
+            hd_transition_rotate_screen(
+                    FALSE, Orientation_change.direction == GOTO_PORTRAIT,
+                    G_CALLBACK(hd_util_change_screen_orientation_cb), NULL);
+          }
+        else
+          {
+            Orientation_change.direction = Orientation_change.new_direction;
+            Orientation_change.phase = FADE_OUT;
+            hd_util_change_screen_orientation_cb (NULL);
+          }
         break;
-      case 2:
-        g_free(data);
-        /* fade back in, after re-showing the render manager */
-        clutter_actor_show(CLUTTER_ACTOR(hd_render_manager_get()));
-        hd_transition_rotate_screen(FALSE, data->goto_portrait, 0, 0);
+      case FADE_IN:
+        Orientation_change.phase = IDLE;
+        if (Orientation_change.direction != Orientation_change.new_direction)
+          hd_util_change_screen_orientation_cb (NULL);
         break;
-      default:
-        g_critical("%s: out of bounds state", __FUNCTION__);
     }
 
   return FALSE;
 }
 
-/* Change the screen's orientation by rotating 90 degrees
- * (portrait mode) or going back to landscape.
- * Returns whether the orientation has actually changed. */
+/* Start changing the screen's orientation by rotating 90 degrees
+ * (portrait mode) or going back to landscape.  Returns FALSE if
+ * orientation changing won't take place. */
 gboolean
 hd_util_change_screen_orientation (MBWindowManager *wm,
                                    gboolean goto_portrait)
 {
-  if (goto_portrait == (HD_COMP_MGR_SCREEN_HEIGHT > HD_COMP_MGR_SCREEN_WIDTH))
-    {
-      g_warning("%s: already in %s mode", __FUNCTION__,
-                goto_portrait?"Portrait":"Landscape");
-      return FALSE;
-    }
+  g_debug("%s(goto_portrait=%d)", __FUNCTION__, goto_portrait);
 
-  ChangeScreenOrientationData *data =
-    g_malloc(sizeof(ChangeScreenOrientationData));
-  data->wm = wm;
-  data->goto_portrait = goto_portrait;
-  data->state = 0;
-  hd_util_change_screen_orientation_cb(data);
+  Orientation_change.wm = wm;
+  Orientation_change.new_direction = goto_portrait
+    ? GOTO_PORTRAIT : GOTO_LANDSCAPE;
+
+  if (Orientation_change.phase == IDLE)
+    {
+      if (goto_portrait == (HD_COMP_MGR_SCREEN_HEIGHT > HD_COMP_MGR_SCREEN_WIDTH))
+        {
+          g_warning("%s: already in %s mode", __FUNCTION__,
+                    goto_portrait ? "portrait" : "landscape");
+          return FALSE;
+        }
+      hd_util_change_screen_orientation_cb(NULL);
+    }
+  else
+    g_debug ("divert");
 
   return TRUE;
 }

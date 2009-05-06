@@ -1,3 +1,25 @@
+2009-05-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Portrait mode switching improvements.
+	Fixes the problem with switching from a portrait-requesting client
+	to a non-supporting one caused rotation.
+	Fixes the problem with accepting call in portrait mode incoming call
+	dialog, which left the call application in landscape.
+
+	* src/mb/hd-wm.c (hd_wm_client_activate):
+	  Do the real activation and restacking before changing state.
+	  As a side effect it appears to fix with giving momentary focus
+	  to clients we're switching away from.  It'll be interesting to
+	  see how many other things will it break.
+	* src/home/hd-switcher.c (hd_switcher_zoom_in_complete):
+	  Don't change state, just rely on client activation.
+	* src/util/hd-util.c (hd_util_change_screen_orientation):
+	  Make the rotation transition more robust.  Previously if mixed up
+	  things when attempted in parallel, now it should recover gracefully
+	  and orient the screen to the last requested direction.
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  debug print
+
 2009-05-06  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Don't send launcher menu loading finished signal if there's nothing

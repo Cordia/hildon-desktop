@@ -347,6 +347,12 @@ hd_wm_client_activate (
     MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
 
   /*
+   * This will restack, which is necessary for us before going to APP state,
+   * because it makes decisions based on the topmost application on the stack.
+   */
+  gboolean ret = wm_class->client_activate (wm, c);
+
+  /*
    * When activating the client we hide the task switcher.
    */
   if (c == wm->desktop)
@@ -365,7 +371,7 @@ hd_wm_client_activate (
           hd_render_manager_stop_transition ();
       }
 	
-  return wm_class->client_activate (wm, c);
+  return ret;
 }
 
 

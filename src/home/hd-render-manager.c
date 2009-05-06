@@ -1225,7 +1225,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if ((   (oldstate != HDRM_STATE_APP_PORTRAIT  && state == HDRM_STATE_APP)
            || (oldstate != HDRM_STATE_HOME_PORTRAIT && state == HDRM_STATE_HOME))
           && hd_comp_mgr_should_be_portrait (priv->comp_mgr))
-        {
+        { g_debug("divert");
           priv->in_set_state = FALSE;
           hd_render_manager_set_state (state == HDRM_STATE_APP
                                        ? HDRM_STATE_APP_PORTRAIT

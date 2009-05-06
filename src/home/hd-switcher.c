@@ -632,12 +632,8 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       MBWindowManagerClient *c;
 
       if ((c = MB_WM_COMP_MGR_CLIENT(hclient)->wm_client) != NULL)
-        {
+        { /* This will switch to APP state. */
           g_debug("mb_wm_activate_client(%p)", c);
-
-          hd_render_manager_set_state(HDRM_STATE_APP);
-          hd_render_manager_stop_transition();
-
           mb_wm_activate_client (c->wmref, c);
         }
       else
