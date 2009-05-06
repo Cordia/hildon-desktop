@@ -45,7 +45,7 @@ G_BEGIN_DECLS
 /* Desktop file entries */
 #define HD_DESKTOP_ENTRY_GROUP         "Desktop Entry"
 /* Standard categories */
-#define HD_LAUNCHER_ITEM_DEFAULT_CATEGORY "applications"
+#define HD_LAUNCHER_ITEM_DEFAULT_CATEGORY "Applications"
 #define HD_LAUNCHER_ITEM_TOP_CATEGORY     "Main"
 
 typedef enum {
@@ -78,6 +78,7 @@ GType              hd_launcher_item_type_get_type (void) G_GNUC_CONST;
 GType              hd_launcher_item_get_type      (void) G_GNUC_CONST;
 
 HdLauncherItem *   hd_launcher_item_new_from_keyfile (const gchar *id,
+                                                      const gchar *category,
                                                       GKeyFile *key_file,
                                                       GError   **error);
 const gchar *      hd_launcher_item_get_id           (HdLauncherItem *item);

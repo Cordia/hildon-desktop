@@ -1,6 +1,6 @@
 desktopdir = $(datadir)/applications/hildon
 desktop_DATA = \
-	applications.desktop
-	
+	applications.directory
+
 EXTRA_DIST = $(desktop_DATA)
 

@@ -77,7 +77,6 @@ typedef enum
 
 struct _HdAppMgrPrivate
 {
-  /* TODO: Remove this and use libgnome-menu. */
   HdLauncherTree *tree;
 
   DBusGProxy *dbus_proxy;
@@ -328,13 +327,11 @@ hd_app_mgr_init (HdAppMgr *self)
   for (int i = 0; i < NUM_QUEUES; i++)
     priv->queues[i] = g_queue_new ();
 
-  /* TODO: Move handling of HdLauncherTree here. */
   priv->tree = hd_launcher_tree_new (NULL);
   g_signal_connect (priv->tree, "finished",
                     G_CALLBACK (hd_app_mgr_populate_tree_finished),
                     self);
-  if (!hd_disable_threads())
-    hd_launcher_tree_populate (priv->tree);
+  hd_launcher_tree_populate (priv->tree);
 
   /* Start memory limits. */
   priv->notify_low_pages = hd_app_mgr_read_lowmem (LOWMEM_PROC_NOTIFY_LOW);
@@ -923,7 +920,7 @@ hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (HD_APP_MGR (data));
   /* We need to copy thess lists because we'll be modifying them. */
   GList *apps = g_list_copy (priv->running_apps);
-  GList *items = hd_launcher_tree_get_items (tree, NULL);
+  GList *items = hd_launcher_tree_get_items (tree);
 
   /* First, traverse the already running apps to see if their HdLauncherApp
    * info has changed.
@@ -1524,7 +1521,7 @@ static DBusHandlerResult hd_app_mgr_dbus_app_died (DBusConnection *conn,
   }
 
   /* Find which app died. */
-  link = g_list_find_custom (hd_launcher_tree_get_items (priv->tree, NULL),
+  link = g_list_find_custom (hd_launcher_tree_get_items (priv->tree),
                              (gconstpointer)filename,
                              (GCompareFunc)_hd_app_mgr_compare_launcher_exec);
   if (link)
@@ -1686,7 +1683,7 @@ hd_app_mgr_match_window (const char *res_name,
   /* Well, there wasn't any already running app, so we'll have to look for
    * a launcher that matches.
    */
-  GList *launchers = hd_launcher_tree_get_items (priv->tree, NULL);
+  GList *launchers = hd_launcher_tree_get_items (priv->tree);
   app = NULL;
 
   if (res_name || res_class)

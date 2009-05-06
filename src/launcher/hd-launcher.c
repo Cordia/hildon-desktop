@@ -38,6 +38,7 @@
 #include <tidy/tidy-finger-scroll.h>
 
 #include "hildon-desktop.h"
+#include "hd-launcher-grid.h"
 #include "hd-launcher-page.h"
 #include "hd-gtk-utils.h"
 #include "hd-render-manager.h"
@@ -98,6 +99,8 @@ static gboolean hd_launcher_captured_event_cb (HdLauncher *launcher,
 static gboolean hd_launcher_background_clicked (HdLauncher *self,
                                                 ClutterButtonEvent *event,
                                                 gpointer *data);
+static void hd_launcher_populate_tree_starting (HdLauncherTree *tree,
+                                                gpointer data);
 static void hd_launcher_populate_tree_finished (HdLauncherTree *tree,
                                                 gpointer data);
 static void hd_launcher_transition_new_frame(ClutterTimeline *timeline,
@@ -185,9 +188,12 @@ static void hd_launcher_constructed (GObject *gobject)
                           HD_LAUNCHER_PAGE_WIDTH, HD_LAUNCHER_PAGE_HEIGHT);
 
   priv->tree = g_object_ref (hd_app_mgr_get_tree ());
+  g_signal_connect (priv->tree, "starting",
+                    G_CALLBACK (hd_launcher_populate_tree_starting),
+                    gobject);
   g_signal_connect (priv->tree, "finished",
                     G_CALLBACK (hd_launcher_populate_tree_finished),
-                    NULL);
+                    gobject);
 
   /* Add callback for clicked background */
   clutter_actor_set_reactive ( self, TRUE );
@@ -195,13 +201,6 @@ static void hd_launcher_constructed (GObject *gobject)
                     G_CALLBACK(hd_launcher_captured_event_cb), 0);
   g_signal_connect (self, "button-release-event",
                     G_CALLBACK(hd_launcher_background_clicked), 0);
-
-  ClutterActor *top_page = hd_launcher_page_new (NULL, NULL);
-  clutter_container_add_actor (CLUTTER_CONTAINER (self),
-                               top_page);
-  clutter_actor_hide (top_page);
-  priv->active_page = NULL;
-  g_datalist_set_data (&priv->pages, HD_LAUNCHER_ITEM_TOP_CATEGORY, top_page);
 
   /* App launch transition */
   priv->launch_image = 0;
@@ -350,6 +349,28 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
                  0, data, NULL);
 }
 
+static void
+_hd_launcher_clear_page (GQuark key_id, gpointer data, gpointer user_data)
+{
+  HdLauncherPage *page = HD_LAUNCHER_PAGE (data);
+  hd_launcher_grid_clear (HD_LAUNCHER_GRID (hd_launcher_page_get_grid (page)));
+}
+
+static void
+hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
+{
+  HdLauncher *launcher = HD_LAUNCHER (data);
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
+
+  if (priv->pages)
+    {
+      g_datalist_foreach (&priv->pages, _hd_launcher_clear_page, NULL);
+      g_dataset_destroy (&priv->pages);
+      priv->pages = NULL;
+    }
+  g_datalist_init(&priv->pages);
+}
+
 /*
  * Creating the pages and tiles
  */
@@ -434,12 +455,21 @@ hd_launcher_lazy_traverse_cleanup (gpointer data)
 static void
 hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
 {
+  HdLauncher *launcher = HD_LAUNCHER (data);
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
   HdLauncherTraverseData *tdata = g_new0 (HdLauncherTraverseData, 1);
-  tdata->items = hd_launcher_tree_get_items(tree, NULL);
+  tdata->items = hd_launcher_tree_get_items(tree);
 
   /* First we traverse the list and create all the categories,
    * so that apps can be correctly put into them.
    */
+  ClutterActor *top_page = hd_launcher_page_new (NULL, NULL);
+  clutter_container_add_actor (CLUTTER_CONTAINER (launcher),
+                               top_page);
+  clutter_actor_hide (top_page);
+  priv->active_page = NULL;
+  g_datalist_set_data (&priv->pages, HD_LAUNCHER_ITEM_TOP_CATEGORY, top_page);
+
   g_list_foreach (tdata->items, (GFunc) hd_launcher_create_page, NULL);
 
   /* Then we add the tiles to them in a idle callback. */

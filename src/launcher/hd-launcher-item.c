@@ -47,7 +47,7 @@ hd_launcher_item_type_get_type (void)
     {
       static GEnumValue values[] = {
         { HD_APPLICATION_LAUNCHER, "HdLauncherApp", "Application" },
-        { HD_CATEGORY_LAUNCHER, "HdLauncherCat", "Category" },
+        { HD_CATEGORY_LAUNCHER, "HdLauncherCat", "Directory" },
         { 0, NULL, NULL }
       };
 
@@ -91,7 +91,6 @@ G_DEFINE_ABSTRACT_TYPE (HdLauncherItem, hd_launcher_item, G_TYPE_OBJECT);
 #define HD_DESKTOP_ENTRY_NAME          "Name"
 #define HD_DESKTOP_ENTRY_ICON          "Icon"
 #define HD_DESKTOP_ENTRY_COMMENT       "Comment"
-#define HD_DESKTOP_ENTRY_CATEGORY      "X-Maemo-Category"
 #define HD_DESKTOP_ENTRY_TEXT_DOMAIN   "X-Text-Domain"
 #define HD_DESKTOP_ENTRY_NO_DISPLAY    "NoDisplay"
 #define HD_DESKTOP_ENTRY_USER_POSITION "X-Osso-User-Position"
@@ -332,20 +331,10 @@ hd_launcher_item_parse_keyfile (HdLauncherItem *item,
                                              HD_DESKTOP_ENTRY_GROUP,
                                              HD_DESKTOP_ENTRY_TEXT_DOMAIN,
                                              NULL);
-  priv->category = g_key_file_get_string (key_file,
-                                          HD_DESKTOP_ENTRY_GROUP,
-                                          HD_DESKTOP_ENTRY_CATEGORY,
-                                          NULL);
-  if (!priv->category)
-    priv->category = g_strdup (HD_LAUNCHER_ITEM_DEFAULT_CATEGORY);
-
   priv->position = g_key_file_get_integer (key_file,
                                            HD_DESKTOP_ENTRY_GROUP,
                                            HD_DESKTOP_ENTRY_USER_POSITION,
                                            NULL);
-  if (priv->position == 0)
-    priv->position = 1000;
-
   return TRUE;
 }
 
@@ -378,6 +367,7 @@ _hd_launcher_app_main_position (const gchar *id)
 
 HdLauncherItem *
 hd_launcher_item_new_from_keyfile (const gchar *id,
+                                   const gchar *category,
                                    GKeyFile *key_file,
                                    GError **error)
 {
@@ -458,15 +448,20 @@ hd_launcher_item_new_from_keyfile (const gchar *id,
       return NULL;
     }
 
-  /* FIXME: The list of apps in the main category is currently hard-coded
-   * until we have freedesktop menu support or equivalent.
-   */
-  guint main_pos = _hd_launcher_app_main_position (id);
-  if (main_pos) {
-    if (result->priv->category)
-      g_free (result->priv->category);
+  if (category)
+    result->priv->category = g_strdup (category);
+  else
     result->priv->category = g_strdup (HD_LAUNCHER_ITEM_TOP_CATEGORY);
-    result->priv->position = main_pos;
+
+  /* As many apps don't have a correct position yet, we hard code some
+   * default values.
+   */
+  if (!hd_launcher_item_get_position (result)) {
+    guint main_pos = _hd_launcher_app_main_position (id);
+    if (main_pos)
+      result->priv->position = main_pos;
+    else
+      result->priv->position = 1000;
   }
 
   return result;

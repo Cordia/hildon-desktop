@@ -1,0 +1,37 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
+
+<Menu>
+
+  <Name>Main</Name>
+
+  <!-- Search the default locations -->
+  <AppDir>/usr/share/applications/hildon</AppDir>
+  <DirectoryDir>/usr/share/applications/hildon</DirectoryDir>
+
+  <Include>
+    <Filename>browser.desktop</Filename>
+    <Filename>mediaplayer.desktop</Filename>
+    <Filename>calendar.desktop</Filename>
+    <Filename>image-viewer.desktop</Filename>
+    <Filename>osso-addressbook.desktop</Filename>
+    <Filename>rtcom-call-ui.desktop</Filename>
+    <Filename>nokia-maps.desktop</Filename>
+    <Filename>camera-ui.desktop</Filename>
+    <Filename>modest.desktop</Filename>
+    <Filename>rtcom-messaging-ui.desktop</Filename>
+    <Filename>worldclock.desktop</Filename>
+    <Filename>osso_calculator.desktop</Filename>
+    <Filename>hildon-application-manager.desktop</Filename>
+    <Filename>hildon-control-panel.desktop</Filename>
+  </Include>
+
+  <Menu>
+    <Name>Applications</Name>
+    <Directory>applications.directory</Directory>
+    <OnlyUnallocated/>
+    <Include>
+      <All/>
+    </Include>
+  </Menu>
+</Menu>

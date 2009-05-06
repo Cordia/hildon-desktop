@@ -1,3 +1,24 @@
+2009-05-06  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Use libgnome-menu to (re)load task launcher contents.
+	Fixes: NB#94416, NB#96458, NB#100815
+
+	* configure.ac:
+	* data/Makefile.am:
+	* data/desktop/Makefile.am:
+	* data/desktop/applications.directory:
+	* data/menu/Makefile.am:
+	* data/menu/hildon.menu:
+	* debian/control:
+	* debian/hildon-desktop.install:
+	* src/launcher/hd-app-mgr.c:
+	* src/launcher/hd-launcher-item.c:
+	* src/launcher/hd-launcher-item.h:
+	* src/launcher/hd-launcher-tree.c:
+	* src/launcher/hd-launcher-tree.h:
+	* src/launcher/hd-launcher.c:
+	* src/launcher/hd-launcher.h:
+
 2009-05-06  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.47

@@ -34,7 +34,7 @@
 #include <glib-object.h>
 #include <clutter/clutter-actor.h>
 
-#include "hd-launcher-tree.h"
+#include "hd-app-mgr.h"
 #include "hd-launcher-app.h"
 #include "hd-launcher-tile.h"
 

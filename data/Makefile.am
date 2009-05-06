@@ -1,4 +1,4 @@
-SUBDIRS = desktop
+SUBDIRS = desktop menu
 
 resdir = $(datadir)/hildon-desktop
 res_DATA = \

@@ -1,3 +1,31 @@
+/*
+ * This file is part of hildon-desktop
+ *
+ * Copyright (C) 2008 Nokia Corporation.
+ *
+ * Contributors:  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+/*
+ * An HdLauncherTree loads and keeps the applications tree.
+ *
+ */
+
 #ifndef __HD_LAUNCHER_TREE_H__
 #define __HD_LAUNCHER_TREE_H__
 
@@ -27,14 +55,6 @@ struct _HdLauncherTree
 struct _HdLauncherTreeClass
 {
   GObjectClass parent_class;
-
-  void (* item_added)    (HdLauncherTree *tree,
-                          HdLauncherItem *item);
-  void (* item_removed)  (HdLauncherTree *tree,
-                          HdLauncherItem *item);
-  void (* item_changed)  (HdLauncherTree *tree,
-                          HdLauncherItem *item);
-  void (* finished)      (HdLauncherTree *tree);
 };
 
 GType           hd_launcher_tree_get_type (void) G_GNUC_CONST;
@@ -43,20 +63,10 @@ HdLauncherTree *hd_launcher_tree_new         (const gchar    *path);
 
 void            hd_launcher_tree_populate    (HdLauncherTree *tree);
 
-GList *         hd_launcher_tree_get_items   (HdLauncherTree *tree,
-                                              HdLauncherItem *parent);
-guint           hd_launcher_tree_get_n_items (HdLauncherTree *tree,
-                                              HdLauncherItem *parent);
+GList *         hd_launcher_tree_get_items   (HdLauncherTree *tree);
 guint           hd_launcher_tree_get_size    (HdLauncherTree *tree);
-
-void            hd_launcher_tree_insert_item (HdLauncherTree *tree,
-                                              gint            position,
-                                              HdLauncherItem *parent,
-                                              HdLauncherItem *item);
-void            hd_launcher_tree_remove_item (HdLauncherTree *tree,
-                                              HdLauncherItem *item);
-HdLauncherItem *hd_launcher_tree_find_item (HdLauncherTree *tree,
-                                            const gchar *id);
+HdLauncherItem *hd_launcher_tree_find_item   (HdLauncherTree *tree,
+                                              const gchar *id);
 
 G_END_DECLS
 
