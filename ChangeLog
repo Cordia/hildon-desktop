@@ -1,3 +1,14 @@
+2009-05-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Learn to deal with entirely missing menus.
+
+	* src/launcher/hd-app-mgr.c:
+	  hd_app_mgr_get:
+	    bug early if somebody tries to get the appmgr object
+	    before it's constructed
+	  hd_app_mgr_populate_tree_finished:
+	    don't start state checking the empty menu.
+
 2009-05-06  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#113582 - Themed title colours
@@ -50,7 +61,7 @@
 	* src/launcher/hd-launcher-grid.c: Add an actor to block clicks
 	  between rows of icons
 
-2009-05-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-05-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Problem fix: when two browser windows are open (say bookmarks
 	and a web page) and you close the web page you end up in app

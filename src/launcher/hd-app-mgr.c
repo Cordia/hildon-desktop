@@ -241,7 +241,13 @@ HdAppMgr *
 hd_app_mgr_get (void)
 {
   if (G_UNLIKELY (!the_app_mgr))
-    the_app_mgr = g_object_new (HD_TYPE_APP_MGR, NULL);
+    { /* "Protect" against reentrancy. */
+      static gboolean under_construction;
+
+      g_assert(!under_construction);
+      under_construction = TRUE;
+      the_app_mgr = g_object_new (HD_TYPE_APP_MGR, NULL);
+    }
   return the_app_mgr;
 }
 
@@ -987,7 +993,14 @@ hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
       hd_app_mgr_prestartable (app, TRUE);
     }
 
-  hd_app_mgr_state_check ();
+  if (G_LIKELY(the_app_mgr != NULL))
+    /*
+     * The menu was empty, hd_launcher_tree_populate() singnalled finish
+     * early on, before the app mgr is constructed.  We cannot start
+     * state checking because it needs the object.  Probably it would be
+     * pointless anyway, but somebody could fix it maybe.
+     */
+    hd_app_mgr_state_check ();
 }
 
 static void
