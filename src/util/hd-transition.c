@@ -101,7 +101,7 @@ hd_transition_ease_out(float amt)
 {
   if (amt>0 && amt<1)
     return cos((1-amt)*3.141592*0.5);
-  return 1-amt;
+  return amt;
 }
 
 /* ------------------------------------------------------------------------- */

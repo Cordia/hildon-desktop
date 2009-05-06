@@ -1,3 +1,8 @@
+2009-05-06  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-transition.c: Fixed minor regression that caused flicker
+	  in screen rotation transition.
+
 2009-05-06  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Use libgnome-menu to (re)load task launcher contents.
