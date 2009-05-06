@@ -35,7 +35,9 @@
 #include "mb/hd-theme.h"
 #include "hd-render-manager.h"
 #include "hd-gtk-utils.h"
+#include "hd-gtk-style.h"
 #include "hd-transition.h"
+#include "hd-task-navigator.h"
 
 #include <matchbox/theme-engines/mb-wm-theme-png.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -216,7 +218,8 @@ static void
 hd_title_bar_init (HdTitleBar *bar)
 {
   ClutterActor *actor = CLUTTER_ACTOR(bar);
-  ClutterColor white = {0xFF, 0xFF, 0xFF, 0xFF};
+  ClutterColor title_color;
+  ClutterColor default_color;
   HdTitleBarPrivate *priv = bar->priv = HD_TITLE_BAR_GET_PRIVATE(bar);
   gint i;
 
@@ -227,6 +230,10 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_actor_set_size(actor,
                     HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_TOP_MARGIN);
   clutter_actor_set_name(CLUTTER_ACTOR(actor), "HdTitleBar");
+
+  hd_gtk_style_resolve_logical_color(&title_color, "TitleTextColor");
+  hd_gtk_style_get_fg_color(HD_GTK_BUTTON_SINGLETON,
+                            GTK_STATE_NORMAL, &default_color);
 
 
   priv->foreground = CLUTTER_GROUP(clutter_group_new());
@@ -258,7 +265,7 @@ hd_title_bar_init (HdTitleBar *bar)
           guint w, h;
 
           label = clutter_label_new();
-          clutter_label_set_color(CLUTTER_LABEL(label), &white);
+          clutter_label_set_color(CLUTTER_LABEL(label), &default_color);
           clutter_label_set_use_markup(CLUTTER_LABEL(label), TRUE);
           clutter_label_set_font_name(CLUTTER_LABEL(label), "Nokia Sans 24px");
           clutter_label_set_text(CLUTTER_LABEL(label), dgettext (BTN_LABELS[2 * i],
@@ -317,7 +324,7 @@ hd_title_bar_init (HdTitleBar *bar)
 
   /* Create the title */
   priv->title = CLUTTER_LABEL(clutter_label_new());
-  clutter_label_set_color(priv->title, &white);
+  clutter_label_set_color(priv->title, &title_color);
   /* do not call clutter_label_set_use_markup() until we know whether
    * or not the text has markup */
   clutter_container_add_actor(CLUTTER_CONTAINER(bar), CLUTTER_ACTOR(priv->title));

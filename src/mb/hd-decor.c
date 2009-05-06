@@ -30,6 +30,7 @@
 #include "hd-render-manager.h"
 #include "hd-clutter-cache.h"
 #include "hd-transition.h"
+#include "hd-gtk-style.h"
 
 #include <matchbox/theme-engines/mb-wm-theme-png.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -225,15 +226,18 @@ hd_decor_create_actors(HdDecor *decor)
       const char* title = mb_wm_client_get_name (client);
       if (title && strlen(title)) {
         ClutterLabel *bar_title;
-        ClutterColor white = { 0xFF, 0xFF, 0xFF, 0xFF };
+        ClutterColor default_color = { 0xFF, 0xFF, 0xFF, 0xFF };
         char font_name[512];
         guint w = 0, h = 0;
+
+        hd_gtk_style_get_fg_color(HD_GTK_BUTTON_SINGLETON,
+                                  GTK_STATE_NORMAL, &default_color);
 
         /* TODO: handle it so that _NET_WM_NAME has pure UTF-8 and no markup,
          * and _HILDON_WM_NAME has UTF-8 + Pango markup. If _HILDON_WM_NAME
          * is there, it is used, otherwise use the traditional properties. */
         bar_title = CLUTTER_LABEL(clutter_label_new());
-        clutter_label_set_color(bar_title, &white);
+        clutter_label_set_color(bar_title, &default_color);
 
         /* set Pango markup only if the string is XML fragment */
         if (client->window->name_has_markup)

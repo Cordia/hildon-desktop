@@ -1,5 +1,12 @@
 2009-05-06  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#113582 - Themed title colours
+	* src/home/hd-title-bar.c
+	* src/mb/hd-decor.c: Now load title bar colours from GTK, using either
+	  default foreground colour, or 'TitleTextColor' for the Title Bar
+
+2009-05-06  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/util/hd-gtk-style.h
 	* src/util/hd-gtk-style.c
 	* src/home/hd-task-navigator.c: Refactored code to get colours/fonts
