@@ -1,5 +1,12 @@
 2009-05-06  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/util/hd-gtk-style.h
+	* src/util/hd-gtk-style.c
+	* src/home/hd-task-navigator.c: Refactored code to get colours/fonts
+	  from GTK Styles into util/hd-gtk-style.c (so HdTitleBar may use it)
+
+2009-05-06  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/util/hd-transition.c: Fixed minor regression that caused flicker
 	  in screen rotation transition.
 

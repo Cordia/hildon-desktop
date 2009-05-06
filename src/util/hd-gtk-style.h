@@ -77,5 +77,12 @@ void hd_gtk_style_get_base_color (HDGtkWidgetSingleton	 widget,
 
 char *hd_gtk_style_get_font_string (HDGtkWidgetSingleton  widget_id);
 
+void
+hd_gtk_style_resolve_logical_color (ClutterColor * color,
+                                    const gchar * logical_name);
+
+gchar *
+hd_gtk_style_resolve_logical_font (const gchar * logical_name);
+
 #endif /* _HD_GTK_STYLE_H_ */
 

@@ -64,6 +64,7 @@
 #include "hd-transition.h"
 #include "hd-theme.h"
 #include "hd-util.h"
+#include "hd-gtk-style.h"
 
 /* Standard definitions {{{ */
 #undef  G_LOG_DOMAIN
@@ -735,55 +736,6 @@ out: /* Return something. */
   return icon;
 }
 /* Graphics loading }}} */
-
-/* Fonts and colors {{{ */
-/* Resolves a logical color name to a #GdkColor. */
-static void
-resolve_logical_color (GdkColor * actual_color, const gchar * logical_name)
-{
-  GtkStyle *style;
-
-  style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
-                                     NULL, NULL,
-                                     GTK_TYPE_WIDGET);
-  if (!style || !gtk_style_lookup_color (style, logical_name, actual_color))
-    { /* Fall back to all-black. */
-      g_critical ("%s: unknown color", logical_name);
-      memset (actual_color, 0, sizeof (*actual_color));
-    }
-}
-
-/* Returns a #ClutterColor for a logical color name. */
-static void
-resolve_clutter_color (ClutterColor * color, const gchar * logical_name)
-{
-  GdkColor tmp;
-
-  resolve_logical_color (&tmp, logical_name);
-  color->red    = tmp.red   >> 8;
-  color->green  = tmp.green >> 8;
-  color->blue   = tmp.blue  >> 8;
-  color->alpha  = 0xFF;
-}
-
-/* Returns a font descrition string for a logical font name you can use
- * to create #ClutterLabel:s.  The returned string is yours. */
-static gchar *
-resolve_logical_font (const gchar * logical_name)
-{
-  GtkStyle *style;
-
-  style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
-                                     logical_name, NULL, G_TYPE_NONE);
-  if (!style)
-    { /* Fall back to system font. */
-      g_critical("%s: unknown font", logical_name);
-      return g_strdup ("Nokia Sans 18");
-    }
-  else
-    return pango_font_description_to_string (style->font_desc);
-}
-/* Fonts and colors }}} */
 
 /* Clutter utilities {{{ */
 /* Animations {{{ */
@@ -3118,10 +3070,10 @@ hd_task_navigator_init (HdTaskNavigator * self)
   Zoom_effect = new_animation (&Zoom_effect_timeline, ZOOM_EFFECT_DURATION);
 
   /* Master pieces */
-  SystemFont = resolve_logical_font ("SystemFont");
-  SmallSystemFont = resolve_logical_font ("SmallSystemFont");
-  resolve_clutter_color (&DefaultTextColor,  "DefaultTextColor");
-  resolve_clutter_color (&ReversedTextColor, "ReversedTextColor");
+  SystemFont =   hd_gtk_style_resolve_logical_font ("SystemFont");
+  SmallSystemFont =   hd_gtk_style_resolve_logical_font ("SmallSystemFont");
+  hd_gtk_style_resolve_logical_color (&DefaultTextColor,  "DefaultTextColor");
+  hd_gtk_style_resolve_logical_color (&ReversedTextColor, "ReversedTextColor");
 
   /* We don't have anything to show yet, so let's hide. */
   clutter_actor_hide (Navigator);

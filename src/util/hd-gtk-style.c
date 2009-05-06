@@ -25,6 +25,7 @@
 
 #include <clutter/clutter.h>
 #include <gtk/gtk.h>
+#include <string.h>
 
 enum {
   HD_GTK_STYLE_FG,
@@ -62,6 +63,16 @@ hd_gtk_style_init (void)
   gtk_widget_show (button);
   gtk_widget_realize (button);
   gtk_widget_singletons[HD_GTK_BUTTON_SINGLETON] = button;
+}
+
+static void
+hd_gtk_style_to_clutter_color(ClutterColor          *dst,
+                              const GdkColor        *src)
+{
+  dst->red   = CLAMP (((src->red   / 65535.0) * 255), 0, 255);
+  dst->green = CLAMP (((src->green / 65535.0) * 255), 0, 255);
+  dst->blue  = CLAMP (((src->blue  / 65535.0) * 255), 0, 255);
+  dst->alpha = 255;
 }
 
 static void
@@ -115,10 +126,7 @@ hd_gtk_style_get_color_component (HDGtkWidgetSingleton   widget_id,
       break;
     }
 
-  color->red   = CLAMP (((gtk_color.red   / 65535.0) * 255), 0, 255);
-  color->green = CLAMP (((gtk_color.green / 65535.0) * 255), 0, 255);
-  color->blue  = CLAMP (((gtk_color.blue  / 65535.0) * 255), 0, 255);
-  color->alpha = 255;
+  hd_gtk_style_to_clutter_color(color, &gtk_color);
 }
 
 void
@@ -221,3 +229,42 @@ hd_gtk_style_get_font_string (HDGtkWidgetSingleton  widget_id)
   return pango_font_description_to_string (style->font_desc);
 }
 
+/* Fonts and colors {{{ */
+/* Resolves a logical color name to a #ClutterColor. */
+void
+hd_gtk_style_resolve_logical_color (ClutterColor * color,
+                                    const gchar * logical_name)
+{
+  GtkStyle *style;
+  GdkColor gtk_color;
+
+  style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
+                                     NULL, NULL,
+                                     GTK_TYPE_WIDGET);
+  if (!style || !gtk_style_lookup_color (style, logical_name, &gtk_color))
+    { /* Fall back to all-black. */
+      g_critical ("%s: unknown color", logical_name);
+      memset (&gtk_color, 0, sizeof (gtk_color));
+    }
+
+  hd_gtk_style_to_clutter_color(color, &gtk_color);
+}
+
+/* Returns a font descrition string for a logical font name you can use
+ * to create #ClutterLabel:s.  The returned string is yours. */
+gchar *
+hd_gtk_style_resolve_logical_font (const gchar * logical_name)
+{
+  GtkStyle *style;
+
+  style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
+                                     logical_name, NULL, G_TYPE_NONE);
+  if (!style)
+    { /* Fall back to system font. */
+      g_critical("%s: unknown font", logical_name);
+      return g_strdup ("Nokia Sans 18");
+    }
+  else
+    return pango_font_description_to_string (style->font_desc);
+}
+/* Fonts and colors }}} */
