@@ -219,7 +219,6 @@ hd_title_bar_init (HdTitleBar *bar)
 {
   ClutterActor *actor = CLUTTER_ACTOR(bar);
   ClutterColor title_color;
-  ClutterColor default_color;
   HdTitleBarPrivate *priv = bar->priv = HD_TITLE_BAR_GET_PRIVATE(bar);
   gint i;
 
@@ -232,9 +231,6 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_actor_set_name(CLUTTER_ACTOR(actor), "HdTitleBar");
 
   hd_gtk_style_resolve_logical_color(&title_color, "TitleTextColor");
-  hd_gtk_style_get_fg_color(HD_GTK_BUTTON_SINGLETON,
-                            GTK_STATE_NORMAL, &default_color);
-
 
   priv->foreground = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->foreground), FALSE);
@@ -265,7 +261,7 @@ hd_title_bar_init (HdTitleBar *bar)
           guint w, h;
 
           label = clutter_label_new();
-          clutter_label_set_color(CLUTTER_LABEL(label), &default_color);
+          clutter_label_set_color(CLUTTER_LABEL(label), &title_color);
           clutter_label_set_use_markup(CLUTTER_LABEL(label), TRUE);
           clutter_label_set_font_name(CLUTTER_LABEL(label), "Nokia Sans 24px");
           clutter_label_set_text(CLUTTER_LABEL(label), dgettext (BTN_LABELS[2 * i],
