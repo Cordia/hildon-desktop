@@ -27,6 +27,7 @@
 #include "hd-decor.h"
 #include "hd-decor-button.h"
 #include "hd-clutter-cache.h"
+#include "hd-render-manager.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -52,6 +53,9 @@ static void
 hd_theme_paint_decor_button (MBWMTheme *theme, MBWMDecorButton *decor);
 
 static void
+hd_theme_get_title_xy (MBWMTheme *theme, int *x, int *y);
+
+static void
 hd_theme_class_init (MBWMObjectClass *klass)
 {
   MBWMThemeClass *t_class = MB_WM_THEME_CLASS (klass);
@@ -60,6 +64,7 @@ hd_theme_class_init (MBWMObjectClass *klass)
   t_class->paint_decor  = hd_theme_paint_decor;
   t_class->paint_button = hd_theme_paint_decor_button;
   t_class->button_size  = hd_theme_simple_get_button_size;
+  t_class->get_title_xy = hd_theme_get_title_xy;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdTheme";
@@ -606,4 +611,10 @@ static void
 hd_theme_paint_decor_button (MBWMTheme *theme, MBWMDecorButton *decor)
 {
   hd_decor_button_sync( HD_DECOR_BUTTON(decor) );
+}
+
+static void
+hd_theme_get_title_xy (MBWMTheme *theme, int *x, int *y)
+{
+  hd_render_manager_get_title_xy (x, y);
 }

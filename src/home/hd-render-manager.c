@@ -2102,3 +2102,11 @@ void hd_render_manager_blurred_changed()
   tidy_blur_group_set_source_changed(
       CLUTTER_ACTOR(the_render_manager->priv->home_blur));
 }
+
+void
+hd_render_manager_get_title_xy (int *x, int *y)
+{
+  if (!the_render_manager) return;
+
+  hd_title_bar_get_xy (the_render_manager->priv->title_bar, x, y);
+}

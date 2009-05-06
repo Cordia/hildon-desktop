@@ -1,3 +1,17 @@
+2009-05-06  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	NB#111652 legacy widget : application menu is not horizontally
+	aligned application title text
+
+	* src/home/hd-render-manager.c:
+	* src/home/hd-render-manager.h:
+	* src/home/hd-title-bar.c:
+	* src/home/hd-title-bar.h:
+	* src/mb/hd-theme.c:
+
+	Add get_title_xy functions to various classes to retrieve the
+	current position of the window title.
+
 2009-05-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Portrait mode switching improvements.

@@ -230,6 +230,9 @@ void hd_render_manager_update(void);
 /* If something that is blurred has changed, update it. */
 void hd_render_manager_blurred_changed(void);
 
+/* Gets the current coordinates of the title. */
+void hd_render_manager_get_title_xy (int *x, int *y);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */

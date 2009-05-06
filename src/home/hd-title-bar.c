@@ -1067,3 +1067,17 @@ hd_title_bar_create_fake(HdTitleBar *bar)
   return CLUTTER_ACTOR(group);
 }
 
+void
+hd_title_bar_get_xy (HdTitleBar *bar, int *x, int *y)
+{
+  ClutterActor *titlebar;
+
+  if (!HD_IS_TITLE_BAR(bar))
+    return;
+
+  titlebar = CLUTTER_ACTOR(bar->priv->title);
+
+  if (x) *x = clutter_actor_get_x (titlebar);
+  if (y) *y = clutter_actor_get_y (titlebar) +
+	   clutter_actor_get_height (titlebar);
+}
