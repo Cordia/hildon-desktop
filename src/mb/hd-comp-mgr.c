@@ -2371,8 +2371,16 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
       if (hd_comp_mgr_ignore_window (c))
         continue;
       PORTRAIT ("IS VISIBLE OR CURRENT?");
-      if (!hd_render_manager_is_client_visible (c))
-        /* Ignore invisibles except if it's the current application. */
+      if (!hd_render_manager_is_client_visible (c)
+          && !(c->window
+               && hd_wm_current_app_is (NULL, 0) == c->window->xwindow))
+        /*
+         * Ignore invisibles except if it's the current application.
+         * This is for cases when the topmost client requests pmode
+         * and you launch another program.  When we're invoked the
+         * new client doesn't have an actor yet but it needs to be
+         * taken into account.
+         */
         continue;
 
       /* Get @portrait_supported/requested updated. */
@@ -2381,6 +2389,20 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
       if (!hcmgrc->priv->portrait_supported)
         return FALSE;
       any_requests |= hcmgrc->priv->portrait_requested;
+
+      /*
+       * This is a workaround for the fullscreen incoming call dialog.
+       * Since it's fullscreen we can safely assume it will cover
+       * everything underneath, even if that's still visible in
+       * clutter sense.  This is an evidence that we just cannot
+       * rely on visibility checking entirely.
+       */
+      if (hcmgrc->priv->portrait_requested && c->window
+          && c->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+        {
+          PORTRAIT ("FULLSCREEN OVERRIDE");
+          break;
+        }
     }
 
   PORTRAIT ("SHOULD BE: %d", any_requests);

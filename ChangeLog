@@ -1,3 +1,12 @@
+2009-05-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Workaround for 'gadget held portrait, launch calculator case'.
+	Workaround for 'have calculator on top and receive a call'.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait):
+	  Take current but invisible clients into account again.
+	  Make requesting fullscreen clients override.
+
 2009-05-06  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	NB#111652 legacy widget : application menu is not horizontally
