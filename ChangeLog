@@ -1,5 +1,14 @@
 2009-05-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#107676 Status menu should not turn in portrait mode
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait):
+	  Treat the status menu and power menu clients just like the others,
+	  which in practice means admit to the fact that they don't support
+	  portrait mode.
+
+2009-05-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/main.c:
 	  Adding the '-d' command line switch to get a debug info dump
 	  from an an already running window manager.

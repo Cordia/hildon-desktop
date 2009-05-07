@@ -2359,9 +2359,8 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
         /* Menus are not transient for their window nor they claim
          * portrait layout support.  Let's just assume they can. */
         continue;
-      if (MB_WM_CLIENT_CLIENT_TYPE (c)
-          & (HdWmClientTypeStatusMenu | HdWmClientTypeHomeApplet))
-        /* Make exceptions for the power menu and applets. */
+      if (MB_WM_CLIENT_CLIENT_TYPE (c) & HdWmClientTypeHomeApplet)
+        /* Make an exception for applets. */
         continue;
       if (HD_IS_BANNER_NOTE (c))
         /* Assume it for now. */
