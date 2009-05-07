@@ -2077,10 +2077,17 @@ void hd_render_manager_place_titlebar_elements (void)
       g_assert(priv->status_area_client && priv->status_area_client->window);
       if (priv->status_area_client->frame_geometry.x != x)
         {
-          /* Reposition the status area. */
+          /*
+           * Reposition the status area.  Maybe we should just use
+           * move_resize_client_xwin().  It is important that we
+           * configure now because we may not get do a sync in the
+           * near future, as mb is only waken up when there's an
+           * X event.
+           */
           MBWindowManagerClient *c = priv->status_area_client;
           c->frame_geometry.x = c->window->geometry.x = x;
           mb_wm_client_geometry_mark_dirty(c);
+          mb_wm_comp_mgr_client_configure (c->cm_client);
           x += c->window->geometry.width;
         }
       else
