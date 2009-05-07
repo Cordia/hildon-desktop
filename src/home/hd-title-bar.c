@@ -203,6 +203,8 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size);
 #define HD_TITLE_BAR_TITLE_MARGIN 24
 #define HD_TITLE_BAR_TEXT_MARGIN 24
 
+#define HD_TITLE_BAR_TITLE_FONT "SystemFont"
+
 enum
 {
   CLICKED_TOP_LEFT,
@@ -219,6 +221,7 @@ hd_title_bar_init (HdTitleBar *bar)
 {
   ClutterActor *actor = CLUTTER_ACTOR(bar);
   ClutterColor title_color;
+  gchar *font_name;
   HdTitleBarPrivate *priv = bar->priv = HD_TITLE_BAR_GET_PRIVATE(bar);
   gint i;
 
@@ -231,6 +234,7 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_actor_set_name(CLUTTER_ACTOR(actor), "HdTitleBar");
 
   hd_gtk_style_resolve_logical_color(&title_color, "TitleTextColor");
+  font_name = hd_gtk_style_resolve_logical_font(HD_TITLE_BAR_TITLE_FONT);
 
   priv->foreground = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->foreground), FALSE);
@@ -260,12 +264,11 @@ hd_title_bar_init (HdTitleBar *bar)
           ClutterActor *label;
           guint w, h;
 
-          label = clutter_label_new();
-          clutter_label_set_color(CLUTTER_LABEL(label), &title_color);
+          label = clutter_label_new_full(
+                      font_name,
+                      dgettext (BTN_LABELS[2 * i], BTN_LABELS[2 * i + 1]),
+                      &title_color);
           clutter_label_set_use_markup(CLUTTER_LABEL(label), TRUE);
-          clutter_label_set_font_name(CLUTTER_LABEL(label), "Nokia Sans 24px");
-          clutter_label_set_text(CLUTTER_LABEL(label), dgettext (BTN_LABELS[2 * i],
-                                                                 BTN_LABELS[2 * i + 1]));
 
           priv->buttons[i] = clutter_group_new();
           clutter_container_add_actor (CLUTTER_CONTAINER(priv->buttons[i]), label);
@@ -362,6 +365,8 @@ hd_title_bar_init (HdTitleBar *bar)
   g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
                            G_CALLBACK(hd_title_bar_stage_allocation_changed),
                            bar);
+
+  g_free(font_name);
 }
 
 static void
@@ -777,7 +782,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
   const char* title = mb_wm_client_get_name (client);
   if (d->show_title && title && strlen(title)) {
     ClutterActor *status_area;
-    char font_name[512];
+    gchar *font_name;
     gint h, w;
     int x_start = 0;
     int x_end = HD_COMP_MGR_SCREEN_WIDTH - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
@@ -788,11 +793,9 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
     if (status_area && CLUTTER_ACTOR_IS_VISIBLE(status_area))
       x_start += clutter_actor_get_width(status_area);
 
-    snprintf (font_name, sizeof (font_name), "%s %i%s",
-              d->font_family ? d->font_family : "Sans",
-              d->font_size ? d->font_size : 18,
-              d->font_units == MBWMXmlFontUnitsPoints ? "" : "px");
+    font_name = hd_gtk_style_resolve_logical_font(HD_TITLE_BAR_TITLE_FONT);
     clutter_label_set_font_name(priv->title, font_name);
+    g_free(font_name);
     clutter_label_set_text(priv->title, title);
 
     if (client->window->name_has_markup)

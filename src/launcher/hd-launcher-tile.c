@@ -46,7 +46,9 @@
 
 #define HD_LAUNCHER_TILE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TILE, HdLauncherTilePrivate))
 
-#define HD_LAUNCHER_TILE_FONT "SmallSystemFont"
+#define HD_LAUNCHER_TILE_FONT "Nokia Sans 15"
+/* We don't use a font from the theme here because apparently there are none the
+ * size we want, and we don't want to add another logical font to gtkrc. */
 
 struct _HdLauncherTilePrivate
 {
@@ -340,8 +342,6 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   ClutterUnit label_width;
   guint label_height, label_width_px;
-  GtkStyle *style;
-  gchar *font_name;
 
   if (!text)
     return;
@@ -358,15 +358,7 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
       clutter_actor_destroy (priv->label);
     }
 
-  style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
-                                     HD_LAUNCHER_TILE_FONT,
-                                     NULL, G_TYPE_NONE);
-  if (style)
-    font_name = pango_font_description_to_string (style->font_desc);
-  else
-    font_name = g_strdup ("Nokia Sans 18px");
-
-  priv->label = clutter_label_new_full (font_name, priv->text, &text_color);
+  priv->label = clutter_label_new_full (HD_LAUNCHER_TILE_FONT, priv->text, &text_color);
   clutter_actor_set_name(priv->label, "HdLauncherTile::label");
 
   /* FIXME: This is a huge work-around because clutter/pango do not
@@ -397,8 +389,6 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
   if (CLUTTER_UNITS_TO_DEVICE(label_width) > HD_LAUNCHER_TILE_WIDTH)
     clutter_actor_set_clip (priv->label, 0, 0,
                   HD_LAUNCHER_TILE_WIDTH, label_height);
-
-  g_free (font_name);
 }
 
 static void

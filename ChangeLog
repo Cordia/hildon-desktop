@@ -1,3 +1,10 @@
+2009-05-07  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher-tile.c: Remove loading of font from gtkrc
+	  and instead use hard-coded (slightly larger) value
+	* src/home/hd-title-bar.c: Use "SystemFont" for both title bar and
+	  home edit mode titles as per UI spec
+
 2009-05-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-title-bar.c (hd_title_bar_set_window), src/mb/hd-decor.c:
