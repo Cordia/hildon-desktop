@@ -2,6 +2,7 @@ hildon-desktop (1:2.2.48-1~unreleased) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#106496 - Ellipsis at the end of Page title
+  * Update build libmatchbox2 dependency.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  6 May 2009 09:36:43 +0300
 
