@@ -1,3 +1,9 @@
+2009-05-07  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#112411
+	* src/mb/hd-comp-mgr.c: Added check for subview transition when the
+	main view hasn't been mapped yet (and explanatory comment)
+
 2009-05-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#107676 Status menu should not turn in portrait mode

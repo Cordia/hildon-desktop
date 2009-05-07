@@ -2085,10 +2085,16 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                     g_list_last(app->leader->followers)->prev)
                   next = MB_WM_CLIENT(
                       g_list_last(app->leader->followers)->prev->data);
-                /* Start actual transition */
-                hd_transition_subview(hmgr, c,
-                                      next,
-                                      MBWMCompMgrClientEventMap);
+                /* Start actual transition - We may have the case where 2
+                 * stackable windows are created at the same time, and we are
+                 * mapping the subview before the main view is mapped. In this
+                 * case the first window will not be in the followers list, and
+                 * app->leader == app, so we don't want any transition.
+                 * Solves NB#112411 */
+                if (c!=next)
+                  hd_transition_subview(hmgr, c,
+                                        next,
+                                        MBWMCompMgrClientEventMap);
               }
             /* We're now showing this app, so remove our app
              * starting screen if we had one */
