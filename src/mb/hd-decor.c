@@ -258,7 +258,7 @@ hd_decor_create_actors(HdDecor *decor)
         /* if it's too big, make sure we crop it */
         if (w > HD_COMP_MGR_SCREEN_WIDTH)
           {
-            clutter_label_set_ellipsize(bar_title, PANGO_ELLIPSIZE_END);
+            clutter_label_set_ellipsize(bar_title, PANGO_ELLIPSIZE_NONE);
             clutter_actor_set_width(CLUTTER_ACTOR(bar_title),
                                     HD_COMP_MGR_SCREEN_WIDTH);
             w = HD_COMP_MGR_SCREEN_WIDTH;
