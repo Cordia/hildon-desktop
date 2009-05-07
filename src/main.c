@@ -25,6 +25,7 @@
 #include <config.h>
 #endif
 
+#include <matchbox/mb-wm-config.h>
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 
@@ -54,6 +55,11 @@ enum {
   KEY_ACTION_TOGGLE_FULLSCREEN,
   KEY_ACTION_TOGGLE_DESKTOP,
 };
+
+#ifdef MBWM_DEB_VERSION
+static __attribute__((unused)) const char mbver[] =
+  "built with libmatchbox2 " MBWM_DEB_VERSION;
+#endif
 
 static unsigned int
 theme_type_func (const char *theme_name, void *data)

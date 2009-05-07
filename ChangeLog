@@ -1,3 +1,9 @@
+2009-05-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/main.c (mbver):
+	  Add a static variable saying the accompanying libmatchbox version
+	  number that you can grep for in the binary.
+
 2009-05-07  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher-tile.c: Remove loading of font from gtkrc
