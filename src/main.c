@@ -288,6 +288,25 @@ try_to_relaunch (Display *dpy)
   g_free (matepath);
 }
 
+static gboolean
+get_debug_info (Display *dpy)
+{
+  pid_t mate;
+
+  if ((mate = hd_already_running (dpy)) < 0)
+    {
+      g_warning ("Mate ain't not found");
+      return FALSE;
+    }
+  else if (kill (mate, SIGUSR1) < 0)
+    {
+      g_warning ("kill(%d): %m", mate);
+      return FALSE;
+    }
+  else
+    return TRUE;
+}
+
 static void
 terminating (int unused)
 {
@@ -392,6 +411,8 @@ main (int argc, char **argv)
    * see if it's hildon-desktop and take it over. */
   if (argv[1] && !strcmp (argv[1], "-r"))
     try_to_relaunch (dpy);
+  else if (argv[1] && !strcmp (argv[1], "-d"))
+    return get_debug_info (dpy) != TRUE;
 
   wm = MB_WINDOW_MANAGER (mb_wm_object_new (HD_TYPE_WM,
 					    MBWMObjectPropArgc, argc,
