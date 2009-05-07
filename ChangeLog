@@ -2,6 +2,8 @@
 
 	* src/home/hd-title-bar.c (hd_title_bar_set_window), src/mb/hd-decor.c:
 	Do not do Pango ellipsation. Fixes: NB#106496
+	(hd_title_bar_get_xy): Provide fallback values in case title bar is
+	not in good condition.
 
 2009-05-07  Gordon Williams <gordon.williams@collabora.co.uk>
 

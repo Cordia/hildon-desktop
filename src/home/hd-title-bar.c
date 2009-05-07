@@ -1072,13 +1072,29 @@ void
 hd_title_bar_get_xy (HdTitleBar *bar, int *x, int *y)
 {
   ClutterActor *titlebar;
+  /* 'adj' depends on title bar font and legacy menu padding */
+  static const int adj = 14;
 
-  if (!HD_IS_TITLE_BAR(bar))
+  if (!HD_IS_TITLE_BAR(bar) || !x || !y)
     return;
 
   titlebar = CLUTTER_ACTOR(bar->priv->title);
 
-  if (x) *x = clutter_actor_get_x (titlebar);
-  if (y) *y = clutter_actor_get_y (titlebar) +
-	   clutter_actor_get_height (titlebar);
+  if (titlebar)
+  {
+    int tmp = clutter_actor_get_x (titlebar);
+
+    /* check that it's a sensible value */
+    if (tmp < 2 * 112 + adj)
+      *x = 2 * 112 + adj;
+    else
+      *x = tmp - adj;
+
+    *y = clutter_actor_get_y (titlebar) + clutter_actor_get_height (titlebar);
+  }
+  else
+  {
+    *x = 2 * 112 + adj;
+    *y = 56;
+  }
 }
