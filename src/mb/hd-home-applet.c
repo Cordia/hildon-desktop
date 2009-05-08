@@ -204,7 +204,6 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
 
 
   mb_wm_client_set_layout_hints (client,
-				 LayoutPrefPositionFree |
 				 LayoutPrefMovable      |
                                  LayoutPrefOverlaps     |
 				 LayoutPrefVisible);

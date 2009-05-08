@@ -1,5 +1,16 @@
 2009-05-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#106183 Desktop shortcut moves place after UI has been rotated
+
+	* src/mb/hd-home-applet.c (hd_home_applet_init):
+	  Don't allow libmatchbox' layout manager to reposition applets
+	  freely whenever it thinks they should be.  In particular when
+	  the root window geometry changes, because it thinks they get
+	  out of bound, which is fair but then it cannot place them to
+	  their original position.
+
+2009-05-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/home/hd-task-navigator.c (hd_task_navigator_remove_window):
 	  Don't forget to release_win() if the navigator is not active.
 	  This has gained significance since now the dialogs are not
