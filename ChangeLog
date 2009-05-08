@@ -1,3 +1,12 @@
+2009-05-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c (hd_task_navigator_remove_window):
+	  Don't forget to release_win() if the navigator is not active.
+	  This has gained significance since now the dialogs are not
+	  automatically destroyed along with the application client,
+	  and in this case they must be returned to the render manager.
+	  This is related with NB#109299.
+
 2009-05-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Changes to allow applets to fade out nicely on state changes rather

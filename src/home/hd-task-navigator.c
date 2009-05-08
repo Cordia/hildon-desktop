@@ -1817,6 +1817,7 @@ create_thwin (Thumbnail * thumb)
 
   /* .close, anchored at the top-right corner of the close graphics. */
   thumb->close = clutter_group_new ();
+  clutter_actor_set_name (thumb->close, "close area");
   clutter_actor_set_size (thumb->close, CLOSE_AREA_SIZE, CLOSE_AREA_SIZE);
   clutter_actor_set_anchor_point (thumb->close,
                                   CLOSE_AREA_SIZE/2 + CLOSE_ICON_SIZE/2,
@@ -2516,6 +2517,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
   else
     {
 damage_control:
+      release_win (apthumb);
       free_thumb (apthumb);
     }
 
