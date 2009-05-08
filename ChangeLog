@@ -1,5 +1,20 @@
 2009-05-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Changes to allow applets to fade out nicely on state changes rather
+	than just disappearing/reappearing.
+
+	* src/home/hd-render-manager.h: Added STATE_TOOLBAR_FOREGROUND to
+	  allow the toolbar to be raised above task nav/launcher and set 
+	  applets not to be visible in app mode (so applets do not fade
+	  out as task nav zooms out)
+	* src/home/hd-render-manager.c: Moved STATE_HOME_FRONT code into
+	  sync_clutter_before where other clutter ordering code is. Added
+	  extra blur/zoom values for applets. Moved blur_front behind
+	  task_nav/launcher in order to stop applets fading out from in
+	  front of them.
+
+2009-05-08  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/home/hd-home-view.c: Added non-linear panning of the home view
 	  applets relative to the background
 

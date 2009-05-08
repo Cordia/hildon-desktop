@@ -127,9 +127,12 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT | \
                     HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT)
 
-/* Show applets in the background? */
+/* Show applets in the background? We DON'T show them for apps so
+ * the app->task nav transition doesn't show them fading out in
+ * the background */
 #define STATE_SHOW_APPLETS(s) \
-  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
+  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
+                      HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT))
 
 /* Are we in a state where we should blur the buttons + status menu?
  * Task Navigator + launcher zoom out, so are a bad idea. for HOME_EDIT
@@ -138,9 +141,20 @@ typedef enum
   (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
                       HDRM_STATE_HOME_EDIT))
 
-/* States to move the home applets out to the front in */
+/* are we in a state where we want the toolbar buttons to be out the front?
+ * We need this in task_nav (and launcher if the buttons ever come back)
+ * because blur_front sits behind task_nav and launcher and they will
+ * block the clicks to the toolbar if it is there. */
+#define STATE_TOOLBAR_FOREGROUND(s) \
+  (STATE_ONE_OF((s), HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER))
+
+/* States to move the home applets out to the front in. We move them
+ * out for home_edit so we can drag them, but we also move them for
+ * task nav/launcher so we can get the applets to fade nicely into the
+ * background */
 #define STATE_HOME_FRONT(s) \
-  (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
+  (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | \
+                     HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
 
 #define STATE_IN_EDIT_MODE(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))

@@ -108,11 +108,12 @@ typedef enum
 {
   HDRM_BLUR_NONE = 0,
   HDRM_BLUR_HOME = 1,
-  HDRM_SHOW_TASK_NAV = 2,
+  HDRM_SHOW_TASK_NAV = 2, /* Used to fade out/fade in task nav */
   HDRM_BLUR_BACKGROUND = 4, /* like BLUR_HOME, but for dialogs, etc */
   HDRM_ZOOM_FOR_LAUNCHER = 16,
   HDRM_ZOOM_FOR_LAUNCHER_SUBMENU = 32,
   HDRM_ZOOM_FOR_TASK_NAV = 64,
+  HDRM_SHOW_APPLETS = 128, /* Used to fade out/fade in applets */
 } HDRMBlurEnum;
 
 #define HDRM_WIDTH  HD_COMP_MGR_SCREEN_WIDTH
@@ -137,12 +138,11 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |                                         --> title_bar
  *       |                                               ---> title_bar::foreground (!HDTB_VIS_FOREGROUND)
  *       |                                                   --->status_area
+ *       --> blur_front (!STATE_BLUR_BUTTONS)
  *       |
- *       --> task_nav_container --> task_nav
+ *       --> task_nav
  *       |
  *       --> launcher
- *       |
- *       --> blur_front (!STATE_BLUR_BUTTONS)
  *       |
  *       --> app_top           ---> dialogs
  *       |
@@ -187,6 +187,8 @@ struct _HdRenderManagerPrivate {
   Range         home_saturation;
   Range         task_nav_opacity;
   Range         task_nav_zoom;
+  Range         applets_opacity;
+  Range         applets_zoom;
 
   HDRMBlurEnum  current_blur;
 
@@ -457,6 +459,8 @@ hd_render_manager_init (HdRenderManager *self)
   range_set(&priv->home_brightness, 1);
   range_set(&priv->task_nav_opacity, 0);
   range_set(&priv->task_nav_zoom, 1);
+  range_set(&priv->applets_opacity, 0);
+  range_set(&priv->applets_zoom, 1);
 
   priv->timeline_blur = clutter_timeline_new_for_duration(250);
   g_signal_connect (priv->timeline_blur, "new-frame",
@@ -494,7 +498,8 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
 {
   HdRenderManagerPrivate *priv;
   float amt;
-  gint task_opacity;
+  gint task_opacity, applets_opacity;
+  ClutterActor *home_front;
 
   priv = the_render_manager->priv;
 
@@ -506,6 +511,8 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
   range_interpolate(&priv->home_brightness, amt);
   range_interpolate(&priv->task_nav_opacity, amt);
   range_interpolate(&priv->task_nav_zoom, amt);
+  range_interpolate(&priv->applets_opacity, amt);
+  range_interpolate(&priv->applets_zoom, amt);
 
   tidy_blur_group_set_blur      (CLUTTER_ACTOR(priv->home_blur),
                                  priv->home_radius.current);
@@ -525,6 +532,23 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
   clutter_actor_set_scale(CLUTTER_ACTOR(priv->task_nav),
                           priv->task_nav_zoom.current,
                           priv->task_nav_zoom.current);
+
+  home_front = hd_home_get_front (priv->home);
+  applets_opacity = priv->applets_opacity.current*255;
+  clutter_actor_set_opacity(CLUTTER_ACTOR(home_front), applets_opacity);
+  if (applets_opacity==0)
+    clutter_actor_hide(CLUTTER_ACTOR(home_front));
+  else
+    clutter_actor_show(CLUTTER_ACTOR(home_front));
+  /* Set the scale of the home_front group. Also set its position
+   * so it appears to zoom from the centre. We can't set the anchor point
+   * from the gravity as this breaks home view panning */
+  clutter_actor_set_scale(CLUTTER_ACTOR(home_front),
+                          priv->applets_zoom.current,
+                          priv->applets_zoom.current);
+  clutter_actor_set_anchor_point(CLUTTER_ACTOR(home_front),
+      -HD_COMP_MGR_LANDSCAPE_WIDTH  * (1-priv->applets_zoom.current) / 2,
+      -HD_COMP_MGR_LANDSCAPE_HEIGHT * (1-priv->applets_zoom.current) / 2);
 }
 
 static void
@@ -578,6 +602,9 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   range_next(&priv->home_zoom, 1);
   range_next(&priv->task_nav_opacity, 0);
   range_next(&priv->task_nav_zoom, 1);
+  range_next(&priv->applets_opacity, 0);
+  range_next(&priv->applets_zoom, 1);
+
 
   /* work out how much we need to zoom various things */
   zoom_task_nav += (blur & HDRM_ZOOM_FOR_LAUNCHER) ? 1 : 0;
@@ -602,9 +629,12 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 
   if (zoom_home)
     {
-      priv->home_zoom.b =
+      float zoom =
               hd_transition_get_double("home", "zoom", 1);
-      priv->home_zoom.b = 1 - (1-priv->home_zoom.b)*zoom_home;
+      /* We want to zoom the home screen out slightly more than the applets
+       * so we get a perspective effect */
+      priv->home_zoom.b = 1 - (1-zoom)*(zoom_home+1);
+      priv->applets_zoom.b = 1 - (1-zoom)*zoom_home;
     }
 
   if (blur & HDRM_SHOW_TASK_NAV)
@@ -618,13 +648,19 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
       priv->task_nav_zoom.b = 1 - (1-priv->task_nav_zoom.b)*zoom_task_nav;
     }
 
+  if (blur & HDRM_SHOW_APPLETS)
+    {
+      priv->applets_opacity.b = 1;
+    }
+
   /* no point animating if everything is already right */
   if (range_equal(&priv->home_radius) &&
       range_equal(&priv->home_saturation) &&
       range_equal(&priv->home_brightness) &&
       range_equal(&priv->home_zoom) &&
       range_equal(&priv->task_nav_opacity) &&
-      range_equal(&priv->task_nav_zoom))
+      range_equal(&priv->task_nav_zoom) &&
+      range_equal(&priv->applets_opacity))
     {
       hd_render_manager_sync_clutter_after();
       return;
@@ -714,6 +750,9 @@ void hd_render_manager_sync_clutter_before ()
   HDRMButtonEnum visible_top_right = HDRM_BUTTON_NONE;
   HdTitleBarVisEnum btn_state = hd_title_bar_get_state(priv->title_bar) &
     ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH | HDTB_VIS_BTN_RIGHT_MASK);
+  HDRMBlurEnum blur = 0;
+  if (STATE_SHOW_APPLETS(priv->state))
+    blur |= HDRM_SHOW_APPLETS;
 
   switch (priv->state)
     {
@@ -728,7 +767,6 @@ void hd_render_manager_sync_clutter_before ()
       case HDRM_STATE_HOME_PORTRAIT: /* Fallen truth */
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        hd_render_manager_set_blur(HDRM_BLUR_NONE);
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_HOME_EDIT:
@@ -736,7 +774,7 @@ void hd_render_manager_sync_clutter_before ()
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        hd_render_manager_set_blur(HDRM_BLUR_HOME);
+        blur |= HDRM_BLUR_HOME;
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_APP:
@@ -745,25 +783,24 @@ void hd_render_manager_sync_clutter_before ()
         /* Fall through */
       case HDRM_STATE_APP_PORTRAIT:
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
-        hd_render_manager_set_blur(HDRM_BLUR_NONE);
         break;
       case HDRM_STATE_TASK_NAV:
         visible_top_left = HDRM_BUTTON_LAUNCHER;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        hd_render_manager_set_blur(HDRM_BLUR_HOME |
-                                   HDRM_ZOOM_FOR_TASK_NAV |
-                                   HDRM_SHOW_TASK_NAV);
+        blur |=  HDRM_BLUR_HOME |
+                 HDRM_ZOOM_FOR_TASK_NAV |
+                 HDRM_SHOW_TASK_NAV;
         break;
       case HDRM_STATE_LAUNCHER:
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_BACK;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        hd_render_manager_set_blur(
+        blur |=
             HDRM_BLUR_HOME |
             HDRM_ZOOM_FOR_LAUNCHER |
             ((priv->previous_state==HDRM_STATE_TASK_NAV)?
-                HDRM_ZOOM_FOR_TASK_NAV : 0) );
+                HDRM_ZOOM_FOR_TASK_NAV : 0);
         break;
     }
 
@@ -815,6 +852,8 @@ void hd_render_manager_sync_clutter_before ()
       g_warning("%s: Invalid button %d in top-right",
           __FUNCTION__, visible_top_right);
   }
+  if (STATE_TOOLBAR_FOREGROUND(priv->state))
+    btn_state |= HDTB_VIS_FOREGROUND;
 
   if (priv->status_menu)
     clutter_actor_raise_top(CLUTTER_ACTOR(priv->status_menu));
@@ -827,11 +866,32 @@ void hd_render_manager_sync_clutter_before ()
        * see it unblurred */
       clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
                              CLUTTER_ACTOR(the_render_manager));
-      /* lower this below app_top */
+      /* lower this below task_nav (see the ordering comments at the top) */
       clutter_actor_lower(CLUTTER_ACTOR(priv->blur_front),
-                          CLUTTER_ACTOR(priv->app_top));
+                          CLUTTER_ACTOR(priv->task_nav));
       hd_render_manager_blurred_changed();
     }
+
+  /* Move the applets out to the front if required */
+  {
+    ClutterActor *home_front = hd_home_get_front (priv->home);
+    if (STATE_HOME_FRONT (priv->state))
+      {
+        if (clutter_actor_get_parent(home_front) !=
+            CLUTTER_ACTOR (priv->blur_front))
+          {
+            clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->blur_front));
+            hd_render_manager_blurred_changed();
+          }
+        clutter_actor_lower_bottom (home_front);
+      }
+    else if (clutter_actor_get_parent(home_front) !=
+             CLUTTER_ACTOR (priv->home))
+      {
+        clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->home));
+        hd_render_manager_blurred_changed();
+      }
+  }
 
   hd_title_bar_set_state(priv->title_bar, btn_state);
   hd_render_manager_place_titlebar_elements();
@@ -858,6 +918,10 @@ void hd_render_manager_sync_clutter_before ()
   /* as soon as we start a transition, set out left-hand button to be
    * not pressed (used when home->switcher causes change of button style) */
   hd_title_bar_left_pressed(priv->title_bar, FALSE);
+
+  /* Do set_blur here, as this sets the initial amounts of blurring, and we
+   * want to have visibilities the way we want them when we do it */
+  hd_render_manager_set_blur(blur);
 }
 
 /* The syncing with clutter that is done after a transition ends */
@@ -1122,7 +1186,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
   if (state != priv->state)
     {
-      ClutterActor *home_front;
       HDRMStateEnum oldstate = priv->state;
       priv->previous_state = priv->state;
       priv->state = state;
@@ -1185,32 +1248,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if (STATE_ONE_OF(state, HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER)
           && !STATE_ONE_OF(oldstate, HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER))
         hd_wm_current_app_is (wm, 0);
-
-      /* Move the applets out to the front. */
-      home_front = hd_home_get_front (priv->home);
-      if (STATE_HOME_FRONT (state))
-        {
-          if (clutter_actor_get_parent(home_front) !=
-              CLUTTER_ACTOR (priv->blur_front))
-            {
-              clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->blur_front));
-              hd_render_manager_blurred_changed();
-            }
-          clutter_actor_lower_bottom (home_front);
-        }
-      else if (clutter_actor_get_parent(home_front) !=
-               CLUTTER_ACTOR (priv->home))
-        {
-          clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->home));
-          hd_render_manager_blurred_changed();
-        }
-
-      /* Hide/show applets.  Must be be done after reparenting @home_front
-       * because clutter_actor_reparent() shows the actor. */
-      if (STATE_SHOW_APPLETS (state))
-        clutter_actor_show (home_front);
-      else
-        clutter_actor_hide (home_front);
 
       if (STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
         mb_wm_handle_show_desktop(wm, STATE_NEED_DESKTOP(state));
