@@ -1,3 +1,8 @@
+2009-05-08  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-home-view.c: Added non-linear panning of the home view
+	  applets relative to the background
+
 2009-05-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/main.c (mbver):

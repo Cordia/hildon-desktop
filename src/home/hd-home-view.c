@@ -34,6 +34,7 @@
 #include "hd-home-applet.h"
 #include "hd-render-manager.h"
 #include "hd-clutter-cache.h"
+#include "hd-transition.h"
 
 #include "hildon-desktop.h"
 #include "../tidy/tidy-sub-texture.h"
@@ -1271,11 +1272,30 @@ hd_home_view_allocation_changed (HdHomeView    *view,
 {
   HdHomeViewPrivate *priv = view->priv;
   ClutterGeometry geom;
+  int offset_x;
 
   /* We need to update the position of the applets container,
-   * as it is not a child of ours */
+   * as it is not a child of ours. Rather than just setting
+   * the X and Y to that of ourselves, we'll modify the offset
+   * so that panning of the applets is non-linear relative to
+   * the background. We only do this if we're mid-pan, as floating
+   * point inaccuracies could cause the normal home view to be a pixel
+   * or two out otherwise. */
   clutter_actor_get_allocation_geometry (CLUTTER_ACTOR(view), &geom);
-  clutter_actor_set_position(priv->applets_container, geom.x, geom.y);
+  if (geom.x % HD_COMP_MGR_LANDSCAPE_WIDTH != 0)
+    {
+      /* work out integer page number (ipage) and fractions of a page (page) */
+      float page = geom.x / (float)HD_COMP_MGR_LANDSCAPE_WIDTH;
+      gint ipage = (int)(page+100) - 100;
+      page = page - ipage;
+      /* non-linearise a little - hd_transition_smooth_ramp is too harsh */
+      page = hd_transition_smooth_ramp(page)*0.5 + page*0.5;
+      /* recombine to pixel offset again */
+      offset_x = (int)((page+ipage) * HD_COMP_MGR_LANDSCAPE_WIDTH);
+    }
+  else
+    offset_x = geom.x;
+  clutter_actor_set_position(priv->applets_container, offset_x, geom.y);
 }
 
 /* ClutterStage::notify::allocation handler to rotate a background
