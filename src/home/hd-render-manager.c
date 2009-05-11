@@ -841,17 +841,10 @@ void hd_render_manager_sync_clutter_before ()
       g_warning("%s: Invalid button %d in top-left",
           __FUNCTION__, visible_top_left);
   }
-  switch (visible_top_right)
-  {
-    case HDRM_BUTTON_NONE:
-      break;
-    case HDRM_BUTTON_BACK:
-      btn_state |= HDTB_VIS_BTN_BACK;
-      break;
-    default:
-      g_warning("%s: Invalid button %d in top-right",
-          __FUNCTION__, visible_top_right);
-  }
+
+  if (visible_top_right == HDRM_BUTTON_BACK)
+    btn_state |= HDTB_VIS_BTN_BACK;
+
   if (STATE_TOOLBAR_FOREGROUND(priv->state))
     btn_state |= HDTB_VIS_FOREGROUND;
 
