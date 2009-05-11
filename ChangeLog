@@ -1,3 +1,8 @@
+2009-05-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/util/hd-dbus.c (hd_dbus_init): No need to use g_strdup_printf
+	for static strings.
+
 2009-05-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#106183 Desktop shortcut moves place after UI has been rotated
