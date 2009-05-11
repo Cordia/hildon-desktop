@@ -5,3 +5,6 @@ do
     sleep 1
 done
 
+sleep 5
+dbus-send --system --type=signal /com/nokia/HildonDesktop/ready \
+          com.nokia.HildonDesktop.ready
