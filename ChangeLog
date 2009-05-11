@@ -1,5 +1,7 @@
 2009-05-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.48
+
 	* src/util/hd-dbus.c (hd_dbus_init): No need to use g_strdup_printf
 	for static strings.
 

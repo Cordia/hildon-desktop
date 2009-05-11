@@ -1,11 +1,29 @@
-hildon-desktop (1:2.2.48-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.48-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#106496 - Ellipsis at the end of Page title
   * Update libmatchbox2 build dependency.
   * Fixes: NB#115875 - Emit ready signal from hildon-desktop-wait script.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  6 May 2009 09:36:43 +0300
+  Gordon:
+  * Fixes: NB#112411 - CRITICAL warning in hildon-desktop
+  * Fixes: NB#104959 - Icons in main view are overlapping with icons in sub
+    view.
+  * Fixes: NB#110247 - Screen overlap in certain scenario.
+  * Fixes: NB#113582 - Title text doesn't adopt theme colour
+
+  Adam:
+  * Fixes: NB#106183 - Desktop shortcut moves place after UI has been rotated
+  * Fixes: NB#107676 - Status menu should not turn in portrait mode
+
+  Marc:
+  * Fixes: NB#105130 - Sometimes "no applications" banner is shown when tapped
+    on task button.
+  * Fixes: NB#94416 - Integrate libgnome-menu for reading .desktop files.
+  * Fixes: NB#96458 - UnInstalled Applications Shown in Launcher
+  * Fixes: NB#100815 - Desktop doesn't react to .desktop file changes
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 11 May 2009 15:01:47 +0300
 
 hildon-desktop (1:2.2.47-1) unstable; urgency=low
 
