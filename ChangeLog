@@ -1,3 +1,9 @@
+2009-05-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher-grid.h
+	* src/launcher/hd-launcher-grid.c: Moved tile vertical spacing const
+	  into the header file and made it 32px as per the spec	  
+
 2009-05-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-render-manager.c

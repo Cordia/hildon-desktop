@@ -707,7 +707,7 @@ hd_launcher_grid_init (HdLauncherGrid *launcher)
   launcher->priv = priv = HD_LAUNCHER_GRID_GET_PRIVATE (launcher);
 
   priv->h_spacing = HILDON_MARGIN_DEFAULT;
-  priv->v_spacing = 40;
+  priv->v_spacing = HD_LAUNCHER_GRID_ROW_SPACING;
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (launcher), FALSE);
 }
