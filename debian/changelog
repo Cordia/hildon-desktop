@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.49-1~unreleased) unstable; urgency=low
 
-  * foo
+  * Add "CLUTTER_VBLANK=none" to hildon-desktop.init when starting h-d. Should
+    be safe since it's used in Scratchbox only.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 11 May 2009 16:14:31 +0300
 
