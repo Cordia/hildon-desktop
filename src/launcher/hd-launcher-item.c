@@ -346,6 +346,7 @@ _hd_launcher_app_main_position (const gchar *id)
     {
       g_datalist_init (&main_apps);
 
+      /* Main application group. */
       g_datalist_set_data (&main_apps, "browser", (gpointer)1);
       g_datalist_set_data (&main_apps, "mediaplayer", (gpointer)2);
       g_datalist_set_data (&main_apps, "calendar", (gpointer)3);
@@ -360,6 +361,14 @@ _hd_launcher_app_main_position (const gchar *id)
       g_datalist_set_data (&main_apps, "osso_calculator", (gpointer)12);
       g_datalist_set_data (&main_apps, "hildon-application-manager", (gpointer)13);
       g_datalist_set_data (&main_apps, "hildon-control-panel", (gpointer)14);
+
+      /* Applications subgroup. */
+      g_datalist_set_data (&main_apps, "filemanager", (gpointer)1);
+      g_datalist_set_data (&main_apps, "osso-backup", (gpointer)2);
+      g_datalist_set_data (&main_apps, "osso_pdfviewer", (gpointer)3);
+      g_datalist_set_data (&main_apps, "chess_startup", (gpointer)4);
+      g_datalist_set_data (&main_apps, "osso_lmarbles", (gpointer)5);
+      g_datalist_set_data (&main_apps, "mahjong_startup", (gpointer)6);
     }
 
   return (guint)g_datalist_get_data (&main_apps, id);
@@ -461,7 +470,7 @@ hd_launcher_item_new_from_keyfile (const gchar *id,
     if (main_pos)
       result->priv->position = main_pos;
     else
-      result->priv->position = 1000;
+      result->priv->position = 0;
   }
 
   return result;

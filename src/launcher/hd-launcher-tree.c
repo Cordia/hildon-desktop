@@ -118,6 +118,18 @@ walk_thread_compare_items (HdLauncherItem *a, HdLauncherItem *b)
   guint apos = hd_launcher_item_get_position (a);
   guint bpos = hd_launcher_item_get_position (b);
 
+  /* If neither of them specifies an ordering, order alphabetically. */
+  if ((apos == 0) && (bpos == 0))
+    return g_utf8_collate (hd_launcher_item_get_local_name(a),
+                           hd_launcher_item_get_local_name(b));
+
+  /* If one of them is 0, the other wins. */
+  if (apos == 0)
+    return 1;
+  if (bpos == 0)
+    return -1;
+
+  /* If both have values, it depends on that. */
   return apos - bpos;
 }
 
