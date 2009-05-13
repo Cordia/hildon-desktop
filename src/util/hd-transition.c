@@ -88,7 +88,7 @@ hd_transition_smooth_ramp(float amt)
   return amt;
 }
 
-static float
+float
 hd_transition_ease_in(float amt)
 {
   if (amt>0 && amt<1)
@@ -96,7 +96,7 @@ hd_transition_ease_in(float amt)
   return amt;
 }
 
-static float
+float
 hd_transition_ease_out(float amt)
 {
   if (amt>0 && amt<1)

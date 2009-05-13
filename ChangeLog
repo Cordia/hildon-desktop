@@ -1,5 +1,15 @@
 2009-05-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* data/transitions.ini: X now blanks for less time so have shortened
+	  the blanking time in the transition to the planned 300ms 
+	* src/util/hd-transition.h
+	* src/util/hd-transition.c: Made functions for animation curves public
+	* src/launcher/hd-launcher.c: Now don't use easing in, only ease out
+	  when doing launch animation. This makes it smoother given the small
+	  time period allowed for it.
+
+2009-05-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/util/hd-util.c
 	* src/util/hd-util.h: Added hd_util_get_cursor_position
 	* src/launcher/hd-launcher.c: Now make app loading transition

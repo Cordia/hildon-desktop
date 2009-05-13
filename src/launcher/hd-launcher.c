@@ -741,7 +741,7 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
   frames = clutter_timeline_get_n_frames(timeline);
   amt = frame_num / (float)frames;
 
-  zoom = 0.05 + (1 - cos(amt * 3.141592)) * 0.475f;
+  zoom = 0.05 + hd_transition_ease_out(amt) * 0.95f;
 
   if (!priv->launch_image)
     return;
