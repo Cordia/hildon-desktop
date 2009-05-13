@@ -1,5 +1,16 @@
 2009-05-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* configure.ac: added linking to libhildondesktop (It was already
+	  required in debian/control)
+	* src/home/hd-home.c: Use libhildondesktop to write application
+	  screenshots in PVR format instead of PNG (for faster load times)
+	* src/launcher/hd-launcher.c: Switch to loading application screenshots
+	  in PVR file format (and clipping them to size if required). Also fix
+	  for the application launch animation starting from the location of
+	  the previously clicked tile - not the currently clicked one.
+
+2009-05-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/mb/hd-comp-mgr.c
 	* src/home/hd-render-manager.h
 	* src/home/hd-render-manager.c: Removed un-needed queue_redraw code

@@ -58,6 +58,7 @@
 #include <unistd.h>
 
 #include <gdk/gdkx.h>
+#include <libhildondesktop/hd-pvr-texture.h>
 
 #define HDH_EDIT_BUTTON_DURATION 200
 #define HDH_EDIT_BUTTON_TIMEOUT 3000
@@ -449,9 +450,9 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 	g_mkdir_with_parents (filename, 0770);
 	g_free (filename);
 
-	filename = g_strdup_printf ("%s/.cache/launch/%s.png",
-				     getenv("HOME"),
-				     service_name);
+	filename = g_strdup_printf ("%s/.cache/launch/%s.pvr",
+	                                     getenv("HOME"),
+	                                     service_name);
 
 	switch (event->data.l[0])
 	  {
@@ -491,11 +492,7 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 						   width,
 						   height);
 
-	      gdk_pixbuf_save (pixbuf,
-			       filename,
-			       "png",
-			       NULL,
-			       NULL);
+	      hd_pvr_texture_save(filename, pixbuf, NULL);
 
 	      gdk_pixbuf_unref (pixbuf);
 	    }

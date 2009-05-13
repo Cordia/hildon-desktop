@@ -47,6 +47,7 @@
 #include "hd-theme.h"
 #include "hd-clutter-cache.h"
 #include "hd-transition.h"
+#include "tidy/tidy-sub-texture.h"
 
 #include <hildon/hildon-banner.h>
 
@@ -329,10 +330,12 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
   HdLauncherApp *app = HD_LAUNCHER_APP (data);
   ClutterActor *top_page;
 
+  /* We must do this before hd_app_mgr_launch, as it uses the tile
+   * clicked in order to zoom the launch image from the correct place */
+  priv->launch_tile = tile;
+
   if (!hd_app_mgr_launch (app))
     return;
-
-  priv->launch_tile = tile;
 
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
         HD_LAUNCHER_PAGE_TRANSITION_LAUNCH);
@@ -536,7 +539,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
       index(service_name, '/')==NULL &&
       service_name[0]!='.')
     {
-      cached_image = g_strdup_printf("%s/.cache/launch/%s.png",
+      cached_image = g_strdup_printf("%s/.cache/launch/%s.pvr",
 				     getenv("HOME"),
 				     service_name);
 
@@ -570,11 +573,42 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   /* App image - if we had one */
   if (loading_image)
     {
+      g_warning("%s: Loading image file '%s' specified for '%s'",
+                __FUNCTION__, loading_image, hd_launcher_app_get_exec(item));
       app_image = clutter_texture_new_from_file(loading_image, 0);
       if (!app_image)
         g_warning("%s: Preload image file '%s' specified for '%s'"
                     " couldn't be loaded",
                   __FUNCTION__, loading_image, hd_launcher_app_get_exec(item));
+      else
+        {
+          guint w,h;
+          ClutterGeometry region = {0, 0, 0, 0};
+          clutter_actor_get_size(app_image, &w, &h);
+
+          region.width = HD_COMP_MGR_SCREEN_WIDTH;
+          region.height = HD_COMP_MGR_SCREEN_HEIGHT-HD_COMP_MGR_TOP_MARGIN;
+
+          if (w > region.width ||
+              h > region.height)
+            {
+              /* It may be that we get a bigger texture than we need
+               * (because PVR texture compression has to use 2^n width
+               * and height). In this case we want to crop off the
+               * bottom + right sides, which we can do more efficiently
+               * with TidySubTexture than we can with set_clip.
+               */
+               TidySubTexture *sub;
+               sub = tidy_sub_texture_new(CLUTTER_TEXTURE(app_image));
+               tidy_sub_texture_set_region(sub, &region);
+               clutter_actor_set_size(CLUTTER_ACTOR(sub),
+                                      region.width, region.height);
+               clutter_actor_hide(app_image);
+               clutter_container_add_actor(
+                   CLUTTER_CONTAINER(priv->launch_image), app_image);
+               app_image = CLUTTER_ACTOR(sub);
+            }
+        }
     }
   /* if not, create a rectangle with the background colour from the theme */
   if (!app_image)
@@ -589,7 +623,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   title_height = clutter_actor_get_height(tb_image);
   clutter_actor_set_size(app_image,
                          HD_COMP_MGR_SCREEN_WIDTH,
-                         HD_COMP_MGR_SCREEN_HEIGHT-title_height);
+                         HD_COMP_MGR_SCREEN_HEIGHT-HD_COMP_MGR_TOP_MARGIN);
   clutter_actor_set_position(app_image,
                              0, title_height);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->launch_image), app_image);
