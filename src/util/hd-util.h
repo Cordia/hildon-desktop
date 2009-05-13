@@ -24,4 +24,6 @@ Bool hd_util_client_has_modal_blocker (MBWindowManagerClient *c);
 gboolean hd_util_change_screen_orientation (MBWindowManager *wm,
                                             gboolean goto_portrait);
 
+gboolean hd_util_get_cursor_position(gint *x, gint *y);
+
 #endif

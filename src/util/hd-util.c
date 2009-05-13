@@ -342,3 +342,25 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
 
   return TRUE;
 }
+
+/* Get the current cursor position, return true (and updates the parameters)
+ * on success, otherwise leaves them as they were */
+gboolean hd_util_get_cursor_position(gint *x, gint *y)
+{
+  Window root, child;
+  int root_x, root_y;
+  int pos_x, pos_y;
+  unsigned int keys_buttons;
+  MBWindowManager *wm = mb_wm_root_window_get (NULL)->wm;
+
+  if (!wm->root_win)
+    return FALSE;
+
+  if (!XQueryPointer(wm->xdpy, wm->root_win->xwindow, &root, &child, &root_x, &root_y,
+      &pos_x, &pos_y, &keys_buttons))
+    return FALSE;
+
+  *x = pos_x;
+  *y = pos_y;
+  return TRUE;
+}

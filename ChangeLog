@@ -1,5 +1,13 @@
 2009-05-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/util/hd-util.c
+	* src/util/hd-util.h: Added hd_util_get_cursor_position
+	* src/launcher/hd-launcher.c: Now make app loading transition
+	  start from last mouse press location (for desktop shortcuts and
+	  any app not launched from the launcher).
+
+2009-05-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/launcher/hd-launcher.c: Removed debug print
 
 2009-05-13  Gordon Williams <gordon.williams@collabora.co.uk>

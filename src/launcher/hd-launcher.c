@@ -47,6 +47,7 @@
 #include "hd-theme.h"
 #include "hd-clutter-cache.h"
 #include "hd-transition.h"
+#include "hd-util.h"
 #include "tidy/tidy-sub-texture.h"
 
 #include <hildon/hildon-banner.h>
@@ -530,6 +531,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   gchar *cached_image = NULL;
   ClutterActor *app_image = 0;
   ClutterActor *tb_image = 0;
+  gint cursor_x, cursor_y;
   gint title_height;
 
   /* Is there a cached image? */
@@ -628,11 +630,22 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
 
   ClutterContainer *parent = hd_render_manager_get_front_group();
 
-  /* default pos to centre of the screen */
-  priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
-  priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
-  /* work out where to expand the image from from the centre of the icon of
-   * the tile that was clicked on */
+  /* Try and get the current mouse cursor location - this should be the place
+   * the user last pressed */
+  if (hd_util_get_cursor_position(&cursor_x, &cursor_y))
+    {
+      priv->launch_position.x = CLUTTER_INT_TO_FIXED(cursor_x);
+      priv->launch_position.y = CLUTTER_INT_TO_FIXED(cursor_y);
+    }
+  else
+    {
+      /* default pos to centre of the screen */
+      priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
+      priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
+    }
+
+  /* If a launcher tile was clicked, expand the image from the centre of the
+   * the tile instead */
   if (tile)
     {
       ClutterActor *parent;
@@ -668,7 +681,6 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
         hd_launcher_page_get_scroll_y(HD_LAUNCHER_PAGE(priv->active_page));
   /* all because the tidy- stuff breaks clutter's nice 'get absolute position'
    * code... */
-
 
   clutter_actor_set_name(priv->launch_image,
                          "HdLauncher:launch_image");
