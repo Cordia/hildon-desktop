@@ -1,3 +1,10 @@
+2009-05-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/mb/hd-comp-mgr.c
+	* src/home/hd-render-manager.h
+	* src/home/hd-render-manager.c: Removed un-needed queue_redraw code
+	and instead just call clutter directly.		
+
 2009-05-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher-grid.h

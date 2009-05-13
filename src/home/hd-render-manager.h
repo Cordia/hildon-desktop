@@ -228,12 +228,6 @@ void hd_render_manager_place_titlebar_elements(void);
 /* Sets whether any of the buttons will actually be set to do anything */
 void hd_render_manager_set_reactive(gboolean reactive);
 
-/* This queues a redraw using a signal set to _CLEANUP. The plan is that this
- * will be processed after all other signals (including the update_area
- * signals), which will allow us to update the full area rather than doing
- * multiple redraws (which flickers and takes ages) */
-void hd_render_manager_queue_delay_redraw(void);
-
 /* This stops any current transition that render manager is doing */
 void hd_render_manager_stop_transition(void);
 

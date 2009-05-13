@@ -1259,7 +1259,7 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
     if (stage)
       {
         clutter_stage_set_damaged_area(stage, area);
-        hd_render_manager_queue_delay_redraw();
+        clutter_actor_queue_redraw_damage(clutter_stage_get_default());
       }
   }
 }

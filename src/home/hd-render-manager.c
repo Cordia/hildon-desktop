@@ -199,15 +199,12 @@ struct _HdRenderManagerPrivate {
   gboolean            timeline_playing;
 
   gboolean            in_set_state;
-  gboolean            queued_redraw;
 };
 
 /* ------------------------------------------------------------------------- */
 static void
 stage_allocation_changed(ClutterActor *actor, GParamSpec *unused,
                          ClutterActor *stage);
-static void
-hd_render_manager_paint_notify(void);
 static void
 on_timeline_blur_new_frame(ClutterTimeline *timeline,
                            gint frame_num, gpointer data);
@@ -469,12 +466,7 @@ hd_render_manager_init (HdRenderManager *self)
                       G_CALLBACK (on_timeline_blur_completed), self);
   priv->timeline_playing = FALSE;
 
-  g_signal_connect (self, "paint",
-                      G_CALLBACK (hd_render_manager_paint_notify),
-                      0);
-
   priv->in_set_state = FALSE;
-  priv->queued_redraw = FALSE;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -568,15 +560,6 @@ on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    PRIVATE  */
 /* ------------------------------------------------------------------------- */
-
-static
-void hd_render_manager_paint_notify()
-{
-  /* It is not necessary to check for !@the_render_manager
-   * because this signal handler is connected when it is created
-   * and @the_render_manager is never taken down. */
-  the_render_manager->priv->queued_redraw = FALSE;
-}
 
 static
 void hd_render_manager_set_blur (HDRMBlurEnum blur)
@@ -2034,21 +2017,6 @@ void hd_render_manager_set_visibilities()
         }
     }
   hd_render_manager_set_input_viewport();
-}
-
-void hd_render_manager_queue_delay_redraw()
-{
-  if (G_UNLIKELY(!the_render_manager))
-    /* TODO Is it necessary to check? */
-    return;
-  if (!the_render_manager->priv->queued_redraw)
-    { /* The flag is cleared when paint is complete. */
-      the_render_manager->priv->queued_redraw = TRUE;
-
-      /* TODO We can use clutter_stage_queue_redraw_damage()
-       *       directlyif we never unset ->allow_redraw. */
-      clutter_actor_queue_redraw_damage(clutter_stage_get_default());
-    }
 }
 
 /* Called by hd-task-navigator when its state changes, as when notifications
