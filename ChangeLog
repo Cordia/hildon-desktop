@@ -1,5 +1,9 @@
 2009-05-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/launcher/hd-launcher.c: Removed debug print
+
+2009-05-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* configure.ac: added linking to libhildondesktop (It was already
 	  required in debian/control)
 	* src/home/hd-home.c: Use libhildondesktop to write application

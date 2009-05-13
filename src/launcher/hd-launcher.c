@@ -573,8 +573,6 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   /* App image - if we had one */
   if (loading_image)
     {
-      g_warning("%s: Loading image file '%s' specified for '%s'",
-                __FUNCTION__, loading_image, hd_launcher_app_get_exec(item));
       app_image = clutter_texture_new_from_file(loading_image, 0);
       if (!app_image)
         g_warning("%s: Preload image file '%s' specified for '%s'"
