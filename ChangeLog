@@ -1,3 +1,9 @@
+2009-05-14  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Order non-positioned task launcher entries case-insensitively.
+
+	* src/launcher/hd-launcher-tree.c:
+
 2009-05-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Order task launcher entries alphabetically if they don't have a position.

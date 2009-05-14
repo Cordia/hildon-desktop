@@ -120,8 +120,17 @@ walk_thread_compare_items (HdLauncherItem *a, HdLauncherItem *b)
 
   /* If neither of them specifies an ordering, order alphabetically. */
   if ((apos == 0) && (bpos == 0))
-    return g_utf8_collate (hd_launcher_item_get_local_name(a),
-                           hd_launcher_item_get_local_name(b));
+    {
+      gint result;
+      gchar *a_casefolded =
+                    g_utf8_casefold (hd_launcher_item_get_local_name(a), -1);
+      gchar *b_casefolded =
+                    g_utf8_casefold (hd_launcher_item_get_local_name(b), -1);
+      result = g_utf8_collate (a_casefolded, b_casefolded);
+      g_free (a_casefolded);
+      g_free (b_casefolded);
+      return result;
+    }
 
   /* If one of them is 0, the other wins. */
   if (apos == 0)
