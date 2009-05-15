@@ -3,6 +3,8 @@ hildon-desktop (1:2.2.49-1~unreleased) unstable; urgency=low
   [ Kimmo Hämäläinen ]
   * Add "CLUTTER_VBLANK=none" to hildon-desktop.init when starting h-d. Should
     be safe since it's used in Scratchbox only.
+  * Close menus when new application appears. This is in preparation for
+    fixing NB#116326.
 
   [ Claudio Saavedra ]
   * Check for /scratchbox in hildon-desktop.init to decide whether to

@@ -1697,7 +1697,7 @@ reset_thumb_title (Thumbnail * thumb)
     new_title = NULL;
 
   g_assert (thumb->title != NULL);
-  g_warning ("%s: *** new_title = '%s'", __func__, new_title);
+  g_debug ("%s: *** new_title = '%s'", __func__, new_title);
   set_label_text_and_color (thumb->title, new_title, thumb->tnote
                             ? &ReversedTextColor : &DefaultTextColor);
   clutter_label_set_use_markup (CLUTTER_LABEL(thumb->title), has_markup);
