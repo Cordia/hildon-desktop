@@ -1,21 +1,24 @@
 hildon-desktop (1:2.2.49-1~unreleased) unstable; urgency=low
 
-  [ Kimmo Hämäläinen ]
+  Kimmo:
   * Add "CLUTTER_VBLANK=none" to hildon-desktop.init when starting h-d. Should
     be safe since it's used in Scratchbox only.
   * Close menus when new application appears. This is in preparation for
     fixing NB#116326.
 
-  [ Claudio Saavedra ]
+  Alejandro:
+  * Fixes: NB#110763 - hildon-desktop should avoid direct linkage to cail
+
+  Claudio:
   * Check for /scratchbox in hildon-desktop.init to decide whether to
     start hildon-desktop with su or not.
 
-  [ Laszlo Pere ]
+  Laszlo:
   * Fixes: NB#114467 - Not updating titles of minimized applications.
   * Fixes: NB#113266 - In the task switcher, name of the application and name
     of the file is missing in certain scenarios.
 
- -- Claudio Saavedra <csaavedra@igalia.com>  Fri, 15 May 2009 11:06:10 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 15 May 2009 17:29:35 +0300
 
 hildon-desktop (1:2.2.48-1) unstable; urgency=low
 
