@@ -1,3 +1,8 @@
+2009-05-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-app.c (delete_open_menus): New. Close menus when new
+	application appears. This is in preparation for fixing NB#116326.
+
 2009-05-15  Laszlo Pere  <lpere@blumsoft.eu>
 
 	Fixes: NB#114467 - Not updating titles of minimized applications.
