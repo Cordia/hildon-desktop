@@ -295,6 +295,7 @@ typedef struct
       GPtrArray           *dialogs;
       MBGeometry           inapwin;
       gchar               *saved_title, *nodest;
+      gboolean             title_had_markup;
 
       /*
        * -- @video_fname: Where to look for the last-frame video screenshot
@@ -1679,22 +1680,27 @@ reset_thumb_title (Thumbnail * thumb)
 {
   const gchar *new_title;
   const MBWMClientWindow *mbwmcwin;
+  gboolean has_markup = TRUE;
 
   /* What to reset the title to? */
   if (thumb_has_notification (thumb))
     new_title = hd_note_get_summary (thumb->tnote->hdnote);
-  else if (thumb->saved_title)
+  else if (thumb->saved_title) {
     /* Client must be having its sweet dreams in hibernation. */
     new_title = thumb->saved_title;
-  else if ((mbwmcwin = actor_to_client_window (thumb->apwin, NULL)) != NULL)
+    has_markup = thumb->title_had_markup;
+  } else if ((mbwmcwin = actor_to_client_window (thumb->apwin, NULL)) != NULL) {
     /* Normal case. */
     new_title = mbwmcwin->name;
-  else
+    has_markup = mbwmcwin->name_has_markup;
+  } else
     new_title = NULL;
 
   g_assert (thumb->title != NULL);
+  g_warning ("%s: *** new_title = '%s'", __func__, new_title);
   set_label_text_and_color (thumb->title, new_title, thumb->tnote
                             ? &ReversedTextColor : &DefaultTextColor);
+  clutter_label_set_use_markup (CLUTTER_LABEL(thumb->title), has_markup);
 }
 
 /* Dress a %Thumbnail: create @thumb->frame.all and populate it
@@ -1789,6 +1795,13 @@ recreate_thumb_frame (Thumbnail * thumb)
                                   oldframe);
 
   layout_thumb_frame (thumb, &Fly_at_once);
+}
+
+static Bool
+win_changed (MBWMClientWindow *win, int unused1, Thumbnail *thumb)
+{
+  reset_thumb_title (thumb);
+  return True;
 }
 
 /* Creates @thumb->thwin.  The exact position of the inner actors is decided
@@ -2214,6 +2227,7 @@ hd_task_navigator_hibernate_window (HdTaskNavigator * self,
   /* Save the window name for reset_thumb_title(). */
   g_return_if_fail (mbwmcwin->name);
   apthumb->saved_title = g_strdup (mbwmcwin->name);
+  apthumb->title_had_markup = mbwmcwin->name_has_markup;
 }
 
 /* Tells us to show @new_win in place of @old_win, and forget about
@@ -2393,8 +2407,9 @@ create_appthumb (ClutterActor * apwin)
   g_signal_connect_swapped (apthumb->close, "button-release-event",
                             G_CALLBACK (appthumb_close_clicked),
                             apthumb);
-
-
+  mb_wm_object_signal_connect (
+                        MB_WM_OBJECT (mbwmcwin), MBWM_WINDOW_PROP_NAME,
+                        (MBWMObjectCallbackFunc) win_changed, apthumb);
   return apthumb;
 }
 

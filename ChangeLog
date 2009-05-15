@@ -1,3 +1,13 @@
+2009-05-15  Laszlo Pere  <lpere@blumsoft.eu>
+
+	Fixes: NB#114467 - Not updating titles of minimized applications.
+	Fixes: NB#113266 - In the task switcher, name of the application and 
+	name of the file is missing in certain scenarios.
+
+	* src/home/hd-task-navigator.c: Connecting to a signal to sense when
+	  the window title has been changed.
+	* src/home/hd-task-navigator.c: Handling the title markup.
+
 2009-05-14  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Order non-positioned task launcher entries case-insensitively.

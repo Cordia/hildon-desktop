@@ -8,6 +8,11 @@ hildon-desktop (1:2.2.49-1~unreleased) unstable; urgency=low
   * Check for /scratchbox in hildon-desktop.init to decide whether to
     start hildon-desktop with su or not.
 
+  [ Laszlo Pere ]
+  * Fixes: NB#114467 - Not updating titles of minimized applications.
+  * Fixes: NB#113266 - In the task switcher, name of the application and name
+    of the file is missing in certain scenarios.
+
  -- Claudio Saavedra <csaavedra@igalia.com>  Fri, 15 May 2009 11:06:10 +0300
 
 hildon-desktop (1:2.2.48-1) unstable; urgency=low
