@@ -5,6 +5,8 @@ hildon-desktop (1:2.2.49-1~unreleased) unstable; urgency=low
     be safe since it's used in Scratchbox only.
   * Close menus when new application appears. This is in preparation for
     fixing NB#116326.
+  * Add libcail-dev build dependency back. Does not cause linking to libcail
+    anymore.
 
   Alejandro:
   * Fixes: NB#110763 - hildon-desktop should avoid direct linkage to cail
