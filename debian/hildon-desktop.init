@@ -5,7 +5,7 @@ if [ -r /etc/osso-af-init/af-defines.sh ]; then
 fi
 
 START_AS_USER=""
-[ -f /bin/su ] && START_AS_USER="su - user"
+[ -d /scratchbox ] || START_AS_USER="su - user"
 
 case "$1" in
 start)
