@@ -4,3 +4,4 @@ debian/tmp/etc/osso-rfs-scripts
 debian/tmp/etc/xdg/menus
 debian/tmp/usr/bin
 debian/tmp/usr/share
+debian/tmp/usr/lib/gtk-*/modules/*.so

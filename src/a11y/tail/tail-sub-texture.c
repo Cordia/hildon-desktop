@@ -30,6 +30,7 @@
  */
 
 #include <cail/cail-actor.h>
+#include <cail/cail-texture.h>
 
 #include "tidy/tidy-sub-texture.h"
 #include "tail-sub-texture.h"

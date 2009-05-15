@@ -12,7 +12,7 @@ bin_PROGRAMS = hildon-desktop
 
 hildon_desktop_SOURCES = main.c hildon-desktop.h
 
-hildon_desktop_LDADD = $(MY_LIBS) $(HD_LIBS) $(HDA_LIBS) $(A11Y_LA)
+hildon_desktop_LDADD = $(MY_LIBS) $(HD_LIBS) $(A11Y_LA)
 hildon_desktop_CFLAGS = -std=c99 -fgnu89-inline
 
 schemadir = ${datadir}/gconf/schemas

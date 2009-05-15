@@ -24,7 +24,7 @@
 #define                                         __TAIL_SUB_TEXTURE_H__
 
 #include                                        <atk/atk.h>
-#include                                        "cail/cail-actor.h"
+#include                                        <cail/cail-actor.h>
 
 G_BEGIN_DECLS
 

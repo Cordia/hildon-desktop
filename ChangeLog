@@ -1,5 +1,9 @@
 2009-05-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Apply patch from Alejandro Pineiro for NB#110763.
+	* src/a11y/hildon-desktop-a11y.c: Load a11y support as modules if
+	available.
+
 	* src/mb/hd-app.c (delete_open_menus): New. Close menus when new
 	application appears. This is in preparation for fixing NB#116326.
 

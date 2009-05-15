@@ -24,12 +24,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 
-#include <cail/cail.h>
-
 #include "hildon-desktop-a11y.h"
-#include "launcher/hda-launcher.h"
-#include "home/hda-home-init.h"
-#include "tail/tail.h"
 
 #define ENV_VAR      "ENABLE_HILDON_DESKTOP_A11Y"
 #define VALUE_STRING "TRUE"
@@ -136,17 +131,10 @@ hildon_desktop_a11y_init (void)
       return;
     }
 
-  /* gail */
+  /* loading the different accessibility modules  */
   _a11y_invoke_module ("libgail", TRUE);
-
-  /* cail : FIXME, this should be done using a module too */
-
-  cail_accessibility_module_init();
-
-  /* Init the concrete steps */
-  hda_launcher_accessibility_init ();
-  hda_home_accessibility_init ();
-  tail_accessibility_init ();
+  _a11y_invoke_module ("libcail", TRUE);
+  _a11y_invoke_module ("libhda", TRUE);
 
   /* atk-bridge */
   _a11y_invoke_module ("libatk-bridge", TRUE);
