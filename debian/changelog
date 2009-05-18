@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.50-1~unreleased) unstable; urgency=low
+
+  * write_something_here
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 18 May 2009 12:16:52 +0300
+
 hildon-desktop (1:2.2.49-1) unstable; urgency=low
 
   Kimmo:
