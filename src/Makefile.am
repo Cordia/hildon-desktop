@@ -31,4 +31,8 @@ backupconfdir = ${sysconfdir}/osso-backup/applications
 backupconf_DATA = \
 	hildon-desktop.conf
 
+backupprebackupdir = ${sysconfdir}/osso-backup/pre-backup.d/
+backupprebackup_SCRIPTS = \
+	hildon-desktop.prebackup.sh
+
 CLEANFILES = *~

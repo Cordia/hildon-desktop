@@ -20,6 +20,10 @@ hildon-desktop (1:2.2.49-1~unreleased) unstable; urgency=low
   * Fixes: NB#113266 - In the task switcher, name of the application and name
     of the file is missing in certain scenarios.
 
+  Jan Arne:
+  * Fixes: NB#103823 - Unable to restore home applets from backup and restore
+    application.
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 15 May 2009 17:29:35 +0300
 
 hildon-desktop (1:2.2.48-1) unstable; urgency=low

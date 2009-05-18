@@ -1,3 +1,12 @@
+2009-05-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#103823 - Unable to restore home applets from backup and
+	restore application.
+
+	* src/Makefile.am:
+	* src/hildon-desktop.prebackup.sh (added): Add prebackup script which
+	copies the system plugins config to user config if that not exist yet.
+
 2009-05-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Apply patch from Alejandro Pineiro for NB#110763.
