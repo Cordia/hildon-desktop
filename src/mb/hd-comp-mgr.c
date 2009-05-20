@@ -2355,6 +2355,8 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
     {
+      MBGeometry cov;
+
       PORTRAIT ("CLIENT %p", c);
       PORTRAIT ("IS IGNORABLE?");
       if (c == hmgr->priv->status_area_client)
@@ -2375,10 +2377,10 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
         continue;
       if (hd_comp_mgr_ignore_window (c))
         continue;
+
       PORTRAIT ("IS VISIBLE OR CURRENT?");
-      if (!hd_render_manager_is_client_visible (c)
-          && !(c->window
-               && hd_wm_current_app_is (NULL, 0) == c->window->xwindow))
+      if (!hd_render_manager_is_client_visible (c) && !(c->window
+          && hd_wm_current_app_is (NULL, 0) == c->window->xwindow))
         /*
          * Ignore invisibles except if it's the current application.
          * This is for cases when the topmost client requests pmode
@@ -2394,6 +2396,13 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
       if (!hcmgrc->priv->portrait_supported)
         return FALSE;
       any_requests |= hcmgrc->priv->portrait_requested;
+
+      /* If the client covers everything below it, we are done. This is
+       * needed because hd_render_manager_is_client_visible doesn't seem
+       * to be enough (it is based on actor visibility). */
+      mb_wm_client_get_coverage (c, &cov);
+      if (cov.width >= wm->xdpy_width && cov.height >= wm->xdpy_height)
+        break;
 
       /*
        * This is a workaround for the fullscreen incoming call dialog.

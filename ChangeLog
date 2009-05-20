@@ -1,3 +1,10 @@
+2009-05-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait): Stop going
+	through the stack after a window covering the whole screen was
+	encountered. This fixes a bogus rotation from portrait to landscape
+	when e.g. Calculator is behind Call UI and you open the dialpad.
+
 2009-05-20  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/home/hd-title-bar.c: Added a static function to determine
