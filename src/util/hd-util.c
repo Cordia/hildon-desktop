@@ -296,6 +296,8 @@ hd_util_change_screen_orientation_cb (gpointer unused)
             hd_transition_rotate_screen(
                     FALSE, Orientation_change.direction == GOTO_PORTRAIT,
                     G_CALLBACK(hd_util_change_screen_orientation_cb), NULL);
+            /* Fix NB#117109 by re-evaluating what is blurred and what isn't */
+            hd_render_manager_update_blur_state(0);
           }
         else
           {

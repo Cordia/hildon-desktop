@@ -1,3 +1,14 @@
+2009-05-20  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#117109 - Contact list background visible in portrait mode
+
+	* src/util/hd-util.c: Update blur state after the screen rotation in
+	order to make sure that the windows that were blurred previously are
+	still blurred. In this case the background will be white during the 
+	screen rotation transition unless clutter >= 0.8.2-0maemo32 is used.
+	The new clutter will also fix the white rects during screen rotation
+	issue.
+
 2009-05-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait): Stop going
