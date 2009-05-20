@@ -369,6 +369,26 @@ hd_title_bar_init (HdTitleBar *bar)
   g_free(font_name);
 }
 
+/*
+ * Returns TRUE iff the status area is visible.
+ * There are several ways the status area can be hidden,
+ * and this function attempts to keep track of all of
+ * them in the same place.
+ */
+static gboolean
+status_area_is_visible (void)
+{
+  ClutterActor *status_area = hd_render_manager_get_status_area();
+  return status_area &&
+    CLUTTER_ACTOR_IS_VISIBLE(status_area) &&
+    clutter_actor_get_y(status_area)>=0;
+  /*
+   * It can also be invisible by being behind something, but in
+   * that case CLUTTER_ACTOR_IS_VISIBLE should be returning
+   * false anyway.
+   */
+}
+
 static void
 hd_title_bar_dispose (GObject *obj)
 {
@@ -600,7 +620,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
       else
         clutter_actor_hide(priv->buttons[BTN_SEPARATOR_LEFT]);
 
-      if (status_area && CLUTTER_ACTOR_IS_VISIBLE(status_area))
+      if (status_area_is_visible())
         {
           clutter_actor_show(priv->buttons[BTN_SEPARATOR_STATUS]);
           clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_STATUS],
@@ -637,7 +657,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
         left_width = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
 
-      if (status_area && CLUTTER_ACTOR_IS_VISIBLE(status_area))
+      if (status_area_is_visible())
         {
           left_width += clutter_actor_get_width(status_area);
           clutter_actor_show(priv->buttons[BTN_SEPARATOR_LEFT]);
@@ -790,7 +810,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
     if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
       x_start += HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
     status_area = hd_render_manager_get_status_area();
-    if (status_area && CLUTTER_ACTOR_IS_VISIBLE(status_area))
+    if (status_area_is_visible())
       x_start += clutter_actor_get_width(status_area);
 
     font_name = hd_gtk_style_resolve_logical_font(HD_TITLE_BAR_TITLE_FONT);
