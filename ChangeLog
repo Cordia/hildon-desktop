@@ -1,3 +1,8 @@
+2009-05-20  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-home-view.c: Modified parallax applet panning method to
+	  something that looks a lot better.
+
 2009-05-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.49
