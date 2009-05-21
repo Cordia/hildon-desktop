@@ -2,6 +2,8 @@ hildon-desktop (1:2.2.50-1~unreleased) unstable; urgency=low
 
   Kimmo:
   * Fix a bogus rotation to landscape caused by a background application.
+  * Add HD_NOTHREADS to hildon-desktop Scratchbox startup script to work
+    around NB#116766.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 18 May 2009 12:16:52 +0300
 
