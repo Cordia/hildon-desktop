@@ -43,6 +43,10 @@ hildon-desktop (1:2.2.49-1) unstable; urgency=low
   * Fixes: NB#103823 - Unable to restore home applets from backup and restore
     application.
 
+  Marc:
+  * Fixes: NB#116215 - Confusing Applications submenu of task launcher after
+    installing lots of apps
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 18 May 2009 12:15:11 +0300
 
 hildon-desktop (1:2.2.48-1) unstable; urgency=low

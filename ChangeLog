@@ -75,8 +75,8 @@
 
 2009-05-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
-	Order task launcher entries alphabetically if they don't have a position.
-	Fixes: NB#116215
+	Order task launcher entries alphabetically if they don't have a
+	position. Fixes: NB#116215
 
 	* src/launcher/hd-launcher-item.c: Add hard-coded positions for default
 	apps in 'Applications' subgroup.
