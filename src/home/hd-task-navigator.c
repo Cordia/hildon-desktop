@@ -324,6 +324,9 @@ typedef struct
    *                  or in the application's they belong to.
    */
   TNote               *tnote;
+
+  MBWMClientWindow    *mbwmcwin;
+  unsigned long        win_changed_cb_id;
 } Thumbnail;
 /* Thumbnail data structures }}} */
 
@@ -1670,6 +1673,9 @@ layout (ClutterActor * newborn)
 static MBWMClientWindow *actor_to_client_window (ClutterActor *win,
                                        const HdCompMgrClient **hcmgrcp);
 
+static Bool
+win_changed (MBWMClientWindow *win, int unused1, Thumbnail *thumb);
+
 /*
  * Reset @thumb's title to the application's name.  Called to set the
  * initial title of a thumbnail (if it has no notifications otherwise)
@@ -1679,7 +1685,7 @@ static void
 reset_thumb_title (Thumbnail * thumb)
 {
   const gchar *new_title;
-  const MBWMClientWindow *mbwmcwin;
+  MBWMClientWindow *mbwmcwin;
   gboolean has_markup = TRUE;
 
   /* What to reset the title to? */
@@ -1691,6 +1697,13 @@ reset_thumb_title (Thumbnail * thumb)
     has_markup = thumb->title_had_markup;
   } else if ((mbwmcwin = actor_to_client_window (thumb->apwin, NULL)) != NULL) {
     /* Normal case. */
+    if (thumb->mbwmcwin && thumb->win_changed_cb_id)
+      mb_wm_object_signal_disconnect (MB_WM_OBJECT (thumb->mbwmcwin),
+                                      thumb->win_changed_cb_id);
+    thumb->mbwmcwin = mbwmcwin;
+    thumb->win_changed_cb_id = mb_wm_object_signal_connect (
+                        MB_WM_OBJECT (mbwmcwin), MBWM_WINDOW_PROP_NAME,
+                        (MBWMObjectCallbackFunc) win_changed, thumb);
     new_title = mbwmcwin->name;
     has_markup = mbwmcwin->name_has_markup;
   } else
@@ -1861,6 +1874,14 @@ free_thumb (Thumbnail * thumb)
   /* This will kill the entire actor hierarchy. */
   clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator_area),
                                   thumb->thwin);
+
+  if (thumb->mbwmcwin && thumb->win_changed_cb_id)
+    {
+      mb_wm_object_signal_disconnect (MB_WM_OBJECT (thumb->mbwmcwin),
+                                      thumb->win_changed_cb_id);
+      thumb->mbwmcwin = NULL;
+      thumb->win_changed_cb_id = 0;
+    }
 
   /* The caller must have taken care of .tnote already. */
   g_assert (!thumb_has_notification (thumb));
@@ -2342,7 +2363,7 @@ create_appthumb (ClutterActor * apwin)
   Thumbnail *apthumb, *nothumb;
   const HdLauncherApp *app;
   const HdCompMgrClient *hmgrc;
-  const MBWMClientWindow *mbwmcwin;
+  MBWMClientWindow *mbwmcwin;
 
   /* We're just in a MapNotify, it shouldn't happen. */
   mbwmcwin = actor_to_client_window (apwin, &hmgrc);
@@ -2407,9 +2428,10 @@ create_appthumb (ClutterActor * apwin)
   g_signal_connect_swapped (apthumb->close, "button-release-event",
                             G_CALLBACK (appthumb_close_clicked),
                             apthumb);
-  mb_wm_object_signal_connect (
+  apthumb->win_changed_cb_id = mb_wm_object_signal_connect (
                         MB_WM_OBJECT (mbwmcwin), MBWM_WINDOW_PROP_NAME,
                         (MBWMObjectCallbackFunc) win_changed, apthumb);
+  apthumb->mbwmcwin = mbwmcwin;
   return apthumb;
 }
 

@@ -8,6 +8,7 @@ hildon-desktop (1:2.2.50-1~unreleased) unstable; urgency=low
   * Fix a bogus rotation to landscape caused by a background application.
   * Add HD_NOTHREADS to hildon-desktop Scratchbox startup script to work
     around NB#116766.
+  * Plug a memory leak in task navigator.
 
   Gordon:
   * Fixes: NB#117109 - Contact list background visible in portrait mode

@@ -1,5 +1,12 @@
 2009-05-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Plug a leak spotted by Valgrind.
+
+	* src/home/hd-task-navigator.c (create_appthumb): Remember the
+	connected win_changed callback for later disconnection.
+	(free_thumb): Disconnect possible win_changed callback.
+	(reset_thumb_title): Reset win_changed callback.
+
 	Patch from Laszlo Pere to fix NB#114750.
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client): Check the
