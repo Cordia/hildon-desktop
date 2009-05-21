@@ -7,6 +7,8 @@ hildon-desktop (1:2.2.50-1~unreleased) unstable; urgency=low
 
   Gordon:
   * Fixes: NB#117109 - Contact list background visible in portrait mode
+  * Modified parallax applet panning method to something that looks a lot
+    better.
 
   Thomas:
   * Fixes: NB#116866 - Task launcher icon and empty battery area are displayed
