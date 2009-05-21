@@ -2428,10 +2428,6 @@ create_appthumb (ClutterActor * apwin)
   g_signal_connect_swapped (apthumb->close, "button-release-event",
                             G_CALLBACK (appthumb_close_clicked),
                             apthumb);
-  apthumb->win_changed_cb_id = mb_wm_object_signal_connect (
-                        MB_WM_OBJECT (mbwmcwin), MBWM_WINDOW_PROP_NAME,
-                        (MBWMObjectCallbackFunc) win_changed, apthumb);
-  apthumb->mbwmcwin = mbwmcwin;
   return apthumb;
 }
 

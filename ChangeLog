@@ -2,8 +2,8 @@
 
 	Plug a leak spotted by Valgrind.
 
-	* src/home/hd-task-navigator.c (create_appthumb): Remember the
-	connected win_changed callback for later disconnection.
+	* src/home/hd-task-navigator.c (create_appthumb): Do not connect the
+	win_changed callback here because it's now done in reset_thumb_title.
 	(free_thumb): Disconnect possible win_changed callback.
 	(reset_thumb_title): Reset win_changed callback.
 
