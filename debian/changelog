@@ -1,5 +1,9 @@
 hildon-desktop (1:2.2.50-1~unreleased) unstable; urgency=low
 
+  Laszlo:
+  * Fixes: NB#114750 - Menu button doesn't appear after opening and closing a
+    bookmark
+
   Kimmo:
   * Fix a bogus rotation to landscape caused by a background application.
   * Add HD_NOTHREADS to hildon-desktop Scratchbox startup script to work

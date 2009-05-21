@@ -1,3 +1,12 @@
+2009-05-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Patch from Laszlo Pere to fix NB#114750.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client): Check the
+	render manager state when a window is unmapped. If we are in
+	STATE_IS_APP() and the current app is the desktop we have to go to
+	HDRM_STATE_TASK_NAV.
+
 2009-05-20  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/home/hd-title-bar.c:  Treat fullscreen windows as though

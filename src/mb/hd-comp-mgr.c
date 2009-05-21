@@ -1111,9 +1111,18 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                   app->followers = NULL; /* list is now in new_leader */
                   app->leader = NULL;
                   app->stack_index = -1;
-		}
-          g_object_set_data (G_OBJECT (actor),
-                             "HD-ApplicationId", NULL);
+		} 
+	      else 
+                {
+                  MBWindowManagerClient *current_client = 
+                          hd_wm_determine_current_app (mgr->wm);
+
+                  if (STATE_IS_APP (hd_render_manager_get_state ()) &&
+                      MB_WM_CLIENT_CLIENT_TYPE (current_client) & 
+                      MBWMClientTypeDesktop) 
+                    hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+                }
+          g_object_set_data (G_OBJECT (actor), "HD-ApplicationId", NULL);
         }
     }
   else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea)
