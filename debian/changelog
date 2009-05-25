@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.50-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.50-1) unstable; urgency=low
 
   Laszlo:
   * Fixes: NB#114750 - Menu button doesn't appear after opening and closing a
@@ -15,12 +15,7 @@ hildon-desktop (1:2.2.50-1~unreleased) unstable; urgency=low
   * Modified parallax applet panning method to something that looks a lot
     better.
 
-  Thomas:
-  * Fixes: NB#116866 - Task launcher icon and empty battery area are displayed
-    in pre capture view full screen mode when Camera brought foreground from
-    minimized state using shutter key
-
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 18 May 2009 12:16:52 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 25 May 2009 09:40:28 +0300
 
 hildon-desktop (1:2.2.49-1) unstable; urgency=low
 

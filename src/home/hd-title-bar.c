@@ -776,9 +776,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
         }
     }
 
-  if (!decor ||
-      (client && client->window &&
-       (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)))
+  if (!decor)
     {
       HdTitleBarVisEnum state;
       /* No north decor found, or no client */
@@ -789,17 +787,8 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
         /* in Home edit mode we can have back button */
 	state = hd_title_bar_get_state(bar) & ~HDTB_VIS_FULL_WIDTH;
       else
-	{
-	  state = hd_title_bar_get_state(bar) & ~(HDTB_VIS_FULL_WIDTH |
-						  HDTB_VIS_BTN_CLOSE | HDTB_VIS_BTN_BACK);
-
-	  /* We only want to hide the switcher if there's a client, since
-	   * it must be a fullscreen client.
-	   */
-	  if (client)
-	    state &= ~HDTB_VIS_BTN_SWITCHER;
-	}
-
+	state = hd_title_bar_get_state(bar) & ~(HDTB_VIS_FULL_WIDTH |
+			         HDTB_VIS_BTN_CLOSE | HDTB_VIS_BTN_BACK);
       hd_title_bar_set_state(bar, state);
       return;
     }
