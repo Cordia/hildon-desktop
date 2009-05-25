@@ -4,12 +4,14 @@ util_h = 	hd-util.h		\
 		hd-dbus.h         \
 		hd-gtk-style.h		\
 		hd-gtk-utils.h		\
+		hd-volume-profile.h		\
 		hd-transition.h
 
 util_c = 	hd-util.c		\
 		hd-dbus.c         \
 		hd-gtk-style.c		\
 		hd-gtk-utils.c		\
+		hd-volume-profile.c		\
 		hd-transition.c
 
 noinst_LTLIBRARIES = libutil.la

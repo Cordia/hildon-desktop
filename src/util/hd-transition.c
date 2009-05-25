@@ -39,6 +39,7 @@
 #include "tidy/tidy-sub-texture.h"
 
 #include "hd-app.h"
+#include "hd-volume-profile.h"
 
 #define HDCM_NOTIFICATION_END_SIZE 32
 
@@ -986,31 +987,18 @@ hd_transition_actor_will_go_away (ClutterActor *actor)
   return hcmgrc->effect->cclient == MB_WM_COMP_MGR_CLUTTER_CLIENT (hcmgrc);
 }
 
-/* Tell hd_transition_play_sound() it's free to play now. */
-static void
-play_finished (ca_context *ctx, uint32_t id, int error_code, void * is_playing)
-{
-  *(gboolean *)is_playing = FALSE;
-}
-
 /* Start playing @fname asynchronously. */
 void
 hd_transition_play_sound (const gchar * fname)
 {
     static ca_context *ca;
-    static gboolean is_playing;
     ca_proplist *pl;
     int ret;
     GTimer *timer;
     gint millisec;
 
     /* Canberra uses threads. */
-    if (hd_disable_threads())
-      return;
-
-    /* Canberra may not like it to play multiple sounds at a time
-     * with the same context.  This may be totally bogus, though. */
-    if (is_playing)
+    if (hd_volume_profile_is_silent() || hd_disable_threads())
       return;
 
     /* Initialize the canberra context once. */
@@ -1036,11 +1024,9 @@ hd_transition_play_sound (const gchar * fname)
     ca_proplist_sets (pl, CA_PROP_CANBERRA_CACHE_CONTROL, "permanent");
     ca_proplist_sets (pl, CA_PROP_MEDIA_FILENAME, fname);
     ca_proplist_sets (pl, CA_PROP_MEDIA_ROLE, "event");
-    if ((ret = ca_context_play_full (ca, 0, pl, play_finished,
-                                     &is_playing)) != CA_SUCCESS)
+    if ((ret = ca_context_play_full (ca, 0, pl, NULL, NULL)) != CA_SUCCESS)
       g_warning("%s: %s", fname, ca_strerror (ret));
     ca_proplist_destroy(pl);
-    is_playing = TRUE;
     millisec = (gint)(g_timer_elapsed(timer, 0)*1000);
     g_timer_destroy(timer);
 

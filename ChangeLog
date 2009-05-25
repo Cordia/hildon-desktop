@@ -1,5 +1,12 @@
 2009-05-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* configure.ac, src/util/Makefile.am, src/util/hd-volume-profile.[ch]:
+	New code for tracking device profiles and volume level for system
+	sounds.
+	* src/util/hd-transition.c (hd_transition_play_sound): Check the
+	profile before playing a sound. Remove unneeded 'is_playing' tracking,
+	libcanberra handles that for us. Fixes: NB#96619
+
 	* src/mb/hd-wm.c (hd_wm_determine_current_app): Avoid using
 	g_return_val_if_fail by using the for loop's condition.
 

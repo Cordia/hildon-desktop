@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.51-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#96619 - System sound off setting is not working
+  * Added build dependency to libprofile-dev.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 25 May 2009 10:12:42 +0300
 

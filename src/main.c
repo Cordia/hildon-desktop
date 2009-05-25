@@ -43,6 +43,7 @@
 #include "hd-wm.h"
 #include "hd-theme.h"
 #include "hd-util.h"
+#include "hd-volume-profile.h"
 #include "launcher/hd-app-mgr.h"
 
 #ifndef DISABLE_A11Y
@@ -453,6 +454,8 @@ main (int argc, char **argv)
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 
   app_mgr = hd_app_mgr_get ();
+
+  hd_volume_profile_init ();
 
   /* NB: we call gtk_main as opposed to clutter_main or mb_wm_main_loop
    * because it does the most extra magic, such as supporting quit functions

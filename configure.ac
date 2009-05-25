@@ -123,6 +123,7 @@ if test "$ac_cv_enable_static_mb2" = yes; then
 		       gdk-pixbuf-xlib-2.0 dnl
                        pangoxft dnl
                        xft dnl
+                       profile dnl
                        mce])
 else
         MB2_CFLAGS=''
@@ -145,6 +146,7 @@ else
 		       gdk-pixbuf-xlib-2.0 dnl
                        xft dnl
                        libmatchbox2-0.1 dnl
+                       profile dnl
                        mce])
 fi
 
