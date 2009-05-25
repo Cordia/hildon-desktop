@@ -339,9 +339,8 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
 
 
 static Bool 
-hd_wm_client_activate (
-		MBWindowManager * wm, 
-		MBWindowManagerClient *c)
+hd_wm_client_activate (MBWindowManager * wm, 
+                       MBWindowManagerClient *c)
 {
   MBWindowManagerClass *wm_class = 
     MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
@@ -384,11 +383,8 @@ hd_wm_determine_current_app (MBWindowManager *wm)
 
   /* Select the topmost client that is either the desktop
    * or a %HdApp with full screen coverage. */
-  for (c = wm->stack_top; ; c = c->stacked_below)
+  for (c = wm->stack_top; c; c = c->stacked_below)
     {
-      /* Hmm, the desktop should always be in the stack, shouldn it? */
-      g_return_val_if_fail (c != NULL, wm->desktop);
-
       if (MB_WM_CLIENT_CLIENT_TYPE (c) & MBWMClientTypeDesktop)
         return c;
       if (!HD_IS_APP (c))
@@ -403,6 +399,7 @@ hd_wm_determine_current_app (MBWindowManager *wm)
         continue;
       return c;
     }
+  return wm->desktop;
 }
 
 /*

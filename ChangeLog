@@ -1,5 +1,8 @@
 2009-05-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/mb/hd-wm.c (hd_wm_determine_current_app): Avoid using
+	g_return_val_if_fail by using the for loop's condition.
+
 	Release 2.2.50
 
 	Revert Thomas' fix for NB#116866 because it hides Tasks button when
