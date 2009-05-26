@@ -665,7 +665,7 @@ hd_render_manager_set_input_viewport()
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   gboolean app_mode = STATE_IS_APP(priv->state);
 
-  if (!STATE_NEED_GRAB(priv->state))
+  if (!STATE_NEED_WHOLE_SCREEN_INPUT(priv->state))
     {
       gint i;
       /* Now look at what buttons we have showing, and add each visible button X

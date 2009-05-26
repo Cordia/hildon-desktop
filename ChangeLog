@@ -1,3 +1,9 @@
+2009-05-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-render-manager.h, src/mb/hd-comp-mgr.c,
+	src/home/hd-render-manager.c: Rename STATE_NEED_GRAB to
+	STATE_NEED_WHOLE_SCREEN_INPUT to make it more descriptive.
+
 2009-05-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* configure.ac, src/util/Makefile.am, src/util/hd-volume-profile.[ch]:
