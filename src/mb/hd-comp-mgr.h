@@ -149,7 +149,6 @@ void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running);
 
 guint hd_comp_mgr_get_current_screen_width(void);
 guint hd_comp_mgr_get_current_screen_height(void);
-gboolean hd_comp_mgr_ignore_window (MBWindowManagerClient *c);
 
 G_END_DECLS
 

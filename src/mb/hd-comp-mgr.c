@@ -1178,22 +1178,6 @@ hd_comp_mgr_get_client_transient_for (MBWindowManagerClient *c)
     : NULL;
 }
 
-static gboolean
-hd_comp_mgr_is_client_screensaver (MBWindowManagerClient *c)
-{
-  /* FIXME: ugly. MBWM flag and change to systemui needed? */
-  return c && c->window && c->window->name &&
-         g_str_equal((c)->window->name, "systemui");
-}
-
-/* strange windows that never go away and mess up our checks for visibility */
-gboolean
-hd_comp_mgr_ignore_window (MBWindowManagerClient *c)
-{
-  return c && c->window && c->window->name &&
-         g_str_equal((c)->window->name, "SystemUI root window");
-}
-
 static void
 hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
                                 int x, int y, int width, int height,
@@ -1931,7 +1915,6 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       while (above)
         {
           if (above != c &&
-              !hd_comp_mgr_ignore_window(above) &&
               MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeHomeApplet &&
               MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeStatusArea)
             grab_spoil = TRUE;
@@ -2036,34 +2019,33 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
       else if (c_type == MBWMClientTypeNote)
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (c_type == MBWMClientTypeApp)
-        if (!hd_comp_mgr_is_client_screensaver(c))
-          {
-            /* Look if it's a stackable window. */
-            HdApp *app = HD_APP (c);
-            if (app->stack_index > 0 && app->leader != app)
-              {
-                /* Find the next window to transition to. We haven't yet been
-                 * removed from the stack so want the window second from the
-                 * top */
-                MBWindowManagerClient *next = MB_WM_CLIENT(app->leader);
-                if (app->leader->followers &&
-                    g_list_last(app->leader->followers)->prev)
-                  next = MB_WM_CLIENT(
-                      g_list_last(app->leader->followers)->prev->data);
-                /* Start actual transition */
-                hd_transition_subview(hmgr, c,
-                                      next,
-                                      MBWMCompMgrClientEventUnmap);
-              }
-            else if ((app->stack_index < 0
-                      || (app->leader == app && !app->followers))
-                     && hd_task_navigator_is_crowded ()
-                     && c->window->xwindow == hd_wm_current_app_is (NULL, 0))
-              hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
-            else
-              hd_transition_close_app (hmgr, c);
-            app->map_effect_before = FALSE;
-          }
+        {
+          /* Look if it's a stackable window. */
+          HdApp *app = HD_APP (c);
+          if (app->stack_index > 0 && app->leader != app)
+            {
+              /* Find the next window to transition to. We haven't yet been
+               * removed from the stack so want the window second from the
+               * top */
+              MBWindowManagerClient *next = MB_WM_CLIENT(app->leader);
+              if (app->leader->followers &&
+                  g_list_last(app->leader->followers)->prev)
+                next = MB_WM_CLIENT(
+                    g_list_last(app->leader->followers)->prev->data);
+              /* Start actual transition */
+              hd_transition_subview(hmgr, c,
+                                    next,
+                                    MBWMCompMgrClientEventUnmap);
+            }
+          else if ((app->stack_index < 0
+                    || (app->leader == app && !app->followers))
+                   && hd_task_navigator_is_crowded ()
+                   && c->window->xwindow == hd_wm_current_app_is (NULL, 0))
+            hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+          else
+            hd_transition_close_app (hmgr, c);
+          app->map_effect_before = FALSE;
+        }
     }
   else if (event == MBWMCompMgrClientEventMap)
     {
@@ -2077,39 +2059,38 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
       else if (c_type == MBWMClientTypeNote)
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventMap);
       else if (c_type == MBWMClientTypeApp)
-        if (!hd_comp_mgr_is_client_screensaver(c))
-          {
-            /* Look if it's a stackable window. We don't do the subview
-             * animation again if we have had a mapping without an unmap,
-             * which is what happens in the Image Viewer when the same
-             * window goes from Fullscreen to Windowed */
-            HdApp *app = HD_APP (c);
-            if (app->stack_index > 0 && !app->map_effect_before)
-              {
-                /* Find the window to transition from (we have already been
-                 * added to the stack, so the window is second from the
-                 * top of the stack */
-                MBWindowManagerClient *next = MB_WM_CLIENT(app->leader);
-                if (app->leader->followers &&
-                    g_list_last(app->leader->followers)->prev)
-                  next = MB_WM_CLIENT(
-                      g_list_last(app->leader->followers)->prev->data);
-                /* Start actual transition - We may have the case where 2
-                 * stackable windows are created at the same time, and we are
-                 * mapping the subview before the main view is mapped. In this
-                 * case the first window will not be in the followers list, and
-                 * app->leader == app, so we don't want any transition.
-                 * Solves NB#112411 */
-                if (c!=next)
-                  hd_transition_subview(hmgr, c,
-                                        next,
-                                        MBWMCompMgrClientEventMap);
-              }
-            /* We're now showing this app, so remove our app
-             * starting screen if we had one */
-            hd_launcher_window_created();
-            app->map_effect_before = TRUE;
-          }
+        {
+          /* Look if it's a stackable window. We don't do the subview
+           * animation again if we have had a mapping without an unmap,
+           * which is what happens in the Image Viewer when the same
+           * window goes from Fullscreen to Windowed */
+          HdApp *app = HD_APP (c);
+          if (app->stack_index > 0 && !app->map_effect_before)
+            {
+              /* Find the window to transition from (we have already been
+               * added to the stack, so the window is second from the
+               * top of the stack */
+              MBWindowManagerClient *next = MB_WM_CLIENT(app->leader);
+              if (app->leader->followers &&
+                  g_list_last(app->leader->followers)->prev)
+                next = MB_WM_CLIENT(
+                    g_list_last(app->leader->followers)->prev->data);
+              /* Start actual transition - We may have the case where 2
+               * stackable windows are created at the same time, and we are
+               * mapping the subview before the main view is mapped. In this
+               * case the first window will not be in the followers list, and
+               * app->leader == app, so we don't want any transition.
+               * Solves NB#112411 */
+              if (c!=next)
+                hd_transition_subview(hmgr, c,
+                                      next,
+                                      MBWMCompMgrClientEventMap);
+            }
+          /* We're now showing this app, so remove our app
+           * starting screen if we had one */
+          hd_launcher_window_created();
+          app->map_effect_before = TRUE;
+        }
     }
 
   /* ignore this window when we set blur state if we're unmapping
@@ -2381,10 +2362,6 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
         continue;
       if (HD_IS_BANNER_NOTE (c))
         /* Assume it for now. */
-        continue;
-      if (hd_comp_mgr_is_client_screensaver (c))
-        continue;
-      if (hd_comp_mgr_ignore_window (c))
         continue;
 
       PORTRAIT ("IS VISIBLE OR CURRENT?");

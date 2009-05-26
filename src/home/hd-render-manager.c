@@ -1624,7 +1624,7 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
   for (c=wm->stack_top;c;c=c->stacked_below)
     {
       int c_type = MB_WM_CLIENT_CLIENT_TYPE(c);
-      if (hd_comp_mgr_ignore_window(c) || c==ignore)
+      if (c==ignore)
         continue;
       if (c_type == MBWMClientTypeApp)
         {

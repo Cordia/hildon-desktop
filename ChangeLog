@@ -1,3 +1,18 @@
+2009-05-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#118521 One hand unlock slider rotates if phone UI is open
+
+	Due to earlier bad experiences we tended to ignore the screensaver
+	window, which in this case enabled the call ui to rotate the
+	screen.  Since systemui windows seem to behave well now probably
+	it's safe not to ignore them anymore.
+
+	* src/home/hd-render-manager.c
+	* src/mb/hd-comp-mgr.c
+	* src/mb/hd-comp-mgr.h:
+	  Removed hd_comp_mgr_is_client_screensaver()
+	  and hd_comp_mgr_ignore_window().
+
 2009-05-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-render-manager.h, src/mb/hd-comp-mgr.c,
