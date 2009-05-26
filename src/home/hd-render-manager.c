@@ -1258,6 +1258,29 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
       /* Signal the state has changed. */
       g_object_notify (G_OBJECT (the_render_manager), "state");
+
+      if (oldstate==HDRM_STATE_TASK_NAV &&
+	  state==HDRM_STATE_APP)
+	{
+
+	  /* Do some tidying up that used to happen in
+	   * hd_switcher_zoom_in_complete().  But if we do it
+	   * there, it doesn't get called if we leave the switcher
+	   * other than through a zoom-in (e.g. the shutter button
+	   * being pressed).
+	   *
+	   * FIXME: Possibly the check for the client hibernating
+	   * should also be moved here.
+	   */
+
+	  /* make sure everything is in the correct order */
+	  hd_comp_mgr_sync_stacking (HD_COMP_MGR (priv->comp_mgr));
+
+	  /* Make sure we blur the right things (fix problem where going from
+	   * app -> task launcher -> other app breaks blur) */
+	  hd_render_manager_update_blur_state(0);
+	}
+
     }
   priv->in_set_state = FALSE;
 }

@@ -1,3 +1,12 @@
+2009-05-26  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	Fixes: NB#116866 (redux)
+
+	* src/home/hd-render-manager.c: Update blur state if we
+	move from the switcher to the app state.
+	* src/home/hd-switcher.c: Don't update blur state, because
+	that's done by the render manager now.
+
 2009-05-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#118521 One hand unlock slider rotates if phone UI is open

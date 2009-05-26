@@ -654,13 +654,6 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
     }
 
-  /* make sure everything is in the correct order */
-  hd_comp_mgr_sync_stacking (HD_COMP_MGR (priv->comp_mgr));
-
-  /* Make sure we blur the right things (fix problem where going from
-   * app -> task launcher -> other app breaks blur) */
-  hd_render_manager_update_blur_state(0);
-
 }
 
 static void
