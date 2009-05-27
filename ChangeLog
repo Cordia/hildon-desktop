@@ -1,3 +1,10 @@
+2009-05-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c:
+	  Redid the keep-thumbnail-titles-up-to-date feature "properly"
+	  (for some value of "proper").
+	* TODO: updated
+
 2009-05-26  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	Fixes: NB#116866 (redux)

@@ -276,26 +276,46 @@ typedef struct
        *                  if it has or had any earlier, otherwise %NULL.
        *                  They are shown along with .apwin.  Hidden if
        *                  we have a .video.
-       * -- @inapwin:     Delimits the non-decoration area in @apwin; this is
-       *                  what we want to show in the switcher, not the whole
-       *                  @apwin.
-       * -- @saved_title: What the application window's title was when it
-       *                  left for hibernation.  It's only use is to know
-       *                  what to reset the thumb title to if its notification
-       *                  is removed while the client is still hibernated.
-       *                  Cleared when the window actor is replaced, presumably
-       *                  because it's woken up.
+       */
+      ClutterActor        *apwin, *windows, *titlebar;
+      GPtrArray           *dialogs;
+
+      /*
+       * -- @win_changed_cb_id: Tracks the window's name to keep the title
+       *                        of the thumbnail up to date.  It's only
+       *                        valid as long as @win is.
+       * -- @win:               The window of the client @apwin belongs to.
+       *                        Kept around in order to be able to disconnect
+       *                        @win_changed_cb_id.  Replaced when @apwin is
+       *                        replaced.  It's not ref'd specifically.
+       *                        %NULL if the client is in hibernation.
+       * -- @saved_title:       What the application window's title was when
+       *                        it left for hibernation.  It's only use is
+       *                        to know what to reset the thumb title to if
+       *                        the client's notification was removed when
+       *                        it was still in hibernation.  Cleared when
+       *                        the window actor is replaced, presumably
+       *                        because it's woken up.
+       * -- @title_had_markup:  Mirrors @win::name_has_markup similarly to
+       *                        @saved_title.
+       * -- @inapwin:           Delimits the non-decoration area in @apwin;
+       *                        this is what we want to show in the switcher,
+       *                        not the whole @apwin.
+       */
+      MBWMClientWindow    *win;
+      unsigned long        win_changed_cb_id;
+      gchar               *saved_title;
+      gboolean             title_had_markup;
+      MBGeometry           inapwin;
+
+      /*
        * -- @nodest:      What notifications this thumbnails is destination for.
        *                  Taken from the _HILDON_NOTIFICATION_THREAD property
        *                  of the thumbnail's client or its WM_CLASS hint.
        *                  Once checked not refreshed again.  Used in matching
        *                  the appropriate TNote for this application.
        */
-      ClutterActor        *apwin, *windows, *titlebar;
-      GPtrArray           *dialogs;
-      MBGeometry           inapwin;
-      gchar               *saved_title, *nodest;
-      gboolean             title_had_markup;
+      gchar               *nodest;
 
       /*
        * -- @video_fname: Where to look for the last-frame video screenshot
@@ -324,9 +344,6 @@ typedef struct
    *                  or in the application's they belong to.
    */
   TNote               *tnote;
-
-  MBWMClientWindow    *mbwmcwin;
-  unsigned long        win_changed_cb_id;
 } Thumbnail;
 /* Thumbnail data structures }}} */
 
@@ -1631,8 +1648,7 @@ layout_thumbs (ClutterActor * newborn)
                        wprison - x - MARGIN_DEFAULT,
                        hprison - y - MARGIN_HALF);
 
-          /* Don't show .message on small thumbnails.
-           * TODO fade in/out */
+          /* Don't show .message on small thumbnails. */
           if (Thumbsize == &Thumbsizes.small)
             clutter_actor_hide (thumb->message);
           else if (oldthsize == &Thumbsizes.small)
@@ -1672,9 +1688,8 @@ layout (ClutterActor * newborn)
 /* %Thumbnail:s {{{ */
 static MBWMClientWindow *actor_to_client_window (ClutterActor *win,
                                        const HdCompMgrClient **hcmgrcp);
-
 static Bool
-win_changed (MBWMClientWindow *win, int unused1, Thumbnail *thumb);
+win_title_changed (MBWMClientWindow *win, int unused1, Thumbnail *thumb);
 
 /*
  * Reset @thumb's title to the application's name.  Called to set the
@@ -1684,36 +1699,30 @@ win_changed (MBWMClientWindow *win, int unused1, Thumbnail *thumb);
 static void
 reset_thumb_title (Thumbnail * thumb)
 {
+  gboolean use_markup;
   const gchar *new_title;
-  MBWMClientWindow *mbwmcwin;
-  gboolean has_markup = TRUE;
 
   /* What to reset the title to? */
   if (thumb_has_notification (thumb))
-    new_title = hd_note_get_summary (thumb->tnote->hdnote);
-  else if (thumb->saved_title) {
-    /* Client must be having its sweet dreams in hibernation. */
-    new_title = thumb->saved_title;
-    has_markup = thumb->title_had_markup;
-  } else if ((mbwmcwin = actor_to_client_window (thumb->apwin, NULL)) != NULL) {
-    /* Normal case. */
-    if (thumb->mbwmcwin && thumb->win_changed_cb_id)
-      mb_wm_object_signal_disconnect (MB_WM_OBJECT (thumb->mbwmcwin),
-                                      thumb->win_changed_cb_id);
-    thumb->mbwmcwin = mbwmcwin;
-    thumb->win_changed_cb_id = mb_wm_object_signal_connect (
-                        MB_WM_OBJECT (mbwmcwin), MBWM_WINDOW_PROP_NAME,
-                        (MBWMObjectCallbackFunc) win_changed, thumb);
-    new_title = mbwmcwin->name;
-    has_markup = mbwmcwin->name_has_markup;
-  } else
-    new_title = NULL;
+    { /* To the notification summary. */
+      new_title = hd_note_get_summary (thumb->tnote->hdnote);
+      use_markup = FALSE;
+    }
+  else if (thumb->win)
+    { /* Normal case. */
+      new_title = thumb->win->name;
+      use_markup = thumb->win->name_has_markup;
+    }
+  else
+    { /* Client must be having its sweet dreams in hibernation. */
+      new_title = thumb->saved_title;
+      use_markup = thumb->title_had_markup;
+    }
 
   g_assert (thumb->title != NULL);
-  g_debug ("%s: *** new_title = '%s'", __func__, new_title);
   set_label_text_and_color (thumb->title, new_title, thumb->tnote
                             ? &ReversedTextColor : &DefaultTextColor);
-  clutter_label_set_use_markup (CLUTTER_LABEL(thumb->title), has_markup);
+  clutter_label_set_use_markup (CLUTTER_LABEL(thumb->title), use_markup);
 }
 
 /* Dress a %Thumbnail: create @thumb->frame.all and populate it
@@ -1810,13 +1819,6 @@ recreate_thumb_frame (Thumbnail * thumb)
   layout_thumb_frame (thumb, &Fly_at_once);
 }
 
-static Bool
-win_changed (MBWMClientWindow *win, int unused1, Thumbnail *thumb)
-{
-  reset_thumb_title (thumb);
-  return True;
-}
-
 /* Creates @thumb->thwin.  The exact position of the inner actors is decided
  * by layout_thumbs(). */
 static void
@@ -1875,14 +1877,6 @@ free_thumb (Thumbnail * thumb)
   clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator_area),
                                   thumb->thwin);
 
-  if (thumb->mbwmcwin && thumb->win_changed_cb_id)
-    {
-      mb_wm_object_signal_disconnect (MB_WM_OBJECT (thumb->mbwmcwin),
-                                      thumb->win_changed_cb_id);
-      thumb->mbwmcwin = NULL;
-      thumb->win_changed_cb_id = 0;
-    }
-
   /* The caller must have taken care of .tnote already. */
   g_assert (!thumb_has_notification (thumb));
 
@@ -1897,6 +1891,11 @@ free_thumb (Thumbnail * thumb)
           g_ptr_array_free (thumb->dialogs, TRUE);
           thumb->dialogs = NULL;
         }
+
+      /* Releases thumb->win too. */
+      if (thumb->win)
+        mb_wm_object_signal_disconnect (MB_WM_OBJECT (thumb->win),
+                                        thumb->win_changed_cb_id);
 
       g_free(thumb->saved_title);
       if (thumb->nodest)
@@ -2234,21 +2233,22 @@ hd_task_navigator_hibernate_window (HdTaskNavigator * self,
                                     ClutterActor * win)
 {
   Thumbnail *apthumb;
-  const MBWMClientWindow *mbwmcwin;
 
   if (!(apthumb = find_by_apwin (win)))
     return;
 
   /* Hibernating clients twice is a nonsense. */
-  g_return_if_fail (!apthumb->saved_title);
+  g_return_if_fail (apthumb->win != NULL);
 
-  mbwmcwin = actor_to_client_window (apthumb->apwin, NULL);
-  g_return_if_fail (mbwmcwin != NULL);
+  /* Save the window name and markupability for reset_thumb_title(). */
+  g_return_if_fail (apthumb->win->name);
+  apthumb->saved_title = g_strdup (apthumb->win->name);
+  apthumb->title_had_markup = apthumb->win->name_has_markup;
 
-  /* Save the window name for reset_thumb_title(). */
-  g_return_if_fail (mbwmcwin->name);
-  apthumb->saved_title = g_strdup (mbwmcwin->name);
-  apthumb->title_had_markup = mbwmcwin->name_has_markup;
+  /* Release .win. */
+  mb_wm_object_signal_disconnect (MB_WM_OBJECT (apthumb->win),
+                                  apthumb->win_changed_cb_id);
+  apthumb->win = NULL;
 }
 
 /* Tells us to show @new_win in place of @old_win, and forget about
@@ -2265,22 +2265,29 @@ hd_task_navigator_replace_window (HdTaskNavigator * self,
   if (old_win == new_win || !(apthumb = find_by_apwin (old_win)))
     return;
 
-  /* Discard the window name we saved when @old_win was hibernated,
-   * refer to the new MBWMClientWindow from now on. */
-  g_free (apthumb->saved_title);
-  apthumb->saved_title = NULL;
-
-  /* Discard current .apwin. */
+  /* Discard current .apwin and embrace @win_win. */
   showing = hd_task_navigator_is_active ();
   if (showing)
     hd_render_manager_return_app (apthumb->apwin);
   g_object_unref (apthumb->apwin);
-
-  /* Embrace @new_win. */
   apthumb->apwin = g_object_ref (new_win);
   if (showing)
-    { /* Don't forget to update the title. */
-      clutter_actor_reparent (apthumb->apwin, apthumb->windows);
+    clutter_actor_reparent (apthumb->apwin, apthumb->windows);
+
+  /* Replace the client window structure with @new_win's. */
+  if (apthumb->win)
+    mb_wm_object_signal_disconnect (MB_WM_OBJECT (apthumb->win),
+                                    apthumb->win_changed_cb_id);
+  apthumb->win = actor_to_client_window (new_win, NULL);
+  if (apthumb->win)
+    {
+      g_free (apthumb->saved_title);
+      apthumb->saved_title = NULL;
+      apthumb->win_changed_cb_id = mb_wm_object_signal_connect (
+                     MB_WM_OBJECT (apthumb->win), MBWM_WINDOW_PROP_NAME,
+                     (MBWMObjectCallbackFunc)win_title_changed, apthumb);
+
+      /* Update the title now if it's shown (and not a notification). */
       if (!thumb_has_notification (apthumb))
         reset_thumb_title (apthumb);
     }
@@ -2353,9 +2360,16 @@ appthumb_close_clicked (const Thumbnail * apthumb)
   return TRUE;
 }
 
+static Bool
+win_title_changed (MBWMClientWindow * win, int unused1, Thumbnail * apthumb)
+{
+  reset_thumb_title (apthumb);
+  return True;
+}
+
 /* Returns a %Thumbnail for @apwin, a window manager client actor.
  * If there is a notification for this application it will be removed
- * and added as the thumbnail title.  */
+ * and added as the thumbnail title. */
 static Thumbnail *
 create_appthumb (ClutterActor * apwin)
 {
@@ -2363,44 +2377,47 @@ create_appthumb (ClutterActor * apwin)
   Thumbnail *apthumb, *nothumb;
   const HdLauncherApp *app;
   const HdCompMgrClient *hmgrc;
-  MBWMClientWindow *mbwmcwin;
-
-  /* We're just in a MapNotify, it shouldn't happen. */
-  mbwmcwin = actor_to_client_window (apwin, &hmgrc);
-  g_assert (mbwmcwin != NULL);
 
   apthumb = g_new0 (Thumbnail, 1);
   apthumb->type = APPLICATION;
 
-  /* @apwin related fields */
-  apthumb->apwin   = g_object_ref (apwin);
-  apthumb->inapwin = mbwmcwin->geometry;
-  if ((app = hd_comp_mgr_client_get_launcher (HD_COMP_MGR_CLIENT (hmgrc))) != NULL)
-    apthumb->video_fname = hd_launcher_app_get_switcher_icon (HD_LAUNCHER_APP (app));
+  /* We're just in a MapNotify, it shouldn't happen.
+   * mb_wm_object_signal_connect() will take reference
+   * of apthumb->win. */
+  apthumb->win = actor_to_client_window (apwin, &hmgrc);
+  g_assert (apthumb->win != NULL);
+  apthumb->win_changed_cb_id = mb_wm_object_signal_connect (
+                     MB_WM_OBJECT (apthumb->win), MBWM_WINDOW_PROP_NAME,
+                     (MBWMObjectCallbackFunc)win_title_changed, apthumb);
+  apthumb->inapwin = apthumb->win->geometry;
 
   /* .nodest: try the property first then fall back to the WM_CLASS hint.
    * TODO This is temporary, just not to break the little functionality
    *      we already have. */
   apthumb->nodest = hd_util_get_x_window_string_property (
-                                           mbwmcwin->wm, mbwmcwin->xwindow,
-                                           HD_ATOM_NOTIFICATION_THREAD);
+                                apthumb->win->wm, apthumb->win->xwindow,
+                                HD_ATOM_NOTIFICATION_THREAD);
   if (!apthumb->nodest)
     {
       XClassHint xwinhint;
 
-      if (XGetClassHint (mbwmcwin->wm->xdpy, mbwmcwin->xwindow, &xwinhint))
+      if (XGetClassHint (apthumb->win->wm->xdpy, apthumb->win->xwindow,
+                         &xwinhint))
         {
           apthumb->nodest = xwinhint.res_class;
           XFree (xwinhint.res_name);
         }
       else
-        g_warning ("XGetClassHint(%lx): failed", mbwmcwin->xwindow);
+        g_warning ("XGetClassHint(%lx): failed", apthumb->win->xwindow);
     }
 
-  /* .titlebar */
-  apthumb->titlebar = hd_title_bar_create_fake (NULL);
+  /* .video_fname */
+  if ((app = hd_comp_mgr_client_get_launcher (HD_COMP_MGR_CLIENT (hmgrc))) != NULL)
+    apthumb->video_fname = hd_launcher_app_get_switcher_icon (HD_LAUNCHER_APP (app));
 
-  /* .windows */
+  /* Now the actors: .apwin, .titlebar, .windows */
+  apthumb->apwin = g_object_ref (apwin);
+  apthumb->titlebar = hd_title_bar_create_fake (NULL);
   apthumb->windows = clutter_group_new ();
   clutter_actor_set_name (apthumb->windows, "windows");
 

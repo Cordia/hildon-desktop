@@ -37,7 +37,8 @@ Switcher:
 - Be more sensible differentiating clicks vs. scroll attempts.
   (It should be the same usability-wise as pannable areas.)
 - dismiss and panning area
+- jitter at the end of zoom-in
+- Update label colors with theme change.
 - Zoom+fly: don't slow down at the end of zoom and don't start slowly
-- Fly+fly: change move(), resize(), scale() not to jump
 - Shadowed text in switcher (wishlist).
 - Get rid of HdSwitcher, now that there is the render manager
