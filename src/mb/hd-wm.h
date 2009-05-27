@@ -63,6 +63,8 @@ int hd_wm_class_type (void);
 MBWindowManagerClient * hd_wm_determine_current_app (MBWindowManager *wm);
 Window                  hd_wm_current_app_is (MBWindowManager *wm,
                                               Window xid);
+Bool                    hd_wm_activate_zoomed_client (MBWindowManager *wm,
+                                                      MBWindowManagerClient *c);
 
 G_END_DECLS
 

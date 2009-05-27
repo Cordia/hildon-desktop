@@ -1,3 +1,27 @@
+2009-05-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#115310 after reading the mail also in task switcher the notification
+		  symptoms are showing still
+
+	As a side effect gtk_window_present() will smoothly zoom in
+	if called in the switcher view.
+
+	* src/home/hd-task-navigator.c (appthumb_clicked, appthumb_close_clicked):
+	  If a thumbnail has a notification behave like one: clear it
+	  when the thumbnail is clicked or close it when the thumbnail
+	  is closed and DO NOT DO ANYTHING ELSE.  Leave the action up
+	  to the notification.  If it decides to top the underlaying
+	  application we'll do it, but not on our own.
+	  Also ignore concurrent zoom attempts.
+	* src/mb/hd-wm.h (hd_wm_activate_zoomed_client):
+	  New function for the switcher to use rather than the regular
+	  client activation when zooming is done.
+	* src/mb/hd-wm.c (hd_wm_client_activate):
+	  In switcher view zoom in the client which is to be activated.
+	* src/home/hd-switcher.h
+	* src/home/hd-switcher.c:
+	  Use hd_wm_activate_zoomed_client().
+
 2009-05-27  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/launcher/hd-launcher-tile.c

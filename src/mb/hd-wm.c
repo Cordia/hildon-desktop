@@ -32,6 +32,7 @@
 #include "hd-render-manager.h"
 #include "hd-desktop.h"
 #include "hd-app.h"
+#include "hd-switcher.h"
 
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/core/mb-wm.h>
@@ -337,6 +338,21 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
     return True;
 }
 
+/* This is like hd_wm_client_activate() but designed specifically
+ * for the switcher.  The focal difference is that this function
+ * doesn't try to zoom in. */
+Bool
+hd_wm_activate_zoomed_client (MBWindowManager *wm,
+                                     MBWindowManagerClient *c)
+{
+  MBWindowManagerClass *wm_class = 
+    MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
+
+  gboolean ret = wm_class->client_activate (wm, c);
+  hd_render_manager_set_state (HDRM_STATE_APP);
+  hd_render_manager_stop_transition ();
+  return ret;
+}
 
 static Bool 
 hd_wm_client_activate (MBWindowManager * wm, 
@@ -344,32 +360,49 @@ hd_wm_client_activate (MBWindowManager * wm,
 {
   MBWindowManagerClass *wm_class = 
     MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
+  gboolean ret;
 
-  /*
-   * This will restack, which is necessary for us before going to APP state,
-   * because it makes decisions based on the topmost application on the stack.
-   */
-  gboolean ret = wm_class->client_activate (wm, c);
-
-  /*
-   * When activating the client we hide the task switcher.
-   */
+  /* If we're in switcher when the client is activated try to zoom in.
+   * Otherwisw just go to APP state. */
   if (c == wm->desktop)
-  {
-    if (!STATE_NEED_DESKTOP(hd_render_manager_get_state () ))
-      hd_render_manager_set_state (HDRM_STATE_HOME);
-  }
+    {
+      ret = wm_class->client_activate (wm, c);
+      if (!STATE_NEED_DESKTOP(hd_render_manager_get_state () ))
+        hd_render_manager_set_state (HDRM_STATE_HOME);
+    }
   else if (HD_IS_APP (c))
-    if (!STATE_IS_APP(hd_render_manager_get_state () ))
-      {
-        gboolean wastasw = hd_render_manager_get_state() == HDRM_STATE_TASK_NAV;
-        hd_render_manager_set_state (HDRM_STATE_APP);
-        if (wastasw)
-          /* Roughly for the same reason as in hd-comp-mgr.c,
-           * see "let's stop the transition and problem solved". */
+    {
+      HDRMStateEnum state = hd_render_manager_get_state();
+      if (state == HDRM_STATE_TASK_NAV)
+        {
+          hd_switcher_item_selected (HD_SWITCHER (hd_comp_mgr_get_switcher (HD_COMP_MGR (wm->comp_mgr))), mb_wm_comp_mgr_clutter_client_get_actor (MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client)));
+          ret = True;
+        }
+      else if (!STATE_IS_APP (state))
+        {
+          /* This will restack, which is necessary for us before going to
+           * APP state, because it makes decisions based on the topmost
+           * application on the stack. */
+          ret = wm_class->client_activate (wm, c);
+          hd_render_manager_set_state (HDRM_STATE_APP);
+
+          /*
+           * Roughly for the same reason as in hd-comp-mgr.c,
+           * see "let's stop the transition and problem solved".
+           * You could trigger the problem by increasing the blur
+           * timeline to 2 secs, have a program that gtk_present()s
+           * itself in 1 second then tap out of the switcher.
+           * At the end the client will be active but it will be
+           * invisible.
+           */
           hd_render_manager_stop_transition ();
-      }
-	
+        }
+      else
+        ret = wm_class->client_activate (wm, c);
+    }
+  else
+    ret = wm_class->client_activate (wm, c);
+
   return ret;
 }
 

@@ -2118,6 +2118,11 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
   if (!(apthumb = find_by_apwin (win)))
     goto damage_control;
 
+  /* Must have gotten a gtk_window_present() during a zooming,
+   * ignore it. */
+  if (animation_in_progress (Zoom_effect_timeline))
+    goto damage_control;
+
   /*
    * Zoom the navigator itself so that when the effect is complete
    * the non-decoration part of .apwin is in its regular position
@@ -2336,7 +2341,12 @@ appthumb_clicked (const Thumbnail * apthumb)
      * delivery of "thumbnail-clicked". */
     return TRUE;
 
-  g_signal_emit_by_name (Navigator, "thumbnail-clicked", apthumb->apwin);
+  /* Behave like a notification if we have one. */
+  if (apthumb->tnote)
+    g_signal_emit_by_name (Navigator, "notification-clicked",
+                           apthumb->tnote->hdnote);
+  else
+    g_signal_emit_by_name (Navigator, "thumbnail-clicked", apthumb->apwin);
 
   return TRUE;
 }
@@ -2351,12 +2361,16 @@ appthumb_close_clicked (const Thumbnail * apthumb)
     /* Maybe not anymore but let's play safe. */
     return TRUE;
 
-  /* Report a regular click on the thumbnail (and make %HdSwitcher zoom in)
-   * if the application has open dialogs. */
-  g_signal_emit_by_name (Navigator,
-                         apthumb->dialogs && apthumb->dialogs->len > 0
-                           ? "thumbnail-clicked" : "thumbnail-closed",
-                         apthumb->apwin);
+  if (apthumb->tnote)
+    g_signal_emit_by_name (Navigator, "notification-closed",
+                           apthumb->tnote->hdnote);
+  else
+    /* Report a regular click on the thumbnail (and make %HdSwitcher zoom in)
+     * if the application has open dialogs. */
+    g_signal_emit_by_name (Navigator,
+                           apthumb->dialogs && apthumb->dialogs->len > 0
+                             ? "thumbnail-clicked" : "thumbnail-closed",
+                           apthumb->apwin);
   return TRUE;
 }
 

@@ -39,6 +39,7 @@
 #include "hd-home.h"
 #include "hd-gtk-utils.h"
 #include "hd-render-manager.h"
+#include "hd-wm.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -101,9 +102,6 @@ static void hd_switcher_constructed (GObject *object);
 static void hd_switcher_clicked (HdSwitcher *switcher);
 static gboolean hd_switcher_press (HdSwitcher *switcher);
 static gboolean hd_switcher_leave (HdSwitcher *switcher);
-
-static void hd_switcher_item_selected (HdSwitcher *switcher,
-				       ClutterActor *actor);
 
 static void hd_switcher_item_closed (HdSwitcher *switcher,
                                      ClutterActor *actor);
@@ -631,12 +629,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
     {
       MBWindowManagerClient *c;
 
-      if ((c = MB_WM_COMP_MGR_CLIENT(hclient)->wm_client) != NULL)
-        { /* This will switch to APP state. */
-          g_debug("mb_wm_activate_client(%p)", c);
-          mb_wm_activate_client (c->wmref, c);
-        }
-      else
+      if (!(c = MB_WM_COMP_MGR_CLIENT(hclient)->wm_client))
         {
           /*
            * A possible reason for this to happen is that the client has been 
@@ -647,6 +640,8 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
           g_warning("%s: cclient->wm_client == NULL", __FUNCTION__);
           hd_render_manager_set_state(HDRM_STATE_HOME);
         }
+      else
+        hd_wm_activate_zoomed_client (c->wmref, c);
     }
   else
     {
@@ -656,7 +651,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
 
 }
 
-static void
+void
 hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
