@@ -7,7 +7,7 @@
 	* src/home/hd-switcher.c: Don't update blur state, because
 	that's done by the render manager now.
 
-2009-05-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-05-26  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#118521 One hand unlock slider rotates if phone UI is open
 
