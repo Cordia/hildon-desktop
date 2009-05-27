@@ -1,3 +1,14 @@
+2009-05-27  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/launcher/hd-launcher-tile.c
+	* src/home/hd-home-view.c
+	* src/home/hd-title-bar.c: Added explicit enable of visibility 
+	detection to clutter actors that require it in readiness for clutter
+	0.8.2-0maemo33 which will have detection off by default.
+	Note: There may be partial screen updates, in which case it helps to
+	have actors with visibility detection even if they may always have 
+	been rendered previously.
+
 2009-05-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c:

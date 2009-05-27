@@ -320,6 +320,9 @@ hd_home_view_init (HdHomeView *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME_VIEW, HdHomeViewPrivate);
 
   clutter_actor_set_name(CLUTTER_ACTOR(self), "HdHomeView");
+  /* Explicitly enable maemo-specific visibility detection to cut down
+   * spurious paints */
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(self), TRUE);
 
   self->priv->gconf_client = gconf_client_get_default ();
 

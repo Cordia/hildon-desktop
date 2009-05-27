@@ -227,7 +227,9 @@ hd_title_bar_init (HdTitleBar *bar)
 
   priv->state = HDTB_VIS_NONE;
 
-  clutter_actor_set_visibility_detect(actor, FALSE);
+  /* Explicitly enable maemo-specific visibility detection to cut down
+   * spurious paints */
+  clutter_actor_set_visibility_detect(actor, TRUE);
   clutter_actor_set_position(actor, 0, 0);
   clutter_actor_set_size(actor,
                     HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_TOP_MARGIN);
@@ -237,7 +239,9 @@ hd_title_bar_init (HdTitleBar *bar)
   font_name = hd_gtk_style_resolve_logical_font(HD_TITLE_BAR_TITLE_FONT);
 
   priv->foreground = CLUTTER_GROUP(clutter_group_new());
-  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->foreground), FALSE);
+  /* Explicitly enable maemo-specific visibility detection to cut down
+   * spurious paints */
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->foreground), TRUE);
   clutter_actor_set_name(CLUTTER_ACTOR(priv->foreground),
       "HdTitleBar::foreground");
   clutter_container_add_actor(CLUTTER_CONTAINER(bar),

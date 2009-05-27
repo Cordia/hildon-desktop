@@ -161,6 +161,9 @@ hd_launcher_tile_init (HdLauncherTile *tile)
       HD_LAUNCHER_TILE_WIDTH,
       HD_LAUNCHER_TILE_HEIGHT);
   clutter_actor_show(CLUTTER_ACTOR(tile));
+  /* Explicitly enable maemo-specific visibility detection to cut down
+   * spurious paints */
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(tile), TRUE);
 
   /* We have a 'click area' because when the tile is near the side of the
    * screen, the click area is actually clipped to the margins. This
