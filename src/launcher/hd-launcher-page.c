@@ -633,6 +633,10 @@ hd_launcher_page_show (ClutterActor *actor)
   else if (priv->scroller)
     clutter_actor_show (priv->scroller);
 
+  /* make the scrollbars appear and then fade out (they won't be shown
+   * if the scrollable area is less than the screen size) */
+  tidy_finger_scroll_show_scrollbars(priv->scroller);
+
   CLUTTER_ACTOR_SET_FLAGS (actor, CLUTTER_ACTOR_MAPPED);
 }
 

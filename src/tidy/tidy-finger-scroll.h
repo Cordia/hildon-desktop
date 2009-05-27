@@ -55,7 +55,7 @@ struct _TidyFingerScroll
 {
   /*< private >*/
   TidyScrollView parent_instance;
-  
+
   TidyFingerScrollPrivate *priv;
 };
 
@@ -69,6 +69,8 @@ GType tidy_finger_scroll_get_type (void) G_GNUC_CONST;
 ClutterActor *tidy_finger_scroll_new  (TidyFingerScrollMode mode);
 
 void          tidy_finger_scroll_stop (TidyFingerScroll *scroll);
+
+void          tidy_finger_scroll_show_scrollbars (ClutterActor *actor);
 
 G_END_DECLS
 

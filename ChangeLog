@@ -1,3 +1,14 @@
+2009-05-27  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#115387 - No initial scrollbar shown in applications menu
+
+	* src/tidy/tidy-finger-scroll.h
+	* src/tidy/tidy-finger-scroll.c: added the function
+	tidy_finger_scroll_show_scrollbars, which shows scrollbars for a
+	second and then fades them away again.
+	* src/launcher/hd-launcher-page.c: call the new function
+	tidy_finger_scroll_show_scrollbars when the page is shown
+
 2009-05-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#115310 after reading the mail also in task switcher the notification

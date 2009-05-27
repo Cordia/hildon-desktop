@@ -29,6 +29,8 @@
 #include <clutter/clutter.h>
 #include <math.h>
 
+#define TIDY_FINGER_SCROLL_INITIAL_SCROLLBAR_DELAY (1000)
+
 G_DEFINE_TYPE (TidyFingerScroll, tidy_finger_scroll, TIDY_TYPE_SCROLL_VIEW)
 
 #define FINGER_SCROLL_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
@@ -60,6 +62,9 @@ struct _TidyFingerScrollPrivate
   ClutterEffectTemplate *template;
   ClutterTimeline       *hscroll_timeline;
   ClutterTimeline       *vscroll_timeline;
+
+  /* Timeout for removing scrollbars after they first appear */
+  guint                  scrollbar_timeout;
 };
 
 enum {
@@ -111,6 +116,12 @@ static void
 tidy_finger_scroll_dispose (GObject *object)
 {
   TidyFingerScrollPrivate *priv = TIDY_FINGER_SCROLL (object)->priv;
+
+  if (priv->scrollbar_timeout)
+    {
+      g_source_remove(priv->scrollbar_timeout);
+      priv->scrollbar_timeout = 0;
+    }
 
   if (priv->deceleration_timeline)
     {
@@ -254,16 +265,23 @@ show_scrollbars (TidyFingerScroll *scroll, gboolean show)
   TidyFingerScrollPrivate *priv = scroll->priv;
 
   /* Stop current timelines */
+  if (priv->scrollbar_timeout)
+    {
+      g_source_remove(priv->scrollbar_timeout);
+      priv->scrollbar_timeout = 0;
+    }
   if (priv->hscroll_timeline)
     {
       clutter_timeline_stop (priv->hscroll_timeline);
       g_object_unref (priv->hscroll_timeline);
+      priv->hscroll_timeline = NULL;
     }
 
   if (priv->vscroll_timeline)
     {
       clutter_timeline_stop (priv->vscroll_timeline);
       g_object_unref (priv->vscroll_timeline);
+      priv->vscroll_timeline = NULL;
     }
 
   hscroll = tidy_scroll_view_get_hscroll_bar (TIDY_SCROLL_VIEW (scroll));
@@ -726,4 +744,42 @@ tidy_finger_scroll_stop (TidyFingerScroll *scroll)
       g_object_unref (priv->deceleration_timeline);
       priv->deceleration_timeline = NULL;
     }
+}
+
+/* callback for tidy_finger_scroll_show_scrollbars timeout -
+ * to remove the scrollbars after some time period */
+static gboolean
+_tidy_finger_scroll_show_scrollbars_cb (ClutterActor *scroll)
+{
+  TidyFingerScrollPrivate *priv;
+
+  if (!TIDY_IS_FINGER_SCROLL(scroll))
+    return FALSE;
+
+  priv = TIDY_FINGER_SCROLL(scroll)->priv;
+
+  priv->scrollbar_timeout = 0;
+
+  show_scrollbars(TIDY_FINGER_SCROLL(scroll), FALSE);
+
+  return FALSE;
+}
+
+/* Show the scrollbars and then fade them out */
+void
+tidy_finger_scroll_show_scrollbars (ClutterActor *scroll)
+{
+  TidyFingerScrollPrivate *priv;
+
+  if (!TIDY_IS_FINGER_SCROLL(scroll))
+    return;
+
+  priv = TIDY_FINGER_SCROLL(scroll)->priv;
+
+  /* Show scrollbars */
+  show_scrollbars(TIDY_FINGER_SCROLL(scroll), TRUE);
+  /* Add delay for removing scrollbars */
+  priv->scrollbar_timeout = g_timeout_add(
+          TIDY_FINGER_SCROLL_INITIAL_SCROLLBAR_DELAY,
+          (GSourceFunc)_tidy_finger_scroll_show_scrollbars_cb, scroll);
 }
