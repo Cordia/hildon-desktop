@@ -1,4 +1,4 @@
-noinst_PROGRAMS = test-hung-process test-applet test-do-not-disturb test-portrait-win test-portrait-dlg test-signals test-winstack
+noinst_PROGRAMS = test-hung-process test-applet test-do-not-disturb test-portrait-win test-portrait-dlg test-signals test-speed test-winstack
 
 test_hung_process_SOURCES = test-hung-process.c
 test_hung_process_CFLAGS = `pkg-config --cflags gtk+-2.0`
@@ -23,6 +23,10 @@ test_portrait_dlg_LDFLAGS = `pkg-config --libs hildon-1`
 test_signals_SOURCES = test-signals.c
 test_signals_CFLAGS = `pkg-config --cflags gtk+-2.0 dbus-1`
 test_signals_LDFLAGS = `pkg-config --libs gtk+-2.0 dbus-1`
+
+test_speed_SOURCES = test-speed.c
+test_speed_CFLAGS = `pkg-config --cflags gtk+-2.0`
+test_speed_LDFLAGS = `pkg-config --libs gtk+-2.0`
 
 test_winstack_SOURCES = test-large-window-stack.c
 test_winstack_CFLAGS = `pkg-config --cflags hildon-1`

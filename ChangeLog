@@ -1,5 +1,11 @@
 2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* tests/Makefile.am
+	* tests/test-speed.c (added): Added very simple gtk test app that
+	  renders as fast as it can to the screen.
+
+2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/mb/hd-theme.c: Now set up TidyStyle to the colours set in the
 	  current theme. This makes sure that the scrollbars in Launcher/Task
 	  Navigator are the correct colour.
