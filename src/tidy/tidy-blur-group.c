@@ -90,7 +90,10 @@ const char *SATURATE_FRAGMENT_SHADER =
 "uniform lowp float saturation;\n"
 "void main () {\n"
 "  lowp vec4 color = frag_color * texture2D (tex, tex_coord);\n"
-"  lowp float lightness = (color.r+color.g+color.b)*0.333*(1.0-saturation); \n"
+ /* just multiply by random numbers to give a dither effect. 0.03125 = 1/32, as
+  * this is the lowest precision of RGB565 */
+"  lowp float noise = fract(tex_coord.x*234.5 + tex_coord.y*287.3) * 0.03125; \n"
+"  lowp float lightness = (color.r+color.g+color.b)*0.333*(1.0-saturation) + noise; \n"
 "  gl_FragColor = vec4(\n"
 "                      color.r*saturation + lightness,\n"
 "                      color.g*saturation + lightness,\n"
@@ -358,7 +361,7 @@ tidy_blur_group_paint (ClutterActor *actor)
       priv->tex_a = cogl_texture_new_with_size(
                 tex_width, tex_height, 0, FALSE /*mipmap*/,
                 priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
-                                  COGL_PIXEL_FORMAT_RGB_888);
+                                  COGL_PIXEL_FORMAT_RGB_565);
       cogl_texture_set_filters(priv->tex_a, CGL_NEAREST, CGL_NEAREST);
       priv->fbo_a = cogl_offscreen_new_to_texture (priv->tex_a);
     }
@@ -367,7 +370,7 @@ tidy_blur_group_paint (ClutterActor *actor)
       priv->tex_b = cogl_texture_new_with_size(
                 tex_width, tex_height, 0, 0,
                 priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
-                                  COGL_PIXEL_FORMAT_RGB_888);
+                                  COGL_PIXEL_FORMAT_RGB_565);
       cogl_texture_set_filters(priv->tex_b, CGL_NEAREST, CGL_NEAREST);
       priv->fbo_b = cogl_offscreen_new_to_texture (priv->tex_b);
     }

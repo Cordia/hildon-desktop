@@ -1,5 +1,12 @@
 2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/tidy/tidy-blur-group.c: Added simple dithering to blurred image,
+	  to try and reduce banding effect. Also revert to RGB565 textures now
+	  we are 16 bit as these take up less memory, are faster, and due to 
+	  some SGX magic actually look better too.
+
+2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* tests/Makefile.am
 	* tests/test-speed.c (added): Added very simple gtk test app that
 	  renders as fast as it can to the screen.
