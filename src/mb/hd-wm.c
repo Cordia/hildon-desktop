@@ -349,7 +349,12 @@ hd_wm_activate_zoomed_client (MBWindowManager *wm,
     MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
 
   gboolean ret = wm_class->client_activate (wm, c);
-  hd_render_manager_set_state (HDRM_STATE_APP);
+
+  if (hd_comp_mgr_is_non_composited (c))
+    hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+  else
+    hd_render_manager_set_state (HDRM_STATE_APP);
+
   hd_render_manager_stop_transition ();
   return ret;
 }

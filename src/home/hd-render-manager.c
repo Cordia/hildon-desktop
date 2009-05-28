@@ -76,6 +76,8 @@ hd_render_manager_state_get_type (void)
         { HDRM_STATE_APP_PORTRAIT,   "HDRM_STATE_APP_PORTRAIT",   "Application in portrait mode" },
         { HDRM_STATE_TASK_NAV,       "HDRM_STATE_TASK_NAV",       "Task switcher" },
         { HDRM_STATE_LAUNCHER,       "HDRM_STATE_LAUNCHER",       "Task launcher" },
+        { HDRM_STATE_NON_COMPOSITED, "HDRM_STATE_NON_COMPOSITED",
+	  "Non-composited" },
         { 0, NULL, NULL }
       };
 
@@ -712,7 +714,7 @@ hd_render_manager_set_input_viewport()
     }
   else
     {
-      /* get the whole screen! */
+      /* g_warning ("%s: get the whole screen!", __func__); */
       geom[0].x = 0;
       geom[0].y = 0;
       geom[0].width = HDRM_WIDTH;
@@ -734,6 +736,7 @@ void hd_render_manager_sync_clutter_before ()
   HdTitleBarVisEnum btn_state = hd_title_bar_get_state(priv->title_bar) &
     ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH | HDTB_VIS_BTN_RIGHT_MASK);
   HDRMBlurEnum blur = 0;
+
   if (STATE_SHOW_APPLETS(priv->state))
     blur |= HDRM_SHOW_APPLETS;
 
@@ -784,6 +787,11 @@ void hd_render_manager_sync_clutter_before ()
             HDRM_ZOOM_FOR_LAUNCHER |
             ((priv->previous_state==HDRM_STATE_TASK_NAV)?
                 HDRM_ZOOM_FOR_TASK_NAV : 0);
+        break;
+      case HDRM_STATE_NON_COMPOSITED:
+        visible_top_left = HDRM_BUTTON_NONE;
+        visible_top_right = HDRM_BUTTON_NONE;
+        clutter_actor_hide(CLUTTER_ACTOR(priv->home));
         break;
     }
 
@@ -1141,9 +1149,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
   priv = the_render_manager->priv;
   cmgr = MB_WM_COMP_MGR (priv->comp_mgr);
 
-  g_debug("%s: STATE %s -> STATE %s", __FUNCTION__,
+  /* g_warning("%s: STATE %s -> STATE %s", __FUNCTION__,
       hd_render_manager_state_str(priv->state),
-      hd_render_manager_state_str(state));
+      hd_render_manager_state_str(state)); */
 
   if (!priv->comp_mgr)
   {
@@ -1165,6 +1173,12 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       HDRMStateEnum oldstate = priv->state;
       priv->previous_state = priv->state;
       priv->state = state;
+
+      if (oldstate == HDRM_STATE_NON_COMPOSITED)
+        {
+	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
+	  mb_wm_setup_redirection (wm, 1);
+	}
 
       /* Goto HOME instead of an empty switcher.  This way the caller
        * needn't care whether the switcher is empty, we'll do what
@@ -1281,6 +1295,11 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 	  hd_render_manager_update_blur_state(0);
 	}
 
+      if (state == HDRM_STATE_NON_COMPOSITED)
+        {
+	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
+	  mb_wm_setup_redirection (wm, 0);
+	}
     }
   priv->in_set_state = FALSE;
 }
@@ -1311,7 +1330,7 @@ gboolean hd_render_manager_is_changing_state(void)
   return the_render_manager->priv->in_set_state;
 }
 
-HDRMStateEnum  hd_render_manager_get_state()
+inline HDRMStateEnum hd_render_manager_get_state()
 {
   if (!the_render_manager)
     return HDRM_STATE_UNDEFINED;
@@ -1331,6 +1350,7 @@ static const char *hd_render_manager_state_str(HDRMStateEnum state)
     case HDRM_STATE_APP_PORTRAIT: return "HDRM_STATE_APP_PORTRAIT";
     case HDRM_STATE_TASK_NAV : return "HDRM_STATE_TASK_NAV";
     case HDRM_STATE_LAUNCHER : return "HDRM_STATE_LAUNCHER";
+    case HDRM_STATE_NON_COMPOSITED : return "HDRM_STATE_NON_COMPOSITED";
   }
   return "";
 }
@@ -1445,7 +1465,6 @@ void hd_render_manager_restack()
   gboolean blur_changed = FALSE;
   gint i;
   GList *previous_home_blur = 0;
-
 
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   /* Add all actors currently in the home_blur group */
@@ -1642,6 +1661,8 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
   gboolean blur = FALSE;
   gboolean blur_buttons = FALSE;
 
+  /* FIXME: check this for non-composited mode */
+
   /* Now look through the MBWM stack and see if we need to blur or not.
    * This happens when we have a dialog/menu in front of the main app */
   for (c=wm->stack_top;c;c=c->stacked_below)
@@ -1746,7 +1767,10 @@ static gboolean
 hd_render_manager_is_visible(GList *blockers,
                              ClutterGeometry rect)
 {
-  if (!hd_render_manager_clip_geo(&rect))
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  if (priv->state == HDRM_STATE_NON_COMPOSITED ||
+      !hd_render_manager_clip_geo(&rect))
     return FALSE;
 
   /* clip for every block */
@@ -1913,6 +1937,14 @@ void hd_render_manager_set_visibilities()
   gboolean show_windows = TRUE;
 
   priv = the_render_manager->priv;
+
+  /* shortcut for non-composited mode */
+  if (priv->state == HDRM_STATE_NON_COMPOSITED)
+    {
+      hd_render_manager_set_input_viewport();
+      return;
+    }
+
   /* first append all the top elements... */
   clutter_container_foreach(CLUTTER_CONTAINER(priv->app_top),
                             hd_render_manager_append_geo_cb,
@@ -2050,7 +2082,10 @@ gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c)
 {
   ClutterActor *a;
   MBWMCompMgrClutterClient *cc;
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
 
+  if (priv->state == HDRM_STATE_NON_COMPOSITED)
+    return FALSE;
   if (!(cc = MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client)))
     return FALSE;
   if (!(a  = mb_wm_comp_mgr_clutter_client_get_actor(cc)))

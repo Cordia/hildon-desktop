@@ -1,7 +1,7 @@
 /*
  * This file is part of hildon-desktop
  *
- * Copyright (C) 2008 Nokia Corporation.
+ * Copyright (C) 2008-2009 Nokia Corporation.
  *
  * Author:  Gordon Williams <gordon.williams@collabora.co.uk>
  *
@@ -87,6 +87,7 @@ typedef enum
   HDRM_STATE_APP_PORTRAIT   = 1 << 5,
   HDRM_STATE_TASK_NAV       = 1 << 6,
   HDRM_STATE_LAUNCHER       = 1 << 7,
+  HDRM_STATE_NON_COMPOSITED = 1 << 8, /* non-composited fullscreen mode */
 } HDRMStateEnum;
 
 /* Does the desktop need to be above apps? */
@@ -108,7 +109,8 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_TASK_NAV)
 
 #define STATE_IS_APP(s) \
-  STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT)
+  STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT | \
+		    HDRM_STATE_NON_COMPOSITED)
 
 /* Can switch to portrait mode? */
 #define STATE_IS_PORTRAIT_CAPABLE(s) \
@@ -169,7 +171,8 @@ typedef enum
   (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
 
 #define STATE_DISCARD_PREVIEW_NOTE(s) \
-  (STATE_ONE_OF((s), HDRM_STATE_TASK_NAV | HDRM_STATE_APP_PORTRAIT))
+  (STATE_ONE_OF((s), HDRM_STATE_TASK_NAV | HDRM_STATE_APP_PORTRAIT | \
+		     HDRM_STATE_NON_COMPOSITED))
 
 /* If we have notes then we may want to be able to click on them. If so
  * then we don't want h-d to have a grab over the notification, so subtract

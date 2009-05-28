@@ -1,6 +1,36 @@
+2009-05-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Initial non-compositing mode implementation.
+
+	* src/home/hd-render-manager.[ch]: Add new render manager state
+	HDRM_STATE_NON_COMPOSITED.
+	(hd_render_manager_set_state): Add transition to and from
+	HDRM_STATE_NON_COMPOSITED.
+	(hd_render_manager_set_visibilities): Shortcut for the mode.
+	(hd_render_manager_is_client_visible): Shortcut for the mode.
+	* src/mb/hd-wm.c (hd_wm_activate_zoomed_client): Go to the
+	non-composited mode if the client requests it with the property.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_setup_input_viewport): Do not
+	set the shape of the compositing overlay window if we are in
+	non-composited mode.
+	(hd_comp_mgr_texture_update_area): Some optimisations and
+	simplifications to avoid Gobject type checking.
+	(hd_comp_mgr_reset_overlay_shape): New function to shape compositor's
+	windows for the non-composited mode.
+	(hd_comp_mgr_is_non_composited): New function to check the window
+	property _HILDON_NON_COMPOSITED_WINDOW. Caches the value of the
+	property after reading it once.
+	(hd_comp_mgr_map_notify): Go to HDRM_STATE_NON_COMPOSITED if the
+	client requests that.
+	* src/mb/hd-atoms.[ch]: Add new atom _HILDON_NON_COMPOSITED_WINDOW.
+	* src/mb/hd-app.h: Add members for caching the composited property.
+	* tests/test-non-compositing.c: Test program for trying out the
+	non-composited mode.
+
 2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
-	Fixes: NB#118969 - Background scaling eventually shows background borders 
+	Fixes: NB#118969 - Background scaling eventually shows background
+	borders 
 	
 	* src/tidy/tidy-blur-group.c: Made sure the tiled vignette stretches
 	  correctly to the edges of the screen. Modified dithering parameters

@@ -46,6 +46,10 @@ struct HdApp
   /* set to true if we have had a map effect before. Helps stop us doing a
    * subview transition if we're merely remapping the same window */
   Bool         map_effect_before;
+
+  /* cache for the window property */
+  Bool         non_composited_read;
+  Bool         non_composited;
 };
 
 struct HdAppClass

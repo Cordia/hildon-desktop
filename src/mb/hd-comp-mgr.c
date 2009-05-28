@@ -854,8 +854,8 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
           rectangle[i].y      = geom[i].y;
           rectangle[i].width  = geom[i].width;
           rectangle[i].height = geom[i].height;
-          /*g_debug("%s: region %d, %d, %d, %d", __FUNCTION__,
-              geom[i].x, geom[i].y, geom[i].width, geom[i].height);*/
+          /* g_warning ("%s: region %d, %d, %d, %d", __FUNCTION__,
+              geom[i].x, geom[i].y, geom[i].width, geom[i].height); */
         }
       region = XFixesCreateRegion (wm->xdpy, rectangle, count);
       g_free (rectangle);
@@ -876,11 +876,12 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
   else
     region = XFixesCreateRegion (wm->xdpy, NULL, 0);
 
-  XFixesSetWindowShapeRegion (xdpy,
-                              overlay,
-                              ShapeBounding,
-                              0, 0,
-                              None);
+  if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED)
+    XFixesSetWindowShapeRegion (xdpy,
+                                overlay,
+                                ShapeBounding,
+                                0, 0,
+                                None);
 
   XFixesSetWindowShapeRegion (xdpy,
                               overlay,
@@ -901,11 +902,12 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
                 KeyPressMask | KeyReleaseMask |
                 PointerMotionMask);
 
-  XFixesSetWindowShapeRegion (xdpy,
-                              clutter_window,
-                              ShapeBounding,
-                              0, 0,
-                              None);
+  if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED)
+    XFixesSetWindowShapeRegion (xdpy,
+                                clutter_window,
+                                ShapeBounding,
+                                0, 0,
+                                None);
 
   XFixesSetWindowShapeRegion (xdpy,
                               clutter_window,
@@ -1187,10 +1189,9 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
   ClutterActor *parent, *it;
   HdCompMgrPrivate * priv;
   gboolean blur_update = FALSE;
+  ClutterActor *actors_stage;
 
-  if (!CLUTTER_IS_ACTOR(actor) ||
-      !CLUTTER_ACTOR_IS_VISIBLE(actor) ||
-      hmgr == 0)
+  if (!actor || !CLUTTER_ACTOR_IS_VISIBLE(actor) || hmgr == 0)
     return;
 
   priv = hmgr->priv;
@@ -1198,7 +1199,12 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
   /* TFP textures are usually bundled into another group, and it is
    * this group that sets visibility - so we must check it too */
   parent = clutter_actor_get_parent(actor);
-  while (parent && !CLUTTER_IS_STAGE(parent))
+  actors_stage = clutter_actor_get_stage(actor);
+  if (!actors_stage)
+    /* if it's not on stage, it's not visible */
+    return;
+
+  while (parent && parent != actors_stage)
     {
       if (!CLUTTER_ACTOR_IS_VISIBLE(parent))
         return;
@@ -1229,7 +1235,7 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
 
   /* Assume no zoom/rotate is happening here as we have simple windows */
   it = actor;
-  while (it && !CLUTTER_IS_STAGE(it))
+  while (it && it != actors_stage)
     {
       ClutterFixed px,py;
       clutter_actor_get_positionu(it, &px, &py);
@@ -1239,7 +1245,6 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
     }
 
   {
-    ClutterActor *stage = clutter_actor_get_stage(actor);
     /* CLUTTER_FIXED_TO_INT does no rounding, so add 0.5 here to help this */
     ClutterGeometry area = {x + CLUTTER_FIXED_TO_INT(offsetx+CFX_HALF),
                             y + CLUTTER_FIXED_TO_INT(offsety+CFX_HALF),
@@ -1249,11 +1254,8 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
             area.x, area.y, area.width, area.height);*/
 
     /* Queue a redraw, but without updating the whole area */
-    if (stage)
-      {
-        clutter_stage_set_damaged_area(stage, area);
-        clutter_actor_queue_redraw_damage(clutter_stage_get_default());
-      }
+    clutter_stage_set_damaged_area(actors_stage, area);
+    clutter_actor_queue_redraw_damage(clutter_stage_get_default());
   }
 }
 
@@ -1309,6 +1311,118 @@ fix_transiency (MBWindowManagerClient *client)
   else
     g_debug("%s: DO NOTHING %lx is transient to %lx\n", __FUNCTION__,
                  win->xwindow, win->xwin_transient_for);
+}
+
+/* set composite overlay shape according to our state */
+void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
+{
+  static gboolean    fs_comp = TRUE;
+  gboolean           want_fs_comp;
+  MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
+  MBWindowManager   *wm;
+  XserverRegion      region;
+  Window             overlay;
+  Window             clutter_window;
+  XRectangle         r;
+  ClutterActor      *stage;
+
+  if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+    want_fs_comp = FALSE;
+  else
+    want_fs_comp = TRUE;
+
+  if (want_fs_comp == fs_comp)
+    return;
+  
+  wm = mgr->wm;
+  stage = clutter_stage_get_default ();
+  clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
+  overlay = XCompositeGetOverlayWindow (wm->xdpy, wm->root_win->xwindow);
+
+  r.x = r.y = 0;
+  if (want_fs_comp)
+    {
+      /* g_warning ("%s: COMPOSITING: FULL SCREEN\n", __FUNCTION__); */
+      clutter_stage_set_shaped_mode (stage, 0);
+      r.width = wm->xdpy_width;
+      r.height = wm->xdpy_height;
+    }
+  else
+    {
+      /* g_warning ("%s: COMPOSITING: ZERO REGION\n", __FUNCTION__); */
+      /* tell Clutter not to draw on the window */
+      clutter_stage_set_shaped_mode (stage, 1);
+      clutter_stage_queue_redraw (CLUTTER_STAGE (stage));
+      r.width = r.height = 0;
+    }
+
+  region = XFixesCreateRegion (wm->xdpy, &r, 1);
+  XFixesSetWindowShapeRegion (wm->xdpy, overlay, ShapeBounding,
+                             0, 0, region);
+
+  XFixesSetWindowShapeRegion (wm->xdpy, clutter_window, ShapeBounding,
+                              0, 0, region);
+
+  XFixesSetWindowShapeRegion (wm->xdpy, wm->desktop->window->xwindow,
+		              ShapeBounding,
+                              0, 0, region);
+
+  XFixesDestroyRegion (wm->xdpy, region);
+
+  fs_comp = want_fs_comp;
+}
+
+gboolean
+hd_comp_mgr_is_non_composited (MBWindowManagerClient *client)
+{
+  MBWindowManager *wm;
+  HdCompMgr *hmgr;
+  MBWMClientWindow *win;
+  Atom atom, actual_type;
+  int format;
+  unsigned long items, left;
+  unsigned char *prop;
+  Status ret;
+
+  if (HD_APP (client)->non_composited_read)
+    {
+      if (HD_APP (client)->non_composited)
+        return TRUE;
+      else
+        return FALSE;
+    }
+
+  wm = client->wmref;
+  hmgr = HD_COMP_MGR (wm->comp_mgr);
+  win = client->window;
+  prop = NULL;
+
+  atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_NON_COMPOSITED_WINDOW);
+
+  mb_wm_util_trap_x_errors ();
+  ret = XGetWindowProperty (wm->xdpy, win->xwindow,
+                            atom, 0, 1, False,
+                            XA_INTEGER, &actual_type, &format,
+                            &items, &left, &prop);
+  mb_wm_util_untrap_x_errors ();
+  if (ret != Success)
+    return FALSE;
+
+  HD_APP (client)->non_composited_read = True;
+
+  if (prop)
+    XFree (prop);
+
+  if (actual_type == XA_INTEGER)
+    {
+      HD_APP (client)->non_composited = True;
+      return TRUE;
+    }
+  else
+   {
+     HD_APP (client)->non_composited = False;
+     return FALSE;
+   }
 }
 
 /* returns HdApp of client that was replaced, or NULL */
@@ -1779,6 +1893,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                                         actor_h, actor);
       mb_wm_object_unref (MB_WM_OBJECT (hclient_h));
       g_hash_table_remove (priv->hibernating_apps, (gpointer)hkey);
+    }
+
+  if (hd_comp_mgr_is_non_composited (c))
+    {
+      /* g_warning ("%s: client requests non-composited mode", __func__); */
+      hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
     }
 
   int topmost;
