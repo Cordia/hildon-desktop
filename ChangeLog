@@ -1,5 +1,13 @@
 2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#117092 - 'Critical' message on screen lock
+	
+	* src/home/hd-render-manager.c: Removed 'Critical' message when home
+	  view was not visible in HOME state. There are a few cases like
+	  screensaver mode when this is actually perfectly valid.
+
+2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/tidy/tidy-blur-group.c: Added simple dithering to blurred image,
 	  to try and reduce banding effect. Also revert to RGB565 textures now
 	  we are 16 bit as these take up less memory, are faster, and due to 

@@ -1978,15 +1978,9 @@ void hd_render_manager_set_visibilities()
         }
     }
 
-  /* Sometimes we make a mistake because of the trasition effects.
-   * One particular case is when a window stack with lots of windows
-   * is dumped altogether. */
-  if (STATE_NEED_DESKTOP (priv->state))
-    if (!CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (priv->home)))
-      {
-        g_critical ("i've got wrong the visibilities :(");
-        clutter_actor_show (CLUTTER_ACTOR (priv->home));
-      }
+  /* We did check STATE_NEED_DESKTOP(state) &&  CLUTTER_ACTOR_IS_VISIBLE(home)
+   * and make an error here, but there are actually many cases where this is
+   * valid. See NB#117092 */
 
   /* now free blockers */
   it = g_list_first(blockers);
