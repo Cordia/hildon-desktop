@@ -92,7 +92,7 @@ const char *SATURATE_FRAGMENT_SHADER =
 "  lowp vec4 color = frag_color * texture2D (tex, tex_coord);\n"
  /* just multiply by random numbers to give a dither effect. 0.03125 = 1/32, as
   * this is the lowest precision of RGB565 */
-"  lowp float noise = fract(tex_coord.x*234.5 + tex_coord.y*287.3) * 0.03125; \n"
+"  lowp float noise = fract(tex_coord.x*123.4 + tex_coord.y*156.7) * 0.03125; \n"
 "  lowp float lightness = (color.r+color.g+color.b)*0.333*(1.0-saturation) + noise; \n"
 "  gl_FragColor = vec4(\n"
 "                      color.r*saturation + lightness,\n"
@@ -525,6 +525,7 @@ tidy_blur_group_paint (ClutterActor *actor)
       vignette_amt = (int)((1-priv->zoom)*2048);
       if (vignette_amt<0) vignette_amt = 0;
       if (vignette_amt>255) vignette_amt = 255;
+      vignette_amt = 255;
 
       /* work out grid points */
       for (y=0;y<=VIGNETTE_TILES;y++)
@@ -534,10 +535,10 @@ tidy_blur_group_paint (ClutterActor *actor)
             gint c = 255;
             gint edge;
             /* we don't want full-size tiles for the edges - just half-size */
-            if (x==0) fx = edge_expand;
-            if (x==VIGNETTE_TILES) fx = VIGNETTE_TILES-edge_expand;
-            if (y==0) fy = edge_expand;
-            if (y==VIGNETTE_TILES) fy = VIGNETTE_TILES-edge_expand;
+            if (x==0) fx = 1-edge_expand;
+            if (x==VIGNETTE_TILES) fx = VIGNETTE_TILES+edge_expand-1;
+            if (y==0) fy = 1-edge_expand;
+            if (y==VIGNETTE_TILES) fy = VIGNETTE_TILES+edge_expand-1;
             /* work out vertex coords */
             v->x = mx+(zx*(fx*2-VIGNETTE_TILES)/(VIGNETTE_TILES-2));
             v->y = my+(zy*(fy*2-VIGNETTE_TILES)/(VIGNETTE_TILES-2));

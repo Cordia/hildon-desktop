@@ -1,5 +1,13 @@
 2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#118969 - Background scaling eventually shows background borders 
+	
+	* src/tidy/tidy-blur-group.c: Made sure the tiled vignette stretches
+	  correctly to the edges of the screen. Modified dithering parameters
+	  to work better when the background is zoomed out fully.
+
+2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* tests/test-speed.c: Modifications to render at a solid 25fps to
 	  allow system usage to be seen.
 
