@@ -407,6 +407,8 @@ hd_title_bar_dispose (GObject *obj)
   clutter_actor_destroy(CLUTTER_ACTOR(priv->foreground));
   g_object_unref(priv->progress_timeline);
   /* TODO: unref others - or do we care as we are a singleton? */
+
+  G_OBJECT_CLASS (hd_title_bar_parent_class)->dispose (obj);
 }
 
 static void

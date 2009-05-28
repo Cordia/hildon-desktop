@@ -1,3 +1,12 @@
+2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#119129 - Memory leaks in hd-clutter-cache
+	* src/util/hd-gtk-style.c: Added check for potential segfault if 
+	  function is called too early.
+	* src/home/hd-clutter-cache.c
+	* src/home/hd-title-bar.c: Added call to parent class's dispose 
+	  method.
+
 2009-05-27  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#115387 - No initial scrollbar shown in applications menu

@@ -91,6 +91,11 @@ hd_gtk_style_get_color_component (HDGtkWidgetSingleton   widget_id,
   widget = gtk_widget_singletons[widget_id];
   style = gtk_widget_get_style (widget);
 
+  if (!style) {
+    g_critical("%s: gtk_widget_get_style returned NULL", __FUNCTION__);
+    return;
+  }
+
   switch (component)
     {
     case HD_GTK_STYLE_FG:

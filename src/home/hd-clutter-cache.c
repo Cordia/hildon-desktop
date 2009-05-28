@@ -71,6 +71,7 @@ hd_clutter_cache_init (HdClutterCache *cache)
 static void
 hd_clutter_cache_dispose (GObject *obj)
 {
+  G_OBJECT_CLASS (hd_clutter_cache_parent_class)->dispose (obj);
 }
 
 static void
