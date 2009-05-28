@@ -28,6 +28,8 @@
 #include "hd-decor-button.h"
 #include "hd-clutter-cache.h"
 #include "hd-render-manager.h"
+#include "hd-gtk-style.h"
+#include "tidy/tidy-style.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -79,7 +81,27 @@ hd_theme_destroy (MBWMObject *obj)
 static int
 hd_theme_init (MBWMObject *obj, va_list vap)
 {
+  TidyStyle *style;
+  ClutterColor col;
+  GValue value;
+
   hd_clutter_cache_theme_changed();
+
+  /* Update tidy-style (for scrollbars) */
+  style = tidy_style_get_default();
+
+  memset(&value, 0, sizeof(GValue));
+  g_value_init(&value, CLUTTER_TYPE_COLOR);
+
+  hd_gtk_style_resolve_logical_color(&col, "SecondaryTextColor");
+  g_value_set_boxed (&value, &col);
+  tidy_style_set_property(style, TIDY_ACTIVE_COLOR, &value);
+
+  hd_gtk_style_resolve_logical_color(&col, "DefaultBackgroundColor");
+  g_value_set_boxed (&value, &col);
+  tidy_style_set_property(style, TIDY_BACKGROUND_COLOR, &value);
+
+  g_value_unset (&value);
 
   return 1;
 }
@@ -199,7 +221,7 @@ back_button_press_handler (MBWindowManager   *wm,
    * it.
    */
   mb_wm_object_ref (MB_WM_OBJECT(button));
-  
+
   bd->timeout_id =
     g_timeout_add_full (G_PRIORITY_HIGH_IDLE,
 			BACK_BUTTON_TIMEOUT, back_button_timeout, bd, NULL);

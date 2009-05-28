@@ -1,5 +1,11 @@
 2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/mb/hd-theme.c: Now set up TidyStyle to the colours set in the
+	  current theme. This makes sure that the scrollbars in Launcher/Task
+	  Navigator are the correct colour.
+
+2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Fixes: NB#119129 - Memory leaks in hd-clutter-cache
 	* src/util/hd-gtk-style.c: Added check for potential segfault if 
 	  function is called too early.
