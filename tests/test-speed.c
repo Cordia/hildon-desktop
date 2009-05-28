@@ -8,8 +8,8 @@
    how fast hildon-desktop is rendering it, or top to see CPU usage. */
 
 /* Area's width and height to render */
-#define AREAW 200
-#define AREAH 200
+#define AREAW 800
+#define AREAH 480
 
 /* This is called when we need to draw the windows contents */
 static gboolean expose(GtkWidget *widget, GdkEventExpose *event, gpointer userdata)
