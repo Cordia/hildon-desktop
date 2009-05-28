@@ -1,5 +1,10 @@
 2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* tests/test-speed.c: Modifications to render at a solid 25fps to
+	  allow system usage to be seen.
+
+2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Fixes: NB#117092 - 'Critical' message on screen lock
 	
 	* src/home/hd-render-manager.c: Removed 'Critical' message when home

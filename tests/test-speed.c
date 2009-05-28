@@ -3,43 +3,13 @@
 #include <cairo.h>
 #include <math.h>
 
-/* This just attempts to paint itself as many times as possible and outputs
-   how many times it has managed. You can then run 'xresponse -i' to check 
-   how fast hildon-desktop is rendering it. */
+/* This just attempts to paint itself at 25fps and outputs the actual fps it
+   has managed. You can then run 'xresponse -i' to check 
+   how fast hildon-desktop is rendering it, or top to see CPU usage. */
 
 /* Area's width and height to render */
 #define AREAW 200
 #define AREAH 200
-
-static gboolean expose(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
-static void clicked(GtkWindow *win, GdkEventButton *event, gpointer user_data);
-
-int main(int argc, char **argv)
-{
-    gtk_init(&argc, &argv);
-
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Speed test");
-    g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
-
-
-    gtk_widget_set_app_paintable(window, TRUE);
-    //gtk_widget_set_double_buffered(window, FALSE);
-
-    g_signal_connect(G_OBJECT(window), "expose-event", G_CALLBACK(expose), NULL);
-
-    /* toggle title bar on click - we add the mask to tell X we are interested in this event */
-    gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
-    gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
-    g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(clicked), NULL);
-
-    /* Run the program */
-    gtk_widget_show_all(window);
-    gtk_main();
-
-    return 0;
-}
-
 
 /* This is called when we need to draw the windows contents */
 static gboolean expose(GtkWidget *widget, GdkEventExpose *event, gpointer userdata)
@@ -81,15 +51,38 @@ static gboolean expose(GtkWidget *widget, GdkEventExpose *event, gpointer userda
 	    frame = 0;
 	  }
       }
-
-    gtk_widget_queue_draw_area(widget, 0, 0, AREAW, AREAH);
-
     return FALSE;
 }
 
-static void clicked(GtkWindow *win, GdkEventButton *event, gpointer user_data)
-{
-    /* toggle window manager frames */
-    gtk_window_set_decorated(win, !gtk_window_get_decorated(win));
+static gboolean timeout(GtkWidget *widget) {
+  gtk_widget_queue_draw_area(widget, 0, 0, AREAW, AREAH);
+  return TRUE;
 }
+
+int main(int argc, char **argv)
+{
+    gtk_init(&argc, &argv);
+
+    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window), "Speed test");
+    g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
+
+
+    gtk_widget_set_app_paintable(window, TRUE);
+    //gtk_widget_set_double_buffered(window, FALSE);
+
+    g_signal_connect(G_OBJECT(window), "expose-event", G_CALLBACK(expose), NULL);
+
+    /* toggle title bar on click - we add the mask to tell X we are interested in this event */
+    gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
+
+    g_timeout_add(1000/25, (GSourceFunc)timeout, window);
+
+    /* Run the program */
+    gtk_widget_show_all(window);
+    gtk_main();
+
+    return 0;
+}
+
 
