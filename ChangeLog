@@ -40,42 +40,27 @@
 	* src/tidy/tidy-blur-group.c: Made sure the tiled vignette stretches
 	  correctly to the edges of the screen. Modified dithering parameters
 	  to work better when the background is zoomed out fully.
-
-2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
-
 	* tests/test-speed.c: Modifications to render at a solid 25fps to
 	  allow system usage to be seen.
-
-2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#117092 - 'Critical' message on screen lock
 	
 	* src/home/hd-render-manager.c: Removed 'Critical' message when home
 	  view was not visible in HOME state. There are a few cases like
 	  screensaver mode when this is actually perfectly valid.
-
-2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
-
 	* src/tidy/tidy-blur-group.c: Added simple dithering to blurred image,
 	  to try and reduce banding effect. Also revert to RGB565 textures now
 	  we are 16 bit as these take up less memory, are faster, and due to 
 	  some SGX magic actually look better too.
-
-2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
-
 	* tests/Makefile.am
 	* tests/test-speed.c (added): Added very simple gtk test app that
 	  renders as fast as it can to the screen.
-
-2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
-
 	* src/mb/hd-theme.c: Now set up TidyStyle to the colours set in the
 	  current theme. This makes sure that the scrollbars in Launcher/Task
 	  Navigator are the correct colour.
 
-2009-05-28  Gordon Williams <gordon.williams@collabora.co.uk>
-
 	Fixes: NB#119129 - Memory leaks in hd-clutter-cache
+
 	* src/util/hd-gtk-style.c: Added check for potential segfault if 
 	  function is called too early.
 	* src/home/hd-clutter-cache.c
