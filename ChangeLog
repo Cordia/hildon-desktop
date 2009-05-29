@@ -1,3 +1,8 @@
+2009-05-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* tests/Makefile.am: Added test-non-compositing.
+	* tests/test-non-compositing.c: Fix compilation warnings.
+
 2009-05-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Initial non-compositing mode implementation.

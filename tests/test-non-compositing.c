@@ -26,6 +26,7 @@
 #include <gdk/gdkx.h>
 #include <gdk/gdkwindow.h>
 
+#if 0
 void set_stacking_layer (GtkWidget *win, int layer)
 {
 	Window xwindow;
@@ -44,8 +45,9 @@ void set_stacking_layer (GtkWidget *win, int layer)
                        XA_CARDINAL, 32, PropModeReplace,
                        (unsigned char *) &layer, 1);
 }
+#endif
 
-void set_non_compositing (GtkWidget *win)
+static void set_non_compositing (GtkWidget *win)
 {
 	Window xwindow;
 	Atom atom;
@@ -65,6 +67,7 @@ void set_non_compositing (GtkWidget *win)
                        (unsigned char *) &one, 1);
 }
 
+#if 0
 void set_menu_type (GtkWidget *win)
 {
 	Window xwindow;
@@ -140,8 +143,9 @@ void create_menu (int layer)
 
 	gtk_widget_show_all (menu);
 }
+#endif
 
-void create_normal_toplevel (int layer)
+static void create_normal_toplevel (int layer)
 {
 	GtkWidget *menu, *label;
 	char buf[100];
@@ -164,6 +168,7 @@ void create_normal_toplevel (int layer)
 	gtk_widget_show_all (menu);
 }
 
+#if 0
 void create_override_window (int layer)
 {
 	GtkWidget *menu, *label;
@@ -186,6 +191,7 @@ void create_override_window (int layer)
 
 	gtk_widget_show_all (menu);
 }
+#endif
 
 int
 main (int argc, char **argv)

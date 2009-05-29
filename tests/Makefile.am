@@ -1,4 +1,6 @@
-noinst_PROGRAMS = test-hung-process test-applet test-do-not-disturb test-portrait-win test-portrait-dlg test-signals test-speed test-winstack
+noinst_PROGRAMS = test-hung-process test-applet test-do-not-disturb \
+		  test-portrait-win test-portrait-dlg test-signals \
+		  test-speed test-winstack test-non-compositing
 
 test_hung_process_SOURCES = test-hung-process.c
 test_hung_process_CFLAGS = `pkg-config --cflags gtk+-2.0`
@@ -32,3 +34,6 @@ test_winstack_SOURCES = test-large-window-stack.c
 test_winstack_CFLAGS = `pkg-config --cflags hildon-1`
 test_winstack_LDFLAGS = `pkg-config --libs hildon-1`
 
+test_non_compositing_SOURCES = test-non-compositing.c
+test_non_compositing_CFLAGS = `pkg-config --cflags hildon-1`
+test_non_compositing_LDFLAGS = `pkg-config --libs hildon-1`
