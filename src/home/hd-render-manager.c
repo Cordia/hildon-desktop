@@ -163,6 +163,12 @@ struct _HdRenderManagerPrivate {
   HDRMStateEnum state;
   HDRMStateEnum previous_state;
 
+  /* The input blocker is added with hd_render_manager_add_input_blocker.
+   * It grabs the whole screen's input until either a window appears or
+   * a timeout expires. */
+  gboolean      has_input_blocker;
+  guint         has_input_blocker_timeout;
+
   TidyBlurGroup *home_blur;
   ClutterGroup  *app_top;
   ClutterGroup  *front;
@@ -207,6 +213,11 @@ struct _HdRenderManagerPrivate {
 static void
 stage_allocation_changed(ClutterActor *actor, GParamSpec *unused,
                          ClutterActor *stage);
+static gboolean
+hd_render_manager_captured_event_cb (ClutterActor     *actor,
+                                     ClutterEvent     *event,
+                                     gpointer *data);
+
 static void
 on_timeline_blur_new_frame(ClutterTimeline *timeline,
                            gint frame_num, gpointer data);
@@ -408,6 +419,12 @@ hd_render_manager_init (HdRenderManager *self)
   clutter_actor_set_name(CLUTTER_ACTOR(self), "HdRenderManager");
   g_signal_connect_swapped(stage, "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), self);
+  /* Add a callback we can use to capture events when we need to block
+   * input with has_input_blocker */
+  g_signal_connect (clutter_stage_get_default(),
+                    "captured-event",
+                    G_CALLBACK (hd_render_manager_captured_event_cb),
+                    self);
 
   priv->state = HDRM_STATE_UNDEFINED;
   priv->previous_state = HDRM_STATE_UNDEFINED;
@@ -667,7 +684,8 @@ hd_render_manager_set_input_viewport()
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   gboolean app_mode = STATE_IS_APP(priv->state);
 
-  if (!STATE_NEED_WHOLE_SCREEN_INPUT(priv->state))
+  if (!STATE_NEED_WHOLE_SCREEN_INPUT(priv->state) &&
+      !priv->has_input_blocker)
     {
       gint i;
       /* Now look at what buttons we have showing, and add each visible button X
@@ -2180,4 +2198,73 @@ hd_render_manager_get_title_xy (int *x, int *y)
   if (!the_render_manager) return;
 
   hd_title_bar_get_xy (the_render_manager->priv->title_bar, x, y);
+}
+
+static gboolean
+hd_render_manager_captured_event_cb (ClutterActor     *actor,
+                                     ClutterEvent     *event,
+                                     gpointer *data)
+{
+  /* We could, *maybe* get called before the_render_manager is set up - so do
+   * a check anyway */
+  if (the_render_manager &&
+      the_render_manager->priv->has_input_blocker)
+    {
+      /* Just put a message here - this should only happen when the user
+       * clicks really quickly */
+      g_debug("%s: Input event blocked by "
+              "hd_render_manager_add_input_blocker", __FUNCTION__);
+      return TRUE; /* halt emission of this event */
+    }
+
+  return FALSE;
+}
+
+static gboolean
+_hd_render_manager_remove_input_blocker_cb() {
+/*  g_warning("%s: Input blocker removed because of timeout (window"
+            " did not appear in time.", __FUNCTION__);*/
+  hd_render_manager_remove_input_blocker();
+
+  return FALSE;
+}
+
+/* Adds a input blocker which grabs the whole screen's input until either a
+ * window appears or a timeout expires. We actually do input blocking by
+ * grabbing the whole input viewport, and then ignoring any events captured
+ * by clutter using hd_render_manager_captured_event_cb  */
+void hd_render_manager_add_input_blocker() {
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  if (!priv->has_input_blocker)
+    {
+      //g_debug("%s: Input Blocker ADDED", __FUNCTION__);
+      priv->has_input_blocker = TRUE;
+      hd_render_manager_set_input_viewport();
+      /* After this timeout has expired we remove the blocker - this should
+       * stop us getting into some broken state if the app does not start. */
+      priv->has_input_blocker_timeout =
+        g_timeout_add(1000,
+                      (GSourceFunc)_hd_render_manager_remove_input_blocker_cb,
+                      0);
+    }
+}
+
+/* See hd_render_manager_add_input_blocker. This should be called when
+ * we don't need the input blocked any more. */
+void hd_render_manager_remove_input_blocker() {
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  /* remove the timeout if there was one */
+  if (priv->has_input_blocker_timeout)
+    {
+      g_source_remove(priv->has_input_blocker_timeout);
+      priv->has_input_blocker_timeout = 0;
+    }
+   /* remove the modal blocker */
+   if (priv->has_input_blocker)
+     {
+       //g_debug("%s: Input Blocker REMOVED", __FUNCTION__);
+       priv->has_input_blocker = FALSE;
+       hd_render_manager_set_input_viewport();
+     }
 }
