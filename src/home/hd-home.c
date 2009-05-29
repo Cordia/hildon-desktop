@@ -872,6 +872,7 @@ hd_home_update_layout (HdHome * home)
       _hd_home_do_normal_layout(home);
       break;
     case HDRM_STATE_HOME_EDIT:
+    case HDRM_STATE_HOME_EDIT_DLG:
       _hd_home_do_edit_layout(home);
       break;
     default:

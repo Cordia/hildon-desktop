@@ -1,3 +1,10 @@
+2009-05-29  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#110737 : hd_home_update_layout warning
+	
+	* src/home/hd-home.c: Added extra clause to switch statement to cope
+	  with the HOME_EDIT_DLG case.
+
 2009-05-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* tests/Makefile.am: Added test-non-compositing.
