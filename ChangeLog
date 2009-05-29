@@ -1,5 +1,23 @@
 2009-05-29  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#116375, NB#104558 - multiple clicks before home edit menu 
+	appears cause all kinds of problems.
+	N.B. This does NOT fix NB#117318, so repeated clicking still causes
+	the modal blocker to be removed. I am currently investigating this.
+	
+	* src/home/hd-render-manager.h	
+	* src/home/hd-render-manager.c: Add hd_render_manager_*_input_blocker.
+	  This blocks all input to the device temporarily (with a timeout in
+	  case).
+	* src/home/hd-switcher.c: When launching home edit menu, use
+	  hd_render_manager_add_input_blocker to block input until hd-home
+	  is able to create its window. Also do the same when an app is
+	  launched, to fix the problem with multiple taps on the launcher.
+	* src/mb/hd-comp-mgr.c: Remove the input blocker when a window is 
+	  mapped.
+
+2009-05-29  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Fixes: NB#110737 : hd_home_update_layout warning
 	
 	* src/home/hd-home.c: Added extra clause to switch statement to cope

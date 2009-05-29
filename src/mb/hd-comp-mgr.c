@@ -1113,15 +1113,15 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                   app->followers = NULL; /* list is now in new_leader */
                   app->leader = NULL;
                   app->stack_index = -1;
-		} 
-	      else 
+		}
+	      else
                 {
-                  MBWindowManagerClient *current_client = 
+                  MBWindowManagerClient *current_client =
                           hd_wm_determine_current_app (mgr->wm);
 
                   if (STATE_IS_APP (hd_render_manager_get_state ()) &&
-                      MB_WM_CLIENT_CLIENT_TYPE (current_client) & 
-                      MBWMClientTypeDesktop) 
+                      MB_WM_CLIENT_CLIENT_TYPE (current_client) &
+                      MBWMClientTypeDesktop)
                     hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
                 }
           g_object_set_data (G_OBJECT (actor), "HD-ApplicationId", NULL);
@@ -1333,7 +1333,7 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
 
   if (want_fs_comp == fs_comp)
     return;
-  
+
   wm = mgr->wm;
   stage = clutter_stage_get_default ();
   clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
@@ -1675,6 +1675,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       first_time = FALSE;
     }
+
+  /* if *anything* is mapped, remove our full-screen input blocker */
+  hd_render_manager_remove_input_blocker();
 
   /*g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c,
              MB_WM_CLIENT_CLIENT_TYPE (c));*/
