@@ -743,6 +743,22 @@ hd_title_bar_set_for_edit_mode(HdTitleBar *bar)
 }
 
 static void
+hd_title_bar_set_for_loading(HdTitleBar *bar)
+{
+  HdTitleBarPrivate *priv;
+  HdTitleBarVisEnum state = hd_title_bar_get_state (bar);
+
+  if (!HD_IS_TITLE_BAR(bar))
+    return;
+  priv = bar->priv;
+
+  state |= HDTB_VIS_FULL_WIDTH;
+  state &= ~HDTB_VIS_FOREGROUND;
+
+  hd_title_bar_set_state(bar, state);
+}
+
+static void
 hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
 {
   MBWMClientType    c_type;
@@ -806,43 +822,87 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
 
   /* add the title */
   const char* title = mb_wm_client_get_name (client);
-  if (d->show_title && title && strlen(title)) {
-    ClutterActor *status_area;
-    gchar *font_name;
-    gint h, w;
-    int x_start = 0;
-    int x_end = HD_COMP_MGR_SCREEN_WIDTH - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
-
-    if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
-      x_start += HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
-    status_area = hd_render_manager_get_status_area();
-    if (status_area_is_visible())
-      x_start += clutter_actor_get_width(status_area);
-
-    font_name = hd_gtk_style_resolve_logical_font(HD_TITLE_BAR_TITLE_FONT);
-    clutter_label_set_font_name(priv->title, font_name);
-    g_free(font_name);
-    clutter_label_set_text(priv->title, title);
-
-    if (client->window->name_has_markup)
-      clutter_label_set_use_markup(priv->title, TRUE);
-
-    h = clutter_actor_get_height(CLUTTER_ACTOR(priv->title));
-    w = x_end - (x_start + HD_TITLE_BAR_TITLE_MARGIN);
-
-    clutter_actor_set_width(CLUTTER_ACTOR(priv->title), w);
-    clutter_actor_set_position(CLUTTER_ACTOR(priv->title),
-                               x_start+HD_TITLE_BAR_TITLE_MARGIN,
-                               (HD_COMP_MGR_TOP_MARGIN-h)/2);
-    clutter_label_set_ellipsize(priv->title, PANGO_ELLIPSIZE_NONE);
-    clutter_actor_set_clip(CLUTTER_ACTOR(priv->title), 0, 0, w, h);
-    clutter_actor_show(CLUTTER_ACTOR(priv->title));
-  }
+  if (d->show_title && title && strlen(title))
+    hd_title_bar_set_title (bar, title, client->window->name_has_markup);
   else
-    clutter_actor_hide(CLUTTER_ACTOR(priv->title));
+    hd_title_bar_set_title (bar, NULL, FALSE);
 
   /* add progress indicator */
-  if (is_waiting)
+  hd_title_bar_set_waiting (bar, is_waiting);
+
+  /* Go through all buttons and set the ones visible that are required */
+  state = hd_title_bar_get_state(bar) & (~HDTB_VIS_BTN_RIGHT_MASK);
+
+  for (l = MB_WM_DECOR(decor)->buttons;l;l = l->next)
+    {
+      MBWMDecorButton * button = l->data;
+      if (button->type == MBWMDecorButtonClose)
+        state |= HDTB_VIS_BTN_CLOSE;
+      if (button->type == HdHomeThemeButtonBack)
+        state |= HDTB_VIS_BTN_BACK;
+
+      pressed |= button->state != MBWMDecorButtonStateInactive;
+    }
+  /* Also set us to be full width */
+  state |= HDTB_VIS_FULL_WIDTH;
+
+  hd_title_bar_set_state(bar, state);
+  hd_title_bar_right_pressed(bar, pressed);
+}
+
+void hd_title_bar_set_title (HdTitleBar *bar,
+                             const char *title,
+                             gboolean has_markup)
+{
+  HdTitleBarPrivate *priv;
+  if (!HD_IS_TITLE_BAR(bar))
+    return;
+  priv = bar->priv;
+
+  if (title)
+    {
+      ClutterActor *status_area;
+      gchar *font_name;
+      gint h, w;
+      int x_start = 0;
+      int x_end = HD_COMP_MGR_SCREEN_WIDTH - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
+
+      if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
+        x_start += HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+      status_area = hd_render_manager_get_status_area();
+      if (status_area_is_visible())
+        x_start += clutter_actor_get_width(status_area);
+
+      font_name = hd_gtk_style_resolve_logical_font(HD_TITLE_BAR_TITLE_FONT);
+      clutter_label_set_font_name(priv->title, font_name);
+      g_free(font_name);
+      clutter_label_set_text(priv->title, title);
+
+      clutter_label_set_use_markup(priv->title, has_markup);
+
+      h = clutter_actor_get_height(CLUTTER_ACTOR(priv->title));
+      w = x_end - (x_start + HD_TITLE_BAR_TITLE_MARGIN);
+
+      clutter_actor_set_width(CLUTTER_ACTOR(priv->title), w);
+      clutter_actor_set_position(CLUTTER_ACTOR(priv->title),
+                                 x_start+HD_TITLE_BAR_TITLE_MARGIN,
+                                 (HD_COMP_MGR_TOP_MARGIN-h)/2);
+      clutter_label_set_ellipsize(priv->title, PANGO_ELLIPSIZE_NONE);
+      clutter_actor_set_clip(CLUTTER_ACTOR(priv->title), 0, 0, w, h);
+      clutter_actor_show(CLUTTER_ACTOR(priv->title));
+    }
+  else
+    clutter_actor_hide(CLUTTER_ACTOR(priv->title));
+}
+
+void hd_title_bar_set_waiting (HdTitleBar *bar, gboolean waiting)
+{
+  HdTitleBarPrivate *priv;
+  if (!HD_IS_TITLE_BAR(bar))
+    return;
+  priv = bar->priv;
+
+  if (waiting)
     {
       gint x = 0;
       gint max_x = HD_COMP_MGR_SCREEN_WIDTH -
@@ -871,25 +931,6 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
       clutter_actor_hide(priv->progress_texture);
       clutter_timeline_stop(priv->progress_timeline);
     }
-
-  /* Go through all buttons and set the ones visible that are required */
-  state = hd_title_bar_get_state(bar) & (~HDTB_VIS_BTN_RIGHT_MASK);
-
-  for (l = MB_WM_DECOR(decor)->buttons;l;l = l->next)
-    {
-      MBWMDecorButton * button = l->data;
-      if (button->type == MBWMDecorButtonClose)
-        state |= HDTB_VIS_BTN_CLOSE;
-      if (button->type == HdHomeThemeButtonBack)
-        state |= HDTB_VIS_BTN_BACK;
-
-      pressed |= button->state != MBWMDecorButtonStateInactive;
-    }
-  /* Also set us to be full width */
-  state |= HDTB_VIS_FULL_WIDTH;
-
-  hd_title_bar_set_state(bar, state);
-  hd_title_bar_right_pressed(bar, pressed);
 }
 
 void
@@ -919,6 +960,11 @@ hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm)
     {
       hd_title_bar_set_for_edit_mode(bar);
       clutter_actor_set_reactive (bar->priv->title_bg, TRUE);
+    }
+  else if (hd_render_manager_get_state() == HDRM_STATE_LOADING)
+    {
+      hd_title_bar_set_for_loading (bar);
+      clutter_actor_set_reactive (bar->priv->title_bg, FALSE);
     }
   else
     {

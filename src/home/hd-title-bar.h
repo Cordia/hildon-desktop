@@ -84,6 +84,13 @@ void hd_title_bar_set_state(HdTitleBar *bar,
 HdTitleBarVisEnum hd_title_bar_get_state(HdTitleBar *bar);
 void
 hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm);
+
+void hd_title_bar_set_title   (HdTitleBar *bar,
+                               const char *title,
+                               gboolean has_markup);
+void hd_title_bar_set_waiting (HdTitleBar *bar,
+                               gboolean waiting);
+
 gboolean
 hd_title_bar_is_title_bar_decor(HdTitleBar *bar, MBWMDecor *decor);
 /* Get the foreground group - we need to put the status area in this so it

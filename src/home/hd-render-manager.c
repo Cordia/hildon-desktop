@@ -76,8 +76,8 @@ hd_render_manager_state_get_type (void)
         { HDRM_STATE_APP_PORTRAIT,   "HDRM_STATE_APP_PORTRAIT",   "Application in portrait mode" },
         { HDRM_STATE_TASK_NAV,       "HDRM_STATE_TASK_NAV",       "Task switcher" },
         { HDRM_STATE_LAUNCHER,       "HDRM_STATE_LAUNCHER",       "Task launcher" },
-        { HDRM_STATE_NON_COMPOSITED, "HDRM_STATE_NON_COMPOSITED",
-	  "Non-composited" },
+        { HDRM_STATE_NON_COMPOSITED, "HDRM_STATE_NON_COMPOSITED", "Non-composited" },
+        { HDRM_STATE_LOADING,        "HDRM_STATE_LOADING",        "Loading" },
         { 0, NULL, NULL }
       };
 
@@ -187,6 +187,7 @@ struct _HdRenderManagerPrivate {
   ClutterActor         *button_launcher;
   ClutterActor         *button_back;
   ClutterActor         *button_edit;
+  ClutterActor         *loading_image;
 
   /* these are current, from + to variables for doing the blurring animations */
   Range         home_radius;
@@ -781,6 +782,14 @@ void hd_render_manager_sync_clutter_before ()
         blur |= HDRM_BLUR_HOME;
         hd_home_update_layout (priv->home);
         break;
+      case HDRM_STATE_LOADING:
+        if (hd_task_navigator_is_empty())
+          visible_top_left = HDRM_BUTTON_LAUNCHER;
+        else
+          visible_top_left = HDRM_BUTTON_TASK_NAV;
+        visible_top_right = HDRM_BUTTON_NONE;
+        clutter_actor_show(CLUTTER_ACTOR(priv->home));
+        break;
       case HDRM_STATE_APP:
         visible_top_left = HDRM_BUTTON_TASK_NAV;
         visible_top_right = HDRM_BUTTON_NONE;
@@ -1043,6 +1052,35 @@ void hd_render_manager_set_operator (ClutterActor *item)
   priv->operator = CLUTTER_ACTOR(g_object_ref(item));
 }
 
+void hd_render_manager_set_loading  (ClutterActor *item)
+{
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  if (priv->loading_image == item)
+    return;
+
+  if (priv->loading_image)
+    {
+      clutter_container_remove_actor (CLUTTER_CONTAINER (priv->front),
+                                      priv->loading_image);
+      g_object_unref(priv->loading_image);
+    }
+
+  if (item)
+    {
+      priv->loading_image = CLUTTER_ACTOR(g_object_ref(item));
+      clutter_container_add_actor (CLUTTER_CONTAINER (priv->front),
+                                   priv->loading_image);
+      clutter_actor_set_size(item,
+                             HD_COMP_MGR_SCREEN_WIDTH,
+                             HD_COMP_MGR_SCREEN_HEIGHT-HD_COMP_MGR_TOP_MARGIN);
+      clutter_actor_set_position(item,
+                                 0, HD_COMP_MGR_TOP_MARGIN);
+    }
+  else
+    priv->loading_image = NULL;
+}
+
 void hd_render_manager_set_button (HDRMButtonEnum btn,
                                    ClutterActor *item)
 {
@@ -1260,6 +1298,14 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if (oldstate == HDRM_STATE_LAUNCHER)
         hd_launcher_hide();
 
+      /* Show/hide the loading image. */
+      if (state == HDRM_STATE_LOADING &&
+          priv->loading_image)
+        clutter_actor_show (priv->loading_image);
+      if (oldstate == HDRM_STATE_LOADING &&
+          priv->loading_image)
+        clutter_actor_hide (priv->loading_image);
+
       /* Reset CURRENT_APP_WIN when entering tasw/talu. */
       if (STATE_ONE_OF(state, HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER)
           && !STATE_ONE_OF(oldstate, HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER))
@@ -1371,20 +1417,16 @@ inline HDRMStateEnum hd_render_manager_get_state()
 
 static const char *hd_render_manager_state_str(HDRMStateEnum state)
 {
-  switch (state)
-  {
-    case HDRM_STATE_UNDEFINED : return "HDRM_STATE_UNDEFINED";
-    case HDRM_STATE_HOME : return "HDRM_STATE_HOME";
-    case HDRM_STATE_HOME_EDIT : return "HDRM_STATE_HOME_EDIT";
-    case HDRM_STATE_HOME_EDIT_DLG : return "HDRM_STATE_HOME_EDIT_DLG";
-    case HDRM_STATE_HOME_PORTRAIT : return "HDRM_STATE_HOME_PORTRAIT";
-    case HDRM_STATE_APP : return "HDRM_STATE_APP";
-    case HDRM_STATE_APP_PORTRAIT: return "HDRM_STATE_APP_PORTRAIT";
-    case HDRM_STATE_TASK_NAV : return "HDRM_STATE_TASK_NAV";
-    case HDRM_STATE_LAUNCHER : return "HDRM_STATE_LAUNCHER";
-    case HDRM_STATE_NON_COMPOSITED : return "HDRM_STATE_NON_COMPOSITED";
-  }
-  return "";
+  GTypeClass *state_class = g_type_class_ref (HD_TYPE_RENDER_MANAGER_STATE);
+  GEnumValue *state_value = g_enum_get_value (
+                             G_ENUM_CLASS (state_class),
+                             state);
+  g_type_class_unref (state_class);
+
+  if (!state_value)
+    return "";
+
+  return state_value->value_name;
 }
 
 const char *hd_render_manager_get_state_str()

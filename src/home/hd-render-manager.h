@@ -88,6 +88,7 @@ typedef enum
   HDRM_STATE_TASK_NAV       = 1 << 6,
   HDRM_STATE_LAUNCHER       = 1 << 7,
   HDRM_STATE_NON_COMPOSITED = 1 << 8, /* non-composited fullscreen mode */
+  HDRM_STATE_LOADING        = 1 << 9
 } HDRMStateEnum;
 
 /* Does the desktop need to be above apps? */
@@ -99,7 +100,8 @@ typedef enum
 #define STATE_NEED_DESKTOP(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME  | HDRM_STATE_HOME_PORTRAIT | \
                     HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | \
-                    HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV)
+                    HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
+                    HDRM_STATE_LOADING)
 
 #define STATE_NEED_WHOLE_SCREEN_INPUT(s) \
   STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
@@ -127,7 +129,8 @@ typedef enum
 
 #define STATE_SHOW_STATUS_AREA(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT | \
-                    HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT)
+                    HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT | \
+                    HDRM_STATE_LOADING )
 
 /* Show applets in the background? We DON'T show them for apps so
  * the app->task nav transition doesn't show them fading out in
@@ -197,6 +200,7 @@ HdRenderManager *hd_render_manager_get (void);
 void hd_render_manager_set_status_area (ClutterActor *item);
 void hd_render_manager_set_status_menu (ClutterActor *item);
 void hd_render_manager_set_operator (ClutterActor *item);
+void hd_render_manager_set_loading  (ClutterActor *item);
 void hd_render_manager_set_button (HDRMButtonEnum button,
                                    ClutterActor *item);
 /* ----------------------------------------------------------------- */

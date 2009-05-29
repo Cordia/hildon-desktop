@@ -46,6 +46,7 @@
 #include "hd-gtk-style.h"
 #include "hd-theme.h"
 #include "hd-clutter-cache.h"
+#include "hd-title-bar.h"
 #include "hd-transition.h"
 #include "hd-util.h"
 #include "tidy/tidy-sub-texture.h"
@@ -530,9 +531,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   const gchar *service_name = 0;
   gchar *cached_image = NULL;
   ClutterActor *app_image = 0;
-  ClutterActor *tb_image = 0;
   gint cursor_x, cursor_y;
-  gint title_height;
 
   /* Is there a cached image? */
   if (item)
@@ -559,19 +558,6 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   if (priv->launch_image)
     clutter_actor_destroy(priv->launch_image);
 
-  /* Load the launch image and add to the stage, along with the title bar
-   * from the theme (in their own group) */
-  priv->launch_image = clutter_group_new();
-  clutter_actor_set_name(priv->launch_image,
-      "hd_launcher_transition_app_start");
-  clutter_actor_set_size(priv->launch_image,
-                         HD_COMP_MGR_SCREEN_WIDTH,
-                         HD_COMP_MGR_SCREEN_HEIGHT);
-  /* Title bar */
-  tb_image = hd_clutter_cache_get_texture(
-      HD_THEME_IMG_TITLE_BAR, TRUE);
-  clutter_actor_set_width(tb_image, HD_COMP_MGR_SCREEN_WIDTH);
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->launch_image), tb_image);
   /* App image - if we had one */
   if (loading_image)
     {
@@ -604,8 +590,6 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
                clutter_actor_set_size(CLUTTER_ACTOR(sub),
                                       region.width, region.height);
                clutter_actor_hide(app_image);
-               clutter_container_add_actor(
-                   CLUTTER_CONTAINER(priv->launch_image), app_image);
                app_image = CLUTTER_ACTOR(sub);
             }
         }
@@ -620,15 +604,10 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
       app_image = clutter_rectangle_new_with_color(&col);
     }
 
-  title_height = clutter_actor_get_height(tb_image);
   clutter_actor_set_size(app_image,
                          HD_COMP_MGR_SCREEN_WIDTH,
                          HD_COMP_MGR_SCREEN_HEIGHT-HD_COMP_MGR_TOP_MARGIN);
-  clutter_actor_set_position(app_image,
-                             0, title_height);
-  clutter_container_add_actor(CLUTTER_CONTAINER(priv->launch_image), app_image);
-
-  ClutterContainer *parent = hd_render_manager_get_front_group();
+  priv->launch_image = app_image;
 
   /* Try and get the current mouse cursor location - this should be the place
    * the user last pressed */
@@ -682,10 +661,11 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   /* all because the tidy- stuff breaks clutter's nice 'get absolute position'
    * code... */
 
+  hd_render_manager_set_loading (priv->launch_image);
   clutter_actor_set_name(priv->launch_image,
                          "HdLauncher:launch_image");
-  clutter_container_add_actor(parent,
-                              priv->launch_image);
+  clutter_actor_set_position(priv->launch_image,
+                             0, HD_COMP_MGR_TOP_MARGIN);
   clutter_actor_set_reactive ( priv->launch_image, TRUE );
   g_signal_connect (priv->launch_image, "button-release-event",
                     G_CALLBACK(_hd_launcher_transition_clicked), 0);
@@ -697,7 +677,13 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
    * the timeline is called */
   hd_launcher_transition_new_frame(priv->launch_transition,
                                    0, launcher);
-  clutter_actor_show(priv->launch_image);
+  hd_render_manager_set_state (HDRM_STATE_LOADING);
+  HdTitleBar *tbar = HD_TITLE_BAR (hd_render_manager_get_title_bar());
+  hd_title_bar_set_title (tbar,
+                          hd_launcher_item_get_local_name
+                                                (HD_LAUNCHER_ITEM (item)),
+                          FALSE);
+  hd_title_bar_set_waiting (tbar, TRUE);
 
   clutter_timeline_rewind(priv->launch_transition);
   clutter_timeline_start(priv->launch_transition);
@@ -718,6 +704,7 @@ void hd_launcher_window_created(void)
 
   if (priv->launch_image)
   {
+    hd_render_manager_set_loading (NULL);
     clutter_timeline_stop(priv->launch_transition);
     clutter_actor_destroy(priv->launch_image);
     priv->launch_image = 0;
@@ -753,12 +740,15 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
                 CLUTTER_FIXED_TO_FLOAT(priv->launch_position.x)*(1-zoom));
   my = CLUTTER_FLOAT_TO_FIXED(
                 height*0.5f*zoom +
-                CLUTTER_FIXED_TO_FLOAT(priv->launch_position.y)*(1-zoom));
+                CLUTTER_FIXED_TO_FLOAT(priv->launch_position.y)*(1-zoom) +
+                HD_COMP_MGR_TOP_MARGIN);
   /* size of actor */
   zx = CLUTTER_FLOAT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH*zoom*0.5f);
-  zy = CLUTTER_FLOAT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT*zoom*0.5f);
+  zy = CLUTTER_FLOAT_TO_FIXED(
+          (HD_LAUNCHER_PAGE_HEIGHT-HD_COMP_MGR_TOP_MARGIN)*zoom*0.5f);
 
-  clutter_actor_set_positionu(priv->launch_image, mx-zx, my-zy);
+  clutter_actor_set_positionu(priv->launch_image,
+                              mx-zx, my-zy);
   clutter_actor_set_scale(priv->launch_image, zoom, zoom);
 }
 
