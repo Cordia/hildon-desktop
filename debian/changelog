@@ -1,12 +1,33 @@
 hildon-desktop (1:2.2.51-1~unreleased) unstable; urgency=low
 
+  Adam:
+  * Fixes: NB#115969 - Task switcher view doesn't respond in a mentioned
+    scenario.
+  * Fixes: NB#115310 - after reading the mail also in task switcher the
+    notification symptoms are showing still
+  * Fixes: NB#118521 - One hand unlock slider rotates if phone UI is open
+
+  Gordon:
+  * Fixes: NB#104558 - Layout mode menu and other layout mode dialogs are
+    coming up in normal mode.
+  * Fixes: NB#110737 - Found GLIB WARNING ** default - hd_home_update_layout:
+    should only be called for HDRM_STATE_HOME.*
+  * Fixes: NB#118969 - Background scaling eventually shows background borders
+  * Fixes: NB#117092 - GLIB CRITICAL ** default - i've got wrong the
+    visibilities :(
+  * Fixes: NB#115387 - No initial scrollbar shown in applications menu
+
   Kimmo:
   * Fixes: NB#96619 - System sound off setting is not working
   * Added build dependency to libprofile-dev.
   * Initial non-compositing mode implementation. Requires newest Clutter and
     libmatchbox2.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 25 May 2009 10:12:42 +0300
+  Thomas:
+  * Fixes: NB#116866 - VIS_FOREGROUND flag is never cleared if switcher is
+    aborted
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 29 May 2009 18:08:53 +0300
 
 hildon-desktop (1:2.2.50-1) unstable; urgency=low
 
