@@ -244,17 +244,6 @@ void hd_render_manager_blurred_changed(void);
 /* Gets the current coordinates of the title. */
 void hd_render_manager_get_title_xy (int *x, int *y);
 
-/* Adds an input blocker which grabs the whole screen's input until either a
- * window appears or a timeout expires. We only use this because
- * if the user clicks rapidly then things like home applets can be launched
- * or state changed before the requested window appears. Currently this is
- * only used for STATE_HOME_EDIT, but it's been done like this because
- * it may be usable to solve problems in other states too.  */
-void hd_render_manager_add_input_blocker(void);
-/* See hd_render_manager_add_input_blocker. This should be called when
- * we don't need the input blocked any more. */
-void hd_render_manager_remove_input_blocker(void);
-
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */

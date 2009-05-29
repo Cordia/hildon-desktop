@@ -343,8 +343,8 @@ hd_switcher_clicked (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
-  g_debug("entered hd_switcher_clicked: state=%s\n",
-        hd_render_manager_get_state_str());
+  g_debug("entered hd_switcher_clicked: state=%d\n",
+        hd_render_manager_get_state());
 
   if (priv->long_press || STATE_IS_EDIT_MODE (hd_render_manager_get_state ()))
     return;
@@ -427,9 +427,6 @@ hd_switcher_press (HdSwitcher *switcher)
         dbus_g_proxy_call_no_reply (priv->hildon_home_proxy, "ShowEditMenu",
                                     G_TYPE_UINT, hd_home_get_current_view_id (home),
                                     G_TYPE_INVALID);
-      /* Add an input blocker while we wait for hildon home to bring up
-       * a window. Fixes NB#116375, NB#104558 */
-      hd_render_manager_add_input_blocker();
     }
 
   return TRUE;
@@ -516,11 +513,6 @@ hd_switcher_launch_app (HdSwitcher *switcher,
                         HdLauncherApp *app,
                         gpointer data)
 {
-  /* Add a full-screen input blocker to stop the user clicking
-   * really quickly and starting something else. This will be removed
-   * when a window appears, or after a timeout.   */
-  hd_render_manager_add_input_blocker();
-
   hd_launcher_transition_app_start (app);
 }
 
@@ -640,7 +632,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       if (!(c = MB_WM_COMP_MGR_CLIENT(hclient)->wm_client))
         {
           /*
-           * A possible reason for this to happen is that the client has been
+           * A possible reason for this to happen is that the client has been 
            * unregistered (this wm_client is cleared) but somebody still holds
            * a reference to it (eg. a hash table, so it hasn't been destroyed).
            * Treat it as if cmgrcc was NULL.

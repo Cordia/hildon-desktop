@@ -1,3 +1,8 @@
+2009-05-29  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Reverted my last commit, because Kimmo doesn't like it.
+	NOTE: NB#116375, NB#104558 ARE NOW NOT FIXED.
+
 2009-05-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#115969 Task switcher view doesn't respond in a mentioned scenario.
