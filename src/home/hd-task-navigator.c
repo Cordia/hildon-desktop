@@ -1344,7 +1344,7 @@ hd_task_navigator_is_empty (void)
   return NThumbnails == 0;
 }
 
-/* Returns whether at least thumbnails populate the switcher. */
+/* Returns whether at least 2 thumbnails populate the switcher. */
 gboolean
 hd_task_navigator_is_crowded (void)
 {

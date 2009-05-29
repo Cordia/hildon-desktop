@@ -40,6 +40,7 @@
 
 #include "hd-app.h"
 #include "hd-volume-profile.h"
+#include "hd-util.h"
 
 #define HDCM_NOTIFICATION_END_SIZE 32
 
@@ -60,6 +61,46 @@ typedef struct _HDEffectData
   /* Any extra particles if they are used for this effect */
   ClutterActor             *particles[HDCM_UNMAP_PARTICLES];
 } HDEffectData;
+
+/* Describes the state of hd_transition_rotating_fsm(). */
+static struct
+{
+  MBWindowManager *wm;
+
+  /*
+   * @direction:      Where we're going now.
+   * @new_direction:  Reaching the next @phase where to go.
+   *                  Used to override half-finished transitions.
+   *                  *_fsm() needs to check it at the end of each @phase.
+   */
+  enum
+  {
+    GOTO_LANDSCAPE,
+    GOTO_PORTRAIT,
+  } direction, new_direction;
+
+  /*
+   * What is *_fsm() currently doing:
+   * -- #IDLE:      nothing, we're sitting in landscape or portrait
+   * -- #FADE_OUT:  hd_transition_fade_and_rotate() is fading out
+   * -- #WAITING:   for X to finish reconfiguring the screen
+   * -- #FADE_IN:   second hd_transition_fade_and_rotate() is in progress
+   */
+  enum
+  {
+    IDLE,
+    FADE_OUT,
+    WAITING,
+    FADE_IN,
+  } phase;
+
+  /*
+   * @goto_state when we've %FADE_OUT:d.  Set by
+   * hd_transition_rotate_screen_and_change_state()
+   * Its initial value is %HDRM_STATE_UNDEFINED, which means don't
+   * change the state. */
+  HDRMStateEnum goto_state;
+} Orientation_change;
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -926,14 +967,14 @@ hd_transition_subview(HdCompMgr                  *mgr,
   clutter_timeline_start (data->timeline);
 }
 
-/* Start a transition for the rotation
+/* Start or finish a transition for the rotation
  * (moving into/out of blanking depending on first_part)
  */
-void
-hd_transition_rotate_screen(gboolean first_part,
-                            gboolean goto_portrait,
-                            GCallback finished_callback,
-                            gpointer finished_callback_data)
+static void
+hd_transition_fade_and_rotate(gboolean first_part,
+                              gboolean goto_portrait,
+                              GCallback finished_callback,
+                              gpointer finished_callback_data)
 {
   ClutterColor black = {0x00, 0x00, 0x00, 0xFF};
   HDEffectData *data = g_new0 (HDEffectData, 1);
@@ -971,6 +1012,131 @@ hd_transition_rotate_screen(gboolean first_part,
   clutter_timeline_start (data->timeline);
 }
 
+static gboolean
+hd_transition_rotating_fsm(void)
+{
+  HDRMStateEnum state;
+  gboolean change_state;
+
+  g_debug ("%s: phase=%d, new_direction=%d, direction=%d", __FUNCTION__,
+           Orientation_change.phase, Orientation_change.new_direction,
+           Orientation_change.direction);
+  switch (Orientation_change.phase)
+    {
+      case IDLE:
+        /* Fade to black ((c) Metallica) */
+        Orientation_change.phase = FADE_OUT;
+        Orientation_change.direction = Orientation_change.new_direction;
+        hd_transition_fade_and_rotate(
+                TRUE, Orientation_change.direction == GOTO_PORTRAIT,
+                G_CALLBACK(hd_transition_rotating_fsm), NULL);
+        break;
+      case FADE_OUT:
+        /*
+         * We're faded out, now it is time to change HDRM state
+         * if* requested and possible.  Take care not to switch
+         * to states which don't support the orientatcion we're
+         * going to.
+         */
+        state = Orientation_change.goto_state;
+        change_state = Orientation_change.new_direction == GOTO_PORTRAIT
+          ?  STATE_IS_PORTRAIT(state) || STATE_IS_PORTRAIT_CAPABLE(state)
+          : !STATE_IS_PORTRAIT(state) && state != HDRM_STATE_UNDEFINED;
+        if (change_state)
+          {
+            Orientation_change.goto_state = HDRM_STATE_UNDEFINED;
+            hd_render_manager_set_state(state);
+          }
+
+        if (Orientation_change.direction == Orientation_change.new_direction)
+          {
+            /*
+             * Wait for the screen change. During this period, blank the
+             * screen by hiding %HdRenderManager. Note that we could wait
+             * until redraws have finished here, but currently X blanks us
+             * for a set time period anyway - and this way it is easier
+             * to get rotation speeds sorted.
+             */
+            Orientation_change.phase = WAITING;
+            clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
+            hd_util_change_screen_orientation(Orientation_change.wm,
+                         Orientation_change.direction == GOTO_PORTRAIT);
+            g_timeout_add(
+              hd_transition_get_int("rotate", "duration_blanking", 500),
+              (GSourceFunc)hd_transition_rotating_fsm, NULL);
+            break;
+          }
+        else
+          Orientation_change.direction = Orientation_change.new_direction;
+        /* Fall through */
+      case WAITING:
+        if (Orientation_change.direction == Orientation_change.new_direction)
+          { /* Fade back in */
+            Orientation_change.phase = FADE_IN;
+            clutter_actor_show(CLUTTER_ACTOR(hd_render_manager_get()));
+            hd_transition_fade_and_rotate(
+                    FALSE, Orientation_change.direction == GOTO_PORTRAIT,
+                    G_CALLBACK(hd_transition_rotating_fsm), NULL);
+            /* Fix NB#117109 by re-evaluating what is blurred and what isn't */
+            hd_render_manager_update_blur_state(0);
+          }
+        else
+          {
+            Orientation_change.direction = Orientation_change.new_direction;
+            Orientation_change.phase = FADE_OUT;
+            hd_transition_rotating_fsm();
+          }
+        break;
+      case FADE_IN:
+        Orientation_change.phase = IDLE;
+        if (Orientation_change.direction != Orientation_change.new_direction)
+          hd_transition_rotating_fsm();
+        break;
+    }
+
+  return FALSE;
+}
+
+/* Start changing the screen's orientation by rotating 90 degrees
+ * (portrait mode) or going back to landscape.  Returns FALSE if
+ * orientation changing won't take place. */
+gboolean
+hd_transition_rotate_screen (MBWindowManager *wm, gboolean goto_portrait)
+{ g_debug("%s(goto_portrait=%d)", __FUNCTION__, goto_portrait);
+  Orientation_change.wm = wm;
+  Orientation_change.new_direction = goto_portrait
+    ? GOTO_PORTRAIT : GOTO_LANDSCAPE;
+
+  if (Orientation_change.phase == IDLE)
+    {
+      if (goto_portrait == (HD_COMP_MGR_SCREEN_HEIGHT > HD_COMP_MGR_SCREEN_WIDTH))
+        {
+          g_warning("%s: already in %s mode", __FUNCTION__,
+                    goto_portrait ? "portrait" : "landscape");
+          return FALSE;
+        }
+
+      Orientation_change.goto_state = HDRM_STATE_UNDEFINED;
+      hd_transition_rotating_fsm();
+    }
+  else
+    g_debug("divert");
+
+  return TRUE;
+}
+
+/*
+ * Asks the rotating machine to switch to @state if possible
+ * when it's faded out.  We'll switch state with best effort,
+ * but no promises.  Only effective if a rotation transition
+ * is underway.
+ */
+void
+hd_transition_rotate_screen_and_change_state (HDRMStateEnum state)
+{
+  Orientation_change.goto_state = state;
+}
+
 /* Returns whether @actor will last only as long as the effect
  * (if it has any) takes.  Currently only subview transitions
  * are considered. */
@@ -998,7 +1164,7 @@ hd_transition_play_sound (const gchar * fname)
     gint millisec;
 
     /* Canberra uses threads. */
-    if (hd_volume_profile_is_silent() || hd_disable_threads())
+    if (1 || hd_volume_profile_is_silent() || hd_disable_threads())
       return;
 
     /* Initialize the canberra context once. */

@@ -2,9 +2,12 @@
 #include "hd-util.h"
 
 #include <matchbox/core/mb-wm.h>
+#include <clutter/x11/clutter-x11.h>
 
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
+#include <X11/extensions/shape.h>
+#include <X11/extensions/Xcomposite.h>
 
 #include "hd-comp-mgr.h"
 #include "hd-wm.h"
@@ -174,12 +177,47 @@ hd_util_client_has_modal_blocker (MBWindowManagerClient *c)
       mb_wm_get_modality_type (c->wmref) == MBWMModalitySystem;
 }
 
+/* Queries the current input viewport and flips the coordinates
+ * of the rectangles. */
+static void
+hd_util_flip_input_viewport (MBWindowManager *wm)
+{
+  Window clwin;
+  XserverRegion region;
+  XRectangle *inputshape;
+  int i, ninputshapes, unused;
+
+  clwin = clutter_x11_get_stage_window (
+                          CLUTTER_STAGE (clutter_stage_get_default ()));
+  inputshape = XShapeGetRectangles(wm->xdpy, clwin,
+                                   ShapeInput, &ninputshapes, &unused);
+  for (i = 0; i < ninputshapes; i++)
+    {
+      XRectangle tmp;
+
+      tmp = inputshape[i];
+      inputshape[i].x = tmp.y;
+      inputshape[i].y = tmp.x;
+      inputshape[i].width = tmp.height;
+      inputshape[i].height = tmp.width;
+    }
+
+  region = XFixesCreateRegion (wm->xdpy, inputshape, ninputshapes);
+  XFree(inputshape);
+
+  hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
+    XCompositeGetOverlayWindow (wm->xdpy, wm->root_win->xwindow),
+    region);
+  hd_comp_mgr_set_input_viewport_for_window (wm->xdpy, clwin, region);
+  XFixesDestroyRegion (wm->xdpy, region);
+}
+
 /* Change the screen's orientation by rotating 90 degrees
  * (portrait mode) or going back to landscape.
  * Returns whether the orientation has actually changed. */
-static gboolean
-hd_util_change_screen_orientation_real (MBWindowManager *wm,
-                                        gboolean goto_portrait)
+gboolean
+hd_util_change_screen_orientation (MBWindowManager *wm,
+                                   gboolean goto_portrait)
 {
   Status ret;
   Time cfgtime;
@@ -226,121 +264,11 @@ hd_util_change_screen_orientation_real (MBWindowManager *wm,
       g_warning("XRRSetScreenConfig() failed: %d", ret);
       return FALSE;
     }
-  else
-    return TRUE;
-}
 
-/* To be documented */
-static struct
-{
-  MBWindowManager *wm;
-
-  enum
-  {
-    GOTO_LANDSCAPE,
-    GOTO_PORTRAIT,
-  } direction, new_direction;
-
-  enum
-  {
-    IDLE,
-    FADE_OUT,
-    WAITING,
-    FADE_IN,
-  } phase;
-} Orientation_change;
-
-static gboolean
-hd_util_change_screen_orientation_cb (gpointer unused)
-{
-  g_debug ("%s: phase=%d, new_direction=%d, direction=%d",
-           __FUNCTION__, Orientation_change.phase,
-           Orientation_change.new_direction, Orientation_change.direction);
-  switch (Orientation_change.phase)
-    {
-      case IDLE:
-        /* Fade to black ((c) Metallica) */
-        Orientation_change.phase = FADE_OUT;
-        Orientation_change.direction = Orientation_change.new_direction;
-        hd_transition_rotate_screen(
-                TRUE, Orientation_change.direction == GOTO_PORTRAIT,
-                G_CALLBACK(hd_util_change_screen_orientation_cb), NULL);
-        break;
-      case FADE_OUT:
-        if (Orientation_change.direction == Orientation_change.new_direction)
-          {
-            /*
-             * Wait for the screen change. During this period, blank the
-             * screen by hiding hd_render_manager. Note that we could wait
-             * until redraws have finished here, but currently X blanks us
-             * for a set time period anyway - and this way it is easier
-             * to get rotation speeds sorted.
-             */
-            Orientation_change.phase = WAITING;
-            clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
-            hd_util_change_screen_orientation_real(Orientation_change.wm,
-                         Orientation_change.direction == GOTO_PORTRAIT);
-            g_timeout_add(
-              hd_transition_get_int("rotate", "duration_blanking", 500),
-              hd_util_change_screen_orientation_cb, NULL);
-            break;
-          }
-        else
-          Orientation_change.direction = Orientation_change.new_direction;
-        /* Fall through */
-      case WAITING:
-        if (Orientation_change.direction == Orientation_change.new_direction)
-          { /* Fade back in */
-            Orientation_change.phase = FADE_IN;
-            clutter_actor_show(CLUTTER_ACTOR(hd_render_manager_get()));
-            hd_transition_rotate_screen(
-                    FALSE, Orientation_change.direction == GOTO_PORTRAIT,
-                    G_CALLBACK(hd_util_change_screen_orientation_cb), NULL);
-            /* Fix NB#117109 by re-evaluating what is blurred and what isn't */
-            hd_render_manager_update_blur_state(0);
-          }
-        else
-          {
-            Orientation_change.direction = Orientation_change.new_direction;
-            Orientation_change.phase = FADE_OUT;
-            hd_util_change_screen_orientation_cb (NULL);
-          }
-        break;
-      case FADE_IN:
-        Orientation_change.phase = IDLE;
-        if (Orientation_change.direction != Orientation_change.new_direction)
-          hd_util_change_screen_orientation_cb (NULL);
-        break;
-    }
-
-  return FALSE;
-}
-
-/* Start changing the screen's orientation by rotating 90 degrees
- * (portrait mode) or going back to landscape.  Returns FALSE if
- * orientation changing won't take place. */
-gboolean
-hd_util_change_screen_orientation (MBWindowManager *wm,
-                                   gboolean goto_portrait)
-{
-  g_debug("%s(goto_portrait=%d)", __FUNCTION__, goto_portrait);
-
-  Orientation_change.wm = wm;
-  Orientation_change.new_direction = goto_portrait
-    ? GOTO_PORTRAIT : GOTO_LANDSCAPE;
-
-  if (Orientation_change.phase == IDLE)
-    {
-      if (goto_portrait == (HD_COMP_MGR_SCREEN_HEIGHT > HD_COMP_MGR_SCREEN_WIDTH))
-        {
-          g_warning("%s: already in %s mode", __FUNCTION__,
-                    goto_portrait ? "portrait" : "landscape");
-          return FALSE;
-        }
-      hd_util_change_screen_orientation_cb(NULL);
-    }
-  else
-    g_debug ("divert");
+  /* Maybe we needn't bother with errors. */
+  mb_wm_util_trap_x_errors ();
+  hd_util_flip_input_viewport (wm);
+  mb_wm_util_untrap_x_errors ();
 
   return TRUE;
 }

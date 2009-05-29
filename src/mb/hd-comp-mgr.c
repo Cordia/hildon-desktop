@@ -806,17 +806,28 @@ hd_comp_mgr_get_foreground_region(HdCompMgr *hmgr, MBWMClientType client_mask)
   return region;
 }
 
+/* Set up the input mask, bounding shape and input shape of @win. */
+void
+hd_comp_mgr_set_input_viewport_for_window (Display *xdpy, Window  win,
+                                            XserverRegion region)
+{
+  XSelectInput (xdpy, win, FocusChangeMask | ExposureMask
+                | PropertyChangeMask | ButtonPressMask | ButtonReleaseMask
+                | KeyPressMask | KeyReleaseMask | PointerMotionMask);
+  if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED)
+    /* nobody knows what this actually is, let alone why shouldn't be
+     * reset in non-composited mode */
+    XFixesSetWindowShapeRegion (xdpy, win, ShapeBounding, 0, 0, None);
+  XFixesSetWindowShapeRegion (xdpy, win, ShapeInput, 0, 0, region);
+}
+
 void
 hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
                                   int count)
 {
   XserverRegion      region;
-  Window             overlay;
-  Window             clutter_window;
   MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
   MBWindowManager   *wm = mgr->wm;
-  Display           *xdpy = wm->xdpy;
-  ClutterActor      *stage;
   gboolean           allow_input_viewport;
   MBWindowManagerClient *client;
 
@@ -831,17 +842,6 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
       }
 
   mb_wm_util_trap_x_errors ();
-
-  overlay = XCompositeGetOverlayWindow (xdpy, wm->root_win->xwindow);
-
-  XSelectInput (xdpy,
-                overlay,
-                FocusChangeMask |
-                ExposureMask |
-                PropertyChangeMask |
-                ButtonPressMask | ButtonReleaseMask |
-                KeyPressMask | KeyReleaseMask |
-                PointerMotionMask );
 
   /*g_debug("%s: setting viewport", __FUNCTION__);*/
   if (count > 0 && allow_input_viewport)
@@ -870,53 +870,21 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
           subtract = hd_comp_mgr_get_foreground_region(hmgr,
               MBWMClientTypeNote | MBWMClientTypeDialog);
           XFixesSubtractRegion (wm->xdpy, region, region, subtract);
-          XFixesDestroyRegion (xdpy, subtract);
+          XFixesDestroyRegion (wm->xdpy, subtract);
         }
     }
   else
     region = XFixesCreateRegion (wm->xdpy, NULL, 0);
 
-  if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED)
-    XFixesSetWindowShapeRegion (xdpy,
-                                overlay,
-                                ShapeBounding,
-                                0, 0,
-                                None);
+  hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
+    XCompositeGetOverlayWindow (wm->xdpy, wm->root_win->xwindow),
+    region);
+  hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
+    clutter_x11_get_stage_window (
+      CLUTTER_STAGE (clutter_stage_get_default ())),
+    region);
 
-  XFixesSetWindowShapeRegion (xdpy,
-                              overlay,
-                              ShapeInput,
-                              0, 0,
-                              region);
-
-  stage = clutter_stage_get_default();
-
-  clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
-
-  XSelectInput (xdpy,
-                clutter_window,
-                FocusChangeMask |
-                ExposureMask |
-                PropertyChangeMask |
-                ButtonPressMask | ButtonReleaseMask |
-                KeyPressMask | KeyReleaseMask |
-                PointerMotionMask);
-
-  if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED)
-    XFixesSetWindowShapeRegion (xdpy,
-                                clutter_window,
-                                ShapeBounding,
-                                0, 0,
-                                None);
-
-  XFixesSetWindowShapeRegion (xdpy,
-                              clutter_window,
-                              ShapeInput,
-                              0, 0,
-                              region);
-
-  XFixesDestroyRegion (xdpy, region);
-
+  XFixesDestroyRegion (wm->xdpy, region);
   if (mb_wm_util_untrap_x_errors ())
     g_debug ("%s: X errors", __FUNCTION__);
 }
@@ -2163,7 +2131,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
           else if ((app->stack_index < 0
                     || (app->leader == app && !app->followers))
                    && hd_task_navigator_is_crowded ()
-                   && c->window->xwindow == hd_wm_current_app_is (NULL, 0))
+                   && c->window->xwindow == hd_wm_current_app_is (NULL, 0)
+                   && hd_render_manager_get_state () != HDRM_STATE_APP_PORTRAIT)
             hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
           else
             hd_transition_close_app (hmgr, c);
@@ -2463,7 +2432,7 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
   /* Invalidate all cached, inherited portrait flags at once. */
   counter++;
 
-  PORTRAIT ("SHOULD BE PORTRAIT?", c);
+  PORTRAIT ("SHOULD BE PORTRAIT?");
   any_requests = FALSE;
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)

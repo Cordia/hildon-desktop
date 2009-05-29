@@ -1188,6 +1188,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
   if (state != priv->state)
     {
+      gboolean goto_tasw = FALSE;
       HDRMStateEnum oldstate = priv->state;
       priv->previous_state = priv->state;
       priv->state = state;
@@ -1201,12 +1202,19 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       /* Goto HOME instead of an empty switcher.  This way the caller
        * needn't care whether the switcher is empty, we'll do what
        * it meant. */
-      if (state == HDRM_STATE_TASK_NAV && hd_task_navigator_is_empty())
+      if (state == HDRM_STATE_TASK_NAV
+          && (hd_task_navigator_is_empty() || STATE_IS_PORTRAIT (oldstate)))
         {
           state = priv->state = HDRM_STATE_HOME;
           g_debug("you must have meant STATE %s -> STATE %s",
                   hd_render_manager_state_str(oldstate),
                   hd_render_manager_state_str(state));
+          if (state == oldstate)
+            goto out;
+          /* If the caller wanted to switch to tasw in portrait mode
+           * got o home insted, switch to landscape and then show tasw.
+           * This is because we cannnot show tasw in portrait. */
+          goto_tasw = !!STATE_IS_PORTRAIT (oldstate);
         }
 
       /* Enter or leave the task switcher. */
@@ -1281,12 +1289,16 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       hd_render_manager_sync_clutter_before();
 
       /* Switch between portrait <=> landscape modes. */
-      if (!!STATE_IS_PORTRAIT (oldstate) == !!STATE_IS_PORTRAIT (state))
-        /* Don't change orientation. */;
-      else if (STATE_IS_PORTRAIT (state))
-        hd_util_change_screen_orientation (wm, TRUE);
-      else if (STATE_IS_PORTRAIT (oldstate))
-        hd_util_change_screen_orientation (wm, FALSE);
+      if (!!STATE_IS_PORTRAIT (oldstate) != !!STATE_IS_PORTRAIT (state))
+        {
+          if (STATE_IS_PORTRAIT (state))
+            hd_transition_rotate_screen (wm, TRUE);
+          else if (STATE_IS_PORTRAIT (oldstate))
+            hd_transition_rotate_screen (wm, FALSE);
+          if (goto_tasw)
+            /* Switch to tasw when we've really exited portarit mode. */
+            hd_transition_rotate_screen_and_change_state (HDRM_STATE_TASK_NAV);
+        }
 
       /* Signal the state has changed. */
       g_object_notify (G_OBJECT (the_render_manager), "state");
@@ -1319,6 +1331,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 	  mb_wm_setup_redirection (wm, 0);
 	}
     }
+
+out:
   priv->in_set_state = FALSE;
 }
 

@@ -25,6 +25,7 @@
 #define __HD_TRANSITION_H__
 
 #include "hd-comp-mgr.h"
+#include "hd-render-manager.h"
 
 /* The file name of the particle image used in close-app transitions
  * and the number of them to show in the transition. */
@@ -69,11 +70,10 @@ hd_transition_subview(HdCompMgr                  *mgr,
                       MBWindowManagerClient      *mainview,
                       MBWMCompMgrClientEvent     event);
 
+gboolean
+hd_transition_rotate_screen(MBWindowManager *wm, gboolean goto_portrait);
 void
-hd_transition_rotate_screen(gboolean first_part,
-                            gboolean goto_portrait,
-                            GCallback finished_callback,
-                            gpointer finished_callback_data);
+hd_transition_rotate_screen_and_change_state (HDRMStateEnum state);
 
 gboolean
 hd_transition_actor_will_go_away (ClutterActor *actor);

@@ -1,3 +1,27 @@
+2009-05-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#115969 Task switcher view doesn't respond in a mentioned scenario.
+
+	The input shape remained 480x800.  The changes will make the
+	transition from portrait to tasw smoother (looks cooler if
+	you slow down the transitions).
+
+	* src/util/hd-util.c:
+	  Update the input shape when rotating the screen.
+	* src/util/hd-transition.h:
+	  New interface to tell the transition FSM to go to the specified state.
+	* src/util/hd-transition.c:
+	  Moved all rotation-transition-related-things here.  Documentation.
+	* src/home/hd-render-manager.c:
+	  If we'd go from portrait mode to TASK_NAV state go to HOME first,
+	  wait until we fade out then go to tasw.
+	* src/home/hd-task-navigator.c:
+	  Cosmetics.
+	* src/mb/hd-comp-mgr.h
+	* src/mb/hd-comp-mgr.c:
+	  Refactored hd_comp_mgr_setup_input_viewport() to be usable
+	  from hd-util.c.
+
 2009-05-29  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#116375, NB#104558 - multiple clicks before home edit menu 
