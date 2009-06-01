@@ -1,4 +1,7 @@
-hildon-desktop (1:2.2.51-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.51-1) unstable; urgency=low
+
+  Marc:
+  * Fixes: NB#114248 - The loading image covers the status area
 
   Adam:
   * Fixes: NB#115969 - Task switcher view doesn't respond in a mentioned
@@ -27,7 +30,7 @@ hildon-desktop (1:2.2.51-1~unreleased) unstable; urgency=low
   * Fixes: NB#116866 - VIS_FOREGROUND flag is never cleared if switcher is
     aborted
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 29 May 2009 18:08:53 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 01 Jun 2009 08:50:16 +0300
 
 hildon-desktop (1:2.2.50-1) unstable; urgency=low
 

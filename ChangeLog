@@ -1,3 +1,7 @@
+2009-06-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.51
+
 2009-05-29  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Added a new state, HRDM_STATE_LOADING, showing the loading screen with
