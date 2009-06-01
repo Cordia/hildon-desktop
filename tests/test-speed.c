@@ -3,13 +3,46 @@
 #include <cairo.h>
 #include <math.h>
 
-/* This just attempts to paint itself at 25fps and outputs the actual fps it
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <gtk/gtk.h>
+#include <gdk/gdkx.h>
+#include <gdk/gdkwindow.h>
+
+/* This just attempts to paint itself at FPS fps and outputs the actual fps it
    has managed. You can then run 'xresponse -i' to check 
    how fast hildon-desktop is rendering it, or top to see CPU usage. */
+
+#define FPS 25
+
+/* #undef this to make the test run in non-composited mode */
+#define COMPOSITED 1
 
 /* Area's width and height to render */
 #define AREAW 800
 #define AREAH 480
+
+#ifndef COMPOSITED
+static void set_non_compositing (GtkWidget *win)
+{
+        Window xwindow;
+        Atom atom;
+        int one = 1;
+        GdkWindow *gdk_window = GTK_WIDGET (win)->window;
+        GdkDisplay *gdk_display = gdk_display_get_default ();
+        Display *display = GDK_DISPLAY_XDISPLAY (gdk_display);
+
+        atom = gdk_x11_get_xatom_by_name_for_display (gdk_display,
+                        "_HILDON_NON_COMPOSITED_WINDOW");
+        xwindow = GDK_WINDOW_XID (gdk_window);
+
+        XChangeProperty (display,
+                       xwindow,
+                       atom,
+                       XA_INTEGER, 32, PropModeReplace,
+                       (unsigned char *) &one, 1);
+}
+#endif
 
 /* This is called when we need to draw the windows contents */
 static gboolean expose(GtkWidget *widget, GdkEventExpose *event, gpointer userdata)
@@ -67,19 +100,24 @@ int main(int argc, char **argv)
     gtk_window_set_title(GTK_WINDOW(window), "Speed test");
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
 
-
     gtk_widget_set_app_paintable(window, TRUE);
     //gtk_widget_set_double_buffered(window, FALSE);
 
     g_signal_connect(G_OBJECT(window), "expose-event", G_CALLBACK(expose), NULL);
 
-    /* toggle title bar on click - we add the mask to tell X we are interested in this event */
+    /* toggle title bar on click - we add the mask to tell X we are interested
+     * in this event */
     gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
 
-    g_timeout_add(1000/25, (GSourceFunc)timeout, window);
+    g_timeout_add(1000/FPS, (GSourceFunc)timeout, window);
 
     /* Run the program */
     gtk_widget_show_all(window);
+
+#ifndef COMPOSITED
+    set_non_compositing (window);
+#endif
+
     gtk_main();
 
     return 0;

@@ -1,5 +1,8 @@
 2009-06-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* tests/test-speed.c: Add support for running the test in the
+	non-composited mode.
+
 	Release 2.2.51
 
 2009-05-29  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
