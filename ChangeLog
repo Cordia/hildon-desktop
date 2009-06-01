@@ -3,10 +3,14 @@
 	Fixes: NB#119381 - Status area to be dimmed when UI dialog shown
 
 	* src/home/hd-title-bar.c: Don't leave space for the status area
-	  when in 'foreground' mode.
+	  when in 'foreground' mode, and make sure the foreground group
+	  sits below status area when not in foregrounbd mode (so status
+	  area is not overlapped when visible)
 	* src/home/hd-render-manager.c: Don't add status area to the 
 	  'foreground' part of the title bar - as we want it blurred
-	  when foreground is visible
+	  when foreground is visible. Also make sure that VIS_FOREGROUND
+	  flag is either set or cleared on state change -> fixes unreliable
+	  behaviour.
 
 2009-06-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
