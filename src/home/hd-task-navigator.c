@@ -79,8 +79,6 @@
 
 /* Measures (in pixels).  Unless indicated, none of them is tunable. */
 /* Common platform metrics */
-#define SCREEN_WIDTH              HD_COMP_MGR_LANDSCAPE_WIDTH
-#define SCREEN_HEIGHT             HD_COMP_MGR_LANDSCAPE_HEIGHT
 #define MARGIN_DEFAULT             8
 #define MARGIN_HALF                4
 #define ICON_FINGER               48
@@ -1471,12 +1469,13 @@ calc_layout (Layout * lout)
   /* Gaps are always the same, regardless of the number of thumbnails.
    * Leave the last row left-aligned.  Center the first pageful amount
    * of rows vertically. */
-  lout->xpos = layout_fun (SCREEN_WIDTH,
+  lout->xpos = layout_fun (hd_comp_mgr_get_current_screen_width (),
                            lout->thumbsize->width,
                            GRID_HORIZONTAL_GAP,
                            lout->cells_per_row);
   lout->last_row_xpos = lout->xpos;
-  lout->ypos = layout_fun (SCREEN_HEIGHT + GRID_TOP_MARGIN,
+  lout->ypos = layout_fun (hd_comp_mgr_get_current_screen_height ()
+                           + GRID_TOP_MARGIN,
                            lout->thumbsize->height,
                            GRID_VERTICAL_GAP,
                            nrows_per_page);
@@ -2187,7 +2186,8 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
    * viewport out of the real estate, but in return we need to ask
    * how much we actually managed to scroll.
    */
-  yarea = ythumb - (SCREEN_HEIGHT - Thumbsize->height) / 2;
+  yarea = ythumb - (hd_comp_mgr_get_current_screen_height()
+                    - Thumbsize->height) / 2;
   hd_scrollable_group_set_viewport_y (Navigator_area, yarea);
   yarea = hd_scrollable_group_get_viewport_y (Navigator_area);
 
@@ -3053,7 +3053,8 @@ screen_size_changed (void)
    * switched to landscape.
    */
   clutter_actor_set_size(Scroller,
-                         HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_SCREEN_HEIGHT);
+                         hd_comp_mgr_get_current_screen_width (),
+                         hd_comp_mgr_get_current_screen_height ());
   for_each_appthumb (li, apthumb)
     {
       const MBWMClientWindow * mbwmcwin;
@@ -3105,7 +3106,9 @@ hd_task_navigator_init (HdTaskNavigator * self)
   /* Turn off visibility detection for @Scroller to it won't be clipped by it. */
   Scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_actor_set_name (Scroller, "Scroller");
-  clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
+  clutter_actor_set_size (Scroller,
+                          hd_comp_mgr_get_current_screen_width (),
+                          hd_comp_mgr_get_current_screen_height ());
   clutter_actor_set_visibility_detect(Scroller, FALSE);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), Scroller);
 

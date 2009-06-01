@@ -232,7 +232,7 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_actor_set_visibility_detect(actor, TRUE);
   clutter_actor_set_position(actor, 0, 0);
   clutter_actor_set_size(actor,
-                    HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_TOP_MARGIN);
+         hd_comp_mgr_get_current_screen_width (), HD_COMP_MGR_TOP_MARGIN);
   clutter_actor_set_name(CLUTTER_ACTOR(actor), "HdTitleBar");
 
   hd_gtk_style_resolve_logical_color(&title_color, "TitleTextColor");
@@ -402,9 +402,21 @@ hd_title_bar_dispose (GObject *obj)
   if (priv->progress_timeline)
     clutter_timeline_stop(priv->progress_timeline);
   for (i=0;i<BTN_COUNT;i++)
-    clutter_actor_destroy(priv->buttons[i]);
-  clutter_actor_destroy(priv->progress_texture);
-  clutter_actor_destroy(CLUTTER_ACTOR(priv->foreground));
+    if (priv->buttons[i])
+      {
+        clutter_actor_destroy(priv->buttons[i]);
+        priv->buttons[i] = 0;
+      }
+  if (priv->progress_texture)
+    {
+      clutter_actor_destroy(priv->progress_texture);
+      priv->progress_texture = 0;
+    }
+  if (priv->foreground)
+    {
+      clutter_actor_destroy(CLUTTER_ACTOR(priv->foreground));
+      priv->foreground = 0;
+    }
   g_object_unref(priv->progress_timeline);
   /* TODO: unref others - or do we care as we are a singleton? */
 
@@ -611,7 +623,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
       /* set up background image */
       clutter_actor_show(priv->title_bg);
       clutter_actor_set_width(priv->title_bg,
-          HD_COMP_MGR_SCREEN_WIDTH);
+          hd_comp_mgr_get_current_screen_width ());
 
       /* set up separator positions */
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
@@ -644,11 +656,12 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
           clutter_actor_show(priv->buttons[BTN_SEPARATOR_RIGHT]);
           if (CLUTTER_ACTOR_IS_VISIBLE (priv->buttons[BTN_DONE]))
             clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_RIGHT],
-                                HD_COMP_MGR_SCREEN_WIDTH -
+                                hd_comp_mgr_get_current_screen_width () -
                                 clutter_actor_get_width (priv->buttons[BTN_DONE]));
           else
             clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_RIGHT],
-                                HD_COMP_MGR_SCREEN_WIDTH - HD_COMP_MGR_TOP_LEFT_BTN_WIDTH);
+                                hd_comp_mgr_get_current_screen_width ()
+                                - HD_COMP_MGR_TOP_LEFT_BTN_WIDTH);
         }
       else
         clutter_actor_hide(priv->buttons[BTN_SEPARATOR_RIGHT]);
@@ -869,7 +882,8 @@ void hd_title_bar_set_title (HdTitleBar *bar,
       gchar *font_name;
       gint h, w;
       int x_start = 0;
-      int x_end = HD_COMP_MGR_SCREEN_WIDTH - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
+      int x_end = hd_comp_mgr_get_current_screen_width ()
+                  - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
 
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
         x_start += HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
@@ -909,7 +923,7 @@ void hd_title_bar_set_waiting (HdTitleBar *bar, gboolean waiting)
   if (waiting)
     {
       gint x = 0;
-      gint max_x = HD_COMP_MGR_SCREEN_WIDTH -
+      gint max_x = hd_comp_mgr_get_current_screen_width () -
                   (HD_THEME_IMG_PROGRESS_SIZE +
                    HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH);
       PangoRectangle logical_rect = { 0, };
@@ -1057,7 +1071,7 @@ hd_title_bar_stage_allocation_changed (HdTitleBar *bar, GParamSpec *unused,
   HdTitleBarPrivate *priv = bar->priv;
   guint i, wscr;
 
-  wscr = HD_COMP_MGR_SCREEN_WIDTH;
+  wscr = hd_comp_mgr_get_current_screen_width ();
   for (i = 0; i < BTN_COUNT; i++)
     if (BTN_FLAGS[i] & BTN_FLAG_ALIGN_RIGHT)
       clutter_actor_set_x(priv->buttons[i],
@@ -1141,7 +1155,7 @@ hd_title_bar_create_fake(HdTitleBar *bar)
   clutter_actor_set_name(group, "hd_title_bar_create_fake");
   ClutterActor *title_bar = hd_clutter_cache_get_texture(
       HD_THEME_IMG_TITLE_BAR, TRUE);
-  clutter_actor_set_width(title_bar,  HD_COMP_MGR_SCREEN_WIDTH);
+  clutter_actor_set_width(title_bar, hd_comp_mgr_get_current_screen_width ());
   clutter_container_add_actor(CLUTTER_CONTAINER(group), title_bar);
 
   return CLUTTER_ACTOR(group);

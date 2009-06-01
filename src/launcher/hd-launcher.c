@@ -556,7 +556,10 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
     loading_image = 0;
 
   if (priv->launch_image)
-    clutter_actor_destroy(priv->launch_image);
+    {
+      clutter_actor_destroy(priv->launch_image);
+      priv->launch_image = 0;
+    }
 
   /* App image - if we had one */
   if (loading_image)
@@ -572,8 +575,9 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
           ClutterGeometry region = {0, 0, 0, 0};
           clutter_actor_get_size(app_image, &w, &h);
 
-          region.width = HD_COMP_MGR_SCREEN_WIDTH;
-          region.height = HD_COMP_MGR_SCREEN_HEIGHT-HD_COMP_MGR_TOP_MARGIN;
+          region.width = hd_comp_mgr_get_current_screen_width ();
+          region.height = hd_comp_mgr_get_current_screen_height () -
+                          HD_COMP_MGR_TOP_MARGIN;
 
           if (w > region.width ||
               h > region.height)
@@ -605,8 +609,9 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
     }
 
   clutter_actor_set_size(app_image,
-                         HD_COMP_MGR_SCREEN_WIDTH,
-                         HD_COMP_MGR_SCREEN_HEIGHT-HD_COMP_MGR_TOP_MARGIN);
+                         hd_comp_mgr_get_current_screen_width (),
+                         hd_comp_mgr_get_current_screen_height ()
+                         - HD_COMP_MGR_TOP_MARGIN);
   priv->launch_image = app_image;
 
   /* Try and get the current mouse cursor location - this should be the place

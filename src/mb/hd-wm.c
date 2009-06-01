@@ -427,7 +427,7 @@ hd_wm_determine_current_app (MBWindowManager *wm)
         return c;
       if (!HD_IS_APP (c))
         continue;
-      if (!HD_COMP_MGR_CLIENT_IS_MAXIMIZED (c->frame_geometry))
+      if (!hd_comp_mgr_client_is_maximized (c->frame_geometry))
         /* Not covering the whole application area. */
         continue;
       if (!c->window)

@@ -597,6 +597,7 @@ hd_launcher_grid_dispose (GObject *gobject)
                   (GFunc) clutter_actor_destroy,
                   NULL);
   g_list_free (priv->tiles);
+  priv->tiles = NULL;
 
   g_list_foreach(priv->blockers,
                  (GFunc) clutter_actor_destroy,

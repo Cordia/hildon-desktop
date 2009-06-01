@@ -132,6 +132,9 @@ struct HdCompMgrClientPrivate
   guint                 portrait_timestamp;
 };
 
+/* The HdCompMgr singleton */
+static HdCompMgr *the_hd_comp_mgr = NULL;
+
 HdRunningApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
                                                HdCompMgr *hmgr);
 
@@ -507,6 +510,8 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   GError               *error = NULL;
 
   priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
+
+  the_hd_comp_mgr = hmgr;
 
   hd_atoms_init (wm->xdpy, priv->atoms);
 
@@ -1740,7 +1745,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                        HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
         {
           hd_render_manager_set_state(HDRM_STATE_HOME);
-          if (HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->window->geometry))
+          if (hd_comp_mgr_client_is_maximized(c->window->geometry))
             /*
              * So we are in switcher view and want to get to home view
              * to show a dialog or something.  hdrm_set_visibilities()
@@ -2676,14 +2681,27 @@ void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running)
    * It is called when any transition begins or ends. */
 }
 
-guint
+inline guint
 hd_comp_mgr_get_current_screen_width (void)
 {
-  return mb_wm_root_window_get (NULL)->wm->xdpy_width;
+  return MB_WM_COMP_MGR (the_hd_comp_mgr)->wm->xdpy_width;
 }
 
-guint
+inline guint
 hd_comp_mgr_get_current_screen_height(void)
 {
-  return mb_wm_root_window_get (NULL)->wm->xdpy_height;
+  return MB_WM_COMP_MGR (the_hd_comp_mgr)->wm->xdpy_height;
 }
+
+inline gboolean
+hd_comp_mgr_client_is_maximized (MBGeometry geom)
+{
+  if ((geom).x == 0 &&
+      (geom).width >= hd_comp_mgr_get_current_screen_width ()
+      && (geom).y == 0 
+      && (geom).height >= hd_comp_mgr_get_current_screen_height ())
+          return TRUE;
+  else
+          return FALSE;
+}
+

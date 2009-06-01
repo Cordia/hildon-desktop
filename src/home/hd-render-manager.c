@@ -118,9 +118,6 @@ typedef enum
   HDRM_SHOW_APPLETS = 128, /* Used to fade out/fade in applets */
 } HDRMBlurEnum;
 
-#define HDRM_WIDTH  HD_COMP_MGR_SCREEN_WIDTH
-#define HDRM_HEIGHT HD_COMP_MGR_SCREEN_HEIGHT
-
 enum
 {
   TRANSITION_COMPLETE,
@@ -500,8 +497,8 @@ stage_allocation_changed(ClutterActor *actor, GParamSpec *unused,
                          ClutterActor *stage)
 {
   clutter_actor_set_size(actor,
-                         HD_COMP_MGR_SCREEN_WIDTH,
-                         HD_COMP_MGR_SCREEN_HEIGHT);
+                         hd_comp_mgr_get_current_screen_width (),
+                         hd_comp_mgr_get_current_screen_height ());
 }
 
 static void
@@ -736,8 +733,8 @@ hd_render_manager_set_input_viewport()
       /* g_warning ("%s: get the whole screen!", __func__); */
       geom[0].x = 0;
       geom[0].y = 0;
-      geom[0].width = HDRM_WIDTH;
-      geom[0].height = HDRM_HEIGHT;
+      geom[0].width = hd_comp_mgr_get_current_screen_width ();
+      geom[0].height = hd_comp_mgr_get_current_screen_height ();
       geom_count = 1;
     }
 
@@ -1073,8 +1070,9 @@ void hd_render_manager_set_loading  (ClutterActor *item)
       clutter_container_add_actor (CLUTTER_CONTAINER (priv->front),
                                    priv->loading_image);
       clutter_actor_set_size(item,
-                             HD_COMP_MGR_SCREEN_WIDTH,
-                             HD_COMP_MGR_SCREEN_HEIGHT-HD_COMP_MGR_TOP_MARGIN);
+                             hd_comp_mgr_get_current_screen_width (),
+                             hd_comp_mgr_get_current_screen_height ()
+                             - HD_COMP_MGR_TOP_MARGIN);
       clutter_actor_set_position(item,
                                  0, HD_COMP_MGR_TOP_MARGIN);
     }
@@ -1641,7 +1639,8 @@ void hd_render_manager_restack()
             if (!hd_render_manager_clip_geo(&geo))
               /* It's neiteher maximized nor @app_top, it doesn't exist. */
               continue;
-            maximized = HD_COMP_MGR_CLIENT_IS_MAXIMIZED(geo);
+            maximized = hd_comp_mgr_client_is_maximized (
+                                        *((MBGeometry*)((void*)&geo)));
             /* Maximized stuff should never be blurred (unless there
              * is nothing else) */
             if (!maximized)
@@ -1654,8 +1653,8 @@ void hd_render_manager_restack()
             /* If this is maximized, or in dialog's position, don't
              * blur anything after */
             if (maximized || (
-                geo.width == HD_COMP_MGR_SCREEN_WIDTH &&
-                geo.y + geo.height == HD_COMP_MGR_SCREEN_HEIGHT
+                geo.width == hd_comp_mgr_get_current_screen_width () &&
+                geo.y + geo.height == hd_comp_mgr_get_current_screen_height ()
                 ))
               break;
 
@@ -1767,7 +1766,7 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
            * status area will not be visible - so we don't want them
            * pulled out to the front. */
           if (c->window &&
-              HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->window->geometry))
+              hd_comp_mgr_client_is_maximized (c->window->geometry))
             blur_buttons = TRUE;
           break;
         }
@@ -1785,7 +1784,7 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
            * Also this dialog is probably the VKB, which appears *over*
            * the top-left icon - so it acts like a system modal blocker
            * and we should not attempt to display unblurred top-left buttons */
-          if (HD_COMP_MGR_CLIENT_IS_MAXIMIZED(c->window->geometry))
+          if (hd_comp_mgr_client_is_maximized (c->window->geometry))
             {
               blur_buttons = TRUE;
               break;
@@ -2022,7 +2021,9 @@ void hd_render_manager_set_visibilities()
   GList *blockers = 0;
   GList *it;
   gint i, n_elements;
-  ClutterGeometry fullscreen_geo = {0, 0, HDRM_WIDTH, HDRM_HEIGHT};
+  ClutterGeometry fullscreen_geo = {0, 0,
+          hd_comp_mgr_get_current_screen_width (),
+          hd_comp_mgr_get_current_screen_height ()};
   MBWindowManager *wm;
   MBWindowManagerClient *c;
   gboolean has_fullscreen;

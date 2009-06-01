@@ -37,8 +37,6 @@ G_BEGIN_DECLS
 /* Hardware display dimensions */
 #define HD_COMP_MGR_LANDSCAPE_WIDTH   800
 #define HD_COMP_MGR_LANDSCAPE_HEIGHT  480
-#define HD_COMP_MGR_SCREEN_WIDTH      hd_comp_mgr_get_current_screen_width()
-#define HD_COMP_MGR_SCREEN_HEIGHT     hd_comp_mgr_get_current_screen_height()
 
 /* The title bar height + HALF_MARGIN border. */
 #define HD_COMP_MGR_TOP_MARGIN         56
@@ -57,10 +55,8 @@ typedef struct HdCompMgrClientPrivate HdCompMgrClientPrivate;
 #define HD_COMP_MGR_CLIENT(c)       ((HdCompMgrClient*)(c))
 #define HD_COMP_MGR_CLIENT_CLASS(c) ((HdCompMgrClientClass*)(c))
 #define HD_TYPE_COMP_MGR_CLIENT     (hd_comp_mgr_client_class_type ())
-#define HD_COMP_MGR_CLIENT_IS_MAXIMIZED(geom)                       \
-        ((geom).x == 0 && (geom).width >= HD_COMP_MGR_SCREEN_WIDTH  \
-         && (geom).y == 0                      \
-         && (geom).height == HD_COMP_MGR_SCREEN_HEIGHT)
+
+inline gboolean hd_comp_mgr_client_is_maximized (MBGeometry geom);
 
 struct HdCompMgrClient
 {
@@ -150,8 +146,8 @@ gboolean hd_comp_mgr_restack (MBWMCompMgr * mgr);
 void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running);
 
 void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr);
-guint hd_comp_mgr_get_current_screen_width(void);
-guint hd_comp_mgr_get_current_screen_height(void);
+inline guint hd_comp_mgr_get_current_screen_width(void);
+inline guint hd_comp_mgr_get_current_screen_height(void);
 gboolean hd_comp_mgr_is_non_composited (MBWindowManagerClient *client);
 
 G_END_DECLS

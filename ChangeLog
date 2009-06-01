@@ -1,3 +1,21 @@
+2009-06-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	HD_COMP_MGR_SCREEN_WIDTH/HEIGHT, SCREEN_WIDTH/HEIGHT,
+	HD_COMP_MGR_CLIENT_IS_MAXIMIZED are now replaced with honest inlined
+	functions.
+
+	* src/launcher/hd-launcher-page.c (hd_launcher_page_finalize): Set
+	actors NULL after destroying.
+	* src/launcher/hd-launcher.c (hd_launcher_transition_app_start): Set
+	actors NULL after destroying.
+	* src/home/hd-title-bar.c (hd_title_bar_dispose): Set NULL after
+	destroying.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_is_maximized): New function
+	to replace HD_COMP_MGR_CLIENT_IS_MAXIMIZED.
+	(the_hd_comp_mgr): New static variable for HdCompMgr singleton. Safely
+	used from hd_comp_mgr_get_current_screen_width/height because the
+	parent is ready before we init HdCompMgr.
+
 2009-06-01  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#119082 - Information notes missing the blur/dim effect

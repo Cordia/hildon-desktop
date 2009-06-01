@@ -214,7 +214,7 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
   clutter_actor_get_geometry(actor, &geo);
 
   pop_top = geo.y==0;
-  pop_bottom = geo.y+geo.height==HD_COMP_MGR_SCREEN_HEIGHT;
+  pop_bottom = geo.y+geo.height==hd_comp_mgr_get_current_screen_height();
   if (pop_top && pop_bottom)
     pop_top = FALSE;
   amt =  (float)clutter_timeline_get_progress(timeline);
@@ -404,7 +404,7 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
        * edge of the screen in an arc */
       float scale =  1 + (1-amt)*0.5f;
       float ang = amt * 3.141592f * 0.5f;
-      float corner_x = HD_COMP_MGR_SCREEN_WIDTH * 0.5f * cos(ang);
+      float corner_x = hd_comp_mgr_get_current_screen_width() * 0.5f * cos(ang);
       float corner_y = (sin(ang)-1) * height;
       /* We set anchor point so if the notification
        * resizes/positions in flight, we're ok */
@@ -437,7 +437,7 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
 
   {
     float corner_x;
-    corner_x = (1-amt) * HD_COMP_MGR_SCREEN_WIDTH;
+    corner_x = (1-amt) * hd_comp_mgr_get_current_screen_width();
     if (subview_actor)
       {
         clutter_actor_set_anchor_pointu(subview_actor,
@@ -450,7 +450,7 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
     if (main_actor)
       {
         clutter_actor_set_anchor_pointu(main_actor,
-           CLUTTER_FLOAT_TO_FIXED( -(corner_x - HD_COMP_MGR_SCREEN_WIDTH) ),
+           CLUTTER_FLOAT_TO_FIXED( -(corner_x - hd_comp_mgr_get_current_screen_width()) ),
            CLUTTER_FLOAT_TO_FIXED( 0 ) );
         /* we have to show this actor, because it'll get hidden by the
          * render manager visibility test if not. */
@@ -496,7 +496,8 @@ on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
   actor = CLUTTER_ACTOR(hd_render_manager_get());
   clutter_actor_set_rotation(actor, CLUTTER_Z_AXIS,
                              frame_num < n_frames ? angle : 0,
-      HD_COMP_MGR_SCREEN_WIDTH/2, HD_COMP_MGR_SCREEN_HEIGHT/2, 0);
+      hd_comp_mgr_get_current_screen_width()/2,
+      hd_comp_mgr_get_current_screen_height()/2, 0);
   /* use this actor to dim out the screen */
   clutter_actor_raise_top(data->particles[0]);
   clutter_actor_set_opacity(data->particles[0], (int)(amt*255));
@@ -999,7 +1000,8 @@ hd_transition_fade_and_rotate(gboolean first_part,
   /* Add the actor we use to dim out the screen */
   data->particles[0] = clutter_rectangle_new();
   clutter_actor_set_size(data->particles[0],
-      HD_COMP_MGR_SCREEN_WIDTH, HD_COMP_MGR_SCREEN_HEIGHT);
+      hd_comp_mgr_get_current_screen_width (),
+      hd_comp_mgr_get_current_screen_height ());
   clutter_container_add_actor(
             CLUTTER_CONTAINER(clutter_stage_get_default()),
             data->particles[0]);
@@ -1109,7 +1111,7 @@ hd_transition_rotate_screen (MBWindowManager *wm, gboolean goto_portrait)
 
   if (Orientation_change.phase == IDLE)
     {
-      if (goto_portrait == (HD_COMP_MGR_SCREEN_HEIGHT > HD_COMP_MGR_SCREEN_WIDTH))
+      if (goto_portrait == (hd_comp_mgr_get_current_screen_height() > hd_comp_mgr_get_current_screen_width()))
         {
           g_warning("%s: already in %s mode", __FUNCTION__,
                     goto_portrait ? "portrait" : "landscape");
