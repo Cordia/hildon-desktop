@@ -1,3 +1,13 @@
+2009-06-01  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#119381 - Status area to be dimmed when UI dialog shown
+
+	* src/home/hd-title-bar.c: Don't leave space for the status area
+	  when in 'foreground' mode.
+	* src/home/hd-render-manager.c: Don't add status area to the 
+	  'foreground' part of the title bar - as we want it blurred
+	  when foreground is visible
+
 2009-06-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* tests/test-speed.c: Add support for running the test in the

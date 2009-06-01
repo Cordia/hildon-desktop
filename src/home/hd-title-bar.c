@@ -540,6 +540,9 @@ void hd_title_bar_set_state(HdTitleBar *bar,
           clutter_actor_reparent(CLUTTER_ACTOR(priv->foreground),
                                  CLUTTER_ACTOR(bar));
           clutter_actor_raise_top(CLUTTER_ACTOR(priv->foreground));
+          // we must raise status area above this, or it gets dimmed by it
+          if (hd_render_manager_get_status_area())
+            clutter_actor_raise_top(hd_render_manager_get_status_area());
         }
     }
 }
@@ -663,7 +666,8 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
         left_width = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
 
-      if (status_area_is_visible())
+      // we don't show the status area in foreground mode
+      if (status_area_is_visible() && !(priv->state & HDTB_VIS_FOREGROUND))
         {
           left_width += clutter_actor_get_width(status_area);
           clutter_actor_show(priv->buttons[BTN_SEPARATOR_LEFT]);

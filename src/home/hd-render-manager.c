@@ -137,9 +137,10 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |                      --> apps (not app_top)
  *       |                      --> blur_front (STATE_BLUR_BUTTONS)
  *       |                                        ---> home_get_front (STATE_HOME_FRONT)
- *       |                                         --> title_bar
+ *       |                                         --> title_bar *       |
  *       |                                               ---> title_bar::foreground (!HDTB_VIS_FOREGROUND)
- *       |                                                   --->status_area
+ *       |                                               ---> status_area
+ *       |
  *       --> blur_front (!STATE_BLUR_BUTTONS)
  *       |
  *       --> task_nav
@@ -149,8 +150,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       --> app_top           ---> dialogs
  *       |
  *       --> front             ---> status_menu
- *                                                ---> title_bar::foreground (HDTB_VIS_FOREGROUND)
- *                                                           --->status_area
+ *                             ---> title_bar::foreground (HDTB_VIS_FOREGROUND)
  *
  */
 
@@ -753,7 +753,8 @@ void hd_render_manager_sync_clutter_before ()
   HDRMButtonEnum visible_top_left = HDRM_BUTTON_NONE;
   HDRMButtonEnum visible_top_right = HDRM_BUTTON_NONE;
   HdTitleBarVisEnum btn_state = hd_title_bar_get_state(priv->title_bar) &
-    ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH | HDTB_VIS_BTN_RIGHT_MASK);
+    ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH |
+      HDTB_VIS_BTN_RIGHT_MASK | HDTB_VIS_FOREGROUND);
   HDRMBlurEnum blur = 0;
 
   if (STATE_SHOW_APPLETS(priv->state))
@@ -1009,7 +1010,7 @@ void hd_render_manager_set_status_area (ClutterActor *item)
       priv->status_area_client = cc->wm_client;
       priv->status_area = g_object_ref(item);
       clutter_actor_reparent(priv->status_area,
-          CLUTTER_ACTOR(hd_title_bar_get_foreground_group(priv->title_bar)));
+          CLUTTER_ACTOR(priv->title_bar));
       clutter_actor_set_reactive(priv->status_area, TRUE);
       g_signal_connect(item, "notify::allocation",
                        G_CALLBACK(hd_render_manager_place_titlebar_elements),
