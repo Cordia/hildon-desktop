@@ -1234,8 +1234,16 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
       if (oldstate == HDRM_STATE_NON_COMPOSITED)
         {
+          MBWindowManagerClient *c;
+
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
 	  mb_wm_setup_redirection (wm, 1);
+
+          /* track damage again */
+          for (c = wm->stack_bottom; c; c = c->stacked_above)
+            if (c->cm_client)
+              mb_wm_comp_mgr_clutter_client_track_damage (
+                        MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client), True);
 	}
 
       /* Goto HOME instead of an empty switcher.  This way the caller
@@ -1374,8 +1382,16 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
       if (state == HDRM_STATE_NON_COMPOSITED)
         {
+          MBWindowManagerClient *c;
+
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
 	  mb_wm_setup_redirection (wm, 0);
+
+          /* do not track damage in non-composited mode */
+          for (c = wm->stack_bottom; c; c = c->stacked_above)
+            if (c->cm_client)
+              mb_wm_comp_mgr_clutter_client_track_damage (
+                        MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client), False);
 	}
     }
 

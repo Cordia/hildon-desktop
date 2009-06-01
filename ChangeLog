@@ -1,3 +1,9 @@
+2009-06-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state): Call
+	mb_wm_comp_mgr_clutter_client_track_damage to toggle damage event
+	handling on/off when dealing with the non-composited mode.
+
 2009-06-01  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#119381 - Status area to be dimmed when UI dialog shown
