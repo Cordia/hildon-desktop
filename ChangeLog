@@ -1,3 +1,10 @@
+2009-06-01  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#119082 - Information notes missing the blur/dim effect
+
+	* src/home/hd-render-manager.c: Added HD_IS_INFO_NOTE to check
+	  for whether to blur background or not.
+
 2009-06-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-render-manager.c (hd_render_manager_set_state): Call

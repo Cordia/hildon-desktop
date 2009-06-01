@@ -1777,7 +1777,8 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
           c_type == MBWMClientTypeMenu ||
           c_type == HdWmClientTypeAppMenu ||
           c_type == HdWmClientTypeStatusMenu ||
-          HD_IS_CONFIRMATION_NOTE (c))
+          HD_IS_CONFIRMATION_NOTE (c) ||
+          HD_IS_INFO_NOTE(c))
         {
           /* If this is a dialog that is maximised, it will be put in the
            * blur group - so do NOT blur the background for this alone.
