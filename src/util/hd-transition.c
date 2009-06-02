@@ -482,26 +482,37 @@ static void
 on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
                                     gint frame_num, HDEffectData *data)
 {
-  float amt, angle;
+  float amt, dim_amt, angle;
   gint n_frames;
   ClutterActor *actor;
+  gboolean portrait;
 
   n_frames = clutter_timeline_get_n_frames(timeline);
   amt = frame_num / (float)n_frames;
-  if (data->event == MBWMCompMgrClientEventMap)
-    amt = hd_transition_ease_in(amt);
-  else
-    amt = hd_transition_ease_out(1-amt);
+  // we want to ease in, but speed up as we go - X^3 does this nicely
+  amt = amt*amt*amt;
+  if (data->event == MBWMCompMgrClientEventUnmap)
+    amt = 1-amt;
+  /* dim=1 -> screen is black, dim=0 -> normal. Only
+   * dim out right at the end of the animation */
+  dim_amt = amt*4 - 3;
+  if (dim_amt<0)
+    dim_amt = 0;
   angle = data->angle * amt;
 
+  /* Check for portrait mode - if so, our rotation axis is different! */
+  portrait = hd_comp_mgr_get_current_screen_height() >
+             hd_comp_mgr_get_current_screen_width();
+
   actor = CLUTTER_ACTOR(hd_render_manager_get());
-  clutter_actor_set_rotation(actor, CLUTTER_Z_AXIS,
+  clutter_actor_set_rotation(actor, portrait ? CLUTTER_Y_AXIS : CLUTTER_X_AXIS,
                              frame_num < n_frames ? angle : 0,
       hd_comp_mgr_get_current_screen_width()/2,
       hd_comp_mgr_get_current_screen_height()/2, 0);
+  clutter_actor_set_depthu(actor, -CLUTTER_FLOAT_TO_FIXED(amt*150));
   /* use this actor to dim out the screen */
   clutter_actor_raise_top(data->particles[0]);
-  clutter_actor_set_opacity(data->particles[0], (int)(amt*255));
+  clutter_actor_set_opacity(data->particles[0], (int)(dim_amt*255));
 }
 
 /* ------------------------------------------------------------------------- */

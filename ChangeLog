@@ -1,3 +1,9 @@
+2009-06-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-transition.c: Modified screen rotation transition to
+	Martin Gimpl's latest idea.
+	* data/transitions.ini: Modified rotation angle for new transition
+
 2009-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#17944 Part of thumbnail in switcher view is shown above
