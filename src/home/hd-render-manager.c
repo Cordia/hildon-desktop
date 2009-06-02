@@ -1809,7 +1809,8 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
   else
     blur_flags = blur_flags & ~HDRM_BLUR_BACKGROUND;
 
-  if (blur && !blur_buttons)
+  /* Actually if we're in tasw the work was unnecessary but whatever. */
+  if ((blur && !blur_buttons) || priv->state == HDRM_STATE_TASK_NAV)
     title_flags |= HDTB_VIS_FOREGROUND;
   else
     title_flags &= ~HDTB_VIS_FOREGROUND;

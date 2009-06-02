@@ -1,5 +1,14 @@
 2009-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#17944 Part of thumbnail in switcher view is shown above
+		 the task switcher button in the mentioned scenario.
+
+	* src/home/hd-render-manager.c (hd_render_manager_update_blur_state):
+	  Patched it not to mess up what sync_clutter_before() did
+	  and leave HdTitleBar::foreground in the front in tasw view.
+
+2009-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/home/hd-title-bar.c (hd_title_bar_create_fake):
 	  Always create 800-pixel-width fake titlebars.
 	* src/mb/hd-wm.c (hd_wm_client_activate): comment
