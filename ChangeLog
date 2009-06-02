@@ -1,5 +1,11 @@
 2009-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-title-bar.c (hd_title_bar_create_fake):
+	  Always create 800-pixel-width fake titlebars.
+	* src/mb/hd-wm.c (hd_wm_client_activate): comment
+
+2009-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#111840 Camera contains two close icons in minimized state
 		  in full screen mode
 	NB#118305 Application is remains in fullscreen in task switcher area

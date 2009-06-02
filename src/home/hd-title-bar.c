@@ -1159,7 +1159,7 @@ hd_title_bar_create_fake(HdTitleBar *bar)
   clutter_actor_set_name(group, "hd_title_bar_create_fake");
   ClutterActor *title_bar = hd_clutter_cache_get_texture(
       HD_THEME_IMG_TITLE_BAR, TRUE);
-  clutter_actor_set_width(title_bar, hd_comp_mgr_get_current_screen_width ());
+  clutter_actor_set_width(title_bar, HD_COMP_MGR_LANDSCAPE_WIDTH);
   clutter_container_add_actor(CLUTTER_CONTAINER(group), title_bar);
 
   return CLUTTER_ACTOR(group);

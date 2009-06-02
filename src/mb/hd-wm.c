@@ -380,6 +380,8 @@ hd_wm_client_activate (MBWindowManager * wm,
       HDRMStateEnum state = hd_render_manager_get_state();
       if (state == HDRM_STATE_TASK_NAV)
         {
+          /* TODO It'll log a CRITICAL warning if the switcher doesn't
+           *      have the window yet, but don't worry it's harmless. */
           hd_switcher_item_selected (HD_SWITCHER (hd_comp_mgr_get_switcher (HD_COMP_MGR (wm->comp_mgr))), mb_wm_comp_mgr_clutter_client_get_actor (MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client)));
           ret = True;
         }
