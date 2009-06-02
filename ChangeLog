@@ -1,5 +1,13 @@
 2009-06-02  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#119446 - Media player shortcut applet is movable in all
+	homes
+
+	* src/home/hd-home.c (hd_home_add_applet): Do not add applets to
+	inactive views.
+
+2009-06-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#116276 - In the left corner of the title area, there should
 	be alayout mode icon.
 

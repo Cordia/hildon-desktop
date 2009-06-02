@@ -939,13 +939,15 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view",
                               wm_applet->applet_id);
 
+  /* Get view id and adjust to 0..3 */
   view_id = gconf_client_get_int (client,
                                   view_key,
                                   NULL);
+  view_id--;
 
-  if (view_id > 0 && view_id <= MAX_VIEWS)
-    view_id--;
-  else
+  if (view_id < 0 || view_id >= MAX_VIEWS ||
+      !hd_home_view_container_get_active (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                          view_id))
     {
       GError *error = NULL;
 
