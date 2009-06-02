@@ -1,3 +1,13 @@
+2009-06-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#119249 - Found hildon desktop crash for missed call alert
+	
+	* src/util/hd-transition.c: Added g_object_ref/unref for actors used
+	  in transitions. Made sure the filler actor in the popup animation 
+	  is added *inside* the CompMgrClient's actor, which avoids it getting
+	  accidentally freed if actor was started inside a clutter group that
+	  is freed during the transition.
+
 2009-06-02  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#119446 - Media player shortcut applet is movable in all

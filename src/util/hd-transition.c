@@ -207,9 +207,14 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
   actor = data->cclient_actor;
   if (!CLUTTER_IS_ACTOR(actor))
     return;
+  filler = data->particles[0];
 
   /* We need to get geometry each frame as often windows have
-   * a habit of changing size while they move */
+   * a habit of changing size while they move. If we have filler
+   * we remove it first, so it doesn't affect the geometry. */
+  if (filler && clutter_actor_get_parent(filler))
+    clutter_container_remove_actor(
+        CLUTTER_CONTAINER(clutter_actor_get_parent(filler)), filler);
   ClutterGeometry geo;
   clutter_actor_get_geometry(actor, &geo);
 
@@ -247,35 +252,31 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
 
   /* use a slither of filler to fill in the gap where the menu
    * has jumped a bit too far up */
-  filler = data->particles[0];
-  if (filler)
+  if (filler &&
+      ((status_pos>status_high && pop_top) ||
+       (status_pos<status_high && pop_bottom)))
     {
-      if ((status_pos<=status_high && pop_top) ||
-          (status_pos>=status_high && pop_bottom) ||
-          !(pop_top || pop_bottom))
-        clutter_actor_hide(filler);
-      else
+      // re-add the filler (see above)
+      if (CLUTTER_IS_CONTAINER(actor))
+        clutter_container_add_actor(CLUTTER_CONTAINER(actor), filler);
+      clutter_actor_show(filler);
+      if (pop_top)
         {
-          clutter_actor_show(filler);
-          clutter_actor_set_opacity(filler, (int)(255*amt));
-          if (pop_top)
-            {
-              clutter_actor_set_positionu(filler,
-                        CLUTTER_INT_TO_FIXED(geo.x),
-                        status_high);
-              clutter_actor_set_sizeu(filler,
-                        CLUTTER_INT_TO_FIXED(geo.width),
-                        CLUTTER_FLOAT_TO_FIXED(status_pos-status_high));
-            }
-          else if (pop_bottom)
-            {
-              clutter_actor_set_positionu(filler,
-                        CLUTTER_INT_TO_FIXED(geo.x),
-                        CLUTTER_FLOAT_TO_FIXED(status_pos + geo.height));
-              clutter_actor_set_sizeu(filler,
-                        CLUTTER_INT_TO_FIXED(geo.width),
-                        CLUTTER_FLOAT_TO_FIXED(status_high-status_pos));
-            }
+          clutter_actor_set_positionu(filler,
+                    CLUTTER_INT_TO_FIXED(0),
+                    CLUTTER_FLOAT_TO_FIXED(status_high-status_pos));
+          clutter_actor_set_sizeu(filler,
+                    CLUTTER_INT_TO_FIXED(geo.width),
+                    CLUTTER_FLOAT_TO_FIXED(status_pos-status_high));
+        }
+      else if (pop_bottom)
+        {
+          clutter_actor_set_positionu(filler,
+                    CLUTTER_INT_TO_FIXED(0),
+                    CLUTTER_INT_TO_FIXED(geo.height));
+          clutter_actor_set_sizeu(filler,
+                    CLUTTER_INT_TO_FIXED(geo.width),
+                    CLUTTER_FLOAT_TO_FIXED(status_high-status_pos));
         }
     }
 }
@@ -594,8 +595,15 @@ hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
     hd_comp_mgr_set_effect_running(hmgr, FALSE);
 
   for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
-    if (data->particles[i])
-      clutter_actor_destroy(data->particles[i]);
+    if (data->particles[i]) {
+      // if actor was in a group, remove it
+      if (CLUTTER_IS_CONTAINER(clutter_actor_get_parent(data->particles[i])))
+             clutter_container_remove_actor(
+               CLUTTER_CONTAINER(clutter_actor_get_parent(data->particles[i])),
+               data->particles[i]);
+      g_object_unref(data->particles[i]); // unref ourselves
+      data->particles[i] = 0; // for safety, set pointer to 0
+    }
 
   g_signal_handlers_disconnect_by_func (clutter_stage_get_default (),
                                         G_CALLBACK (on_screen_size_changed),
@@ -645,11 +653,7 @@ hd_transition_popup(HdCompMgr                  *mgr,
   hd_comp_mgr_set_effect_running(mgr, TRUE);
 
   /* Add actor for the background when we pop a bit too far */
-  data->particles[0] = clutter_rectangle_new();
-  clutter_actor_hide(data->particles[0]);
-  clutter_container_add_actor(
-            CLUTTER_CONTAINER(clutter_actor_get_parent(actor)),
-            data->particles[0]);
+  data->particles[0] = g_object_ref(clutter_rectangle_new());
   hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL,
                               &col);
   clutter_rectangle_set_color(CLUTTER_RECTANGLE(data->particles[0]),
@@ -778,6 +782,7 @@ hd_transition_close_app (HdCompMgr                  *mgr,
           HD_THEME_IMG_CLOSING_PARTICLE, TRUE);
       if (data->particles[i])
         {
+          g_object_ref(data->particles[i]);
           clutter_actor_set_anchor_point_from_gravity(data->particles[i],
                                                       CLUTTER_GRAVITY_CENTER);
           clutter_container_add_actor(parent, data->particles[i]);
@@ -998,7 +1003,7 @@ hd_transition_fade_and_rotate(gboolean first_part,
   if (first_part == goto_portrait)
     data->angle *= -1;
   /* Add the actor we use to dim out the screen */
-  data->particles[0] = clutter_rectangle_new();
+  data->particles[0] = g_object_ref(clutter_rectangle_new());
   clutter_actor_set_size(data->particles[0],
       hd_comp_mgr_get_current_screen_width (),
       hd_comp_mgr_get_current_screen_height ());
