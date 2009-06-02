@@ -1,3 +1,13 @@
+2009-06-02  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Show CallUI from the desktop when device is rotated to portrait.
+	Fixes: NB#119691
+
+	* src/home/hd-render-manager.h: Added STATE_SHOW_CALLUI to mark states
+	where CallUI should be shown if rotated.
+	* src/launcher/hd-app-mgr.c: Track the necessary MCE signals and GConf
+	settings to know when CallUI should be shown.
+
 2009-06-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#120118 - Observed GLIB CRITICAL - clutter_actor_destroy

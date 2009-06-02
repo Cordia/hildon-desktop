@@ -41,6 +41,9 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-bindings.h>
 #include <dbus/dbus-glib-lowlevel.h>
+#include <gconf/gconf-client.h>
+#include <mce/dbus-names.h>
+#include <mce/mode-names.h>
 #include "hd-launcher.h"
 #include "hd-launcher-tree.h"
 #include "home/hd-render-manager.h"
@@ -104,6 +107,13 @@ struct _HdAppMgrPrivate
   gboolean lowmem:1;
   gboolean init_done:1;
   gboolean prestarting_stopped:1;
+
+  /* Flags for showing CallUI. */
+  GConfClient *gconf_client;
+  gboolean portrait;
+  gboolean unlocked;
+  gboolean display_on;
+  gboolean slide_closed;
 };
 
 #define HD_APP_MGR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -176,6 +186,11 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define MAEMO_LAUNCHER_PATH  "/org/maemo/launcher"
 #define MAEMO_LAUNCHER_APP_DIED_SIGNAL_NAME "ApplicationDied"
 
+/* Signals for showing CallUI. */
+#define CALLUI_INTERFACE      "com.nokia.CallUI"
+#define GCONF_SLIDE_OPEN_DIR  "/system/osso/af"
+#define GCONF_SLIDE_OPEN_KEY  "/system/osso/af/slide-open"
+
 /* Forward declarations */
 static void hd_app_mgr_dispose (GObject *gobject);
 
@@ -225,9 +240,14 @@ static void hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
 static DBusHandlerResult hd_app_mgr_dbus_app_died (DBusConnection *conn,
                                                    DBusMessage *msg,
                                                    void *data);
-static DBusHandlerResult hd_app_mgr_signal_handler (DBusConnection *conn,
+static DBusHandlerResult hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                                                     DBusMessage *msg,
                                                     void *data);
+static void hd_app_mgr_gconf_value_changed (GConfClient *client,
+                                            guint cnxn_id,
+                                            GConfEntry *entry,
+                                            gpointer user_data);
+static void hd_app_mgr_check_show_callui (void);
 
 static void     hd_app_mgr_request_app_pid (HdRunningApp *app);
 static gboolean hd_app_mgr_loading_timeout (HdRunningApp *app);
@@ -312,11 +332,18 @@ hd_app_mgr_class_init (HdAppMgrClass *klass)
  * name.
  */
 static gboolean
-hd_app_mgr_add_signal_match (DBusGProxy *proxy, const gchar *interface)
+hd_app_mgr_add_signal_match (DBusGProxy *proxy,
+                             const gchar *interface,
+                             const gchar *member)
 {
   gboolean result;
   gchar *arg;
-  arg = g_strdup_printf("type='signal', interface='%s'", interface);
+  if (member)
+    arg = g_strdup_printf("type='signal', interface='%s', member='%s'",
+                          interface, member);
+  else
+    arg = g_strdup_printf("type='signal', interface='%s'", interface);
+
   result = org_freedesktop_DBus_add_match (proxy, arg, NULL);
   g_free (arg);
   return result;
@@ -338,6 +365,23 @@ hd_app_mgr_init (HdAppMgr *self)
                     G_CALLBACK (hd_app_mgr_populate_tree_finished),
                     self);
   hd_launcher_tree_populate (priv->tree);
+
+  /* NOTE: Can we assume this when we start up? */
+  priv->unlocked = TRUE;
+  priv->display_on = TRUE;
+  priv->gconf_client = gconf_client_get_default ();
+  if (priv->gconf_client)
+    {
+      priv->slide_closed = !gconf_client_get_bool (priv->gconf_client,
+                                                   GCONF_SLIDE_OPEN_KEY,
+                                                   NULL);
+      gconf_client_add_dir (priv->gconf_client, GCONF_SLIDE_OPEN_DIR,
+                            GCONF_CLIENT_PRELOAD_NONE, NULL);
+      gconf_client_notify_add (priv->gconf_client, GCONF_SLIDE_OPEN_KEY,
+                               hd_app_mgr_gconf_value_changed,
+                               (gpointer) self,
+                               NULL, NULL);
+    }
 
   /* Start memory limits. */
   priv->notify_low_pages = hd_app_mgr_read_lowmem (LOWMEM_PROC_NOTIFY_LOW);
@@ -392,7 +436,8 @@ hd_app_mgr_init (HdAppMgr *self)
 
       /* Connect to the maemo launcher dbus interface. */
       hd_app_mgr_add_signal_match (priv->dbus_proxy,
-                                   MAEMO_LAUNCHER_IFACE);
+                                   MAEMO_LAUNCHER_IFACE,
+                                   MAEMO_LAUNCHER_APP_DIED_SIGNAL_NAME);
       dbus_connection_add_filter (dbus_g_connection_get_connection (connection),
                                   hd_app_mgr_dbus_app_died,
                                   self, NULL);
@@ -416,17 +461,25 @@ hd_app_mgr_init (HdAppMgr *self)
       if (priv->dbus_sys_proxy)
         {
           hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       LOWMEM_ON_SIGNAL_INTERFACE);
+                                       LOWMEM_ON_SIGNAL_INTERFACE,
+                                       LOWMEM_ON_SIGNAL_NAME);
           hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       LOWMEM_OFF_SIGNAL_INTERFACE);
+                                       LOWMEM_OFF_SIGNAL_INTERFACE,
+                                       LOWMEM_OFF_SIGNAL_NAME);
           hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       BGKILL_ON_SIGNAL_INTERFACE);
+                                       BGKILL_ON_SIGNAL_INTERFACE,
+                                       BGKILL_ON_SIGNAL_NAME);
           hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       BGKILL_OFF_SIGNAL_INTERFACE);
+                                       BGKILL_OFF_SIGNAL_INTERFACE,
+                                       BGKILL_OFF_SIGNAL_NAME);
           hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       INIT_DONE_SIGNAL_INTERFACE);
+                                       INIT_DONE_SIGNAL_INTERFACE,
+                                       INIT_DONE_SIGNAL_NAME);
+          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
+                                       MCE_SIGNAL_IF,
+                                       MCE_DEVICE_ORIENTATION_SIG);
           dbus_connection_add_filter (dbus_g_connection_get_connection (connection),
-                                      hd_app_mgr_signal_handler,
+                                      hd_app_mgr_dbus_signal_handler,
                                       self, NULL);
         }
       else
@@ -515,6 +568,13 @@ hd_app_mgr_dispose (GObject *gobject)
           g_queue_free (priv->queues[i]);
           priv->queues[i] = NULL;
         }
+    }
+
+  if (priv->gconf_client)
+    {
+      gconf_client_remove_dir (priv->gconf_client, GCONF_SLIDE_OPEN_DIR, NULL);
+      g_object_unref (G_OBJECT (priv->gconf_client));
+      priv->gconf_client = NULL;
     }
 
   G_OBJECT_CLASS (hd_app_mgr_parent_class)->dispose (gobject);
@@ -1575,8 +1635,56 @@ hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable)
   return TRUE;
 }
 
+/* Show CallUI if
+ * - Showing the desktop.
+ * - In portrait mode.
+ * - Unlocked.
+ * - Display on.
+ * - Slide closed.
+ */
+static void
+hd_app_mgr_check_show_callui (void)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+
+  if (STATE_SHOW_CALLUI (hd_render_manager_get_state ()) &&
+      priv->portrait &&
+      priv->unlocked &&
+      priv->display_on &&
+      priv->slide_closed)
+    {
+      hd_app_mgr_service_top (CALLUI_INTERFACE, NULL);
+    }
+}
+
+static gboolean
+_hd_app_mgr_dbus_check_value (DBusMessage *msg,
+                              const gchar *value)
+{
+  DBusError err;
+  gchar *arg;
+
+  dbus_error_init (&err);
+  dbus_message_get_args (msg, &err,
+                         DBUS_TYPE_STRING, &arg,
+                         DBUS_TYPE_INVALID);
+
+  if (dbus_error_is_set(&err))
+  {
+      g_warning ("%s: Error getting message args: %s\n",
+                 __FUNCTION__, err.message);
+      dbus_error_free (&err);
+      return FALSE;
+  }
+
+  if (!g_strcmp0 (arg, value))
+    return TRUE;
+
+  return FALSE;
+}
+
 static DBusHandlerResult
-hd_app_mgr_signal_handler (DBusConnection *conn,
+hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                            DBusMessage *msg,
                            void *data)
 {
@@ -1604,12 +1712,60 @@ hd_app_mgr_signal_handler (DBusConnection *conn,
                                    INIT_DONE_SIGNAL_NAME))
     priv->init_done = TRUE;
   else
-    changed = FALSE;
+    {
+      /* Check for showing CallUI flags. */
+      changed = FALSE;
+      if (dbus_message_is_signal (msg,
+                                  MCE_SIGNAL_IF,
+                                  MCE_TKLOCK_MODE_SIG))
+        {
+          priv->unlocked = _hd_app_mgr_dbus_check_value (msg,
+                                           MCE_DEVICE_UNLOCKED);
+        }
+      else if (dbus_message_is_signal (msg,
+                                       MCE_SIGNAL_IF,
+                                       MCE_DISPLAY_SIG))
+        {
+          priv->display_on = _hd_app_mgr_dbus_check_value (msg,
+                                           MCE_DISPLAY_ON_STRING);
+        }
+      else if (dbus_message_is_signal (msg,
+                                  MCE_SIGNAL_IF,
+                                  MCE_DEVICE_ORIENTATION_SIG))
+        {
+          priv->portrait = _hd_app_mgr_dbus_check_value (msg,
+                                           MCE_ORIENTATION_PORTRAIT);
+          if (priv->portrait)
+            hd_app_mgr_check_show_callui ();
+        }
+    }
 
   if (changed)
     hd_app_mgr_state_check ();
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+static void
+hd_app_mgr_gconf_value_changed (GConfClient *client,
+                                guint cnxn_id,
+                                GConfEntry *entry,
+                                gpointer user_data)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (HD_APP_MGR (user_data));
+  GConfValue *value;
+
+  if (entry &&
+      (value = gconf_entry_get_value (entry)) &&
+      (value->type == GCONF_VALUE_BOOL))
+    {
+      priv->slide_closed = !gconf_value_get_bool (value);
+    }
+  else {
+    /* Assume it's closed. */
+    priv->slide_closed = TRUE;
+  }
+
 }
 
 static void

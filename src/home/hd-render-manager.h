@@ -188,6 +188,11 @@ typedef enum
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | \
                      HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER))
 
+/* The states from which we show CallUI if rotated to portrait. */
+#define STATE_SHOW_CALLUI(s) \
+  (STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT | \
+                     HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER))
+
 GType hd_render_manager_state_get_type (void) G_GNUC_CONST;
 GType hd_render_manager_get_type       (void) G_GNUC_CONST;
 
