@@ -557,7 +557,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
 
   if (priv->launch_image)
     {
-      clutter_actor_destroy(priv->launch_image);
+      g_object_unref(priv->launch_image);
       priv->launch_image = 0;
     }
 
@@ -612,7 +612,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
                          hd_comp_mgr_get_current_screen_width (),
                          hd_comp_mgr_get_current_screen_height ()
                          - HD_COMP_MGR_TOP_MARGIN);
-  priv->launch_image = app_image;
+  priv->launch_image = g_object_ref(app_image);
 
   /* Try and get the current mouse cursor location - this should be the place
    * the user last pressed */
@@ -711,7 +711,8 @@ void hd_launcher_window_created(void)
   {
     hd_render_manager_set_loading (NULL);
     clutter_timeline_stop(priv->launch_transition);
-    clutter_actor_destroy(priv->launch_image);
+
+    g_object_unref(priv->launch_image);
     priv->launch_image = 0;
   }
 }

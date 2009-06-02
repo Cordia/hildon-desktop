@@ -1,5 +1,12 @@
 2009-06-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#120118 - Observed GLIB CRITICAL - clutter_actor_destroy
+	
+	* src/launcher/hd-launcher.c: Replaced clutter_actor_destroy with
+	  g_object_ref/unref
+
+2009-06-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Fixes: NB#119249 - Found hildon desktop crash for missed call alert
 	
 	* src/util/hd-transition.c: Added g_object_ref/unref for actors used
