@@ -1,3 +1,12 @@
+2009-06-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#116276 - In the left corner of the title area, there should
+	be alayout mode icon.
+
+	* src/home/hd-title-bar.c (BTN_FILENAMES, BTN_LABELS,
+	  hd_title_bar_set_for_edit_mode): Use edit icon in layout mode
+	  titlebar.
+
 2009-06-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	HD_COMP_MGR_SCREEN_WIDTH/HEIGHT, SCREEN_WIDTH/HEIGHT,

@@ -88,8 +88,8 @@ static const char *const BTN_FILENAMES[BTN_COUNT] = {
     HD_THEME_IMG_BACK_PRESSED,
     HD_THEME_IMG_CLOSE,
     HD_THEME_IMG_CLOSE_PRESSED,
-    NULL,
-    NULL,
+    HD_THEME_IMG_EDIT_ICON,
+    NULL, // BTN_DONE
 };
 
 static const char *const BTN_LABELS[BTN_COUNT * 2] = {
@@ -111,8 +111,8 @@ static const char *const BTN_LABELS[BTN_COUNT * 2] = {
     NULL, NULL,  // BTN_BACK_PRESSED,
     NULL, NULL,  // BTN_CLOSE,
     NULL, NULL,  // BTN_CLOSE_PRESSED,
-    "maemo-af-desktop", "home_ti_desktop_menu",
-    "hildon-libs", "wdgt_bd_done",
+    NULL, NULL,  // BTN_MENU
+    "hildon-libs", "wdgt_bd_done", // BTN_DONE
 };
 
 enum {
@@ -747,10 +747,14 @@ hd_title_bar_set_for_edit_mode(HdTitleBar *bar)
 {
   HdTitleBarPrivate *priv;
   HdTitleBarVisEnum state = HDTB_VIS_NONE;
+  const gchar *title;
 
   if (!HD_IS_TITLE_BAR(bar))
     return;
   priv = bar->priv;
+
+  title = dgettext ("maemo-af-desktop", "home_ti_desktop_menu");
+  hd_title_bar_set_title (bar, title, FALSE);
 
   state |= HDTB_VIS_BTN_MENU;
   state |= HDTB_VIS_BTN_DONE;
