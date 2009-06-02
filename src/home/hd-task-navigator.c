@@ -12,30 +12,31 @@
  *       @Thumbnails          #ClutterGroup:s
  *
  * Thumbnail.thwin hierarchy:
+ *   .prison                  #ClutterGroup         applications
+ *     .titlebar              #ClutterGroup
+ *     .windows               #ClutterGroup
+ *       .apwin               #ClutterActor
+ *       .dialogs             #ClutterActor
+ *     .video                 #ClutterTexture
+ *   .notwin                  #ClutterGroup         notifications
+ *     .background            #ClutterCloneTexture  or apps w/notifs
+ *     .icon                  #ClutterTexture
+ *     .time                  #ClutterLabel
+ *     .message               #ClutterLabel
  *   .plate                   #ClutterGroup
  *     .frames.all            #ClutterGroup
  *       .frames.north_west   #ClutterCloneTexture
  *       .frames.north        #ClutterCloneTexture
  *       .frames.north_east   #ClutterCloneTexture
  *       .frames.west         #ClutterCloneTexture
- *       .frames.center       #ClutterCloneTexture  notifications
  *       .frames.east         #ClutterCloneTexture
  *       .frames.south_west   #ClutterCloneTexture
  *       .frames.south        #ClutterCloneTexture
  *       .frames.south_east   #ClutterCloneTexture
  *     .title                 #ClutterLabel
  *     .close                 #ClutterGroup
- *   .prison                  #ClutterGroup
- *     .titlebar              #ClutterGroup         applications
- *     .windows               #ClutterGroup         applications
- *       .apwin               #ClutterActor         applications
- *       .dialogs             #ClutterActor         applications
- *     .video                 #ClutterTexture       applications
- *     .icon                  #ClutterTexture       notifications
- *     .time                  #ClutterLabel         notifications
- *     .message               #ClutterLabel         notifications
  * }}}
-*/
+ */
 
 /* Include files */
 #include <math.h>
@@ -79,6 +80,8 @@
 
 /* Measures (in pixels).  Unless indicated, none of them is tunable. */
 /* Common platform metrics */
+#define SCREEN_WIDTH              HD_COMP_MGR_LANDSCAPE_WIDTH
+#define SCREEN_HEIGHT             HD_COMP_MGR_LANDSCAPE_HEIGHT
 #define MARGIN_DEFAULT             8
 #define MARGIN_HALF                4
 #define ICON_FINGER               48
@@ -203,19 +206,9 @@ typedef struct
 /* }}} */
 
 /* Thumbnail data structures {{{ */
-/* Extra information about incoming event notification clients. */
-typedef struct
-{
-  /*
-   * -- @hdnote:               The notification client,
-   *                           mb_wm_object_ref()ed.
-   * -- @hdnote_changed_cb_id: %HdNoteSignalChanged callback id.
-   */
-  HdNote                      *hdnote;
-  unsigned long                hdnote_changed_cb_id;
-} TNote;
-
-/* Structure to hol a %Thumbnail's frame decoration. */
+/* Structure to hold a %Thumbnail's frame decoration.
+ * The graphics are updated automatically whenever
+ * the theme changes. */
 typedef struct
 {
   ClutterActor *all;
@@ -225,13 +218,36 @@ typedef struct
     struct
     {
       ClutterActor *north_west, *north, *north_east;
-      ClutterActor *west, *center, *east;
+      ClutterActor *west, *east;
       ClutterActor *south_west, *south, *south_east;
     };
 
     ClutterActor *pieces[9];
   };
 } Thumbnail_frame;
+
+/* Information about incoming event notification clients. */
+typedef struct
+{
+  /*
+   * -- @hdnote:               The notification client,
+   *                           mb_wm_object_ref()ed.
+   * -- @hdnote_changed_cb_id: %HdNoteSignalChanged callback id.
+   */
+  HdNote                      *hdnote;
+  unsigned long                hdnote_changed_cb_id;
+
+  /*
+   * -- @notwin:              Wraps for all the rest, nothing more.
+   *                          In purpose similar to %Thumbnail::prison.
+   *                          These actors always need to be present
+   *                          whenever there's a notification in order
+   *                          to show it as a whole.
+   * -- @icon:                %NULL until .notwin is layed out first
+   */
+  ClutterActor                *notwin;
+  ClutterActor                *background, *icon, *time, *message;
+} TNote;
 
 /* Our central object, the thumbnail. */
 typedef struct
@@ -241,10 +257,9 @@ typedef struct
 
   /*
    * -- @thwin:       @Navigator_area's thumbnail window and event responder.
-   * -- @prison:      In application thumbnails it scales and positions @windows
-   *                  and its contents.  Otherwise it's just a simple container.
    * -- @plate:       Groups the @title and the @frame graphics; used to fade
-   *                  them all at once.
+   *                  them all at once.  It sits on the top and can be thought
+   *                  of as a boilerplate.
    * -- @title:       What to put in the thumbnail's title area.
    *                  Centered vertically within TITLE_HEIGHT.
    * -- @close:       An invisible actor (graphics is part of the frame)
@@ -252,7 +267,7 @@ typedef struct
    *                  Slightly reaches out of the thumbnail bounds.
    * -- @frame:       Frame graphics.
    */
-  ClutterActor        *thwin, *prison, *plate;
+  ClutterActor        *thwin, *plate;
   ClutterActor        *title, *close;
   Thumbnail_frame      frame;
 
@@ -262,20 +277,26 @@ typedef struct
     struct
     {
       /*
-       * -- @apwin:       The pristine application window, not to be touched.
-       *                  Hidden if we have a .video.
+       * -- @apwin:       The pristine #MBWMCompMgrClutterClient::actor,
+       *                  not to be touched.
+       * -- @dialogs:     The application's dialogs, popup menus and whatsnot
+       *                  if it has or had any earlier, otherwise %NULL.
+       *                  They are shown along with .apwin.  Hidden if
+       *                  we have a .video.
        * -- @windows:     Just 0-dimension container for @apwin and @dialogs,
        *                  its sole purpose is to make it easier to hide them
        *                  when the %Thumbnail has a @video.
        * -- @titlebar:    An actor that looks like the original title bar.
        *                  Faded in/out when zooming in/out, but normally
        *                  transparent or not visible at all.
-       * -- @dialogs:     The application's dialogs, popup menus and whatsnot
-       *                  if it has or had any earlier, otherwise %NULL.
-       *                  They are shown along with .apwin.  Hidden if
-       *                  we have a .video.
+       * -- @prison:      Scales, positions and anchors all the above actors
+       *                  and more.  It's surrounded closely by @frame and it
+       *                  represents the application area of application view.
+       *                  That is, whatever is shown in @prison is what you
+       *                  see in that area.  Hidden if the thumbnails has a
+       *                  notification.
        */
-      ClutterActor        *apwin, *windows, *titlebar;
+      ClutterActor        *apwin, *windows, *titlebar, *prison;
       GPtrArray           *dialogs;
 
       /*
@@ -296,15 +317,11 @@ typedef struct
        *                        because it's woken up.
        * -- @title_had_markup:  Mirrors @win::name_has_markup similarly to
        *                        @saved_title.
-       * -- @inapwin:           Delimits the non-decoration area in @apwin;
-       *                        this is what we want to show in the switcher,
-       *                        not the whole @apwin.
        */
       MBWMClientWindow    *win;
       unsigned long        win_changed_cb_id;
       gchar               *saved_title;
       gboolean             title_had_markup;
-      MBGeometry           inapwin;
 
       /*
        * -- @nodest:      What notifications this thumbnails is destination for.
@@ -329,11 +346,7 @@ typedef struct
       time_t               video_mtime;
     };
 
-    /* Notification-thumbnail-specific fields */
-    struct
-    {
-      ClutterActor        *icon, *time, *message;
-    };
+    /* Currently we don't have notification-specific fields. */ 
   };
 
   /*
@@ -467,6 +480,16 @@ static const Flyops Fly_smoothly =
   .move   = check_and_move,
   .resize = check_and_resize,
   .scale  = check_and_scale,
+};
+
+/* The size and position of non-fullscreen application windows
+ * in application view. */
+static const ClutterGeometry App_window_geometry =
+{
+  .x      = 0,
+  .y      = HD_COMP_MGR_TOP_MARGIN,
+  .width  = HD_COMP_MGR_LANDSCAPE_WIDTH,
+  .height = HD_COMP_MGR_LANDSCAPE_HEIGHT - HD_COMP_MGR_TOP_MARGIN,
 };
 /* }}} */
 
@@ -1469,13 +1492,12 @@ calc_layout (Layout * lout)
   /* Gaps are always the same, regardless of the number of thumbnails.
    * Leave the last row left-aligned.  Center the first pageful amount
    * of rows vertically. */
-  lout->xpos = layout_fun (hd_comp_mgr_get_current_screen_width (),
+  lout->xpos = layout_fun (SCREEN_WIDTH,
                            lout->thumbsize->width,
                            GRID_HORIZONTAL_GAP,
                            lout->cells_per_row);
   lout->last_row_xpos = lout->xpos;
-  lout->ypos = layout_fun (hd_comp_mgr_get_current_screen_height ()
-                           + GRID_TOP_MARGIN,
+  lout->ypos = layout_fun (SCREEN_HEIGHT + GRID_TOP_MARGIN,
                            lout->thumbsize->height,
                            GRID_VERTICAL_GAP,
                            nrows_per_page);
@@ -1483,8 +1505,18 @@ calc_layout (Layout * lout)
   lout->vspace = lout->thumbsize->height + GRID_VERTICAL_GAP;
 }
 
+static void
+get_prison_size (GtkRequisition * prison)
+{
+  /* .prison is right below the title background and reserves
+   * some pixels on both sides. */
+  prison->width  = Thumbsize->width - 2*FRAME_WIDTH;
+  prison->height = Thumbsize->height
+                   - (FRAME_TOP_HEIGHT + FRAME_BOTTOM_HEIGHT);
+}
+
 /* Depending on the current @Thumbsize places the frame graphics
- * elements (except .center) of @thumb where they should be. */
+ * elements of @thumb where they should be. */
 static void
 layout_thumb_frame (const Thumbnail * thumb, const Flyops * ops)
 {
@@ -1514,6 +1546,86 @@ layout_thumb_frame (const Thumbnail * thumb, const Flyops * ops)
   ops->scale (thumb->frame.east, 1,
               (gdouble)(Thumbsize->height - (ht+hb))
                 / clutter_actor_get_height (thumb->frame.east));
+}
+
+/* Lays out the inners of a notwin belonging to @thumb.
+ * @oldsize tells the previous (to-be-changed) size of @thumb
+ * and can be %NULL for the initial layout. */
+static void
+layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
+               const Flyops * ops)
+{
+  TNote *tnote;
+  gboolean change;
+  guint isize, x, y;
+  GtkRequisition prison;
+
+  tnote = thumb->tnote;
+  get_prison_size (&prison);
+  if (!ops)
+    ops = &Fly_at_once;
+
+  /* The icon size determines the placement of the inners of
+   * notification thumbnails.  If the icon size changes,
+   * those change too, but if not, neither does the rest. */
+  change = !tnote->icon /* first layout of .notwin */
+    || oldthsize == &Thumbsizes.large
+    || Thumbsize == &Thumbsizes.large;
+
+  /* .icon */
+  isize = Thumbsize == &Thumbsizes.large
+    ? ICON_FINGER : ICON_STYLUS;
+  if (change && tnote->icon)
+    { /* Kill the icon and reload a different size. */
+      clutter_container_remove_actor (
+                       CLUTTER_CONTAINER (tnote->notwin),
+                       tnote->icon);
+      tnote->icon = NULL;
+    }
+  if (!tnote->icon)
+    {
+      tnote->icon = get_icon (hd_note_get_icon (tnote->hdnote),
+                              isize);
+      clutter_container_add_actor (
+                       CLUTTER_CONTAINER (tnote->notwin),
+                       tnote->icon);
+    }
+  if (change)
+    ops->move (tnote->icon, MARGIN_DEFAULT, MARGIN_HALF);
+
+  /* .time: %MARGIN_DEFAULT on the left and centered vertically
+   * relative to the .icon. */
+  if (change)
+    {
+      clutter_label_set_font_name (CLUTTER_LABEL (tnote->time),
+                                   Thumbsize == &Thumbsizes.large
+                                     ? SystemFont : SmallSystemFont);
+      y = clutter_actor_get_height (tnote->time);
+      ops->move (tnote->time,
+                 MARGIN_DEFAULT + isize + MARGIN_DEFAULT,
+                 MARGIN_HALF    + (isize-y) / 2);
+    }
+
+  /* .message: %MARGIN_DEFAULT at left-right and %MARGIN_HALF
+   * at top-bottom. */
+  x = MARGIN_DEFAULT;
+  y = MARGIN_HALF + isize + MARGIN_HALF;
+  if (change)
+    ops->move (tnote->message, x, y);
+  ops->resize (tnote->message,
+               prison.width  - x - MARGIN_DEFAULT,
+               prison.height - y - MARGIN_HALF);
+
+  /* Don't show .message on small thumbnails. */
+  if (Thumbsize == &Thumbsizes.small)
+    clutter_actor_hide (tnote->message);
+  else if (oldthsize == &Thumbsizes.small)
+    clutter_actor_show (tnote->message);
+
+  /* Background */
+  clutter_actor_get_size (tnote->background, &x, &y);
+  ops->scale (tnote->background,
+              (gdouble)prison.width / x, (gdouble)prison.height / y);
 }
 
 /*
@@ -1546,7 +1658,6 @@ layout_thumbs (ClutterActor * newborn)
   for (li = Thumbnails, i = 0; li && (thumb = li->data); li = li->next, i++)
     {
       const Flyops *ops;
-      guint wprison, hprison;
 
       /* If it's a new row re/set @ythumb and @xthumb. */
       g_assert (lout.cells_per_row > 0);
@@ -1588,80 +1699,22 @@ layout_thumbs (ClutterActor * newborn)
       /* Place @thumb->frame. */
       layout_thumb_frame (thumb, ops);
 
-      /* .prison is right below the title background and reserves
-       * some pixels on both sides. */
-      wprison = Thumbsize->width - 2*FRAME_WIDTH;
-      hprison = Thumbsize->height - (FRAME_TOP_HEIGHT + FRAME_BOTTOM_HEIGHT);
+      if (thumb_has_notification (thumb))
+        /* nothumb or apthumb with a notification,
+         * show it as a notification */
+        layout_notwin (thumb, oldthsize, ops);
 
-      if (thumb_is_notification (thumb))
-        { /* Boring details of laying out the inners of a nothumb. */
-          gboolean change;
-          guint isize, x, y;
+      if (thumb_is_application (thumb))
+        {
+          GtkRequisition s;
 
-          /* The icon size determine the placement of the inners of
-           * notification thumbnails.  If the icon size changes,
-           * those change too, but if not, neither the rest. */
-          change = thumb->thwin == newborn
-            || oldthsize == &Thumbsizes.large
-            || Thumbsize == &Thumbsizes.large;
-
-          /* .icon */
-          isize = Thumbsize == &Thumbsizes.large
-            ? ICON_FINGER : ICON_STYLUS;
-          if (change && thumb->icon)
-            {
-              clutter_container_remove_actor (CLUTTER_CONTAINER (thumb->prison),
-                                              thumb->icon);
-              thumb->icon = NULL;
-            }
-          if (!thumb->icon)
-            {
-              thumb->icon = get_icon (hd_note_get_icon (thumb->tnote->hdnote),
-                                      isize);
-              clutter_container_add_actor (CLUTTER_CONTAINER (thumb->prison),
-                                           thumb->icon);
-            }
-          if (change)
-            ops->move (thumb->icon, MARGIN_DEFAULT, MARGIN_HALF);
-
-          /* .time: %MARGIN_DEFAULT on the left and centered vertically
-           * relative to the .icon. */
-          if (change)
-            {
-              clutter_label_set_font_name (CLUTTER_LABEL (thumb->time),
-                                           Thumbsize == &Thumbsizes.large
-                                             ? SystemFont : SmallSystemFont);
-              y = clutter_actor_get_height (thumb->time);
-              ops->move (thumb->time,
-                         MARGIN_DEFAULT + isize + MARGIN_DEFAULT,
-                         MARGIN_HALF    + (isize-y) / 2);
-            }
-
-          /* .message: %MARGIN_DEFAULT at left-right and %MARGIN_HALF
-           * at top-bottom. */
-          x = MARGIN_DEFAULT;
-          y = MARGIN_HALF + isize + MARGIN_HALF;
-          if (change)
-            ops->move (thumb->message, x, y);
-          ops->resize (thumb->message,
-                       wprison - x - MARGIN_DEFAULT,
-                       hprison - y - MARGIN_HALF);
-
-          /* Don't show .message on small thumbnails. */
-          if (Thumbsize == &Thumbsizes.small)
-            clutter_actor_hide (thumb->message);
-          else if (oldthsize == &Thumbsizes.small)
-            clutter_actor_show (thumb->message);
-
-          /* Background */
-          clutter_actor_get_size (thumb->frame.center, &x, &y);
-          ops->scale (thumb->frame.center,
-                      (gdouble)wprison / x, (gdouble)hprison / y);
+          /* Whether it's visible or not set the scale so we can just
+           * show the prison later. */
+          get_prison_size (&s);
+          ops->scale (thumb->prison,
+                      (gdouble)s.width  / App_window_geometry.width,
+                      (gdouble)s.height / App_window_geometry.height);
         }
-      else
-        ops->scale (thumb->prison,
-                    (gdouble)wprison / thumb->inapwin.width,
-                    (gdouble)hprison / thumb->inapwin.height);
 
 skip_the_circus:
       xthumb += lout.hspace;
@@ -1735,7 +1788,6 @@ create_thumb_frame (Thumbnail * thumb)
     CLUTTER_GRAVITY_NORTH_WEST,             /* N  */
     CLUTTER_GRAVITY_NORTH_EAST,             /* NE */
     CLUTTER_GRAVITY_NORTH_WEST,             /* W  */
-    CLUTTER_GRAVITY_NORTH_WEST,             /* C  */
     CLUTTER_GRAVITY_NORTH_EAST,             /* E  */
     CLUTTER_GRAVITY_SOUTH_WEST,             /* SW */
     CLUTTER_GRAVITY_SOUTH_WEST,             /* S  */
@@ -1747,7 +1799,6 @@ create_thumb_frame (Thumbnail * thumb)
     "TaskSwitcherThumbnailTitleCenter.png",
     "TaskSwitcherThumbnailTitleRight.png",
     "TaskSwitcherThumbnailBorderLeft.png",
-    NULL,
     "TaskSwitcherThumbnailBorderRight.png",
     "TaskSwitcherThumbnailBottomLeft.png",
     "TaskSwitcherThumbnailBottomCenter.png",
@@ -1759,7 +1810,6 @@ create_thumb_frame (Thumbnail * thumb)
     "TaskSwitcherNotificationTitleCenter.png",
     "TaskSwitcherNotificationTitleRight.png",
     "TaskSwitcherNotificationBorderLeft.png",
-    "TaskSwitcherNotificationBackground.png",
     "TaskSwitcherNotificationBorderRight.png",
     "TaskSwitcherNotificationBottomLeft.png",
     "TaskSwitcherNotificationBottomCenter.png",
@@ -1776,14 +1826,6 @@ create_thumb_frame (Thumbnail * thumb)
 
   for (i = 0; i < G_N_ELEMENTS (gravities); i++)
     {
-      if (thumb_is_application (thumb)
-          && &thumb->frame.pieces[i] == &thumb->frame.center)
-        {
-          /* Skip the .center element for application thumbnails. */
-          thumb->frame.center = NULL;
-          continue;
-        }
-
       g_assert (fnames[i] != NULL);
       thumb->frame.pieces[i] = hd_clutter_cache_get_texture (fnames[i], TRUE);
       clutter_actor_set_anchor_point_from_gravity (thumb->frame.pieces[i],
@@ -1791,12 +1833,6 @@ create_thumb_frame (Thumbnail * thumb)
       clutter_container_add_actor (CLUTTER_CONTAINER (thumb->frame.all),
                                    thumb->frame.pieces[i]);
     }
-
-  /* The @center piece is the background of the @prison.
-   * This is why @frmame.all needs to be ordered below it. */
-  if (thumb->frame.center)
-    clutter_actor_set_position (thumb->frame.center,
-                                PRISON_XPOS, PRISON_YPOS);
 }
 
 /* Replace a %Thumbnail's @frame.  This is necessary when an
@@ -1821,12 +1857,10 @@ recreate_thumb_frame (Thumbnail * thumb)
 /* Creates @thumb->thwin.  The exact position of the inner actors is decided
  * by layout_thumbs(). */
 static void
-create_thwin (Thumbnail * thumb)
+create_thwin (Thumbnail * thumb, ClutterActor * prison)
 {
   /* .prison */
-  clutter_actor_set_name (thumb->prison, "prison");
-  clutter_actor_set_position (thumb->prison,
-                              PRISON_XPOS, PRISON_YPOS);
+  clutter_actor_set_position (prison, PRISON_XPOS, PRISON_YPOS);
 
   /* .frame */
   create_thumb_frame (thumb);
@@ -1857,13 +1891,12 @@ create_thwin (Thumbnail * thumb)
   clutter_container_add (CLUTTER_CONTAINER (thumb->plate),
                          thumb->frame.all, thumb->title, thumb->close, NULL);
 
-  /* .thwin: it is important that .plate is ordered below .prison
-   * because of the center element of the frame. */
+  /* .thwin */
   thumb->thwin = clutter_group_new ();
   clutter_actor_set_name (thumb->thwin, "thumbnail");
   clutter_actor_set_reactive (thumb->thwin, TRUE);
   clutter_container_add (CLUTTER_CONTAINER (thumb->thwin),
-                         thumb->plate, thumb->prison, NULL);
+                         prison, thumb->plate, NULL);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator_area),
                                thumb->thwin);
 }
@@ -1984,16 +2017,18 @@ claim_win (Thumbnail * apthumb)
   /* Load the video screenshot and place its actor in the hierarchy. */
   if (need_to_load_video (apthumb))
     {
+      /* Make it appear as if .video were .apwin,
+       * having the same geometry. */
       g_assert (!apthumb->video);
       apthumb->video = load_image (apthumb->video_fname,
-                                   apthumb->inapwin.width,
-                                   apthumb->inapwin.height);
+                                   App_window_geometry.width,
+                                   App_window_geometry.height);
       if (apthumb->video)
         {
           clutter_actor_set_name (apthumb->video, "video");
           clutter_actor_set_position (apthumb->video,
-                                      apthumb->inapwin.x,
-                                      apthumb->inapwin.y);
+                                      App_window_geometry.x,
+                                      App_window_geometry.y);
           clutter_container_add_actor (CLUTTER_CONTAINER (apthumb->prison),
                                        apthumb->video);
         }
@@ -2006,15 +2041,16 @@ claim_win (Thumbnail * apthumb)
     /* Only show @apthumb->video. */
     clutter_actor_hide (apthumb->windows);
 
-  /* Make sure @apthumb->title is up-to-date. */
-  if (!thumb_has_notification (apthumb))
-    reset_thumb_title (apthumb);
-
   /* Restore the opacity/visibility of the actors that have been faded out
    * while zooming, so we won't have trouble if we happen to to need to enter
    * the navigator directly. */
-  clutter_actor_set_opacity (apthumb->plate, 255);
   clutter_actor_hide (apthumb->titlebar);
+  clutter_actor_set_opacity (apthumb->plate, 255);
+  if (thumb_has_notification (apthumb))
+    {
+      clutter_actor_hide (apthumb->prison);
+      clutter_actor_set_opacity (apthumb->tnote->notwin, 255);
+    }
 }
 
 /* Stop managing @apthumb's application window and give it back
@@ -2026,6 +2062,47 @@ release_win (const Thumbnail * apthumb)
   if (apthumb->dialogs)
     g_ptr_array_foreach (apthumb->dialogs,
                          (GFunc)hd_render_manager_return_dialog, NULL);
+}
+
+/* Hide our .prison behind @tnote->notwin. */
+static void
+adopt_notification (Thumbnail * apthumb, TNote * tnote)
+{
+  if (tnote)
+    {
+      g_assert (!apthumb->tnote);
+      apthumb->tnote = tnote;
+    }
+  else
+    {
+      g_assert (apthumb->tnote);
+      tnote = apthumb->tnote;
+    }
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (apthumb->thwin),
+                               tnote->notwin);
+  clutter_container_raise_child (CLUTTER_CONTAINER (apthumb->thwin),
+                                 tnote->notwin, apthumb->prison);
+  clutter_actor_hide (apthumb->prison);
+}
+
+/* Restore .prison. */
+static TNote *
+orphan_notification (Thumbnail * apthumb)
+{
+  TNote *tnote;
+
+  tnote = apthumb->tnote;
+  g_assert (apthumb->tnote != NULL);
+
+  /* Take care not to blow .notwin. */
+  g_object_ref (tnote->notwin);
+  clutter_container_remove_actor (CLUTTER_CONTAINER (apthumb->thwin),
+                                  tnote->notwin);
+  clutter_actor_show (apthumb->prison);
+  apthumb->tnote = NULL;
+
+  return tnote;
 }
 /* Child adoption }}} */
 
@@ -2100,6 +2177,23 @@ zoom_in_complete (ClutterActor * navigator, ClutterActor * apwin)
 }
 
 /*
+ * Tells how to scale and position @Scroller to show a prison
+ * appearing the same as in application view (at the start of
+ * a zoom-out or at the end of a zoom-in).  The prisons screen
+ * coordinates and scaling are given in switcher view.
+ */
+static void
+zoom_fun (gint * xposp, gint * yposp,
+          gdouble * xscalep, gdouble * yscalep)
+{
+  /* The prison represents what's in @App_window_geometry in app view. */
+  *xscalep = 1 / *xscalep;
+  *yscalep = 1 / *yscalep;
+  *xposp = -*xposp * *xscalep + App_window_geometry.x;
+  *yposp = -*yposp * *yscalep + App_window_geometry.y;
+}
+
+/*
  * Zoom into @win, which must be shown in the navigator.  @win is not
  * returned to its original parent until the effect is complete, when
  * the navigator disappears.  Calls @fun(@win, @funparam) then, unless
@@ -2135,18 +2229,22 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
   xpos += PRISON_XPOS;
   ypos += PRISON_YPOS;
 
-  clutter_effect_scale (Zoom_effect, Scroller,
-                        1 / xscale, 1 / yscale, NULL, NULL);
-  clutter_effect_move (Zoom_effect, Scroller,
-                       -xpos / xscale + apthumb->inapwin.x,
-                       -ypos / yscale + apthumb->inapwin.y,
-                       NULL, NULL);
+  zoom_fun (&xpos, &ypos, &xscale, &yscale);
+  clutter_effect_scale  (Zoom_effect, Scroller, xscale, yscale, NULL, NULL);
+  clutter_effect_move   (Zoom_effect, Scroller, xpos,   ypos,   NULL, NULL);
 
   /* Crossfade .plate with .titlebar. */
   clutter_actor_show (apthumb->titlebar);
   clutter_actor_set_opacity (apthumb->titlebar, 0);
   clutter_effect_fade (Zoom_effect, apthumb->titlebar, 255, NULL, NULL);
   clutter_effect_fade (Zoom_effect, apthumb->plate,      0, NULL, NULL);
+
+  /* Fade out our notification smoothly if we have one. */
+  if (thumb_has_notification (apthumb))
+    {
+      clutter_actor_show (apthumb->prison);
+      clutter_effect_fade (Zoom_effect, apthumb->tnote->notwin, 0, NULL, NULL);
+    }
 
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)zoom_in_complete,
@@ -2168,17 +2266,17 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
                             ClutterEffectCompleteFunc fun, gpointer funparam)
 { g_debug (__FUNCTION__);
   const Thumbnail *apthumb;
-  gdouble sxprison, syprison, sxscroller, syscroller;
-  gint yarea, xthumb, ythumb, xprison, yprison, xscroller, yscroller;
+  gdouble xscale, yscale;
+  gint yarea, xpos, ypos;
 
   /* Our "show" callback will grab the butts of @win. */
   clutter_actor_show (Navigator);
   if (!(apthumb = find_by_apwin (win)))
     goto damage_control;
 
-  /* @xthumb, @ythumb := intended real position of @apthumb */
+  /* @xpos, @ypos:= intended real position of @apthumb */
   g_assert (Thumbsize != NULL);
-  clutter_actor_get_position (apthumb->thwin,  &xthumb, &ythumb);
+  clutter_actor_get_position (apthumb->thwin,  &xpos, &ypos);
 
   /*
    * Scroll the @Navigator_area so that @apthumb is closest the middle
@@ -2186,40 +2284,42 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
    * viewport out of the real estate, but in return we need to ask
    * how much we actually managed to scroll.
    */
-  yarea = ythumb - (hd_comp_mgr_get_current_screen_height()
-                    - Thumbsize->height) / 2;
+  yarea = ypos - (SCREEN_HEIGHT - Thumbsize->height) / 2;
   hd_scrollable_group_set_viewport_y (Navigator_area, yarea);
   yarea = hd_scrollable_group_get_viewport_y (Navigator_area);
 
+  /* Make @ypos absolute (relative to the top of the screen). */
+  ypos -= yarea;
+
+  /* @xpos, @ypos := absolute position of .prison. */
+  xpos += PRISON_XPOS;
+  ypos += PRISON_YPOS;
+  clutter_actor_get_scale (apthumb->prison, &xscale, &yscale);
+
   /* Reposition and rescale the @Scroller so that .apwin is shown exactly
    * in the same position and size as in the application view. */
-
-  /* Make @ythumb absolute (relative to the top of the screen). */
-  ythumb -= yarea;
-
-  /* @xprison, @yprison := absolute position of .prison. */
-  xprison = xthumb + PRISON_XPOS;
-  yprison = ythumb + PRISON_YPOS;
-  clutter_actor_get_scale (apthumb->prison, &sxprison, &syprison);
-
-  /* anchor of .prison      <- start of non-decoration area of .apwin
-   * visual size of .prison <- width of non-decoration area of .apwin */
-  xscroller = apthumb->inapwin.x - xprison/sxprison;
-  yscroller = apthumb->inapwin.y - yprison/syprison;
-  sxscroller = 1 / sxprison;
-  syscroller = 1 / syprison;
-
-  clutter_actor_set_scale     (Scroller, sxscroller, syscroller);
-  clutter_actor_set_position  (Scroller,  xscroller,  yscroller);
+  zoom_fun (&xpos, &ypos, &xscale, &yscale);
+  clutter_actor_set_scale     (Scroller, xscale,  yscale);
+  clutter_actor_set_position  (Scroller, xpos,    ypos);
   clutter_effect_scale (Zoom_effect, Scroller, 1, 1, NULL, NULL);
   clutter_effect_move  (Zoom_effect, Scroller, 0, 0, NULL, NULL);
 
   /* Crossfade .plate with .titlebar.  It's okay to leave .titlebar shown
    * but transparent. */
-  clutter_actor_set_opacity (apthumb->plate, 0);
-  clutter_effect_fade (Zoom_effect, apthumb->plate,    255, NULL, NULL);
-  clutter_effect_fade (Zoom_effect, apthumb->titlebar,   0, NULL, NULL);
   clutter_actor_show (apthumb->titlebar);
+  clutter_actor_set_opacity (apthumb->titlebar, 255);
+  clutter_effect_fade (Zoom_effect, apthumb->titlebar,   0, NULL, NULL);
+  clutter_actor_set_opacity (apthumb->plate,      0);
+  clutter_effect_fade (Zoom_effect, apthumb->plate,    255, NULL, NULL);
+
+  /* Fade in .notwin smoothly.  It's not so okay to leave .prison shown
+   * but that's life. */
+  if (thumb_has_notification (apthumb))
+    {
+      clutter_actor_show (apthumb->prison);
+      clutter_actor_set_opacity (apthumb->tnote->notwin, 0);
+      clutter_effect_fade (Zoom_effect, apthumb->tnote->notwin, 255, NULL, NULL);
+    }
 
   add_effect_closure (Zoom_effect_timeline, fun, win, funparam);
   return;
@@ -2323,14 +2423,6 @@ actor_to_client_window (ClutterActor * win, const HdCompMgrClient **hcmgrcp)
   return cmgrc->wm_client->window;
 }
 
-/* Set up the @thumb->inapwin-dependant properties of @thumb->prison. */
-static void
-setup_prison (const Thumbnail * apthumb)
-{
-  clutter_actor_set_anchor_point (apthumb->prison,
-                                  apthumb->inapwin.x, apthumb->inapwin.y);
-}
-
 /* Called when a %Thumbnail.thwin is clicked. */
 static gboolean
 appthumb_clicked (const Thumbnail * apthumb)
@@ -2342,7 +2434,7 @@ appthumb_clicked (const Thumbnail * apthumb)
     return TRUE;
 
   /* Behave like a notification if we have one. */
-  if (apthumb->tnote)
+  if (thumb_has_notification (apthumb))
     g_signal_emit_by_name (Navigator, "notification-clicked",
                            apthumb->tnote->hdnote);
   else
@@ -2361,7 +2453,7 @@ appthumb_close_clicked (const Thumbnail * apthumb)
     /* Maybe not anymore but let's play safe. */
     return TRUE;
 
-  if (apthumb->tnote)
+  if (thumb_has_notification (apthumb))
     g_signal_emit_by_name (Navigator, "notification-closed",
                            apthumb->tnote->hdnote);
   else
@@ -2374,6 +2466,7 @@ appthumb_close_clicked (const Thumbnail * apthumb)
   return TRUE;
 }
 
+/* Called when the %MBWM_WINDOW_PROP_NAME of @win has changed. */
 static Bool
 win_title_changed (MBWMClientWindow * win, int unused1, Thumbnail * apthumb)
 {
@@ -2403,7 +2496,6 @@ create_appthumb (ClutterActor * apwin)
   apthumb->win_changed_cb_id = mb_wm_object_signal_connect (
                      MB_WM_OBJECT (apthumb->win), MBWM_WINDOW_PROP_NAME,
                      (MBWMObjectCallbackFunc)win_title_changed, apthumb);
-  apthumb->inapwin = apthumb->win->geometry;
 
   /* .nodest: try the property first then fall back to the WM_CLASS hint.
    * TODO This is temporary, just not to break the little functionality
@@ -2435,14 +2527,19 @@ create_appthumb (ClutterActor * apwin)
   apthumb->windows = clutter_group_new ();
   clutter_actor_set_name (apthumb->windows, "windows");
 
-  /* .prison: anchor @apwin where it should be.
-   * ie. let its (0, 0) coordinate be the top-left of @apwin. */
+  /* .prison: anchor it so that we can ignore the UI framework area
+   * of its contents.  Do so even if @apwin is really fullscreen,
+   * ie. ignore the parts that would be in place of the title bar. */
   apthumb->prison = clutter_group_new ();
-  setup_prison (apthumb);
+  clutter_actor_set_name (apthumb->prison, "prison");
+  clutter_actor_set_anchor_point (apthumb->prison,
+                                  App_window_geometry.x,
+                                  App_window_geometry.y);
   clutter_container_add (CLUTTER_CONTAINER (apthumb->prison),
                          apthumb->titlebar, apthumb->windows, NULL);
 
-  /* Do we have a notification for @apwin? */
+  /* Do we have a notification for @apwin?  We need to find it out now
+   * so create_thwin() will dress us up with the right title and frames. */
   for_each_notification (li, nothumb)
     {
       if (tnote_matches_thumb (nothumb->tnote, apthumb))
@@ -2453,12 +2550,17 @@ create_appthumb (ClutterActor * apwin)
     }
 
   /* Have .thwin created .*/
-  create_thwin (apthumb);
+  create_thwin (apthumb, apthumb->prison);
   g_signal_connect_swapped (apthumb->thwin, "button-release-event",
                             G_CALLBACK (appthumb_clicked), apthumb);
   g_signal_connect_swapped (apthumb->close, "button-release-event",
                             G_CALLBACK (appthumb_close_clicked),
                             apthumb);
+
+  /* Now that everything is in place, replace ourselves... */
+  if (apthumb->tnote)
+    adopt_notification (apthumb, NULL);
+
   return apthumb;
 }
 
@@ -2539,15 +2641,15 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
       return;
     }
 
-  /* If @win had a notification, add it to @Navigator_area
-   * as a standalone thumbnail. */
-  if (thumb_has_notification (apthumb))
-    {
-      newborn = add_nothumb (apthumb->tnote)->thwin;
-      apthumb->tnote = NULL;
-    }
-  else
-    newborn = NULL;
+  /*
+   * If @win had a notification, add it to @Navigator_area as a standalone
+   * thumbnail.  TODO It'd be nice to show the notification squeezing but
+   * we can't because %TNote must belong to exactly one %Thumbnail a time.
+   * Maybe %ClutterTexture could be used to work it around.
+   */
+  newborn = thumb_has_notification (apthumb)
+    ? add_nothumb (orphan_notification (apthumb))->thwin
+    : NULL;
 
   /* If we're active let's do the TV-turned-off effect on @apthumb.
    * This effect is run in parallel with the flying effects. */
@@ -2695,36 +2797,34 @@ tnote_changed (HdNote * hdnote, int unused1, TNote * tnote)
 { g_debug(__FUNCTION__);
   GList *li;
   Thumbnail *thumb;
+  const char *iname, *oname;
 
   for_each_thumbnail (li, thumb)
     if (thumb->tnote == tnote)
       break;
+  g_assert (thumb != NULL);
 
-  if (thumb_is_notification (thumb))
-    {
-      const char *iname, *oname;
+  set_label_text_and_color (tnote->time,
+                            hd_note_get_time (tnote->hdnote),
+                            NULL);
+  set_label_text_and_color (tnote->message,
+                            hd_note_get_message (tnote->hdnote),
+                            NULL);
 
-      set_label_text_and_color (thumb->time,
-                                hd_note_get_time (tnote->hdnote),
-                                NULL);
-      set_label_text_and_color (thumb->message,
-                                hd_note_get_message (tnote->hdnote),
-                                NULL);
-
-      if ((iname = hd_note_get_icon (tnote->hdnote)) != NULL)
-        { /* Replace icon? */
-          if (!(oname = clutter_actor_get_name (thumb->icon))
-              || strcmp (iname, oname))
-            { /* Ignore further errors. */
-              clutter_container_remove_actor (CLUTTER_CONTAINER (thumb->prison),
-                                              thumb->icon);
-              thumb->icon = get_icon (iname, Thumbsize == &Thumbsizes.large
-                                      ? ICON_FINGER : ICON_STYLUS);
-              clutter_container_add_actor (CLUTTER_CONTAINER (thumb->prison),
-                                           thumb->icon);
-            }
+  if ((iname = hd_note_get_icon (tnote->hdnote)) != NULL)
+    { /* Replace icon? */
+      if (!(oname = clutter_actor_get_name (tnote->icon))
+          || strcmp (iname, oname))
+        { /* Ignore further errors. */
+          clutter_container_remove_actor (CLUTTER_CONTAINER (tnote->notwin),
+                                          tnote->icon);
+          tnote->icon = get_icon (iname, Thumbsize == &Thumbsizes.large
+                                  ? ICON_FINGER : ICON_STYLUS);
+          clutter_container_add_actor (CLUTTER_CONTAINER (tnote->notwin),
+                                       tnote->icon);
         }
     }
+
   reset_thumb_title (thumb);
 
   /* TODO The change in a group event notification may actually
@@ -2751,16 +2851,46 @@ create_tnote (HdNote * hdnote)
                         MB_WM_OBJECT (hdnote), HdNoteSignalChanged,
                         (MBWMObjectCallbackFunc)tnote_changed, tnote);
 
+  /* Inners of notifications */
+  /* .background */
+  tnote->background = hd_clutter_cache_get_texture (
+                        "TaskSwitcherNotificationBackground.png", TRUE);
+
+  /* .time */
+  tnote->time = set_label_text_and_color (clutter_label_new (),
+                                       hd_note_get_time (tnote->hdnote),
+                                       &DefaultTextColor);
+
+  /* .message */
+  tnote->message = set_label_text_and_color (clutter_label_new (),
+                                    hd_note_get_message (tnote->hdnote),
+                                    &DefaultTextColor);
+  clutter_label_set_font_name (CLUTTER_LABEL (tnote->message),
+                               SmallSystemFont);
+  clutter_label_set_line_wrap (CLUTTER_LABEL (tnote->message), TRUE);
+  g_signal_connect (tnote->message, "notify::allocation",
+                    G_CALLBACK (clip_on_resize), NULL);
+
+  /* .icon will be set by layout_thumbs(). */
+  tnote->notwin = clutter_group_new();
+  clutter_actor_set_position (tnote->notwin, PRISON_XPOS, PRISON_YPOS);
+  clutter_actor_set_name (tnote->notwin, "notwin");
+  clutter_container_add (CLUTTER_CONTAINER (tnote->notwin),
+                         tnote->background, tnote->time, tnote->message,
+                         NULL);
+
   return tnote;
 }
 
-/* Releases what was allocated by create_tnote(). */
+/* Releases what was allocated by create_tnote() except the #ClutterActors,
+ * which are taken care of by free_thumb(). */
 static void
 free_tnote (TNote * tnote)
 {
   mb_wm_object_signal_disconnect (MB_WM_OBJECT (tnote->hdnote),
                                   tnote->hdnote_changed_cb_id);
   mb_wm_object_unref (MB_WM_OBJECT (tnote->hdnote));
+  g_object_unref (tnote->notwin);
   g_free (tnote);
 }
 
@@ -2805,27 +2935,7 @@ add_nothumb (TNote * tnote)
   nothumb->type = NOTIFICATION;
   nothumb->tnote = tnote;
 
-  /* .time */
-  nothumb->time = set_label_text_and_color (clutter_label_new (),
-                                       hd_note_get_time (tnote->hdnote),
-                                       &DefaultTextColor);
-
-  /* .message */
-  nothumb->message = set_label_text_and_color (clutter_label_new (),
-                                    hd_note_get_message (tnote->hdnote),
-                                    &DefaultTextColor);
-  clutter_label_set_font_name (CLUTTER_LABEL (nothumb->message),
-                               SmallSystemFont);
-  clutter_label_set_line_wrap (CLUTTER_LABEL (nothumb->message), TRUE);
-  g_signal_connect (nothumb->message, "notify::allocation",
-                    G_CALLBACK (clip_on_resize), NULL);
-
-  /* .icon will be set by layout_thumbs(). */
-  nothumb->prison = clutter_group_new();
-  clutter_container_add (CLUTTER_CONTAINER (nothumb->prison),
-                         nothumb->time, nothumb->message, NULL);
-
-  create_thwin (nothumb);
+  create_thwin (nothumb, tnote->notwin);
   g_signal_connect_swapped (nothumb->thwin, "button-release-event",
                             G_CALLBACK (nothumb_clicked), nothumb);
   g_signal_connect_swapped (nothumb->close, "button-release-event",
@@ -2856,13 +2966,21 @@ remove_nothumb (GList * li, gboolean destroy_tnote)
   nothumb = li->data;
   g_assert (thumb_is_notification (nothumb));
 
+  g_object_ref (nothumb->tnote->notwin);
   if (destroy_tnote)
     {
+      /* Don't kill .notwin yet, but let free_thumb() do it. */
       free_tnote (nothumb->tnote);
       tnote = NULL;
     }
   else
-    tnote = nothumb->tnote;
+    {
+      /* The caller will want to use @tnote afterwards,
+       * make sure free_thumb() doesn't kill .notwin. */
+      clutter_container_remove_actor (CLUTTER_CONTAINER (nothumb->thwin),
+                                      nothumb->tnote->notwin);
+      tnote = nothumb->tnote;
+    }
   nothumb->tnote = NULL;
 
   free_thumb (nothumb);
@@ -2908,9 +3026,10 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
             }
 
           /* Okay, found it. */
-          apthumb->tnote = tnote;
-          reset_thumb_title (apthumb);
+          adopt_notification (apthumb, tnote);
           recreate_thumb_frame (apthumb);
+          reset_thumb_title (apthumb);
+          layout_notwin (apthumb, NULL, NULL);
           return;
         }
     }
@@ -2950,8 +3069,7 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
     }
   else
     { /* @hdnote is in an application's title area. */
-      free_tnote (thumb->tnote);
-      thumb->tnote = NULL;
+      free_tnote (orphan_notification (thumb));
       reset_thumb_title (thumb);
       recreate_thumb_frame (thumb);
     }
@@ -3037,38 +3155,6 @@ unclip (ClutterActor * actor, GParamSpec * prop, gpointer unused)
     clutter_actor_remove_clip (actor);
   return TRUE;
 }
-
-/* Called when the screen's dimensions have changed. */
-static void
-screen_size_changed (void)
-{
-  GList *li;
-  Thumbnail *apthumb;
-
-  /*
-   * Screen size has an influence on all @Thumbnails.inapwin.
-   * This is the only time we care about changing @inapwin.
-   * Since @apwin:s are generally not resized it's only significant
-   * when the WM is started right into portrait mode and then it's
-   * switched to landscape.
-   */
-  clutter_actor_set_size(Scroller,
-                         hd_comp_mgr_get_current_screen_width (),
-                         hd_comp_mgr_get_current_screen_height ());
-  for_each_appthumb (li, apthumb)
-    {
-      const MBWMClientWindow * mbwmcwin;
-
-      if (!(mbwmcwin = actor_to_client_window (apthumb->apwin, NULL)))
-        continue;
-      apthumb->inapwin = mbwmcwin->geometry;
-      setup_prison (apthumb);
-    }
-
-  /* Relayout the inners of appthumbs. */
-  Thumbsize = NULL;
-  layout_thumbs (NULL);
-}
 /* Callbacks }}} */
 
 /* Creates an effect template for @duration and also returns its timeline.
@@ -3106,9 +3192,7 @@ hd_task_navigator_init (HdTaskNavigator * self)
   /* Turn off visibility detection for @Scroller to it won't be clipped by it. */
   Scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_actor_set_name (Scroller, "Scroller");
-  clutter_actor_set_size (Scroller,
-                          hd_comp_mgr_get_current_screen_width (),
-                          hd_comp_mgr_get_current_screen_height ());
+  clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
   clutter_actor_set_visibility_detect(Scroller, FALSE);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), Scroller);
 
@@ -3128,11 +3212,6 @@ hd_task_navigator_init (HdTaskNavigator * self)
                             G_CALLBACK (navigator_clicked), Navigator);
   clutter_container_add_actor (CLUTTER_CONTAINER (Scroller),
                                CLUTTER_ACTOR (Navigator_area));
-
-  /* Make sure we're not broken if the WM is started in portrait mode. */
-  g_signal_connect(clutter_stage_get_default(),
-                   "notify::allocation", G_CALLBACK(screen_size_changed),
-                   NULL);
 
   /* Effect timelines */
   Fly_effect  = new_animation (&Fly_effect_timeline,  FLY_EFFECT_DURATION);

@@ -1,3 +1,19 @@
+2009-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#111840 Camera contains two close icons in minimized state
+		  in full screen mode
+	NB#118305 Application is remains in fullscreen in task switcher area
+		  in mentioned scenario
+
+	* src/home/hd-task-navigator.c:
+	  Don't treat fullscreen applications any different.
+	  Also in preparation for the new UI specs, show the entire
+	  notification in place of an application thumbnail.
+	  + regression fix: revering Kimmo's changes to always take
+	    the LANDSCAPE dimensions of the screen
+	  + bugfix: reset the opacity of the fake title bar when zooming out
+	  + refactoring: a lot
+
 2009-06-02  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Show CallUI from the desktop when device is rotated to portrait.
