@@ -49,7 +49,8 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #define BACKGROUND_COLOR {0, 0, 0, 0xff}
-#define CACHED_BACKGROUND_IMAGE_FILE "%s/.backgrounds/background-%u.pvr"
+#define CACHED_BACKGROUND_IMAGE_FILE_PNG "%s/.backgrounds/background-%u.png"
+#define CACHED_BACKGROUND_IMAGE_FILE_PVR "%s/.backgrounds/background-%u.pvr"
 
 #define GCONF_KEY_POSITION "/apps/osso/hildon-desktop/applets/%s/position"
 #define GCONF_KEY_MODIFIED "/apps/osso/hildon-desktop/applets/%s/modified"
@@ -372,9 +373,17 @@ load_background_idle (gpointer data)
   if (g_source_is_destroyed (g_main_current_source ()))
     return FALSE;
 
-  cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE,
+  cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PNG,
                                                   g_get_home_dir (),
                                                   priv->id + 1);
+  if (!g_file_test (cached_background_image_file,
+                    G_FILE_TEST_EXISTS))
+    {
+      g_free (cached_background_image_file);
+      cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PVR,
+                                                      g_get_home_dir (),
+                                                      priv->id + 1);
+    }
 
   new_bg = clutter_texture_new_from_file (cached_background_image_file,
                                           &error);

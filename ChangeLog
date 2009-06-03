@@ -1,3 +1,10 @@
+2009-06-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-home-view-container.c (backgrounds_dir_changed):
+	* src/home/hd-home-view.c (CACHED_BACKGROUND_IMAGE_FILE_PNG,
+	  CACHED_BACKGROUND_IMAGE_FILE_PVR, load_background_idle): Add support
+	  for background-[1..4].png cached files.
+
 2009-06-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/launcher/hd-launcher-tile.c (hd_launcher_tile_set_icon_name):
