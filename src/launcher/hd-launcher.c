@@ -709,7 +709,6 @@ void hd_launcher_window_created(void)
 
   if (priv->launch_image)
   {
-    hd_render_manager_set_loading (NULL);
     clutter_timeline_stop(priv->launch_transition);
 
     g_object_unref(priv->launch_image);

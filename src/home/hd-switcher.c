@@ -39,6 +39,7 @@
 #include "hd-home.h"
 #include "hd-gtk-utils.h"
 #include "hd-render-manager.h"
+#include "hd-title-bar.h"
 #include "hd-wm.h"
 
 #include <clutter/clutter.h>
@@ -653,10 +654,19 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
     }
   else
     {
-      g_debug("hd_comp_mgr_wakeup_client(%p)", hclient);
+      HdTitleBar *tbar = HD_TITLE_BAR (hd_render_manager_get_title_bar());
+      gchar *text =
+        g_strdup_printf (dgettext("maemo-af-desktop",
+                                  "ckct_ib_application_resuming"),
+                         hd_comp_mgr_client_get_app_local_name (hclient));
+      hd_render_manager_set_loading (actor);
+      hd_render_manager_set_state (HDRM_STATE_LOADING);
+      hd_render_manager_stop_transition ();
+      hd_title_bar_set_title (tbar, text, FALSE);
+      hd_title_bar_set_waiting (tbar, TRUE);
       hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
+      g_free (text);
     }
-
 }
 
 void

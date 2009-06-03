@@ -185,6 +185,7 @@ struct _HdRenderManagerPrivate {
   ClutterActor         *button_back;
   ClutterActor         *button_edit;
   ClutterActor         *loading_image;
+  ClutterActor         *loading_image_parent;
 
   /* these are current, from + to variables for doing the blurring animations */
   Range         home_radius;
@@ -535,7 +536,25 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
   task_opacity = priv->task_nav_opacity.current*255;
   clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav), task_opacity);
   if (task_opacity==0)
-    clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav));
+    {
+      clutter_actor_hide(CLUTTER_ACTOR(priv->task_nav));
+      if (priv->loading_image)
+        {
+          clutter_actor_reparent (priv->loading_image,
+                                  CLUTTER_ACTOR (priv->front));
+          clutter_actor_set_size(priv->loading_image,
+                                 hd_comp_mgr_get_current_screen_width (),
+                                 hd_comp_mgr_get_current_screen_height ()
+                                 - HD_COMP_MGR_TOP_MARGIN);
+          clutter_actor_set_position(priv->loading_image, 0,
+               /* We use priv->loading_image_parent to determine if we
+                * got loading_image from the switcher.
+                * TODO: Make this less of a nasty hack.
+                */
+               (priv->loading_image_parent ? 0 : HD_COMP_MGR_TOP_MARGIN));
+          clutter_actor_show (priv->loading_image);
+        }
+    }
   else
     clutter_actor_show(CLUTTER_ACTOR(priv->task_nav));
   clutter_actor_set_scale(CLUTTER_ACTOR(priv->task_nav),
@@ -1059,22 +1078,12 @@ void hd_render_manager_set_loading  (ClutterActor *item)
 
   if (priv->loading_image)
     {
-      clutter_container_remove_actor (CLUTTER_CONTAINER (priv->front),
-                                      priv->loading_image);
       g_object_unref(priv->loading_image);
     }
 
   if (item)
     {
       priv->loading_image = CLUTTER_ACTOR(g_object_ref(item));
-      clutter_container_add_actor (CLUTTER_CONTAINER (priv->front),
-                                   priv->loading_image);
-      clutter_actor_set_size(item,
-                             hd_comp_mgr_get_current_screen_width (),
-                             hd_comp_mgr_get_current_screen_height ()
-                             - HD_COMP_MGR_TOP_MARGIN);
-      clutter_actor_set_position(item,
-                                 0, HD_COMP_MGR_TOP_MARGIN);
     }
   else
     priv->loading_image = NULL;
@@ -1246,6 +1255,27 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             }
 	}
 
+      /* Return the actor if we used it for loading. */
+      if (oldstate == HDRM_STATE_LOADING &&
+          priv->loading_image)
+        {
+          if (priv->loading_image_parent)
+            {
+              clutter_actor_reparent (priv->loading_image,
+                                      priv->loading_image_parent);
+              g_object_unref (G_OBJECT (priv->loading_image_parent));
+              priv->loading_image_parent = NULL;
+            }
+          else
+            {
+              clutter_actor_hide (priv->loading_image);
+              clutter_container_remove_actor (CLUTTER_CONTAINER (priv->front),
+                                              priv->loading_image);
+            }
+          g_object_unref (G_OBJECT (priv->loading_image));
+          priv->loading_image = NULL;
+        }
+
       /* Goto HOME instead of an empty switcher.  This way the caller
        * needn't care whether the switcher is empty, we'll do what
        * it meant. */
@@ -1310,10 +1340,21 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       /* Show/hide the loading image. */
       if (state == HDRM_STATE_LOADING &&
           priv->loading_image)
-        clutter_actor_show (priv->loading_image);
-      if (oldstate == HDRM_STATE_LOADING &&
-          priv->loading_image)
-        clutter_actor_hide (priv->loading_image);
+        {
+          ClutterActor *parent = clutter_actor_get_parent (priv->loading_image);
+          /* Keep the loading screen parent to return to it later. */
+          priv->loading_image_parent = parent ?
+                              CLUTTER_ACTOR (g_object_ref (parent)) : NULL;
+          clutter_actor_reparent (priv->loading_image,
+                                  CLUTTER_ACTOR (priv->front));
+          clutter_actor_set_size(priv->loading_image,
+                                 hd_comp_mgr_get_current_screen_width (),
+                                 hd_comp_mgr_get_current_screen_height ()
+                                 - HD_COMP_MGR_TOP_MARGIN);
+          clutter_actor_set_position(priv->loading_image,
+                                     0, HD_COMP_MGR_TOP_MARGIN);
+          clutter_actor_show (priv->loading_image);
+        }
 
       /* Reset CURRENT_APP_WIN when entering tasw/talu. */
       if (STATE_ONE_OF(state, HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER)

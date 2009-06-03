@@ -1,3 +1,13 @@
+2009-06-03  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Use the new HDRM_STATE_LOADING for waking up hibernated apps.
+	Fixes: NB#118215
+
+	* src/home/hd-render-manager.c: Keep track of the loading screen parent,
+	if present, to return it there later.
+	* src/home/hd-switcher.c:
+	* src/launcher/hd-launcher.c:
+
 2009-06-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-render-manager.c (hd_render_manager_set_state): Return
