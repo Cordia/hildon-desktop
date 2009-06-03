@@ -16,7 +16,7 @@
 #define FPS 25
 
 /* #undef this to make the test run in non-composited mode */
-#define COMPOSITED 1
+#define COMPOSITED 1 
 
 /* Area's width and height to render */
 #define AREAW 800
@@ -101,6 +101,9 @@ int main(int argc, char **argv)
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
 
     gtk_widget_set_app_paintable(window, TRUE);
+#ifndef COMPOSITED
+    gtk_window_fullscreen (GTK_WINDOW (window));
+#endif
     //gtk_widget_set_double_buffered(window, FALSE);
 
     g_signal_connect(G_OBJECT(window), "expose-event", G_CALLBACK(expose), NULL);

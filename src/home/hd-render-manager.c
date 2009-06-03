@@ -1204,9 +1204,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
   priv = the_render_manager->priv;
   cmgr = MB_WM_COMP_MGR (priv->comp_mgr);
 
-  /* g_warning("%s: STATE %s -> STATE %s", __FUNCTION__,
+  g_debug("%s: STATE %s -> STATE %s", __FUNCTION__,
       hd_render_manager_state_str(priv->state),
-      hd_render_manager_state_str(state)); */
+      hd_render_manager_state_str(state)); 
 
   if (!priv->comp_mgr)
   {
@@ -1238,10 +1238,12 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 	  mb_wm_setup_redirection (wm, 1);
 
           /* track damage again */
-          for (c = wm->stack_bottom; c; c = c->stacked_above)
-            if (c->cm_client)
-              mb_wm_comp_mgr_clutter_client_track_damage (
-                        MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client), True);
+          for (c = wm->stack_top; c; c = c->stacked_below)
+            {
+              if (c->cm_client)
+                mb_wm_comp_mgr_clutter_client_track_damage (
+                        MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client), True);
+            }
 	}
 
       /* Goto HOME instead of an empty switcher.  This way the caller

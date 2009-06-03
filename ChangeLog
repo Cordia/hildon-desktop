@@ -1,3 +1,16 @@
+2009-06-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state): Return
+	the g_debug print about state change back. When restarting damage
+	tracking, do it from top to down.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Switch to composited
+	mode if application, Status Menu, or a dialog appears in non-composited
+	mode.
+	(hd_comp_mgr_unmap_notify): Switch back to non-composited mode if the
+	next window in the stack is non-composited.
+	* tests/test-speed.c: Make the window fullscreen in non-composited
+	mode.
+
 2009-06-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-home-view-container.c (backgrounds_dir_changed):

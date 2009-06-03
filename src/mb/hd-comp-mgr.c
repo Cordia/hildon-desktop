@@ -1797,6 +1797,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       if (STATE_ONE_OF(hd_render_manager_get_state(),
                        HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
         hd_render_manager_set_state(HDRM_STATE_HOME);
+      else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+        {
+          hd_render_manager_set_state (HDRM_STATE_APP);
+        }
       hd_home_add_status_menu (HD_HOME (priv->home), actor);
       priv->status_menu_client = c;
       return;
@@ -1838,6 +1842,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         {
           hd_switcher_add_dialog (priv->switcher_group, c, actor);
         }
+      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+        {
+          /* go back to composited mode to show the dialog properly
+           * (the title is drawn in Clutter) */
+          hd_render_manager_set_state (HDRM_STATE_APP);
+        }
       return;
     }
   else if (c->window->net_type ==
@@ -1875,6 +1885,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       /* g_warning ("%s: client requests non-composited mode", __func__); */
       hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+    }
+  else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+    {
+      hd_render_manager_set_state (HDRM_STATE_APP);
     }
 
   int topmost;
@@ -2018,6 +2032,18 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         }
       if (!grab_spoil)
         hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
+    }
+  else if (hd_render_manager_get_state() == HDRM_STATE_APP)
+    {
+      MBWindowManagerClient *below;
+      /* check if we should go back to non-composited mode */
+      for (below = c->stacked_below; below; below = below->stacked_below)
+        if (MB_WM_CLIENT_CLIENT_TYPE (below) != HdWmClientTypeStatusArea)
+          {
+            if (HD_IS_APP (below) && hd_comp_mgr_is_non_composited (below))
+              hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+            break;
+          }
     }
 
   if (HD_IS_APP (c) && HD_APP (c)->stack_index > 0 &&
