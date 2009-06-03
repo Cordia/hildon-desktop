@@ -322,6 +322,10 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
 
   gtk_icon_info_free(info);
 
+  if (priv->icon_glow)
+    /* free the old one */
+    clutter_actor_destroy (CLUTTER_ACTOR (priv->icon_glow));
+
   priv->icon_glow = tidy_highlight_new(CLUTTER_TEXTURE(priv->icon));
   clutter_actor_set_size (CLUTTER_ACTOR(priv->icon_glow),
         HD_LAUNCHER_TILE_GLOW_SIZE,
