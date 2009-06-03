@@ -1182,7 +1182,7 @@ hd_transition_play_sound (const gchar * fname)
     gint millisec;
 
     /* Canberra uses threads. */
-    if (1 || hd_volume_profile_is_silent() || hd_disable_threads())
+    if (hd_volume_profile_is_silent() || hd_disable_threads())
       return;
 
     /* Initialize the canberra context once. */

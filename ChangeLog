@@ -1,3 +1,8 @@
+2009-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-transition.c (hd_transition_play_sound):
+	  Carelessness fix: undisable sounds
+
 2009-06-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-transition.c: Modified screen rotation transition to
