@@ -1,5 +1,10 @@
 2009-06-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#120722 - Scaled background image shows dark lines at edges
+	* src/tidy/tidy-blur-group.c
+	* src/tidy/tidy-cached-group.c: Modified pixel offset for rendering,
+	  so bottom/right edges of the background were rendered correctly.
+
 	* src/util/hd-transition.c: Modify timings in app_close transition
 	  to allow more time for sparkles, and to shrink their size over
 	  time.

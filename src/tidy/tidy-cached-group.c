@@ -116,7 +116,7 @@ tidy_cached_group_paint (ClutterActor *actor)
       cogl_draw_buffer(COGL_OFFSCREEN_BUFFER, priv->fbo);
       cogl_push_matrix();
       /* translate a bit to let bilinear filter smooth out intermediate pixels */
-      cogl_translatex(-CFX_ONE/2,-CFX_ONE/2,0);
+      cogl_translatex(CFX_ONE/2,CFX_ONE/2,0);
       cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height);
 
       cogl_paint_init(&bgcol);
