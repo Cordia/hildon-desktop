@@ -1189,17 +1189,21 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
            * instead we just hint that next time we become
            * unblurred, we need to recalculate. */
           tidy_blur_group_hint_source_changed(parent);
-          blur_update = TRUE;
+          /* ONLY set blur_update if the image is buffered ->
+           * we are actually blurred */
+          if (tidy_blur_group_source_buffered(parent))
+            blur_update = TRUE;
         }
       parent = clutter_actor_get_parent(parent);
     }
 
-  /* Check we're not in a mode where it's a bad idea.
-   * Also skip if we're in some transition - instead just update normally
-   * We also must update fully if blurring, as we must update the whole
-   * blur testure. */
-  if (!STATE_DO_PARTIAL_REDRAW(hd_render_manager_get_state()) ||
-      blur_update)
+  /* We no longer display changes that occur on blurred windows, so if
+   * this damage was actually on a blurred window, forget about it. */
+  if (blur_update)
+    return;
+
+  /* Check we're not in a mode where it's a bad idea. */
+  if (!STATE_DO_PARTIAL_REDRAW(hd_render_manager_get_state()))
   {
     ClutterActor *stage = clutter_stage_get_default();
     clutter_actor_queue_redraw(stage);
@@ -2727,7 +2731,7 @@ hd_comp_mgr_client_is_maximized (MBGeometry geom)
 {
   if ((geom).x == 0 &&
       (geom).width >= hd_comp_mgr_get_current_screen_width ()
-      && (geom).y == 0 
+      && (geom).y == 0
       && (geom).height >= hd_comp_mgr_get_current_screen_height ())
           return TRUE;
   else
