@@ -1,3 +1,21 @@
+2009-06-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#116566 Device hangs completely after disconnecting call when
+		  device lock is active
+
+	Don't go to HDRM_STATE_TASK_NAV if we have modals.
+
+	* src/mb/hd-wm.h
+	* src/mb/hd-wm.c (hd_wm_has_modal_blockers):
+	  Factored out the code in hd_comp_mgr_setup_input_viewport()
+	  to see if we have any modals.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_effect):
+	  Do an ordinary hd_transition_close_app() in this case.
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  Don't go to see tasw if we have modals, go to HOME instead.
+	* src/util/hd-transition.c (hd_transition_rotate_screen):
+	  Don't reset goto_state, it may be set before we're called.
+
 2009-06-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-home-view-container.c: Moved away from using ClutterUnit
@@ -70,7 +88,7 @@
 	  draw its children onto a (currently half-size) texture (for use
 	  with hibernated apps).
 
-2009-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-06-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-transition.c (hd_transition_play_sound):
 	  Carelessness fix: undisable sounds

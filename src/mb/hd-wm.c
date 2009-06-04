@@ -56,6 +56,7 @@
 #include "hd-dialog.h"
 #include "hd-animation-actor.h"
 #include "hd-remote-texture.h"
+#include "hd-util.h"
 
 static int  hd_wm_init       (MBWMObject *object, va_list vap);
 static void hd_wm_destroy    (MBWMObject *object);
@@ -464,4 +465,15 @@ hd_wm_current_app_is (MBWindowManager *wm, Window xid)
                   (unsigned char *)&xid, 1);
   g_debug ("CURRENT_APP_WINDOW => 0x%lx", xid);
   return last;
+}
+
+gboolean
+hd_wm_has_modal_blockers (const MBWindowManager *wm)
+{
+  MBWindowManagerClient *client;
+
+  for (client = wm->stack_top; client; client=client->stacked_below)
+    if (hd_util_client_has_modal_blocker(client))
+      return TRUE;
+  return FALSE;
 }

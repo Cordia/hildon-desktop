@@ -833,23 +833,14 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
   XserverRegion      region;
   MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
   MBWindowManager   *wm = mgr->wm;
-  gboolean           allow_input_viewport;
-  MBWindowManagerClient *client;
 
   /* check for windows that may have a modal blocker. If anything has one
    * we should NOT grab any part of the screen. */
-  allow_input_viewport = TRUE;
-  for (client = wm->stack_top; client; client=client->stacked_below)
-    if (hd_util_client_has_modal_blocker(client))
-      {
-        allow_input_viewport = FALSE;
-        break;
-      }
 
   mb_wm_util_trap_x_errors ();
 
   /*g_debug("%s: setting viewport", __FUNCTION__);*/
-  if (count > 0 && allow_input_viewport)
+  if (count > 0 && !hd_wm_has_modal_blockers (wm))
     {
       XRectangle *rectangle = g_new (XRectangle, count);
       guint      i;
@@ -1088,7 +1079,8 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                   app->stack_index = -1;
 		}
 	      else
-                {
+                { g_warning("%s:%u: what am i doing here?",
+                            __FUNCTION__, __LINE__);
                   MBWindowManagerClient *current_client =
                           hd_wm_determine_current_app (mgr->wm);
 
@@ -2170,9 +2162,11 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                     || (app->leader == app && !app->followers))
                    && hd_task_navigator_is_crowded ()
                    && c->window->xwindow == hd_wm_current_app_is (NULL, 0)
-                   && hd_render_manager_get_state () != HDRM_STATE_APP_PORTRAIT)
+                   && hd_render_manager_get_state () != HDRM_STATE_APP_PORTRAIT
+                   && !hd_wm_has_modal_blockers (mgr->wm))
             hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
           else
+            /* unregister_client() will switch state if it thinks so */
             hd_transition_close_app (hmgr, c);
           app->map_effect_before = FALSE;
         }
