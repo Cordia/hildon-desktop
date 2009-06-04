@@ -1,5 +1,17 @@
 2009-06-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#118976 - Transition speed mismatch when dismissing the applications-submenu
+	* data/transitions.ini: modified transition durations at Martin 
+	  Gimpl's request. Also fixed strange character that was stopping
+	  g_key_file reading the [launcher_forward]duration key.
+	* src/launcher/hd-launcher-grid.c: Reduce zoom on launcher subview
+	  in/out transitions.
+	* src/util/hd-transition.c: lowered overshoot on dialog transitions,
+	  actually print a warning message if the transitions file couldn't 
+	  be loaded. 	  
+
+2009-06-04  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/mb/hd-comp-mgr.c: Regression fix: it seems since ~W13 we have
 	not been updating areas of the screen except for dialogs and full-
 	screen windows.

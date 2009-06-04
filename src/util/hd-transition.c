@@ -116,9 +116,9 @@ hd_transition_overshoot(float x)
   int offset;
   offset = (int)x;
   amt = x-offset;
-  smooth_ramp = 1.0f - cos(amt*3.141592);
-  converge = sin(0.5*3.141592*(1-amt));
-  return offset + (smooth_ramp*0.75)*converge + (1-converge);
+  smooth_ramp = 1.0f - cos(amt*3.141592); // 0 <= smooth_ramp <= 2
+  converge = sin(0.5*3.141592*(1-amt)); // 0 <= converve <= 1
+  return offset + (smooth_ramp*0.675)*converge + (1-converge);
 }
 
 /* amt goes from 0->1, and the result goes from 0->1 smoothly */
@@ -1277,6 +1277,8 @@ hd_transition_get_int(const gchar *transition,
                                   &error);
   if (error)
     {
+      g_warning("%s: g_key_file Error %s", __FUNCTION__,
+                error->message?error->message:"null");
       g_error_free (error);
       g_key_file_free (key_file);
       return default_val;

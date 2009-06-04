@@ -837,14 +837,20 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
             case HD_LAUNCHER_PAGE_TRANSITION_IN:
             case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
               {
+                int depth_amount;
                 float label_amt = (((order_amt*26) - 16) / 10);
                 float tile_amt = ((order_amt*26) / 16);
+
+                if (trans_type == HD_LAUNCHER_PAGE_TRANSITION_IN)
+                  depth_amount = 150;
+                else
+                  depth_amount = 100;
                 if (tile_amt<0) tile_amt = 0;
                 if (tile_amt>1) tile_amt = 1;
                 if (label_amt<0) label_amt=0;
                 if (label_amt>1) label_amt=1;
                 depth = CLUTTER_UNITS_FROM_FLOAT(
-                                150 * (1 - sexy_overshoot(tile_amt)));
+                    depth_amount * (1 - sexy_overshoot(tile_amt)));
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
                 clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255);
                 if (tile_icon)
@@ -855,10 +861,17 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
               }
             case HD_LAUNCHER_PAGE_TRANSITION_OUT:
             case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
-                depth = CLUTTER_UNITS_FROM_FLOAT(100*amount);
+              {
+                int depth_amount;
+                if (trans_type == HD_LAUNCHER_PAGE_TRANSITION_OUT)
+                  depth_amount = 100;
+                else
+                  depth_amount = 50;
+                depth = CLUTTER_UNITS_FROM_FLOAT(depth_amount*amount);
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
                 clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255 - (int)(amount*255));
                 break;
+              }
             case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
               {
                 float tile_amt = amount*2 - d;
