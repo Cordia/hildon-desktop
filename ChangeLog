@@ -1,5 +1,9 @@
 2009-06-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/home/hd-home-view-container.c: Moved away from using ClutterUnit
+	  (this is removed in Clutter > 0.9), and added code to handle easing
+	  on home view panning.
+
 	Fixes: NB#118976 - Transition speed mismatch when dismissing the applications-submenu
 	* data/transitions.ini: modified transition durations at Martin 
 	  Gimpl's request. Also fixed strange character that was stopping
@@ -9,8 +13,6 @@
 	* src/util/hd-transition.c: lowered overshoot on dialog transitions,
 	  actually print a warning message if the transitions file couldn't 
 	  be loaded. 	  
-
-2009-06-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/mb/hd-comp-mgr.c: Regression fix: it seems since ~W13 we have
 	not been updating areas of the screen except for dialogs and full-

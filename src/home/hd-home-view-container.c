@@ -28,6 +28,7 @@
 #include "hd-home.h"
 #include "hd-comp-mgr.h"
 #include "hd-render-manager.h"
+#include "hd-transition.h"
 
 #include <glib/gstdio.h>
 
@@ -57,14 +58,14 @@ struct _HdHomeViewContainerPrivate
   guint previous_view;
   guint next_view;
 
-  ClutterUnit offset;
+  int offset;
 
   HdHome *home;
   HdCompMgr *comp_mgr;
 
   /* animation */
   ClutterTimeline *timeline;
-  ClutterUnit offset_per_frame;
+  int timeline_offset;
   guint frames;
 
   /* GConf */
@@ -479,7 +480,7 @@ hd_home_view_container_allocate (ClutterActor          *self,
   height = box->y2 - box->y1;
 
   if (priv->previous_view != priv->current_view && priv->next_view != priv->current_view)
-    offset = priv->offset;
+    offset = CLUTTER_UNITS_FROM_INT(priv->offset);
 
   for (i = 0; i < MAX_HOME_VIEWS; i++)
     {
@@ -684,7 +685,7 @@ hd_home_view_container_set_offset (HdHomeViewContainer *container,
   if (priv->timeline)
     return;
 
-  priv->offset = offset;
+  priv->offset = CLUTTER_UNITS_TO_INT(offset);
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
 }
@@ -696,7 +697,10 @@ scroll_back_new_frame_cb (ClutterTimeline     *timeline,
 {
   HdHomeViewContainerPrivate *priv = container->priv;
 
-  priv->offset = (priv->frames - frame_num) * priv->offset_per_frame;
+  float amt = frame_num / (float)priv->frames;
+  amt = hd_transition_ease_out(amt);
+
+  priv->offset = (int)((1-amt) * priv->timeline_offset);
   /* prod the blur control so it notices that the background has changed */
   hd_render_manager_blurred_changed();
 
@@ -739,16 +743,13 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container)
 
   clutter_actor_get_size (CLUTTER_ACTOR (container), &width, NULL);
 
-  priv->timeline = clutter_timeline_new_for_duration (ABS (CLUTTER_UNITS_TO_DEVICE (priv->offset)) * SCROLL_DURATION / width);
+  priv->timeline = clutter_timeline_new_for_duration (ABS (priv->offset) * SCROLL_DURATION / width);
 
   priv->frames = clutter_timeline_get_n_frames (priv->timeline);
-  priv->offset_per_frame = ABS (priv->offset) / priv->frames;
-  if (priv->offset < 0)
-    priv->offset_per_frame *= -1;
+  priv->timeline_offset = priv->offset;
 
-  g_debug ("frames: %u, offset: %d, offset_per_frame: %d",
-           priv->frames, CLUTTER_UNITS_TO_DEVICE (priv->offset),
-           CLUTTER_UNITS_TO_DEVICE (priv->offset_per_frame));
+  g_debug ("frames: %u, offset: %d",
+           priv->frames, priv->offset);
 
   g_signal_connect (priv->timeline, "new-frame",
                     G_CALLBACK (scroll_back_new_frame_cb), container);
@@ -762,7 +763,7 @@ void
 hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container)
 {
   HdHomeViewContainerPrivate *priv;
-  ClutterUnit width;
+  guint width;
 
   g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
@@ -771,7 +772,7 @@ hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container)
   if (priv->timeline)
     return;
 
-  clutter_actor_get_sizeu (CLUTTER_ACTOR (container), &width, NULL);
+  clutter_actor_get_size (CLUTTER_ACTOR (container), &width, NULL);
 
   priv->offset -= width;
   hd_home_view_container_set_current_view (container,
@@ -784,7 +785,7 @@ ClutterTimeline *
 hd_home_view_container_scroll_to_next (HdHomeViewContainer *container)
 {
   HdHomeViewContainerPrivate *priv;
-  ClutterUnit width;
+  guint width;
 
   g_return_val_if_fail (HD_IS_HOME_VIEW_CONTAINER (container), NULL);
 
@@ -793,7 +794,7 @@ hd_home_view_container_scroll_to_next (HdHomeViewContainer *container)
   if (priv->timeline)
     return NULL;
 
-  clutter_actor_get_sizeu (CLUTTER_ACTOR (container), &width, NULL);
+  clutter_actor_get_size (CLUTTER_ACTOR (container), &width, NULL);
 
   priv->offset += width;
   hd_home_view_container_set_current_view (container,
