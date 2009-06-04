@@ -1063,7 +1063,6 @@ hd_transition_rotating_fsm(void)
         change_state = Orientation_change.new_direction == GOTO_PORTRAIT
           ?  STATE_IS_PORTRAIT(state) || STATE_IS_PORTRAIT_CAPABLE(state)
           : !STATE_IS_PORTRAIT(state) && state != HDRM_STATE_UNDEFINED;
-        g_warning("CHANGE STATE %d -> %d", change_state, state);
         if (change_state)
           {
             Orientation_change.goto_state = HDRM_STATE_UNDEFINED;
