@@ -309,7 +309,7 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
   ClutterActor *actor;
   float amtx, amty, amtp;
   int centrex, centrey;
-  float particle_opacity, particle_radius;
+  float particle_opacity, particle_radius, particle_scale;
   gint i;
 
   actor = data->cclient_actor;
@@ -318,9 +318,9 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
 
   amt = (float)clutter_timeline_get_progress(timeline);
 
-  amtx = 1.6 - amt*2;
-  amty = 1 - amt*2;
-  amtp = amt*2 - 1;
+  amtx = 1.6 - amt*2.5; // shrink in x
+  amty = 1 - amt*2.5; // shrink in y
+  amtp = amt*2 - 1; // particles
   if (amtx<0) amtx=0;
   if (amtx>1) amtx=1;
   if (amty<0) amty=0;
@@ -340,6 +340,7 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
   clutter_actor_set_scale(actor, amtx, amty);
   clutter_actor_set_opacity(actor, (int)(255 * (1-amtp)));
   /* do sparkles... */
+  particle_scale = 1-amtp*0.5;
   for (i=0;i<HDCM_UNMAP_PARTICLES;i++)
     if (data->particles[i] && (amtp > 0) && (amtp < 1))
       {
@@ -352,6 +353,8 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
         clutter_actor_show( data->particles[i] );
         clutter_actor_set_opacity(data->particles[i],
                 (int)(255 * opacity));
+        clutter_actor_set_scale(data->particles[i],
+                particle_scale, particle_scale);
 
         clutter_actor_set_positionu(data->particles[i],
                 CLUTTER_FLOAT_TO_FIXED(centrex + sin(ang) * radius),

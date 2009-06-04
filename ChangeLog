@@ -1,3 +1,11 @@
+2009-06-04  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-transition.c: Modify timings in app_close transition
+	  to allow more time for sparkles, and to shrink their size over
+	  time.
+	* data/transitions.ini: Increase app_close transition length to
+	  include extra time for sparkles
+
 2009-06-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#116566 Device hangs completely after disconnecting call when
