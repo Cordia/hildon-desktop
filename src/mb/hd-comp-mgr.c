@@ -124,10 +124,20 @@ struct HdCompMgrClientPrivate
    * are cached values.  The validity of the cache is delimited by the
    * timestamp.  This is used to decide whether it is necessary to
    * recalculate the inherited flags of a client.
+   *
+   * Possible values of @portrait_requested are:
+   * -- 0: not requested
+   * -- 1: requested, but this can be ignored if other, nonsupporting
+   *       clients are visible
+   * -- 2: demanded, switch to portrait whatever clients are visible.
+   *       In return the client promises to maximize itself so the
+   *       other clients wouldn't matter anyway.  Like everything
+   *       else this is a hack.
+   * -- other values: treated like 2
    */
   gboolean              portrait_supported;
   gboolean              portrait_supported_inherited;
-  gboolean              portrait_requested;
+  guint                 portrait_requested;
   gboolean              portrait_requested_inherited;
   guint                 portrait_timestamp;
 };
@@ -335,7 +345,7 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
                        XA_CARDINAL, 32, 1, NULL);
   if (prop)
     {
-      priv->portrait_requested = *prop != 0;
+      priv->portrait_requested = *prop;
       XFree (prop);
     }
   else
@@ -739,7 +749,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
     }
   else
     {
-      cc->priv->portrait_requested            = *value > 0;
+      cc->priv->portrait_requested            = *value > 0 ? *value : 0;
       cc->priv->portrait_requested_inherited  = *value < 0;
     }
   g_debug ("portrait property of %p changed: supported=%d requested=%d", c,
@@ -2469,8 +2479,6 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
     {
-      MBGeometry cov;
-
       PORTRAIT ("CLIENT %p", c);
       PORTRAIT ("IS IGNORABLE?");
       if (c == hmgr->priv->status_area_client)
@@ -2505,26 +2513,20 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
       PORTRAIT ("SUPPORT IS %d", hcmgrc->priv->portrait_supported);
       if (!hcmgrc->priv->portrait_supported)
         return FALSE;
-      any_requests |= hcmgrc->priv->portrait_requested;
-
-      /* If the client covers everything below it, we are done. This is
-       * needed because hd_render_manager_is_client_visible doesn't seem
-       * to be enough (it is based on actor visibility). */
-      mb_wm_client_get_coverage (c, &cov);
-      if (cov.width >= wm->xdpy_width && cov.height >= wm->xdpy_height)
-        break;
+      any_requests |= hcmgrc->priv->portrait_requested != 0;
 
       /*
        * This is a workaround for the fullscreen incoming call dialog.
        * Since it's fullscreen we can safely assume it will cover
        * everything underneath, even if that's still visible in
        * clutter sense.  This is an evidence that we just cannot
-       * rely on visibility checking entirely.
+       * rely on visibility checking entirely. TODO remove later
        */
-      if (hcmgrc->priv->portrait_requested && c->window
-          && c->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+      if (hcmgrc->priv->portrait_requested > 1
+          || (hcmgrc->priv->portrait_requested && c->window
+              && c->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen))
         {
-          PORTRAIT ("FULLSCREEN OVERRIDE");
+          PORTRAIT ("DEMANDED");
           break;
         }
     }

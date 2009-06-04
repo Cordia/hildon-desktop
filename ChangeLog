@@ -1,3 +1,21 @@
+2009-06-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#116272 ROTATION: Incoming call dialog does not rotate
+		  if not on the home view
+
+	Recognize PORTRAIT_MODE_REQUEST=2 as a demand for switching,
+	whether other clients are comfortable with it or not.
+
+	* src/home/hd-render-manager.c (hd_render_manager_clip_geo):
+	  Respect the screen's right and bottom boundaries as well.
+	  Visibility checking after rotation has been broken for a
+	  few weeks because now we don't reconfigure windows that
+	  are completely covered by other windows.  As a result now
+	  we may have 800x480 geometries on a 480x800 screen.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_property_changed,
+	    hd_comp_mgr_client_init, hd_comp_mgr_should_be_portrait):
+	  Understand REQUEST=2.
+
 2009-06-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#120722 - Scaled background image shows dark lines at edges

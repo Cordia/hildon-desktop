@@ -1574,12 +1574,13 @@ void hd_render_manager_return_dialog(ClutterActor *actor)
 /*
  * Clip the offscreen parts of a @geo, ensuring that it doesn't have negative
  * (x, y) coordinates.  Returns %FALSE if it's completely offscreen, meaning
- * you can ignore it.  NOTE that only the -x and the -y halfplanes are
- * considered offscreen in this context.
+ * you can ignore it.
  */
 static gboolean
 hd_render_manager_clip_geo(ClutterGeometry *geo)
 {
+  guint t;
+
   if (geo->x < 0)
     {
       if (-geo->x >= geo->width)
@@ -1595,6 +1596,18 @@ hd_render_manager_clip_geo(ClutterGeometry *geo)
       geo->height += geo->y;
       geo->y = 0;
     }
+
+  t = hd_comp_mgr_get_current_screen_width ();
+  if (geo->x >= t)
+    return FALSE;
+  if (geo->x + geo->width > t)
+    geo->width = t - geo->x;
+
+  t = hd_comp_mgr_get_current_screen_height ();
+  if (geo->y >= t)
+    return FALSE;
+  if (geo->y + geo->height > t)
+    geo->height = t - geo->y;
 
   return TRUE;
 }
