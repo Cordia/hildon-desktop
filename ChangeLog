@@ -1,3 +1,12 @@
+2009-06-03  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	Fixes: NB#120044 Top-most application banners are blocked
+	with DND flag set
+	
+	* src/mb/hd-comp-mgr.c: Apps can always show banners if they're
+	topmost, even if they have do-not-disturb set.  Also, atoms are
+	atoms, not booleans.
+
 2009-06-03  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Use the new HDRM_STATE_LOADING for waking up hibernated apps.

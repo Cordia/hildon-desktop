@@ -1671,12 +1671,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
 
   /* Discard notification banners if do not disturb flag is set
-   * and the dnd override flag is not set on the information banner */
-  if (priv->do_not_disturb_flag && HD_IS_BANNER_NOTE (c))
+   * and the dnd override flag is not set on the information banner
+   * and the client is not topmost
+   */
+  if (priv->do_not_disturb_flag && HD_IS_BANNER_NOTE (c) &&
+      mb_wm_client_get_next_focused_app (c)!=NULL)
     {
       guint32 *value;
-      gboolean dnd_override = hd_comp_mgr_get_atom (HD_COMP_MGR (mgr),
-                                HD_ATOM_HILDON_DO_NOT_DISTURB_OVERRIDE);
+      Atom dnd_override = hd_comp_mgr_get_atom (HD_COMP_MGR (mgr),
+						HD_ATOM_HILDON_DO_NOT_DISTURB_OVERRIDE);
 
       value = hd_util_get_win_prop_data_and_validate (c->wmref->xdpy,
                 c->window->xwindow, dnd_override, XA_INTEGER, 32, 1, NULL);
