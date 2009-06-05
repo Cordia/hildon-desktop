@@ -1,3 +1,10 @@
+2009-06-05  Laszlo Pere  <lpere@blumsoft.eu>
+	NB#119709 Device freezes if camera lens cover is opened while in 
+	          change background image dialog
+
+	* src/home/hd-home.c: When removing removing hd-home dialogs remove
+	  the transients of the hd-home dialogs too.
+
 2009-06-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#120571 ROTATION: Call idle view is not completely Displayed

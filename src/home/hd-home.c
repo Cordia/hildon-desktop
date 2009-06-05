@@ -1206,6 +1206,19 @@ hd_home_set_reactive (HdHome   *home,
                                        reactive);
 }
 
+static gboolean
+hd_is_hildon_home_dialog (
+		MBWindowManagerClient  *c)
+{
+  if (MB_WM_CLIENT_CLIENT_TYPE(c) != MBWMClientTypeDialog)
+    return FALSE;
+
+  if (!c->transient_for)
+    return TRUE;
+
+  return hd_is_hildon_home_dialog (c->transient_for);
+}
+
 /* Remove any hildon-home dialogs that are showing */
 void hd_home_remove_dialogs(HdHome *home)
 {
@@ -1224,15 +1237,12 @@ void hd_home_remove_dialogs(HdHome *home)
   while (c)
     {
       MBWindowManagerClient *next = c->stacked_below;
-      if (MB_WM_CLIENT_CLIENT_TYPE(c) == MBWMClientTypeDialog) {
-        if (!c->transient_for) {
-          /* We have no real way of telling what a hildon-home dialog is,
-           * but they are all transient_for=NULL - and we are called when
-           * we leave home_edit_dlg mode, so they are all stacked above the
-           * desktop. */
+      /* We have no real way of telling what a hildon-home dialog is, but they
+       * are all transient_for=NULL - and we are called when we leave
+       * home_edit_dlg mode, so they are all stacked above the desktop. */
+      if (hd_is_hildon_home_dialog(c)) {
           mb_wm_client_hide (c);
           mb_wm_client_deliver_delete (c);
-        }
       } else if (MB_WM_CLIENT_CLIENT_TYPE(c) == MBWMClientTypeDesktop)
         break;
       c = next;
