@@ -1,5 +1,10 @@
 2009-06-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/home/hd-home-view.c (hd_home_view_applet_release): Prepare for
+	NULL return value from hd_home_view_container_get_next/previous_view.
+	Fixes: NB#120248 - observed a hildon-desktop crash. Also, cut some
+	overlong lines...
+
 	Fix inline functions to actually be inlined.
 
 	* src/main.c (hd_mb_wm): Global MBWindowManager pointer for the

@@ -802,16 +802,23 @@ hd_home_view_applet_release (ClutterActor       *applet,
           ClutterActor *new_view;
 
           if (priv->move_applet_left)
-            new_view = hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container));
+            new_view = hd_home_view_container_get_previous_view (
+                            HD_HOME_VIEW_CONTAINER (priv->view_container));
           else
-            new_view = hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container));
+            new_view = hd_home_view_container_get_next_view (
+                            HD_HOME_VIEW_CONTAINER (priv->view_container));
 
-          hd_home_view_move_applet (view, HD_HOME_VIEW (new_view), applet);
+          if (new_view)
+            hd_home_view_move_applet (view, HD_HOME_VIEW (new_view), applet);
+          else
+            g_warning ("%s: new_view is NULL", __func__);
 
           if (priv->move_applet_left)
-            hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container));
+            hd_home_view_container_scroll_to_previous (
+                            HD_HOME_VIEW_CONTAINER (priv->view_container));
           else
-            hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container));
+            hd_home_view_container_scroll_to_next (
+                            HD_HOME_VIEW_CONTAINER (priv->view_container));
         }
       else
         {
@@ -835,7 +842,8 @@ cmp_applet_modified (gconstpointer a,
   const MBWMCompMgrClient *cc_a = a;
   const MBWMCompMgrClient *cc_b = b;
 
-  return HD_HOME_APPLET (cc_a->wm_client)->modified - HD_HOME_APPLET (cc_b->wm_client)->modified;
+  return HD_HOME_APPLET (cc_a->wm_client)->modified
+          - HD_HOME_APPLET (cc_b->wm_client)->modified;
 }
 
 /* Return the list of CompMgrClients of the applets this homeview
