@@ -26,6 +26,7 @@
 
 #include <glib/gmacros.h>
 #include <matchbox/core/mb-wm-object.h>
+#include <matchbox/core/mb-window-manager.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 
@@ -56,8 +57,6 @@ typedef struct HdCompMgrClientPrivate HdCompMgrClientPrivate;
 #define HD_COMP_MGR_CLIENT_CLASS(c) ((HdCompMgrClientClass*)(c))
 #define HD_TYPE_COMP_MGR_CLIENT     (hd_comp_mgr_client_class_type ())
 
-inline gboolean hd_comp_mgr_client_is_maximized (MBGeometry geom);
-
 struct HdCompMgrClient
 {
   MBWMCompMgrClutterClient    parent;
@@ -76,6 +75,7 @@ struct HdCompMgrClientClass
 {
     MBWMCompMgrClutterClientClass parent;
 };
+
 
 int hd_comp_mgr_client_class_type (void);
 
@@ -146,9 +146,43 @@ gboolean hd_comp_mgr_restack (MBWMCompMgr * mgr);
 void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running);
 
 void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr);
-inline guint hd_comp_mgr_get_current_screen_width(void);
-inline guint hd_comp_mgr_get_current_screen_height(void);
+
+MBWindowManager *hd_comp_mgr_get_wm (void);
+
+static inline guint
+hd_comp_mgr_get_current_screen_width(void);
+static inline guint
+hd_comp_mgr_get_current_screen_width (void)
+{
+  extern MBWindowManager *hd_mb_wm;
+  return hd_mb_wm->xdpy_width;
+}
+
+static inline guint
+hd_comp_mgr_get_current_screen_height(void);
+static inline guint
+hd_comp_mgr_get_current_screen_height(void)
+{
+  extern MBWindowManager *hd_mb_wm;
+  return hd_mb_wm->xdpy_height;
+}
+
 gboolean hd_comp_mgr_is_non_composited (MBWindowManagerClient *client);
+
+static inline gboolean
+hd_comp_mgr_client_is_maximized (MBGeometry geom);
+static inline gboolean
+hd_comp_mgr_client_is_maximized (MBGeometry geom)
+{
+  extern MBWindowManager *hd_mb_wm;
+  if ((geom).x == 0 &&
+      (geom).width >= hd_mb_wm->xdpy_width
+      && (geom).y == 0
+      && (geom).height >= hd_mb_wm->xdpy_height)
+          return TRUE;
+  else
+          return FALSE;
+}
 
 G_END_DECLS
 

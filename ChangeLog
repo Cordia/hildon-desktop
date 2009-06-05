@@ -1,3 +1,16 @@
+2009-06-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fix inline functions to actually be inlined.
+
+	* src/main.c (hd_mb_wm): Global MBWindowManager pointer for the
+	inlined functions.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_init): Initialise hd_mb_wm here.
+	(hd_comp_mgr_get_current_screen_width,
+	hd_comp_mgr_get_current_screen_height,
+	hd_comp_mgr_client_is_maximized): Moved to hd-comp-mgr.h.
+	* src/mb/Makefile.am: Use libmb.la instead of libmb.a similarly to
+	other subdirectories (home, launcher,...).
+
 2009-06-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#116272 ROTATION: Incoming call dialog does not rotate

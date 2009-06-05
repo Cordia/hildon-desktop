@@ -1,7 +1,7 @@
 /*
  * This file is part of hildon-desktop
  *
- * Copyright (C) 2008 Nokia Corporation.
+ * Copyright (C) 2008-2009 Nokia Corporation.
  *
  * Author:  Johan Bilien <johan.bilien@nokia.com>
  *
@@ -61,6 +61,8 @@ enum {
 static __attribute__((unused)) const char mbver[] =
   "built with libmatchbox2 " MBWM_DEB_VERSION;
 #endif
+
+MBWindowManager *hd_mb_wm = NULL;
 
 static unsigned int
 theme_type_func (const char *theme_name, void *data)

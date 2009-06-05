@@ -34,11 +34,11 @@ mb_c = 		hd-atoms.c			\
 		hd-animation-actor.c		\
 		hd-remote-texture.c
 
-noinst_LIBRARIES = libmb.a
+noinst_LTLIBRARIES = libmb.la
 
-libmb_a_SOURCES = $(mb_h) $(mb_c)
-libmb_a_CFLAGS =  @HD_CFLAGS@						\
+libmb_la_SOURCES = $(mb_h) $(mb_c)
+libmb_la_CFLAGS =  @HD_CFLAGS@  \
 		     -DHD_DATADIR=\"$(datadir)/hildon-desktop\"
-libmb_a_LIBS = @HD_LIBS@
+libmb_la_LIBADD = @HD_LIBS@
 
 CLEANFILES = *~
