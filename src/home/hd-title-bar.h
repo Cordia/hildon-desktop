@@ -87,8 +87,7 @@ hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm);
 
 void hd_title_bar_set_title   (HdTitleBar *bar,
                                const char *title,
-                               gboolean has_markup);
-void hd_title_bar_set_waiting (HdTitleBar *bar,
+                               gboolean has_markup,
                                gboolean waiting);
 
 gboolean

@@ -687,8 +687,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   hd_title_bar_set_title (tbar,
                           hd_launcher_item_get_local_name
                                                 (HD_LAUNCHER_ITEM (item)),
-                          FALSE);
-  hd_title_bar_set_waiting (tbar, TRUE);
+                          FALSE, TRUE);
 
   clutter_timeline_rewind(priv->launch_transition);
   clutter_timeline_start(priv->launch_transition);

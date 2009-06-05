@@ -754,7 +754,7 @@ hd_title_bar_set_for_edit_mode(HdTitleBar *bar)
   priv = bar->priv;
 
   title = dgettext ("maemo-af-desktop", "home_ti_desktop_menu");
-  hd_title_bar_set_title (bar, title, FALSE);
+  hd_title_bar_set_title (bar, title, FALSE, FALSE);
 
   state |= HDTB_VIS_BTN_MENU;
   state |= HDTB_VIS_BTN_DONE;
@@ -844,12 +844,10 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
   /* add the title */
   const char* title = mb_wm_client_get_name (client);
   if (d->show_title && title && strlen(title))
-    hd_title_bar_set_title (bar, title, client->window->name_has_markup);
+    hd_title_bar_set_title (bar, title,
+                            client->window->name_has_markup, is_waiting);
   else
-    hd_title_bar_set_title (bar, NULL, FALSE);
-
-  /* add progress indicator */
-  hd_title_bar_set_waiting (bar, is_waiting);
+    hd_title_bar_set_title (bar, NULL, FALSE, is_waiting);
 
   /* Go through all buttons and set the ones visible that are required */
   state = hd_title_bar_get_state(bar) & (~HDTB_VIS_BTN_RIGHT_MASK);
@@ -873,7 +871,8 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
 
 void hd_title_bar_set_title (HdTitleBar *bar,
                              const char *title,
-                             gboolean has_markup)
+                             gboolean has_markup,
+                             gboolean waiting)
 {
   HdTitleBarPrivate *priv;
   if (!HD_IS_TITLE_BAR(bar))
@@ -887,7 +886,8 @@ void hd_title_bar_set_title (HdTitleBar *bar,
       gint h, w;
       int x_start = 0;
       int x_end = hd_comp_mgr_get_current_screen_width ()
-                  - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
+                  - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH
+                  - (waiting ? HD_THEME_IMG_PROGRESS_SIZE : 0);
 
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
         x_start += HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
@@ -915,14 +915,6 @@ void hd_title_bar_set_title (HdTitleBar *bar,
     }
   else
     clutter_actor_hide(CLUTTER_ACTOR(priv->title));
-}
-
-void hd_title_bar_set_waiting (HdTitleBar *bar, gboolean waiting)
-{
-  HdTitleBarPrivate *priv;
-  if (!HD_IS_TITLE_BAR(bar))
-    return;
-  priv = bar->priv;
 
   if (waiting)
     {

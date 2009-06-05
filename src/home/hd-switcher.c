@@ -662,8 +662,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       hd_render_manager_set_loading (actor);
       hd_render_manager_set_state (HDRM_STATE_LOADING);
       hd_render_manager_stop_transition ();
-      hd_title_bar_set_title (tbar, text, FALSE);
-      hd_title_bar_set_waiting (tbar, TRUE);
+      hd_title_bar_set_title (tbar, text, FALSE, TRUE);
       hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
       g_free (text);
     }

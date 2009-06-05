@@ -1,3 +1,14 @@
+2009-06-05  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Clip titlebar's text when showing the progress indicator.
+	Fixes: NB#120342
+
+	* src/home/hd-switcher.c:
+	* src/home/hd-title-bar.c:
+	* src/home/hd-title-bar.h: Set the text and progress indicator in the
+	same call, so we can calculate the correct clipping.
+	* src/launcher/hd-launcher.c:
+
 2009-06-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-home-view.c (hd_home_view_applet_release): Prepare for
