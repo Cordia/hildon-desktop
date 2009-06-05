@@ -2426,7 +2426,8 @@ hd_comp_mgr_kill_all_apps (HdCompMgr *hmgr)
 }
 
 /* Update the inherited portrait flags of @cs if they were calculated
- * earlier than @now.  Returns @cs's %HdCompMgrClient. */
+ * earlier than @now.  If @now is G_MAXUINT the flags are uncoditionally
+ * updated but are not cached.  Returns @cs's %HdCompMgrClient. */
 static HdCompMgrClient *
 hd_comp_mgr_update_clients_portrait_flags (MBWindowManagerClient *cs,
                                            guint now)
@@ -2453,7 +2454,8 @@ hd_comp_mgr_update_clients_portrait_flags (MBWindowManagerClient *cs,
           if (hcmgrcs->priv->portrait_requested_inherited)
             hcmgrcs->priv->portrait_requested = hcmgrct->priv->portrait_requested;
         }
-      hcmgrcs->priv->portrait_timestamp = now;
+      if (now != G_MAXUINT)
+        hcmgrcs->priv->portrait_timestamp = now;
     }
   return hcmgrcs;
 }
@@ -2531,6 +2533,14 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
 
   PORTRAIT ("SHOULD BE: %d", any_requests);
   return any_requests;
+}
+
+gboolean
+hd_comp_mgr_client_supports_portrait (MBWindowManagerClient *mbwmc)
+{
+  /* Don't mess with hd_comp_mgr_should_be_portrait()'s @counter. */
+  return hd_comp_mgr_update_clients_portrait_flags (mbwmc, G_MAXUINT)
+    ->priv->portrait_supported;
 }
 
 static void

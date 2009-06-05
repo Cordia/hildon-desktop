@@ -1,3 +1,26 @@
+2009-06-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#120571 ROTATION: Call idle view is not completely Displayed
+		  in certain scenario
+	NB#120066 ROTATION: Cannot go back to home view after closing
+		  phone application
+
+	When the layout manager requests new geometry in portrait mode
+	do not touch clients which don't support it, but reconfigure
+	all other.  This way we don't resize clients that needn't be
+	but resize the ones that need to be.
+
+	* src/mb/hd-comp-mgr.h (hd_comp_mgr_is_portrait):
+	  New utility function.  Oh, sorry, typesafe macro.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_supports_portrait):
+	  New utility function.
+	* src/util/hd-transition.c:
+	  Replace get_current_screen_width/height() with is_portrait().
+	* src/mb/hd-app.c (hd_app_request_geometry):
+	  Ignore the layout manager's request if we're in portrait
+	  but the client doesn't support it.  When we leave portrait
+	  it will be reconfigured properly anyway.
+
 2009-06-05  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Clip titlebar's text when showing the progress indicator.

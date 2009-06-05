@@ -125,6 +125,7 @@ void hd_comp_mgr_wakeup_client       (HdCompMgr       *hmgr,
 				      HdCompMgrClient *hclient);
 
 gboolean hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr);
+gboolean hd_comp_mgr_client_supports_portrait (MBWindowManagerClient *mbwmc);
 
 Atom hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id);
 
@@ -165,6 +166,15 @@ hd_comp_mgr_get_current_screen_height(void)
 {
   extern MBWindowManager *hd_mb_wm;
   return hd_mb_wm->xdpy_height;
+}
+
+static inline
+gboolean hd_comp_mgr_is_portrait(void);
+static inline
+gboolean hd_comp_mgr_is_portrait(void)
+{ /* This is a very typesafe macro. */
+  extern MBWindowManager *hd_mb_wm;
+  return hd_mb_wm->xdpy_width < hd_mb_wm->xdpy_height;
 }
 
 gboolean hd_comp_mgr_is_non_composited (MBWindowManagerClient *client);

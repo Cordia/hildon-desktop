@@ -488,7 +488,6 @@ on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
   float amt, dim_amt, angle;
   gint n_frames;
   ClutterActor *actor;
-  gboolean portrait;
 
   n_frames = clutter_timeline_get_n_frames(timeline);
   amt = frame_num / (float)n_frames;
@@ -503,13 +502,10 @@ on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
     dim_amt = 0;
   angle = data->angle * amt;
 
-  /* Check for portrait mode - if so, our rotation axis is different! */
-  portrait = hd_comp_mgr_get_current_screen_height() >
-             hd_comp_mgr_get_current_screen_width();
-
   actor = CLUTTER_ACTOR(hd_render_manager_get());
-  clutter_actor_set_rotation(actor, portrait ? CLUTTER_Y_AXIS : CLUTTER_X_AXIS,
-                             frame_num < n_frames ? angle : 0,
+  clutter_actor_set_rotation(actor,
+      hd_comp_mgr_is_portrait () ? CLUTTER_Y_AXIS : CLUTTER_X_AXIS,
+      frame_num < n_frames ? angle : 0,
       hd_comp_mgr_get_current_screen_width()/2,
       hd_comp_mgr_get_current_screen_height()/2, 0);
   clutter_actor_set_depthu(actor, -CLUTTER_FLOAT_TO_FIXED(amt*150));
@@ -1130,7 +1126,7 @@ hd_transition_rotate_screen (MBWindowManager *wm, gboolean goto_portrait)
 
   if (Orientation_change.phase == IDLE)
     {
-      if (goto_portrait == (hd_comp_mgr_get_current_screen_height() > hd_comp_mgr_get_current_screen_width()))
+      if (goto_portrait == hd_comp_mgr_is_portrait ())
         {
           g_warning("%s: already in %s mode", __FUNCTION__,
                     goto_portrait ? "portrait" : "landscape");

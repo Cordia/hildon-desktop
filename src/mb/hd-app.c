@@ -25,12 +25,19 @@
 #include "hd-comp-mgr.h"
 #include "hd-wm.h"
 
+static Bool
+hd_app_request_geometry (MBWindowManagerClient *client,
+                         MBGeometry            *new_geometry,
+                         MBWMClientReqGeomType  flags);
+
 static void
 hd_app_class_init (MBWMObjectClass *klass)
 {
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdApp";
 #endif
+
+  MB_WM_CLIENT_CLASS (klass)->geometry = hd_app_request_geometry;
 }
 
 static void
@@ -129,6 +136,26 @@ hd_app_new (MBWindowManager *wm, MBWMClientWindow *win)
   return client;
 }
 
+static Bool
+hd_app_request_geometry (MBWindowManagerClient *client,
+                         MBGeometry            *new_geometry,
+                         MBWMClientReqGeomType  flags)
+{
+  /*
+   * Ignore the layout manager's request if we're in portrait but we don't
+   * support it.  The window manager ensures that we are not visible in
+   * this case.  If we were it couldn't be in portrait mode because we don't
+   * support it.  When the wm exits portrait mode we'll be reconfigured,
+   * then we can do a proper geometry change.
+   */
+  if ((flags & MBWMClientReqGeomIsViaLayoutManager)
+      &&  hd_comp_mgr_is_portrait ()
+      && !hd_comp_mgr_client_supports_portrait (client))
+    return False;
+  return MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)))
+    ->geometry (client, new_geometry, flags);
+}
+
 MBWindowManagerClient*
 hd_app_get_next_group_member (HdApp *app)
 {
@@ -220,4 +247,3 @@ hd_app_close_followers (HdApp *app)
 
   return MB_WM_CLIENT (leader);
 }
-
