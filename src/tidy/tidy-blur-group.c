@@ -90,10 +90,7 @@ const char *SATURATE_FRAGMENT_SHADER =
 "uniform lowp float saturation;\n"
 "void main () {\n"
 "  lowp vec4 color = frag_color * texture2D (tex, tex_coord);\n"
- /* just multiply by random numbers to give a dither effect. 0.03125 = 1/32, as
-  * this is the lowest precision of RGB565 */
-"  lowp float noise = fract(tex_coord.x*123.4 + tex_coord.y*156.7) * 0.03125; \n"
-"  lowp float lightness = (color.r+color.g+color.b)*0.333*(1.0-saturation) + noise; \n"
+"  lowp float lightness = (color.r+color.g+color.b)*0.333*(1.0-saturation); \n"
 "  gl_FragColor = vec4(\n"
 "                      color.r*saturation + lightness,\n"
 "                      color.g*saturation + lightness,\n"

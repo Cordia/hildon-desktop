@@ -1,5 +1,9 @@
 2009-06-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/tidy/tidy-blur-group.c: Remove dithering code from blur class.
+	  With clutter >= 0.8.2-0maemo36, blurring is turned on for everything
+	  by default - and GLES/SGX does a better job than the pixel shader.
+
 	* src/home/hd-render-manager.c: Ensure that applets fade out, but 
 	  don't fade in. Doing fade as well as fade back from blur meant that
 	  applets seemed to just be made visible immediately previously.
