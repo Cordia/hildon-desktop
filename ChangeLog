@@ -1,5 +1,11 @@
 2009-06-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	General speed optimisation
+	* src/home/hd-home-view.c: Ensure that when a home view isn't visible,
+	  the container for the applets on it isn't visible either.
+	* src/home/hd-home-view-container.c: Ensure that home views that are
+	  not onscreen are clutter_actor_hidden.	  
+
 	Fixes: NB#120492 - Unparented animation actors are displayed.
 	
 	* src/home/hd-render-manager.c: Added hd_render_manager_should_hide

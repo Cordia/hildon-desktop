@@ -484,7 +484,7 @@ hd_home_view_container_allocate (ClutterActor          *self,
 
   for (i = 0; i < MAX_HOME_VIEWS; i++)
     {
-      if (!CLUTTER_ACTOR_IS_VISIBLE (priv->views[i]))
+      if (!priv->active_views[i])
         continue;
 
       child_box.x1 = width;
@@ -509,6 +509,23 @@ hd_home_view_container_allocate (ClutterActor          *self,
         }
 
       clutter_actor_allocate (priv->views[i], &child_box, absolute_origin_changed);
+
+      /* Make sure offscreen views are hidden. Views positioned offscreen
+       * wouldn't be seen anyway, but they introduce extra overheads in
+       * Clutter/GLES if they are CLUTTER_ACTOR_IS_VISIBLE. We use < rather
+       * than <= here because given the positioning above, the clause would
+       * always be true otherwise */
+      if ((child_box.x1 < width) &&
+          (child_box.x2 > 0))
+        {
+          if (!CLUTTER_ACTOR_IS_VISIBLE(priv->views[i]))
+            clutter_actor_show(priv->views[i]);
+        }
+      else
+        {
+          if (CLUTTER_ACTOR_IS_VISIBLE(priv->views[i]))
+            clutter_actor_hide(priv->views[i]);
+        }
     }
 }
 

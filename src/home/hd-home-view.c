@@ -261,6 +261,23 @@ hd_home_view_background_release (ClutterActor *self,
   return TRUE;
 }
 
+/* applets_container is not a member of HdHomeView (it is in HdHome's 'front'
+ * container. Hence we want to show/hide the applets container whenever the
+ * home view itself is hidden */
+static gboolean hd_home_view_shown(HdHomeView   *view) {
+  HdHomeViewPrivate        *priv = view->priv;
+  clutter_actor_show(priv->applets_container);
+  return FALSE;
+}
+/* applets_container is not a member of HdHomeView (it is in HdHome's 'front'
+ * container. Hence we want to show/hide the applets container whenever the
+ * home view itself is hidden */
+static gboolean hd_home_view_hidden(HdHomeView   *view) {
+  HdHomeViewPrivate        *priv = view->priv;
+  clutter_actor_hide(priv->applets_container);
+  return FALSE;
+}
+
 static void
 hd_home_view_constructed (GObject *object)
 {
@@ -312,6 +329,11 @@ hd_home_view_constructed (GObject *object)
   g_signal_connect (object, "notify::allocation",
                     G_CALLBACK (hd_home_view_allocation_changed),
                     object);
+
+  g_signal_connect (object, "show",
+                    G_CALLBACK (hd_home_view_shown), NULL);
+  g_signal_connect (object, "hide",
+                    G_CALLBACK (hd_home_view_hidden), NULL);
 
 }
 
