@@ -73,6 +73,7 @@ struct _HdSwitcherPrivate
   MBWMCompMgrClutter   *comp_mgr;
 
   gboolean long_press;
+  gboolean pressed;
   guint press_timeout;
 };
 
@@ -356,6 +357,9 @@ hd_switcher_clicked (HdSwitcher *switcher)
       priv->press_timeout = 0;
     }
 
+  if (!priv->pressed)
+    return;
+  priv->pressed = FALSE;
   /*
    * We have the following scenarios:
    *
@@ -408,6 +412,8 @@ hd_switcher_press (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
+  priv->pressed = TRUE;
+
   if (priv->press_timeout)
     g_source_remove (priv->press_timeout);
 
@@ -441,6 +447,8 @@ hd_switcher_leave (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = switcher->priv;
 
+  priv->pressed = FALSE;
+  
   if (priv->press_timeout)
     {
       g_source_remove (priv->press_timeout);

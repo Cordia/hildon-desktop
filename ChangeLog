@@ -1,3 +1,8 @@
+2009-06-08  Laszlo Pere  <lpere@blumsoft.eu>
+	NB#120612 Unwanted activation of the task launcher/switcher button
+
+	* src/home/hd-switcher.c: Handling the 'pressed' state for the button.
+
 2009-06-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.52

@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.53-1~unreleased) unstable; urgency=low
 
-  * foo
+  Laszlo:
+  * Fixes: NB#120612 - Unwanted activation of the task launcher/switcher button
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  8 Jun 2009 10:39:10 +0300
 
