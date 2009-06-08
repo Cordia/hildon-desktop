@@ -1,10 +1,16 @@
+2009-06-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.52
+
 2009-06-08  Laszlo Pere  <lpere@blumsoft.eu>
+
 	NB#120955 Memory leaks in window manager.
 
 	* src/launcher/hd-launcher-tree.c: The last leak of the bug report has 
 	  been fixed by calling the g_key_file_free() function.
 
 2009-06-05  Laszlo Pere  <lpere@blumsoft.eu>
+
 	NB#119709 Device freezes if camera lens cover is opened while in 
 	          change background image dialog
 

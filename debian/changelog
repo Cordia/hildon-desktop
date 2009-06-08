@@ -1,16 +1,62 @@
-hildon-desktop (1:2.2.52-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.52-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#120122 - hildon-desktop has a versioned dependency on
     theme-config
   * Fixes: NB#120248 - observed a hildon-desktop crash.
+  * Fixes: NB#119753 - Support for full screen mode without compositing
 
   Laszlo:
   * Fixes: NB#119709 - Device freezes if camera lens cover is opened while in
     change background image dialog.
   * Fixes: NB#120955 - Memory leaks in window manager.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  1 Jun 2009 08:55:08 +0300
+  Adam:
+  * Fixes: NB#120571 - ROTATION: Call idle view is not completely Displayed
+    in certain scenario
+  * Fixes: NB#120066 - ROTATION: Cannot go back to home view after closing
+    phone application
+  * Fixes: NB#116272 - ROTATION: Incoming call dialog does not rotate if not
+    on the home view
+  * Fixes: NB#116566 - Device hangs completely after disconnecting call when
+    device lock is active
+  * Fixes: NB#117944 - Part of thumbnail in switcher view is shown above the
+    the task switcher button in the mentioned scenario.
+  * Fixes: NB#111840 - Camera contains two close icons in minimized state in
+    full screen mode
+  * Fixes: NB#118305 - Application is remains in fullscreen in task switcher
+    area in mentioned scenario
+
+  Marc:
+  * Fixes: NB#120342 - Progress indicator overlapped with long window title
+  * Fixes: NB#118215 - Resuming background killed task banner "%s - resuming"
+    is not shown while maximizing the background killed application.
+  * Fixes: NB#119691 - Unable to launch Call UI if device is turned to
+    portrait mode
+
+  Gordon:
+  * Fixes: NB#120722 - Scaled background image shows dark lines at bottom,
+    right
+  * Fixes: NB#118976 - Transition speed mismatch when dismissing the
+    applications-submenu
+  * Fixes: NB#120118 - Observed GLIB CRITICAL ** Clutter -
+    clutter_actor_destroy: CLUTTER_IS_ACTOR(0x337270) FAILED
+  * Fixes: NB#119249 - Found hildon desktop crash for missed call alert in
+    task switcher view
+  * Fixes: NB#119082 - Information notes missing the blur/dim effect
+  * Fixes: NB#119381 - Status area to be dimmed when there's UI dialog shown
+    on display
+
+  Thomas:
+  * Fixes: NB#120044 - Top-most application banners are blocked with DND flag
+    set
+
+  Jan Arne:
+  * Fixes: NB#119446 - Media player shortcut applet is movable in all homes
+  * Fixes: NB#116276 - In the left corner of the title area, there should be
+    alayout mode icon.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 08 Jun 2009 10:27:00 +0300
 
 hildon-desktop (1:2.2.51-1) unstable; urgency=low
 
