@@ -239,10 +239,12 @@ walk_thread_func (gpointer user_data)
           g_key_file_free (key_file);
           key_file = NULL;
         }
-      if (key_file)
+      if (key_file) {
         item = hd_launcher_item_new_from_keyfile (id,
                   gmenu_tree_directory_get_menu_id (data->root),
                   key_file, NULL);
+	g_key_file_free (key_file);
+      }
       if (item)
         data->items = g_list_prepend (data->items, (gpointer)item);
 

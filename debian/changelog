@@ -8,6 +8,7 @@ hildon-desktop (1:2.2.52-1~unreleased) unstable; urgency=low
   Laszlo:
   * Fixes: NB#119709 - Device freezes if camera lens cover is opened while in
     change background image dialog.
+  * Fixes: NB#120955 - Memory leaks in window manager.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  1 Jun 2009 08:55:08 +0300
 
