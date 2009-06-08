@@ -1,3 +1,11 @@
+2009-06-08  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#120492 - Unparented animation actors are displayed.
+	
+	* src/home/hd-render-manager.c: Added hd_render_manager_should_hide
+	which checks MBWMCompMgrClutterClientDontShow. This is then used
+	when setting visibility of actors.
+
 2009-06-08  Laszlo Pere  <lpere@blumsoft.eu>
 	NB#120612 Unwanted activation of the task launcher/switcher button
 

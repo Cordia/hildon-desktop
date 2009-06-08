@@ -243,7 +243,8 @@ hd_render_manager_set_property (GObject      *gobject,
                                 guint         prop_id,
                                 const GValue *value,
                                 GParamSpec   *pspec);
-
+static
+gboolean hd_render_manager_should_hide(ClutterActor *actor);
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------  RANGE      */
 /* ------------------------------------------------------------------------- */
@@ -1215,7 +1216,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
   g_debug("%s: STATE %s -> STATE %s", __FUNCTION__,
       hd_render_manager_state_str(priv->state),
-      hd_render_manager_state_str(state)); 
+      hd_render_manager_state_str(state));
 
   if (!priv->comp_mgr)
   {
@@ -1715,8 +1716,12 @@ void hd_render_manager_restack()
               {
                 clutter_actor_reparent(child, CLUTTER_ACTOR(priv->app_top));
                 clutter_actor_lower_bottom(child);
-                clutter_actor_show(child); /* because it is in app-top, vis
-                                              check does not get applied */
+
+                /* because it is in app-top, vis check does not get applied */
+                if (hd_render_manager_should_hide(child))
+                  clutter_actor_hide(child);
+                else
+                  clutter_actor_show(child);
               }
             /* If this is maximized, or in dialog's position, don't
              * blur anything after */
@@ -2050,6 +2055,23 @@ hd_render_manager_get_wm_client_from_actor(ClutterActor *actor)
 }
 
 static
+gboolean hd_render_manager_should_hide(ClutterActor *actor)
+{
+  MBWindowManagerClient *wm_client;
+  MBWMCompMgrClutterClient *cm_client;
+
+  wm_client = hd_render_manager_get_wm_client_from_actor(actor);
+  if (!(wm_client && wm_client->cm_client))
+    return FALSE;
+  cm_client = MB_WM_COMP_MGR_CLUTTER_CLIENT(wm_client->cm_client);
+
+  /* This flag is set for Animation Actors that don't wish to be visible
+   * before being parented */
+  return (mb_wm_comp_mgr_clutter_client_get_flags(cm_client) &
+          MBWMCompMgrClutterClientDontShow);
+}
+
+static
 gboolean hd_render_manager_actor_opaque(ClutterActor *actor)
 {
   MBWindowManager *wm;
@@ -2147,7 +2169,8 @@ void hd_render_manager_set_visibilities()
           clutter_actor_get_geometry(child, &geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
           VISIBILITY ("IS %p (%dx%d%+d%+d) VISIBLE?", child, MBWM_GEOMETRY(&geo));
-          if (show_window && hd_render_manager_is_visible(blockers, geo))
+          if (show_window && hd_render_manager_is_visible(blockers, geo) &&
+              !hd_render_manager_should_hide(child))
             {
               VISIBILITY ("IS");
               clutter_actor_show(child);
