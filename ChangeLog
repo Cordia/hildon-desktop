@@ -1,5 +1,9 @@
 2009-06-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/home/hd-render-manager.c: Ensure that applets fade out, but 
+	  don't fade in. Doing fade as well as fade back from blur meant that
+	  applets seemed to just be made visible immediately previously.
+
 	General speed optimisation
 	* src/home/hd-home-view.c: Ensure that when a home view isn't visible,
 	  the container for the applets on it isn't visible either.

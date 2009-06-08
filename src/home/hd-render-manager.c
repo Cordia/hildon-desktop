@@ -670,6 +670,13 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 
   if (blur & HDRM_SHOW_APPLETS)
     {
+      /* Set .a here because we want to show applets immediately
+       * (because we'll fade back from the blurred (non-appletted) image
+       * at the same time, and fading applets too makes them appear to
+       * just flick up). Fading out is fine though, so we want to do that
+       * slowly.
+       */
+      priv->applets_opacity.a = 1;
       priv->applets_opacity.b = 1;
     }
 
