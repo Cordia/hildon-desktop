@@ -683,6 +683,11 @@ void hd_app_mgr_hibernatable (HdRunningApp *app, gboolean hibernatable)
     hd_app_mgr_add_to_queue (QUEUE_HIBERNATABLE, app);
   else
     hd_app_mgr_remove_from_queue (QUEUE_HIBERNATABLE, app);
+
+  /* Go to state check, as marking an app hibernatable could mean we
+   * have to bgkill it immediately.
+   */
+  hd_app_mgr_state_check ();
 }
 
 /* Application management */
