@@ -75,7 +75,7 @@ gboolean hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id);
 gboolean hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable);
 
 /* Controlling running apps. */
-gboolean hd_app_mgr_wakeup       (HdRunningApp *app);
+gboolean hd_app_mgr_activate     (HdRunningApp *app);
 gboolean hd_app_mgr_kill         (HdRunningApp *app);
 void     hd_app_mgr_kill_all     (void);
 void     hd_app_mgr_hibernatable (HdRunningApp *app, gboolean hibernatable);

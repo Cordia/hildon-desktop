@@ -2200,8 +2200,16 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                    && !hd_wm_has_modal_blockers (mgr->wm))
             hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
           else
-            /* unregister_client() will switch state if it thinks so */
-            hd_transition_close_app (hmgr, c);
+            {
+              HdCompMgrClient *hclient = HD_COMP_MGR_CLIENT (c->cm_client);
+              HdRunningApp *app = hd_comp_mgr_client_get_app (hclient);
+
+              /* Avoid this transition if app is being hibernated. */
+              if (!app ||
+                  hd_running_app_get_state (app) == HD_APP_STATE_SHOWN)
+                /* unregister_client() will switch state if it thinks so */
+                hd_transition_close_app (hmgr, c);
+            }
           app->map_effect_before = FALSE;
         }
     }
@@ -2442,7 +2450,7 @@ hd_comp_mgr_close_client (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc)
 void
 hd_comp_mgr_wakeup_client (HdCompMgr *hmgr, HdCompMgrClient *hclient)
 {
-  hd_app_mgr_wakeup (hclient->priv->app);
+  hd_app_mgr_activate (hclient->priv->app);
 }
 
 void

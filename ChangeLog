@@ -1,3 +1,16 @@
+2009-06-09  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Retry waking up hibernated apps if not shown in 10s.
+	Fixes: NB#121512
+
+	* src/launcher/hd-app-mgr.c: Separated part of hd_app_mgr_launch into a new
+	method hd_app_mgr_activate for when we already have the HdRunningApp.
+	Don't immediately close apps when killing them, wait for their dbus service
+	or windows to close.
+	* src/launcher/hd-app-mgr.h:
+	* src/mb/hd-comp-mgr.c: Use the new hd_app_mgr_activate when waking up
+	apps so it will be retried if failed.
+
 2009-06-09  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-cached-group.h: Fixed copy/paste #define bug

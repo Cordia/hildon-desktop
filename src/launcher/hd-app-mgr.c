@@ -201,6 +201,7 @@ gboolean hd_app_mgr_start     (HdRunningApp *app);
 gboolean hd_app_mgr_relaunch  (HdRunningApp *app);
 gboolean hd_app_mgr_prestart  (HdRunningApp *app);
 gboolean hd_app_mgr_hibernate (HdRunningApp *app);
+gboolean hd_app_mgr_wakeup    (HdRunningApp *app);
 static gboolean hd_app_mgr_service_top (const gchar *service,
                                         const gchar *param);
 static gboolean  hd_app_mgr_execute (const gchar *exec, GPid *pid);
@@ -715,7 +716,6 @@ hd_app_mgr_launch (HdLauncherApp *launcher)
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   gboolean result = FALSE;
   HdRunningApp *app = NULL;
-  HdRunningAppState state;
   GList *link = NULL;
 
   /* Find if we already have a running app for this launcher. */
@@ -729,6 +729,31 @@ hd_app_mgr_launch (HdLauncherApp *launcher)
       /* We need to create a new running app for it. */
       app = hd_running_app_new (launcher);
     }
+
+  result = hd_app_mgr_activate (app);
+
+  if (!link)
+    {
+      /* We just created this running app, so add to list or get rid of it. */
+      if (result)
+        priv->running_apps = g_list_prepend (priv->running_apps, app);
+      else
+        g_object_unref (app);
+    }
+
+  return result;
+}
+
+/* This function either:
+ * - Relaunches an app if already running.
+ * - Wakes up an app if it's hibernating.
+ * - Starts the app if not running.
+ */
+gboolean
+hd_app_mgr_activate (HdRunningApp *app)
+{
+  gboolean result = FALSE;
+  HdRunningAppState state;
 
   state = hd_running_app_get_state (app);
   switch (state)
@@ -748,18 +773,10 @@ hd_app_mgr_launch (HdLauncherApp *launcher)
       result = FALSE;
   }
 
-  if (!link)
-    {
-      /* We just created this running app, so add to list or get rid of it. */
-      if (result)
-        priv->running_apps = g_list_prepend (priv->running_apps, app);
-      else
-        g_object_unref (app);
-    }
   if (!result)
     {
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LOADING_FAIL],
-          0, launcher, NULL);
+          0, hd_running_app_get_launcher_app (app), NULL);
     }
   else if (state != HD_APP_STATE_SHOWN)
     {
@@ -771,6 +788,7 @@ hd_app_mgr_launch (HdLauncherApp *launcher)
                              (GSourceFunc)hd_app_mgr_loading_timeout,
                              g_object_ref (app));
     }
+
   return result;
 }
 
@@ -861,6 +879,12 @@ hd_app_mgr_loading_timeout (HdRunningApp *app)
           0, launcher, NULL);
     }
 
+  /* If the app was hibernated and didn't appear in time, try again. */
+  if (hd_running_app_get_state (app) == HD_APP_STATE_HIBERNATING)
+    {
+      hd_app_mgr_activate (app);
+    }
+
   g_object_unref (app);
   return FALSE;
 }
@@ -898,7 +922,6 @@ hd_app_mgr_kill (HdRunningApp *app)
   if (kill (pid, SIGTERM) != 0)
     return FALSE;
 
-  hd_app_mgr_app_closed (app);
   return TRUE;
 }
 
@@ -942,11 +965,11 @@ hd_app_mgr_app_closed (HdRunningApp *app)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
+  HdRunningAppState state = hd_running_app_get_state (app);
 
-  if (hd_running_app_get_state (app) == HD_APP_STATE_HIBERNATING)
+  if (state == HD_APP_STATE_HIBERNATING)
     {
-      hd_running_app_set_pid (app, 0);
-      hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
+      /* Do nothing with hibernating apps, as we need to keep them around. */
       return;
     }
 
@@ -1123,11 +1146,12 @@ hd_app_mgr_hibernate (HdRunningApp *app)
     /* Can't hibernate a non-dbus app. */
     return FALSE;
 
-  g_debug ("%s: service %s\n", __FUNCTION__, service);
   if (hd_app_mgr_kill (app))
     {
       hd_running_app_set_state (app, HD_APP_STATE_HIBERNATING);
       hd_app_mgr_move_queue (QUEUE_HIBERNATABLE, QUEUE_HIBERNATED, app);
+      hd_running_app_set_pid (app, 0);
+      hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
     }
   else
     {
@@ -1142,6 +1166,8 @@ hd_app_mgr_hibernate (HdRunningApp *app)
 gboolean
 hd_app_mgr_wakeup   (HdRunningApp *app)
 {
+  g_return_val_if_fail (app, FALSE);
+
   gboolean res = FALSE;
   const gchar *service = hd_running_app_get_service (app);
 
