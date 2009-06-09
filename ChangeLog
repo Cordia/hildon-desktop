@@ -1,3 +1,17 @@
+2009-06-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#121066 Even when conversation window of a particular contact is open,
+		  a separate notification is shown in switcher
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed):
+	  Take notice of changes to _HILDON_NOTIFICATION_THREAD
+	  and tell tasw about it.
+	* src/home/hd-task-navigator.h
+	* src/home/hd-task-navigator.c (hd_task_navigator_notification_thread_changed):
+	  Handle it.
+	  Also changed FLY_EFFECT_DURATION to 250 ms.
+	* TODO: reality check
+
 2009-06-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-blur-group.c: Remove dithering code from blur class.

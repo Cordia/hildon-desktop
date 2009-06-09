@@ -54,11 +54,15 @@ void hd_task_navigator_remove_window    (HdTaskNavigator *self,
                                          ClutterActor *win,
                                          ClutterEffectCompleteFunc fun,
                                          gpointer funparam);
+
+void hd_task_navigator_hibernate_window (HdTaskNavigator *self,
+                                         ClutterActor *win);
 void hd_task_navigator_replace_window   (HdTaskNavigator *self,
                                          ClutterActor *old_win,
                                          ClutterActor *new_win);
-void hd_task_navigator_hibernate_window (HdTaskNavigator *self,
-                                         ClutterActor *win);
+void hd_task_navigator_notification_thread_changed (HdTaskNavigator *self,
+                                                    ClutterActor *win,
+                                                    char *nothread);
 
 void hd_task_navigator_add_dialog (HdTaskNavigator *self,
                                    ClutterActor *win,

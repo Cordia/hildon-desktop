@@ -148,7 +148,7 @@
  */
 #if 1
 # define ZOOM_EFFECT_DURATION      200
-# define FLY_EFFECT_DURATION       400
+# define FLY_EFFECT_DURATION       250
 #else
 # define ZOOM_EFFECT_DURATION      1000
 # define FLY_EFFECT_DURATION       1000
@@ -327,8 +327,13 @@ typedef struct
        * -- @nodest:      What notifications this thumbnails is destination for.
        *                  Taken from the _HILDON_NOTIFICATION_THREAD property
        *                  of the thumbnail's client or its WM_CLASS hint.
-       *                  Once checked not refreshed again.  Used in matching
-       *                  the appropriate TNote for this application.
+       *                  Once checked when the window is added then whenever
+       *                  hd_task_navigator_notification_thread() is called.
+       *                  TODO How about replace_window()?
+       *                  Normally two or more application thumbnails should
+       *                  not have the same @nodest.  It is undefined how to
+       *                  handale this case but we'll try our best.  Used in
+       *                  matching the appropriate TNote for this application.
        */
       gchar               *nodest;
 
@@ -2330,75 +2335,6 @@ damage_control:
 }
 /* Zooming }}} */
 
-/* Misc window commands {{{ */
-/* Prepare for the client of @win being hibernated.
- * Undone when @win is replaced by the woken-up client's new actor. */
-void
-hd_task_navigator_hibernate_window (HdTaskNavigator * self,
-                                    ClutterActor * win)
-{
-  Thumbnail *apthumb;
-
-  if (!(apthumb = find_by_apwin (win)))
-    return;
-
-  /* Hibernating clients twice is a nonsense. */
-  g_return_if_fail (apthumb->win != NULL);
-
-  /* Save the window name and markupability for reset_thumb_title(). */
-  g_return_if_fail (apthumb->win->name);
-  apthumb->saved_title = g_strdup (apthumb->win->name);
-  apthumb->title_had_markup = apthumb->win->name_has_markup;
-
-  /* Release .win. */
-  mb_wm_object_signal_disconnect (MB_WM_OBJECT (apthumb->win),
-                                  apthumb->win_changed_cb_id);
-  apthumb->win = NULL;
-}
-
-/* Tells us to show @new_win in place of @old_win, and forget about
- * the latter one entirely.  Replaceing the window doesn't affect
- * its dialogs if any was set earlier. */
-void
-hd_task_navigator_replace_window (HdTaskNavigator * self,
-                                  ClutterActor * old_win,
-                                  ClutterActor * new_win)
-{ g_debug (__FUNCTION__);
-  Thumbnail *apthumb;
-  gboolean showing;
-
-  if (old_win == new_win || !(apthumb = find_by_apwin (old_win)))
-    return;
-
-  /* Discard current .apwin and embrace @win_win. */
-  showing = hd_task_navigator_is_active ();
-  if (showing)
-    hd_render_manager_return_app (apthumb->apwin);
-  g_object_unref (apthumb->apwin);
-  apthumb->apwin = g_object_ref (new_win);
-  if (showing)
-    clutter_actor_reparent (apthumb->apwin, apthumb->windows);
-
-  /* Replace the client window structure with @new_win's. */
-  if (apthumb->win)
-    mb_wm_object_signal_disconnect (MB_WM_OBJECT (apthumb->win),
-                                    apthumb->win_changed_cb_id);
-  apthumb->win = actor_to_client_window (new_win, NULL);
-  if (apthumb->win)
-    {
-      g_free (apthumb->saved_title);
-      apthumb->saved_title = NULL;
-      apthumb->win_changed_cb_id = mb_wm_object_signal_connect (
-                     MB_WM_OBJECT (apthumb->win), MBWM_WINDOW_PROP_NAME,
-                     (MBWMObjectCallbackFunc)win_title_changed, apthumb);
-
-      /* Update the title now if it's shown (and not a notification). */
-      if (!thumb_has_notification (apthumb))
-        reset_thumb_title (apthumb);
-    }
-}
-/* Misc window commands }}} */
-
 /* Add/remove windows {{{ */
 static TNote *remove_nothumb (GList * li, gboolean destroy_tnote);
 static Thumbnail *add_nothumb (TNote * tnote);
@@ -2787,6 +2723,171 @@ hd_task_navigator_add_dialog (HdTaskNavigator * self,
   g_ptr_array_add (apthumb->dialogs, g_object_ref(dialog));
 }
 /* Add/remove windows }}} */
+
+/* Misc window commands {{{ */
+/* Prepare for the client of @win being hibernated.
+ * Undone when @win is replaced by the woken-up client's new actor. */
+void
+hd_task_navigator_hibernate_window (HdTaskNavigator * self,
+                                    ClutterActor * win)
+{
+  Thumbnail *apthumb;
+
+  if (!(apthumb = find_by_apwin (win)))
+    return;
+
+  /* Hibernating clients twice is a nonsense. */
+  g_return_if_fail (apthumb->win != NULL);
+
+  /* Save the window name and markupability for reset_thumb_title(). */
+  g_return_if_fail (apthumb->win->name);
+  apthumb->saved_title = g_strdup (apthumb->win->name);
+  apthumb->title_had_markup = apthumb->win->name_has_markup;
+
+  /* Release .win. */
+  mb_wm_object_signal_disconnect (MB_WM_OBJECT (apthumb->win),
+                                  apthumb->win_changed_cb_id);
+  apthumb->win = NULL;
+}
+
+/* Tells us to show @new_win in place of @old_win, and forget about
+ * the latter one entirely.  Replaceing the window doesn't affect
+ * its dialogs if any was set earlier. */
+void
+hd_task_navigator_replace_window (HdTaskNavigator * self,
+                                  ClutterActor * old_win,
+                                  ClutterActor * new_win)
+{ g_debug (__FUNCTION__);
+  Thumbnail *apthumb;
+  gboolean showing;
+
+  if (old_win == new_win || !(apthumb = find_by_apwin (old_win)))
+    return;
+
+  /* Discard current .apwin and embrace @win_win. */
+  showing = hd_task_navigator_is_active ();
+  if (showing)
+    hd_render_manager_return_app (apthumb->apwin);
+  g_object_unref (apthumb->apwin);
+  apthumb->apwin = g_object_ref (new_win);
+  if (showing)
+    clutter_actor_reparent (apthumb->apwin, apthumb->windows);
+
+  /* Replace the client window structure with @new_win's. */
+  if (apthumb->win)
+    mb_wm_object_signal_disconnect (MB_WM_OBJECT (apthumb->win),
+                                    apthumb->win_changed_cb_id);
+  apthumb->win = actor_to_client_window (new_win, NULL);
+  if (apthumb->win)
+    {
+      g_free (apthumb->saved_title);
+      apthumb->saved_title = NULL;
+      apthumb->win_changed_cb_id = mb_wm_object_signal_connect (
+                     MB_WM_OBJECT (apthumb->win), MBWM_WINDOW_PROP_NAME,
+                     (MBWMObjectCallbackFunc)win_title_changed, apthumb);
+
+      /* Update the title now if it's shown (and not a notification). */
+      if (!thumb_has_notification (apthumb))
+        reset_thumb_title (apthumb);
+    }
+}
+
+/*
+ * Sets the @win's %Thumbnail's @nodest.  @nodest == %NULL clears it.
+ * It is an error if the associated %Thumbnail cannot be found, but
+ * we'll do nothing then.  If it already has a notification it will be
+ * swapped out.  If there's a notification destined for @nothread it
+ * will be taken by @win's thumbnail.  If other application thumbnail
+ * has such a notification it will be taken away and the other thumbnail
+ * will be deprived of its @nodest.  This is designed to allow clients
+ * to change threads in arbitrary order to transfer notifications from
+ * one thumbnail to another.
+ *
+ * The callee is responsible for managing @nothread.
+ */
+void
+hd_task_navigator_notification_thread_changed (HdTaskNavigator * self,
+                                               ClutterActor * win,
+                                               char * nothread)
+{
+  GList *li;
+  gboolean relayout;
+  ClutterActor *newborn;
+  Thumbnail *apthumb, *thumb;
+
+  /* Get @apthumb. */
+  if (!(apthumb = find_by_apwin (win)))
+    {
+      if (nothread)
+        XFree (nothread);
+      return;
+    }
+
+  /* Has anything changed? */
+  if (!nothread && !apthumb->nodest)
+    return;
+  if (nothread && apthumb->nodest && !strcmp (nothread, apthumb->nodest))
+    {
+      XFree (nothread);
+      return;
+    }
+
+  /* Drop our notification if we have any.  layout() later,
+   * when we've finished recreating frames as necessary. */
+  newborn = NULL;
+  if (thumb_has_notification (apthumb))
+    newborn = add_nothumb (orphan_notification (apthumb))->thwin;
+  if (apthumb->nodest)
+    {
+      XFree (apthumb->nodest);
+      apthumb->nodest = NULL;
+    }
+
+  /* @nothread -> @apthumb. */
+  if (!nothread)
+    {
+      reset_thumb_title (apthumb);
+      recreate_thumb_frame (apthumb);
+      if (newborn)
+        layout (newborn);
+      return;
+    }
+  apthumb->nodest = nothread;
+
+  /* Search for notifications destined to @nothread and claim
+   * the first one we can find. */
+  relayout = FALSE;
+  for_each_thumbnail (li, thumb)
+    if (thumb_has_notification (thumb)
+        && tnote_matches_thumb (thumb->tnote, apthumb))
+      {
+        if (thumb_is_application (thumb))
+          { /* It's another application's, take it away. */
+            adopt_notification (apthumb, orphan_notification (thumb));
+            if (thumb->nodest)
+              { /* Make sure @thumb won't receive our notifications. */
+                XFree (thumb->nodest);
+                thumb->nodest = NULL;
+              }
+            reset_thumb_title (thumb);
+            recreate_thumb_frame (thumb);
+          }
+        else
+          { /* Individual notification thumbnail, kidnap it. */
+            adopt_notification (apthumb, remove_nothumb (li, FALSE));
+            relayout = TRUE;
+          }
+
+        reset_thumb_title (apthumb);
+        if (!newborn)
+          recreate_thumb_frame (apthumb);
+        break;
+      }
+
+  if (newborn || relayout)
+    layout (newborn);
+}
+/* Misc window commands }}} */
 /* }}} */
 
 /* Notification thumbnails {{{ */

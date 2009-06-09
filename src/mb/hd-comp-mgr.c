@@ -656,12 +656,14 @@ hd_comp_mgr_get_current_client (HdCompMgr *hmgr)
 }
 
 /* Called on #PropertyNotify to handle changes to
- * _HILDON_PORTRAIT_MODE_SUPPORT and _HILDON_PORTRAIT_MODE_REQUEST. */
+ * _HILDON_PORTRAIT_MODE_SUPPORT and _HILDON_PORTRAIT_MODE_REQUEST
+ * and _HILDON_APP_KILLABLE and _HILDON_ABLE_TO_HIBERNATE
+ * and _HILDON_DO_NOT_DISTURB and _HILDON_NOTIFICATION_THREAD. */
 Bool
 hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
 {
   static gint32 idontcare[] = { -1 };
-  Atom pok, prq, killable, able_to_hibernate, dnd;
+  Atom pok, prq, killable, able_to_hibernate, dnd, nothread;
   gint32 *value;
   MBWindowManager *wm;
   HdCompMgrClient *cc;
@@ -714,6 +716,30 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
     {
       hd_comp_mgr_check_do_not_disturb_flag (hmgr);
       return FALSE;
+    }
+
+  nothread = hd_comp_mgr_get_atom (hmgr, HD_ATOM_NOTIFICATION_THREAD);
+  if (event->atom == nothread)
+    {
+      char *str;
+      ClutterActor *a;
+      HdTaskNavigator *tasw;
+
+      c = mb_wm_managed_client_from_xwindow (wm, event->window);
+      if (!c || !c->cm_client)
+        return False;
+      tasw = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (
+                                           hmgr->priv->switcher_group));
+      a = mb_wm_comp_mgr_clutter_client_get_actor (
+                          MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client));
+      str = event->state == PropertyNewValue
+        ? hd_util_get_x_window_string_property (wm, c->window->xwindow,
+                                                HD_ATOM_NOTIFICATION_THREAD)
+        : NULL;
+      if (event->state != PropertyNewValue || str)
+        /* Otherwise don't mess up more. */
+        hd_task_navigator_notification_thread_changed (tasw, a, str);
+      return False;
     }
 
   /* Process PORTRAIT flags */
