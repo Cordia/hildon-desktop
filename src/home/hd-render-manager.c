@@ -689,6 +689,10 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
       range_equal(&priv->task_nav_zoom) &&
       range_equal(&priv->applets_opacity))
     {
+      /* Just make sure that we set everything up still - even if the
+       * ranges are the same, we may have changed 'a' and 'b' together
+       * (see applets_opacity) */
+      on_timeline_blur_new_frame(priv->timeline_blur, 0, NULL);
       hd_render_manager_sync_clutter_after();
       return;
     }

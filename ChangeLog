@@ -1,3 +1,10 @@
+2009-06-09  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c: regression fix for recent changes - 
+	  ensure that open app -> close app doesn't hide the applets, by
+	  making sure that even if we don't have to animate the values,
+	  we still make sure that actors are set correctly.
+
 2009-06-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#121066 Even when conversation window of a particular contact is open,
