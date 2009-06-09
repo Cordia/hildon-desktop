@@ -1,3 +1,7 @@
+2009-06-09  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/tidy/tidy-cached-group.h: Fixed copy/paste #define bug
+
 2009-06-09  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	When an app is marked hibernatable, check if we need to bgkill it

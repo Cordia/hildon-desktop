@@ -1,5 +1,5 @@
-#ifndef TIDYBLUR_H_
-#define TIDYBLUR_H_
+#ifndef TIDYCACHEDGROUP_H_
+#define TIDYCACHEDGROUP_H_
 
 #include <clutter/clutter-group.h>
 #include <clutter/clutter-types.h>
@@ -41,4 +41,4 @@ void tidy_cached_group_changed(ClutterActor *cached_group);
 G_END_DECLS
 
 
-#endif /*TIDYBLUR_H_*/
+#endif /*TIDYCACHEDGROUP_H_*/
