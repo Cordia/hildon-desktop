@@ -47,6 +47,7 @@ static HdAtoms IEProperties[] =
 {
   HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_ICON,
   HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_TIME,
+  HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_COUNT,
   HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY,
   HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_MESSAGE,
   HD_ATOM_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION,
@@ -115,7 +116,31 @@ x_window_property_changed (XPropertyEvent *event, HdNote *self)
       if (event->atom != hd_comp_mgr_get_atom (cmgr, IEProperties[i]))
         continue;
 
-      /* Invalidate the cache and emit a signal. */
+      /*
+       * Invalidate the cache and emit a signal.
+       *
+       * TODO When several properties are changed at once we emit
+       *      %HdNoteSignalChanged for each of them, which is not
+       *      good.  We can make use of hildon-home's custom that
+       *      whenever it updates a "switcher window" (notification
+       *      thumbnail at our side) it always sets the DESTINATION
+       *      property of the window and always does it last. Other
+       *      than that it occasionly sets the TIME of the window
+       *      individually.  In the end we could define a separate
+       *      signal for TIME and ignore property updates until
+       *      DESTINATION is finally set.
+       *
+       *      if (property == DESTINATION)
+       *      {
+       *        signal(HdNoteSignalChanged)
+       *        mass = FALSE;
+       *      } else if (mass)
+       *        ignore;
+       *      else if (property == TIME)
+       *        emit(HdNoteSignalTimeChanged)
+       *      else
+       *        mass = TRUE;
+       */
       if (self->properties[i])
         XFree (self->properties[i]);
       self->properties[i] = NULL;
@@ -420,6 +445,7 @@ const char *hd_note_get_##field (HdNote *self)                                \
 
 DEFINE_ACCESSOR(0, icon);
 DEFINE_ACCESSOR(1, time);
-DEFINE_ACCESSOR(2, summary);
-DEFINE_ACCESSOR(3, message);
-DEFINE_ACCESSOR(4, destination);
+DEFINE_ACCESSOR(2, count);
+DEFINE_ACCESSOR(3, summary);
+DEFINE_ACCESSOR(4, message);
+DEFINE_ACCESSOR(5, destination);

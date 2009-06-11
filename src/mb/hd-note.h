@@ -82,7 +82,7 @@ struct HdNote
 
   /* For IncomingEvent:s: property cache and signal id.
    * The strings in the cache are X-allocated. */
-  char *properties[5];
+  char *properties[6];
   unsigned long   property_changed_cb_id;
 };
 
@@ -95,6 +95,7 @@ MBWindowManagerClient* hd_note_new (MBWindowManager *wm, MBWMClientWindow *win);
 const char *hd_note_get_destination (HdNote *self);
 const char *hd_note_get_message (HdNote *self);
 const char *hd_note_get_summary (HdNote *self);
+const char *hd_note_get_count (HdNote *self);
 const char *hd_note_get_time (HdNote *self);
 const char *hd_note_get_icon (HdNote *self);
 

@@ -21,6 +21,7 @@
  *   .notwin                  #ClutterGroup         notifications
  *     .background            #ClutterCloneTexture  or apps w/notifs
  *     .icon                  #ClutterTexture
+ *     .count                 #ClutterLabel
  *     .time                  #ClutterLabel
  *     .message               #ClutterLabel
  *   .plate                   #ClutterGroup
@@ -138,6 +139,9 @@
 #define PRISON_XPOS               FRAME_WIDTH
 #define PRISON_YPOS               FRAME_TOP_HEIGHT
 
+/* Read: reduce by 4 pixels; only relevant if the time(label) wraps. */
+#define NOTIFICATION_TIME_LINESPACING pango_units_from_double(-4)
+
 /*
  * %ZOOM_EFFECT_DURATION:         Determines how many miliseconds should
  *                                it take to zoom thumbnails.  Tunable.
@@ -147,7 +151,7 @@
  *                                the windows are repositioned.
  */
 #if 1
-# define ZOOM_EFFECT_DURATION      200
+# define ZOOM_EFFECT_DURATION      250
 # define FLY_EFFECT_DURATION       250
 #else
 # define ZOOM_EFFECT_DURATION      1000
@@ -169,9 +173,12 @@
        (li) ? ((thumb) = li->data) : ((thumb) = NULL);                  \
        (li) = (li)->next)
 
-#define thumb_is_application(thumb)  ((thumb)->type == APPLICATION)
-#define thumb_is_notification(thumb) ((thumb)->type == NOTIFICATION)
+#define thumb_is_application(thumb)   ((thumb)->type == APPLICATION)
+#define thumb_is_notification(thumb)  ((thumb)->type == NOTIFICATION)
 #define thumb_has_notification(thumb) ((thumb)->tnote != NULL)
+
+#define THUMBSIZE_IS(what)            (Thumbsize == &Thumbsizes.what)
+#define FLY(ops, how)                 ((ops) == &Fly_##how)
 /* Macros }}} */
 
 /* Type definitions {{{ */
@@ -222,7 +229,7 @@ typedef struct
       ClutterActor *south_west, *south, *south_east;
     };
 
-    ClutterActor *pieces[9];
+    ClutterActor *pieces[8];
   };
 } Thumbnail_frame;
 
@@ -244,9 +251,16 @@ typedef struct
    *                          whenever there's a notification in order
    *                          to show it as a whole.
    * -- @icon:                %NULL until .notwin is layed out first
+   * -- @count:               Displays the message count (how many
+   *                          notification does this thumbnail represent).
+   * -- @time:                Displays the time elapsed since the last
+   *                          notification this thumbnail stands for
+   *                          arrived.  Anchored at NORTH.  May be wrapped.
+   * -- @message:             Referred to as "secondary text" in UI Specs.
+   *                          May be wrapped.
    */
   ClutterActor                *notwin;
-  ClutterActor                *background, *icon, *time, *message;
+  ClutterActor                *background, *icon, *count, *time, *message;
 } TNote;
 
 /* Our central object, the thumbnail. */
@@ -544,8 +558,9 @@ static ClutterEffectTemplate *Fly_effect, *Zoom_effect;
 static GPtrArray *Effects;
 
 /* gtkrc articles */
-static const gchar *SystemFont, *SmallSystemFont;
-static ClutterColor DefaultTextColor, ReversedTextColor;
+static const gchar *LargeSystemFont, *SystemFont, *SmallSystemFont;
+static ClutterColor DefaultTextColor;
+static ClutterColor NotificationTextColor, NotificationSecondaryTextColor;
 /* Private variables }}} */
 
 /* Program code */
@@ -1141,7 +1156,10 @@ resize_effect (ClutterTimeline * timeline, ClutterActor * actor,
     clutter_actor_set_height (actor, hfinal);
 
   if (!closure)
-    closure = new_effect (timeline, actor, NULL, resize_effect_complete);
+    {
+      closure = new_effect (timeline, actor, NULL, resize_effect_complete);
+      closure->effectid = resize_effect_complete;
+    }
   closure->width  = wfinal;
   closure->height = hfinal;
   clutter_timeline_start (timeline);
@@ -1165,7 +1183,7 @@ check_and_resize (ClutterActor * actor, gint width_new, gint height_new)
   clutter_actor_get_size (actor, &width_now, &height_now);
   if (width_now != width_new || height_now != height_new)
     resize (actor, width_new, height_new);
-  else if ((closure = has_effect (actor, resize_effect)) != NULL)
+  else if ((closure = has_effect (actor, resize_effect_complete)) != NULL)
     free_effect (closure->timeline, closure);
 }
 #endif /* __armel__ */
@@ -1313,17 +1331,6 @@ turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
 /* Boom effect }}} */
 
 /* Misc {{{ */
-/* #ClutterActor::notify::allocation callback to clip @actor to its size
- * whenever it changes.  Used to clip ClutterLabel:s to their allocated
- * size. */
-static void clip_on_resize (ClutterActor * actor)
-{
-  ClutterUnit width, height;
-
-  clutter_actor_get_sizeu (actor, &width, &height);
-  clutter_actor_set_clipu (actor, 0, 0, width, height);
-}
-
 /* Utility function to set up or change a #ClutterLabel. */
 static ClutterActor *
 set_label_text_and_color (ClutterActor * label, const char * newtext,
@@ -1339,6 +1346,56 @@ set_label_text_and_color (ClutterActor * label, const char * newtext,
                   || strcmp (newtext, text)))
     clutter_label_set_text (CLUTTER_LABEL (label), newtext);
   return label;
+}
+
+/* Query or set the line spacing of a #ClutterLabel if it's wrapping.
+ * For some reason this attribute is lost after you've changed the
+ * label's size so it needs to be restored. */
+#define get_label_line_spacing(label) \
+  pango_layout_get_spacing (clutter_label_get_layout (CLUTTER_LABEL (label)))
+#define set_label_line_spacing(label, spacing) \
+  pango_layout_set_spacing (clutter_label_get_layout (CLUTTER_LABEL (label)), \
+                            spacing)
+
+/* Returns pango's idea about the @label's height.
+ * Unlike clutter_actor_get_height() this includes
+ * linespace. */
+static gint
+get_real_label_height (ClutterActor * label)
+{
+  gint height;
+
+  pango_layout_get_pixel_size(clutter_label_get_layout(CLUTTER_LABEL(label)),
+                              NULL, &height);
+  return height;
+}
+
+/* #ClutterActor::notify::allocation callback to clip @actor to its size
+ * whenever it changes.  Used to clip ClutterLabel:s to their allocated
+ * size. */
+static void
+clip_on_resize (ClutterActor * actor)
+{
+  ClutterUnit width, height;
+
+  clutter_actor_get_sizeu (actor, &width, &height);
+  clutter_actor_set_clipu (actor, 0, 0, width, height);
+}
+
+/* Once you've specified an anchor point by gravity clutter forgets about it
+ * and only remembers the coordinates.  Reinforce it according to the new size
+ * of @actor. */
+static void
+reanchor_on_resize (ClutterActor * actor, gpointer unused, gpointer grv)
+{
+  clutter_actor_set_anchor_point_from_gravity (actor, GPOINTER_TO_INT (grv));
+}
+
+/* Linespacing is lost every now and then. */
+static void
+preserve_linespacing (ClutterActor * actor, gpointer unused, gpointer spc)
+{
+  set_label_line_spacing (actor, GPOINTER_TO_INT (spc));
 }
 
 /* Hide @actor and only show it after the flying animation finished.
@@ -1561,27 +1618,53 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
                const Flyops * ops)
 {
   TNote *tnote;
-  gboolean change;
-  guint isize, x, y;
-  GtkRequisition prison;
+  gboolean reload_icon;
+  gint x, y;
+  GtkRequisition max;
+  guint isize, msgdiv;
+  guint xicon, ycount, xmsg;
+  guint htime, hleft, hleftforme;
+  guint width, height, worig, horig;
 
   tnote = thumb->tnote;
-  get_prison_size (&prison);
   if (!ops)
     ops = &Fly_at_once;
+  get_prison_size (&max);
 
-  /* The icon size determines the placement of the inners of
-   * notification thumbnails.  If the icon size changes,
-   * those change too, but if not, neither does the rest. */
-  change = !tnote->icon /* first layout of .notwin */
+  /* .background */
+  clutter_actor_get_size (tnote->background, &width, &height);
+  ops->scale (tnote->background,
+              (gdouble)max.width / width, (gdouble)max.height / height);
+
+  /* How much space can we use in the prison?  There are fix margins
+   * at the sides and at the bottom. */
+  max.width -= 2*MARGIN_DEFAULT;
+  hleft = max.height - MARGIN_HALF;
+
+  /* Determine the icon size and the gap between .time and .message. */
+  if (THUMBSIZE_IS (large))
+    {
+      isize  = ICON_FINGER;
+      msgdiv = MARGIN_DEFAULT;
+    }
+  else if (THUMBSIZE_IS (medium))
+    {
+      isize  = ICON_STYLUS;
+      msgdiv = MARGIN_HALF;
+    }
+  else
+    {
+      isize  = ICON_STYLUS;
+      msgdiv = 0;
+    }
+
+  /* (Re)load the icon it if it hasn't been or its size is changing. */
+  reload_icon = !tnote->icon
     || oldthsize == &Thumbsizes.large
     || Thumbsize == &Thumbsizes.large;
-
-  /* .icon */
-  isize = Thumbsize == &Thumbsizes.large
-    ? ICON_FINGER : ICON_STYLUS;
-  if (change && tnote->icon)
+  if (reload_icon && tnote->icon)
     { /* Kill the icon and reload a different size. */
+      clutter_actor_get_position (tnote->icon, &x, &y);
       clutter_container_remove_actor (
                        CLUTTER_CONTAINER (tnote->notwin),
                        tnote->icon);
@@ -1594,43 +1677,96 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
       clutter_container_add_actor (
                        CLUTTER_CONTAINER (tnote->notwin),
                        tnote->icon);
+      if (reload_icon)
+        clutter_actor_set_position (tnote->icon, x, y);
     }
-  if (change)
-    ops->move (tnote->icon, MARGIN_DEFAULT, MARGIN_HALF);
 
-  /* .time: %MARGIN_DEFAULT on the left and centered vertically
-   * relative to the .icon. */
-  if (change)
+  /* Size and locate the notwin's guts. */
+  /* .icon, .count: separated by a margin and centered together. */
+  clutter_label_set_font_name (CLUTTER_LABEL (tnote->count),
+                   THUMBSIZE_IS (large) ? LargeSystemFont : SystemFont);
+  clutter_actor_get_size (tnote->count, &width, &height);
+  xicon  = (max.width - (isize + MARGIN_HALF + width)) / 2;
+  ycount = (isize-height) / 2;
+  hleft -= isize;
+
+  /* .time: it can wrap, take care not to lose the line spacing.
+   * See its natural (unwrapped) size then determine the height. */
+  if (FLY (ops, smoothly))
+    clutter_actor_get_size (tnote->time, &worig, &horig);
+  clutter_label_set_font_name (CLUTTER_LABEL (tnote->time),
+                   THUMBSIZE_IS (large) ? SystemFont : SmallSystemFont);
+  clutter_actor_set_size (tnote->time, -1, -1);
+  clutter_actor_get_size (tnote->time, &width, &htime);
+  if (width > max.width)
     {
-      clutter_label_set_font_name (CLUTTER_LABEL (tnote->time),
-                                   Thumbsize == &Thumbsizes.large
-                                     ? SystemFont : SmallSystemFont);
-      y = clutter_actor_get_height (tnote->time);
-      ops->move (tnote->time,
-                 MARGIN_DEFAULT + isize + MARGIN_DEFAULT,
-                 MARGIN_HALF    + (isize-y) / 2);
+      width = max.width;
+      clutter_actor_set_width (tnote->time, width);
+      htime = get_real_label_height (tnote->time);
+    }
+  if (hleft < htime)
+    { /* We must have lost linespacing or we have a 3-line-ling text. */
+      g_critical ("$time too high (%u > %u", htime, hleft);
+      hleft = 0;
+    }
+  else
+    hleft -= htime;
+  if (FLY (ops, smoothly))
+    {
+      clutter_actor_set_size (tnote->time, worig, horig);
+      ops->resize (tnote->time, width, htime);
     }
 
-  /* .message: %MARGIN_DEFAULT at left-right and %MARGIN_HALF
-   * at top-bottom. */
-  x = MARGIN_DEFAULT;
-  y = MARGIN_HALF + isize + MARGIN_HALF;
-  if (change)
-    ops->move (tnote->message, x, y);
-  ops->resize (tnote->message,
-               prison.width  - x - MARGIN_DEFAULT,
-               prison.height - y - MARGIN_HALF);
+  /*
+   * .message: like with .time but make sure not to exceed the space left
+   * in the prison.  It's not shown on @Thumbsizes.small nevertheless
+   * they need to be sized/positioned so we can animate when we're moving
+   * to a larger @Thumbsize.
+   */
+  hleft -= msgdiv;
+  if (FLY (ops, smoothly))
+    /* Only needed for flying. */
+    clutter_actor_get_size (tnote->message, &worig, &horig);
+  clutter_actor_set_size (tnote->message, -1, -1);
+  clutter_actor_get_size (tnote->message, &width, &height);
+  if (width > max.width)
+    {
+      width = max.width;
+      clutter_actor_set_width (tnote->message, width);
+      height = clutter_actor_get_height (tnote->message);
+    }
+  hleftforme = THUMBSIZE_IS (small) ? hleft/2 : hleft;
+  if (height > hleftforme)
+    height = hleftforme;
+  xmsg = (max.width-width) / 2;
+  if (!THUMBSIZE_IS (small))
+    hleft -= height;
+  if (FLY (ops, smoothly))
+    { /* Don't fly if it's (will be shortly) hidden. */
+      clutter_actor_set_size (tnote->message, worig, horig);
+      ops->resize (tnote->message, width, height);
+    }
+  else
+    clutter_actor_set_size (tnote->message, width, height);
 
-  /* Don't show .message on small thumbnails. */
-  if (Thumbsize == &Thumbsizes.small)
-    clutter_actor_hide (tnote->message);
-  else if (oldthsize == &Thumbsizes.small)
-    clutter_actor_show (tnote->message);
-
-  /* Background */
-  clutter_actor_get_size (tnote->background, &x, &y);
-  ops->scale (tnote->background,
-              (gdouble)prison.width / x, (gdouble)prison.height / y);
+  /* Finished with resizing, move them now. */
+  y = hleft / 2;
+  ops->move (tnote->icon,  MARGIN_DEFAULT + xicon, y);
+  ops->move (tnote->count, MARGIN_DEFAULT + xicon + MARGIN_HALF + isize,
+             y+ycount);
+  y += isize;
+  ops->move (tnote->time, MARGIN_DEFAULT+max.width/2, y);
+  y += htime + msgdiv;
+  if (!THUMBSIZE_IS (small))
+    {
+      clutter_actor_show (tnote->message);
+      ops->move (tnote->message, MARGIN_DEFAULT + xmsg, y);
+    }
+  else
+    {
+      clutter_actor_hide (tnote->message);
+      clutter_actor_set_position (tnote->message, MARGIN_DEFAULT + xmsg, y);
+    }
 }
 
 /*
@@ -1778,7 +1914,7 @@ reset_thumb_title (Thumbnail * thumb)
 
   g_assert (thumb->title != NULL);
   set_label_text_and_color (thumb->title, new_title, thumb->tnote
-                            ? &ReversedTextColor : &DefaultTextColor);
+                            ? &NotificationTextColor : &DefaultTextColor);
   clutter_label_set_use_markup (CLUTTER_LABEL(thumb->title), use_markup);
 }
 
@@ -2069,7 +2205,9 @@ release_win (const Thumbnail * apthumb)
                          (GFunc)hd_render_manager_return_dialog, NULL);
 }
 
-/* Hide our .prison behind @tnote->notwin. */
+/* Hide our .prison behind @tnote->notwin.  To allow for greater
+ * flexibility it doesn't recreate_thumb_frame() nor reset_thumb_title()
+ * but you should do that at some point yourself. */
 static void
 adopt_notification (Thumbnail * apthumb, TNote * tnote)
 {
@@ -2892,12 +3030,40 @@ hd_task_navigator_notification_thread_changed (HdTaskNavigator * self,
 
 /* Notification thumbnails {{{ */
 /* %TNote:s {{{ */
+/* Compares two stringified base-10 numbers. */
+static gint
+numstrcmp(const gchar * a, const gchar * b)
+{
+  gint decision;
+
+  if (!a || !b)
+    return 0;
+  decision = 0;
+
+  for (; ; a++, b++)
+    {
+      if ( *a && !*b)
+              return  1;
+      if (!*a &&  *b)
+              return -1;
+      if (!*a && !*b)
+              return  decision;
+      if (decision)
+              continue;
+      if (*a < *b)
+              decision = -1;
+      if (*a > *b)
+              decision =  1;
+    }
+}
+
 /* HdNote::HdNoteSignalChanged signal handler. */
 static Bool
 tnote_changed (HdNote * hdnote, int unused1, TNote * tnote)
 { g_debug(__FUNCTION__);
   GList *li;
   Thumbnail *thumb;
+  gboolean is_more;
   const char *iname, *oname;
 
   for_each_thumbnail (li, thumb)
@@ -2905,8 +3071,13 @@ tnote_changed (HdNote * hdnote, int unused1, TNote * tnote)
       break;
   g_assert (thumb != NULL);
 
+  is_more = numstrcmp (clutter_label_get_text (CLUTTER_LABEL (tnote->count)),
+                       hd_note_get_count (tnote->hdnote)) < 0;
   set_label_text_and_color (tnote->time,
                             hd_note_get_time (tnote->hdnote),
+                            NULL);
+  set_label_text_and_color (tnote->count,
+                            hd_note_get_count (tnote->hdnote),
                             NULL);
   set_label_text_and_color (tnote->message,
                             hd_note_get_message (tnote->hdnote),
@@ -2919,21 +3090,20 @@ tnote_changed (HdNote * hdnote, int unused1, TNote * tnote)
         { /* Ignore further errors. */
           clutter_container_remove_actor (CLUTTER_CONTAINER (tnote->notwin),
                                           tnote->icon);
-          tnote->icon = get_icon (iname, Thumbsize == &Thumbsizes.large
+          tnote->icon = get_icon (iname, THUMBSIZE_IS (large)
                                   ? ICON_FINGER : ICON_STYLUS);
           clutter_container_add_actor (CLUTTER_CONTAINER (tnote->notwin),
                                        tnote->icon);
         }
     }
 
-  reset_thumb_title (thumb);
+  layout_notwin (thumb, NULL, NULL);
 
-  /* TODO The change in a group event notification may actually
-   *      signify that an event was removed from the group,
-   *      in which case we should not pulse. */
-  hd_title_bar_set_switcher_pulse (
-                    HD_TITLE_BAR (hd_render_manager_get_title_bar ()),
-                    TRUE);
+  reset_thumb_title (thumb);
+  if (is_more)
+    hd_title_bar_set_switcher_pulse (
+                      HD_TITLE_BAR (hd_render_manager_get_title_bar ()),
+                      TRUE);
 
   return False;
 }
@@ -2957,28 +3127,48 @@ create_tnote (HdNote * hdnote)
   tnote->background = hd_clutter_cache_get_texture (
                         "TaskSwitcherNotificationBackground.png", TRUE);
 
+  /* .count */
+  tnote->count = set_label_text_and_color (clutter_label_new (),
+                                      hd_note_get_count (tnote->hdnote),
+                                      &NotificationTextColor);
+
   /* .time */
   tnote->time = set_label_text_and_color (clutter_label_new (),
                                        hd_note_get_time (tnote->hdnote),
-                                       &DefaultTextColor);
+                                       &NotificationSecondaryTextColor);
+  clutter_label_set_line_wrap (CLUTTER_LABEL (tnote->time), TRUE);
+  clutter_label_set_alignment (CLUTTER_LABEL(tnote->time),
+                               PANGO_ALIGN_CENTER);
+  set_label_line_spacing (tnote->time, NOTIFICATION_TIME_LINESPACING);
+  g_signal_connect (tnote->time, "notify::allocation",
+                    G_CALLBACK (reanchor_on_resize),
+                    GINT_TO_POINTER (CLUTTER_GRAVITY_NORTH));
+  if (NOTIFICATION_TIME_LINESPACING != 0)
+    g_signal_connect (tnote->time, "notify::allocation",
+                      G_CALLBACK (preserve_linespacing),
+                      GINT_TO_POINTER (NOTIFICATION_TIME_LINESPACING));
 
   /* .message */
   tnote->message = set_label_text_and_color (clutter_label_new (),
                                     hd_note_get_message (tnote->hdnote),
-                                    &DefaultTextColor);
+                                    &NotificationTextColor);
   clutter_label_set_font_name (CLUTTER_LABEL (tnote->message),
                                SmallSystemFont);
   clutter_label_set_line_wrap (CLUTTER_LABEL (tnote->message), TRUE);
+  clutter_label_set_alignment (CLUTTER_LABEL(tnote->message),
+                               PANGO_ALIGN_CENTER);
   g_signal_connect (tnote->message, "notify::allocation",
                     G_CALLBACK (clip_on_resize), NULL);
 
-  /* .icon will be set by layout_thumbs(). */
+  /* .icon will be set by layout_thumbs() because we can't decide yet
+   * what size to use because we don't know whether we'll get our own
+   * thumbnail. */
   tnote->notwin = clutter_group_new();
   clutter_actor_set_position (tnote->notwin, PRISON_XPOS, PRISON_YPOS);
   clutter_actor_set_name (tnote->notwin, "notwin");
   clutter_container_add (CLUTTER_CONTAINER (tnote->notwin),
-                         tnote->background, tnote->time, tnote->message,
-                         NULL);
+                         tnote->background, tnote->count, tnote->time,
+                         tnote->message, NULL);
 
   return tnote;
 }
@@ -3319,10 +3509,15 @@ hd_task_navigator_init (HdTaskNavigator * self)
   Zoom_effect = new_animation (&Zoom_effect_timeline, ZOOM_EFFECT_DURATION);
 
   /* Master pieces */
-  SystemFont =   hd_gtk_style_resolve_logical_font ("SystemFont");
-  SmallSystemFont =   hd_gtk_style_resolve_logical_font ("SmallSystemFont");
-  hd_gtk_style_resolve_logical_color (&DefaultTextColor,  "DefaultTextColor");
-  hd_gtk_style_resolve_logical_color (&ReversedTextColor, "ReversedTextColor");
+  LargeSystemFont = hd_gtk_style_resolve_logical_font ("LargeSystemFont");
+  SystemFont = hd_gtk_style_resolve_logical_font ("SystemFont");
+  SmallSystemFont = hd_gtk_style_resolve_logical_font ("SmallSystemFont");
+  hd_gtk_style_resolve_logical_color (&DefaultTextColor,
+                                      "DefaultTextColor");
+  hd_gtk_style_resolve_logical_color (&NotificationTextColor,
+                                      "NotificationTextColor");
+  hd_gtk_style_resolve_logical_color (&NotificationSecondaryTextColor,
+                                      "NotificationSecondaryTextColor");
 
   /* We don't have anything to show yet, so let's hide. */
   clutter_actor_hide (Navigator);

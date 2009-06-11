@@ -1,3 +1,27 @@
+2009-06-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#120847 Text of time in notification goes out of box window
+	NB#121060 Indication is done on top of Tasks button, with an
+		  animation and highlight for every one min even when
+		  there is no new event.
+	(and NB#120626 Number of notifications is not coming in task
+	 switcher but that's not complete)
+
+	Bring ourselfves closed to tana lagu 2.3.
+
+	* src/home/hd-task-navigator.c:
+	  * layout_notwin(): implemented the new layout
+	  * check_and_resize(): we couldn't cancel an already running effect
+	  * FLY_EFFECT_DURATION, ZOOM_EFFECT_DURATION: changed to 250ms
+	* src/util/hd-gtk-style.c (hd_gtk_style_resolve_logical_color):
+	  Return white for unknown colors, much more readable.
+	* src/mb/hd-atoms.h
+	* src/mb/hd-atoms.c
+	* src/mb/hd-note.h
+	* src/mb/hd-note.c: Make _HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT
+	  accessible.
+	* TODO: new TODOs
+
 2009-06-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/util/hd-volume-profile.[ch]: Add hd_volume_profile_set_silent.

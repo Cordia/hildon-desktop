@@ -33,6 +33,8 @@ Notifications:
 - Use ATOM:ic property values in hd-note.c.
 
 Switcher:
+- When zooming back is complete fade in the real titlebar.
+- When zooming back do a blur animation.
 - Scrollbar: place 4 pixels leftwards
 - Be more sensible differentiating clicks vs. scroll attempts.
   (It should be the same usability-wise as pannable areas.)
