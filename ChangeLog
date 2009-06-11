@@ -4,6 +4,7 @@
 	NB#121060 Indication is done on top of Tasks button, with an
 		  animation and highlight for every one min even when
 		  there is no new event.
+	NB#121584 Missed call notification text comes outside of the window
 	(and NB#120626 Number of notifications is not coming in task
 	 switcher but that's not complete)
 
