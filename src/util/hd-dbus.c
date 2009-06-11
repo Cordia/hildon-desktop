@@ -95,7 +95,7 @@ hd_dbus_prevent_display_blanking (void)
 static gboolean
 display_timeout_f (gpointer unused)
 {
-  g_warning ("%s: called", __func__);
+  /* g_warning ("%s: called", __func__); */
   hd_dbus_prevent_display_blanking ();
   return TRUE;
 }
