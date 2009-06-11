@@ -5,6 +5,8 @@
 #include "hildon-desktop.h"
 #include "hd-launcher-tree.h"
 
+#include <sys/stat.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -118,18 +120,30 @@ walk_thread_compare_items (HdLauncherItem *a, HdLauncherItem *b)
   guint apos = hd_launcher_item_get_position (a);
   guint bpos = hd_launcher_item_get_position (b);
 
-  /* If neither of them specifies an ordering, order alphabetically. */
+  /* If neither of them specifies an ordering, order by ctime. */
   if ((apos == 0) && (bpos == 0))
     {
-      gint result;
-      gchar *a_casefolded =
-                    g_utf8_casefold (hd_launcher_item_get_local_name(a), -1);
-      gchar *b_casefolded =
-                    g_utf8_casefold (hd_launcher_item_get_local_name(b), -1);
-      result = g_utf8_collate (a_casefolded, b_casefolded);
-      g_free (a_casefolded);
-      g_free (b_casefolded);
-      return result;
+      guint actime, bctime;
+      actime = hd_launcher_item_get_ctime (a);
+      bctime = hd_launcher_item_get_ctime (b);
+
+      if (actime != bctime)
+        {
+          return actime - bctime;
+        }
+      else
+        {
+          /* If equal ctime, order alphabetically. */
+          gint result;
+          gchar *a_casefolded =
+                        g_utf8_casefold (hd_launcher_item_get_local_name(a), -1);
+          gchar *b_casefolded =
+                        g_utf8_casefold (hd_launcher_item_get_local_name(b), -1);
+          result = g_utf8_collate (a_casefolded, b_casefolded);
+          g_free (a_casefolded);
+          g_free (b_casefolded);
+          return result;
+        }
     }
 
   /* If one of them is 0, the other wins. */
@@ -189,7 +203,8 @@ walk_thread_func (gpointer user_data)
       HdLauncherItem *item = NULL;
       gchar *id;
       const gchar *key_file_path;
-      GKeyFile *key_file;
+      GKeyFile *key_file = NULL;
+      struct stat key_file_stat;
       GError *error = NULL;
 
       switch (gmenu_tree_item_get_type (tmp_entry))
@@ -227,21 +242,30 @@ walk_thread_func (gpointer user_data)
         continue;
       }
 
-      key_file = g_key_file_new ();
-      g_key_file_load_from_file (key_file, key_file_path, 0, &error);
-      if (error)
+      if (stat(key_file_path, &key_file_stat))
         {
-          g_warning ("%s: Unable to parse %s: %s", __FUNCTION__,
-                     key_file_path,
-                     error->message);
+          g_warning ("%s: Unable to stat %s", __FUNCTION__,
+                               key_file_path);
+        }
+      else
+        {
+          key_file = g_key_file_new ();
+          g_key_file_load_from_file (key_file, key_file_path, 0, &error);
+          if (error)
+            {
+              g_warning ("%s: Unable to parse %s: %s", __FUNCTION__,
+                         key_file_path,
+                         error->message);
 
-          g_error_free (error);
-          g_key_file_free (key_file);
-          key_file = NULL;
+              g_error_free (error);
+              g_key_file_free (key_file);
+              key_file = NULL;
+            }
         }
       if (key_file) {
         item = hd_launcher_item_new_from_keyfile (id,
                   gmenu_tree_directory_get_menu_id (data->root),
+                  (guint) key_file_stat.st_ctime,
                   key_file, NULL);
 	g_key_file_free (key_file);
       }

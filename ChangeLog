@@ -1,3 +1,12 @@
+2009-06-11  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Order applications by ctime if not hard-coded in position.
+	Fixes: NB#116215
+
+	* src/launcher/hd-launcher-item.c: Added more hard-coded apps.
+	* src/launcher/hd-launcher-item.h:
+	* src/launcher/hd-launcher-tree.c:
+
 2009-06-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator (turnoff_fun, turnoff_effect_frame):

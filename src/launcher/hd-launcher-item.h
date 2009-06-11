@@ -79,6 +79,7 @@ GType              hd_launcher_item_get_type      (void) G_GNUC_CONST;
 
 HdLauncherItem *   hd_launcher_item_new_from_keyfile (const gchar *id,
                                                       const gchar *category,
+                                                      guint ctime,
                                                       GKeyFile *key_file,
                                                       GError   **error);
 const gchar *      hd_launcher_item_get_id           (HdLauncherItem *item);
@@ -91,6 +92,7 @@ const gchar *      hd_launcher_item_get_comment      (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_text_domain  (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_category     (HdLauncherItem *item);
 guint              hd_launcher_item_get_position     (HdLauncherItem *item);
+guint              hd_launcher_item_get_ctime        (HdLauncherItem *item);
 
 G_END_DECLS
 

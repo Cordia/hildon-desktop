@@ -72,6 +72,7 @@ struct _HdLauncherItemPrivate
 
   gchar *category;
   guint position;
+  guint ctime;
 };
 
 enum
@@ -302,6 +303,14 @@ hd_launcher_item_get_position (HdLauncherItem *item)
   return item->priv->position;
 }
 
+guint
+hd_launcher_item_get_ctime (HdLauncherItem *item)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), 0);
+
+  return item->priv->ctime;
+}
+
 gboolean
 hd_launcher_item_parse_keyfile (HdLauncherItem *item,
                                 GKeyFile *key_file,
@@ -363,12 +372,18 @@ _hd_launcher_app_main_position (const gchar *id)
       g_datalist_set_data (&main_apps, "hildon-control-panel", (gpointer)14);
 
       /* Applications subgroup. */
-      g_datalist_set_data (&main_apps, "filemanager", (gpointer)1);
-      g_datalist_set_data (&main_apps, "osso-backup", (gpointer)2);
-      g_datalist_set_data (&main_apps, "osso_pdfviewer", (gpointer)3);
-      g_datalist_set_data (&main_apps, "chess_startup", (gpointer)4);
-      g_datalist_set_data (&main_apps, "osso_lmarbles", (gpointer)5);
-      g_datalist_set_data (&main_apps, "mahjong_startup", (gpointer)6);
+      g_datalist_set_data (&main_apps, "osso_notes", (gpointer)1);
+      g_datalist_set_data (&main_apps, "osso_pdfviewer", (gpointer)2);
+      g_datalist_set_data (&main_apps, "filemanager", (gpointer)3);
+      g_datalist_set_data (&main_apps, "osso_rss_feed_reader", (gpointer)4);
+      g_datalist_set_data (&main_apps, "osso_sketch", (gpointer)5);
+      g_datalist_set_data (&main_apps, "osso-backup", (gpointer)6);
+      g_datalist_set_data (&main_apps, "maemoblocks", (gpointer)7);
+      g_datalist_set_data (&main_apps, "chess_startup", (gpointer)8);
+      g_datalist_set_data (&main_apps, "mahjong_startup", (gpointer)9);
+      g_datalist_set_data (&main_apps, "osso_lmarbles", (gpointer)10);
+      g_datalist_set_data (&main_apps, "tutorial-launcher", (gpointer)11);
+      g_datalist_set_data (&main_apps, "osso-xterm", (gpointer)12);
     }
 
   return (guint)g_datalist_get_data (&main_apps, id);
@@ -377,6 +392,7 @@ _hd_launcher_app_main_position (const gchar *id)
 HdLauncherItem *
 hd_launcher_item_new_from_keyfile (const gchar *id,
                                    const gchar *category,
+                                   guint ctime,
                                    GKeyFile *key_file,
                                    GError **error)
 {
@@ -461,6 +477,8 @@ hd_launcher_item_new_from_keyfile (const gchar *id,
     result->priv->category = g_strdup (category);
   else
     result->priv->category = g_strdup (HD_LAUNCHER_ITEM_TOP_CATEGORY);
+
+  result->priv->ctime = ctime;
 
   /* As many apps don't have a correct position yet, we hard code some
    * default values.
