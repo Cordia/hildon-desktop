@@ -1,4 +1,15 @@
+2009-06-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/util/hd-dbus.c (hd_dbus_prevent_display_blanking): New function
+	to send display blanking prevention message to MCE.
+	(hd_dbus_disable_display_blanking): New function to switch display
+	blanking prevention on/off.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_check_do_not_disturb_flag): Call
+	hd_dbus_disable_display_blanking when we are in DnD mode.
+	Fixes: NB#118192
+
 2009-06-11  Laszlo Pere  <lpere@blumsoft.eu>
+
 	* src/mb/hd-animation-actor.c: Fixed GLib warnings.
 
 2009-06-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>

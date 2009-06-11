@@ -2603,7 +2603,7 @@ hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr)
     {
       priv->do_not_disturb_flag = do_not_disturb_flag;
 
-      /* FIXME: Call mce (?) to block/release auto locks */
+      hd_dbus_disable_display_blanking (do_not_disturb_flag); 
     }
 
   if (value)

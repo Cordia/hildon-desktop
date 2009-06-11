@@ -5,6 +5,7 @@
 #include "hd-volume-profile.h"
 
 #include <glib.h>
+#include <mce/dbus-names.h>
 /*
  * Application killer DBus interface
  */
@@ -17,6 +18,8 @@
 
 #define DSME_SIGNAL_INTERFACE "com.nokia.dsme.signal"
 #define DSME_SHUTDOWN_SIGNAL_NAME "shutdown_ind"
+
+static DBusConnection *connection, *sysbus_conn;
 
 static DBusHandlerResult
 hd_dbus_signal_handler (DBusConnection *conn, DBusMessage *msg, void *data)
@@ -63,10 +66,63 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
+static void
+hd_dbus_prevent_display_blanking (void)
+{
+  DBusMessage *msg;
+  dbus_bool_t b;
+
+  if (sysbus_conn == NULL) {
+    g_warning ("%s: no D-Bus system bus connection", __func__);
+    return;
+  }
+  msg = dbus_message_new_method_call(MCE_SERVICE, MCE_REQUEST_PATH,
+                                     MCE_REQUEST_IF, MCE_PREVENT_BLANK_REQ);
+  if (msg == NULL) {
+    g_warning ("%s: could not create message", __func__);
+    return;
+  }
+
+  b = dbus_connection_send(sysbus_conn, msg, NULL);
+  if (!b) {
+    g_warning ("%s: dbus_connection_send() failed", __func__);
+  } else {
+    dbus_connection_flush(sysbus_conn);
+  }
+  dbus_message_unref(msg);
+}
+
+static gboolean
+display_timeout_f (gpointer unused)
+{
+  g_warning ("%s: called", __func__);
+  hd_dbus_prevent_display_blanking ();
+  return TRUE;
+}
+
+/* keeps the display lit by sending periodical messages to MCE's D-Bus
+ * interface */
+void
+hd_dbus_disable_display_blanking (gboolean setting)
+{
+  static guint timeout_f = 0;
+
+  if (setting)
+    {
+      hd_dbus_prevent_display_blanking ();
+      if (!timeout_f)
+        timeout_f = g_timeout_add (30 * 1000, display_timeout_f, NULL);
+    }
+  else if (timeout_f)
+    {
+      g_source_remove (timeout_f);
+      timeout_f = 0;
+    }
+}
+
 DBusConnection *
 hd_dbus_init (HdCompMgr * hmgr)
 {
-  DBusConnection *connection, *sysbus_conn;
   DBusError       error;
 
   dbus_error_init (&error);
