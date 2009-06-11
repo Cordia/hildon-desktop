@@ -26,5 +26,6 @@
 
 void hd_volume_profile_init(void);
 gboolean hd_volume_profile_is_silent(void);
+void hd_volume_profile_set_silent(gboolean setting);
 
 #endif

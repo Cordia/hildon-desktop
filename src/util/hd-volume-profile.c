@@ -31,6 +31,7 @@
 #define SILENT_PROFILE "silent"
 #define SYSTEM_SOUNDS_KEY "system.sound.level"
 
+static gboolean silenced;
 static int silent_profile = -1;
 static int system_sounds = -1;
 
@@ -38,7 +39,7 @@ gboolean hd_volume_profile_is_silent(void)
 {
         if (silent_profile < 0) {
                 char *prof = profile_get_profile();
-                if (prof && strcmp(SILENT_PROFILE, prof) == 0)
+                if (silenced || (prof && strcmp(SILENT_PROFILE, prof)) == 0)
                         silent_profile = 1;
                 else
                         silent_profile = 0;
@@ -49,10 +50,15 @@ gboolean hd_volume_profile_is_silent(void)
                         system_sounds = atoi(val);
         }
 
-        if (silent_profile || system_sounds == 0)
+        if (silenced || silent_profile || system_sounds == 0)
                 return TRUE;
         else
                 return FALSE;
+}
+
+void hd_volume_profile_set_silent(gboolean setting)
+{
+        silenced = setting;
 }
 
 static void track_active(const char *profile, const char *key,
@@ -66,7 +72,7 @@ static void track_active(const char *profile, const char *key,
 
 static void track_profile(const char *profile)
 {
-        if (profile && strcmp(SILENT_PROFILE, profile) == 0)
+        if (silenced || (profile && strcmp(SILENT_PROFILE, profile) == 0))
                 silent_profile = 1;
         else
                 silent_profile = 0;

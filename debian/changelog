@@ -3,6 +3,9 @@ hildon-desktop (1:2.2.53-1~unreleased) unstable; urgency=low
   Laszlo:
   * Fixes: NB#120612 - Unwanted activation of the task launcher/switcher button
 
+  Kimmo:
+  * Exit on shutdown_ind signal.
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  8 Jun 2009 10:39:10 +0300
 
 hildon-desktop (1:2.2.52-1) unstable; urgency=low

@@ -1,3 +1,11 @@
+2009-06-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/util/hd-volume-profile.[ch]: Add hd_volume_profile_set_silent.
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler): New function
+	to catch signals on the D-Bus system bus. Sends TERM to applications
+	and exits hildon-desktop when receiving shutdown_ind from DSME.
+	(hd_dbus_init): Start listening to DSME signals.
+
 2009-06-11  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Another set of changes to prestarting:
@@ -9,7 +17,8 @@
 	hd_app_mgr_init: Start a timeout in case init_done is never received.
 	hd_app_mgr_prestart: Disable prestarting while we wait for an app to
 	  prestart.
-	hd_app_mgr_can_prestart: Check loadavg is low (<= 0.50) before prestarting.
+	hd_app_mgr_can_prestart: Check loadavg is low (<= 0.50) before
+	prestarting.
 	hd_app_mgr_dbus_app_died: Don't report crashes of unknown apps.
 
 2009-06-09  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
@@ -17,10 +26,11 @@
 	Retry waking up hibernated apps if not shown in 10s.
 	Fixes: NB#121512
 
-	* src/launcher/hd-app-mgr.c: Separated part of hd_app_mgr_launch into a new
-	method hd_app_mgr_activate for when we already have the HdRunningApp.
-	Don't immediately close apps when killing them, wait for their dbus service
-	or windows to close.
+	* src/launcher/hd-app-mgr.c: Separated part of hd_app_mgr_launch into
+	a new method hd_app_mgr_activate for when we already have the
+	HdRunningApp.
+	Don't immediately close apps when killing them, wait for their dbus
+	service or windows to close.
 	* src/launcher/hd-app-mgr.h:
 	* src/mb/hd-comp-mgr.c: Use the new hd_app_mgr_activate when waking up
 	apps so it will be retried if failed.
@@ -53,7 +63,8 @@
 	  Take notice of changes to _HILDON_NOTIFICATION_THREAD
 	  and tell tasw about it.
 	* src/home/hd-task-navigator.h
-	* src/home/hd-task-navigator.c (hd_task_navigator_notification_thread_changed):
+	* src/home/hd-task-navigator.c
+	(hd_task_navigator_notification_thread_changed):
 	  Handle it.
 	  Also changed FLY_EFFECT_DURATION to 250 ms.
 	* TODO: reality check
