@@ -1,3 +1,8 @@
+2009-06-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator (turnoff_fun, turnoff_effect_frame):
+	  Streamlined with the other effect (again).
+
 2009-06-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/util/hd-dbus.c (hd_dbus_prevent_display_blanking): New function

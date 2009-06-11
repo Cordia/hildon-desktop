@@ -1212,12 +1212,7 @@ check_and_scale (ClutterActor * actor, gdouble sx_new, gdouble sy_new)
 static inline __attribute__((const)) gdouble
 turnoff_fun (gdouble x0, gdouble y0, gdouble x1, gdouble y1, gdouble t)
 {
-  gdouble a, c, d;
-
-  d = cos (x1) / cos (x0);
-  c = (y1 - d) / (y0 - d);
-  a = (y0 - c) / cos (x0);
-  return a*cos(t) + c;
+  return ((y1-y0)*cos(t) + (y0*cos(x1)-y1*cos(x0))) / (cos(x1)-cos(x0));
 }
 
 /* ClutterTimeline::new-frame callback for turnoff_effect(). */
@@ -1227,19 +1222,20 @@ turnoff_effect_frame (ClutterTimeline * timeline, gint frame,
 {
   gdouble now;
 
-  // thwin scale-y    0.0 .. 0.5 cosine 1.0 .. 0.1
-  // thwin scale-x    0.3 .. 0.8 cosine 1.0 .. 0.1
-  // thwin opacity    0.5 .. 1.0 linear 255 .. 0.0
-  // particle opacity 0.5 .. 1.0 sine   0.0 .. 1.0 .. 0.0
-  // particle radius  0.5 .. 1.0 cosine 8.0 .. 72
-  // particle angle   0.5 .. 1.0 linear 0.0 .. PI/2
+  // thwin scale-y    0.0 .. 0.4  cosine 1.0 .. 0.1
+  // thwin scale-x    0.3 .. 0.64 cosine 1.0 .. 0.1
+  // thwin opacity    0.5 .. 1.0  linear 255 .. 0.0
+  // particle opacity 0.5 .. 1.0  sine   0.0 .. 1.0 .. 0.0
+  // particle radius  0.5 .. 1.0  cosine 8.0 .. 72
+  // particle angle   0.5 .. 1.0  linear 0.0 .. PI/2
+  // particle scale   0.5 .. 1.0  linear 1.0 .. 0.5
   now = clutter_timeline_get_progress (timeline);
 
   /* @thwin */
   if (now <= 0.8)
     clutter_actor_set_scale (closure->actor,
-                 now <= 0.3 ? 1.0 : turnoff_fun (0.3, 1, 0.8, 0.1, now),
-                 now >= 0.5 ? 0.1 : turnoff_fun (0.0, 1, 0.5, 0.1, now));
+                 now <= 0.3 ? 1.0 : turnoff_fun (0.3, 1, 0.64, 0.1, now),
+                 now >= 0.4 ? 0.1 : turnoff_fun (0.0, 1, 0.4,  0.1, now));
   if (0.5 <= now)
     clutter_actor_set_opacity (closure->actor, 510 - 510*now);
 
@@ -1259,6 +1255,8 @@ turnoff_effect_frame (ClutterTimeline * timeline, gint frame,
           rad = all_rad * i/G_N_ELEMENTS (closure->particles);
           clutter_actor_set_position (closure->particles[i].particle,
                                       cos(ang)*rad, sin(ang)*rad);
+          clutter_actor_set_scale (closure->particles[i].particle,
+                                   1.5-now, 1.5-now);
         }
 
       clutter_actor_set_opacity (closure->all_particles, 255*sin(M_PI*t));
