@@ -107,6 +107,7 @@ struct _HdAppMgrPrivate
   gboolean lowmem:1;
   gboolean init_done:1;
   gboolean prestarting_stopped:1;
+  gboolean prestarting;
 
   /* Flags for showing CallUI. */
   GConfClient *gconf_client;
@@ -143,9 +144,10 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define LOWMEM_PROC_NOTIFY_HIGH "/proc/sys/vm/lowmem_notify_high_pages"
 #define LOWMEM_PROC_NR_DECAY    "/proc/sys/vm/lowmem_nr_decay_pages"
 
+#define LOADAVG_MAX               (0.5)
 #define STATE_CHECK_INTERVAL      (1)
 #define LOADING_TIMEOUT           (10)
-
+#define INIT_DONE_TIMEOUT         (5)
 
 #define PRESTART_ENV_VAR          "HILDON_DESKTOP_APPS_PRESTART"
 #define NSIZE                     ((size_t)(-1))
@@ -252,6 +254,7 @@ static void hd_app_mgr_check_show_callui (void);
 
 static void     hd_app_mgr_request_app_pid (HdRunningApp *app);
 static gboolean hd_app_mgr_loading_timeout (HdRunningApp *app);
+static gboolean hd_app_mgr_init_done_timeout (HdAppMgr *self);
 
 static void hd_app_mgr_kill_all_prestarted (void);
 
@@ -488,6 +491,13 @@ hd_app_mgr_init (HdAppMgr *self)
     }
   else
     g_warning ("%s: Failed to proxy system dbus.\n", __FUNCTION__);
+
+  /* Add a timeout in case init_done is never received. That can happen
+   * when restarting, for example.
+   */
+  g_timeout_add_seconds (INIT_DONE_TIMEOUT,
+                         (GSourceFunc)hd_app_mgr_init_done_timeout,
+                         self);
 }
 
 void
@@ -1088,7 +1098,11 @@ static void
 _hd_app_mgr_prestart_cb (DBusGProxy *proxy, guint result,
                         GError *error, gpointer data)
 {
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   HdRunningApp *app = HD_RUNNING_APP (data);
+
+  /* Prestarting can go ahead now. */
+  priv->prestarting = FALSE;
 
   if (error || !result)
     {
@@ -1129,6 +1143,7 @@ hd_app_mgr_prestart (HdRunningApp *app)
 
   g_debug ("%s: Starting to prestart %s\n", __FUNCTION__,
            service);
+  priv->prestarting = TRUE;
   org_freedesktop_DBus_start_service_by_name_async (priv->dbus_proxy,
       service, 0,
       _hd_app_mgr_prestart_cb, (gpointer)app);
@@ -1343,6 +1358,30 @@ hd_app_mgr_read_lowmem (const gchar *filename)
   return NSIZE;
 }
 
+static gboolean
+hd_app_mgr_check_loadavg (void)
+{
+  int fd = open ("/proc/loadavg", O_RDONLY);
+
+  if (fd >= 0)
+    {
+      char buffer[32];
+      size_t size = read (fd, buffer, sizeof(buffer) -1);
+
+      close (fd);
+      if (size > 0)
+        {
+          gdouble load;
+          buffer[size] = 0;
+          load = g_ascii_strtod(buffer, NULL);
+
+          return (load <= LOADAVG_MAX);
+        }
+    }
+
+  return FALSE;
+}
+
 static HdAppMgrPrestartMode
 hd_app_mgr_setup_prestart (size_t low_pages,
                            size_t nr_decay_pages,
@@ -1408,6 +1447,9 @@ static gboolean hd_app_mgr_can_prestart (void)
   if (priv->prestart_mode == PRESTART_ALWAYS)
     return TRUE;
   else if (priv->prestart_mode == PRESTART_NEVER)
+    return FALSE;
+
+  if (!hd_app_mgr_check_loadavg ())
     return FALSE;
 
   size_t free_pages = hd_app_mgr_read_lowmem (LOWMEM_PROC_FREE);
@@ -1502,16 +1544,18 @@ hd_app_mgr_state_check_loop (gpointer data)
   /* If we have enough memory and there are apps waiting to be prestarted,
    * do that.
    */
-  else if (/* TODO: Add a timeout for waiting on the init_done signal. */
-      /* priv->init_done &&
-      !priv->lowmem &&
-      !priv->bg_killing && */
-      !priv->prestarting_stopped &&
-      !g_queue_is_empty (priv->queues[QUEUE_PRESTARTABLE]) &&
-      hd_app_mgr_can_prestart ())
+  else if (priv->init_done &&
+           priv->prestart_mode != PRESTART_NEVER &&
+           !priv->prestarting_stopped &&
+           !g_queue_is_empty (priv->queues[QUEUE_PRESTARTABLE])
+      )
     {
-      HdRunningApp *app = g_queue_peek_head (priv->queues[QUEUE_PRESTARTABLE]);
-      hd_app_mgr_prestart (app);
+      /* We make this tests here to loop even if we can't prestart right now.*/
+      if (!priv->prestarting && hd_app_mgr_can_prestart ())
+        {
+          HdRunningApp *app = g_queue_peek_head (priv->queues[QUEUE_PRESTARTABLE]);
+          hd_app_mgr_prestart (app);
+        }
       if (!g_queue_is_empty (priv->queues[QUEUE_PRESTARTABLE]))
         loop = TRUE;
     }
@@ -1621,11 +1665,18 @@ static DBusHandlerResult hd_app_mgr_dbus_app_died (DBusConnection *conn,
   link = g_list_find_custom (hd_launcher_tree_get_items (priv->tree),
                              (gconstpointer)filename,
                              (GCompareFunc)_hd_app_mgr_compare_launcher_exec);
-  if (link)
-      launcher = link->data;
 
-  g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_CRASHED],
-            0, launcher, NULL);
+  /* NOTE: Should we report crashes of app we don't know about? */
+  g_debug ("%s: app: %s, filename: %s", __FUNCTION__,
+      link ? hd_launcher_item_get_id (HD_LAUNCHER_ITEM (link->data)) : "<unknown>",
+      filename);
+
+  if (link)
+    {
+      launcher = link->data;
+      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_CRASHED],
+                     0, launcher, NULL);
+    }
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
@@ -1686,6 +1737,21 @@ hd_app_mgr_check_show_callui (void)
     {
       hd_app_mgr_service_top (CALLUI_INTERFACE, NULL);
     }
+}
+
+static gboolean
+hd_app_mgr_init_done_timeout (HdAppMgr *self)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
+
+  if (!priv->init_done)
+    {
+      g_debug ("%s", __FUNCTION__);
+      priv->init_done = TRUE;
+      hd_app_mgr_state_check ();
+    }
+
+  return FALSE;
 }
 
 static gboolean

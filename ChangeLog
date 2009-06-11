@@ -1,3 +1,17 @@
+2009-06-11  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Another set of changes to prestarting:
+	- Check loadavg before prestarting.
+	- Ensure apps are prestarted sequentally.
+	Hopefully this Fixes: NB#100819
+
+	* src/launcher/hd-app-mgr.c:
+	hd_app_mgr_init: Start a timeout in case init_done is never received.
+	hd_app_mgr_prestart: Disable prestarting while we wait for an app to
+	  prestart.
+	hd_app_mgr_can_prestart: Check loadavg is low (<= 0.50) before prestarting.
+	hd_app_mgr_dbus_app_died: Don't report crashes of unknown apps.
+
 2009-06-09  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Retry waking up hibernated apps if not shown in 10s.
