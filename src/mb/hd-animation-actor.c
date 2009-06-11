@@ -188,7 +188,7 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
        {
          g_signal_handler_disconnect (actor,
                                       self->actor_destroy_handler_id);
-
+         self->actor_destroy_handler_id = 0;
        }
 
        /* Unparent the actor */
@@ -381,9 +381,11 @@ hd_animation_actor_destroy (MBWMObject *this)
       if (cclient)
       {
           ClutterActor             *actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-	  if (actor)
+	  if (actor) {
              g_signal_handler_disconnect (actor,
                                           self->actor_destroy_handler_id);
+	     self->actor_destroy_handler_id = 0;
+	  }
       }
     }
 }
