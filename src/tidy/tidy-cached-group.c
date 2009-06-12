@@ -55,7 +55,7 @@ tidy_cached_group_paint (ClutterActor *actor)
 
   /* If we are rendering normally then shortcut all this, and
    just render directly without the texture */
-  if (priv->cache_amount==0)
+  if (priv->cache_amount< 0.01)
     {
       /* render direct */
       CLUTTER_ACTOR_CLASS (tidy_cached_group_parent_class)->paint(actor);
@@ -134,7 +134,7 @@ tidy_cached_group_paint (ClutterActor *actor)
 
   /* if cache_amount isn't 1, we merge the two images by rendering the
    * real one first, then rendering the other one after... */
-  if (priv->cache_amount < 1)
+  if (priv->cache_amount < 0.99)
     {
       cogl_color (&white);
       /* And we must render ourselves properly so we can render
@@ -142,6 +142,7 @@ tidy_cached_group_paint (ClutterActor *actor)
       cogl_push_matrix();
       CLUTTER_ACTOR_CLASS (tidy_cached_group_parent_class)->paint(actor);
       cogl_pop_matrix();
+      col.alpha = (int)(priv->cache_amount*255);
     }
 
   /* Now we render the image we have... */
