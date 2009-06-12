@@ -249,7 +249,7 @@ hd_gtk_style_resolve_logical_color (ClutterColor * color,
   if (!style || !gtk_style_lookup_color (style, logical_name, &gtk_color))
     { /* Fall back to white. */
       g_critical ("%s: unknown color", logical_name);
-      memset (&gtk_color, 0xff, sizeof (gtk_color));
+      memset (&gtk_color, 0x7f, sizeof (gtk_color));
     }
 
   hd_gtk_style_to_clutter_color(color, &gtk_color);
