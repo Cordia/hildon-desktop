@@ -481,7 +481,7 @@ hd_launcher_tree_populate (HdLauncherTree *tree)
   if (!priv->menu_path)
     return;
 
-  priv->tree = gmenu_tree_lookup (priv->menu_path, GMENU_TREE_FLAGS_NONE);
+  priv->tree = gmenu_tree_lookup (priv->menu_path, GMENU_TREE_FLAGS_SHOW_EMPTY);
   if (!priv->tree)
     {
       g_warning ("%s: Couldn't load menu at %s", __FUNCTION__, priv->menu_path);

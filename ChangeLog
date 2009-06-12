@@ -1,3 +1,10 @@
+2009-06-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Show empty categories in task launcher.
+	Fixes: NB#121803
+
+	* src/launcher/hd-launcher-tree.c:
+
 2009-06-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/tidy/tidy-cached-group.c: Tweaks to improve cached-group 
