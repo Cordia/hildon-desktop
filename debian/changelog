@@ -7,6 +7,8 @@ hildon-desktop (1:2.2.53-1~unreleased) unstable; urgency=low
   * Exit on shutdown_ind signal.
   * Fixes: NB#118192 - screen dimming and auto locks are activated evenif DnD
     is set
+  * Fixes: NB#117673 - Screen dimmed after receiving long class 0 flash SMS
+    message
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  8 Jun 2009 10:39:10 +0300
 
