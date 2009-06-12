@@ -970,10 +970,6 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
-  /* In cases like the FKB, we don't get an unmap event, so we need to
-   * update the state of blurring here. */
-  hd_render_manager_update_blur_state(c);
-
   /* Check if it's the last window for the app. */
   if (hclient->priv->app)
     {
@@ -1733,6 +1729,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (parent_klass->map_notify)
     parent_klass->map_notify (mgr, c);
 
+  /* Now the actor has been created and added to the desktop, make sure we
+   * call hdrm_restack to put it in the correct group in hd-render-manager */
+  hd_render_manager_restack();
+
   /* Hide the Edit button if it is currently shown */
   if (priv->home)
     hd_home_hide_edit_button (HD_HOME (priv->home));
@@ -2261,11 +2261,6 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
           app->map_effect_before = TRUE;
         }
     }
-
-  /* ignore this window when we set blur state if we're unmapping
-   * - because it will be just about to disappear */
-  hd_render_manager_update_blur_state(
-      (event == MBWMCompMgrClientEventUnmap) ? c : NULL);
 }
 
 gboolean
@@ -2606,7 +2601,7 @@ hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr)
     {
       priv->do_not_disturb_flag = do_not_disturb_flag;
 
-      hd_dbus_disable_display_blanking (do_not_disturb_flag); 
+      hd_dbus_disable_display_blanking (do_not_disturb_flag);
     }
 
   if (value)

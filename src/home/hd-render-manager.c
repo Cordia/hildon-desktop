@@ -46,7 +46,7 @@
 
 /* This is to dump debug information to the console to help see whether the
  * order of clutter actors matches that of matchbox. */
-//#define STACKING_DEBUG 1
+#define STACKING_DEBUG 0
 
 /* And this one is to help debugging visibility-related problems
  * ie. when stacking is all right but but you cannot see what you want. */
@@ -245,6 +245,7 @@ hd_render_manager_set_property (GObject      *gobject,
                                 GParamSpec   *pspec);
 static
 gboolean hd_render_manager_should_hide(ClutterActor *actor);
+static void hd_render_manager_update_blur_state(void);
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------  RANGE      */
 /* ------------------------------------------------------------------------- */
@@ -1439,10 +1440,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
 	  /* make sure everything is in the correct order */
 	  hd_comp_mgr_sync_stacking (HD_COMP_MGR (priv->comp_mgr));
-
-	  /* Make sure we blur the right things (fix problem where going from
-	   * app -> task launcher -> other app breaks blur) */
-	  hd_render_manager_update_blur_state(0);
 	}
 
       if (state == HDRM_STATE_NON_COMPOSITED)
@@ -1665,20 +1662,22 @@ void hd_render_manager_restack()
                   /* if we want to render this, add it. we need to be careful
                    * not to pull applets or other things out from where they
                    * were */
-                  if (parent == CLUTTER_ACTOR(desktop) ||
-                      parent == CLUTTER_ACTOR(priv->app_top))
-                    {
-                      clutter_actor_reparent(actor,
-                                             CLUTTER_ACTOR(priv->home_blur));
-                    }
-#if STACKING_DEBUG
-                  else
-                    g_debug("%s NOT MOVED - OWNED BY %s",
-                        clutter_actor_get_name(actor)?clutter_actor_get_name(actor):"?",
-                        clutter_actor_get_name(parent)?clutter_actor_get_name(parent):"?");
-#endif /*STACKING_DEBUG*/
                   if (parent)
-		    clutter_actor_raise_top(actor);
+                    {
+                      if (parent == CLUTTER_ACTOR(desktop) ||
+                          parent == CLUTTER_ACTOR(priv->app_top))
+                        {
+                          clutter_actor_reparent(actor,
+                                                 CLUTTER_ACTOR(priv->home_blur));
+                        }
+#if STACKING_DEBUG
+                      else
+                        g_debug("%s NOT MOVED - OWNED BY %s",
+                            clutter_actor_get_name(actor)?clutter_actor_get_name(actor):"?",
+                            clutter_actor_get_name(parent)?clutter_actor_get_name(parent):"?");
+#endif /*STACKING_DEBUG*/
+		      clutter_actor_raise_top(actor);
+                    }
 #if STACKING_DEBUG
                   else
                     g_debug("%s DOES NOT HAVE A PARENT",
@@ -1749,6 +1748,10 @@ void hd_render_manager_restack()
   if (clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) ==
                                CLUTTER_ACTOR(priv->home_blur))
     clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
+
+  /* We could have changed the order of the windows here, so update whether
+   * we blur or not based on the order. */
+  hd_render_manager_update_blur_state();
 
   /* And for speed of rendering, work out what is visible and what
    * isn't, and hide anything that would be rendered over by another app */
@@ -1825,7 +1828,7 @@ void hd_render_manager_restack()
   hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
 }
 
-void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
+static void hd_render_manager_update_blur_state()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   HDRMBlurEnum blur_flags;
@@ -1842,8 +1845,6 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
   for (c=wm->stack_top;c;c=c->stacked_below)
     {
       int c_type = MB_WM_CLIENT_CLIENT_TYPE(c);
-      if (c==ignore)
-        continue;
       if (c_type == MBWMClientTypeApp)
         {
           /* If we have a fullscreen window then the top-left button and
@@ -1903,9 +1904,6 @@ void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore)
     hd_render_manager_set_blur(blur_flags);
 
   hd_title_bar_set_state(priv->title_bar, title_flags);
-
-  /* TODO Things break if we don't restack, but why? */
-  hd_comp_mgr_sync_stacking (priv->comp_mgr);
 }
 
 /* This is called when we are in the launcher subview so that we can blur and

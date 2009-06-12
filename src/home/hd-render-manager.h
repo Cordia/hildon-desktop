@@ -226,7 +226,6 @@ void hd_render_manager_set_state_unportrait (void);
 gboolean hd_render_manager_is_changing_state(void);
 const char *hd_render_manager_get_state_str(void);
 gboolean hd_render_manager_in_transition(void);
-void hd_render_manager_update_blur_state(MBWindowManagerClient *ignore);
 gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c);
 void hd_render_manager_set_launcher_subview(gboolean subview);
 

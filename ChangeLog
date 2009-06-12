@@ -1,5 +1,21 @@
 2009-06-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#119406 - blurring not working when camera brought to top
+	                   using button.
+	General attempt to clean up the stacking/update_blur code a little.
+
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h: Make hdrm_update_blur_state static,
+	  and call it on restack (when window order has changed). update_blur
+	  has no need for sync_stacking any more, as we make sure we stack
+	  when the window order changes. Also remove 'ignore' parameter from
+	  update_blur as there is no need for it now.
+	* src/util/hd-transition.c: call hdrm_restack rather than update_blur
+	  explicitly.
+	* src/mb/hd-comp-mgr.c: Remove calls to update_blur_state, and
+	  instead call restack after mbwmcmc_map_notify (which adds a new
+	  clutter actor which required a restack).
+
 	* src/tidy/tidy-blur-group.c: Fix annoying low-quality flicker that
 	sometimes happens at the end of blurring. Slight speed increase too.
 
