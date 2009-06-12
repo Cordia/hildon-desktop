@@ -462,10 +462,13 @@ tidy_blur_group_paint (ClutterActor *actor)
 
   /* If we're blurring out, do it by adjusting the opacity of what we're
    * rendering now... */
-  if (priv->blur_step < priv->max_blur_step)
+  if (priv->blur_step==0 || (priv->blur_step < priv->max_blur_step))
     {
       priv->current_blur_step = priv->blur_step;
-      col.alpha = col.alpha * priv->current_blur_step / priv->max_blur_step;
+      if (priv->max_blur_step > 0)
+        col.alpha = col.alpha * priv->current_blur_step / priv->max_blur_step;
+      else
+        col.alpha = 0;
 
       /* And we must render ourselves properly so we can render
        * the blur over the top */
@@ -484,6 +487,12 @@ tidy_blur_group_paint (ClutterActor *actor)
       cogl_clip_unset();
       cogl_pop_matrix();
     }
+
+/*  g_debug("%s: Blur act: %d, cur:%d, max:%d - alpha:%d", __FUNCTION__,
+      priv->blur_step, priv->current_blur_step, priv->max_blur_step, col.alpha);*/
+
+  if (col.alpha == 0)
+    return;
 
   /* Now we render the image we have, with a desaturation pixel
    * shader */

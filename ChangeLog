@@ -1,3 +1,8 @@
+2009-06-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/tidy/tidy-blur-group.c: Fix annoying low-quality flicker that
+	sometimes happens at the end of blurring. Slight speed increase too.
+
 2009-06-12  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Show empty categories in task launcher.
