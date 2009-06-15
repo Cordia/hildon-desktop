@@ -8,6 +8,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #include <gdk/gdkwindow.h>
+#include <string.h>
 
 /* This just attempts to paint itself at FPS fps and outputs the actual fps it
    has managed. You can then run 'xresponse -i' to check 
@@ -16,31 +17,49 @@
 #define FPS 25
 
 /* #undef this to make the test run in non-composited mode */
-#define COMPOSITED 1 
+/* #define COMPOSITED 1 */
 
 /* Area's width and height to render */
 #define AREAW 800
 #define AREAH 480
 
 #ifndef COMPOSITED
-static void set_non_compositing (GtkWidget *win)
+static void set_non_compositing (Display *display, Window xwindow)
 {
-        Window xwindow;
         Atom atom;
         int one = 1;
-        GdkWindow *gdk_window = GTK_WIDGET (win)->window;
-        GdkDisplay *gdk_display = gdk_display_get_default ();
-        Display *display = GDK_DISPLAY_XDISPLAY (gdk_display);
 
-        atom = gdk_x11_get_xatom_by_name_for_display (gdk_display,
-                        "_HILDON_NON_COMPOSITED_WINDOW");
-        xwindow = GDK_WINDOW_XID (gdk_window);
+        atom = XInternAtom (display, "_HILDON_NON_COMPOSITED_WINDOW", False);
 
         XChangeProperty (display,
                        xwindow,
                        atom,
                        XA_INTEGER, 32, PropModeReplace,
                        (unsigned char *) &one, 1);
+}
+
+static void set_fullscreen (Display *display, Window xwindow)
+{
+        XClientMessageEvent xclient;
+  
+#define _NET_WM_STATE_REMOVE        0    /* remove/unset property */
+#define _NET_WM_STATE_ADD           1    /* add/set property */
+#define _NET_WM_STATE_TOGGLE        2    /* toggle property  */  
+  
+  memset (&xclient, 0, sizeof (xclient));
+  xclient.type = ClientMessage;
+  xclient.window = xwindow;
+  xclient.message_type = XInternAtom (display, "_NET_WM_STATE", False);
+  xclient.format = 32;
+  xclient.data.l[0] = _NET_WM_STATE_ADD;
+  xclient.data.l[1] = XInternAtom (display, "_NET_WM_STATE_FULLSCREEN", False);
+  xclient.data.l[2] = None;
+  xclient.data.l[3] = 0;
+  xclient.data.l[4] = 0;
+  
+  XSendEvent (display, DefaultRootWindow (display), False,
+              SubstructureRedirectMask | SubstructureNotifyMask,
+              (XEvent *)&xclient);
 }
 #endif
 
@@ -101,9 +120,6 @@ int main(int argc, char **argv)
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
 
     gtk_widget_set_app_paintable(window, TRUE);
-#ifndef COMPOSITED
-    gtk_window_fullscreen (GTK_WINDOW (window));
-#endif
     //gtk_widget_set_double_buffered(window, FALSE);
 
     g_signal_connect(G_OBJECT(window), "expose-event", G_CALLBACK(expose), NULL);
@@ -115,10 +131,17 @@ int main(int argc, char **argv)
     g_timeout_add(1000/FPS, (GSourceFunc)timeout, window);
 
     /* Run the program */
+    gtk_widget_realize (window);
+
+#ifndef COMPOSITED
+    Display *display = XOpenDisplay (NULL);
+    set_non_compositing (display, GDK_WINDOW_XID (GTK_WIDGET (window)->window));
+#endif
+
     gtk_widget_show_all(window);
 
 #ifndef COMPOSITED
-    set_non_compositing (window);
+    set_fullscreen (display, GDK_WINDOW_XID (GTK_WIDGET (window)->window));
 #endif
 
     gtk_main();

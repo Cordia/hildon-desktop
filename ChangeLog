@@ -13,6 +13,9 @@
 
 2009-06-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* tests/test-speed.c: Make window property setting functions more
+	suitable as example for Rovio guys.
+
 	Release 2.2.53
 
 2009-06-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
