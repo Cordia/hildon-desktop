@@ -1059,11 +1059,17 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 		  {
                     ClutterActor *pactor;
                     pactor = mb_wm_comp_mgr_clutter_client_get_actor (prev);
-                    clutter_actor_show (pactor);
-		    g_debug ("%s: REPLACE ACTOR %p WITH %p", __func__, actor,
-			     pactor);
-                    hd_switcher_replace_window_actor (priv->switcher_group,
-                                                      actor, pactor);
+                    if (pactor)
+                    {
+                      clutter_actor_show (pactor);
+		      g_debug ("%s: REPLACE ACTOR %p WITH %p", __func__,
+                               actor, pactor);
+                      hd_switcher_replace_window_actor (priv->switcher_group,
+                                                        actor, pactor);
+                    }
+                    else
+                      g_warning ("%s: leader or next secondary not found",
+                                 __func__);
 		  }
                 }
               else if (!(c->window->ewmh_state &

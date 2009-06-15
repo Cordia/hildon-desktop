@@ -1,3 +1,8 @@
+2009-06-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client): Avoid crash in
+	case of weird internal inconsistency. Fixes: NB#122802
+
 2009-06-15  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#119149 - Title graphics should not be scaled
