@@ -6098,7 +6098,7 @@
 
 	* src/launcher/hd-launcher.h
 	* src/launcher/hd-launcher.c	
-        * src/launcher/hd-launcher-page.c:
+	* src/launcher/hd-launcher-page.c:
 	Modified task launcher transition to fade the 'back' arrow in and out
 
 2008-12-02  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
