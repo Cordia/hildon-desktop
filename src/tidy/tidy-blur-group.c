@@ -20,6 +20,10 @@
 #include <locale.h>
 
 
+/* This destroys and re-allocates the texture if the actor size changes
+ * (eg. screen rotation). We may not want to do this as it takes some time. */
+#define RESIZE_TEXTURE 0
+
 /* This fixes the bug where the SGX GLSL compiler uses the current locale for
  * numbers - so '1.0' in a shader will not work when the locale says that ','
  * is a decimal separator.
@@ -322,6 +326,7 @@ tidy_blur_group_paint (ClutterActor *actor)
   int exp_height = height/2;
   int tex_width = 0;
   int tex_height = 0;
+  gboolean rotate_90;
 
   /* check sizes */
   if (priv->tex_a)
@@ -329,6 +334,8 @@ tidy_blur_group_paint (ClutterActor *actor)
       tex_width = cogl_texture_get_width(priv->tex_a);
       tex_height = cogl_texture_get_height(priv->tex_a);
     }
+
+#if RESIZE_TEXTURE
   /* free texture if the size is wrong */
   if (tex_width!=exp_width || tex_height!=exp_height) {
     if (priv->fbo_a)
@@ -348,6 +355,7 @@ tidy_blur_group_paint (ClutterActor *actor)
     priv->current_blur_step = 0;
     priv->source_changed = TRUE;
   }
+#endif // RESIZE_TEXTURE
   /* create the texture + offscreen buffer if they didn't exist.
    * We can specify mipmapping here, but we don't need it */
   if (!priv->tex_a)
@@ -372,6 +380,11 @@ tidy_blur_group_paint (ClutterActor *actor)
       priv->fbo_b = cogl_offscreen_new_to_texture (priv->tex_b);
     }
 
+  /* It may be that we have resized, but the texture has not.
+   * If so, try and keep blurring 'nice' by rotating so that
+   * we don't have a texture that is totally the wrong aspect ratio */
+  rotate_90 = (tex_width > tex_height) != (width > height);
+
   /* Draw children into an offscreen buffer */
   if (priv->source_changed && priv->current_blur_step==0)
     {
@@ -379,7 +392,15 @@ tidy_blur_group_paint (ClutterActor *actor)
       cogl_push_matrix();
       /* translate a bit to let bilinear filter smooth out intermediate pixels */
       cogl_translatex(CFX_ONE/2,CFX_ONE/2,0);
-      cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height);
+
+      if (rotate_90) {
+        cogl_scale(CFX_ONE*tex_width/height, CFX_ONE*tex_height/width);
+        cogl_translatex(CFX_ONE*height/2, CFX_ONE*width/2, 0);
+        cogl_rotate(90, 0, 0, 1);
+        cogl_translatex(-CFX_ONE*width/2, -CFX_ONE*height/2, 0);
+      } else {
+        cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height);
+      }
 
       cogl_paint_init(&bgcol);
       cogl_color (&white);
@@ -505,6 +526,15 @@ tidy_blur_group_paint (ClutterActor *actor)
 
   cogl_color (&col);
 
+  if (rotate_90)
+    {
+      cogl_push_matrix();
+      cogl_translatex(CFX_ONE*width/2, CFX_ONE*height/2, 0);
+      cogl_rotate(90, 0, 0, 1);
+      cogl_scale(-CFX_ONE*height/width, -CFX_ONE*width/height);
+      cogl_translatex(-CFX_ONE*width/2, -CFX_ONE*height/2, 0);
+    }
+
   if ((priv->zoom >= 1) || !priv->use_mirror)
     {
       cogl_texture_rectangle (priv->current_is_a ? priv->tex_a : priv->tex_b,
@@ -594,6 +624,11 @@ tidy_blur_group_paint (ClutterActor *actor)
                               6*(VIGNETTE_TILES*VIGNETTE_TILES),
                               verts,
                               TRUE);
+    }
+
+  if (rotate_90)
+    {
+      cogl_pop_matrix();
     }
 
   if (priv->use_shader && priv->shader_saturate)

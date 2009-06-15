@@ -1,3 +1,10 @@
+2009-06-15  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/tidy/tidy-blur-group.c: Avoid resizing the textures used for
+	  blurring and instead rotate the image by 90 degrees if the aspect
+	  ratio is wrong. This saves us vital time in the middle of a rotate
+	  transition. Done to help with NB#117748.
+
 2009-06-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client): Avoid crash in
