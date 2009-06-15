@@ -78,6 +78,8 @@ void            tidy_sub_texture_set_parent_texture (TidySubTexture *sub,
                                                      ClutterTexture      *texture);
 void            tidy_sub_texture_set_region (TidySubTexture *sub,
                                              ClutterGeometry *region);
+void            tidy_sub_texture_set_tiled (TidySubTexture *sub,
+                                            gboolean tile);
 
 G_END_DECLS
 

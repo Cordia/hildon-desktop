@@ -321,6 +321,8 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
 
             tex = tidy_sub_texture_new(texture);
             tidy_sub_texture_set_region(tex, &geot);
+            if (x==1 || y==1)
+              tidy_sub_texture_set_tiled(tex, TRUE);
             clutter_actor_set_position(CLUTTER_ACTOR(tex), pos.x, pos.y);
             clutter_actor_set_size(CLUTTER_ACTOR(tex), pos.width, pos.height);
             clutter_container_add_actor(
@@ -345,6 +347,7 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
       tidy_sub_texture_set_region(texa, &geoa);
       texb = tidy_sub_texture_new(texture);
       tidy_sub_texture_set_region(texb, &geob);
+      tidy_sub_texture_set_tiled(texb, TRUE);
       texc = tidy_sub_texture_new(texture);
       tidy_sub_texture_set_region(texc, &geoc);
       clutter_actor_set_position(CLUTTER_ACTOR(texa),

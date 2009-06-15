@@ -221,6 +221,7 @@ hd_title_bar_init (HdTitleBar *bar)
 {
   ClutterActor *actor = CLUTTER_ACTOR(bar);
   ClutterColor title_color;
+  ClutterGeometry title_bg_size = {0,0,112,56}; /* size of theme image */
   gchar *font_name;
   HdTitleBarPrivate *priv = bar->priv = HD_TITLE_BAR_GET_PRIVATE(bar);
   gint i;
@@ -248,8 +249,10 @@ hd_title_bar_init (HdTitleBar *bar)
       CLUTTER_ACTOR(priv->foreground));
 
   /* Title background */
-  priv->title_bg = hd_clutter_cache_get_texture(
-      HD_THEME_IMG_TITLE_BAR, TRUE);
+  priv->title_bg = hd_clutter_cache_get_sub_texture(
+      HD_THEME_IMG_TITLE_BAR, TRUE, &title_bg_size);
+  if (TIDY_IS_SUB_TEXTURE(priv->title_bg))
+    tidy_sub_texture_set_tiled(TIDY_SUB_TEXTURE(priv->title_bg), TRUE);
   clutter_container_add_actor(CLUTTER_CONTAINER(bar),
       CLUTTER_ACTOR(priv->title_bg));
 

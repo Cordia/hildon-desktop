@@ -28,7 +28,8 @@ G_DEFINE_TYPE (TidySubTexture,
 struct _TidySubTexturePrivate
 {
   ClutterTexture      *parent_texture;
-  ClutterGeometry      region;
+  ClutterGeometry      region; /* The region of the parent texture to draw */
+  gboolean             tiled; /* should the texture be tiled rather than stretched? */
 };
 
 static void
@@ -104,7 +105,7 @@ tidy_sub_texture_paint (ClutterActor *self)
 {
   TidySubTexturePrivate  *priv;
   ClutterActor                *parent_texture;
-  gint                         x_1, y_1, x_2, y_2;
+  gint                         x_1, y_1, x_2, y_2, width, height;
   ClutterColor                 col = { 0xff, 0xff, 0xff, 0xff };
   CoglHandle                   cogl_texture;
   ClutterFixed                 t_x, t_y, t_w, t_h;
@@ -128,6 +129,8 @@ tidy_sub_texture_paint (ClutterActor *self)
   cogl_color (&col);
 
   clutter_actor_get_allocation_coords (self, &x_1, &y_1, &x_2, &y_2);
+  width = x_2 - x_1;
+  height = y_2 - y_1;
 
   cogl_texture = clutter_texture_get_cogl_texture (priv->parent_texture);
 
@@ -150,11 +153,78 @@ tidy_sub_texture_paint (ClutterActor *self)
   t_w = CLUTTER_FLOAT_TO_FIXED(region.width / (float)tex_width);
   t_h = CLUTTER_FLOAT_TO_FIXED(region.height / (float)tex_height);
 
-  /* Parent paint translated us into position */
-  cogl_texture_rectangle (cogl_texture, 0, 0,
-			  CLUTTER_INT_TO_FIXED (x_2 - x_1),
-			  CLUTTER_INT_TO_FIXED (y_2 - y_1),
-			  t_x, t_y, t_x+t_w, t_y+t_h);
+  /* Parent paint translated us into position, so we just
+   * paint at 0,0 */
+  if (!priv->tiled)
+    {
+      // normal draw if not tiled...
+      cogl_texture_rectangle (cogl_texture, 0, 0,
+                              CLUTTER_INT_TO_FIXED (width),
+                              CLUTTER_INT_TO_FIXED (height),
+                              t_x, t_y, t_x+t_w, t_y+t_h);
+    }
+  else
+    {
+      gint x,y,c;
+      CoglTextureVertex *verts, *rect;
+      /* For tiling, we draw a rectangles for each tile that we repeat.
+       * We do this using draw_triangles as it is way more efficient
+       * than calling texture_rectangle multiple times. Hence each rect
+       * has 6 elements = 2 triangles.  */
+
+      /* max number of items needed */
+      c = ((width / region.width)+1) * ((height / region.height)+1);
+      verts = g_malloc(sizeof(CoglTextureVertex)*c*6);
+      c = 0;
+      rect = verts;
+
+
+      for (y=0;y<height;y+=region.height)
+        for (x=0;x<width;x+=region.width)
+          {
+            gint w,h;
+            /* Clip width and height to the edges of the image */
+            w = region.width;
+            if (x+w > width)
+              w = width-x;
+            h = region.height;
+            if (y+h > height)
+              h = height-y;
+
+            rect[0].x = CLUTTER_INT_TO_FIXED(x);
+            rect[0].y = CLUTTER_INT_TO_FIXED(y);
+            rect[0].z = 0;
+            rect[0].tx = t_x;
+            rect[0].ty = t_y;
+            rect[1].x = CLUTTER_INT_TO_FIXED(x+w);
+            rect[1].y = CLUTTER_INT_TO_FIXED(y);
+            rect[1].z = 0;
+            rect[1].tx = t_x+(t_w*w/region.width);
+            rect[1].ty = t_y;
+            rect[2].x = CLUTTER_INT_TO_FIXED(x+w);
+            rect[2].y = CLUTTER_INT_TO_FIXED(y+h);
+            rect[2].z = 0;
+            rect[2].tx = t_x+(t_w*w/region.width);
+            rect[2].ty = t_y+(t_h*h/region.height);
+            rect[3] = rect[0];
+            rect[4] = rect[2];
+            rect[5].x = CLUTTER_INT_TO_FIXED(x);
+            rect[5].y = CLUTTER_INT_TO_FIXED(y+h);
+            rect[5].z = 0;
+            rect[5].tx = t_x;
+            rect[5].ty = t_y+(t_h*h/region.height);
+
+            rect += 6;
+            c++;
+          }
+
+      /* render! */
+      cogl_texture_triangles (cogl_texture,
+                              6*c,
+                              verts,
+                              FALSE);
+      g_free(verts);
+    }
 }
 
 static void
@@ -295,6 +365,7 @@ tidy_sub_texture_init (TidySubTexture *self)
   self->priv = priv = CLUTTER_SUB_TEXTURE_GET_PRIVATE (self);
   priv->parent_texture = NULL;
   priv->region = null_region;
+  priv->tiled = FALSE;
 }
 
 /**
@@ -362,5 +433,13 @@ void tidy_sub_texture_set_region (TidySubTexture *sub,
 {
   g_return_if_fail (TIDY_IS_SUB_TEXTURE (sub));
   sub->priv->region = *region;
+}
+
+/* Set whether to tile (rather than stretch) the image */
+void tidy_sub_texture_set_tiled (TidySubTexture *sub,
+                                gboolean tile)
+{
+  g_return_if_fail (TIDY_IS_SUB_TEXTURE (sub));
+  sub->priv->tiled = tile;
 }
 

@@ -1,3 +1,16 @@
+2009-06-15  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#119149 - Title graphics should not be scaled
+
+	* src/tidy/tidy-sub-texture.c
+	* src/tidy/tidy-sub-texture.h: Added tidy_sub_texture_set_tiled and
+	  relevant code to tile the image in GLES.
+	* src/home/hd-clutter-cache.c: Set textures to be tiled when they
+	  would previously have been stretched.
+	* src/home/hd-title-bar.c: Now ensure that we use a tidy_sub_texture
+	  for the title bar background, and make sure that when it is 
+	  stretched it tiles the image.
+
 2009-06-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.53
