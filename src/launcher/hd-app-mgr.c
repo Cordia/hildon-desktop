@@ -481,6 +481,12 @@ hd_app_mgr_init (HdAppMgr *self)
                                        INIT_DONE_SIGNAL_NAME);
           hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
                                        MCE_SIGNAL_IF,
+                                       MCE_TKLOCK_MODE_SIG);
+          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
+                                       MCE_SIGNAL_IF,
+                                       MCE_DISPLAY_SIG);
+          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
+                                       MCE_SIGNAL_IF,
                                        MCE_DEVICE_ORIENTATION_SIG);
           dbus_connection_add_filter (dbus_g_connection_get_connection (connection),
                                       hd_app_mgr_dbus_signal_handler,
