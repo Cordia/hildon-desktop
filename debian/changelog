@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.53-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.53-1) unstable; urgency=low
 
   Laszlo:
   * Fixes: NB#120612 - Unwanted activation of the task launcher/switcher button
@@ -10,7 +10,30 @@ hildon-desktop (1:2.2.53-1~unreleased) unstable; urgency=low
   * Fixes: NB#117673 - Screen dimmed after receiving long class 0 flash SMS
     message
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  8 Jun 2009 10:39:10 +0300
+  Gordon:
+  * Fixes: NB#119406 - blurring not working when camera brought to top using
+    button.
+  * Fixes: NB#120492 - Unparented animation actors are displayed.
+
+  Marc:
+  * Fixes: NB#121803 - Show empty categories in task launcher.
+  * Fixes: NB#116215 - Order applications by ctime if not hard-coded in
+    position.
+  * Fixes: NB#100819 - consider load_avg in prestarting
+  * Fixes: NB#121512 - Retry waking up hibernated apps if not shown in 10s.
+  * Fixes: NB#121487 - When an app is marked hibernatable, check if we need to
+    bgkill it immediately.
+
+  Adam:
+  * Fixes: NB#120847 - Text of time in notification goes out of box window
+  * Fixes: NB#121060 - Indication is done on top of Tasks button, with an
+    animation and highlight for every one min even when there is no new event.
+  * Fixes: NB#121584 - Missed call notification text comes outside of the
+    window
+  * Fixes: NB#121066 - Even when conversation window of a particular contact is
+    open, a separate notification is shown in switcher
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Jun 2009 09:16:49 +0300
 
 hildon-desktop (1:2.2.52-1) unstable; urgency=low
 
