@@ -1,4 +1,7 @@
-hildon-desktop (1:2.2.54-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.54-1) unstable; urgency=low
+
+  Gordon:
+  * Fixes: NB#119149 - Title graphics should not be scaled
 
   Kimmo:
   * Fixes: NB#122802 - Desktop crashed when resuming image viewer from
