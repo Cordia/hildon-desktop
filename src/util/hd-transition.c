@@ -44,6 +44,16 @@
 
 #define HDCM_NOTIFICATION_END_SIZE 32
 
+/* In the rotation transition, the amount of milliseconds to leave after we
+ * get a damage event before we transition back from blanking */
+#define HD_TRANSITION_ROTATION_DAMAGE_TIMEOUT (300)
+/* Maximum amount of time we may wait if we keep getting damage events */
+#define HD_TRANSITION_ROTATION_MAX_TIMEOUT (1000)
+/* TODO: These timings should be lower, but currently the resizing of
+ * windows is so slow that we're having to wait for ages or we start the
+ * transition back while drawing is still happening. It is not uncommon
+ * for damage events to be 280ms apart according to xresponse. */
+
 typedef struct _HDEffectData
 {
   MBWMCompMgrClientEvent   event;
@@ -100,6 +110,15 @@ static struct
    * Its initial value is %HDRM_STATE_UNDEFINED, which means don't
    * change the state. */
   HDRMStateEnum goto_state;
+
+  /* In the WAITING state we have a timer that calls us back a few ms
+   * after the last damage event. This is the id, as we need to restart
+   * it whenever we get another damage event. */
+  guint timeout_id;
+
+  /* This timer counts from when we first entered the WAITING state,
+   * so if we are continually getting damage we don't just hang there. */
+  GTimer *timer;
 } Orientation_change;
 
 /* ------------------------------------------------------------------------- */
@@ -1038,6 +1057,16 @@ hd_transition_rotating_fsm(void)
   g_debug ("%s: phase=%d, new_direction=%d, direction=%d", __FUNCTION__,
            Orientation_change.phase, Orientation_change.new_direction,
            Orientation_change.direction);
+
+  /* We will always return FALSE, which will cancel the timeout,
+   * so make sure it is set to 0. */
+  Orientation_change.timeout_id = 0;
+  /* if we enter here, we don't need the timer any more either */
+  if (Orientation_change.timer) {
+    g_timer_destroy(Orientation_change.timer);
+    Orientation_change.timer = 0;
+  }
+
   switch (Orientation_change.phase)
     {
       case IDLE:
@@ -1078,9 +1107,10 @@ hd_transition_rotating_fsm(void)
             clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
             hd_util_change_screen_orientation(Orientation_change.wm,
                          Orientation_change.direction == GOTO_PORTRAIT);
-            g_timeout_add(
-              hd_transition_get_int("rotate", "duration_blanking", 500),
-              (GSourceFunc)hd_transition_rotating_fsm, NULL);
+            Orientation_change.timeout_id = g_timeout_add(
+                HD_TRANSITION_ROTATION_DAMAGE_TIMEOUT,
+                (GSourceFunc)hd_transition_rotating_fsm, NULL);
+            Orientation_change.timer = g_timer_new();
             break;
           }
         else
@@ -1151,6 +1181,34 @@ void
 hd_transition_rotate_screen_and_change_state (HDRMStateEnum state)
 {
   Orientation_change.goto_state = state;
+}
+
+/* Returns whether we are in a state where we should ignore any
+ * damage requests. This also checks and possibly prolongs how long
+ * we stay in the WAITING state, so we can be sure that all windows
+ * have updated before we fade back from black. */
+gboolean
+hd_transition_rotate_ignore_damage()
+{
+  if (Orientation_change.phase == WAITING)
+    {
+      /* Only postpone the timeout if we haven't postponed
+       * it too long already. This stops us getting stuck
+       * in the WAITING state if an app keeps redrawing. */
+      if (g_timer_elapsed(Orientation_change.timer, NULL) <
+          (HD_TRANSITION_ROTATION_MAX_TIMEOUT / 1000.0))
+        {
+          /* Reset the timeout to be a little longer */
+          if (Orientation_change.timeout_id)
+            g_source_remove(Orientation_change.timeout_id);
+          Orientation_change.timeout_id = g_timeout_add(
+                HD_TRANSITION_ROTATION_DAMAGE_TIMEOUT,
+                (GSourceFunc)hd_transition_rotating_fsm, NULL);
+        }
+
+      return TRUE;
+    }
+  return FALSE;
 }
 
 /* Returns whether @actor will last only as long as the effect

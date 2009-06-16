@@ -1195,6 +1195,14 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
   if (!actor || !CLUTTER_ACTOR_IS_VISIBLE(actor) || hmgr == 0)
     return;
 
+  /* If we are in the blanking period of the rotation transition
+   * then we don't want to issue a redraw every time something changes.
+   * This function also assumes that it is called because there was damage,
+   * and makes sure it prolongs the blanking period a bit.
+   */
+  if (hd_transition_rotate_ignore_damage())
+    return;
+
   priv = hmgr->priv;
 
   /* TFP textures are usually bundled into another group, and it is
@@ -1683,6 +1691,11 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   /* if *anything* is mapped, remove our full-screen input blocker */
   hd_render_manager_remove_input_blocker();
+
+  /* We want to make sure the rotation transition is notified of a map event.
+   * It may have happened during blanking, and if so we want to increase the
+   * blanking time. */
+  hd_transition_rotate_ignore_damage();
 
   /*g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c,
              MB_WM_CLIENT_CLIENT_TYPE (c));*/

@@ -1,3 +1,17 @@
+2009-06-16  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#117748 - Transition while switching to and from portrait mode
+	                   is not proper (dial pad)
+	* src/util/hd-transition.c
+	* src/util/hd-transition.h: Added hd_transition_rotate_ignore_damage,
+	  which returns whether or not the compositor should ignore damage
+	  events (because the screen is blanked). Use calls to this to
+	  prolong the time we spend in the blanking state.
+	* src/mb/hd-comp-mgr.c: consult hd_transition_rotate_ignore_damage
+	  before we queue a redraw for the screen.
+	* data/transitions.ini: removed duration_blanking item as it is no
+	  longer required
+
 2009-06-15  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Added missing D-Bus signal matches for lock and screen status.

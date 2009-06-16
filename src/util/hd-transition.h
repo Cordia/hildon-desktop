@@ -74,6 +74,8 @@ gboolean
 hd_transition_rotate_screen(MBWindowManager *wm, gboolean goto_portrait);
 void
 hd_transition_rotate_screen_and_change_state (HDRMStateEnum state);
+gboolean
+hd_transition_rotate_ignore_damage(void);
 
 gboolean
 hd_transition_actor_will_go_away (ClutterActor *actor);
