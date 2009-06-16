@@ -54,6 +54,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include <clutter/clutter.h>
 #include <tidy/tidy-scrollable.h>
@@ -61,9 +62,18 @@
 
 #include "hd-scrollable-group.h"
 
-/* How many pixels may the user drag the pointer before we consider it
- * a purely scrolling motion.  Tunable. */
-#define MAX_CLICK_DRIFT                     10
+/*
+ * These are based on the UX Guidance.
+ *
+ * %MAX_CLICK_DRIFT:  How many pixels may the user drag the pointer
+ *                    until we consider it a purely scrolling motion.
+ * %MIN_CLICK_TIME:   Clicks shorter than this...
+ * %MAX_CLICK_TIME:   or longer than this microseconds are not clicks.
+ *                    In practice this is 30-300 ms.
+ */
+#define MAX_CLICK_DRIFT                        15
+#define MIN_CLICK_TIME                      30000
+#define MAX_CLICK_TIME                     300000
 
 /* The average speed of hd_scrollable_group_scroll() in pixels per second.
  * Tunable. */
@@ -122,7 +132,8 @@ typedef struct
 } HdScrollableGroupDirectionInfo;
 
 typedef struct
-{
+{ /* @last_pressed is the time we last saw a button-press-event */
+  struct timeval last_pressed;
   HdScrollableGroupDirectionInfo horizontal, vertical;
 } HdScrollableGroupPrivate;
 /* Type definitions }}} */
@@ -297,6 +308,7 @@ hd_scrollable_group_clicked (ClutterActor * actor, ClutterEvent * event)
   /* Remember the coordinates for hd_scrollable_group_is_clicked(). */
   if (event->type == CLUTTER_BUTTON_PRESS)
     {
+      gettimeofday (&priv->last_pressed, NULL);
       priv->horizontal.last_press = ((ClutterButtonEvent *)event)->x;
       priv->vertical.last_press   = ((ClutterButtonEvent *)event)->y;
     }
@@ -363,20 +375,36 @@ hd_scrollable_group_tick (ClutterTimeline * timeline, guint current,
  * to be reactive.
  * NOTE The other alternative is not leaving button-release-event
  * propagate if it was not a real click according to this function.
+ * NOTE This function doesn't have anything to do with scrolling anymore.
  */
 gboolean
 hd_scrollable_group_is_clicked (HdScrollableGroup * self)
 {
-  gint dx, dy;
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
+  gint dx, dy, dt;
+  struct timeval now;
 
-  if (!priv->horizontal.can_scroll && !priv->vertical.can_scroll)
-    return TRUE;
-
+  /* Is the click endpoint within a %MAX_CLICK_DRIFT circle of the
+   * starting point? */
   /* distance(a, b) = sqrt((x_a - x_b)^2 + (y_a - y_b)^2) */
   dx = priv->horizontal.last_release - priv->horizontal.last_press;
   dy = priv->vertical.last_release - priv->vertical.last_press;
-  return dx*dx + dy*dy <= MAX_CLICK_DRIFT*MAX_CLICK_DRIFT;
+  if (dx*dx + dy*dy > MAX_CLICK_DRIFT*MAX_CLICK_DRIFT)
+    return FALSE;
+
+  /* Was the click in the [MIN_CLICK_TIME, MAX_CLICK_TIME] frame? */
+  gettimeofday (&now, NULL);
+  if (now.tv_usec > priv->last_pressed.tv_usec)
+    dt = now.tv_usec-priv->last_pressed.tv_usec
+      + (now.tv_sec-priv->last_pressed.tv_sec) * 1000000;
+  else /* now.sec > last.sec */
+    dt = (1000000-priv->last_pressed.tv_usec)+now.tv_usec
+      + (now.tv_sec-priv->last_pressed.tv_sec-1) * 1000000;
+  if (!(MIN_CLICK_TIME <= dt && dt <= MAX_CLICK_TIME))
+    return FALSE;
+
+  /* It a click! */
+  return TRUE;
 }
 
 /* Returns in pixels how far the left side of the estate is from the left side

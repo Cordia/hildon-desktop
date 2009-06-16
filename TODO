@@ -36,9 +36,6 @@ Switcher:
 - When zooming back is complete fade in the real titlebar.
 - When zooming back do a blur animation.
 - Scrollbar: place 4 pixels leftwards
-- Be more sensible differentiating clicks vs. scroll attempts.
-  (It should be the same usability-wise as pannable areas.)
-- dismiss and panning area
 - Update label colors with theme change.
 - Zoom+fly: don't slow down at the end of zoom and don't start slowly
 - Shadowed text in switcher (wishlist).

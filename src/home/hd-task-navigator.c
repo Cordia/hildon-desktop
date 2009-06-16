@@ -6,34 +6,31 @@
  * event notifications.
  *
  * Actor hierarchy:
- * @Navigator                 #ClutterGroup
- *   @Scroller                #TidyFingerScroll
- *     @Navigator_area        #HdScrollableGroup
- *       @Thumbnails          #ClutterGroup:s
- *
- * Thumbnail.thwin hierarchy:
- *   .prison                  #ClutterGroup         applications
- *     .titlebar              #ClutterGroup
- *     .windows               #ClutterGroup
- *       .apwin               #ClutterActor
- *       .dialogs             #ClutterActor
- *     .video                 #ClutterTexture
- *   .notwin                  #ClutterGroup         notifications
- *     .background            #ClutterCloneTexture  or apps w/notifs
- *     .separator,            #ClutterCloneTexture
- *     .icon                  #ClutterTexture
- *     .count                 #ClutterLabel
- *     .time                  #ClutterLabel
- *     .message               #ClutterLabel
- *   .plate                   #ClutterGroup
- *     .frame.all             #ClutterGroup         applications
- *       .frame.nw, .nm, .ne  #ClutterCloneTexture  applications
- *       .frame.mw,      .mw  #ClutterCloneTexture  applications
- *       .frame.sw, .sm, .sw  #ClutterCloneTexture  applications
- *     .title                 #ClutterLabel
- *     .close                 #ClutterGroup
- *       .icon_app            #ClutterCloneTexture
- *       .icon_notif          #ClutterCloneTexture
+ * @Navigator                   #ClutterGroup
+ *   @Scroller                  #TidyFingerScroll
+ *     @Grid                    #HdScrollableGroup
+ *       @Thumbnails            #ClutterGroup:s
+ *                             
+ * Thumbnail.thwin hierarchy: 
+ *   .prison                    #ClutterGroup         applications
+ *     .titlebar                #ClutterGroup
+ *     .windows                 #ClutterGroup
+ *       .apwin                 #ClutterActor
+ *       .dialogs               #ClutterActor
+ *     .video                   #ClutterTexture
+ *   .notwin                    #ClutterGroup         notifications
+ *     .background              #ClutterCloneTexture  or apps w/notifs
+ *     .separator               #ClutterCloneTexture
+ *     .icon                    #ClutterTexture
+ *     .count, .time, .message  #ClutterLabel
+ *   .plate                     #ClutterGroup
+ *     .frame.all               #ClutterGroup         applications
+ *       .frame.nw, .nm, .ne    #ClutterCloneTexture  applications
+ *       .frame.mw,      .mw    #ClutterCloneTexture  applications
+ *       .frame.sw, .sm, .sw    #ClutterCloneTexture  applications
+ *     .title                   #ClutterLabel
+ *     .close                   #ClutterGroup
+ *       .icon_app, .icon_notif #ClutterCloneTexture
  * }}}
  */
 
@@ -195,13 +192,15 @@ typedef struct
 {
   /*
    * -- @cells_per_row:   How many thumbnails to lay out in a row
-   *                      (not in the last row).
+   *                      (not in the last and incomplete row).
    * -- @xpos:            The horizontal position of the leftmost
-   *                      thumbnails relative to the @Navigator_area
-   *                      (not in the last row).
-   * -- @last_row_xpos:   Likewise, but for the last row.
-   * -- @ypos:            The vertical position of the topmost
-   *                      thumbnails relative to the @Navigator_area.
+   *                      thumbnails relative to the @Grid
+   *                      (not in the last and incomplete row).
+   * -- @last_row_xpos:   Likewise, but for the last and incomplete row.
+   *                      By definition the last and incomplete row has
+   *                      fewer thunmbnails than @cells_per_row.
+   * -- @ypos:            The vertical position of the topmost thumbnails
+   *                      relative to the @Grid.
    * -- @hspace, @vspace: When a thumbnail is placed somewhere don't
    *                      place other thumbnails within this rectangle.
    * -- @thumbsize:       Desired size of the thumbnails, points to one
@@ -266,7 +265,7 @@ typedef struct
   enum { APPLICATION, NOTIFICATION } type;
 
   /*
-   * -- @thwin:       @Navigator_area's thumbnail window and event responder.
+   * -- @thwin:       The @Grid's thumbnail window and event responder.
    * -- @plate:       Groups the @title and the @frame graphics; used to fade
    *                  them all at once.  It sits on the top and can be thought
    *                  of as a boilerplate.
@@ -537,9 +536,10 @@ static const ClutterGeometry App_window_geometry =
  * -- @Navigator:         Root group, event responder.
  * -- @Scroller:          Viewport of @Navigation_area and controls
  *                        its scrolling.  Moved and scaled when zooming.
- * -- @Navigator_area:    Contains the complete layout.
+ * -- @Grid:              Contains the complete layout and does a
+ *                        little button-event management.
  */
-static HdScrollableGroup *Navigator_area;
+static HdScrollableGroup *Grid;
 static ClutterActor *Navigator, *Scroller;
 
 /*
@@ -1321,7 +1321,7 @@ turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
    * and hide it initially because particles are shown later during the
    * effect. */
   clutter_actor_get_position (thwin,  &centerx, &centery);
-  centery -= hd_scrollable_group_get_viewport_y (Navigator_area);
+  centery -= hd_scrollable_group_get_viewport_y (Grid);
   closure->all_particles = clutter_group_new ();
   clutter_actor_set_position (closure->all_particles, centerx, centery);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator),
@@ -1481,6 +1481,7 @@ hd_task_navigator_has_window (HdTaskNavigator * self, ClutterActor * win)
   return FALSE;
 }
 
+/* Find which thumbnail represents the requested app. */
 ClutterActor *
 hd_task_navigator_find_app_actor (HdTaskNavigator * self, const gchar * id)
 {
@@ -1499,18 +1500,18 @@ hd_task_navigator_find_app_actor (HdTaskNavigator * self, const gchar * id)
   return NULL;
 }
 
-/* Scroll @Navigator_area to the top. */
+/* Scroll @Grid to the top. */
 void
 hd_task_navigator_scroll_back (HdTaskNavigator * self)
 {
-  hd_scrollable_group_set_viewport_y (Navigator_area, 0);
+  hd_scrollable_group_set_viewport_y (Grid, 0);
 }
 
-/* Updates our #HdScrollableGroup's idea about @Navigator_area's height. */
+/* Updates our #HdScrollableGroup's idea about the @Grid's height. */
 static void
 set_navigator_height (guint hnavigator)
 {
-  hd_scrollable_group_set_real_estate (Navigator_area,
+  hd_scrollable_group_set_real_estate (Grid,
                                        HD_SCROLLABLE_GROUP_VERTICAL,
                                        hnavigator);
 }
@@ -1784,10 +1785,10 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
 }
 
 /*
- * Lays out @Thumbnails on @Navigator_area, and their inner portions.
- * Makes actors fly if it's appropriate.  @newborn is either a new thumbnail
- * or notification to be displayed; it won't be animated.  Returns the
- * position of the bottom of the lowest thumbnail.  Also sets @Thumbsize.
+ * Lays out @Thumbnails on @Grid, and their inner portions.  Makes actors fly
+ * if it's appropriate.  @newborn is either a new thumbnail or notification
+ * to be displayed; it won't be animated.  Returns the position of the bottom
+ * of the lowest thumbnail.  Also sets @Thumbsize.
  */
 static guint
 layout_thumbs (ClutterActor * newborn)
@@ -1877,7 +1878,7 @@ skip_the_circus:
   return ythumb + Thumbsize->height;
 }
 
-/* Lays out the @Thumbnails in @Navigator_area. */
+/* Lays out the @Thumbnails in the @Grid. */
 static void
 layout (ClutterActor * newborn)
 {
@@ -1988,8 +1989,7 @@ create_thwin (Thumbnail * thumb, ClutterActor * prison)
   clutter_actor_set_reactive (thumb->thwin, TRUE);
   clutter_container_add (CLUTTER_CONTAINER (thumb->thwin),
                          prison, thumb->plate, NULL);
-  clutter_container_add_actor (CLUTTER_CONTAINER (Navigator_area),
-                               thumb->thwin);
+  clutter_container_add_actor (CLUTTER_CONTAINER (Grid), thumb->thwin);
 }
 
 /* Release everything related to @thumb. */
@@ -1997,8 +1997,7 @@ static void
 free_thumb (Thumbnail * thumb)
 {
   /* This will kill the entire actor hierarchy. */
-  clutter_container_remove_actor (CLUTTER_CONTAINER (Navigator_area),
-                                  thumb->thwin);
+  clutter_container_remove_actor (CLUTTER_CONTAINER (Grid), thumb->thwin);
 
   /* The caller must have taken care of .tnote already. */
   g_assert (!thumb_has_notification (thumb));
@@ -2316,7 +2315,7 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
    */
   clutter_actor_get_position  (apthumb->thwin,  &xpos,    &ypos);
   clutter_actor_get_scale     (apthumb->prison, &xscale,  &yscale);
-  ypos -= hd_scrollable_group_get_viewport_y (Navigator_area);
+  ypos -= hd_scrollable_group_get_viewport_y (Grid);
   xpos += PRISON_XPOS;
   ypos += PRISON_YPOS;
 
@@ -2370,14 +2369,14 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   clutter_actor_get_position (apthumb->thwin,  &xpos, &ypos);
 
   /*
-   * Scroll the @Navigator_area so that @apthumb is closest the middle
-   * of the screen.  #HdScrollableGroup does not let us scroll the
-   * viewport out of the real estate, but in return we need to ask
-   * how much we actually managed to scroll.
+   * Scroll the @Grid so that @apthumb is closest the middle of the screen.
+   * #HdScrollableGroup does not let us scroll the viewport out of the real
+   * estate, but in return we need to ask how much we actually managed to
+   * scroll.
    */
   yarea = ypos - (SCREEN_HEIGHT - Thumbsize->height) / 2;
-  hd_scrollable_group_set_viewport_y (Navigator_area, yarea);
-  yarea = hd_scrollable_group_get_viewport_y (Navigator_area);
+  hd_scrollable_group_set_viewport_y (Grid, yarea);
+  yarea = hd_scrollable_group_get_viewport_y (Grid);
 
   /* Make @ypos absolute (relative to the top of the screen). */
   ypos -= yarea;
@@ -2617,7 +2616,7 @@ create_appthumb (ClutterActor * apwin)
   for_each_notification (li, nothumb)
     {
       if (tnote_matches_thumb (nothumb->tnote, apthumb))
-        { /* Yes, steal it from the @Navigator_area. */
+        { /* Yes, steal it from the the @Grid. */
           adopt_notification (apthumb, remove_nothumb (li, FALSE));
           break;
         }
@@ -2708,9 +2707,9 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
     }
 
   /*
-   * If @win had a notification, add it to @Navigator_area as a standalone
-   * thumbnail.  TODO It'd be nice to show the notification squeezing but
-   * we can't because %TNote must belong to exactly one %Thumbnail a time.
+   * If @win had a notification, add it to @Grid as a standalone thumbnail.
+   * TODO It'd be nice to show the notification squeezing but we can't
+   * because %TNote must belong to exactly one %Thumbnail a time.
    * Maybe %ClutterTexture could be used to work it around.
    */
   newborn = thumb_has_notification (apthumb)
@@ -3234,9 +3233,8 @@ add_nothumb (TNote * tnote)
   return nothumb;
 }
 
-/* If @li is in @Notifications removes the notification's thumbnail
- * from @Navigator_area and deletes @li from the list, but it doesn't
- * free %TNote. */
+/* If @li is in @Notifications removes the notification's thumbnail from
+ * the @Grid and deletes @li from the list, but it doesn't free %TNote. */
 static TNote *
 remove_nothumb (GList * li, gboolean destroy_tnote)
 {
@@ -3274,7 +3272,7 @@ remove_nothumb (GList * li, gboolean destroy_tnote)
 /* nothumb:s }}} */
 
 /* Add/remove notifications {{{ */
-/* Show a notification in the navigator, either in the @Navigator_area
+/* Show a notification in the navigator, either in the @Grid
  * or in the notification's thumbnail title area if it's running. */
 void
 hd_task_navigator_add_notification (HdTaskNavigator * self,
@@ -3299,7 +3297,7 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
             {
               /* hildon-home should have replaced the summary of the existing
                * %HdNote instead; the easy way out is adding the new one to the
-               * @Navigator_area. */
+               * @Grid. */
               g_critical ("%s: attempt to add more than one notification",
                           __FUNCTION__);
               break;
@@ -3358,9 +3356,56 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
 /* }}} */
 
 /* %HdTaskNavigator {{{ */
-/* Find which thumbnail represents the requested app. */
 /* Callbacks {{{ */
 G_DEFINE_TYPE (HdTaskNavigator, hd_task_navigator, CLUTTER_TYPE_GROUP);
+
+/*
+ * Returns whether the @event coordinates fall within the tight
+ * grid of thumbnails.  If @Thumbnails have an incomplete row at
+ * the end the cells not occupied by thumbnails are not considered
+ * part of the tight grid.
+ */
+static gboolean
+within_grid (const ClutterButtonEvent * event)
+{
+  Layout lout;
+  gint x, y, n, m;
+
+  if (!NThumbnails)
+    return FALSE;
+  calc_layout (&lout);
+
+  if (event->y < lout.ypos)
+    /* Clicked above the first row. */
+    return FALSE;
+  n = NThumbnails / lout.cells_per_row;
+  m = NThumbnails % lout.cells_per_row;
+  y = lout.ypos + lout.vspace*(n-1) + lout.thumbsize->height
+    - hd_scrollable_group_get_viewport_y (Grid);
+
+  if (event->y <= y)
+    { /* Clicked somewhere in the complete rows. */
+      x = lout.xpos;
+      n = lout.cells_per_row;
+    }
+  else if (m && event->y <= y + lout.vspace)
+    { /* Clicked somewhere in the incomplete row. */
+      x = lout.last_row_xpos;
+      n = m;
+    }
+  else /* Clicked below the last row. */
+    return FALSE;
+
+  /* Clicked somehere in the last (either complete or incomplete) row. */
+  g_assert (n > 0);
+  if (event->x < x)
+    return FALSE;
+  if (event->x > x + lout.hspace*(n-1) + lout.thumbsize->width)
+    return FALSE;
+
+  /* Clicked between the thumbnails. */
+  return TRUE;
+}
 
 /* @Navigator's "show" handler. */
 static void
@@ -3408,19 +3453,41 @@ navigator_hidden (ClutterActor * navigator, gpointer unused)
     release_win (thumb);
 }
 
-/* Called when you click the navigator outside thumbnails and notifications,
- * possibly to hide the navigator. */
+/* @Navigator::button-release-event handler */
 static gboolean
-navigator_clicked (ClutterActor * navigator, ClutterButtonEvent * event,
-                   HdScrollableGroup * navarea)
-{
-  if (hd_scrollable_group_is_clicked (navarea))
-    g_signal_emit_by_name (navigator, "background-clicked");
+navigator_clicked (ClutterActor * navigator, ClutterButtonEvent * event)
+{ /* Tell %HdSwitcher about it, which will hide us. */
+  g_signal_emit_by_name (navigator, "background-clicked");
   return TRUE;
 }
 
-/* @Navigator_area's notify::has-clip callback to prevent clipping
- * from being applied. */
+/* @Scroller::captured-event handler */
+static gboolean
+scroller_touched (ClutterActor * scroller, const ClutterEvent * event)
+{ /* Don't start scrolling outside the grid. */
+  if (event->type == CLUTTER_BUTTON_PRESS && !within_grid (&event->button))
+    g_signal_stop_emission_by_name (scroller, "captured-event");
+  return FALSE;
+}
+
+/* @Grid::captured-event handler */
+static gboolean
+grid_touched (ClutterActor * grid, ClutterEvent * event)
+{ /* Don't propagate non-clicks to things within_grid(). */
+  return   event->type == CLUTTER_BUTTON_RELEASE
+        && within_grid (&event->button)
+        && !hd_scrollable_group_is_clicked (HD_SCROLLABLE_GROUP (grid));
+}
+
+/* @Grid::button-release-event handler */
+static gboolean
+grid_clicked (ClutterActor * grid, ClutterButtonEvent * event)
+{ /* Don't propagate the signal to @Navigator if it happened within_grid(). */
+  return within_grid (event);
+}
+
+/* @Grid's notify::has-clip callback to prevent clipping.
+ * TODO Who clips and why? */
 static gboolean
 unclip (ClutterActor * actor, GParamSpec * prop, gpointer unused)
 {
@@ -3459,8 +3526,11 @@ hd_task_navigator_init (HdTaskNavigator * self)
 {
   Navigator = CLUTTER_ACTOR (self);
   clutter_actor_set_reactive (Navigator, TRUE);
+  clutter_actor_set_size (Navigator, SCREEN_WIDTH, SCREEN_HEIGHT);
   g_signal_connect (Navigator, "show", G_CALLBACK (navigator_shown),  NULL);
   g_signal_connect (Navigator, "hide", G_CALLBACK (navigator_hidden), NULL);
+  g_signal_connect (Navigator, "button-release-event",
+                    G_CALLBACK (navigator_clicked), NULL);
 
   /* Actor hierarchy */
   /* Turn off visibility detection for @Scroller to it won't be clipped by it. */
@@ -3469,6 +3539,8 @@ hd_task_navigator_init (HdTaskNavigator * self)
   clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
   clutter_actor_set_visibility_detect(Scroller, FALSE);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), Scroller);
+  g_signal_connect (Scroller, "captured-event",
+                    G_CALLBACK (scroller_touched), NULL);
 
   /*
    * When we zoom in we may need to move the @Scroller up or downwards.
@@ -3476,16 +3548,17 @@ hd_task_navigator_init (HdTaskNavigator * self)
    * half of the zooming window.  Circumvent it by removing clipping
    * at the same time it is set.  TODO This can be considered a hack.
    */
-  Navigator_area = HD_SCROLLABLE_GROUP (hd_scrollable_group_new ());
-  clutter_actor_set_name (CLUTTER_ACTOR (Navigator_area), "Navigator area");
-  clutter_actor_set_reactive (CLUTTER_ACTOR (Navigator_area), TRUE);
-  clutter_actor_set_visibility_detect(CLUTTER_ACTOR (Navigator_area), FALSE);
-  g_signal_connect (Navigator_area, "notify::has-clip",
-                    G_CALLBACK (unclip), NULL);
-  g_signal_connect_swapped (Navigator_area, "button-release-event",
-                            G_CALLBACK (navigator_clicked), Navigator);
+  Grid = HD_SCROLLABLE_GROUP (hd_scrollable_group_new ());
+  clutter_actor_set_name (CLUTTER_ACTOR (Grid), "Navigator area");
+  clutter_actor_set_reactive (CLUTTER_ACTOR (Grid), TRUE);
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR (Grid), FALSE);
+  g_signal_connect (Grid, "notify::has-clip", G_CALLBACK (unclip), NULL);
+  g_signal_connect_after (Grid, "captured-event",
+                          G_CALLBACK (grid_touched), NULL);
+  g_signal_connect (Grid, "button-release-event",
+                    G_CALLBACK (grid_clicked), NULL);
   clutter_container_add_actor (CLUTTER_CONTAINER (Scroller),
-                               CLUTTER_ACTOR (Navigator_area));
+                               CLUTTER_ACTOR (Grid));
 
   /* Effect timelines */
   Fly_effect  = new_animation (&Fly_effect_timeline,  FLY_EFFECT_DURATION);

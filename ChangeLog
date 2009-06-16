@@ -1,3 +1,17 @@
+2009-06-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#121351 task switcher maximises applications instead of just panning
+
+	Take UX Guidelines seriously.
+	Also implrement correct (to specs) panning and dismissal areas.
+
+	* src/tidy/tidy-finger-scroll.c:
+	  Make the capture callback a class signal handler in order
+	  to be overridable somehow.
+	* src/home/hd-scrollable-group.c (hd_scrollable_group_is_clicked):
+	  Allow max. 15 pixels of drift and also consider the time.
+	* src/home/hd-task-navigator.c
+
 2009-06-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/main.c: Remove old keyboard shortcuts and add ctrl+backspace

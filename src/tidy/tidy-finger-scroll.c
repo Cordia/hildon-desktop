@@ -72,6 +72,8 @@ enum {
   PROP_BUFFER,
 };
 
+static gboolean captured_event_cb (ClutterActor *actor, ClutterEvent *event);
+
 static void
 tidy_finger_scroll_get_property (GObject *object, guint property_id,
                                  GValue *value, GParamSpec *pspec)
@@ -163,6 +165,7 @@ tidy_finger_scroll_class_init (TidyFingerScrollClass *klass)
   object_class->get_property = tidy_finger_scroll_get_property;
   object_class->set_property = tidy_finger_scroll_set_property;
   object_class->dispose = tidy_finger_scroll_dispose;
+  CLUTTER_ACTOR_CLASS (klass)->captured_event = captured_event_cb;
 
   g_object_class_install_property (object_class,
                                    PROP_MODE,
@@ -585,9 +588,9 @@ after_event_cb (TidyFingerScroll *scroll)
 
 static gboolean
 captured_event_cb (ClutterActor     *actor,
-                   ClutterEvent     *event,
-                   TidyFingerScroll *scroll)
+                   ClutterEvent     *event)
 {
+  TidyFingerScroll *scroll = TIDY_FINGER_SCROLL (actor);
   TidyFingerScrollPrivate *priv = scroll->priv;
 
   if (event->type == CLUTTER_BUTTON_PRESS)
@@ -694,10 +697,6 @@ tidy_finger_scroll_init (TidyFingerScroll *self)
   priv->decel_rate = CLUTTER_FLOAT_TO_FIXED(1.1f);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
-  g_signal_connect (CLUTTER_ACTOR (self),
-                    "captured-event",
-                    G_CALLBACK (captured_event_cb),
-                    self);
 
   /* Make the scroll-bars unreactive and set their opacity - we'll fade them
    * in/out when we scroll.
