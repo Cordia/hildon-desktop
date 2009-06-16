@@ -45,16 +45,15 @@
 #include "hd-util.h"
 #include "hd-volume-profile.h"
 #include "launcher/hd-app-mgr.h"
+#include "home/hd-render-manager.h"
 
 #ifndef DISABLE_A11Y
 #include "hildon-desktop-a11y.h"
 #endif
 
 enum {
-  KEY_ACTION_PAGE_NEXT,
-  KEY_ACTION_PAGE_PREV,
-  KEY_ACTION_TOGGLE_FULLSCREEN,
-  KEY_ACTION_TOGGLE_DESKTOP,
+  KEY_ACTION_TOGGLE_SWITCHER = 1,
+  KEY_ACTION_TOGGLE_NON_COMP_MODE,
 };
 
 #ifdef MBWM_DEB_VERSION
@@ -102,25 +101,22 @@ key_binding_func (MBWindowManager   *wm,
 		  MBWMKeyBinding    *binding,
 		  void              *userdata)
 {
-  printf(" ### got key press ### \n");
   int action;
 
   action = (int)(userdata);
 
   switch (action)
     {
-    case KEY_ACTION_PAGE_NEXT:
-      mb_wm_cycle_apps (wm, False);
+    case KEY_ACTION_TOGGLE_SWITCHER:
+      /* printf(" ### KEY_ACTION_TOGGLE_SWITCHER ###\n"); */
+      hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
       break;
-    case KEY_ACTION_PAGE_PREV:
-      mb_wm_cycle_apps (wm, True);
-      break;
-    case KEY_ACTION_TOGGLE_FULLSCREEN:
-      printf(" ### KEY_ACTION_TOGGLE_FULLSCREEN ### \n");
-      break;
-    case KEY_ACTION_TOGGLE_DESKTOP:
-      printf(" ### KEY_ACTION_TOGGLE_DESKTOP ### \n");
-      mb_wm_toggle_desktop (wm);
+    case KEY_ACTION_TOGGLE_NON_COMP_MODE:
+      /* printf(" ### KEY_ACTION_TOGGLE_NON_COMP_MODE ###\n"); */
+      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+        hd_render_manager_set_state (HDRM_STATE_APP);
+      else
+        hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
       break;
     }
 }
@@ -436,22 +432,15 @@ main (int argc, char **argv)
   g_assert (mb_wm_comp_mgr_enabled (wm->comp_mgr));
 
   mb_wm_keys_binding_add_with_spec (wm,
-				    "<alt>d",
+				    "<ctrl>BackSpace",
 				    key_binding_func,
 				    NULL,
-				    (void*)KEY_ACTION_TOGGLE_DESKTOP);
-
+				    (void*)KEY_ACTION_TOGGLE_SWITCHER);
   mb_wm_keys_binding_add_with_spec (wm,
-				    "<alt>n",
+				    "<shift><ctrl>n",
 				    key_binding_func,
 				    NULL,
-				    (void*)KEY_ACTION_PAGE_NEXT);
-
-  mb_wm_keys_binding_add_with_spec (wm,
-				    "<alt>p",
-				    key_binding_func,
-				    NULL,
-				    (void*)KEY_ACTION_PAGE_PREV);
+				    (void*)KEY_ACTION_TOGGLE_NON_COMP_MODE);
 
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 
