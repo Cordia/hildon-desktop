@@ -46,7 +46,7 @@
 
 /* In the rotation transition, the amount of milliseconds to leave after we
  * get a damage event before we transition back from blanking */
-#define HD_TRANSITION_ROTATION_DAMAGE_TIMEOUT (300)
+#define HD_TRANSITION_ROTATION_DAMAGE_TIMEOUT (200)
 /* Maximum amount of time we may wait if we keep getting damage events */
 #define HD_TRANSITION_ROTATION_MAX_TIMEOUT (1000)
 /* TODO: These timings should be lower, but currently the resizing of
