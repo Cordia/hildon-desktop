@@ -5,10 +5,24 @@ hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
     open any other after Map
   * Fixes: NB#123112 - Status Area stays on top of fullscreen non-composited
     window
+  * Fixed keyboard shortcuts.
 
   Laszlo:
-  * Fixes: NB#114610: ROTATION: Misplaced status area separator in portrait 
+  * Fixes: NB#114610 - ROTATION: Misplaced status area separator in portrait 
     mode.
+
+  Marc:
+  * Fixes: NB#122221 - Added missing D-Bus signal matches for lock and screen
+    status.
+
+  Adam:
+  * Fixes: NB#123246 - hildon-desktop crashed.
+  * Fixes: NB#121351 - task switcher maximises applications instead of just
+    panning
+
+  Gordon:
+  * Fixes: NB#117748 - Transition while switching to and from portrait mode
+    is not proper (dial pad)
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Jun 2009 18:04:12 +0300
 
