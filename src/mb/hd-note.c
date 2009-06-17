@@ -438,8 +438,12 @@ const char *hd_note_get_##field (HdNote *self)                                \
 {                                                                             \
   mbwm_return_val_if_fail (self->note_type == HdNoteTypeIncomingEvent, NULL); \
   if (!self->properties[prop])                                                \
-    self->properties[prop] = get_x_window_string_property (self,              \
-                IEProperties[prop]);                                          \
+    {                                                                         \
+      mb_wm_util_trap_x_errors ();                                            \
+      self->properties[prop] = get_x_window_string_property (self,            \
+                  IEProperties[prop]);                                        \
+      mb_wm_util_untrap_x_errors ();                                          \
+    }                                                                         \
   return self->properties[prop];                                              \
 }
 

@@ -1,5 +1,14 @@
 2009-06-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#23246 hildon-desktop crashed.
+
+	(crash != abort)
+
+	* src/mb/hd-note.c:
+	  mb_wm_util_trap_x_errors()
+
+2009-06-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/home/hd-task-navigator (hd_task_navigator_zoom_in):
 	  Handle the situation gracefully and keep the targetting the window
 	  if it happens to move away while we're zooming, for example because
