@@ -1,3 +1,10 @@
+2009-06-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator (hd_task_navigator_zoom_in):
+	  Handle the situation gracefully and keep the targetting the window
+	  if it happens to move away while we're zooming, for example because
+	  a thumbnail was added or removed during the animation.
+
 2009-06-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-render-manager.c (hd_render_manager_set_state): Move SA

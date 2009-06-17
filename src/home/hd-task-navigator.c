@@ -2258,14 +2258,6 @@ find_dialog (guint * idxp, ClutterActor * dialog, gboolean for_removal)
 /* Managing @Thumbnails }}} */
 
 /* Zooming {{{ */
-/* add_effect_closure() callback for hd_task_navigator_zoom_in()
- * to leave the navigator. */
-static void
-zoom_in_complete (ClutterActor * navigator, ClutterActor * apwin)
-{
-  g_signal_emit_by_name (Navigator, "zoom-in-complete", apwin);
-}
-
 /*
  * Tells how to scale and position @Scroller to show a prison
  * appearing the same as in application view (at the start of
@@ -2283,6 +2275,50 @@ zoom_fun (gint * xposp, gint * yposp,
   *yposp = -*yposp * *yscalep + App_window_geometry.y;
 }
 
+/* Zoom the navigator itself so that when the effect is complete the
+ * non-decoration part of @apthumb->apwin is in its regular position
+ * and size in application view. */
+static void
+zoom_in (const Thumbnail * apthumb)
+{
+  gint xpos, ypos;
+  gdouble xscale, yscale;
+
+  /* @xpos, @ypos := .prison's absolute coordinates. */
+  clutter_actor_get_position  (apthumb->thwin,  &xpos,    &ypos);
+  clutter_actor_get_scale     (apthumb->prison, &xscale,  &yscale);
+  ypos -= hd_scrollable_group_get_viewport_y (Grid);
+  xpos += PRISON_XPOS;
+  ypos += PRISON_YPOS;
+
+  /* If zoom-in is already in progress this will just change its direction
+   * such that it will focus on @apthumb's current position. */
+  zoom_fun (&xpos, &ypos, &xscale, &yscale);
+  scale_effect (Zoom_effect_timeline, Scroller, xscale, yscale);
+  move_effect  (Zoom_effect_timeline, Scroller, xpos,   ypos);
+}
+
+/* Called when the position or the size (scale) of @apthumb has changed,
+ * most probably as a consequence of a new or removed thumbnail.  Make
+ * sure @apthumb remains in focus. */
+static void
+rezoom (ClutterActor * actor, GParamSpec * unused, const Thumbnail * apthumb)
+{
+  zoom_in (apthumb);
+}
+
+/* add_effect_closure() callback for hd_task_navigator_zoom_in()
+ * to leave the navigator. */
+static void
+zoom_in_complete (ClutterActor * navigator, const Thumbnail * apthumb)
+{
+  g_signal_handlers_disconnect_by_func (apthumb->prison,
+                                        rezoom, (Thumbnail *)apthumb);
+  g_signal_handlers_disconnect_by_func (apthumb->thwin,
+                                        rezoom, (Thumbnail *)apthumb);
+  g_signal_emit_by_name (Navigator, "zoom-in-complete", apthumb->apwin);
+}
+
 /*
  * Zoom into @win, which must be shown in the navigator.  @win is not
  * returned to its original parent until the effect is complete, when
@@ -2293,35 +2329,18 @@ void
 hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
                            ClutterEffectCompleteFunc fun, gpointer funparam)
 { g_debug (__FUNCTION__);
-  gint xpos, ypos;
-  gdouble xscale, yscale;
   const Thumbnail *apthumb;
 
   g_assert (hd_task_navigator_is_active ());
   if (!(apthumb = find_by_apwin (win)))
     goto damage_control;
 
-  /* Must have gotten a gtk_window_present() during a zooming,
-   * ignore it. */
+  /* Must have gotten a gtk_window_present() during a zooming, ignore it. */
   if (animation_in_progress (Zoom_effect_timeline))
     goto damage_control;
 
-  /*
-   * Zoom the navigator itself so that when the effect is complete
-   * the non-decoration part of .apwin is in its regular position
-   * and size in application view.
-   *
-   * @xpos, @ypos := .prison's absolute coordinates.
-   */
-  clutter_actor_get_position  (apthumb->thwin,  &xpos,    &ypos);
-  clutter_actor_get_scale     (apthumb->prison, &xscale,  &yscale);
-  ypos -= hd_scrollable_group_get_viewport_y (Grid);
-  xpos += PRISON_XPOS;
-  ypos += PRISON_YPOS;
-
-  zoom_fun (&xpos, &ypos, &xscale, &yscale);
-  clutter_effect_scale  (Zoom_effect, Scroller, xscale, yscale, NULL, NULL);
-  clutter_effect_move   (Zoom_effect, Scroller, xpos,   ypos,   NULL, NULL);
+  /* This is the actual zooming, but we do other effects as well. */
+  zoom_in (apthumb);
 
   /* Crossfade .plate with .titlebar. */
   clutter_actor_show (apthumb->titlebar);
@@ -2336,9 +2355,26 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
       clutter_effect_fade (Zoom_effect, apthumb->tnote->notwin, 0, NULL, NULL);
     }
 
+  /*
+   * rezoom() if @apthumb changes its position while we're trying to
+   * zoom it in.  This may happen if somebody adds a window or adds
+   * or removes a notification.  While zooming out it's not important
+   * but when zooming in we want @win to be in the right position.
+   * During the animation @apthumb is valid.  The only way it could
+   * disappear is by removing it, but remove_window() is deferred
+   * until zomming is finished.
+   */
+  g_signal_connect (apthumb->thwin, "notify::allocation",
+                    G_CALLBACK(rezoom), (Thumbnail *)apthumb);
+  g_signal_connect (apthumb->prison, "notify::scale-x",
+                    G_CALLBACK(rezoom), (Thumbnail *)apthumb);
+  g_signal_connect (apthumb->prison, "notify::scale-y",
+                    G_CALLBACK(rezoom), (Thumbnail *)apthumb);
+
+  /* Clean up, exit and call @fun when then animation is finished. */
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)zoom_in_complete,
-                      CLUTTER_ACTOR (self), win);
+                      CLUTTER_ACTOR (self), (Thumbnail *)apthumb);
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)fun, win, funparam);
   return;
