@@ -3,6 +3,8 @@ hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
   Kimmo:
   * Fixes: NB#122719 - Status area gets overlapped with application title if
     open any other after Map
+  * Fixes: NB#123112 - Status Area stays on top of fullscreen non-composited
+    window
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Jun 2009 18:04:12 +0300
 

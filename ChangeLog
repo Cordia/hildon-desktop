@@ -1,5 +1,8 @@
 2009-06-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/home/hd-render-manager.c (hd_render_manager_set_state): Move SA
+	offscreen when going to the non-composited mode. Fixes: NB#123112.
+
 	* src/home/hd-title-bar.c (status_area_is_visible): Check x coordinate
 	as well (SA is moved offscreen in x-axis). Fixes: NB#122719.
 
