@@ -1384,11 +1384,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           clutter_actor_show (priv->loading_image);
         }
 
-      /* Reset CURRENT_APP_WIN when entering tasw/talu. */
-      if (STATE_ONE_OF(state, HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER)
-          && !STATE_ONE_OF(oldstate, HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER))
-        hd_wm_current_app_is (wm, 0);
-
       if (STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
         mb_wm_handle_show_desktop(wm, STATE_NEED_DESKTOP(state));
 
@@ -1420,6 +1415,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           else if (STATE_IS_PORTRAIT (oldstate))
             hd_transition_rotate_screen (wm, FALSE);
         }
+
+      /* Reset CURRENT_APP_WIN when entering tasw. */
+      /* Try not to change it unnecessary. */
+      if (state == HDRM_STATE_TASK_NAV)
+        hd_wm_current_app_is (wm, ~0);
+      else if (oldstate == HDRM_STATE_TASK_NAV && !STATE_IS_APP (state))
+        hd_wm_current_app_is (wm,  0);
 
       /* Signal the state has changed. */
       g_object_notify (G_OBJECT (the_render_manager), "state");

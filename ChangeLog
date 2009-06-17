@@ -1,3 +1,12 @@
+2009-06-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#122941 App window need information about state when it is visible
+		  in task-switcher and not visible at all
+
+	* src/home/hd-render-manager.c (hd_rener_manager_set_state):
+	  Change _MB_WM_CURRENT_APP_WIN such that 0xFFFFFFFF indicates
+	  we're in tasw.
+
 2009-06-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Improved waking up hibernated apps, for NB#121512.
