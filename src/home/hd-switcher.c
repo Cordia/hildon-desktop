@@ -448,7 +448,7 @@ hd_switcher_leave (HdSwitcher *switcher)
   HdSwitcherPrivate *priv = switcher->priv;
 
   priv->pressed = FALSE;
-  
+
   if (priv->press_timeout)
     {
       g_source_remove (priv->press_timeout);
@@ -575,6 +575,14 @@ hd_switcher_loading_fail (HdSwitcher *switcher,
                           gpointer data)
 {
   hd_launcher_stop_loading_transition ();
+  if (hd_render_manager_get_state () == HDRM_STATE_LOADING)
+    {
+      if (hd_task_navigator_has_apps ())
+        hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+      else
+        hd_render_manager_set_state (HDRM_STATE_HOME);
+    }
+
   GtkWidget* banner = hildon_banner_show_information (NULL, NULL,
                         _("ckct_ib_application_loading_failed"));
   hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);

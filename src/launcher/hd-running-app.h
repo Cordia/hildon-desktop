@@ -63,9 +63,10 @@ HdRunningApp   *hd_running_app_new      (HdLauncherApp *launcher);
 
 typedef enum {
   HD_APP_STATE_INACTIVE = 0,
-  HD_APP_STATE_HIBERNATING,
+  HD_APP_STATE_HIBERNATED,
   HD_APP_STATE_PRESTARTED,
   HD_APP_STATE_LOADING,
+  HD_APP_STATE_WAKING,
   HD_APP_STATE_SHOWN
 } HdRunningAppState;
 
@@ -73,6 +74,8 @@ HdRunningAppState hd_running_app_get_state (HdRunningApp *app);
 void              hd_running_app_set_state (HdRunningApp *app,
                                              HdRunningAppState state);
 gboolean hd_running_app_is_executing     (HdRunningApp *app);
+gboolean hd_running_app_is_hibernating   (HdRunningApp *app);
+gboolean hd_running_app_is_inactive      (HdRunningApp *app);
 
 HdLauncherApp  *hd_running_app_get_launcher_app  (HdRunningApp *app);
 void            hd_running_app_set_launcher_app  (HdRunningApp *app,

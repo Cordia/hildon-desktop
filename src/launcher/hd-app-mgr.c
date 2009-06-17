@@ -769,21 +769,28 @@ gboolean
 hd_app_mgr_activate (HdRunningApp *app)
 {
   gboolean result = FALSE;
+  gboolean timer = FALSE;
   HdRunningAppState state;
 
   state = hd_running_app_get_state (app);
   switch (state)
   {
     case HD_APP_STATE_INACTIVE:
-    case HD_APP_STATE_LOADING:
     case HD_APP_STATE_PRESTARTED:
       result = hd_app_mgr_start (app);
+      timer = TRUE;
       break;
     case HD_APP_STATE_SHOWN:
       result = hd_app_mgr_relaunch (app);
       break;
-    case HD_APP_STATE_HIBERNATING:
+    case HD_APP_STATE_HIBERNATED:
       result = hd_app_mgr_wakeup (app);
+      timer = TRUE;
+      break;
+    case HD_APP_STATE_LOADING:
+    case HD_APP_STATE_WAKING:
+      /* Do nothing, keep on waiting. */
+      result = TRUE;
       break;
     default:
       result = FALSE;
@@ -794,7 +801,7 @@ hd_app_mgr_activate (HdRunningApp *app)
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LOADING_FAIL],
           0, hd_running_app_get_launcher_app (app), NULL);
     }
-  else if (state != HD_APP_STATE_SHOWN)
+  else if (timer)
     {
       /* Start a loading timer. */
       time_t now;
@@ -881,24 +888,23 @@ hd_app_mgr_loading_timeout (HdRunningApp *app)
 {
   time_t now;
   time (&now);
-  if (hd_running_app_get_state (app) == HD_APP_STATE_LOADING &&
+  HdRunningAppState state = hd_running_app_get_state (app);
+  if ((state == HD_APP_STATE_LOADING || state == HD_APP_STATE_WAKING) &&
       difftime (now, hd_running_app_get_last_launch (app)) >= LOADING_TIMEOUT)
     {
-      /* If application hasn't appeared after this long, consider it
-       * closed.
-       */
       HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
-      hd_app_mgr_app_closed (app);
+
+      if (state == HD_APP_STATE_LOADING)
+        /* If application hasn't appeared after this long, consider it
+         * closed. */
+        hd_app_mgr_app_closed (app);
+      /* But not if hibernating, as we may need the pid later. */
+      else
+        hd_running_app_set_state (app, HD_APP_STATE_HIBERNATED);
 
       /* Tell the world, so something can be shown to the user. */
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LOADING_FAIL],
           0, launcher, NULL);
-    }
-
-  /* If the app was hibernated and didn't appear in time, try again. */
-  if (hd_running_app_get_state (app) == HD_APP_STATE_HIBERNATING)
-    {
-      hd_app_mgr_activate (app);
     }
 
   g_object_unref (app);
@@ -971,6 +977,7 @@ void hd_app_mgr_app_opened (HdRunningApp *app)
   /* Remove it from prestarting lists, just in case it has been launched
    * from somewhere else.
    */
+  hd_app_mgr_remove_from_queue (QUEUE_HIBERNATED, app);
   hd_app_mgr_remove_from_queue (QUEUE_PRESTARTED, app);
   hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
 
@@ -983,9 +990,18 @@ hd_app_mgr_app_closed (HdRunningApp *app)
   HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
   HdRunningAppState state = hd_running_app_get_state (app);
 
-  if (state == HD_APP_STATE_HIBERNATING)
+  if (state == HD_APP_STATE_HIBERNATED)
     {
       /* Do nothing with hibernating apps, as we need to keep them around. */
+      return;
+    }
+  if (state == HD_APP_STATE_WAKING)
+    {
+      /* If the user switches really fast, h-d can try to wake up an app
+       * that hasn't closed completely yet. As a dirty fix, try to
+       * wake it up again. */
+      hd_running_app_set_state (app, HD_APP_STATE_HIBERNATED);
+      hd_app_mgr_activate (app);
       return;
     }
 
@@ -1169,7 +1185,7 @@ hd_app_mgr_hibernate (HdRunningApp *app)
 
   if (hd_app_mgr_kill (app))
     {
-      hd_running_app_set_state (app, HD_APP_STATE_HIBERNATING);
+      hd_running_app_set_state (app, HD_APP_STATE_HIBERNATED);
       hd_app_mgr_move_queue (QUEUE_HIBERNATABLE, QUEUE_HIBERNATED, app);
       hd_running_app_set_pid (app, 0);
       hd_app_mgr_remove_from_queue (QUEUE_PRESTARTABLE, app);
@@ -1193,7 +1209,7 @@ hd_app_mgr_wakeup   (HdRunningApp *app)
   const gchar *service = hd_running_app_get_service (app);
 
   /* If the app is not hibernating, do nothing. */
-  if (hd_running_app_get_state (app) != HD_APP_STATE_HIBERNATING)
+  if (hd_running_app_get_state (app) != HD_APP_STATE_HIBERNATED)
     return TRUE;
 
   if (!service)
@@ -1212,8 +1228,7 @@ hd_app_mgr_wakeup   (HdRunningApp *app)
 
   res = hd_app_mgr_service_top (service, "RESTORE");
   if (res) {
-    hd_app_mgr_remove_from_queue (QUEUE_HIBERNATED, app);
-    hd_app_mgr_request_app_pid (app);
+    hd_running_app_set_state (app, HD_APP_STATE_WAKING);
   }
 
   return res;
@@ -1595,7 +1610,7 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
     {
       HdRunningApp *app = HD_RUNNING_APP (apps->data);
 
-      if (!hd_running_app_is_executing (app))
+      if (hd_running_app_is_inactive (app))
         goto next;
 
       if (!g_strcmp0 (name, hd_running_app_get_service (app)))
@@ -1603,15 +1618,15 @@ hd_app_mgr_dbus_name_owner_changed (DBusGProxy *proxy,
           if (!new_owner[0])
             { /* Disconnection */
               g_debug ("%s: App %s has fallen\n", __FUNCTION__,
-              hd_running_app_get_id (app));
+                                    hd_running_app_get_id (app));
 
               /* We have the correct app, deal accordingly. */
               hd_app_mgr_app_closed (app);
             }
           else
             { /* Connection */
-          if (!hd_running_app_get_pid (app))
-                hd_app_mgr_request_app_pid (app);
+              if (!hd_running_app_get_pid (app))
+                    hd_app_mgr_request_app_pid (app);
             }
           break;
         }

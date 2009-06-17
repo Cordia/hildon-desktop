@@ -1,3 +1,18 @@
+2009-06-17  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Improved waking up hibernated apps, for NB#121512.
+
+	* src/home/hd-switcher.c: If still loading, go to switcher or home when	the
+	loading fail appears.
+	* src/launcher/hd-app-mgr.c:
+	  - Time waking up, send loading-fail if app doesn't appear.
+	  - Retry waking up if app closes after trying to wake up, in case the user
+	  switches back to it really fast.
+	  - Listen to d-bus name changes for loading and waking apps (thanks, Adam!).
+	* src/launcher/hd-running-app.c:
+	* src/launcher/hd-running-app.h: New state HD_APP_STATE_WAKING.
+	* src/mb/hd-comp-mgr.c:
+
 2009-06-17  Laszlo Pere  <lpere@blumsoft.eu>
 
 	NB#114610: ROTATION: Misplaced status area separator in portrait mode.

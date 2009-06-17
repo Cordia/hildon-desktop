@@ -400,7 +400,7 @@ hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient)
   HdCompMgrClientPrivate * priv = hclient->priv;
 
   if (priv->app)
-    return (hd_running_app_get_state (priv->app) == HD_APP_STATE_HIBERNATING);
+    return (hd_running_app_is_hibernating (priv->app));
 
   return FALSE;
 }
@@ -993,8 +993,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * If the actor is an application, remove it also to the switcher
    */
   if (hclient->priv->app &&
-      (hd_running_app_get_state (hclient->priv->app)
-       == HD_APP_STATE_HIBERNATING) &&
+      hd_running_app_is_hibernating (hclient->priv->app) &&
       !g_hash_table_lookup (priv->hibernating_apps,
                             (gpointer) hclient->priv->hibernation_key))
     {

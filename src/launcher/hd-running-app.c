@@ -102,6 +102,20 @@ hd_running_app_is_executing (HdRunningApp *app)
           hd_running_app_get_state (app) == HD_APP_STATE_SHOWN);
 }
 
+gboolean
+hd_running_app_is_hibernating (HdRunningApp *app)
+{
+  return (hd_running_app_get_state (app) == HD_APP_STATE_HIBERNATED ||
+          hd_running_app_get_state (app) == HD_APP_STATE_WAKING);
+}
+
+gboolean
+hd_running_app_is_inactive (HdRunningApp *app)
+{
+  return (hd_running_app_get_state (app) == HD_APP_STATE_INACTIVE ||
+          hd_running_app_get_state (app) == HD_APP_STATE_HIBERNATED);
+}
+
 GPid
 hd_running_app_get_pid (HdRunningApp *app)
 {
