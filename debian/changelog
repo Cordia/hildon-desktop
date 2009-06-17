@@ -24,6 +24,10 @@ hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
   * Fixes: NB#117748 - Transition while switching to and from portrait mode
     is not proper (dial pad)
 
+  Jan Arne:
+  * Fixes: NB#120157 - applets on the deactivated home are some times
+    appearing on the present active home for a small instance of time.
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Jun 2009 18:04:12 +0300
 
 hildon-desktop (1:2.2.54-1) unstable; urgency=low

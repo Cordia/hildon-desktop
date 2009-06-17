@@ -967,6 +967,9 @@ close_applet (HdHomeView *view, HdHomeViewAppletData *data)
   const gchar *applet_id;
   gchar *applet_key;
 
+  /* Hide clutter actor */
+  clutter_actor_hide (data->actor);
+
   /* Unset GConf configuration */
   applet_id = HD_HOME_APPLET (data->cc->wm_client)->applet_id;
 

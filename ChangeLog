@@ -1,3 +1,11 @@
+2009-06-17  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#120157 - applets on the deactivated home are some times
+	appearing on the present active home for a small instance of time.
+
+	* src/home/hd-home-view.c (close_applet): Hide clutter actor when
+	closing.
+
 2009-06-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#122941 App window need information about state when it is visible
