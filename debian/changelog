@@ -6,6 +6,8 @@ hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
   * Fixes: NB#123112 - Status Area stays on top of fullscreen non-composited
     window
   * Fixed keyboard shortcuts.
+  * Fixes: NB#112165 - Confirmation notes should be pinged even if they are
+    not closed when tapping outside
 
   Laszlo:
   * Fixes: NB#114610 - ROTATION: Misplaced status area separator in portrait 

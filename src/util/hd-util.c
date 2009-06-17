@@ -104,13 +104,25 @@ hd_util_modal_blocker_release_handler (XButtonEvent    *xev,
   mb_wm_client_deliver_delete (c);
 }
 
+static void
+hd_util_modal_blocker_release_handler_for_ping (XButtonEvent    *xev,
+                                                void            *userdata)
+{
+  MBWindowManagerClient *c = userdata;
+
+  g_debug ("%s: c %p", __FUNCTION__, c);
+  mb_wm_client_ping_start (c);
+}
+
 /* Creates a fullscreen modal blocker window for @client that closes it
  * when clicked.  Returns a matchbox callback ID you should deregister
  * when @client is destroyed. */
 unsigned long
-hd_util_modal_blocker_realize(MBWindowManagerClient *client)
+hd_util_modal_blocker_realize(MBWindowManagerClient *client,
+                              gboolean ping_only)
 {
   MBWindowManager *wm = client->wmref;
+  unsigned long handler;
 
   /* Movedd from hd-dialog.c */
   if (!client->xwin_modal_blocker)
@@ -147,11 +159,20 @@ hd_util_modal_blocker_realize(MBWindowManagerClient *client)
       XSelectInput (wm->xdpy, client->xwin_modal_blocker, attrs.your_event_mask);
     }
 
-    return mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+  if (ping_only)
+    handler = mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+                  client->xwin_modal_blocker,
+                  ButtonRelease,
+                  (MBWMXEventFunc)
+                  hd_util_modal_blocker_release_handler_for_ping,
+                  client);
+  else
+    handler = mb_wm_main_context_x_event_handler_add (wm->main_ctx,
                   client->xwin_modal_blocker,
                   ButtonRelease,
                   (MBWMXEventFunc)hd_util_modal_blocker_release_handler,
                   client);
+  return handler;
 }
 
 Bool

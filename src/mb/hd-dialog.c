@@ -168,7 +168,7 @@ hd_dialog_realize (MBWindowManagerClient *client)
   if (parent_klass->realize)
     parent_klass->realize (client);
 
-  dialog->release_cb_id = hd_util_modal_blocker_realize (client);
+  dialog->release_cb_id = hd_util_modal_blocker_realize (client, FALSE);
 }
 
 static Bool

@@ -172,7 +172,7 @@ hd_note_destroy (MBWMObject *this)
 {
   HdNote *note = HD_NOTE (this);
 
-  if (note->note_type == HdNoteTypeInfo)
+  if (note->modal_blocker_cb_id)
     mb_wm_main_context_x_event_handler_remove (
                                 MB_WM_CLIENT (this)->wmref->main_ctx,
                                 ButtonRelease,
@@ -303,7 +303,12 @@ hd_note_realize (MBWindowManagerClient *client)
   parent_klass->realize (client);
   if (HD_NOTE (client)->note_type == HdNoteTypeInfo)
     /* Close information notes when clicked outside. */
-    HD_NOTE(client)->modal_blocker_cb_id = hd_util_modal_blocker_realize (client);
+    HD_NOTE(client)->modal_blocker_cb_id =
+            hd_util_modal_blocker_realize (client, FALSE);
+  else if (HD_NOTE (client)->note_type == HdNoteTypeConfirmation)
+    /* Ping confirmation notes when clicked outside. */
+    HD_NOTE(client)->modal_blocker_cb_id =
+            hd_util_modal_blocker_realize (client, TRUE);
 }
 
 static Bool

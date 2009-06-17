@@ -19,7 +19,8 @@ void * hd_util_get_win_prop_data_and_validate (Display   *xpdy,
 char * hd_util_get_x_window_string_property (MBWindowManager  *wm,
                                              Window            xwin,
                                              HdAtoms           atom_id);
-unsigned long hd_util_modal_blocker_realize(MBWindowManagerClient *client);
+unsigned long hd_util_modal_blocker_realize(MBWindowManagerClient *client,
+                                            gboolean ping_only);
 Bool hd_util_client_has_modal_blocker (MBWindowManagerClient *c);
 gboolean hd_util_change_screen_orientation (MBWindowManager *wm,
                                             gboolean goto_portrait);

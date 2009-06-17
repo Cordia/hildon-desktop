@@ -1,3 +1,11 @@
+2009-06-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/util/hd-util.c (hd_util_modal_blocker_realize): Add argument for
+	saying that only ping is desired, not delete event.
+	* src/mb/hd-note.c: Create modal blocker for confirmation notes, too,
+	but do not delete them, just ping them to detect a jammed application.
+	Fixes: NB#112165
+
 2009-06-17  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#120157 - applets on the deactivated home are some times
