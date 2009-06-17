@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#122719 - Status area gets overlapped with application title if
+    open any other after Map
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Jun 2009 18:04:12 +0300
 

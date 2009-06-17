@@ -386,9 +386,9 @@ static gboolean
 status_area_is_visible (void)
 {
   ClutterActor *status_area = hd_render_manager_get_status_area();
-  return status_area &&
-    CLUTTER_ACTOR_IS_VISIBLE(status_area) &&
-    clutter_actor_get_y(status_area)>=0;
+  return status_area && CLUTTER_ACTOR_IS_VISIBLE (status_area) &&
+    clutter_actor_get_x (status_area) >= 0 &&
+    clutter_actor_get_y (status_area) >= 0;
   /*
    * It can also be invisible by being behind something, but in
    * that case CLUTTER_ACTOR_IS_VISIBLE should be returning

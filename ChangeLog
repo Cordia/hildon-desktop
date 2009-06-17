@@ -1,3 +1,8 @@
+2009-06-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-title-bar.c (status_area_is_visible): Check x coordinate
+	as well (SA is moved offscreen in x-axis). Fixes: NB#122719.
+
 2009-06-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#121351 task switcher maximises applications instead of just panning
