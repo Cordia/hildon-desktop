@@ -6,6 +6,10 @@ hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
   * Fixes: NB#123112 - Status Area stays on top of fullscreen non-composited
     window
 
+  Laszlo:
+  * Fixes: NB#114610: ROTATION: Misplaced status area separator in portrait 
+    mode.
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Jun 2009 18:04:12 +0300
 
 hildon-desktop (1:2.2.54-1) unstable; urgency=low

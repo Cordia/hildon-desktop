@@ -647,9 +647,14 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
       if (status_area_is_visible())
         {
           clutter_actor_show(priv->buttons[BTN_SEPARATOR_STATUS]);
-          clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_STATUS],
-              HD_COMP_MGR_TOP_LEFT_BTN_WIDTH +
-              clutter_actor_get_width(status_area));
+
+	  if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
+            clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_STATUS],
+                HD_COMP_MGR_TOP_LEFT_BTN_WIDTH +
+                clutter_actor_get_width(status_area));
+          else
+            clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_STATUS],
+                clutter_actor_get_width(status_area));
         }
       else
         clutter_actor_hide(priv->buttons[BTN_SEPARATOR_STATUS]);
