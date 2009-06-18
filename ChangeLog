@@ -1,3 +1,11 @@
+2009-06-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fix couple of Coverity issues.
+	* src/launcher/hd-launcher.c (hd_launcher_transition_app_start): Bail
+	out if NULL is passed.
+	* src/home/hd-render-manager.c (hd_render_manager_restack): Initialise
+	'geo' before using it.
+
 2009-06-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	NB#122051 - Touch screen unlocking view is blurred in layout mode

@@ -8,6 +8,7 @@ hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
   * Fixed keyboard shortcuts.
   * Fixes: NB#112165 - Confirmation notes should be pinged even if they are
     not closed when tapping outside
+  * Fix couple of Coverity issues.
 
   Laszlo:
   * Fixes: NB#114610 - ROTATION: Misplaced status area separator in portrait 

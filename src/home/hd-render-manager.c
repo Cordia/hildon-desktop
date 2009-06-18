@@ -1731,7 +1731,7 @@ void hd_render_manager_restack()
         if (child != CLUTTER_ACTOR(priv->home) &&
             child != CLUTTER_ACTOR(priv->blur_front))
           {
-            ClutterGeometry geo;
+            ClutterGeometry geo = {0};
             gboolean maximized;
 
             clutter_actor_get_geometry(child, &geo);

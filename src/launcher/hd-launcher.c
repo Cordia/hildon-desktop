@@ -536,6 +536,9 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   /* Is there a cached image? */
   if (item)
     service_name = hd_launcher_app_get_service (item);
+  else
+    return FALSE;
+
   if (service_name &&
       index(service_name, '/')==NULL &&
       service_name[0]!='.')
