@@ -2233,7 +2233,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 
               /* Avoid this transition if app is being hibernated. */
               if (!app ||
-                  hd_running_app_get_state (app) == HD_APP_STATE_SHOWN)
+                  !hd_running_app_is_hibernating (app))
                 /* unregister_client() will switch state if it thinks so */
                 hd_transition_close_app (hmgr, c);
             }

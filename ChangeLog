@@ -1,5 +1,11 @@
 2009-06-18  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
+	Avoid closing transition only if app is really hibernating.
+
+	* src/mb/hd-comp-mgr.c:
+
+2009-06-18  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
 	Add oom_adj option to dsmetool invocation.
 	Fixes: NB#87433
 
