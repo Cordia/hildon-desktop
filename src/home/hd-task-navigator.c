@@ -148,11 +148,13 @@
  *                                the windows are repositioned.
  */
 #if 1
-# define ZOOM_EFFECT_DURATION      250
-# define FLY_EFFECT_DURATION       250
+# define ZOOM_EFFECT_DURATION     \
+  hd_transition_get_int("task_nav", "zoom_duration", 250)
+# define FLY_EFFECT_DURATION      \
+  hd_transition_get_int("task_nav", "fly_duration",  250)
 #else
-# define ZOOM_EFFECT_DURATION      1000
-# define FLY_EFFECT_DURATION       1000
+# define ZOOM_EFFECT_DURATION     1000
+# define FLY_EFFECT_DURATION      1000
 #endif
 /* Standard definitions }}} */
 

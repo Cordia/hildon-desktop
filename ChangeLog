@@ -1,5 +1,12 @@
 2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-task-navigator.c
+	* data/transitions.ini:
+	  Read ZOOM_EFFECT_DURATION and FLY_EFFECT_DURATION from
+	  transitions.ini.  Once.  At startup.
+
+2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/home/hd-task-navigator.c (hd_task_navigator_zoom_out):
 	  Hide the prison at the end if the application had a notification.
 
