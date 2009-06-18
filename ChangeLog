@@ -1,5 +1,10 @@
 2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-task-navigator.c (hd_task_navigator_zoom_out):
+	  Hide the prison at the end if the application had a notification.
+
+2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/util/hd-transition.c (on_notification_timeline_new_frame):
 	  Fly to the right of the tasks button rather than covering it.
 

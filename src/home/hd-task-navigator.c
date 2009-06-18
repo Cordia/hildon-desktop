@@ -1416,6 +1416,14 @@ preserve_linespacing (ClutterActor * actor, gpointer unused, gpointer spc)
   set_label_line_spacing (actor, GPOINTER_TO_INT (spc));
 }
 
+/* #ClutterEffectCompleteFunc to hide @other when the effect is complete.
+ * Used when @actor fades in in the top of @other. */
+static void
+hide_when_complete (ClutterActor * actor, ClutterActor * other)
+{
+  clutter_actor_hide (other);
+}
+
 /* Hide @actor and only show it after the flying animation finished.
  * Used when a new thing is created but you need to move other things
  * out of the way to make room for it. */
@@ -2438,13 +2446,14 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   clutter_actor_set_opacity (apthumb->plate,      0);
   clutter_effect_fade (Zoom_effect, apthumb->plate,    255, NULL, NULL);
 
-  /* Fade in .notwin smoothly.  It's not so okay to leave .prison shown
-   * but that's life. */
+  /* Fade in .notwin smoothly. */
   if (thumb_has_notification (apthumb))
     {
       clutter_actor_show (apthumb->prison);
       clutter_actor_set_opacity (apthumb->tnote->notwin, 0);
-      clutter_effect_fade (Zoom_effect, apthumb->tnote->notwin, 255, NULL, NULL);
+      clutter_effect_fade (Zoom_effect, apthumb->tnote->notwin, 255,
+                           (ClutterEffectCompleteFunc)hide_when_complete,
+                           apthumb->prison);
     }
 
   add_effect_closure (Zoom_effect_timeline, fun, win, funparam);
