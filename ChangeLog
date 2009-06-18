@@ -21,7 +21,8 @@
 
 2009-06-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
-	NB#122051 - Touch screen unlocking view is blurred in layout mode
+	Work towards fixing NB#122051 (Touch screen unlocking view is blurred
+	in layout mode) - Now works fine apart from first attempt.
 	
 	* src/home/hd-render-manager.c: Use HDRM_BLUR_BACKGROUND for
 	  STATE_HOME_EDIT_DLG, as HDRM_BLUR_BACKGROUND is overridden by
