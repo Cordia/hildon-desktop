@@ -1,3 +1,11 @@
+2009-06-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	NB#122051 - Touch screen unlocking view is blurred in layout mode
+
+	* src/home/hd-render-manager.c: Now restack after changing state to
+	  HOME_EDIT_DLG - this forces blur state to be set correctly for the
+	  fullscreen unlock dialog.
+
 2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-status-area.c (hd_status_area_class_type):

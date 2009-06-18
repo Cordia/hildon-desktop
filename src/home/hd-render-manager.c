@@ -805,20 +805,11 @@ void hd_render_manager_sync_clutter_before ()
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_HOME_EDIT:
-        visible_top_left = HDRM_BUTTON_NONE;
-        visible_top_right = HDRM_BUTTON_NONE;
-        clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        blur |= HDRM_BLUR_HOME;
-        hd_home_update_layout (priv->home);
-        break;
+        blur |= HDRM_BLUR_HOME; /* fall through intentionally */
       case HDRM_STATE_HOME_EDIT_DLG:
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
-        /* BLUR_BACKGROUND is reset whenever update_blur_state is called,
-         * which means we can stop blurring if a fullscreen dialog comes
-         * along in this mode */
-        blur |= HDRM_BLUR_BACKGROUND;
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_LOADING:
@@ -972,6 +963,7 @@ void hd_render_manager_sync_clutter_before ()
   /* Do set_blur here, as this sets the initial amounts of blurring, and we
    * want to have visibilities the way we want them when we do it */
   hd_render_manager_set_blur(blur);
+
 }
 
 /* The syncing with clutter that is done after a transition ends */
@@ -1435,8 +1427,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       /* Signal the state has changed. */
       g_object_notify (G_OBJECT (the_render_manager), "state");
 
-      if (oldstate==HDRM_STATE_TASK_NAV &&
-	  state==HDRM_STATE_APP)
+      if ((oldstate==HDRM_STATE_TASK_NAV &&
+	   state==HDRM_STATE_APP) ||
+	   (state==HDRM_STATE_HOME_EDIT_DLG))
 	{
 
 	  /* Do some tidying up that used to happen in
@@ -1447,6 +1440,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 	   *
 	   * FIXME: Possibly the check for the client hibernating
 	   * should also be moved here.
+	   */
+
+	  /* Added check for HDRM_STATE_HOME_EDIT_DLG here because we
+	   * need a restack to ensure that blurring is set correctly.
+	   * Usually we would blur, but if we HOME_EDIT, then lock and
+	   * use the power key, we get to show a fullscreen dialog
+	   * (which doesn't have blurring) right away.
 	   */
 
 	  /* make sure everything is in the correct order */
