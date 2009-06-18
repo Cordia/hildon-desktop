@@ -1,3 +1,10 @@
+2009-06-18  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Add oom_adj option to dsmetool invocation.
+	Fixes: NB#87433
+
+	* debian/hildon-desktop.xsession:
+
 2009-06-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fix couple of Coverity issues.
