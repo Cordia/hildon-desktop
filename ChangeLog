@@ -1,3 +1,12 @@
+2009-06-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	NB#122051 - Touch screen unlocking view is blurred in layout mode
+	
+	* src/home/hd-render-manager.c: Use HDRM_BLUR_BACKGROUND for
+	  STATE_HOME_EDIT_DLG, as HDRM_BLUR_BACKGROUND is overridden by
+	  hdrm_update_blur_state and this allows full-screen dialogs to be
+	  displayed correctly if mapped while in HOME_EDIT_DLG state.
+
 2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c

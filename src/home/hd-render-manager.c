@@ -805,11 +805,20 @@ void hd_render_manager_sync_clutter_before ()
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_HOME_EDIT:
-      case HDRM_STATE_HOME_EDIT_DLG:
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         blur |= HDRM_BLUR_HOME;
+        hd_home_update_layout (priv->home);
+        break;
+      case HDRM_STATE_HOME_EDIT_DLG:
+        visible_top_left = HDRM_BUTTON_NONE;
+        visible_top_right = HDRM_BUTTON_NONE;
+        clutter_actor_show(CLUTTER_ACTOR(priv->home));
+        /* BLUR_BACKGROUND is reset whenever update_blur_state is called,
+         * which means we can stop blurring if a fullscreen dialog comes
+         * along in this mode */
+        blur |= HDRM_BLUR_BACKGROUND;
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_LOADING:
@@ -1731,9 +1740,14 @@ void hd_render_manager_restack()
               continue;
             maximized = hd_comp_mgr_client_is_maximized (
                                         *((MBGeometry*)((void*)&geo)));
+
             /* Maximized stuff should never be blurred (unless there
              * is nothing else) */
-            if (!maximized)
+            /* If we are in HOME_EDIT_DLG state, the background is always
+             * blurred, and if something is maximised it MUST be a dialog
+             * (or we would have left the state) - so we want it brought
+             * to app_top where it is NOT blurred. */
+            if ((!maximized) || (priv->state == HDRM_STATE_HOME_EDIT_DLG))
               {
                 clutter_actor_reparent(child, CLUTTER_ACTOR(priv->app_top));
                 clutter_actor_lower_bottom(child);
