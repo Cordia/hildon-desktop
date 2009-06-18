@@ -1,5 +1,14 @@
 2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#120368 Notification displayed top of touch screen unlocking view
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_visibilities):
+	  Hide/show the front group together with blur_front when we sense
+	  fullscreens or not.  This is to hide the notification previews
+	  which sit in the front group.
+
+2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_dump_debug_info):
 	  Print information about HildonWindowStack:s.
 
