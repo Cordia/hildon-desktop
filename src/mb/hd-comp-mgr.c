@@ -2730,15 +2730,25 @@ hd_comp_mgr_dump_debug_info (const gchar *tag)
   mb_wm_stack_enumerate_reverse (root->wm, mbwmc)
     {
       MBGeometry geo;
+      const HdApp *app;
 
       geo = mbwmc->window ? mbwmc->window->geometry : mbwmc->frame_geometry;
       g_debug (" client=%p, type=%d, size=%dx%d%+d%+d, trfor=%p, layer=%d, "
-               "win=0x%lx, group=0x%lx, name=%s",
+               "stkidx=%d, win=0x%lx, group=0x%lx, name=%s",
                mbwmc, MB_WM_CLIENT_CLIENT_TYPE (mbwmc), MBWM_GEOMETRY (&geo),
                mbwmc->transient_for, mbwmc->stacking_layer,
+               HD_IS_APP (mbwmc) ? HD_APP (mbwmc)->stack_index : -1,
                mbwmc->window ? mbwmc->window->xwindow : 0,
                mbwmc->window ? mbwmc->window->xwin_group : 0,
                mbwmc->window ? mbwmc->window->name : "<unset>");
+      if (HD_IS_APP (mbwmc) && (app = HD_APP (mbwmc))->followers)
+        {
+          const GList *li;
+
+          g_debug ("  followers:");
+          for (li = app->followers; li; li = li->next)
+            g_debug ("   %p", li->data);
+        }
     }
   mb_wm_object_unref (MB_WM_OBJECT (root));
 

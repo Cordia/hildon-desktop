@@ -1,3 +1,8 @@
+2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_dump_debug_info):
+	  Print information about HildonWindowStack:s.
+
 2009-06-17  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	NB#119560 Hiding a window affects the visibility of
