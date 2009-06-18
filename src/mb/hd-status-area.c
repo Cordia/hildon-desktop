@@ -93,7 +93,7 @@ hd_status_area_class_type ()
           hd_status_area_class_init
       };
 
-      type = mb_wm_object_register_class (&info, MB_WM_TYPE_CLIENT_NOTE, 0);
+      type = mb_wm_object_register_class (&info, MB_WM_TYPE_CLIENT_BASE, 0);
     }
 
   return type;

@@ -1,3 +1,11 @@
+2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-status-area.c (hd_status_area_class_type):
+	  Inherit from the base client rather than Note.
+	  This is to avoid dialogs' (dialogues') smart stacking
+	  which would override ours errornously.  And makes
+	  the status area clickable again.
+
 2009-06-18  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Avoid closing transition only if app is really hibernating.
@@ -38,6 +46,7 @@
 
 2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+>>>>>>> .r40317
 	* src/home/hd-task-navigator.c (hd_task_navigator_zoom_out):
 	  Hide the prison at the end if the application had a notification.
 
