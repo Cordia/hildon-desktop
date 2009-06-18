@@ -1,3 +1,12 @@
+2009-06-17  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	NB#119560 Hiding a window affects the visibility of
+	other transient windows
+
+	* src/mb/hd-comp-mgr.c: If we are leaving app mode, and there are
+	modal blockers, don't go to the switcher.  Go to the desktop,
+	instead.
+
 2009-06-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/util/hd-util.c (hd_util_modal_blocker_realize): Add argument for

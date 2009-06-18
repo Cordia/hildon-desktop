@@ -1087,8 +1087,14 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                                                    actor, cclient);
 
                   if (c->window->xwindow == hd_wm_current_app_is (NULL, 0))
-                    /* We are in APP state and foreground application closed. */
-                    hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+		    {
+		      /* We are in APP state and foreground application closed. */
+		      if (hd_wm_has_modal_blockers (mgr->wm))
+			/* Modal dialogues are up; can't go to the switcher. */
+			hd_render_manager_set_state (HDRM_STATE_HOME);
+		      else
+			hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+		    }
                 }
 	      else if (app->leader == app && app->followers)
 	        {
