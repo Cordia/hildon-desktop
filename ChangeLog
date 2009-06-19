@@ -1,3 +1,10 @@
+2009-06-19  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-util.c
+	* src/mb/hd-atoms.c
+	* src/mb/hd-atoms.h: Applied Daniel Stone's patch to use RandR 1.3
+	  for screen rotation.
+
 2009-06-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Allow scrolling in rows between launcher icons.

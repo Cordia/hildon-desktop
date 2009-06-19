@@ -233,6 +233,51 @@ hd_util_flip_input_viewport (MBWindowManager *wm)
   XFixesDestroyRegion (wm->xdpy, region);
 }
 
+static RRCrtc
+get_primary_crtc (MBWindowManager *wm, XRRScreenResources *res)
+{
+  int i;
+  XRROutputInfo *output;
+  RRCrtc ret = ~0UL;
+  Atom rr_connector_type, rr_connector_panel;
+  unsigned char *contype;
+  Atom actual_type;
+  int actual_format;
+  unsigned long nitems, bytes_after;
+
+  if (res->ncrtc == 1)
+    return res->crtcs[0];
+  
+  rr_connector_type = hd_comp_mgr_get_atom (HD_COMP_MGR (wm->comp_mgr),
+                                            HD_ATOM_RANDR_CONNECTOR_TYPE);
+  rr_connector_panel = hd_comp_mgr_get_atom (HD_COMP_MGR (wm->comp_mgr),
+                                             HD_ATOM_RANDR_CONNECTOR_TYPE_PANEL);
+
+  for (i = 0; i < res->noutput; i++)
+    {
+      output = XRRGetOutputInfo (wm->xdpy, res, res->outputs[i]);
+      if (!output)
+          continue;
+
+      if (XRRGetOutputProperty (wm->xdpy, res->outputs[i], rr_connector_type,
+                                0, 1, False, False, AnyPropertyType, &actual_type,
+                                &actual_format, &nitems, &bytes_after,
+                                &contype) == Success)
+        {
+          if (actual_type == XA_ATOM && actual_format == 32 && nitems == 1 &&
+              *(Atom *)contype == rr_connector_panel)
+            {
+              ret = output->crtc;
+              XRRFreeOutputInfo (output);
+              break;
+            }
+        }
+      XRRFreeOutputInfo (output);
+    }
+
+  return ret;
+}
+
 /* Change the screen's orientation by rotating 90 degrees
  * (portrait mode) or going back to landscape.
  * Returns whether the orientation has actually changed. */
@@ -240,49 +285,107 @@ gboolean
 hd_util_change_screen_orientation (MBWindowManager *wm,
                                    gboolean goto_portrait)
 {
+  int rr_major, rr_minor;
+  static RRCrtc crtc = ~0UL; /* cache to avoid potentially lots of roundtrips */
+  static int randr_supported = -1;
+  XRRScreenResources *res;
+  XRRCrtcInfo *crtc_info;
+  Rotation want;
   Status ret;
-  Time cfgtime;
-  SizeID sizeid;
-  Rotation current, want;
-  XRRScreenConfiguration *scrcfg;
-  static Rotation can;
+  int width, height, width_mm, height_mm;
+
+  if (randr_supported == -1)
+    {
+      ret = XRRQueryVersion (wm->xdpy, &rr_major, &rr_minor);
+      if (ret == True && (rr_major > 1 || (rr_major == 1 && rr_minor >= 3)))
+          randr_supported = 1;
+      else
+          randr_supported = 0;
+    }
+  if (!randr_supported)
+    {
+      g_debug ("Server does not support RandR 1.3\n");
+      return FALSE;
+    }
+
+  res = XRRGetScreenResources (wm->xdpy, wm->root_win->xwindow);
+  if (!res)
+    {
+      g_warning ("Couldn't get RandR screen resources\n");
+      return FALSE;
+    }
+
+  if (crtc == ~0UL)
+      crtc = get_primary_crtc (wm, res);
+  if (crtc == ~0UL)
+    {
+      g_warning ("Couldn't find CRTC to rotate\n");
+      return FALSE;
+    }
+  crtc_info = XRRGetCrtcInfo (wm->xdpy, res, crtc);
+  if (!crtc_info)
+    {
+      g_warning ("Couldn't find CRTC info\n");
+      return FALSE;
+    }
 
   if (goto_portrait)
     {
       g_debug ("Entering portrait mode");
       want = RR_Rotate_90;
+      width = MIN(DisplayWidth (wm->xdpy, DefaultScreen (wm->xdpy)),
+		  DisplayHeight (wm->xdpy, DefaultScreen (wm->xdpy)));
+      height = MAX(DisplayWidth (wm->xdpy, DefaultScreen (wm->xdpy)),
+ 		   DisplayHeight (wm->xdpy, DefaultScreen (wm->xdpy)));
+      width_mm = MIN(DisplayWidthMM (wm->xdpy, DefaultScreen (wm->xdpy)),
+		     DisplayHeightMM (wm->xdpy, DefaultScreen (wm->xdpy)));
+      height_mm = MAX(DisplayWidthMM (wm->xdpy, DefaultScreen (wm->xdpy)),
+ 		      DisplayHeightMM (wm->xdpy, DefaultScreen (wm->xdpy)));
     }
   else
     {
       g_debug ("Leaving portrait mode");
       want = RR_Rotate_0;
+      width = MAX(DisplayWidth (wm->xdpy, DefaultScreen (wm->xdpy)),
+		  DisplayHeight (wm->xdpy, DefaultScreen (wm->xdpy)));
+      height = MIN(DisplayWidth (wm->xdpy, DefaultScreen (wm->xdpy)),
+		   DisplayHeight (wm->xdpy, DefaultScreen (wm->xdpy)));
+      width_mm = MAX(DisplayWidthMM (wm->xdpy, DefaultScreen (wm->xdpy)),
+		     DisplayHeightMM (wm->xdpy, DefaultScreen (wm->xdpy)));
+      height_mm = MIN(DisplayWidthMM (wm->xdpy, DefaultScreen (wm->xdpy)),
+ 		      DisplayHeightMM (wm->xdpy, DefaultScreen (wm->xdpy)));
     }
 
-  if (can == 0)
-    can = XRRRotations (wm->xdpy, 0, &current);
-
-  if (!(can & want))
+  if (!(crtc_info->rotations & want))
     {
-      g_warning ("Server is incapable (0x%.8X vs. 0x%.8X)", can, want);
+      g_warning ("CRTC does not support rotation (0x%.8X vs. 0x%.8X)",
+		 crtc_info->rotations, want);
       return FALSE;
     }
 
-  scrcfg = XRRGetScreenInfo(wm->xdpy, wm->root_win->xwindow);
-  XRRConfigTimes(scrcfg, &cfgtime);
-  sizeid = XRRConfigCurrentConfiguration(scrcfg, &current);
-  if (current == want)
+  if (crtc_info->rotation == want)
     {
-      g_warning ("Already in that mode");
+      g_debug ("Requested rotation already active");
       return FALSE;
     }
 
-  ret = XRRSetScreenConfig(wm->xdpy, scrcfg, wm->root_win->xwindow, sizeid,
-                           want, cfgtime);
-  XRRFreeScreenConfigInfo(scrcfg);
+  /* Disable the CRTC first, as it doesn't fit within our existing screen. */
+  XRRSetCrtcConfig (wm->xdpy, res, crtc, crtc_info->timestamp, 0, 0, None,
+		    RR_Rotate_0, NULL, 0);
+  /* Then change the screen size to accommodate our glorious new CRTC. */
+  XRRSetScreenSize (wm->xdpy, wm->root_win->xwindow, width, height,
+		    width_mm, height_mm);
+  /* And now rotate. */
+  ret = XRRSetCrtcConfig (wm->xdpy, res, crtc, crtc_info->timestamp,
+                          crtc_info->x, crtc_info->y, crtc_info->mode, want,
+                          crtc_info->outputs, crtc_info->noutput);
+
+  XRRFreeCrtcInfo (crtc_info);
+  XRRFreeScreenResources (res);
 
   if (ret != Success)
     {
-      g_warning("XRRSetScreenConfig() failed: %d", ret);
+      g_warning ("XRRSetCrtcConfig() failed: %d", ret);
       return FALSE;
     }
 

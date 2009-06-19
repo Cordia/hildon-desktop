@@ -1,5 +1,6 @@
 
 #include "hd-atoms.h"
+#include <X11/extensions/randr.h>
 
 void
 hd_atoms_init (Display * xdpy, Atom * atoms)
@@ -76,6 +77,9 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     "_HILDON_TEXTURE_CLIENT_READY",
 
     "_HILDON_LOADING_SCREENSHOT",
+
+    RR_PROPERTY_CONNECTOR_TYPE,
+    "Panel",
   };
 
   XInternAtoms (xdpy,
