@@ -1346,6 +1346,11 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                   clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav), 255);
                   range_set(&priv->task_nav_opacity, 1);
 
+                  /* Make sure we stop any active transitions, as these don't
+                   * work well with task_nav (esp. subview transitions where
+                   * task nav takes only the frontmost - NB#120171) */
+                  hd_transition_stop(priv->comp_mgr, mbwmc);
+
                   /* Make sure @cmgrcc stays around as long as needed. */
                   mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
                   hd_task_navigator_zoom_out(priv->task_nav, actor,

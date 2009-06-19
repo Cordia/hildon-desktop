@@ -579,7 +579,7 @@ on_screen_size_changed (ClutterActor *stage, GParamSpec *unused,
 }
 
 static void
-hd_transition_completed (ClutterActor* timeline, HDEffectData *data)
+hd_transition_completed (ClutterTimeline* timeline, HDEffectData *data)
 {
   gint i;
   HdCompMgr *hmgr = HD_COMP_MGR (data->hmgr);
@@ -999,6 +999,30 @@ hd_transition_subview(HdCompMgr                  *mgr,
   /* first call to stop flicker */
   on_subview_timeline_new_frame(data->timeline, 0, data);
   clutter_timeline_start (data->timeline);
+}
+
+/* Stop any currently active transition on the given client (assuming the
+ * 'effect' member of the cclient has been set). Currently this is only done
+ * for subview. */
+void
+hd_transition_stop(HdCompMgr                  *mgr,
+                   MBWindowManagerClient      *client)
+{
+  MBWMCompMgrClutterClient * cclient;
+  HDEffectData             * data;
+
+  cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
+
+  if ((data = HD_COMP_MGR_CLIENT (cclient)->effect))
+    {
+      gint n_frames = clutter_timeline_get_n_frames(data->timeline);
+      clutter_timeline_stop(data->timeline);
+      /* Make sure we update to the final state for this transition */
+      g_signal_emit_by_name (data->timeline, "new-frame",
+                             n_frames, NULL);
+      /* Call end-of-transition handler */
+      hd_transition_completed(data->timeline, data);
+    }
 }
 
 /* Start or finish a transition for the rotation

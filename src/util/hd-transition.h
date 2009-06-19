@@ -70,6 +70,10 @@ hd_transition_subview(HdCompMgr                  *mgr,
                       MBWindowManagerClient      *mainview,
                       MBWMCompMgrClientEvent     event);
 
+void
+hd_transition_stop(HdCompMgr                  *mgr,
+                   MBWindowManagerClient      *client);
+
 gboolean
 hd_transition_rotate_screen(MBWindowManager *wm, gboolean goto_portrait);
 void

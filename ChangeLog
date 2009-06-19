@@ -1,5 +1,19 @@
 2009-06-19  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#120171 - Part of all contacts view is shown in background of
+	                   switcher view in a mentioned scenario.
+
+	* src/util/hd-transition.c
+	* src/util/hd-transition.h: Added hd_transition_stop to stop subview
+	  transitions immediately and place windows correctly at their 
+	  endpoints.
+	* src/home/hd-render-manager.c: Call hd_transition_stop on active 
+	  client before entering the task nav. The task nav doesn't handle
+	  subview sliding properly (It only grabs the frontmost win, and also
+	  it doesn't clip now for performance reasons). 
+
+2009-06-19  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	* src/util/hd-util.c
 	* src/mb/hd-atoms.c
 	* src/mb/hd-atoms.h: Applied Daniel Stone's patch to use RandR 1.3
