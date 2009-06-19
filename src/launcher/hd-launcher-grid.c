@@ -96,6 +96,10 @@ static guint task_signals[LAST_SIGNAL] = {};
 static void clutter_container_iface_init (ClutterContainerIface   *iface);
 static void tidy_scrollable_iface_init   (TidyScrollableInterface *iface);
 
+static gboolean _hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
+                                        ClutterButtonEvent *event,
+                                        gpointer *data);
+
 #define HD_LAUNCHER_GRID_MAX_COLUMNS 5
 
 G_DEFINE_TYPE_WITH_CODE (HdLauncherGrid,
@@ -480,7 +484,11 @@ hd_launcher_grid_allocate (ClutterActor          *actor,
         ClutterActor *blocker = clutter_group_new();
         clutter_actor_set_name(blocker, "HdLauncherGrid::blocker");
         clutter_actor_show(blocker);
+        clutter_actor_set_parent (blocker, actor);
         clutter_actor_set_reactive(blocker, TRUE);
+        g_signal_connect (blocker, "button-release-event",
+                          G_CALLBACK (_hd_launcher_grid_blocker_release_cb),
+                          NULL);
         box.x1 = CLUTTER_UNITS_FROM_INT(HD_LAUNCHER_LEFT_MARGIN);
         box.y1 = CLUTTER_UNITS_FROM_INT(cur_height + HD_LAUNCHER_TILE_HEIGHT);
         box.x2 = CLUTTER_UNITS_FROM_INT(
@@ -559,7 +567,6 @@ hd_launcher_grid_pick (ClutterActor       *actor,
       if (CLUTTER_ACTOR_IS_VISIBLE (child))
         clutter_actor_paint (child);
     }
-
 
   cogl_pop_matrix ();
 }
@@ -899,4 +906,12 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
           }
       }
     }
+}
+
+static gboolean
+_hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
+                                      ClutterButtonEvent *event,
+                                      gpointer *data)
+{
+  return TRUE;
 }
