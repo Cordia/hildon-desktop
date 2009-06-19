@@ -30,6 +30,8 @@ hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
   Jan Arne:
   * Fixes: NB#120157 - applets on the deactivated home are some times
     appearing on the present active home for a small instance of time.
+  * Fixes: NB#122091 - Wrong color in layout mode when moving widgets from one
+    desktop to another
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Jun 2009 18:04:12 +0300
 

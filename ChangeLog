@@ -1,3 +1,18 @@
+2009-06-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#122091 - Wrong color in layout mode when moving widgets from
+	one desktop to another
+
+	* src/home/hd-home.c (hd_home_constructed, hd_home_remove_dialogs,
+	  hd_home_theme_changed): 
+	* src/home/hd-home.h: Add hd_home_theme_changed method to update edge
+	color.
+
+	* src/mb/hd-theme.c (hd_theme_init): Call hd_home_theme_changed when
+	the theme is changed.
+
+	* debian/changelog: update.
+
 2009-06-19  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#120171 - Part of all contacts view is shown in background of

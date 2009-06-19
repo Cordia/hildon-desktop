@@ -102,6 +102,8 @@ hd_home_back_button_clicked (ClutterActor *button,
                              ClutterEvent *event,
                              HdHome       *home);
 
+/* Called on theme change */
+void hd_home_theme_changed (HdHome *home);
 
 G_END_DECLS
 

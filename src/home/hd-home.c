@@ -550,11 +550,8 @@ hd_home_constructed (GObject *object)
   HdHomePrivate   *priv = HD_HOME (object)->priv;
   ClutterActor    *edit_group;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-  ClutterColor     clr = {0,0,0,0xff};
   XSetWindowAttributes attr;
   XWMHints         wmhints;
-  GtkStyle        *style;
-  GdkColor         color;
 
   clutter_actor_set_name (CLUTTER_ACTOR(object), "HdHome");
 
@@ -595,18 +592,6 @@ hd_home_constructed (GObject *object)
   priv->edge_indication_left = clutter_rectangle_new ();
   clutter_actor_set_name (priv->edge_indication_left, "HdHome:left_switch");
 
-  /* FIXME -- should the color come from theme ? */
-  style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
-                                     NULL, NULL,
-                                     GTK_TYPE_WIDGET);
-  if (!gtk_style_lookup_color (style, HD_EDGE_INDICATION_COLOR, &color))
-    color.red = color.green = color.blue = 0;
-  clr.red = color.red >> 8;
-  clr.green = color.green >> 8;
-  clr.blue = color.blue >> 8;
-  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_left),
-                               &clr);
-
   clutter_actor_set_size (priv->edge_indication_left,
                 HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
   clutter_actor_set_position (priv->edge_indication_left, 0, 0);
@@ -617,9 +602,6 @@ hd_home_constructed (GObject *object)
   priv->edge_indication_right = clutter_rectangle_new ();
   clutter_actor_set_name (priv->edge_indication_right, "HdHome:right_switch");
 
-  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_right),
-                               &clr);
-
   clutter_actor_set_size (priv->edge_indication_right,
                 HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
   clutter_actor_set_position (priv->edge_indication_right,
@@ -627,6 +609,9 @@ hd_home_constructed (GObject *object)
   clutter_actor_hide (priv->edge_indication_right);
   clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
                                priv->edge_indication_right);
+
+  /* Set color of edge indicators */
+  hd_home_theme_changed (HD_HOME (object));
 
   clutter_actor_lower_bottom (priv->view_container);
 
@@ -1247,4 +1232,20 @@ void hd_home_remove_dialogs(HdHome *home)
         break;
       c = next;
     }
+}
+
+/* Called on theme change */
+void
+hd_home_theme_changed (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  ClutterColor col;
+
+  /* Get color from theme */
+  hd_gtk_style_resolve_logical_color(&col, HD_EDGE_INDICATION_COLOR);
+
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_left),
+                               &col);
+  clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_right),
+                               &col);
 }

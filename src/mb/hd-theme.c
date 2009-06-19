@@ -30,6 +30,7 @@
 #include "hd-render-manager.h"
 #include "hd-gtk-style.h"
 #include "tidy/tidy-style.h"
+#include "hd-home.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -84,6 +85,7 @@ hd_theme_init (MBWMObject *obj, va_list vap)
   TidyStyle *style;
   ClutterColor col;
   GValue value;
+  extern MBWindowManager *hd_mb_wm;
 
   hd_clutter_cache_theme_changed();
 
@@ -102,6 +104,15 @@ hd_theme_init (MBWMObject *obj, va_list vap)
   tidy_style_set_property(style, TIDY_BACKGROUND_COLOR, &value);
 
   g_value_unset (&value);
+
+  /* Update home theme */
+  if (hd_mb_wm && hd_mb_wm->comp_mgr)
+    {
+      ClutterActor *home = hd_comp_mgr_get_home (HD_COMP_MGR (hd_mb_wm->comp_mgr));
+
+      if (home)
+        hd_home_theme_changed (HD_HOME (home));
+    }
 
   return 1;
 }
