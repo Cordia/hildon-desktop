@@ -40,6 +40,8 @@ static void hd_note_realize (MBWindowManagerClient *client);
 static Bool hd_note_request_geometry (MBWindowManagerClient *client,
 				      MBGeometry            *new_geometry,
 				      MBWMClientReqGeomType  flags);
+static MBWMStackLayerType
+hd_note_stacking_layer (MBWindowManagerClient *client);
 
 /* Properties of an IncomingEvent that can be queried, we cache
  * and notice if change. */
@@ -161,6 +163,7 @@ hd_note_class_init (MBWMObjectClass *klass)
   client->client_type  = MBWMClientTypeNote;
   client->realize      = hd_note_realize;
   client->geometry     = hd_note_request_geometry;
+  client->stacking_layer = hd_note_stacking_layer;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdNote";
@@ -434,6 +437,20 @@ hd_note_new (MBWindowManager *wm, MBWMClientWindow *win)
 				      NULL));
 
   return client;
+}
+
+static MBWMStackLayerType
+hd_note_stacking_layer (MBWindowManagerClient *c)
+{
+  if (HD_IS_BANNER_NOTE (c) || HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c)
+      || HD_IS_CONFIRMATION_NOTE (c))
+    /* hd_comp_mgr_map_notify() has put these notes into the front
+     * group.  Therefore if we don't stack them above everything
+     * else, it will cause a stacking mashup.  NB#115408.
+     */
+    return MBWMStackLayerHildon10;
+  else
+    return c->stacking_layer;
 }
 
 /* Define an accessor function that caches @IEProperties[@prop]'s value

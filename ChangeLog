@@ -1,3 +1,15 @@
+2009-06-21  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	NB#115408 Cannot snooze/stop an alarm playing over 'Switch off
+	device?' confirmation note
+
+	* src/mb/hd-note.c: Certain kinds of notes are put into the front
+	group by hd_comp_mgr_map_notify().  It is possible (by manipulating
+	a window's Hildon layer) to put a note below another window in the
+	X stacking order, whereupon it will be shown on top anyway because
+	it's in the front group.  So for these kinds of notes, stack them
+	on top in the X stacking order as well.
+
 2009-06-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#122091 - Wrong color in layout mode when moving widgets from
