@@ -264,11 +264,11 @@ tidy_scroll_view_allocate (ClutterActor          *actor,
     CLUTTER_UNITS_FROM_INT (ythickness) : 0;
 
   /* Vertical scrollbar */
-  child_box.x1 = box->x2 - box->x1 - padding.top;
+  child_box.x1 = box->x2 - box->x1 - padding.right;
   child_box.x2 = MAX(0, (box->y2 - box->y1 - ythicknessu)) +
                      child_box.x1 - padding.top - padding.bottom;
-  child_box.y1 = padding.right;
-  child_box.y2 = MIN(xthicknessu, box->x2 - box->x1) + padding.right;
+  child_box.y1 = padding.top;
+  child_box.y2 = MIN(xthicknessu, box->x2 - box->x1) + padding.top;
   
   clutter_actor_allocate (priv->vscroll,
                           &child_box,
@@ -456,7 +456,7 @@ child_vadjustment_notify_cb (GObject *gobject,
 static void
 tidy_scroll_view_init (TidyScrollView *self)
 {
-  static const TidyPadding padding = { .top  = CLUTTER_UNITS_FROM_INT (8) };
+  static const TidyPadding padding = { .right = CLUTTER_UNITS_FROM_INT (8) };
   TidyScrollViewPrivate *priv = self->priv = SCROLL_VIEW_PRIVATE (self);
   
   priv->hscroll = tidy_scroll_bar_new (NULL);
