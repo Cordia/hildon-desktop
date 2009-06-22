@@ -378,12 +378,25 @@ hd_wm_client_activate (MBWindowManager * wm,
     }
   else if (HD_IS_APP (c))
     {
-      HDRMStateEnum state = hd_render_manager_get_state();
-      if (state == HDRM_STATE_TASK_NAV)
+      HdSwitcher *sw;
+      HdTaskNavigator *tn;
+      ClutterActor *a;
+      HDRMStateEnum state;
+
+      /*
+       * We need to verify the thing is in the switcher already, otherwise
+       * zoom_in() may complain about missing apwins.  This can arise when
+       * an application is started while you're in the switcher.  This is
+       * because when a new %MBWindowManagerClient is created it is activated
+       * but its window is not added to the switcher yet.
+       */
+      a = mb_wm_comp_mgr_clutter_client_get_actor (MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client));
+      sw = HD_SWITCHER (hd_comp_mgr_get_switcher (HD_COMP_MGR (wm->comp_mgr)));
+      tn = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (sw));
+      state = hd_render_manager_get_state();
+      if (state == HDRM_STATE_TASK_NAV && hd_task_navigator_has_window (tn, a))
         {
-          /* TODO It'll log a CRITICAL warning if the switcher doesn't
-           *      have the window yet, but don't worry it's harmless. */
-          hd_switcher_item_selected (HD_SWITCHER (hd_comp_mgr_get_switcher (HD_COMP_MGR (wm->comp_mgr))), mb_wm_comp_mgr_clutter_client_get_actor (MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client)));
+          hd_switcher_item_selected (sw, a);
           ret = True;
         }
       else if (!STATE_IS_APP (state))
