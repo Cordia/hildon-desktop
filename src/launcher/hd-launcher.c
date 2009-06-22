@@ -536,8 +536,6 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   /* Is there a cached image? */
   if (item)
     service_name = hd_launcher_app_get_service (item);
-  else
-    return FALSE;
 
   if (service_name &&
       index(service_name, '/')==NULL &&
@@ -687,9 +685,12 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
                                    0, launcher);
   hd_render_manager_set_state (HDRM_STATE_LOADING);
   HdTitleBar *tbar = HD_TITLE_BAR (hd_render_manager_get_title_bar());
+  const gchar *title = "";
+  if (item)
+    title =  hd_launcher_item_get_local_name(HD_LAUNCHER_ITEM (item));
+
   hd_title_bar_set_title (tbar,
-                          hd_launcher_item_get_local_name
-                                                (HD_LAUNCHER_ITEM (item)),
+                          title,
                           FALSE, TRUE);
 
   clutter_timeline_rewind(priv->launch_transition);

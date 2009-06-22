@@ -2470,4 +2470,12 @@ void hd_render_manager_remove_input_blocker() {
        priv->has_input_blocker = FALSE;
        hd_render_manager_set_input_viewport();
      }
-}
+ }
+
+ gboolean hd_render_manager_allow_dbus_launch_transition() {
+   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   /* We only allow a launch transition from dbug if a window hasn't been
+    * mapped within a short time period - otherwise it is most likely
+    * that the dbus signal arrived after the window was mapped. */
+   return hd_comp_mgr_time_since_last_map(priv->comp_mgr) > 250;
+ }

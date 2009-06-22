@@ -148,8 +148,6 @@ void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running);
 
 void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr);
 
-MBWindowManager *hd_comp_mgr_get_wm (void);
-
 static inline guint
 hd_comp_mgr_get_current_screen_width(void);
 static inline guint
@@ -193,6 +191,8 @@ hd_comp_mgr_client_is_maximized (MBGeometry geom)
   else
           return FALSE;
 }
+
+gint hd_comp_mgr_time_since_last_map(HdCompMgr *hmgr);
 
 G_END_DECLS
 

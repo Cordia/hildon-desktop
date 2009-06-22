@@ -1706,8 +1706,21 @@ gboolean
 hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
-  HdLauncherItem *item = hd_launcher_tree_find_item (priv->tree, id);
+  HdLauncherItem *item;
   HdLauncherApp *app = NULL;
+
+  if (!id || !strlen(id))
+    { /* If no ID was specified, all we want to do is trigger the
+         app start animation with a blank window, not do anything fancy.
+         We must check first that we haven't had a window mapped recently,
+         because it could be that the dbus message got to us after the window
+         appeared. */
+      if (hd_render_manager_allow_dbus_launch_transition())
+        hd_launcher_transition_app_start(NULL);
+      return TRUE;
+    }
+
+  item = hd_launcher_tree_find_item (priv->tree, id);
 
   if (!item)
     return FALSE;

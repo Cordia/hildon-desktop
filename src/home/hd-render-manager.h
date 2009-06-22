@@ -266,6 +266,10 @@ void hd_render_manager_add_input_blocker(void);
  * we don't need the input blocked any more. */
 void hd_render_manager_remove_input_blocker(void);
 
+/* Check how long ago the last window was mapped. If it was very
+ * recent then most likely it was mapped before the dbus signal arrived. */
+gboolean hd_render_manager_allow_dbus_launch_transition(void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */

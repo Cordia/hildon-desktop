@@ -1,5 +1,22 @@
 2009-06-22  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Hildon Desktop part of fix for NB#123285 - No window animation for
+	                                           SMS Conversation View
+	* tests/test-app-launch.c (Added)
+	* tests/Makefile.am: Test app to show how to use launch animation                                          
+	* src/launcher/hd-launcher.c: Allowed launch anim to work without
+	  a service specified.
+	* src/mb/hd-comp-mgr.c
+	* src/mb/hd-comp-mgr.h: Store the time that the last window was mapped, 
+	  and provide hd_comp_mgr_time_since_last_map to access it.	  
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h: Provide _allow_dbus_launch_transition
+	  (which looks to see if it is likely that a window has been mapped 
+	  before its 'launch' dbus message arrives).
+	* src/launcher/hd-app-mgr.c: If hd_app_mgr_dbus_launch_app is called
+	  without an argument, assume that just the launch transition is
+	  required.
+
 	NB#122210 - ROTATION:Screen corruption with horizontal lines
 	
 	* src/util/hd-util.c: Added call to glFinish to wait until OpenGL

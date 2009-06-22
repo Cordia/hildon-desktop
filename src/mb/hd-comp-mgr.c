@@ -60,6 +60,7 @@
 #include <signal.h>
 #include <math.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #define OPERATOR_APPLET_ID "_HILDON_OPERATOR_APPLET"
 #define STAMP_DIR          "/tmp/hildon-desktop/"
@@ -104,6 +105,9 @@ struct HdCompMgrPrivate
 
   /* MCE D-Bus Proxy */
   DBusGProxy            *mce_proxy;
+
+  /* Time of last mapped window */
+  struct timeval         last_map_time;
 };
 
 /*
@@ -1694,6 +1698,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       first_time = FALSE;
     }
 
+  /* Log the time this window was mapped */
+  gettimeofday(&priv->last_map_time, NULL);
+
   /* if *anything* is mapped, remove our full-screen input blocker */
   hd_render_manager_remove_input_blocker();
 
@@ -2786,3 +2793,16 @@ void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running)
    * It is called when any transition begins or ends. */
 }
 
+/* Return the time since the last window was mapped (in ms). This
+ * is used in the _launch dbus call to check that the window we
+ * were asked to do a transition for hasn't actually mapped before
+ * we got the dbug message.
+ */
+gint hd_comp_mgr_time_since_last_map(HdCompMgr *hmgr)
+{
+  struct timeval current;
+  gettimeofday(&current, NULL);
+
+  return ((current.tv_sec - hmgr->priv->last_map_time.tv_sec) * 1000) +
+         ((current.tv_usec - hmgr->priv->last_map_time.tv_usec) / 1000);
+}
