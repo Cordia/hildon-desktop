@@ -1,3 +1,14 @@
+2009-06-22  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* tests/Makefile.am
+	* tests/test-large-note.c (Added): Test for NB#117673
+	* src/mb/hd-comp-mgr.c: Remove old fix for NB#117673 as it breaks
+	                        stacking.
+	* src/home/hd-render-manager.c: New fix for NB#117673, which fixes
+	  other bug where any fullscreen window of a type not covered in 
+	  update_blur_state would be blurred regardless of whether it
+	  should have been or not.
+
 2009-06-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-note.c (hd_note_stacking_layer): Revert Thomas' fix using

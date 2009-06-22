@@ -1,5 +1,5 @@
 noinst_PROGRAMS = test-hung-process test-applet test-app-launch \
-		  test-do-not-disturb \
+		  test-do-not-disturb test-large-note \
 		  test-portrait-win test-portrait-dlg test-signals \
 		  test-speed test-winstack test-non-compositing
 
@@ -18,6 +18,10 @@ test_applet_LDFLAGS = `pkg-config --libs gtk+-2.0`
 test_do_not_disturb_SOURCES = test-do-not-disturb.c
 test_do_not_disturb_CFLAGS = `pkg-config --cflags gtk+-2.0`
 test_do_not_disturb_LDFLAGS = `pkg-config --libs gtk+-2.0`
+
+test_large_note_SOURCES = test-large-note.c
+test_large_note_CFLAGS = `pkg-config --cflags gtk+-2.0 hildon-1`
+test_large_note_LDFLAGS = `pkg-config --libs gtk+-2.0 hildon-1`
 
 test_portrait_win_SOURCES = test-portrait-win.c
 test_portrait_win_CFLAGS = `pkg-config --cflags hildon-1`

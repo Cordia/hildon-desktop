@@ -1923,6 +1923,11 @@ static void hd_render_manager_update_blur_state()
           if (hd_util_client_has_modal_blocker(c))
             blur_buttons = TRUE;
         }
+
+      /* If anything fills the entire screen, stop looking for things
+       * to blur as you wouldn't see them anyway. */
+      if (hd_comp_mgr_client_is_maximized(c->window->geometry))
+        break;
     }
 
   blur_flags = priv->current_blur;
