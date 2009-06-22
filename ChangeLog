@@ -1,3 +1,10 @@
+2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	  Clean up the mess.
+
+	* src/mb/hd-note.c (hd_note_init):
+	  Rather than stacking low move HdNoteIncomingEvent:s off the screen.
+
 2009-06-22  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* tests/Makefile.am

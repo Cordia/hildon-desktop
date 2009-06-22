@@ -230,13 +230,11 @@ hd_note_init (MBWMObject *this, va_list vap)
 
   if (note->note_type == HdNoteTypeIncomingEvent)
     {
-      /* Stack it as low as possible to make it "disappear" from the screen.
-       * It will remain mapped, but the user cannot click it directly. */
-      client->stacking_layer = MBWMStackLayerUnknown;
+      static MBGeometry geo = { -13, -17, 7, 11 };
 
-      /* Leave it up to the client to specify size; position doesn't matter. */
-      hd_note_request_geometry (client, &client->frame_geometry,
-                                MBWMClientReqGeomForced);
+      /* Move it offscreen to make it "disappear" from the screen.
+       * It will remain mapped, but the user cannot click it directly. */
+      hd_note_request_geometry (client, &geo, MBWMClientReqGeomForced);
 
       note->property_changed_cb_id = mb_wm_main_context_x_event_handler_add (
                        wm->main_ctx, client->window->xwindow, PropertyNotify,
