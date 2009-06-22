@@ -1,4 +1,10 @@
-hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.55-1) unstable; urgency=low
+
+  Thomas:
+  * Fixes: NB#115408 - Cannot snooze/stop an alarm playing over 'Switch off
+    device?' confirmation note
+  * Fixes: NB#119560 - Hiding a window affects the visibility of other
+    transient windows
 
   Kimmo:
   * Fixes: NB#122719 - Status area gets overlapped with application title if
@@ -17,15 +23,20 @@ hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
   Marc:
   * Fixes: NB#122221 - Added missing D-Bus signal matches for lock and screen
     status.
+  * Fixes: NB#121814 - Allow scrolling in rows between launcher icons.
 
   Adam:
   * Fixes: NB#123246 - hildon-desktop crashed.
   * Fixes: NB#121351 - task switcher maximises applications instead of just
     panning
+  * Fixes: NB#120368 - Notification displayed top of touch screen unlocking view
 
   Gordon:
   * Fixes: NB#117748 - Transition while switching to and from portrait mode
     is not proper (dial pad)
+  * Fixes: NB#120171 - Part of all contacts view is shown in background of
+    switcher view in a mentioned scenario.
+  * Fixes: NB#122051 - Touch screen unlocking view is blurred in layout mode
 
   Jan Arne:
   * Fixes: NB#120157 - applets on the deactivated home are some times
@@ -33,7 +44,7 @@ hildon-desktop (1:2.2.55-1~unreleased) unstable; urgency=low
   * Fixes: NB#122091 - Wrong color in layout mode when moving widgets from one
     desktop to another
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Jun 2009 18:04:12 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 22 Jun 2009 10:14:24 +0300
 
 hildon-desktop (1:2.2.54-1) unstable; urgency=low
 
