@@ -552,6 +552,8 @@ hd_home_constructed (GObject *object)
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   XSetWindowAttributes attr;
   XWMHints         wmhints;
+  pid_t            our_pid = getpid ();
+  char             buf[HOST_NAME_MAX+1];
 
   clutter_actor_set_name (CLUTTER_ACTOR(object), "HdHome");
 
@@ -648,6 +650,19 @@ hd_home_constructed (GObject *object)
 		   (unsigned char *)
 		   &wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DESKTOP],
 		   1);
+
+  XChangeProperty(wm->xdpy, priv->desktop,
+		  wm->atoms[MBWM_ATOM_NET_WM_PID],
+		  XA_CARDINAL, 32, PropModeReplace,
+		  (unsigned char *)&our_pid,
+		  1);
+
+  gethostname (buf, sizeof(buf));
+  XChangeProperty(wm->xdpy, priv->desktop,
+		  wm->atoms[MBWM_ATOM_WM_CLIENT_MACHINE],
+		  XA_STRING, 8, PropModeReplace,
+		  (unsigned char *)buf,
+		  strlen(buf)+1);
 
   XMapWindow (wm->xdpy, priv->desktop);
 

@@ -1,5 +1,12 @@
 2009-06-22  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
+	NB#122710 Weird screen appearing after closing the camera application
+	
+	* src/home/hd-home.c: We should set WM_CLIENT_MACHINE and _NET_WM_PID
+	on the desktop window.
+
+2009-06-22  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
 	NB#121966 Banners displayed even when Do not Disturb flag is enabled.
 
 	* src/mb/hd-comp-mgr.c: Banner notes are only discarded during DND
