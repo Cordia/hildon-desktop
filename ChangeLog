@@ -1,5 +1,10 @@
 2009-06-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-task-navigator.c (navigator_shown):
+	  Flash the scrollbar when entering.
+
+2009-06-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Unzoom the background when zooming in in switcher view.
 
 	* src/home/hd-render-manager.h

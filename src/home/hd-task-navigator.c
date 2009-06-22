@@ -3479,6 +3479,9 @@ navigator_shown (ClutterActor * navigator, gpointer unused)
    * because we are responsible for showing them now. */
   for_each_appthumb (li, thumb)
     claim_win (thumb);
+
+  /* Flash the scrollbar.  %TidyFingerScroll will do the right thing. */
+  tidy_finger_scroll_show_scrollbars (Scroller);
 }
 
 /* @Navigator's "hide" handler. */
