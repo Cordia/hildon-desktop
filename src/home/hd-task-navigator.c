@@ -2354,6 +2354,7 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
     goto damage_control;
 
   /* This is the actual zooming, but we do other effects as well. */
+  hd_render_manager_unzoom_background ();
   zoom_in (apthumb);
 
   /* Crossfade .plate with .titlebar. */

@@ -706,6 +706,15 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   priv->timeline_playing = TRUE;
 }
 
+/* This is for the task navigator when it zooms into a thumbnail.
+ * The background is already zoomed and blurred now leave all
+ * home_blur-zooming behind (especially HDRM_ZOOM_FOR_TASK_NAV). */
+void
+hd_render_manager_unzoom_background()
+{
+  hd_render_manager_set_blur (HDRM_BLUR_HOME | HDRM_SHOW_TASK_NAV);
+}
+
 static void
 hd_render_manager_set_input_viewport()
 {

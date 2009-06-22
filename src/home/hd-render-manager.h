@@ -246,6 +246,9 @@ void hd_render_manager_stop_transition(void);
  * arrive the button in the top-left may need to change */
 void hd_render_manager_update(void);
 
+/* Remove all zooming from home_blur but keep it blurred. */
+void hd_render_manager_unzoom_background(void);
+
 /* If something that is blurred has changed, update it. */
 void hd_render_manager_blurred_changed(void);
 
