@@ -2682,6 +2682,7 @@ dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
   const gchar *name;
   MBWMCompMgrClient *cmgrc;
   ClutterGeometry geo;
+  gint ax, ay;
 
   if (!indent)
     indent = g_string_new ("");
@@ -2691,13 +2692,14 @@ dump_clutter_actor_tree (ClutterActor *actor, GString *indent)
   cmgrc = g_object_get_data(G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
 
   clutter_actor_get_geometry (actor, &geo);
+  clutter_actor_get_anchor_point (actor, &ax, &ay);
   g_debug ("actor[%u]: %s%p (type=%s, name=%s, win=0x%lx), "
-           "size: %ux%u%+d%+d, visible: %d, reactive: %d",
+           "size: %ux%u%+d%+d[%d,%d], visible: %d, reactive: %d",
            indent->len, indent->str, actor,
            G_OBJECT_TYPE_NAME (actor), name,
            cmgrc && cmgrc->wm_client && cmgrc->wm_client->window
                ? cmgrc->wm_client->window->xwindow : 0,
-           geo.width, geo.height, geo.x, geo.y,
+           geo.width, geo.height, geo.x, geo.y, ax, ay,
            CLUTTER_ACTOR_IS_VISIBLE (actor) != 0,
            CLUTTER_ACTOR_IS_REACTIVE (actor) != 0);
   if (CLUTTER_IS_CONTAINER (actor))

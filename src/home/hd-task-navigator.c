@@ -31,6 +31,8 @@
  *     .title                   #ClutterLabel
  *     .close                   #ClutterGroup
  *       .icon_app, .icon_notif #ClutterCloneTexture
+ *
+ * FIXME 'apthumb' is sometimes 'appthumb'
  * }}}
  */
 
@@ -300,7 +302,9 @@ typedef struct
        *                  we have a .video.
        * -- @windows:     Just 0-dimension container for @apwin and @dialogs,
        *                  its sole purpose is to make it easier to hide them
-       *                  when the %Thumbnail has a @video.
+       *                  when the %Thumbnail has a @video.  Also clips its
+       *                  contents to @App_window_geometry, making sure that
+       *                  really nothing is shown outside the thumbnail.
        * -- @titlebar:    An actor that looks like the original title bar.
        *                  Faded in/out when zooming in/out, but normally
        *                  transparent or not visible at all.
@@ -2632,6 +2636,9 @@ create_appthumb (ClutterActor * apwin)
   apthumb->titlebar = hd_title_bar_create_fake (NULL);
   apthumb->windows = clutter_group_new ();
   clutter_actor_set_name (apthumb->windows, "windows");
+  clutter_actor_set_clip (apthumb->windows,
+                          App_window_geometry.x, App_window_geometry.y,
+                          App_window_geometry.width, App_window_geometry.height);
 
   /* .prison: anchor it so that we can ignore the UI framework area
    * of its contents.  Do so even if @apwin is really fullscreen,

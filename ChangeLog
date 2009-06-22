@@ -1,5 +1,15 @@
 2009-06-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#123736 Window thumbnail shows hidden part of the window
+
+	* src/home/hd-task-navigator.c (create_appthumb):
+	  Clip.  Necessary because of the animation actors
+	  because they are not regulated by the cmgr.
+	* src/mb/hd-comp-mgr.c (dump_clutter_actor_tree):
+	  Print the actors anchor point as well.
+
+2009-06-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#120267
 
 	* src/mb/hd-wm.c (hd_wm_client_activate):
