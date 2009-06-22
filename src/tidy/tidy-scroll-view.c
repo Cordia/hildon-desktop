@@ -367,14 +367,14 @@ tidy_stylable_iface_init (TidyStylableIface *iface)
       pspec = g_param_spec_uint ("xthickness",
                                   "Vertical scroll-bar thickness",
                                   "Thickness of vertical scrollbar, in px",
-                                  0, G_MAXUINT, 4,
+                                  0, G_MAXUINT, 8,
                                   G_PARAM_READWRITE);
       tidy_stylable_iface_install_property (iface, TIDY_TYPE_SCROLL_VIEW, pspec);
 
       pspec = g_param_spec_uint ("ythickness",
                                   "Horizontal scroll-bar thickness",
                                   "Thickness of horizontal scrollbar, in px",
-                                  0, G_MAXUINT, 4,
+                                  0, G_MAXUINT, 8,
                                   G_PARAM_READWRITE);
       tidy_stylable_iface_install_property (iface, TIDY_TYPE_SCROLL_VIEW, pspec);
     }
@@ -456,6 +456,7 @@ child_vadjustment_notify_cb (GObject *gobject,
 static void
 tidy_scroll_view_init (TidyScrollView *self)
 {
+  static const TidyPadding padding = { .top  = CLUTTER_UNITS_FROM_INT (8) };
   TidyScrollViewPrivate *priv = self->priv = SCROLL_VIEW_PRIVATE (self);
   
   priv->hscroll = tidy_scroll_bar_new (NULL);
@@ -467,6 +468,8 @@ tidy_scroll_view_init (TidyScrollView *self)
   clutter_actor_show (priv->hscroll);
   clutter_actor_show (priv->vscroll);
   clutter_actor_set_rotation (priv->vscroll, CLUTTER_Z_AXIS, 90.0, 0, 0, 0);
+
+  tidy_actor_set_padding (TIDY_ACTOR (self), &padding);
 }
 
 static void

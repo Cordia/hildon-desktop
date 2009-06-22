@@ -1,4 +1,12 @@
-2009-06-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-06-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	  Make scroll indicators MLG 2.3 compilant.
+
+	* src/tidy/tidy-scroll-view.c:
+	  Set default indicator width/height 8 pixels.
+	  Set a 8 pixel right-padding by default.
+
+2009-06-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	  Clean up the mess.
 
