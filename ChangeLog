@@ -1,3 +1,8 @@
+2009-06-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-note.c (hd_note_stacking_layer): Revert Thomas' fix using
+	Hildon stacking layers. Reopens NB#115408.
+
 2009-06-22  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Hildon Desktop part of fix for NB#123285 - No window animation for
