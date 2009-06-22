@@ -1679,6 +1679,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   guint                      hkey;
   MBWMClientType             ctype;
   static gboolean            first_time = TRUE;
+  MBWindowManagerClient    * transient_for =
+    c? mb_wm_client_get_transient_for (c) : NULL;
 
   g_debug ("%s: 0x%lx", __FUNCTION__, c && c->window ? c->window->xwindow : 0);
 
@@ -1732,7 +1734,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * and the client is not topmost
    */
   if (priv->do_not_disturb_flag && HD_IS_BANNER_NOTE (c) &&
-      mb_wm_client_get_next_focused_app (c)!=NULL)
+      (!transient_for || mb_wm_client_get_next_focused_app (transient_for)!=NULL))
     {
       guint32 *value;
       Atom dnd_override = hd_comp_mgr_get_atom (HD_COMP_MGR (mgr),
@@ -1802,7 +1804,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * before we disable hdrm reactivity, because changing state after that
    * restores that.
    */
-  if (!c->transient_for)
+  if (!transient_for)
     if (ctype == MBWMClientTypeDialog
         || HD_IS_INFO_NOTE (c) || HD_IS_CONFIRMATION_NOTE (c))
       if (STATE_ONE_OF(hd_render_manager_get_state(),
@@ -1891,7 +1893,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       if (!HD_IS_INCOMING_EVENT_NOTE (c)
           && !HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c)
-          && c->transient_for)
+          && transient_for)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
 
       if (HD_IS_BANNER_NOTE (c) && priv->mce_proxy)
@@ -1904,7 +1906,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (ctype == MBWMClientTypeDialog)
     {
-      if (c->transient_for)
+      if (transient_for)
         {
           hd_switcher_add_dialog (priv->switcher_group, c, actor);
         }

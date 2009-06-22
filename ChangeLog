@@ -1,3 +1,12 @@
+2009-06-22  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	NB#121966 Banners displayed even when Do not Disturb flag is enabled.
+
+	* src/mb/hd-comp-mgr.c: Banner notes are only discarded during DND
+	if either they don't have a parent window or their parent window
+	is not uppermost.  (The previous code checked whether the banner
+	itself was uppermost.)
+
 2009-06-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	  Make scroll indicators MLG 2.3 compilant.
