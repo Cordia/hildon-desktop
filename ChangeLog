@@ -1,3 +1,10 @@
+2009-06-22  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	NB#122210 - ROTATION:Screen corruption with horizontal lines
+	
+	* src/util/hd-util.c: Added call to glFinish to wait until OpenGL
+	  has finished drawing before calling randr for screen rotate.
+
 2009-06-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c (navigator_shown):

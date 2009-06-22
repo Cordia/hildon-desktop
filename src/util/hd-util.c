@@ -3,6 +3,7 @@
 
 #include <matchbox/core/mb-wm.h>
 #include <clutter/x11/clutter-x11.h>
+#include <cogl/cogl.h>
 
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
@@ -247,7 +248,7 @@ get_primary_crtc (MBWindowManager *wm, XRRScreenResources *res)
 
   if (res->ncrtc == 1)
     return res->crtcs[0];
-  
+
   rr_connector_type = hd_comp_mgr_get_atom (HD_COMP_MGR (wm->comp_mgr),
                                             HD_ATOM_RANDR_CONNECTOR_TYPE);
   rr_connector_panel = hd_comp_mgr_get_atom (HD_COMP_MGR (wm->comp_mgr),
@@ -368,6 +369,11 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
       g_debug ("Requested rotation already active");
       return FALSE;
     }
+
+  /* We must call glFinish here in order to be sure that OpenGL won't be
+   * trying to render stuff while we do the transition - as this sometimes
+   * causes rubbish to be displayed. */
+  glFinish();
 
   /* Disable the CRTC first, as it doesn't fit within our existing screen. */
   XRRSetCrtcConfig (wm->xdpy, res, crtc, crtc_info->timestamp, 0, 0, None,
