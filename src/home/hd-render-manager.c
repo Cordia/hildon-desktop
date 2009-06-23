@@ -944,10 +944,9 @@ void hd_render_manager_sync_clutter_before ()
   }
 
   hd_title_bar_set_state(priv->title_bar, btn_state);
+  /* hd_render_manager_place_titlebar_elements calls hd_title_bar_update()
+   * as well */
   hd_render_manager_place_titlebar_elements();
-
-  /* update our fixed title bar at the top of the screen */
-  hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
 
   /* Make sure we hide the edit button if it's not required */
   if (priv->state != HDRM_STATE_HOME)

@@ -12,6 +12,10 @@
 
 2009-06-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/home/hd-render-manager.c
+	(hd_render_manager_sync_clutter_before): Don't call hd_title_bar_update
+	after hd_render_manager_place_titlebar_elements has already done it.
+
 	Release 2.2.56
 
 2009-06-22  Thomas Thurman  <thomas.thurman@collabora.co.uk>
