@@ -1,14 +1,29 @@
-hildon-desktop (1:2.2.56-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.56-1) unstable; urgency=low
 
-  * foo
+  Thomas:
+  * Fixes: NB#122710 - Weird screen appearing after closing the camera
+    application in certain scenerio
+  * Fixes: NB#121966 - Banners displayed even when Do not Disturb flag is
+    enabled.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 22 Jun 2009 10:16:19 +0300
+  Adam:
+  * Fixes: NB#123736 - Window thumbnail shows hidden part of the window
+  * Fixes: NB#120267 - Observed hildon-desktop[1177]: GLIB CRITICAL **
+    hd-task-navigator - find_by_apwin(0x2efa68): apwin not found
+  * Make scroll indicators MLG 2.3 compliant.
+  * Rather than stacking low, move HdNoteIncomingEvents off the screen.
+
+  Gordon:
+  * New fix for NB#117673.
+
+  Kimmo:
+  * Revert Thomas' fix using Hildon stacking layers. Reopens NB#115408.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 23 Jun 2009 09:50:52 +0300
 
 hildon-desktop (1:2.2.55-1) unstable; urgency=low
 
   Thomas:
-  * Fixes: NB#115408 - Cannot snooze/stop an alarm playing over 'Switch off
-    device?' confirmation note
   * Fixes: NB#119560 - Hiding a window affects the visibility of other
     transient windows
 
