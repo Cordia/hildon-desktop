@@ -40,6 +40,7 @@ static void hd_note_realize (MBWindowManagerClient *client);
 static Bool hd_note_request_geometry (MBWindowManagerClient *client,
 				      MBGeometry            *new_geometry,
 				      MBWMClientReqGeomType  flags);
+static MBWMStackLayerType hd_note_stacking_layer(MBWindowManagerClient *client);
 
 /* Properties of an IncomingEvent that can be queried, we cache
  * and notice if change. */
@@ -161,6 +162,7 @@ hd_note_class_init (MBWMObjectClass *klass)
   client->client_type  = MBWMClientTypeNote;
   client->realize      = hd_note_realize;
   client->geometry     = hd_note_request_geometry;
+  client->stacking_layer = hd_note_stacking_layer;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdNote";
@@ -230,11 +232,13 @@ hd_note_init (MBWMObject *this, va_list vap)
 
   if (note->note_type == HdNoteTypeIncomingEvent)
     {
-      static MBGeometry geo = { -13, -17, 7, 11 };
-
-      /* Move it offscreen to make it "disappear" from the screen.
+      /* Stack it as low as possible to make it "disappear" from the screen.
        * It will remain mapped, but the user cannot click it directly. */
-      hd_note_request_geometry (client, &geo, MBWMClientReqGeomForced);
+      client->stacking_layer = MBWMStackLayerUnknown;
+
+      /* Leave it up to the client to specify size; position doesn't matter. */
+      hd_note_request_geometry (client, &client->frame_geometry,
+                                MBWMClientReqGeomForced);
 
       note->property_changed_cb_id = mb_wm_main_context_x_event_handler_add (
                        wm->main_ctx, client->window->xwindow, PropertyNotify,
@@ -418,6 +422,20 @@ hd_note_request_geometry (MBWindowManagerClient *client,
     }
 
   return True; /* Geometry accepted */
+}
+
+/* Do not let our parent class decide our stacking layer if we're
+ * an incoming event. */
+MBWMStackLayerType
+hd_note_stacking_layer(MBWindowManagerClient *client)
+{
+  MBWindowManagerClientClass *parent;
+
+  if (HD_NOTE (client)->note_type == HdNoteTypeIncomingEvent)
+    return MBWMStackLayerUnknown;
+
+  parent = MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
+  return parent->stacking_layer (client);
 }
 
 MBWindowManagerClient*
