@@ -1,5 +1,7 @@
 2009-06-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.57
+
 	Really fix NB#122719 now.
 
 	* src/home/hd-render-manager.[ch]
