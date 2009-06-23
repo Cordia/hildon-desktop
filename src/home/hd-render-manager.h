@@ -212,6 +212,7 @@ void hd_render_manager_set_button (HDRMButtonEnum button,
 ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button);
 ClutterActor *hd_render_manager_get_title_bar(void);
 ClutterActor *hd_render_manager_get_status_area(void);
+MBWindowManagerClient *hd_render_manager_get_status_area_client(void);
 void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible);
 gboolean hd_render_manager_get_visible(HDRMButtonEnum button);
 

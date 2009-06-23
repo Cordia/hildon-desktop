@@ -1171,6 +1171,11 @@ ClutterActor *hd_render_manager_get_status_area(void)
   return CLUTTER_ACTOR(the_render_manager->priv->status_area);
 }
 
+MBWindowManagerClient *hd_render_manager_get_status_area_client(void)
+{
+  return the_render_manager->priv->status_area_client;
+}
+
 void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;

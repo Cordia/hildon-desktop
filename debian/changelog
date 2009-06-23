@@ -1,8 +1,14 @@
-hildon-desktop (1:2.2.57-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.57-1) unstable; urgency=low
 
-  * foo
+  Adam:
+  * Fixes: NB#124133 - No potrait mode when there is an incoming event preview
+    in switcher view.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 23 Jun 2009 09:53:30 +0300
+  Kimmo:
+  * Fixes: NB#122719 - Status area gets overlapped with application title if
+    open any other after Map
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 23 Jun 2009 13:56:08 +0300
 
 hildon-desktop (1:2.2.56-1) unstable; urgency=low
 
@@ -34,8 +40,6 @@ hildon-desktop (1:2.2.55-1) unstable; urgency=low
     transient windows
 
   Kimmo:
-  * Fixes: NB#122719 - Status area gets overlapped with application title if
-    open any other after Map
   * Fixes: NB#123112 - Status Area stays on top of fullscreen non-composited
     window
   * Fixed keyboard shortcuts.
