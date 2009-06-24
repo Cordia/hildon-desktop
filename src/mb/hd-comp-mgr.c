@@ -151,6 +151,8 @@ HdRunningApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
 
 static void hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr);
 
+static void hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr);
+
 static MBWMCompMgrClient *
 hd_comp_mgr_client_new (MBWindowManagerClient * client)
 {
@@ -1778,6 +1780,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   /* Now the actor has been created and added to the desktop, make sure we
    * call hdrm_restack to put it in the correct group in hd-render-manager */
   hd_render_manager_restack();
+  hd_comp_mgr_portrait_or_not_portrait(mgr);
 
   /* Hide the Edit button if it is currently shown */
   if (priv->home)
@@ -2386,25 +2389,9 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
 
   hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
 
-  /* Now that HDRM has sorted out the visibilities see if we need to
-   * switch to/from portrait mode because of a new window. */
-  if (!hd_render_manager_is_changing_state ())
-    {
-      /*
-       * Change state if necessate:
-       * APP <=> APP_PORTRAIT and HOME <=> HOME_PORTRAIT
-       */
-      if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state ()))
-        { /* Landscape -> portrait? */
-          if (hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
-            hd_render_manager_set_state_portrait ();
-        }
-      else if (STATE_IS_PORTRAIT(hd_render_manager_get_state ()))
-        { /* Portrait -> landscape? */
-          if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
-            hd_render_manager_set_state_unportrait ();
-        }
-    }
+  /* TODO Is it necessary at all to call it here if it's called
+   *      map_notify() as well? */
+  hd_comp_mgr_portrait_or_not_portrait (mgr);
 
   return FALSE;
 }
@@ -2610,6 +2597,33 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
 
   PORTRAIT ("SHOULD BE: %d", any_requests);
   return any_requests;
+}
+
+/* Based on the visible windows decide whether we should be portrait or not.
+ * Requires that the visibilities be sorted out.  Otherwise it doesn't work
+ * correctly. */
+static void
+hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr)
+{
+  /* I think this is a guard for cases when we do a
+   * set_state() -> portrait/unportrait() -> restack() */
+  if (hd_render_manager_is_changing_state ())
+    return;
+
+  /*
+   * Change state if necessate:
+   * APP <=> APP_PORTRAIT and HOME <=> HOME_PORTRAIT
+   */
+  if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state ()))
+    { /* Landscape -> portrait? */
+      if (hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
+        hd_render_manager_set_state_portrait ();
+    }
+  else if (STATE_IS_PORTRAIT(hd_render_manager_get_state ()))
+    { /* Portrait -> landscape? */
+      if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
+        hd_render_manager_set_state_unportrait ();
+    }
 }
 
 gboolean
