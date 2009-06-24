@@ -11,6 +11,8 @@ hildon-desktop (1:2.2.58-1~unreleased) unstable; urgency=low
   * Fixes: NB#124072 - While closing the power key menu over start view is
     opening other dialog
   * Fixes: NB#112007 - Unable to close status menu in a mentioned scenario.
+  * Fixes: NB#113966 - Home view is pannable with desktop menu and application
+    in task switcher area also comes up
 
   Kimmo:
   * Fixes: NB#124294 - The Layout mode title overlaps the layout mode icon.
