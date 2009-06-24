@@ -1667,8 +1667,11 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
     }
   else if (THUMBSIZE_IS (medium))
     {
+      /* Increase the bottom margin artificially to not draw the top
+       * fragment of the third line of the secondary text. */
       isize  = ICON_STYLUS;
       msgdiv = MARGIN_HALF;
+      hleft -= 8;
     }
   else
     {
@@ -1786,7 +1789,7 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
       clutter_actor_set_position (tnote->message, NOTE_MARGINS + xmsg, y);
     }
 
-  /* The difficault part is over, let's finish with the decoration:
+  /* The difficult part is over, let's finish with the decoration:
    * .background, .separator. */
   clutter_actor_get_size (tnote->background, &width, &height);
   ops->scale (tnote->background,

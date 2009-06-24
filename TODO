@@ -34,7 +34,6 @@ Notifications:
 
 Switcher:
 - When zooming back is complete fade in the real titlebar.
-- When zooming back do a blur animation.
 - Scrollbar: place 4 pixels leftwards
 - Update label colors with theme change.
 - Zoom+fly: don't slow down at the end of zoom and don't start slowly

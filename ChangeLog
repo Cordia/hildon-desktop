@@ -1,3 +1,8 @@
+2009-06-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c (layout_notwin):
+	  Make sure no line fragments are drawn in midsized notif thumbnails.
+
 2009-06-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-title-bar.c (hd_title_bar_set_for_edit_mode): Set title
