@@ -8,6 +8,8 @@ hildon-desktop (1:2.2.58-1~unreleased) unstable; urgency=low
     coming up in normal mode.
   * Fixes: NB#123223 - Power key menu does not close when invoked over Status
     Menu
+  * Fixes: NB#124072 - While closing the power key menu over start view is
+    opening other dialog
 
   Kimmo:
   * Fixes: NB#124294 - The Layout mode title overlaps the layout mode icon.
