@@ -269,6 +269,8 @@ hd_home_desktop_do_motion (
   /* Set velocity */
   time += drag_item->period;
   priv->velocity_x = drag_distance / time;
+  if (priv->cumulative_x < 0)
+    priv->velocity_x = -priv->velocity_x;
 
   if (ABS (priv->cumulative_x) > HDH_PAN_THRESHOLD)
     priv->moved_over_threshold = TRUE;

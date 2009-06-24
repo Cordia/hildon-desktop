@@ -775,7 +775,7 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocit
     {
       /* Overshoot if we were going in one direction, but expect to
        * go in the other */
-      priv->animation_overshoot = FALSE;//(velocity>0) != (priv->offset>0);
+      priv->animation_overshoot = (velocity>0) == (priv->offset>0);
       /* make sure velocity is within a sensible range, we don't want this
        * taking more than a second, or totally flicking past... */
       velocity = ABS(velocity);
@@ -788,9 +788,6 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocit
    * function in scroll_back_new_frame_cb uses sin, and sin(x)==x near 0) */
   priv->timeline = clutter_timeline_new_for_duration
                         (ABS (priv->offset) * 1570 / velocity);
-  /* TODO: when sign(priv->offset) != sign(velocity) then the home view
-   * is moving back to its old position, and maybe we should have some
-   * overshoot */
 
   priv->frames = clutter_timeline_get_n_frames (priv->timeline);
   priv->timeline_offset = priv->offset;
