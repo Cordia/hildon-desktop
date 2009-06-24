@@ -6,6 +6,8 @@ hildon-desktop (1:2.2.58-1~unreleased) unstable; urgency=low
   * Fixes: NB#111837 - Screen focus can be shifted to back screen
   * Fixes: NB#104558 - Layout mode menu and other layout mode dialogs are
     coming up in normal mode.
+  * Fixes: NB#123223 - Power key menu does not close when invoked over Status
+    Menu
 
   Kimmo:
   * Fixes: NB#124294 - The Layout mode title overlaps the layout mode icon.
