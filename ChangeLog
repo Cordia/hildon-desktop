@@ -1,3 +1,11 @@
+2009-06-24  Laszlo Pere  <lpere@blumsoft.eu>
+
+	NB#117318: Able to pan between home views in layout mode.
+
+	* src/mb/hd-app-menu.[ch]: Added a modal blocker window to the
+	  HildonAppmenu class. The grab can be removed from the 
+	  hildon-app-menu.c of the Hildon1 library.
+
 2009-06-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Patch from Laszlo Pere for NB#109932.

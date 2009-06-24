@@ -23,11 +23,15 @@
 
 #include "hd-wm.h"
 #include "hd-app-menu.h"
+#include "hd-util.h"
 
 static Bool
 hd_app_menu_request_geometry (MBWindowManagerClient *client,
 			      MBGeometry            *new_geometry,
 			      MBWMClientReqGeomType  flags);
+
+static void
+hd_app_menu_realize (MBWindowManagerClient *client);
 
 static void
 hd_app_menu_class_init (MBWMObjectClass *klass)
@@ -39,6 +43,7 @@ hd_app_menu_class_init (MBWMObjectClass *klass)
   client = (MBWindowManagerClientClass *)klass;
 
   client->client_type  = HdWmClientTypeAppMenu;
+  client->realize  = hd_app_menu_realize;
   client->geometry = hd_app_menu_request_geometry;
 
 #if MBWM_WANT_DEBUG
@@ -49,6 +54,12 @@ hd_app_menu_class_init (MBWMObjectClass *klass)
 static void
 hd_app_menu_destroy (MBWMObject *this)
 {
+  HdAppMenu             *menu = HD_APP_MENU (this);
+  MBWindowManagerClient *c      = MB_WM_CLIENT (this);
+  MBWindowManager       *wm     = c->wmref;
+
+  mb_wm_main_context_x_event_handler_remove (wm->main_ctx, ButtonRelease,
+					     menu->release_cb_id);
 }
 
 static int
@@ -90,6 +101,20 @@ hd_app_menu_new (MBWindowManager *wm, MBWMClientWindow *win)
 				      NULL));
 
   return client;
+}
+
+static void
+hd_app_menu_realize (MBWindowManagerClient *client)
+{
+  MBWindowManagerClientClass  *parent_klass = NULL;
+  HdAppMenu                   *menu = HD_APP_MENU (client);
+
+  parent_klass = MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS (client));
+
+  if (parent_klass->realize)
+    parent_klass->realize (client);
+
+  menu->release_cb_id = hd_util_modal_blocker_realize (client, FALSE);
 }
 
 static Bool

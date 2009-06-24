@@ -38,6 +38,8 @@ typedef struct HdAppMenuClass HdAppMenuClass;
 struct HdAppMenu
 {
   MBWMClientMenu  parent;
+
+  unsigned long   release_cb_id;
 };
 
 struct HdAppMenuClass
