@@ -837,10 +837,10 @@ hd_home_view_applet_release (ClutterActor       *applet,
 
           if (priv->move_applet_left)
             hd_home_view_container_scroll_to_previous (
-                            HD_HOME_VIEW_CONTAINER (priv->view_container));
+                            HD_HOME_VIEW_CONTAINER (priv->view_container), 0);
           else
             hd_home_view_container_scroll_to_next (
-                            HD_HOME_VIEW_CONTAINER (priv->view_container));
+                            HD_HOME_VIEW_CONTAINER (priv->view_container), 0);
         }
       else
         {

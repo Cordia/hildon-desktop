@@ -69,6 +69,8 @@
 /* FIXME -- match spec */
 #define HDH_PAN_THRESHOLD 20
 #define PAN_NEXT_PREVIOUS_PERCENTAGE 0.25
+/* Time in secs to look back when finding average velocity */
+#define HDH_PAN_VELOCITY_HISTORY 0.5
 
 #define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home"
 #define HD_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
@@ -129,6 +131,11 @@ struct _HdHomePrivate
   gint                   initial_x;
   gint                   initial_y;
   gint                   cumulative_x;
+  gint                   velocity_x; /* movement in pixels per sec */
+  GTimer                 *last_move_time; /* time of last movement event */
+  GList                  *drag_list;
+  /* List of HdHomeDrag - history of mouse events used to work out an
+   * average velocity */
 
   gboolean               moved_over_threshold : 1;
 
@@ -138,6 +145,11 @@ struct _HdHomePrivate
   DBusGProxy            *call_ui_proxy;
   DBusGProxy            *osso_addressbook_proxy;
 };
+
+typedef struct {
+  gint    x;
+  gdouble period;
+} HdHomeDrag;
 
 static void hd_home_class_init (HdHomeClass *klass);
 static void hd_home_init       (HdHome *self);
@@ -223,11 +235,40 @@ hd_home_desktop_do_motion (
 		int         y)
 {
   HdHomePrivate   *priv = home->priv;
-  gint by_x;
+  HdHomeDrag *drag_item;
+  gdouble time;
+  gint drag_distance;
+  GList  *list;
 
-  by_x = x - priv->last_x;
+  drag_item = g_malloc(sizeof(HdHomeDrag));
+  drag_item->period = g_timer_elapsed(priv->last_move_time, NULL);
+  g_timer_reset(priv->last_move_time);
 
-  priv->cumulative_x += by_x;
+  drag_item->x = x - priv->last_x;
+  priv->cumulative_x += drag_item->x;
+
+  /* Remove any items older than a certain age */
+  time = 0;
+  drag_distance = 0;
+  list = priv->drag_list;
+  while (list)
+    {
+      GList *next = list->next;
+      if (time > HDH_PAN_VELOCITY_HISTORY)
+        priv->drag_list = g_list_remove_link(priv->drag_list, list);
+      else
+        {
+          HdHomeDrag *drag = (HdHomeDrag*)list->data;
+          time += drag->period;
+          drag_distance += ABS(drag->x);
+        }
+      list = next;
+    }
+  /* Add new item to drag list */
+  priv->drag_list = g_list_prepend(priv->drag_list, drag_item);
+  /* Set velocity */
+  time += drag_item->period;
+  priv->velocity_x = drag_distance / time;
 
   if (ABS (priv->cumulative_x) > HDH_PAN_THRESHOLD)
     priv->moved_over_threshold = TRUE;
@@ -261,18 +302,22 @@ hd_home_desktop_do_release (
 					       priv->desktop_motion_cb);
 
   priv->desktop_motion_cb = 0;
+  /* Free drag history */
+  g_list_foreach(priv->drag_list, (GFunc)g_free, 0);
+  g_list_free(priv->drag_list);
+  priv->drag_list = 0;
 
   if (priv->moved_over_threshold)
     {
       if (ABS (priv->cumulative_x) >= PAN_NEXT_PREVIOUS_PERCENTAGE * HD_COMP_MGR_LANDSCAPE_WIDTH) /* */
         {
           if (priv->cumulative_x > 0)
-            hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container));
+            hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
           else
-            hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container));
+            hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
         }
       else
-        hd_home_view_container_scroll_back (HD_HOME_VIEW_CONTAINER (priv->view_container));
+        hd_home_view_container_scroll_back (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
     }
   else if (hd_render_manager_get_state() == HDRM_STATE_HOME &&
 		  priv->initial_x == -1 &&
@@ -314,8 +359,13 @@ hd_home_desktop_do_press (
     }
 
   priv->last_x = x;
-
   priv->cumulative_x = 0;
+  priv->velocity_x = 0;
+  g_timer_reset(priv->last_move_time);
+  /* Make sure drag history is clear */
+  g_list_foreach(priv->drag_list, (GFunc)g_free, 0);
+  g_list_free(priv->drag_list);
+  priv->drag_list = 0;
 
   priv->desktop_motion_cb =
     mb_wm_main_context_x_event_handler_add (wm->main_ctx,
@@ -740,10 +790,11 @@ hd_home_init (HdHome *self)
   GError *error = NULL;
 
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME, HdHomePrivate);
-  
+
   priv->initial_x = -1;
   priv->initial_y = -1;
-  
+  priv->last_move_time = g_timer_new();
+
   priv->show_edit_button_template = clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
                                                                               CLUTTER_ALPHA_SINE_INC);
   priv->hide_edit_button_template = clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
@@ -815,6 +866,14 @@ cleanup:
 static void
 hd_home_dispose (GObject *object)
 {
+  HdHomePrivate *priv = HD_HOME(object)->priv;
+
+  if (priv->last_move_time)
+    {
+      g_timer_destroy(priv->last_move_time);
+      priv->last_move_time = 0;
+    }
+
   G_OBJECT_CLASS (hd_home_parent_class)->dispose (object);
 }
 
@@ -966,7 +1025,7 @@ hd_home_applet_emit_button_release_event (
   MBWMCompMgrClient  *cclient;
   XButtonEvent        xev;
   Window              mywindow;
- 
+
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   cclient = g_object_get_data (G_OBJECT (applet),
                                "HD-MBWMCompMgrClutterClient");
@@ -988,15 +1047,15 @@ hd_home_applet_emit_button_release_event (
   xev.same_screen = True;
 
   /* We need to find the window inside the plugin. */
-  XTranslateCoordinates (wm->xdpy, 
-		  xev.root, xev.window, 
+  XTranslateCoordinates (wm->xdpy,
+		  xev.root, xev.window,
 		  xev.x_root, xev.y_root,
 		  &xev.x, &xev.y,
 		  &mywindow);
   if (mywindow) {
     xev.window = mywindow;
-    XTranslateCoordinates (wm->xdpy, 
-		  xev.root, xev.window, 
+    XTranslateCoordinates (wm->xdpy,
+		  xev.root, xev.window,
 		  xev.x_root, xev.y_root,
 		  &xev.x, &xev.y,
 		  &mywindow);
@@ -1018,7 +1077,7 @@ hd_home_applet_emit_button_press_event (
   MBWMCompMgrClient  *cclient;
   XButtonEvent        xev;
   Window              mywindow;
- 
+
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   cclient = g_object_get_data (G_OBJECT (applet),
                                "HD-MBWMCompMgrClutterClient");
@@ -1041,15 +1100,15 @@ hd_home_applet_emit_button_press_event (
   xev.same_screen = True;
 
   /* We need to find the window inside the plugin. */
-  XTranslateCoordinates (wm->xdpy, 
-		  xev.root, xev.window, 
+  XTranslateCoordinates (wm->xdpy,
+		  xev.root, xev.window,
 		  xev.x_root, xev.y_root,
 		  &xev.x, &xev.y,
 		  &mywindow);
   if (mywindow) {
     xev.window = mywindow;
-    XTranslateCoordinates (wm->xdpy, 
-		  xev.root, xev.window, 
+    XTranslateCoordinates (wm->xdpy,
+		  xev.root, xev.window,
 		  xev.x_root, xev.y_root,
 		  &xev.x, &xev.y,
 		  &mywindow);
@@ -1071,7 +1130,7 @@ hd_home_applet_emit_leave_event (
   MBWMCompMgrClient  *cclient;
   XCrossingEvent      xev;
   Window              mywindow;
- 
+
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   cclient = g_object_get_data (G_OBJECT (applet),
                                "HD-MBWMCompMgrClutterClient");
@@ -1093,15 +1152,15 @@ hd_home_applet_emit_leave_event (
   xev.same_screen = True;
 
   /* We need to find the window inside the plugin. */
-  XTranslateCoordinates (wm->xdpy, 
-		  xev.root, xev.window, 
+  XTranslateCoordinates (wm->xdpy,
+		  xev.root, xev.window,
 		  xev.x_root, xev.y_root,
 		  &xev.x, &xev.y,
 		  &mywindow);
 
-  if (mywindow) 
+  if (mywindow)
       xev.window = mywindow;
-  
+
   xev.x = -10;
   xev.y = -10;
   xev.x_root = -10;
@@ -1154,7 +1213,7 @@ hd_home_applet_release (ClutterActor       *applet,
    */
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
- 
+
   hd_home_desktop_do_release (home);
   clutter_ungrab_pointer ();
 
@@ -1168,7 +1227,7 @@ hd_home_applet_release (ClutterActor       *applet,
      * the pointer grab) we send a click to the applet window.
      */
     if (event->source == applet)
-      hd_home_applet_emit_button_release_event (home, applet, 
+      hd_home_applet_emit_button_release_event (home, applet,
 	    priv->initial_x,
 	    priv->initial_y);
     priv->initial_x = -1;
@@ -1192,8 +1251,8 @@ hd_home_applet_motion (ClutterActor       *applet,
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
 
-  if (!(event->modifier_state & 
-	(CLUTTER_BUTTON1_MASK | CLUTTER_BUTTON2_MASK | CLUTTER_BUTTON2_MASK))) 
+  if (!(event->modifier_state &
+	(CLUTTER_BUTTON1_MASK | CLUTTER_BUTTON2_MASK | CLUTTER_BUTTON2_MASK)))
     return FALSE;
 
   was_over_threshold = priv->moved_over_threshold;
@@ -1204,7 +1263,7 @@ hd_home_applet_motion (ClutterActor       *applet,
    * need the initial coordinates any more.
    */
   if (!was_over_threshold && priv->moved_over_threshold) {
-    hd_home_applet_emit_leave_event (home, applet, 
+    hd_home_applet_emit_leave_event (home, applet,
 		    priv->initial_x,
 		    priv->initial_y);
     priv->initial_x = -1;

@@ -70,9 +70,12 @@ void             hd_home_view_container_set_offset         (HdHomeViewContainer 
 ClutterActor    *hd_home_view_container_get_previous_view  (HdHomeViewContainer *container);
 ClutterActor    *hd_home_view_container_get_next_view      (HdHomeViewContainer *container);
 
-void             hd_home_view_container_scroll_back        (HdHomeViewContainer *container);
-void             hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container);
-ClutterTimeline *hd_home_view_container_scroll_to_next     (HdHomeViewContainer *container);
+void             hd_home_view_container_scroll_back        (HdHomeViewContainer *container,
+                                                            gint velocity);
+void             hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container,
+                                                            gint velocity);
+ClutterTimeline *hd_home_view_container_scroll_to_next     (HdHomeViewContainer *container,
+                                                            gint velocity);
 void             hd_home_view_container_set_reactive       (HdHomeViewContainer *container,
                                                             gboolean             reactive);
 

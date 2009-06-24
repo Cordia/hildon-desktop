@@ -38,14 +38,13 @@
 #include <matchbox/core/mb-wm.h>
 
 #include <string.h>
+#include <math.h>
 
 #define MAX_HOME_VIEWS 4
 
 #define HD_GCONF_DIR_VIEWS         "/apps/osso/hildon-desktop/views"
 #define HD_GCONF_KEY_VIEWS_ACTIVE  HD_GCONF_DIR_VIEWS "/active"
 #define HD_GCONF_KEY_VIEWS_CURRENT HD_GCONF_DIR_VIEWS "/current"
-
-#define SCROLL_DURATION 300
 
 #define BACKGROUNDS_DIR ".backgrounds"
 
@@ -67,6 +66,7 @@ struct _HdHomeViewContainerPrivate
   ClutterTimeline *timeline;
   int timeline_offset;
   guint frames;
+  gboolean animation_overshoot;
 
   /* GConf */
   GConfClient *gconf_client;
@@ -716,6 +716,9 @@ scroll_back_new_frame_cb (ClutterTimeline     *timeline,
 
   float amt = frame_num / (float)priv->frames;
   amt = hd_transition_ease_out(amt);
+  /* If we overshoot, go negative for the first part of the transition */
+  if (priv->animation_overshoot)
+    amt = amt * -cos(amt*3.141592);
 
   priv->offset = (int)((1-amt) * priv->timeline_offset);
   /* prod the blur control so it notices that the background has changed */
@@ -745,8 +748,10 @@ scroll_back_completed_cb (ClutterTimeline     *timeline,
     }
 }
 
+/* Velocity is the speed in pixels/second, and we attempt to set the scroll
+ * speed accordingly */
 void
-hd_home_view_container_scroll_back (HdHomeViewContainer *container)
+hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocity)
 {
   HdHomeViewContainerPrivate *priv;
   guint width;
@@ -760,7 +765,31 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container)
 
   clutter_actor_get_size (CLUTTER_ACTOR (container), &width, NULL);
 
-  priv->timeline = clutter_timeline_new_for_duration (ABS (priv->offset) * SCROLL_DURATION / width);
+  /* if no velocity, make something up */
+  if (velocity == 0)
+    {
+      velocity = width*5;
+    }
+  else
+    {
+      /* Overshoot if we were going in one direction, but expect to
+       * go in the other */
+      priv->animation_overshoot = (velocity>0) != (priv->offset>0);
+      /* make sure velocity is within a sensible range, we don't want this
+       * taking more than a second, or totally flicking past... */
+      velocity = ABS(velocity);
+      if (velocity > 10000) velocity = 10000;
+      if (velocity < width) velocity = width;
+    }
+
+  /* we use 1570, because it's roughly 1000 * PI/2 - this keeps the initial speed
+   * the same as the drag velocity given in the argument (because the ease_out
+   * function in scroll_back_new_frame_cb uses sin, and sin(x)==x near 0) */
+  priv->timeline = clutter_timeline_new_for_duration
+                        (ABS (priv->offset) * 1570 / velocity);
+  /* TODO: when sign(priv->offset) != sign(velocity) then the home view
+   * is moving back to its old position, and maybe we should have some
+   * overshoot */
 
   priv->frames = clutter_timeline_get_n_frames (priv->timeline);
   priv->timeline_offset = priv->offset;
@@ -777,7 +806,7 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container)
 }
 
 void
-hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container)
+hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container, gint velocity)
 {
   HdHomeViewContainerPrivate *priv;
   guint width;
@@ -795,11 +824,11 @@ hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container)
   hd_home_view_container_set_current_view (container,
                                            priv->previous_view);
 
-  hd_home_view_container_scroll_back (container);
+  hd_home_view_container_scroll_back (container, velocity);
 }
 
 ClutterTimeline *
-hd_home_view_container_scroll_to_next (HdHomeViewContainer *container)
+hd_home_view_container_scroll_to_next (HdHomeViewContainer *container, gint velocity)
 {
   HdHomeViewContainerPrivate *priv;
   guint width;
@@ -817,7 +846,7 @@ hd_home_view_container_scroll_to_next (HdHomeViewContainer *container)
   hd_home_view_container_set_current_view (container,
                                            priv->next_view);
 
-  hd_home_view_container_scroll_back (container);
+  hd_home_view_container_scroll_back (container, velocity);
 
   return priv->timeline;
 }

@@ -1,3 +1,16 @@
+2009-06-24  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Home view kinetic panning
+
+	* src/home/hd-home-view.c
+	* src/home/hd-home-view-container.c
+	* src/home/hd-home-view-container.h: Added velocity parameter to 
+	  _scroll functions, and made them pay attention to it.
+	* src/home/hd-home.c: Store the last few mouse drag events and use
+	  them to work out an average finger velocity.	
+	* data/transitions.ini: Slowed down launcher subview showing transition
+	  at MartinG's request
+
 2009-06-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Patch from Laszlo Pere for NB#117797.
