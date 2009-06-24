@@ -3,6 +3,7 @@ hildon-desktop (1:2.2.58-1~unreleased) unstable; urgency=low
   Laszlo:
   * Fixes: NB#109932 - Panning over widgets
   * Fixes: NB#117318 - Able to pan between home views in layout mode.
+  * Fixes: NB#111837 - Screen focus can be shifted to back screen
 
   Kimmo:
   * Fixes: NB#124294 - The Layout mode title overlaps the layout mode icon.
