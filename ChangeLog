@@ -1,5 +1,11 @@
 2009-06-24  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/mb/hd-atoms.h
+	* src/mb/hd-atoms.c: Added _MAEMO_SUPPRESS_ROOT_RECONFIGURATION atom
+	* src/util/hd-util.c: Set atom above to 1 around the XRandR calls to 
+	  allow fbdev to supress the extra redraw that happens on windows 
+	  when rotating the screen.
+
 	* src/home/hd-home.c
 	* src/home/hd-home-view-container.c: Misc tweaks to home panning
 

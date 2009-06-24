@@ -80,6 +80,8 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
 
     RR_PROPERTY_CONNECTOR_TYPE,
     "Panel",
+
+    "_MAEMO_SUPPRESS_ROOT_RECONFIGURATION",
   };
 
   XInternAtoms (xdpy,
