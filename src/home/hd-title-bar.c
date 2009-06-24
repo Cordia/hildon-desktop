@@ -763,14 +763,14 @@ hd_title_bar_set_for_edit_mode(HdTitleBar *bar)
     return;
   priv = bar->priv;
 
-  title = dgettext ("maemo-af-desktop", "home_ti_desktop_menu");
-  hd_title_bar_set_title (bar, title, FALSE, FALSE);
-
   state |= HDTB_VIS_BTN_MENU;
   state |= HDTB_VIS_BTN_DONE;
   state |= HDTB_VIS_FULL_WIDTH;
 
   hd_title_bar_set_state(bar, state);
+
+  title = dgettext ("maemo-af-desktop", "home_ti_desktop_menu");
+  hd_title_bar_set_title (bar, title, FALSE, FALSE);
 }
 
 static void
