@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.58-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.58-1) unstable; urgency=low
 
   Laszlo:
   * Fixes: NB#109932 - Panning over widgets
@@ -17,7 +17,10 @@ hildon-desktop (1:2.2.58-1~unreleased) unstable; urgency=low
   Kimmo:
   * Fixes: NB#124294 - The Layout mode title overlaps the layout mode icon.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 23 Jun 2009 14:03:05 +0300
+  Adam:
+  * Fixes: NB#124405 - New contact dialog appears in portrait mode.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 24 Jun 2009 15:43:45 +0300
 
 hildon-desktop (1:2.2.57-1) unstable; urgency=low
 
