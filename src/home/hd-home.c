@@ -217,14 +217,15 @@ hd_home_back_button_clicked (ClutterActor *button,
 }
 
 static void
-hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
+hd_home_desktop_do_motion (
+		HdHome     *home,
+		int         x,
+		int         y)
 {
-  HdHome          *home = userdata;
   HdHomePrivate   *priv = home->priv;
-//  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   gint by_x;
 
-  by_x = xev->x - priv->last_x;
+  by_x = x - priv->last_x;
 
   priv->cumulative_x += by_x;
 
@@ -235,13 +236,20 @@ hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
     hd_home_view_container_set_offset (HD_HOME_VIEW_CONTAINER (priv->view_container),
                                   CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_x));
 
-  priv->last_x = xev->x;
+  priv->last_x = x;
 }
 
 static void
-hd_home_desktop_release (XButtonEvent *xev, void *userdata)
+hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
 {
-  HdHome *home = userdata;
+  HdHome          *home = userdata;
+  hd_home_desktop_do_motion (home, xev->x, xev->y);
+}
+
+static void
+hd_home_desktop_do_release (
+		HdHome     *home)
+{
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
 
@@ -266,13 +274,64 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
       else
         hd_home_view_container_scroll_back (HD_HOME_VIEW_CONTAINER (priv->view_container));
     }
-  else if (hd_render_manager_get_state() == HDRM_STATE_HOME)
+  else if (hd_render_manager_get_state() == HDRM_STATE_HOME &&
+		  priv->initial_x == -1 &&
+		  priv->initial_y == -1)
     {
+      /*
+       * If the button was not pressed over an applet we start up the edit
+       * button.
+       */
       hd_home_show_edit_button (home);
     }
 
   priv->cumulative_x = 0;
   priv->moved_over_threshold = FALSE;
+}
+
+static void
+hd_home_desktop_release (XButtonEvent *xev, void *userdata)
+{
+  hd_home_desktop_do_release (userdata);
+}
+
+static Bool
+hd_home_desktop_do_press (
+		HdHome     *home,
+		int         x,
+		int         y)
+{
+  HdHomePrivate *priv = home->priv;
+  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+
+  if (priv->desktop_motion_cb)
+    {
+      mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
+						 MotionNotify,
+						 priv->desktop_motion_cb);
+
+      priv->desktop_motion_cb = 0;
+    }
+
+  priv->last_x = x;
+
+  priv->cumulative_x = 0;
+
+  priv->desktop_motion_cb =
+    mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+					    priv->desktop,
+					    MotionNotify,
+					    (MBWMXEventFunc)
+					    hd_home_desktop_motion,
+					    home);
+  return True;
+}
+
+static Bool
+hd_home_desktop_press (XButtonEvent *xev, void *userdata)
+{
+  HdHome *home = userdata;
+  return hd_home_desktop_do_press (home, xev->x, xev->y);
 }
 
 static void
@@ -331,37 +390,6 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
     }
 }
 
-static Bool
-hd_home_desktop_press (XButtonEvent *xev, void *userdata)
-{
-  HdHome *home = userdata;
-  HdHomePrivate *priv = home->priv;
-  MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-
-  if (priv->desktop_motion_cb)
-    {
-      mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
-						 MotionNotify,
-						 priv->desktop_motion_cb);
-
-      priv->desktop_motion_cb = 0;
-    }
-
-  priv->initial_x = priv->last_x = xev->x;
-  priv->initial_y = xev->y;
-
-  priv->cumulative_x = 0;
-
-  priv->desktop_motion_cb =
-    mb_wm_main_context_x_event_handler_add (wm->main_ctx,
-					    priv->desktop,
-					    MotionNotify,
-					    (MBWMXEventFunc)
-					    hd_home_desktop_motion,
-					    userdata);
-
-  return True;
-}
 
 static void
 hd_property_notify_message (XPropertyEvent *xev, void *userdata)
@@ -712,7 +740,10 @@ hd_home_init (HdHome *self)
   GError *error = NULL;
 
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME, HdHomePrivate);
-
+  
+  priv->initial_x = -1;
+  priv->initial_y = -1;
+  
   priv->show_edit_button_template = clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
                                                                               CLUTTER_ALPHA_SINE_INC);
   priv->hide_edit_button_template = clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
@@ -922,6 +953,268 @@ hd_home_add_status_area (HdHome *home, ClutterActor *sa)
   hd_render_manager_set_status_area(sa);
 }
 
+
+static void
+hd_home_applet_emit_button_release_event (
+		HdHome             *home,
+		ClutterActor       *applet,
+		int                 x,
+		int                 y)
+{
+  HdHomePrivate      *priv = home->priv;
+  MBWindowManager    *wm;
+  MBWMCompMgrClient  *cclient;
+  XButtonEvent        xev;
+  Window              mywindow;
+ 
+  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  cclient = g_object_get_data (G_OBJECT (applet),
+                               "HD-MBWMCompMgrClutterClient");
+  /*
+   * Emitting a button release event.
+   */
+  xev.type = ButtonRelease;
+  xev.display = wm->xdpy;
+  xev.window = MB_WM_CLIENT_XWIN(cclient->wm_client);
+  xev.root = wm->root_win->xwindow;
+  xev.subwindow = None;
+  xev.time = CurrentTime;
+  xev.x = x;
+  xev.y = y;
+  xev.x_root = x;
+  xev.y_root = y;
+  xev.state = Button1Mask;
+  xev.button = Button1;
+  xev.same_screen = True;
+
+  /* We need to find the window inside the plugin. */
+  XTranslateCoordinates (wm->xdpy, 
+		  xev.root, xev.window, 
+		  xev.x_root, xev.y_root,
+		  &xev.x, &xev.y,
+		  &mywindow);
+  if (mywindow) {
+    xev.window = mywindow;
+    XTranslateCoordinates (wm->xdpy, 
+		  xev.root, xev.window, 
+		  xev.x_root, xev.y_root,
+		  &xev.x, &xev.y,
+		  &mywindow);
+  }
+
+  XSendEvent(wm->xdpy, xev.window, True,
+	     0, (XEvent *)&xev);
+}
+
+static void
+hd_home_applet_emit_button_press_event (
+		HdHome             *home,
+		ClutterActor       *applet,
+		int                 x,
+		int                 y)
+{
+  HdHomePrivate      *priv = home->priv;
+  MBWindowManager    *wm;
+  MBWMCompMgrClient  *cclient;
+  XButtonEvent        xev;
+  Window              mywindow;
+ 
+  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  cclient = g_object_get_data (G_OBJECT (applet),
+                               "HD-MBWMCompMgrClutterClient");
+  /*
+   * Emitting a button press event.
+   */
+  xev.type = ButtonPress;
+  xev.send_event = False;
+  xev.display = wm->xdpy;
+  xev.window = MB_WM_CLIENT_XWIN(cclient->wm_client);
+  xev.root = wm->root_win->xwindow;
+  xev.subwindow = None;
+  xev.time = CurrentTime;
+  xev.x = x;
+  xev.y = y;
+  xev.x_root = x;
+  xev.y_root = y;
+  xev.state = 0;
+  xev.button = Button1;
+  xev.same_screen = True;
+
+  /* We need to find the window inside the plugin. */
+  XTranslateCoordinates (wm->xdpy, 
+		  xev.root, xev.window, 
+		  xev.x_root, xev.y_root,
+		  &xev.x, &xev.y,
+		  &mywindow);
+  if (mywindow) {
+    xev.window = mywindow;
+    XTranslateCoordinates (wm->xdpy, 
+		  xev.root, xev.window, 
+		  xev.x_root, xev.y_root,
+		  &xev.x, &xev.y,
+		  &mywindow);
+  }
+
+  XSendEvent(wm->xdpy, xev.window, True,
+	     0, (XEvent *)&xev);
+}
+
+static void
+hd_home_applet_emit_leave_event (
+		HdHome             *home,
+		ClutterActor       *applet,
+		int                 x,
+		int                 y)
+{
+  HdHomePrivate      *priv = home->priv;
+  MBWindowManager    *wm;
+  MBWMCompMgrClient  *cclient;
+  XCrossingEvent      xev;
+  Window              mywindow;
+ 
+  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  cclient = g_object_get_data (G_OBJECT (applet),
+                               "HD-MBWMCompMgrClutterClient");
+  /*
+   * Emitting a leave event.
+   */
+  xev.type = LeaveNotify;
+  xev.display = wm->xdpy;
+  xev.window = MB_WM_CLIENT_XWIN(cclient->wm_client);
+  xev.root = wm->root_win->xwindow;
+  xev.subwindow = None;
+  xev.time = CurrentTime;
+  xev.x = x;
+  xev.y = y;
+  xev.x_root = x;
+  xev.y_root = y;
+  xev.mode = NotifyNormal;
+  xev.focus = False;
+  xev.same_screen = True;
+
+  /* We need to find the window inside the plugin. */
+  XTranslateCoordinates (wm->xdpy, 
+		  xev.root, xev.window, 
+		  xev.x_root, xev.y_root,
+		  &xev.x, &xev.y,
+		  &mywindow);
+
+  if (mywindow) 
+      xev.window = mywindow;
+  
+  xev.x = -10;
+  xev.y = -10;
+  xev.x_root = -10;
+  xev.y_root = -10;
+
+  XSendEvent(wm->xdpy, xev.window, True,
+	     0, (XEvent *)&xev);
+}
+
+static gboolean
+hd_home_applet_press (ClutterActor       *applet,
+		      ClutterButtonEvent *event,
+		      HdHome             *home)
+{
+  HdHomePrivate   *priv = home->priv;
+
+  /*
+   * If we are in edit mode the HdHomeView will have to deal with this event.
+   */
+  if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
+    return FALSE;
+
+  /*
+   * We always emit a button press event to animate it on the screen. Later we
+   * can abort the click with a LeaveNotify event.
+   */
+  hd_home_applet_emit_button_press_event (home, applet, event->x, event->y);
+  /*
+   * We store the coordinates where the screen was touched. These values are
+   * set only when applet was clicked, so we will know at release time if the
+   * button was pressed on an applet.
+   */
+  priv->initial_x = event->x;
+  priv->initial_y = event->y;
+
+  clutter_grab_pointer (applet);
+  hd_home_desktop_do_press (home, event->x, event->y);
+  return TRUE;
+}
+
+static gboolean
+hd_home_applet_release (ClutterActor       *applet,
+	  	        ClutterButtonEvent *event,
+			HdHome             *home)
+{
+  HdHomePrivate   *priv = home->priv;
+
+  /*
+   * If we are in edit mode the HdHomeView will have to deal with this event.
+   */
+  if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
+    return FALSE;
+ 
+  hd_home_desktop_do_release (home);
+  clutter_ungrab_pointer ();
+
+  /*
+   * If we have the initial coordinates the pointer was not moved over the
+   * treshold to pan the desktop.
+   */
+  if (priv->initial_x > -1 && priv->initial_y > -1) {
+    /*
+     * If we are still inside the applet (and did not get the event because of
+     * the pointer grab) we send a click to the applet window.
+     */
+    if (event->source == applet)
+      hd_home_applet_emit_button_release_event (home, applet, 
+	    priv->initial_x,
+	    priv->initial_y);
+    priv->initial_x = -1;
+    priv->initial_y = -1;
+  }
+
+  return TRUE;
+}
+
+static gboolean
+hd_home_applet_motion (ClutterActor       *applet,
+		       ClutterMotionEvent *event,
+		       HdHome             *home)
+{
+  HdHomePrivate *priv = home->priv;
+  gboolean       was_over_threshold;
+
+  /*
+   * If we are in edit mode the HdHomeView will have to deal with this event.
+   */
+  if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
+    return FALSE;
+
+  if (!(event->modifier_state & 
+	(CLUTTER_BUTTON1_MASK | CLUTTER_BUTTON2_MASK | CLUTTER_BUTTON2_MASK))) 
+    return FALSE;
+
+  was_over_threshold = priv->moved_over_threshold;
+  hd_home_desktop_do_motion (home, event->x, event->y);
+
+  /*
+   * If the pointer was moved over the threshold to pan the desktop we don't
+   * need the initial coordinates any more.
+   */
+  if (!was_over_threshold && priv->moved_over_threshold) {
+    hd_home_applet_emit_leave_event (home, applet, 
+		    priv->initial_x,
+		    priv->initial_y);
+    priv->initial_x = -1;
+    priv->initial_y = -1;
+  }
+
+  return TRUE;
+}
+
+
 void
 hd_home_add_applet (HdHome *home, ClutterActor *applet)
 {
@@ -944,6 +1237,17 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
                                   view_key,
                                   NULL);
   view_id--;
+
+  /*
+   * Here we connect to the pointer events of the applet actor. It is needed for
+   * the panning initiated inside the applets.
+   */
+  g_signal_connect (applet, "button-press-event",
+		  G_CALLBACK (hd_home_applet_press), home);
+  g_signal_connect (applet, "button-release-event",
+		  G_CALLBACK (hd_home_applet_release), home);
+  g_signal_connect (applet, "motion-event",
+                  G_CALLBACK (hd_home_applet_motion), home);
 
   if (view_id < 0 || view_id >= MAX_VIEWS ||
       !hd_home_view_container_get_active (HD_HOME_VIEW_CONTAINER (priv->view_container),

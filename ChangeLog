@@ -1,3 +1,15 @@
+2009-06-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Patch from Laszlo Pere for NB#109932.
+
+	* src/home/hd-home.c (hd_home_desktop_do_motion,
+	hd_home_desktop_do_release, hd_home_applet_emit_button_release_event, 
+	hd_home_applet_emit_button_press_event): Allow starting of Home panning
+	on top of applets as well and synthesize input events to the applets
+	when needed.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_setup_input_viewport): Catch input
+	events for Home applet windows.
+
 2009-06-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.57

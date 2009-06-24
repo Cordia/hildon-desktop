@@ -839,6 +839,7 @@ hd_comp_mgr_get_foreground_region(HdCompMgr *hmgr, MBWMClientType client_mask)
           rectangle[i].y      = geo.y;
           rectangle[i].width  = geo.width;
           rectangle[i].height = geo.height;
+          ++i;
         }
 
       fg_client = fg_client->stacked_above;
@@ -906,6 +907,18 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
           XFixesSubtractRegion (wm->xdpy, region, region, subtract);
           XFixesDestroyRegion (wm->xdpy, subtract);
         }
+
+      /*
+       * We need the events initiated on the applets.
+       */
+      if (STATE_NEED_DESKTOP(hd_render_manager_get_state())) {
+          XserverRegion unionregion;
+
+          unionregion = hd_comp_mgr_get_foreground_region(hmgr,
+              HdWmClientTypeHomeApplet);
+          XFixesUnionRegion (wm->xdpy, region, region, unionregion);
+          XFixesDestroyRegion (wm->xdpy, unionregion);
+      }
     }
   else
     region = XFixesCreateRegion (wm->xdpy, NULL, 0);
