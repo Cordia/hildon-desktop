@@ -117,6 +117,10 @@ hd_launcher_grid_refresh_h_adjustment (HdLauncherGrid *grid)
   ClutterFixed width;
   ClutterUnit clip_x, clip_width;
   ClutterUnit page_width;
+  width = 0;
+  clip_x = 0;
+  clip_width = 0;
+  page_width = 0;
 
   if (!priv->h_adjustment)
     return;
@@ -148,6 +152,10 @@ hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
   ClutterFixed height;
   ClutterUnit clip_y, clip_height;
   ClutterUnit page_height;
+  height = 0;
+  clip_y = 0;
+  clip_height = 0;
+  page_height = 0;
 
   if (!priv->v_adjustment)
     return;
