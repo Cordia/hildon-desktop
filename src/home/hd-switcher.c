@@ -75,6 +75,7 @@ struct _HdSwitcherPrivate
   gboolean long_press;
   gboolean pressed;
   guint press_timeout;
+  guint wakeup_timeout;
 };
 
 /* used for a callback to trigger the relaunch animation */
@@ -288,6 +289,12 @@ hd_switcher_dispose (GObject *object)
     {
       g_source_remove (priv->press_timeout);
       priv->press_timeout = 0;
+    }
+  
+  if (priv->wakeup_timeout) 
+    {
+      g_source_remove (priv->wakeup_timeout);
+      priv->wakeup_timeout = 0;
     }
 
   G_OBJECT_CLASS (hd_switcher_parent_class)->dispose (object);
@@ -623,6 +630,65 @@ hd_switcher_insufficient_memory(HdSwitcher *switcher,
   hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
 }
 
+/*
+ * This function is called when a wakeup is initiated but the application is not
+ * responding.
+ */
+static void
+hd_switcher_waking_fail (HdSwitcher *switcher)
+{
+  GtkWidget *banner;
+
+  banner = hildon_banner_show_information (NULL, NULL,
+                        _("ckct_ib_application_loading_failed"));
+  hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
+  
+  hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+}
+
+/*
+ * A timeout function to monitor the wakeup.
+ */
+static gboolean
+hd_switcher_wakeup_timeout(gpointer data)
+{
+  HdSwitcher *switcher = HD_SWITCHER (data);
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  if (hd_render_manager_get_state () == HDRM_STATE_LOADING) {
+    hd_switcher_waking_fail (switcher);
+  }
+
+  priv->wakeup_timeout = 0;
+  return FALSE;
+}
+
+/*
+ * This function is called when the render manager changes state during the
+ * wakeup procedure of an application. The function will remove the timeout
+ * that checks if the wake-up failed.
+ */
+static void
+hd_switcher_render_manager_notify_state (
+		GObject    *gobject,
+		GParamSpec *pspec,
+		gpointer    data)
+{
+  HdSwitcher *switcher = HD_SWITCHER (data);
+  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+
+  g_signal_handlers_disconnect_by_func(
+      priv->task_nav,
+      G_CALLBACK(hd_switcher_render_manager_notify_state),
+      data);
+
+  if (priv->wakeup_timeout) 
+    {
+      g_source_remove (priv->wakeup_timeout);
+      priv->wakeup_timeout = 0;
+    }
+}
+
 static void
 hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
 {
@@ -679,6 +745,16 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       hd_render_manager_set_state (HDRM_STATE_LOADING);
       hd_render_manager_stop_transition ();
       hd_title_bar_set_title (tbar, text, FALSE, TRUE);
+
+      /*
+       * Implementing a timeout to see if the wakeup fails.
+       */
+      priv->wakeup_timeout = g_timeout_add (6000,
+                                            hd_switcher_wakeup_timeout,
+                                            switcher);
+      g_signal_connect (hd_render_manager_get(), "notify::state",
+          G_CALLBACK (hd_switcher_render_manager_notify_state), switcher);
+
       hd_comp_mgr_wakeup_client (HD_COMP_MGR (priv->comp_mgr), hclient);
       g_free (text);
     }

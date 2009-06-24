@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.59-1~unreleased) unstable; urgency=low
 
-  * foo
+  Laszlo:
+  * Fixes: NB#117797 - Switcher button and title is not shown in the
+    application view.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 24 Jun 2009 15:45:54 +0300
 

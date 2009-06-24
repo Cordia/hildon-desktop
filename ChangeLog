@@ -1,5 +1,14 @@
 2009-06-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Patch from Laszlo Pere for NB#117797.
+
+	* src/home/hd-switcher.c (hd_switcher_waking_fail,
+	hd_switcher_wakeup_timeout, hd_switcher_render_manager_notify_state):
+	New functions to detect an application that fails to wake up from its
+	hibernation.
+	(hd_switcher_zoom_in_complete): Set up a timeout before waking up the
+	application.
+
 	Release 2.2.58
 
 2009-06-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
