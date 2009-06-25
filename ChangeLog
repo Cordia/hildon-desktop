@@ -10,13 +10,9 @@
 	  If we have >12 thumbnails position the grid so that the titles of
 	  the fourth row can be seen clearly.
 
-2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
-
 	* src/tidy/tidy-scroll-view.c (tidy_scroll_view_init):
 	  Force transparent background on the indicators.
 	  Maybe it could have been done more elegantly.
-
-2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c (layout_notwin):
 	  Show only the first 3-2 lines of the secondary text.
