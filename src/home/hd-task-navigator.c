@@ -1584,18 +1584,25 @@ calc_layout (Layout * lout)
       nrows_per_page = NThumbnails <= 8 ? 2 : 3;
     }
 
-  /* Gaps are always the same, regardless of the number of thumbnails.
+  /*
+   * Gaps are always the same, regardless of the number of thumbnails.
    * Leave the last row left-aligned.  Center the first pageful amount
-   * of rows vertically. */
+   * of rows vertically, except when we have more than one pages; then
+   * we know exactly where to start the first row.  This enables us to
+   * show the titles of the thumbnails in the 4th row.
+   */
   lout->xpos = layout_fun (SCREEN_WIDTH,
                            lout->thumbsize->width,
                            GRID_HORIZONTAL_GAP,
                            lout->cells_per_row);
   lout->last_row_xpos = lout->xpos;
-  lout->ypos = layout_fun (SCREEN_HEIGHT + GRID_TOP_MARGIN,
-                           lout->thumbsize->height,
-                           GRID_VERTICAL_GAP,
-                           nrows_per_page);
+  if (NThumbnails <= 12)
+    lout->ypos = layout_fun (SCREEN_HEIGHT + GRID_TOP_MARGIN,
+                             lout->thumbsize->height,
+                             GRID_VERTICAL_GAP,
+                             nrows_per_page);
+  else
+    lout->ypos = GRID_TOP_MARGIN + MARGIN_DEFAULT;
   lout->hspace = lout->thumbsize->width  + GRID_HORIZONTAL_GAP;
   lout->vspace = lout->thumbsize->height + GRID_VERTICAL_GAP;
 }

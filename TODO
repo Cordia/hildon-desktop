@@ -34,8 +34,6 @@ Notifications:
 
 Switcher:
 - When zooming back is complete fade in the real titlebar.
-- Scrollbar: place 4 pixels leftwards
 - Update label colors with theme change.
 - Zoom+fly: don't slow down at the end of zoom and don't start slowly
 - Shadowed text in switcher (wishlist).
-- Get rid of HdSwitcher, now that there is the render manager
