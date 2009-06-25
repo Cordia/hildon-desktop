@@ -458,9 +458,18 @@ tidy_scroll_view_init (TidyScrollView *self)
 {
   static const TidyPadding padding = { .right = CLUTTER_UNITS_FROM_INT (8) };
   TidyScrollViewPrivate *priv = self->priv = SCROLL_VIEW_PRIVATE (self);
+  GValue transparent = { 0 };
   
   priv->hscroll = tidy_scroll_bar_new (NULL);
   priv->vscroll = tidy_scroll_bar_new (NULL);
+
+  /* Make the scroll indicator's background transparent. */
+  g_value_init (&transparent, CLUTTER_TYPE_COLOR);
+  g_value_set_boxed (&transparent, &(const ClutterColor){ 0, 0, 0, 0 });
+  tidy_stylable_set_property (TIDY_STYLABLE (priv->hscroll),
+                              "bg-color", &transparent);
+  tidy_stylable_set_property (TIDY_STYLABLE (priv->vscroll),
+                              "bg-color", &transparent);
   
   clutter_actor_set_parent (priv->hscroll, CLUTTER_ACTOR (self));
   clutter_actor_set_parent (priv->vscroll, CLUTTER_ACTOR (self));
