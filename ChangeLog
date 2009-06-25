@@ -1,3 +1,8 @@
+2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-task-navigator.c (layout_notwin):
+	  Show only the first 3-2 lines of the secondary text.
+
 2009-06-24  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/mb/hd-atoms.h

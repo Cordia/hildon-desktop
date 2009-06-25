@@ -1642,12 +1642,12 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
 {
   TNote *tnote;
   gboolean reload_icon;
+  guint isize, msgdiv, maxmsg;
   gint x, y;
   guint width, height;
-  guint isize, msgdiv;
   guint xicon, ycount, xmsg;
-  guint htime, hleft, hleftforme;
   guint worig, horig, wmax, hmax;
+  guint htime, hleft, hleftforme;
 
   tnote = thumb->tnote;
   if (!ops)
@@ -1664,19 +1664,19 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
     {
       isize  = ICON_FINGER;
       msgdiv = MARGIN_DEFAULT;
+      maxmsg = 3;
     }
   else if (THUMBSIZE_IS (medium))
     {
-      /* Increase the bottom margin artificially to not draw the top
-       * fragment of the third line of the secondary text. */
       isize  = ICON_STYLUS;
       msgdiv = MARGIN_HALF;
-      hleft -= 8;
+      maxmsg = 2;
     }
   else
     {
       isize  = ICON_STYLUS;
       msgdiv = 0;
+      maxmsg = 1;
     }
 
   /* (Re)load the icon it if it hasn't been or its size is changing. */
@@ -1752,9 +1752,31 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
   clutter_actor_get_size (tnote->message, &width, &height);
   if (width > wmax)
     {
+      PangoLayout *lout;
+
+      /* Make it wrapped. */
       width = wmax;
       clutter_actor_set_width (tnote->message, width);
-      height = clutter_actor_get_height (tnote->message);
+
+      /* Check the line count and restrict to @maxmsg. */
+      lout = clutter_label_get_layout(CLUTTER_LABEL(tnote->message));
+      if (pango_layout_get_line_count (lout) > maxmsg)
+        {
+          PangoRectangle r;
+          PangoLayoutIter *iter;
+
+          /* Cut at the bottom of the @maxmsg:th line. */
+          for (iter = pango_layout_get_iter (lout); maxmsg > 1;
+               pango_layout_iter_next_line (iter))
+            maxmsg--;
+
+          pango_layout_iter_get_line_extents (iter, NULL, &r);
+          pango_extents_to_pixels (&r, NULL);
+          pango_layout_iter_free (iter);
+          height = r.y + r.height;
+        }
+      else /* We can show all lines. */
+        height = clutter_actor_get_height (tnote->message);
     }
   hleftforme = THUMBSIZE_IS (small) ? hleft/2 : hleft;
   if (height > hleftforme)
