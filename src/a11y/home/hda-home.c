@@ -176,7 +176,8 @@ _hda_home_next_home_action                      (CailActor *cail_actor)
 
   if (container != NULL)
     {
-      hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (container));
+      hd_home_view_container_scroll_to_next (
+                      HD_HOME_VIEW_CONTAINER (container), 0);
     }
 }
 
@@ -189,6 +190,7 @@ _hda_home_previous_home_action                  (CailActor *cail_actor)
 
   if (container != NULL)
     {
-      hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (container));
+      hd_home_view_container_scroll_to_previous (
+                      HD_HOME_VIEW_CONTAINER (container), 0);
     }
 }

@@ -1,3 +1,9 @@
+2009-06-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/a11y/home/hda-home.c (_hda_home_next_home_action,
+	_hda_home_previous_home_action): Add 0 argument as velocity for
+	hd_home_view_container_scroll_to_next/previous to fix compilation.
+
 2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c (calc_layout):
