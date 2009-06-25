@@ -410,8 +410,7 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
        * resizes/positions in flight, we're ok */
       float min_scale = HDCM_NOTIFICATION_END_SIZE / (float)width;
       float scale = (1-a1) + a1*min_scale;
-      float corner_x = -a1*(HD_COMP_MGR_TOP_LEFT_BTN_WIDTH+width*scale)*0.5f
-                       + HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+      float corner_x = -a1*(HD_COMP_MGR_TOP_LEFT_BTN_WIDTH +width *scale)*0.5f;
       float corner_y =  a1*(HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT-height*scale)*0.5f;
 
       clutter_actor_set_opacity(actor, (int)(255*(1-a2)));
@@ -426,10 +425,12 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
        * edge of the screen in an arc */
       float scale =  1 + (1-amt)*0.5f;
       float ang = amt * 3.141592f * 0.5f;
-      float corner_x = (hd_comp_mgr_get_current_screen_width()*0.5f - HD_COMP_MGR_TOP_LEFT_BTN_WIDTH) * cos(ang) + HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+      float corner_x = (hd_comp_mgr_get_current_screen_width()*0.5f
+                        - HD_COMP_MGR_TOP_LEFT_BTN_WIDTH) * cos(ang);
       float corner_y = (sin(ang)-1) * height;
-      /* We set anchor point so if the notification
-       * resizes/positions in flight, we're ok */
+      /* We set anchor point so if the notification resizes/positions
+       * in flight, we're ok.  NOTE that the position of the actor
+       * (get_position()) still matters, and it is LEFT_BIN_WIDTH. */
       clutter_actor_set_opacity(actor, (int)(255*amt));
       clutter_actor_set_scale(actor, scale, scale);
       clutter_actor_set_anchor_pointu(actor,

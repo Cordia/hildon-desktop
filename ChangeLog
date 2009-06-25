@@ -1,3 +1,11 @@
+2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-note.c (hd_note_init)
+	* src/util/hd-transition.c (on_notification_timeline_new_frame)
+
+	Place notification preview windows where they're supposed to be
+	ie. right to the tasks button.
+
 2009-06-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/a11y/home/hda-home.c (_hda_home_next_home_action,

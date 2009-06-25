@@ -256,7 +256,8 @@ hd_note_init (MBWMObject *this, va_list vap)
       else
         n = s = w = e = 0;
 
-      geom.x = geom.y = 0;
+      geom.x = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+      geom.y = 0;
       geom.width  = w + client->window->geometry.width  + e;
       geom.height = n + client->window->geometry.height + s;
       hd_note_request_geometry (client, &geom, MBWMClientReqGeomForced);
