@@ -1,3 +1,18 @@
+2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#118959 Task Switcher thumbnails not scaled when entering
+		  task switcher from the desktop 
+
+	Zoom the tasw when entering from/leaving for home.
+
+	* data/transitions.ini (task_nav):
+	  Added "zoom_for_home".
+	* src/home/hd-render-manager.c:
+	  hd_render_manager_set_blur():
+	    Recognize HDRM_ZOOM_FOR_HOME to zoom task_nav by that much.
+	  hd_render_manager_sync_clutter_before():
+	    Use the flag when going HDRM_STATE_HOME.
+
 2009-06-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Patch from Mox Soini for NB#124643.

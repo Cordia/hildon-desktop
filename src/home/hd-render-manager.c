@@ -112,10 +112,11 @@ typedef enum
   HDRM_BLUR_HOME = 1,
   HDRM_SHOW_TASK_NAV = 2, /* Used to fade out/fade in task nav */
   HDRM_BLUR_BACKGROUND = 4, /* like BLUR_HOME, but for dialogs, etc */
-  HDRM_ZOOM_FOR_LAUNCHER = 16,
-  HDRM_ZOOM_FOR_LAUNCHER_SUBMENU = 32,
-  HDRM_ZOOM_FOR_TASK_NAV = 64,
-  HDRM_SHOW_APPLETS = 128, /* Used to fade out/fade in applets */
+  HDRM_ZOOM_FOR_LAUNCHER = 16, /* zoom task_nav for launchre */
+  HDRM_ZOOM_FOR_LAUNCHER_SUBMENU = 32, /* ...for submenu */
+  HDRM_ZOOM_FOR_HOME = 64, /* for home */
+  HDRM_ZOOM_FOR_TASK_NAV = 128, /* zoom home for task_nav */
+  HDRM_SHOW_APPLETS = 256, /* Used to fade out/fade in applets */
 } HDRMBlurEnum;
 
 enum
@@ -604,7 +605,6 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 {
   HdRenderManagerPrivate *priv;
   gboolean blur_home;
-  gint zoom_task_nav = 0;
   gint zoom_home = 0;
 
   priv = the_render_manager->priv;
@@ -628,8 +628,6 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 
 
   /* work out how much we need to zoom various things */
-  zoom_task_nav += (blur & HDRM_ZOOM_FOR_LAUNCHER) ? 1 : 0;
-  zoom_task_nav += (blur & HDRM_ZOOM_FOR_LAUNCHER_SUBMENU) ? 1 : 0;
   zoom_home += (blur & HDRM_ZOOM_FOR_LAUNCHER) ? 1 : 0;
   zoom_home += (blur & HDRM_ZOOM_FOR_LAUNCHER_SUBMENU) ? 1 : 0;
   zoom_home += (blur & HDRM_ZOOM_FOR_TASK_NAV) ? 1 : 0;
@@ -662,11 +660,15 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
     {
       priv->task_nav_opacity.b = 1;
     }
-  if (zoom_task_nav)
+  if (blur & HDRM_ZOOM_FOR_HOME)
+    priv->task_nav_zoom.b = hd_transition_get_double("task_nav",
+                                                     "zoom_for_home", 1);
+  else if (blur & HDRM_ZOOM_FOR_LAUNCHER)
+    priv->task_nav_zoom.b = hd_transition_get_double("task_nav", "zoom", 1);
+  else if (blur & HDRM_ZOOM_FOR_LAUNCHER_SUBMENU)
     {
-      priv->task_nav_zoom.b =
-              hd_transition_get_double("task_nav", "zoom", 1);
-      priv->task_nav_zoom.b = 1 - (1-priv->task_nav_zoom.b)*zoom_task_nav;
+      priv->task_nav_zoom.b = hd_transition_get_double("task_nav", "zoom", 1);
+      priv->task_nav_zoom.b = 1 - 2*(1-priv->task_nav_zoom.b);
     }
 
   if (blur & HDRM_SHOW_APPLETS)
@@ -808,6 +810,7 @@ void hd_render_manager_sync_clutter_before ()
           visible_top_left = HDRM_BUTTON_LAUNCHER;
         else
           visible_top_left = HDRM_BUTTON_TASK_NAV;
+        blur |=  HDRM_ZOOM_FOR_HOME;
       case HDRM_STATE_HOME_PORTRAIT: /* Fallen truth */
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
