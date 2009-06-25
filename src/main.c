@@ -29,6 +29,11 @@
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#include <time.h>
+
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #include <clutter/clutter-main.h>
@@ -54,6 +59,7 @@
 enum {
   KEY_ACTION_TOGGLE_SWITCHER = 1,
   KEY_ACTION_TOGGLE_NON_COMP_MODE,
+  KEY_ACTION_TAKE_SCREENSHOT
 };
 
 #ifdef MBWM_DEB_VERSION
@@ -62,6 +68,57 @@ static __attribute__((unused)) const char mbver[] =
 #endif
 
 MBWindowManager *hd_mb_wm = NULL;
+
+/* Take screenshot */
+static void
+take_screenshot (void)
+{
+  char *path, *filename;
+  static gchar datestamp[255];
+  time_t secs;
+  struct tm *tm = NULL;
+  GdkDrawable *window;
+  int width, height;
+  GdkPixbuf *image;
+  GError *error = NULL;
+  gboolean ret;
+
+  if (!getenv("MYDOCSDIR")) {
+    g_warning ("Screenshot failed, environment variable MYDOCSDIR missing.");
+    return;
+  }
+
+  path = g_strdup_printf ("%s/.images/Screenshots", getenv("MYDOCSDIR"));
+  g_mkdir_with_parents (path, 0770);
+
+  secs = time(NULL);
+  tm = localtime(&secs);  
+  strftime (datestamp, 255, "%Y%m%d-%H%M%S", tm);
+
+  filename = g_strdup_printf ("%s/Screenshot-%s.png",
+			      path,
+			      datestamp);
+  g_free (path);
+
+  window = gdk_get_default_root_window();
+  gdk_drawable_get_size(window, &width, &height);
+  image = gdk_pixbuf_get_from_drawable(NULL,
+				       window,
+				       gdk_drawable_get_colormap(window),
+				       0, 0,
+				       0, 0,
+				       width, height);
+  ret = gdk_pixbuf_save (image, filename, "png", &error, NULL);
+  g_object_unref(image);
+
+  if (ret) {
+    g_debug ("Screenshot '%s' saved.", filename);
+  } else if (error) {
+    g_warning ("%s: Image saving failed: %s", __func__, error->message);
+    g_error_free (error);
+  }
+  g_free (filename);
+}
 
 static unsigned int
 theme_type_func (const char *theme_name, void *data)
@@ -118,6 +175,9 @@ key_binding_func (MBWindowManager   *wm,
       else
         hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
       break;
+    case KEY_ACTION_TAKE_SCREENSHOT:
+        take_screenshot();
+	break;
     }
 }
 
@@ -441,6 +501,11 @@ main (int argc, char **argv)
 				    key_binding_func,
 				    NULL,
 				    (void*)KEY_ACTION_TOGGLE_NON_COMP_MODE);
+  mb_wm_keys_binding_add_with_spec (wm,
+				    "<shift><ctrl>p",
+				    key_binding_func,
+				    NULL,
+				    (void*)KEY_ACTION_TAKE_SCREENSHOT);
 
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 

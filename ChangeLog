@@ -1,3 +1,11 @@
+2009-06-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Patch from Mox Soini for NB#124643.
+
+	* src/main.c (take_screenshot): New function to save a screen shot.
+	(key_binding_func): Add enum for screen shot shortcut.
+	(main): shift+ctrl+p takes a screen shot.
+
 2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-render-manager.c (hd_render_manager_set_state):
@@ -7,8 +15,6 @@
 	  Don't consider notification previews modal blockers.
 	  This allow the tasks button not to be blocked while
 	  they're showing.
-
-2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-note.c (hd_note_init)
 	* src/util/hd-transition.c (on_notification_timeline_new_frame)
