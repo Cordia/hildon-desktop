@@ -1236,6 +1236,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
   HdRenderManagerPrivate *priv;
   MBWMCompMgr          *cmgr;
   MBWindowManager      *wm;
+  MBWindowManagerClient *c;
+
 
   priv = the_render_manager->priv;
   cmgr = MB_WM_COMP_MGR (priv->comp_mgr);
@@ -1267,8 +1269,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
       if (oldstate == HDRM_STATE_NON_COMPOSITED)
         {
-          MBWindowManagerClient *c;
-
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
 	  mb_wm_setup_redirection (wm, 1);
 
@@ -1335,6 +1335,15 @@ void hd_render_manager_set_state(HDRMStateEnum state)
          * has no effect, otherwise cancel any possible previous indication
          * of state switching. */
         hd_transition_rotate_screen_and_change_state (HDRM_STATE_UNDEFINED);
+
+      /* Discard notification previews. */
+      if (STATE_DISCARD_PREVIEW_NOTE (state))
+          for (c = wm->stack_top; c; c = c->stacked_below)
+            if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c))
+              {
+                mb_wm_client_hide (c);
+                mb_wm_client_deliver_delete (c);
+              }
 
       /* Enter or leave the task switcher. */
       if (STATE_NEED_TASK_NAV (state))

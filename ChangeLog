@@ -1,5 +1,15 @@
 2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  Discard notification previews if we're going to
+	  STATE_DISCARD_PREVIEW_NOTE().
+	* src/util/hd-util.c (hd_util_client_has_modal_blocker):
+	  Don't consider notification previews modal blockers.
+	  This allow the tasks button not to be blocked while
+	  they're showing.
+
+2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/mb/hd-note.c (hd_note_init)
 	* src/util/hd-transition.c (on_notification_timeline_new_frame)
 

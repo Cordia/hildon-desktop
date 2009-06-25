@@ -193,6 +193,7 @@ hd_util_client_has_modal_blocker (MBWindowManagerClient *c)
        (c_type == HdWmClientTypeAppMenu) ||
        (c_type == HdWmClientTypeStatusMenu) ||
        (c_type == MBWMClientTypeNote &&
+        HD_NOTE (c)->note_type != HdNoteTypeIncomingEventPreview &&
         HD_NOTE (c)->note_type != HdNoteTypeIncomingEvent &&
         HD_NOTE (c)->note_type != HdNoteTypeBanner)) &&
       !mb_wm_client_get_transient_for (c) &&
