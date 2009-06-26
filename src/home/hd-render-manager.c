@@ -617,6 +617,15 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 
   priv->current_blur = blur;
 
+  /* If we were going to transition to not blurring but didn't get there,
+   * make sure we set blur=0 anyway in order to *force* the blurring to
+   * recalculate. The first call to on_timeline_blur_new_frame will set
+   * the correct value anyway. */
+  if (priv->home_radius.b == 0 &&
+      priv->home_radius.current != 0)
+    tidy_blur_group_set_blur(
+      CLUTTER_ACTOR(the_render_manager->priv->home_blur), 0);
+
   range_next(&priv->home_radius, 0);
   range_next(&priv->home_saturation, 1);
   range_next(&priv->home_brightness, 1);
@@ -683,6 +692,12 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
       priv->applets_opacity.b = 1;
     }
 
+  /* Just make sure that we set everything up correctly - even if the
+   * ranges are the same, we may have changed 'a' and 'b' together
+   * (see applets_opacity). Otherwise it is possible to get a frame
+   * of flicker if clutter renders before the timeline. */
+  on_timeline_blur_new_frame(priv->timeline_blur, 0, NULL);
+
   /* no point animating if everything is already right */
   if (range_equal(&priv->home_radius) &&
       range_equal(&priv->home_saturation) &&
@@ -692,10 +707,6 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
       range_equal(&priv->task_nav_zoom) &&
       range_equal(&priv->applets_opacity))
     {
-      /* Just make sure that we set everything up still - even if the
-       * ranges are the same, we may have changed 'a' and 'b' together
-       * (see applets_opacity) */
-      on_timeline_blur_new_frame(priv->timeline_blur, 0, NULL);
       hd_render_manager_sync_clutter_after();
       return;
     }
@@ -796,6 +807,7 @@ void hd_render_manager_sync_clutter_before ()
     ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH |
       HDTB_VIS_BTN_RIGHT_MASK | HDTB_VIS_FOREGROUND);
   HDRMBlurEnum blur = 0;
+  gboolean blurred_changed = FALSE;
 
   if (STATE_SHOW_APPLETS(priv->state))
     blur |= HDRM_SHOW_APPLETS;
@@ -922,7 +934,7 @@ void hd_render_manager_sync_clutter_before ()
       /* lower this below task_nav (see the ordering comments at the top) */
       clutter_actor_lower(CLUTTER_ACTOR(priv->blur_front),
                           CLUTTER_ACTOR(priv->task_nav));
-      hd_render_manager_blurred_changed();
+      blurred_changed = TRUE;
     }
 
   /* Move the applets out to the front if required */
@@ -934,7 +946,7 @@ void hd_render_manager_sync_clutter_before ()
             CLUTTER_ACTOR (priv->blur_front))
           {
             clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->blur_front));
-            hd_render_manager_blurred_changed();
+            blurred_changed = TRUE;
           }
         clutter_actor_lower_bottom (home_front);
       }
@@ -942,7 +954,7 @@ void hd_render_manager_sync_clutter_before ()
              CLUTTER_ACTOR (priv->home))
       {
         clutter_actor_reparent(home_front, CLUTTER_ACTOR (priv->home));
-        hd_render_manager_blurred_changed();
+        blurred_changed = TRUE;
       }
   }
 
@@ -975,6 +987,11 @@ void hd_render_manager_sync_clutter_before ()
    * want to have visibilities the way we want them when we do it */
   hd_render_manager_set_blur(blur);
 
+  /* We have to call blurred_changed *after* set_blur, so we know
+   * whether we are blurring in or out. (If blurring out, we don't
+   * want to update the blurring immediately). */
+  if (blurred_changed)
+    hd_render_manager_blurred_changed();
 }
 
 /* The syncing with clutter that is done after a transition ends */
@@ -2408,10 +2425,28 @@ void hd_render_manager_place_titlebar_elements (void)
 
 void hd_render_manager_blurred_changed()
 {
+  HdRenderManagerPrivate *priv;
+  gboolean force = FALSE;
+
   if (!the_render_manager) return;
 
-  tidy_blur_group_set_source_changed(
-      CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+  priv = the_render_manager->priv;
+
+  /* from home_edit to home, applets swap from front to blurred and
+   * it makes the transition look a bit strange */
+  if (priv->previous_state == HDRM_STATE_HOME_EDIT &&
+      priv->state          == HDRM_STATE_HOME)
+    force = TRUE;
+
+  /* If we're in the middle of a transition to somewhere where we won't
+   * blur, just 'hint' that we have damage (we'll recalculate next time
+   * we blur). */
+  if (force || priv->home_radius.b != 0)
+    tidy_blur_group_set_source_changed(
+          CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+  else
+    tidy_blur_group_hint_source_changed(
+          CLUTTER_ACTOR(the_render_manager->priv->home_blur));
 }
 
 void

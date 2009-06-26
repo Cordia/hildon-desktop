@@ -1,3 +1,20 @@
+2009-06-26  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Some good performance improvements from reducing the amount of
+	times blurring is recalculated. Also fixes NB#123272, NB#124708
+	(Wrong background is blurred) - hopefully pending S3 status
+
+	* src/home/hd-render-manager.c: Ensure that set_blur sets the values
+	  correctly for the very next frame. Also set whether to blur a bit
+	  more carefully.
+	* src/tidy/tidy-blur-group.c: Get rid of slight artefacts on vignette
+	  effect. Fix problem with needless redraw at the end of the blur,
+	  and only do one redraw per frame (as it looks like we may have an SGX
+	  bug).
+	  
+	* src/home/hd-home.c: Get rid of the small 'jump' as the user drags
+	  mode than HDH_PAN_THRESHOLD	  
+
 2009-06-26  Laszlo Pere  <lpere@blumsoft.eu>
 
 	NB#119136: Memory leaks found while traversing from main view ti sub 
@@ -15,7 +32,7 @@
 	received MapNotify yet. Uses new API from libmatchbox2.
 	Fixes: NB#121902
 
-2009-06-26  Gordon Williams <gordon.williams@collabora.co.uk>
+2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Better fix for NB#120368 and unbreaks banners not shown in fullscreen.
 
@@ -26,6 +43,8 @@
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
 	  ...and discard the preview if it is.
 	* src/mb/hd-comp-mgr.h
+
+2009-06-26  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-util.c: Modifications for 122222 to use XA_CARDINAL,32
 	  for _MAEMO_SUPPRESS_ROOT_RECONFIGURATION property

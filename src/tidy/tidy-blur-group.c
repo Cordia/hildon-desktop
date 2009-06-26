@@ -36,7 +36,10 @@
 
 /* How many steps can we perform per frame - we don't want too many or
  * we get really slow */
-#define MAX_STEPS_PER_FRAME 2
+#define MAX_STEPS_PER_FRAME 1
+/* Currently it seems we have trouble setting this to 2, as it looks like
+ * there may be some SGX syncing problem causing the second iteration to
+ * work with the texture from *before* the first iteration */
 
 /* The OpenGL fragment shader used to do blur and desaturation.
  * We use 3 samples here arranged in a rough triangle. We need
@@ -278,7 +281,7 @@ tidy_blur_group_paint (ClutterActor *actor)
 {
   ClutterColor    white = { 0xff, 0xff, 0xff, 0xff };
   ClutterColor    col = { 0xff, 0xff, 0xff, 0xff };
-  ClutterColor    bgcol = { 0x00, 0x00, 0x00, 0x00 };
+  ClutterColor    bgcol = { 0x00, 0x00, 0x00, 0xff };
   gint            x_1, y_1, x_2, y_2;
   gint            steps_this_frame = 0;
 
@@ -402,6 +405,7 @@ tidy_blur_group_paint (ClutterActor *actor)
         cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height);
       }
 
+
       cogl_paint_init(&bgcol);
       cogl_color (&white);
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
@@ -414,9 +418,6 @@ tidy_blur_group_paint (ClutterActor *actor)
       priv->max_blur_step = 0;
       priv->current_is_a = TRUE;
       //g_debug("Rendered buffer");
-      /* If we're still not blurred enough, ask to be rendered again... */
-      if (priv->current_blur_step != priv->blur_step)
-        clutter_actor_queue_redraw(actor);
       steps_this_frame++;
     }
 
@@ -464,10 +465,11 @@ tidy_blur_group_paint (ClutterActor *actor)
       /* We've destroyed our source image, so next time we've zoomed out we
        * need to re-create it */
       priv->source_changed = TRUE;
-      /* If we're still not blurred enough, ask to be rendered again... */
-      if (priv->current_blur_step != priv->blur_step)
-        clutter_actor_queue_redraw(actor);
     }
+
+  /* If we're still not blurred enough, ask to be rendered again... */
+  if (priv->current_blur_step != priv->blur_step)
+    clutter_actor_queue_redraw(actor);
 
   ClutterFixed mx, my, zx, zy;
   mx = CLUTTER_INT_TO_FIXED (width) / 2;
@@ -611,12 +613,33 @@ tidy_blur_group_paint (ClutterActor *actor)
         for (x=0;x<VIGNETTE_TILES;x++)
           {
             CoglTextureVertex *grid_pt = &grid[x + y*(VIGNETTE_TILES+1)];
-            v[0] = grid_pt[0]; /* tri 1 */
-            v[1] = grid_pt[1];
-            v[2] = grid_pt[1+(VIGNETTE_TILES+1)];
-            v[3] = grid_pt[0]; /* tri 2 */
-            v[4] = grid_pt[1+(VIGNETTE_TILES+1)];
-            v[5] = grid_pt[VIGNETTE_TILES+1];
+            /* We triangulate in 2 different ways depending on where we
+             * are in the grid - because otherwise the resulting interpolation
+             * offends MartinG.
+             *   ___    ___
+             *  |\  |  |  /|
+             *  | \ |  | / |
+             *  |__\|  |/__|
+             *  TL/BR  TR/BL
+             */
+            if ((x<(VIGNETTE_TILES/2)) == (y<(VIGNETTE_TILES/2)))
+              {
+                v[0] = grid_pt[0]; /* tri 1 */
+                v[1] = grid_pt[1];
+                v[2] = grid_pt[1+(VIGNETTE_TILES+1)];
+                v[3] = v[0]; /* tri 2 */
+                v[4] = v[2];
+                v[5] = grid_pt[VIGNETTE_TILES+1];
+              }
+            else
+              {
+                v[0] = grid_pt[VIGNETTE_TILES+1]; /* tri 1 */
+                v[1] = grid_pt[0];
+                v[2] = grid_pt[1];
+                v[3] = v[0]; /* tri 2 */
+                v[4] = v[2];
+                v[5] = grid_pt[1+(VIGNETTE_TILES+1)];
+              }
             v+=6;
           }
       /* render! */
@@ -633,7 +656,6 @@ tidy_blur_group_paint (ClutterActor *actor)
 
   if (priv->use_shader && priv->shader_saturate)
     clutter_shader_set_is_enabled (priv->shader_saturate, FALSE);
-
 }
 
 static void
@@ -742,6 +764,10 @@ void tidy_blur_group_set_blur(ClutterActor *blur_group, float blur)
 {
   TidyBlurGroupPrivate *priv;
   gint step = (int)blur;
+  /* Don't set step to be 0 if blur isn't. This fixes the case where
+   * saturation!=0 but blur is, and blur is needlessly recalculated */
+  if (step==0 && blur!=0)
+    step = 1;
 
   if (!TIDY_IS_BLUR_GROUP(blur_group))
     return;

@@ -272,8 +272,16 @@ hd_home_desktop_do_motion (
   if (priv->cumulative_x < 0)
     priv->velocity_x = -priv->velocity_x;
 
-  if (ABS (priv->cumulative_x) > HDH_PAN_THRESHOLD)
-    priv->moved_over_threshold = TRUE;
+  if (!priv->moved_over_threshold &&
+      ABS (priv->cumulative_x) > HDH_PAN_THRESHOLD)
+    {
+      priv->moved_over_threshold = TRUE;
+      /* Remove initial jump caused by the threshold */
+      if (priv->cumulative_x > 0)
+        priv->cumulative_x -= HDH_PAN_THRESHOLD;
+      else
+        priv->cumulative_x += HDH_PAN_THRESHOLD;
+    }
 
   if (priv->moved_over_threshold)
     hd_home_view_container_set_offset (HD_HOME_VIEW_CONTAINER (priv->view_container),
