@@ -1,4 +1,13 @@
-2009-06-26  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-06-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Patch from Laszlo Pere for NB#121902.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_handle_stackable): Do not get
+	confused by stackable windows that are in the stack but have not
+	received MapNotify yet. Uses new API from libmatchbox2.
+	Fixes: NB#121902
+
+2009-06-26  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Better fix for NB#120368 and unbreaks banners not shown in fullscreen.
 
@@ -9,8 +18,6 @@
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
 	  ...and discard the preview if it is.
 	* src/mb/hd-comp-mgr.h
-
-2009-06-26  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-util.c: Modifications for 122222 to use XA_CARDINAL,32
 	  for _MAEMO_SUPPRESS_ROOT_RECONFIGURATION property

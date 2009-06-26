@@ -3,6 +3,11 @@ hildon-desktop (1:2.2.59-1~unreleased) unstable; urgency=low
   Laszlo:
   * Fixes: NB#117797 - Switcher button and title is not shown in the
     application view.
+  * Fixes: NB#121902 - Image Viewer displayed in grid view in task switcher
+    when minimized from NSM view.
+
+  Kimmo:
+  * Require libmatchbox2-dev (>> 0.2.44-1) due to Laszlo's new API.
 
   Mox:
   * Fixes: NB#124643 - Shortcut for taking a screenshot

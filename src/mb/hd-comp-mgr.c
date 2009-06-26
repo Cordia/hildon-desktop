@@ -1521,27 +1521,22 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
             HD_APP (c_tmp)->stack_index >= 0 /* == stackable window */ &&
             c_tmp->window->xwin_group == win_group)
           {
-            old_leader = HD_APP (c_tmp)->leader;
-            break;
+	    /*
+	     * It is possible that the bottommost window is mapped but we did
+	     * not get a map notify yet. In this case the leader can be found
+	     * higher (see NB#121902). 
+	     */
+            if (mb_wm_client_is_map_confirmed(c_tmp)) 
+              {
+                old_leader = HD_APP (c_tmp)->leader;
+                break;
+              }
           }
 
       if (old_leader && old_leader->followers)
         last_follower = HD_APP (g_list_last (old_leader->followers)->data);
 
-      if (app->stack_index > 0 && old_leader &&
-	  (!last_follower || last_follower->stack_index < app->stack_index))
-        {
-          g_debug ("%s: %p is NEW SECONDARY OF THE STACK\n", __FUNCTION__, app);
-          app->leader = old_leader;
-
-          app->leader->followers = g_list_append (old_leader->followers,
-                                                  client);
-	  if (last_follower)
-	    *replaced = last_follower;
-	  else
-	    *replaced = old_leader;
-        }
-      else if (old_leader && app->stack_index <= old_leader->stack_index)
+      if (old_leader && app->stack_index <= old_leader->stack_index)
         {
           GList *l;
 
@@ -1584,8 +1579,20 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
             mb_wm_client_theme_change ((MBWindowManagerClient*)app);
           }
         }
-      else if (old_leader && app->stack_index > old_leader->stack_index)
+      else if (app->stack_index > 0 && old_leader &&
+	  (!last_follower || last_follower->stack_index < app->stack_index))
+        {
+          g_debug ("%s: %p is NEW SECONDARY OF THE STACK\n", __FUNCTION__, app);
+          app->leader = old_leader;
 
+          app->leader->followers = g_list_append (old_leader->followers,
+                                                  client);
+	  if (last_follower)
+	    *replaced = last_follower;
+	  else
+	    *replaced = old_leader;
+        }
+      else if (old_leader && app->stack_index > old_leader->stack_index)
         {
           GList *flink;
           HdApp *f = NULL;
