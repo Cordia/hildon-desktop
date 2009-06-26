@@ -6,6 +6,7 @@
 
 #include <glib.h>
 #include <mce/dbus-names.h>
+#include <mce/mode-names.h>
 /*
  * Application killer DBus interface
  */
@@ -61,6 +62,15 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
       hd_volume_profile_set_silent (TRUE);
       hd_comp_mgr_kill_all_apps (hmgr);
       exit (0);
+    }
+  else if (dbus_message_is_signal (msg, MCE_SIGNAL_IF, "tklock_mode_ind"))
+    {
+      const char *mode;
+      if (dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &mode,
+                                 DBUS_TYPE_INVALID));
+        {
+          hd_comp_mgr_tklocked (hmgr, !strcmp(mode, MCE_TK_LOCKED));
+        }
     }
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -155,6 +165,11 @@ hd_dbus_init (HdCompMgr * hmgr)
       /* system bus */
       dbus_bus_add_match (sysbus_conn, "type='signal', interface='"
                           DSME_SIGNAL_INTERFACE "'", NULL);
+      dbus_bus_add_match (sysbus_conn,
+                          "type='signal',path='"MCE_SIGNAL_PATH"',"
+                          "interface='"MCE_SIGNAL_IF"',"
+                          "member='tklock_mode_ind'",
+                          NULL);
 
       dbus_connection_add_filter (sysbus_conn,
                                   hd_dbus_system_bus_signal_handler,

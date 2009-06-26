@@ -95,6 +95,9 @@ struct HdCompMgrPrivate
   /* Do Not Disturb flag */
   gboolean               do_not_disturb_flag : 1;
 
+  /* Are we swipe-locked?  Only used to discard notif previews. */
+  gboolean               tklocked : 1;
+
   MBWindowManagerClient *status_area_client;
   MBWindowManagerClient *status_menu_client;
 
@@ -1731,11 +1734,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
     return;
 
-  /* discard notification previews if in switcher */
+  /* discard notification previews if necessary */
   if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
     {
-      if (priv->do_not_disturb_flag ||
-          STATE_DISCARD_PREVIEW_NOTE (hd_render_manager_get_state()))
+      if (priv->do_not_disturb_flag
+          || STATE_DISCARD_PREVIEW_NOTE (hd_render_manager_get_state())
+          || priv->tklocked)
         {
           g_debug ("%s. Discard notification", __FUNCTION__);
           mb_wm_client_hide (c);
@@ -2659,6 +2663,7 @@ hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr)
   if (priv->do_not_disturb_flag != do_not_disturb_flag)
     {
       priv->do_not_disturb_flag = do_not_disturb_flag;
+      g_debug ("DND: %d", priv->do_not_disturb_flag);
 
       hd_dbus_disable_display_blanking (do_not_disturb_flag);
     }
@@ -2833,4 +2838,10 @@ gint hd_comp_mgr_time_since_last_map(HdCompMgr *hmgr)
 
   return ((current.tv_sec - hmgr->priv->last_map_time.tv_sec) * 1000) +
          ((current.tv_usec - hmgr->priv->last_map_time.tv_usec) / 1000);
+}
+
+void hd_comp_mgr_tklocked (HdCompMgr *hmgr, gboolean isit)
+{
+  hmgr->priv->tklocked = isit;
+  g_debug ("tklocked: %d", isit);
 }

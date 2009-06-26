@@ -2302,7 +2302,6 @@ void hd_render_manager_set_visibilities()
   if (has_fullscreen)
     { VISIBILITY ("SA GO AWAY");
       clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
-      clutter_actor_hide(CLUTTER_ACTOR(priv->front));
       clutter_actor_hide(CLUTTER_ACTOR(priv->button_task_nav));
       if (c && c->frame_geometry.y >= 0)
         { /* Move SA out of the way. */
@@ -2313,7 +2312,6 @@ void hd_render_manager_set_visibilities()
     }
   else
     { VISIBILITY ("SA COME BACK");
-      clutter_actor_show(CLUTTER_ACTOR(priv->front));
       clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
       if (c && c->frame_geometry.y < 0)
         { /* Restore the position of SA. */
