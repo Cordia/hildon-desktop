@@ -4,6 +4,17 @@ hildon-desktop (1:2.2.59-1~unreleased) unstable; urgency=low
   * Fixes: NB#117797 - Switcher button and title is not shown in the
     application view.
 
+  Mox:
+  * Fixes: NB#124643 - Shortcut for taking a screenshot
+
+  Gordon:
+  * Fixes: NB#122222 - X sends a large number of unnecessary Expose events 
+    on screen rotation to all applications
+
+  Adam:
+  * Fixes: NB#118959 - Task Switcher thumbnails not scaled when entering
+    task switcher from the desktop 
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 24 Jun 2009 15:45:54 +0300
 
 hildon-desktop (1:2.2.58-1) unstable; urgency=low
