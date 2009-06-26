@@ -1,3 +1,8 @@
+2009-06-24  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/util/hd-util.c: Modifications for 122222 to use XA_CARDINAL,32
+	  for _MAEMO_SUPPRESS_ROOT_RECONFIGURATION property
+
 2009-06-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#118959 Task Switcher thumbnails not scaled when entering
