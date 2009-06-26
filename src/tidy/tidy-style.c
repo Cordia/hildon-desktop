@@ -174,6 +174,7 @@ tidy_style_load_from_file (TidyStyle    *style,
 {
   GKeyFile *rc_file;
   GError *internal_error;
+  gboolean retval = TRUE;
 
   rc_file = g_key_file_new ();
   
@@ -189,16 +190,17 @@ tidy_style_load_from_file (TidyStyle    *style,
           internal_error->code == G_FILE_ERROR_NOENT)
         {
           g_error_free (internal_error);
-          return TRUE;
+          goto finalize;
         }
 
       g_propagate_error (error, internal_error);
-      return FALSE;
+      retval = FALSE;
+      goto finalize;
     }
 
+finalize:
   g_key_file_free (rc_file);
-
-  return TRUE;
+  return retval;
 }
 
 static void
@@ -228,6 +230,8 @@ tidy_style_load (TidyStyle *style)
                   error->message);
       g_error_free (error);
     }
+
+  g_free (rc_file);
 }
 
 static void

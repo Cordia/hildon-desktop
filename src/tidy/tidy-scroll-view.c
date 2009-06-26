@@ -470,6 +470,7 @@ tidy_scroll_view_init (TidyScrollView *self)
                               "bg-color", &transparent);
   tidy_stylable_set_property (TIDY_STYLABLE (priv->vscroll),
                               "bg-color", &transparent);
+  g_value_unset (&transparent); 
   
   clutter_actor_set_parent (priv->hscroll, CLUTTER_ACTOR (self));
   clutter_actor_set_parent (priv->vscroll, CLUTTER_ACTOR (self));

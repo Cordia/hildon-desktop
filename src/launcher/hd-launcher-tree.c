@@ -419,15 +419,24 @@ hd_launcher_tree_init (HdLauncherTree *tree)
 HdLauncherTree *
 hd_launcher_tree_new (const gchar *path)
 {
-  if (!path)
+  HdLauncherTree  *tree;
+  gboolean         free_path = FALSE;
+
+  if (!path) {
     path = g_build_filename (SYSCONFDIR,
                              HILDON_DESKTOP_MENU_DIR,
                              HILDON_DESKTOP_APPLICATIONS_MENU,
                              NULL);
+    free_path = TRUE;
+  }
 
-  return g_object_new (HD_TYPE_LAUNCHER_TREE,
+  tree = g_object_new (HD_TYPE_LAUNCHER_TREE,
                        "menu-path", path,
                        NULL);
+  if (free_path)
+    g_free ((void *)path);
+
+  return tree;
 }
 
 static void

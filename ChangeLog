@@ -1,3 +1,11 @@
+2009-06-26  Laszlo Pere  <lpere@blumsoft.eu>
+
+	NB#119136: Memory leaks found while traversing from main view ti sub 
+	           view in task launcher.
+
+	* src/launcher/hd-launcher-tree.c, src/tidy/tidy-style.c, 
+	  src/tidy/tidy-scroll-view.c: Memory leaks has been fixed.
+
 2009-06-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Patch from Laszlo Pere for NB#121902.

@@ -3,6 +3,8 @@ hildon-desktop (1:2.2.59-1~unreleased) unstable; urgency=low
   Laszlo:
   * Fixes: NB#117797 - Switcher button and title is not shown in the
     application view.
+  * Fixes: NB#119136 - Memory leaks found while traversing from main view ti 
+    sub view in task launcher.
   * Fixes: NB#121902 - Image Viewer displayed in grid view in task switcher
     when minimized from NSM view.
 
