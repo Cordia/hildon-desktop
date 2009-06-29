@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.60-1~unreleased) unstable; urgency=low
 
-  * foo
+  Laszlo:
+  * Fixes: NB#124242 - Can not select any option in the 'device swicth" dialog 
+    when new hildon meny is displayed on application and tapped.
 
  -- Aapo Kojo <aapo.kojo@nokia.com>  Mon, 29 Jun 2009 11:20:54 +0300
 

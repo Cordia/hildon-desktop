@@ -1,3 +1,11 @@
+2009-06-26  Laszlo Pere  <lpere@blumsoft.eu>
+
+	NB#124242: Can not select any option in the 'device swicth" dialog 
+	           when new hildon meny is displayed on application and tapped 
+
+	* src/mb/hd-app-menu.c: Closing all the menus when a new menu is
+	  initialized. The same as found in the hd-app.c
+
 2009-06-29  Aapo Kojo <aapo.kojo@nokia.com>
 
 	Release 2.2.59

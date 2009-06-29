@@ -65,6 +65,19 @@ hd_app_menu_destroy (MBWMObject *this)
 static int
 hd_app_menu_init (MBWMObject *this, va_list vap)
 {
+  MBWindowManagerClient *client = MB_WM_CLIENT (this);
+  MBWindowManager       *wm = client->wmref;
+  MBWindowManagerClient *c;
+
+  for (c = wm->stack_top; c; c = c->stacked_below)
+    {
+      if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeAppMenu ||
+          MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeMenu)
+        {
+          mb_wm_client_deliver_delete (c);
+        }
+    }
+
   return 1;
 }
 
