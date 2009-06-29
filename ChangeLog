@@ -1,3 +1,10 @@
+2009-06-29  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Applied Mox's patch to add a 1s delay before launching CallUI.
+	Fixes: NB#124321
+
+	* src/launcher/hd-app-mgr.c:
+
 2009-06-26  Laszlo Pere  <lpere@blumsoft.eu>
 
 	NB#124242: Can not select any option in the 'device swicth" dialog 

@@ -190,6 +190,7 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 
 /* Signals for showing CallUI. */
 #define CALLUI_INTERFACE      "com.nokia.CallUI"
+#define CALLUI_PORTRAIT_TIMEOUT 1
 #define GCONF_SLIDE_OPEN_DIR  "/system/osso/af"
 #define GCONF_SLIDE_OPEN_KEY  "/system/osso/af/slide-open"
 
@@ -250,6 +251,8 @@ static void hd_app_mgr_gconf_value_changed (GConfClient *client,
                                             guint cnxn_id,
                                             GConfEntry *entry,
                                             gpointer user_data);
+static guint callui_timeout_event = 0;
+static gboolean hd_app_mgr_show_callui_cb (gpointer data);
 static void hd_app_mgr_check_show_callui (void);
 
 static void     hd_app_mgr_request_app_pid (HdRunningApp *app);
@@ -1751,6 +1754,15 @@ hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable)
   return TRUE;
 }
 
+/* Callback for showing the CALL UI */
+static gboolean
+hd_app_mgr_show_callui_cb (gpointer data)
+{
+    callui_timeout_event = 0;
+    hd_app_mgr_service_top (CALLUI_INTERFACE, NULL);
+    return FALSE;
+}
+
 /* Show CallUI if
  * - Showing the desktop.
  * - In portrait mode.
@@ -1769,7 +1781,9 @@ hd_app_mgr_check_show_callui (void)
       priv->display_on &&
       priv->slide_closed)
     {
-      hd_app_mgr_service_top (CALLUI_INTERFACE, NULL);
+      callui_timeout_event = g_timeout_add_seconds(CALLUI_PORTRAIT_TIMEOUT,
+					     (GSourceFunc) hd_app_mgr_show_callui_cb,
+					     NULL);
     }
 }
 
@@ -1869,6 +1883,14 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
           if (priv->portrait)
             hd_app_mgr_check_show_callui ();
         }
+
+      if (!priv->unlocked || !priv->display_on || !priv->portrait || !priv->slide_closed)
+        {
+          // The device state has changed, remove the callui callback.
+          if (callui_timeout_event)
+            g_source_remove(callui_timeout_event);
+          callui_timeout_event = 0;
+	}
     }
 
   if (changed)
