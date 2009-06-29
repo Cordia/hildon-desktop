@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.59-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.59-1) unstable; urgency=low
 
   Laszlo:
   * Fixes: NB#117797 - Switcher button and title is not shown in the
@@ -17,12 +17,14 @@ hildon-desktop (1:2.2.59-1~unreleased) unstable; urgency=low
   Gordon:
   * Fixes: NB#122222 - X sends a large number of unnecessary Expose events 
     on screen rotation to all applications
+  * Fixes: NB#123272 - Sometimes a ghost window is visible under task launcher
+  * Fixes: NB#124708 - Previously closed application view is shown as the background in the switcher view.
 
   Adam:
   * Fixes: NB#118959 - Task Switcher thumbnails not scaled when entering
     task switcher from the desktop 
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 24 Jun 2009 15:45:54 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 29 Jun 2009 11:15:46 +0300
 
 hildon-desktop (1:2.2.58-1) unstable; urgency=low
 
