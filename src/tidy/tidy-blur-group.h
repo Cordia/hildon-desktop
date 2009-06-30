@@ -38,6 +38,7 @@ struct _TidyBlurGroupClass
 GType tidy_blur_group_get_type (void) G_GNUC_CONST;
 ClutterActor *tidy_blur_group_new (void);
 
+void tidy_blur_group_set_chequer(ClutterActor *blur_group, gboolean chequer);
 void tidy_blur_group_set_blur(ClutterActor *blur_group, float blur);
 void tidy_blur_group_set_saturation(ClutterActor *blur_group, float saturation);
 void tidy_blur_group_set_brightness(ClutterActor *blur_group, float brightness);

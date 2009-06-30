@@ -439,3 +439,40 @@ gboolean hd_util_get_cursor_position(gint *x, gint *y)
   *y = pos_y;
   return TRUE;
 }
+
+gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client)
+{
+  MBWindowManager *wm;
+  HdCompMgr *hmgr;
+  Atom atom;
+  Atom actual_type_return;
+  int actual_format_return;
+  unsigned long nitems_return;
+  unsigned long bytes_after_return;
+  unsigned char* prop_return = NULL;
+  int result = 0;
+
+  wm = client->wmref;
+  hmgr = HD_COMP_MGR (wm->comp_mgr);
+  atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_OMAP_VIDEO_OVERLAY);
+
+  mb_wm_util_trap_x_errors ();
+  XGetWindowProperty (wm->xdpy, client->window->xwindow,
+                      atom,
+                      0, G_MAXLONG,
+                      False,
+                      AnyPropertyType,
+                      &actual_type_return,
+                      &actual_format_return,
+                      &nitems_return,
+                      &bytes_after_return,
+                      &prop_return);
+  if (prop_return)
+    {
+      result = prop_return[0];
+      XFree (prop_return);
+    }
+  mb_wm_util_untrap_x_errors();
+
+  return result;
+}

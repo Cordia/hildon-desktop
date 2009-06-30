@@ -34,6 +34,10 @@
 #define VIGNETTE_TILES 7
 #define VIGNETTE_COLOURS ((VIGNETTE_TILES)/2 + 1)
 
+/* Chequer is 32x32 because that's the smallest SGX will do. If we go smaller
+ * it just ends up getting put in a block that size anyway */
+#define CHEQUER_SIZE (32)
+
 /* How many steps can we perform per frame - we don't want too many or
  * we get really slow */
 #define MAX_STEPS_PER_FRAME 1
@@ -119,9 +123,9 @@ struct _TidyBlurGroupPrivate
   ClutterShader *shader_saturate;
   CoglHandle tex_a;
   CoglHandle fbo_a;
-
   CoglHandle tex_b;
   CoglHandle fbo_b;
+  CoglHandle tex_chequer; /* chequer texture used for dimming video overlays */
   gboolean current_is_a;
 
   gboolean use_shader;
@@ -130,6 +134,8 @@ struct _TidyBlurGroupPrivate
   float zoom; /* amount to zoom. 1=normal, 0.5=out, 2=double-size */
   gboolean use_alpha; /* whether to use an alpha channel in our textures */
   gboolean use_mirror; /* whether to mirror the edge of teh blurred texture */
+  gboolean chequer; /* whether to chequer pattern the contents -
+                       for dimming video overlays */
 
   int blur_step;
   int current_blur_step;
@@ -274,6 +280,35 @@ tidy_blur_group_fallback_blur(TidyBlurGroup *group, int tex_width, int tex_heigh
   cogl_blend_func(CGL_SRC_ALPHA, CGL_ONE_MINUS_SRC_ALPHA);
 }
 
+/* If priv->chequer, draw a chequer pattern over the screen */
+static void
+tidy_blur_group_do_chequer(TidyBlurGroup *group)
+{
+  gint            x_1, y_1, x_2, y_2;
+  gint            width, height;
+  ClutterColor    black = { 0x00, 0x00, 0x00, 0xFF };
+
+  TidyBlurGroupPrivate *priv = group->priv;
+
+  if (!priv->chequer)
+    return;
+
+  clutter_actor_get_allocation_coords (
+      CLUTTER_ACTOR(group), &x_1, &y_1, &x_2, &y_2);
+
+  width = x_2 - x_1;
+  height = y_2 - y_1;
+
+  cogl_color (&black);
+  cogl_texture_rectangle (priv->tex_chequer,
+                          0, 0,
+                          CLUTTER_INT_TO_FIXED (width),
+                          CLUTTER_INT_TO_FIXED (height),
+                          0, 0,
+                          CFX_ONE*width/CHEQUER_SIZE,
+                          CFX_ONE*height/CHEQUER_SIZE);
+}
+
 /* An implementation for the ClutterGroup::paint() vfunc,
    painting all the child actors: */
 static void
@@ -302,6 +337,7 @@ tidy_blur_group_paint (ClutterActor *actor)
       priv->source_changed = TRUE;
       /* render direct */
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
+      tidy_blur_group_do_chequer(container);
       return;
     }
 
@@ -319,6 +355,7 @@ tidy_blur_group_paint (ClutterActor *actor)
       col.alpha = (1-priv->saturation) * 255;
       cogl_color (&col);
       cogl_rectangle (0, 0, x_2 - x_1, y_2 - y_1);
+      tidy_blur_group_do_chequer(container);
       return;
     }
 #endif
@@ -515,7 +552,10 @@ tidy_blur_group_paint (ClutterActor *actor)
       priv->blur_step, priv->current_blur_step, priv->max_blur_step, col.alpha);*/
 
   if (col.alpha == 0)
-    return;
+    {
+      tidy_blur_group_do_chequer(container);
+      return;
+    }
 
   /* Now we render the image we have, with a desaturation pixel
    * shader */
@@ -656,6 +696,8 @@ tidy_blur_group_paint (ClutterActor *actor)
 
   if (priv->use_shader && priv->shader_saturate)
     clutter_shader_set_is_enabled (priv->shader_saturate, FALSE);
+
+  tidy_blur_group_do_chequer(container);
 }
 
 static void
@@ -677,6 +719,11 @@ tidy_blur_group_dispose (GObject *gobject)
       cogl_texture_unref(priv->tex_b);
       priv->fbo_b = 0;
       priv->tex_b = 0;
+    }
+  if (priv->tex_chequer)
+    {
+      cogl_texture_unref(priv->tex_chequer);
+      priv->tex_chequer = 0;
     }
 
   G_OBJECT_CLASS (tidy_blur_group_parent_class)->dispose (gobject);
@@ -702,7 +749,8 @@ static void
 tidy_blur_group_init (TidyBlurGroup *self)
 {
   TidyBlurGroupPrivate *priv;
-  gint i;
+  gint i,x,y;
+  guchar dither_data[CHEQUER_SIZE*CHEQUER_SIZE];
 
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
                                                    TIDY_TYPE_BLUR_GROUP,
@@ -736,6 +784,28 @@ tidy_blur_group_init (TidyBlurGroup *self)
     priv->vignette_colours[i] = 255;
   priv->vignette_colours[0] = 0;
   priv->vignette_colours[1] = 128;
+
+  /* Dimming texture - a 32x32 chequer pattern */
+  i=0;
+  for (y=0;y<CHEQUER_SIZE;y++)
+    for (x=0;x<CHEQUER_SIZE;x++)
+      {
+        /* A 50:50 chequer pattern:
+         * dither_data[i++] = ((x&1) == (y&1)) ? 255 : 0;*/
+
+        /* 25:75 pattern */
+        gint d = x + y;
+        dither_data[i++] = ((d&3) == 0) ? 0 : 255;
+      }
+  priv->tex_chequer = cogl_texture_new_from_data(
+      CHEQUER_SIZE,
+      CHEQUER_SIZE,
+      0,
+      0,
+      COGL_PIXEL_FORMAT_A_8,
+      COGL_PIXEL_FORMAT_A_8,
+      CHEQUER_SIZE,
+      dither_data);
 }
 
 /*
@@ -753,6 +823,28 @@ ClutterActor *
 tidy_blur_group_new (void)
 {
   return g_object_new (TIDY_TYPE_BLUR_GROUP, NULL);
+}
+
+/**
+ * tidy_blur_group_set_chequer:
+ *
+ * Sets whether to chequer the contents with a 50:50 pattern of black dots
+ */
+void tidy_blur_group_set_chequer(ClutterActor *blur_group, gboolean chequer)
+{
+  TidyBlurGroupPrivate *priv;
+
+  if (!TIDY_IS_BLUR_GROUP(blur_group))
+    return;
+
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
+
+  if (priv->chequer != chequer)
+    {
+      priv->chequer = chequer;
+      if (CLUTTER_ACTOR_IS_VISIBLE(blur_group))
+        clutter_actor_queue_redraw(blur_group);
+    }
 }
 
 /**

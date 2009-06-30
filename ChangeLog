@@ -1,3 +1,20 @@
+2009-06-30  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#106433 - Detect XVideo Overlays and don't blur if so
+
+	* src/mb/hd-atoms.c
+	* src/mb/hd-atoms.h: added _OMAP_VIDEO_OVERLAY atom
+	* src/util/hd-util.c
+	* src/util/hd-util.h: added hd_util_client_has_video_overlay	
+	* src/tidy/tidy-blur-group.c
+	* src/tidy/tidy-blur-group.h: added tidy_blur_group_set_chequer to
+	  allow us to put a black chequer pattern over everything in the 
+	  blur group.
+	* src/home/hd-render-manager.c: If we are about to blur a window,
+	  check that what we are blurring doesn't have a video overlay. If
+	  so, use tidy_blur_group_set_chequer to use a chequer pattern for
+	  dimming.
+
 2009-06-30  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#125453 - Unable to add more than 3 shortcuts on a row

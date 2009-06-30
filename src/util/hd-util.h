@@ -26,5 +26,6 @@ gboolean hd_util_change_screen_orientation (MBWindowManager *wm,
                                             gboolean goto_portrait);
 
 gboolean hd_util_get_cursor_position(gint *x, gint *y);
+gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client);
 
 #endif

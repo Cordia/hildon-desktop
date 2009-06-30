@@ -1910,6 +1910,7 @@ static void hd_render_manager_update_blur_state()
   MBWindowManagerClient *c;
   gboolean blur = FALSE;
   gboolean blur_buttons = FALSE;
+  gboolean has_video_overlay = FALSE;
 
   /* FIXME: check this for non-composited mode */
 
@@ -1918,6 +1919,14 @@ static void hd_render_manager_update_blur_state()
   for (c=wm->stack_top;c;c=c->stacked_below)
     {
       int c_type = MB_WM_CLIENT_CLIENT_TYPE(c);
+
+      /* If we are already blurred for something, now check and see if
+       * any window we are blurring has a video overlay */
+      if (blur) {
+        if (hd_util_client_has_video_overlay(c))
+          has_video_overlay = TRUE;
+      }
+
       if (c_type == MBWMClientTypeApp)
         {
           /* If we have a fullscreen window then the top-left button and
@@ -1967,7 +1976,9 @@ static void hd_render_manager_update_blur_state()
   blur_flags = priv->current_blur;
   title_flags = hd_title_bar_get_state(priv->title_bar);
 
-  if (blur)
+  /* If we have a video overlay we can't blur properly - see
+   * tidy_blur_group_set_chequer below */
+  if (blur && !has_video_overlay)
     blur_flags = blur_flags | HDRM_BLUR_BACKGROUND;
   else
     blur_flags = blur_flags & ~HDRM_BLUR_BACKGROUND;
@@ -1982,6 +1993,12 @@ static void hd_render_manager_update_blur_state()
     hd_render_manager_set_blur(blur_flags);
 
   hd_title_bar_set_state(priv->title_bar, title_flags);
+
+  /* If we have a video overlay, blurring sods it all up. Instead just
+   * apply a chequer pattern to do our dimming */
+  tidy_blur_group_set_chequer(
+          CLUTTER_ACTOR(priv->home_blur),
+          blur && has_video_overlay);
 }
 
 /* This is called when we are in the launcher subview so that we can blur and
