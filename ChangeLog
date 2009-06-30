@@ -1,5 +1,8 @@
 2009-06-30  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/data/transitions.ini: Made task launcher initial transitions
+	  1/3rd slower.
+
 	Fixes: NB#106433 - Detect XVideo Overlays and don't blur if so
 
 	* src/mb/hd-atoms.c
