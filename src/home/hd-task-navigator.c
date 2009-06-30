@@ -41,6 +41,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -158,6 +159,16 @@
 # define ZOOM_EFFECT_DURATION     1000
 # define FLY_EFFECT_DURATION      1000
 #endif
+
+/*
+ *  These are based on the UX Guidance.
+ *
+ * %MIN_CLICK_TIME:   Clicks shorter than this...
+ * %MAX_CLICK_TIME:   or longer than this microseconds are not clicks.
+ *                    In practice this is 30-300 ms.
+ */
+#define MIN_CLICK_TIME           30000
+#define MAX_CLICK_TIME          300000
 /* Standard definitions }}} */
 
 /* Macros {{{ */
@@ -3443,9 +3454,9 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
 /* }}} */
 
 /* %HdTaskNavigator {{{ */
-/* Callbacks {{{ */
 G_DEFINE_TYPE (HdTaskNavigator, hd_task_navigator, CLUTTER_TYPE_GROUP);
 
+/* Private functions {{{ */
 /*
  * Returns whether the @event coordinates fall within the tight
  * grid of thumbnails.  If @Thumbnails have an incomplete row at
@@ -3494,6 +3505,25 @@ within_grid (const ClutterButtonEvent * event)
   return TRUE;
 }
 
+/* Returns the widget that was clicked in @event.  It differentiates
+ * between thumbnails, the @Grid (the thumbnailed area, effectively
+ * the space between the thumbnails) and @Navigator (all the rest). */
+static ClutterActor *
+clicked_widget (const ClutterButtonEvent * event)
+{
+  if (event->source != CLUTTER_ACTOR (Navigator)
+      && event->source != CLUTTER_ACTOR (Scroller)
+      && event->source != CLUTTER_ACTOR (Grid))
+    return event->source;
+  else if (within_grid (event))
+    return CLUTTER_ACTOR (Grid);
+  else
+    return CLUTTER_ACTOR (Navigator);
+}
+/* Private functions }}} */
+
+/* Callbacks {{{ */
+/* Entering and exiting @Navigator {{{ */
 /* @Navigator's "show" handler. */
 static void
 navigator_shown (ClutterActor * navigator, gpointer unused)
@@ -3542,8 +3572,87 @@ navigator_hidden (ClutterActor * navigator, gpointer unused)
   for_each_appthumb (li, thumb)
     release_win (thumb);
 }
+/* Entering and exiting @Navigator }}} */
 
-/* @Navigator::button-release-event handler */
+/* Click-handling {{{
+ * {{{
+ * Is easy, but we need to consider a few circumstances:
+ * a) The "grid" (the thumbnailed area) may be non-rectangular
+ *    and it has its own behavior.  within_grid() help us in this.
+ * b) We need to filter out clicks which are not clicks per UX Guidance.
+ *    We have three criteria:
+ *    1. the clicked widget (must be unambigous)
+ *    2. click time (neither too fast or too slow)
+ *    3. panning (differentiate between panning and clicking)
+ *    The first two are guarded by a low level captured-event handler,
+ *    which simply removes unwanted release-events.  The third is
+ *    guarded by the captured-event handler of @Grid.
+ *
+ * Talking high-level our widgets have these behaviors:
+ * -- close:      close thumbnails
+ * -- thumbnail:  zoom in
+ * -- grid:       do nothing
+ * -- navigator:  exit
+ * }}}
+ */
+/*
+ * @Navigator::captured-event handler.  Its purpose is to filter out
+ * non-clicks, ie. button-release-events which together with their
+ * button-press-event counterpart didn't meet the click-critiera.
+ *
+ * In order for a press-release to be considered a click:
+ * -- the button must be released above the pressed widget
+ * -- the time between press and release must satisfy a static
+ *    constraint.
+ *
+ * If these conditions remain unmet this handler prevents the propagation
+ * of the button-release-event.  This does not interfere with scrolling
+ * (%TidyFingerScroll grabs the pointer when it needs it) but would break
+ * things if, for example, some widget wanted to have a highlighted state.
+ */
+static gboolean
+navigator_touched (ClutterActor * navigator, ClutterEvent * event)
+{
+  static struct timeval last_press_time;
+  static ClutterActor *pressed_widget;
+
+  if (event->type == CLUTTER_BUTTON_PRESS)
+    {
+      gettimeofday (&last_press_time, NULL);
+      pressed_widget = clicked_widget (&event->button);
+    }
+  else if (event->type == CLUTTER_BUTTON_RELEASE && pressed_widget)
+    {
+      struct timeval now;
+      ClutterActor *widget;
+      int dt;
+
+      /* Don't interfere if we somehow get release events without
+       * corresponding press events. */
+      widget = pressed_widget;
+      pressed_widget = NULL;
+
+      /* Check press-release time. */
+      gettimeofday (&now, NULL);
+      if (now.tv_usec > last_press_time.tv_usec)
+        dt = now.tv_usec-last_press_time.tv_usec
+          + (now.tv_sec-last_press_time.tv_sec) * 1000000;
+      else /* now.sec > last.sec */
+        dt = (1000000-last_press_time.tv_usec)+now.tv_usec
+          + (now.tv_sec-last_press_time.tv_sec-1) * 1000000;
+      if (!(MIN_CLICK_TIME <= dt && dt <= MAX_CLICK_TIME))
+        return TRUE;
+
+      /* Verify that the pressed widget is the same as clicked_widget(). */
+      if (widget != clicked_widget (&event->button))
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+/* @Navigator::button-release-event handler.  Handles events propagated
+ * by grid_clicked(). */
 static gboolean
 navigator_clicked (ClutterActor * navigator, ClutterButtonEvent * event)
 { /* Tell %HdSwitcher about it, which will hide us. */
@@ -3575,6 +3684,7 @@ grid_clicked (ClutterActor * grid, ClutterButtonEvent * event)
 { /* Don't propagate the signal to @Navigator if it happened within_grid(). */
   return within_grid (event);
 }
+/* Click handling }}} */
 
 /* @Grid's notify::has-clip callback to prevent clipping.
  * TODO Who clips and why? */
@@ -3619,6 +3729,8 @@ hd_task_navigator_init (HdTaskNavigator * self)
   clutter_actor_set_size (Navigator, SCREEN_WIDTH, SCREEN_HEIGHT);
   g_signal_connect (Navigator, "show", G_CALLBACK (navigator_shown),  NULL);
   g_signal_connect (Navigator, "hide", G_CALLBACK (navigator_hidden), NULL);
+  g_signal_connect (Navigator, "captured-event",
+                    G_CALLBACK (navigator_touched), NULL);
   g_signal_connect (Navigator, "button-release-event",
                     G_CALLBACK (navigator_clicked), NULL);
 
@@ -3639,7 +3751,7 @@ hd_task_navigator_init (HdTaskNavigator * self)
    * at the same time it is set.  TODO This can be considered a hack.
    */
   Grid = HD_SCROLLABLE_GROUP (hd_scrollable_group_new ());
-  clutter_actor_set_name (CLUTTER_ACTOR (Grid), "Navigator area");
+  clutter_actor_set_name (CLUTTER_ACTOR (Grid), "Grid");
   clutter_actor_set_reactive (CLUTTER_ACTOR (Grid), TRUE);
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR (Grid), FALSE);
   g_signal_connect (Grid, "notify::has-clip", G_CALLBACK (unclip), NULL);

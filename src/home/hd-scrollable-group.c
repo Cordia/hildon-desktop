@@ -54,7 +54,6 @@
 
 #include <math.h>
 #include <string.h>
-#include <sys/time.h>
 
 #include <clutter/clutter.h>
 #include <tidy/tidy-scrollable.h>
@@ -63,17 +62,12 @@
 #include "hd-scrollable-group.h"
 
 /*
- * These are based on the UX Guidance.
+ * This is based on the UX Guidance.
  *
  * %MAX_CLICK_DRIFT:  How many pixels may the user drag the pointer
  *                    until we consider it a purely scrolling motion.
- * %MIN_CLICK_TIME:   Clicks shorter than this...
- * %MAX_CLICK_TIME:   or longer than this microseconds are not clicks.
- *                    In practice this is 30-300 ms.
  */
-#define MAX_CLICK_DRIFT                        15
-#define MIN_CLICK_TIME                      30000
-#define MAX_CLICK_TIME                     300000
+#define MAX_CLICK_DRIFT                      15
 
 /* The average speed of hd_scrollable_group_scroll() in pixels per second.
  * Tunable. */
@@ -94,9 +88,7 @@ typedef struct
    * @self:               This is ourselves; used to find out the
    *                      object when only this context is available.
    *
-   * @last_press, @last_release:
-   *                      Coordinate of the last "button-press-event"
-   *                      "and "button-release-event".
+   * @last_position:      Position of the viewport before we began scrolling.
    * @adjustment:         The #TinyAdjustments we manage and listen to
    *                      and driven by our parent #TidyFingerScroll.
    * @can_scroll:         Are we scrollable in this direction?  ie. is
@@ -121,7 +113,7 @@ typedef struct
    *                      by hd_scrollable_greoup_set_real_estate().
    */
   HdScrollableGroup         *self;
-  gint                      last_press, last_release;
+  gint                      last_position;
   gboolean                  can_scroll;
   TidyAdjustment           *adjustment;
   ClutterTimeline          *manual_scroll_timeline;
@@ -132,8 +124,7 @@ typedef struct
 } HdScrollableGroupDirectionInfo;
 
 typedef struct
-{ /* @last_pressed is the time we last saw a button-press-event */
-  struct timeval last_pressed;
+{
   HdScrollableGroupDirectionInfo horizontal, vertical;
 } HdScrollableGroupPrivate;
 /* Type definitions }}} */
@@ -301,21 +292,18 @@ hd_scrollable_group_parent_changed (ClutterActor * actor,
 
 /* #HdScrollableGroup's "captured-event" handler. */
 static gboolean
-hd_scrollable_group_clicked (ClutterActor * actor, ClutterEvent * event)
+hd_scrollable_group_touched (ClutterActor * actor, ClutterEvent * event)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (actor);
 
-  /* Remember the coordinates for hd_scrollable_group_is_clicked(). */
+  /* Remember the coordinates of the of the viewport
+   * for hd_scrollable_group_is_clicked(). */
   if (event->type == CLUTTER_BUTTON_PRESS)
     {
-      gettimeofday (&priv->last_pressed, NULL);
-      priv->horizontal.last_press = ((ClutterButtonEvent *)event)->x;
-      priv->vertical.last_press   = ((ClutterButtonEvent *)event)->y;
-    }
-  else if (event->type == CLUTTER_BUTTON_RELEASE)
-    {
-      priv->horizontal.last_release = ((ClutterButtonEvent *)event)->x;
-      priv->vertical.last_release   = ((ClutterButtonEvent *)event)->y;
+      priv->horizontal.last_position = hd_scrollable_group_get_viewport_x (
+                                           HD_SCROLLABLE_GROUP (actor));
+      priv->vertical.last_position   = hd_scrollable_group_get_viewport_y (
+                                           HD_SCROLLABLE_GROUP (actor));
     }
 
   return FALSE;
@@ -372,39 +360,25 @@ hd_scrollable_group_tick (ClutterTimeline * timeline, guint current,
 /*
  * Call it from button-release-event handlers to decide if the user
  * wanted to click on @self or just wanted to scroll it.  @self needs
- * to be reactive.
+ * to be reactive.  Another way to phrase it: "did you scroll away
+ * significantly so that the release shouldn't be considered a click?"
  * NOTE The other alternative is not leaving button-release-event
- * propagate if it was not a real click according to this function.
- * NOTE This function doesn't have anything to do with scrolling anymore.
+ *      propagate if it was not a real click according to this function.
  */
 gboolean
 hd_scrollable_group_is_clicked (HdScrollableGroup * self)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
-  gint dx, dy, dt;
-  struct timeval now;
+  gint dx, dy;
 
   /* Is the click endpoint within a %MAX_CLICK_DRIFT circle of the
    * starting point? */
   /* distance(a, b) = sqrt((x_a - x_b)^2 + (y_a - y_b)^2) */
-  dx = priv->horizontal.last_release - priv->horizontal.last_press;
-  dy = priv->vertical.last_release - priv->vertical.last_press;
-  if (dx*dx + dy*dy > MAX_CLICK_DRIFT*MAX_CLICK_DRIFT)
-    return FALSE;
-
-  /* Was the click in the [MIN_CLICK_TIME, MAX_CLICK_TIME] frame? */
-  gettimeofday (&now, NULL);
-  if (now.tv_usec > priv->last_pressed.tv_usec)
-    dt = now.tv_usec-priv->last_pressed.tv_usec
-      + (now.tv_sec-priv->last_pressed.tv_sec) * 1000000;
-  else /* now.sec > last.sec */
-    dt = (1000000-priv->last_pressed.tv_usec)+now.tv_usec
-      + (now.tv_sec-priv->last_pressed.tv_sec-1) * 1000000;
-  if (!(MIN_CLICK_TIME <= dt && dt <= MAX_CLICK_TIME))
-    return FALSE;
-
-  /* It a click! */
-  return TRUE;
+  dx = hd_scrollable_group_get_viewport_x (self)
+       - priv->horizontal.last_position;
+  dy = hd_scrollable_group_get_viewport_y (self)
+       - priv->vertical.last_position;
+  return dx*dx + dy*dy <= MAX_CLICK_DRIFT*MAX_CLICK_DRIFT;
 }
 
 /* Returns in pixels how far the left side of the estate is from the left side
@@ -638,7 +612,7 @@ hd_scrollable_group_class_init (HdScrollableGroupClass * klass)
   actor_class->paint                = hd_scrollable_group_paint;
   actor_class->pick                 = hd_scrollable_group_pick;
   actor_class->parent_set           = hd_scrollable_group_parent_changed;
-  actor_class->captured_event       = hd_scrollable_group_clicked;
+  actor_class->captured_event       = hd_scrollable_group_touched;
 
   /* Provided for the sake of #TidyScrollable. */
   g_object_class_override_property (G_OBJECT_CLASS (klass),

@@ -1,3 +1,18 @@
+2009-06-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#121351 task switcher maximises applications instead of just panning
+	NB#125263 Icons in task switcher are not responsive enough, need to
+		  tap them more than once to activate them
+
+	Tune the responsiveness.
+
+	* src/home/hd-scrollable-group.c (hd_scrollable_group_is_scrolled):
+	  Consider the position of the viewport, not the mouse coordinates.
+	* src/home/hd-task-navigator.c:
+	  Generic filter for non-clicks.
+	  Consider also the press and release widget when deciding about
+	  clicking.
+
 2009-06-29  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Applied Mox's patch to add a 1s delay before launching CallUI.
