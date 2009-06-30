@@ -135,6 +135,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |                      --> apps (not app_top)
  *       |                      --> blur_front (STATE_BLUR_BUTTONS)
  *       |                                        ---> home_get_front (STATE_HOME_FRONT)
+ *       |                                        ---> loading_image (STATE_LOADING)
  *       |                                         --> title_bar *       |
  *       |                                               ---> title_bar::foreground (!HDTB_VIS_FOREGROUND)
  *       |                                               ---> status_area
@@ -544,7 +545,7 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
       if (priv->loading_image)
         {
           clutter_actor_reparent (priv->loading_image,
-                                  CLUTTER_ACTOR (priv->front));
+                                  CLUTTER_ACTOR (priv->blur_front));
           clutter_actor_set_size(priv->loading_image,
                                  hd_comp_mgr_get_current_screen_width (),
                                  hd_comp_mgr_get_current_screen_height ()
@@ -1315,7 +1316,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           else
             {
               clutter_actor_hide (priv->loading_image);
-              clutter_container_remove_actor (CLUTTER_CONTAINER (priv->front),
+              clutter_container_remove_actor (CLUTTER_CONTAINER (priv->blur_front),
                                               priv->loading_image);
             }
           g_object_unref (G_OBJECT (priv->loading_image));
@@ -1422,7 +1423,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           priv->loading_image_parent = parent ?
                               CLUTTER_ACTOR (g_object_ref (parent)) : NULL;
           clutter_actor_reparent (priv->loading_image,
-                                  CLUTTER_ACTOR (priv->front));
+                                  CLUTTER_ACTOR (priv->blur_front));
           clutter_actor_set_size(priv->loading_image,
                                  hd_comp_mgr_get_current_screen_width (),
                                  hd_comp_mgr_get_current_screen_height ()
