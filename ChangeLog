@@ -1,3 +1,14 @@
+2009-06-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Add maemo-launcher support and exports map. Initial patch by Dafydd Harries.
+	Fixes: NB#101031
+
+	* configure.ac:
+	* debian/hildon-desktop.launcher:
+	* debian/rules:
+	* src/Makefile.am:
+	* src/export.map:
+
 2009-06-30  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Speed improvements for TidyFingerScroll

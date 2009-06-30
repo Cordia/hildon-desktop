@@ -1,0 +1,18 @@
+{
+  global:
+	main;
+	_bss_end__;
+	_init;
+	_fini;
+	_edata;
+	_end;
+	_bss_end__;
+	_init;
+	_fini;
+	_edata;
+	_end;
+	_I*;
+	__*;
+  local: _Z*;
+	*;
+};

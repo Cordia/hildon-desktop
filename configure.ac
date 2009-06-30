@@ -39,7 +39,7 @@ AC_PATH_PROG(DBUS_BINDING_TOOL, dbus-binding-tool)
 # Misc build flags
 #++++++++++++++++++
 
-CFLAGS="$CFLAGS -Wall -Wno-format-extra-args -ansi -Wmissing-prototypes -Wmissing-declarations -Werror -std=gnu99 -rdynamic -DG_DISABLE_CAST_CHECKS -fgnu89-inline"
+CFLAGS="$CFLAGS -Wall -Wno-format-extra-args -ansi -Wmissing-prototypes -Wmissing-declarations -Werror -std=gnu99 -DG_DISABLE_CAST_CHECKS -fgnu89-inline"
 
 AC_SUBST(CFLAGS)
 
@@ -58,6 +58,17 @@ if test "$ac_cv_enable_static_mb2" = yes; then
        AC_MSG_RESULT(yes)
 else
        AC_MSG_RESULT(no)
+fi
+
+# Use maemo-launcher?
+AC_ARG_ENABLE(maemo-launcher,
+  [  --enable-maemo-launcher compile with maemo-launcher [default=no]],,
+  enable_maemo_launcher=no)
+
+if test "x$enable_maemo_launcher" = "xyes"; then
+  PKG_CHECK_MODULES(MAEMO_LAUNCHER, [maemo-launcher-app])
+  AC_SUBST(MAEMO_LAUNCHER_CFLAGS)
+  AC_SUBST(MAEMO_LAUNCHER_LIBS)
 fi
 
 # do we want a11y support?
