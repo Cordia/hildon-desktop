@@ -580,6 +580,8 @@ after_event_cb (TidyFingerScroll *scroll)
    */
   if (clutter_get_pointer_grab () != CLUTTER_ACTOR (scroll))
     {
+      TidyFingerScrollPrivate *priv = scroll->priv;
+
       g_signal_handlers_disconnect_by_func (scroll,
                                             motion_event_cb,
                                             scroll);
