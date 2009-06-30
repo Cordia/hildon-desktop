@@ -144,7 +144,7 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define LOWMEM_PROC_NOTIFY_HIGH "/proc/sys/vm/lowmem_notify_high_pages"
 #define LOWMEM_PROC_NR_DECAY    "/proc/sys/vm/lowmem_nr_decay_pages"
 
-#define LOADAVG_MAX               (0.5)
+#define LOADAVG_MAX               (1.0)
 #define STATE_CHECK_INTERVAL      (1)
 #define LOADING_TIMEOUT           (10)
 #define INIT_DONE_TIMEOUT         (5)

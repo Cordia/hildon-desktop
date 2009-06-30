@@ -1,5 +1,12 @@
 2009-06-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
+	Increased minimum loadavg for prestarting to 1.0.
+	Fixes: NB#125697
+
+	* src/launcher/hd-app-mgr.c:
+
+2009-06-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
 	Moved loading_image to blur_front so that power key menu appears on top.
 	Fixes: NB#123990
 
