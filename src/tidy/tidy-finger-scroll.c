@@ -65,6 +65,10 @@ struct _TidyFingerScrollPrivate
 
   /* Timeout for removing scrollbars after they first appear */
   guint                  scrollbar_timeout;
+
+  /* We have to call clutter_set_capture_motion_events, so we need
+   * this to be able to restore the state afterwards */
+  gboolean               old_capture_motion_events;
 };
 
 enum {
@@ -389,6 +393,7 @@ button_release_event_cb (ClutterActor *actor,
                                         scroll);
 
   clutter_ungrab_pointer ();
+  clutter_set_motion_events_enabled(priv->old_capture_motion_events);
 
   if ((priv->mode == TIDY_FINGER_SCROLL_MODE_KINETIC) && (child))
     {
@@ -581,6 +586,8 @@ after_event_cb (TidyFingerScroll *scroll)
       g_signal_handlers_disconnect_by_func (scroll,
                                             button_release_event_cb,
                                             scroll);
+
+      clutter_set_motion_events_enabled(priv->old_capture_motion_events);
     }
 
   return FALSE;
@@ -621,6 +628,11 @@ captured_event_cb (ClutterActor     *actor,
           show_scrollbars (scroll, TRUE);
 
           clutter_grab_pointer (actor);
+          /* We need the following so that this captures *all* motion
+           * events, and doesn't do a pick per movement where we really
+           * don't need it. */
+          priv->old_capture_motion_events = clutter_get_motion_events_enabled();
+          clutter_set_motion_events_enabled(FALSE);
 
           /* Add a high priority idle to check the grab after the event
            * emission is finished.
