@@ -146,10 +146,15 @@ hd_app_request_geometry (MBWindowManagerClient *client,
    * support it.  The window manager ensures that we are not visible in
    * this case.  If we were it couldn't be in portrait mode because we don't
    * support it.  When the wm exits portrait mode we'll be reconfigured,
-   * then we can do a proper geometry change.
+   * then we can do a proper geometry change.  Unfortunately we cannot skip
+   * reconfiguration if the client is just being mapped (!map_confirmed())
+   * because if it's not even realized %MBWMClientBase::realize needs some
+   * geometry, otherwise it will try to create a 0x0 frame window and fail
+   * in a sneaky way.
    */
   if ((flags & MBWMClientReqGeomIsViaLayoutManager)
       &&  hd_comp_mgr_is_portrait ()
+      &&  mb_wm_client_is_map_confirmed (client)
       && !hd_comp_mgr_client_supports_portrait (client))
     return False;
   return MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)))

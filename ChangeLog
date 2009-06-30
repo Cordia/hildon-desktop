@@ -1,3 +1,12 @@
+2009-06-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#125534 No 'X' button to close the application
+
+	* src/mb/hd-app.c (hd_app_request_geometry):
+	  Do not discard the geometry request if the client is just
+	  being mapped as then its frame window creation may silently
+	  fail, causing all sort of funny effects.
+
 2009-06-30  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/data/transitions.ini: Made task launcher initial transitions
