@@ -1,3 +1,19 @@
+2009-06-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#121704 ss application menu displayed on top of "select connection "
+		  dialog then disappeared after sometime
+
+	Delete GtkMenu:s as well as HildonAppMenu:s.
+
+	* src/mb/hd-atoms.h
+	* src/mb/hd-atoms.c:
+	  Added _GTK_DELETE_TEMPORARIES for GtkMenu:s.
+	* src/mb/hd-wm.h
+	* src/mb/hd-wm.c (hd_wm_delete_temporaries):
+	  Factored out of hd-dialog.c and enhanved with legacy menu deletion.
+	* src/mb/hd-dialog.c:
+	  Use it.
+
 2009-06-30  Laszlo Pere  <lpere@blumsoft.eu>
 
 	NB#125137: Highlight stays on widget in some cases.

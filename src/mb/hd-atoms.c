@@ -81,7 +81,10 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     RR_PROPERTY_CONNECTOR_TYPE,
     "Panel",
 
+    /* Former: used for randr
+     * Latter: use to delete legacy menus */
     "_MAEMO_SUPPRESS_ROOT_RECONFIGURATION",
+    "_GTK_DELETE_TEMPORARIES",
   };
 
   XInternAtoms (xdpy,

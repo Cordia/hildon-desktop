@@ -490,3 +490,25 @@ hd_wm_has_modal_blockers (const MBWindowManager *wm)
       return TRUE;
   return FALSE;
 }
+
+/* Delete the topmost menu. */
+void
+hd_wm_delete_temporaries (MBWindowManager *wm)
+{
+  MBWindowManagerClient *c;
+
+  for (c = wm->stack_top; c; c = c->stacked_below)
+    if (MB_WM_CLIENT_CLIENT_TYPE (c) & HdWmClientTypeAppMenu)
+      { /* HdAppMenu understands WM_DELETE. */
+        mb_wm_client_deliver_delete (c);
+        return;
+      }
+    else if (MB_WM_CLIENT_CLIENT_TYPE (c) & MBWMClientTypeMenu)
+      { /* GtkMenu wants DELETE_TEMPORARIES. */
+        mb_wm_client_deliver_message (c,
+                       hd_comp_mgr_get_atom (HD_COMP_MGR (wm->comp_mgr),
+                                             HD_ATOM_DELETE_TEMPORARIES),
+                       None, None, None, None, None);
+        return;
+      }
+}
