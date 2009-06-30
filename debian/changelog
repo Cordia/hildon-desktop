@@ -4,6 +4,7 @@ hildon-desktop (1:2.2.60-1~unreleased) unstable; urgency=low
   * Fixes: NB#124242 - Can not select any option in the 'device swicth" dialog 
     when new hildon meny is displayed on application and tapped.
   * Fixes: NB#125137 - Highlight stays on widget in some cases.
+  * Fixes: NB#109932 - Panning over widgets.
 
   Jan Arne:
   * Fixes: NB#125453 - Unable to add more than 3 shortcuts on a row

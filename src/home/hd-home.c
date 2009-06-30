@@ -1070,7 +1070,7 @@ hd_home_applet_emit_button_release_event (
 		  &xev.x, &xev.y,
 		  &mywindow);
   }
-
+  
   XSendEvent(wm->xdpy, xev.window, True,
 	     0, (XEvent *)&xev);
 }
@@ -1108,7 +1108,7 @@ hd_home_applet_emit_button_press_event (
   xev.state = 0;
   xev.button = Button1;
   xev.same_screen = True;
-
+  
   /* We need to find the window inside the plugin. */
   XTranslateCoordinates (wm->xdpy,
 		  xev.root, xev.window,
@@ -1125,7 +1125,7 @@ hd_home_applet_emit_button_press_event (
   }
 
   XSendEvent(wm->xdpy, xev.window, True,
-	     0, (XEvent *)&xev);
+  	     0, (XEvent *)&xev);
 }
 
 static void
@@ -1180,6 +1180,53 @@ hd_home_applet_emit_leave_event (
 	     0, (XEvent *)&xev);
 }
 
+static void
+hd_home_applet_emit_enter_event (
+		HdHome             *home,
+		ClutterActor       *applet,
+		int                 x,
+		int                 y)
+{
+  HdHomePrivate      *priv = home->priv;
+  MBWindowManager    *wm;
+  MBWMCompMgrClient  *cclient;
+  XCrossingEvent      xev;
+  Window              mywindow;
+
+  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  cclient = g_object_get_data (G_OBJECT (applet),
+                               "HD-MBWMCompMgrClutterClient");
+  /*
+   * Emitting a enter event.
+   */
+  xev.type = EnterNotify;
+  xev.display = wm->xdpy;
+  xev.window = MB_WM_CLIENT_XWIN(cclient->wm_client);
+  xev.root = wm->root_win->xwindow;
+  xev.subwindow = None;
+  xev.time = CurrentTime;
+  xev.x = x;
+  xev.y = y;
+  xev.x_root = x;
+  xev.y_root = y;
+  xev.mode = NotifyNormal;
+  xev.focus = False;
+  xev.same_screen = True;
+
+  /* We need to find the window inside the plugin. */
+  XTranslateCoordinates (wm->xdpy,
+		  xev.root, xev.window,
+		  xev.x_root, xev.y_root,
+		  &xev.x, &xev.y,
+		  &mywindow);
+
+  if (mywindow)
+      xev.window = mywindow;
+
+  XSendEvent(wm->xdpy, xev.window, True,
+	     0, (XEvent *)&xev);
+}
+
 static gboolean
 hd_home_applet_press (ClutterActor       *applet,
 		      ClutterButtonEvent *event,
@@ -1197,6 +1244,7 @@ hd_home_applet_press (ClutterActor       *applet,
    * We always emit a button press event to animate it on the screen. Later we
    * can abort the click with a LeaveNotify event.
    */
+  hd_home_applet_emit_enter_event (home, applet, event->x, event->y);
   hd_home_applet_emit_button_press_event (home, applet, event->x, event->y);
   /*
    * We store the coordinates where the screen was touched. These values are

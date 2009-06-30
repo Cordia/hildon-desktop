@@ -67,9 +67,12 @@
 2009-06-30  Laszlo Pere  <lpere@blumsoft.eu>
 
 	NB#125137: Highlight stays on widget in some cases.
+	NB#109932: Panning over widgets.
 
 	* src/home/hd-home.c: Modified the signal handling logic to fix the 
 	  bug.
+	* src/home/hd-home.c: Sending an enter event before the button press
+	  event so that the GtkButtons inside the applets will work again.
 
 2009-06-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
