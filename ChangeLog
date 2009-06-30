@@ -1,3 +1,10 @@
+2009-06-30  Laszlo Pere  <lpere@blumsoft.eu>
+
+	NB#125137: Highlight stays on widget in some cases.
+
+	* src/home/hd-home.c: Modified the signal handling logic to fix the 
+	  bug.
+
 2009-06-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#121351 task switcher maximises applications instead of just panning

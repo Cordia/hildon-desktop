@@ -1217,7 +1217,6 @@ hd_home_applet_release (ClutterActor       *applet,
 			HdHome             *home)
 {
   HdHomePrivate   *priv = home->priv;
-
   /*
    * If we are in edit mode the HdHomeView will have to deal with this event.
    */
@@ -1240,6 +1239,11 @@ hd_home_applet_release (ClutterActor       *applet,
       hd_home_applet_emit_button_release_event (home, applet,
 	    priv->initial_x,
 	    priv->initial_y);
+    else
+      hd_home_applet_emit_leave_event (home, applet,
+        priv->initial_x,
+        priv->initial_y);
+
     priv->initial_x = -1;
     priv->initial_y = -1;
   }
@@ -1253,7 +1257,7 @@ hd_home_applet_motion (ClutterActor       *applet,
 		       HdHome             *home)
 {
   HdHomePrivate *priv = home->priv;
-  gboolean       was_over_threshold;
+  gboolean       moved_over_threshold;
 
   /*
    * If we are in edit mode the HdHomeView will have to deal with this event.
@@ -1265,20 +1269,28 @@ hd_home_applet_motion (ClutterActor       *applet,
 	(CLUTTER_BUTTON1_MASK | CLUTTER_BUTTON2_MASK | CLUTTER_BUTTON2_MASK)))
     return FALSE;
 
-  was_over_threshold = priv->moved_over_threshold;
   hd_home_desktop_do_motion (home, event->x, event->y);
 
   /*
-   * If the pointer was moved over the threshold to pan the desktop we don't
-   * need the initial coordinates any more.
+   * If the pointer was moved over the threshold the initial_x and initial_y is
+   * -1;
    */
-  if (!was_over_threshold && priv->moved_over_threshold) {
+  if (priv->initial_x == -1 && 
+		  priv->initial_x == -1)
+    return TRUE;
+
+  moved_over_threshold = 
+	  ABS (priv->initial_x - event->x) > HDH_PAN_THRESHOLD ||
+	  ABS (priv->initial_y - event->y) > HDH_PAN_THRESHOLD;
+
+  if (moved_over_threshold) {
     hd_home_applet_emit_leave_event (home, applet,
-		    priv->initial_x,
-		    priv->initial_y);
+      priv->initial_x,
+      priv->initial_y);
     priv->initial_x = -1;
     priv->initial_y = -1;
   }
+
 
   return TRUE;
 }
