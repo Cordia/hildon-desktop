@@ -22,7 +22,7 @@
 #include "hd-home-view-layout.h"
 #include "hd-comp-mgr.h"
 
-#define PADDING 20
+#define PADDING 16
 #define MIN_SIZE (2 * PADDING + 1)
 
 typedef struct rect_t rect_t;

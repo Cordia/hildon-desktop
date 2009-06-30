@@ -1,3 +1,19 @@
+2009-06-30  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#125453 - Unable to add more than 3 shortcuts on a row
+	Fixes: NB#124885 - Merged contact's  shortcut avatar is not
+	proper(i.e. overlapped)
+	Fixes: NB#112246 - Hildon status menu disappearing while sharing
+	images using BT
+
+	* src/home/hd-home-view-layout.c (PADDING): Decrease the padding
+	slightly so 4 bookmark shotcuts fit a row.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Do not close status
+	menu if an override-redirect window is mapped.
+
+	* debian/changelog: update.
+
 2009-06-30  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Increased minimum loadavg for prestarting to 1.0.

@@ -5,6 +5,13 @@ hildon-desktop (1:2.2.60-1~unreleased) unstable; urgency=low
     when new hildon meny is displayed on application and tapped.
   * Fixes: NB#125137 - Highlight stays on widget in some cases.
 
+  Jan Arne:
+  * Fixes: NB#125453 - Unable to add more than 3 shortcuts on a row
+  * Fixes: NB#124885 - Merged contact's  shortcut avatar is not proper(i.e.
+    overlapped)
+  * Fixes: NB#112246 - Hildon status menu disappearing while sharing images
+    using BT
+
  -- Aapo Kojo <aapo.kojo@nokia.com>  Mon, 29 Jun 2009 11:20:54 +0300
 
 hildon-desktop (1:2.2.59-1) unstable; urgency=low
