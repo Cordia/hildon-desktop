@@ -877,11 +877,11 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
             case HD_LAUNCHER_PAGE_TRANSITION_OUT:
             case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
               {
-                int depth_amount;
-                if (trans_type == HD_LAUNCHER_PAGE_TRANSITION_OUT)
+                int depth_amount = 100;
+                /*if (trans_type == HD_LAUNCHER_PAGE_TRANSITION_OUT)
                   depth_amount = 100;
                 else
-                  depth_amount = 50;
+                  depth_amount = 50;*/
                 depth = CLUTTER_UNITS_FROM_FLOAT(depth_amount*amount);
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
                 clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255 - (int)(amount*255));
