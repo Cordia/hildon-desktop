@@ -269,7 +269,10 @@ hd_home_desktop_do_motion (
   /* Set velocity */
   time += drag_item->period;
   drag_distance += ABS(drag_item->x);
-  priv->velocity_x = drag_distance / time;
+  if (time > 0)
+    priv->velocity_x = drag_distance / time;
+  else
+    priv->velocity_x = 0;
   if (priv->cumulative_x < 0)
     priv->velocity_x = -priv->velocity_x;
 
