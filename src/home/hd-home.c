@@ -268,6 +268,7 @@ hd_home_desktop_do_motion (
   priv->drag_list = g_list_prepend(priv->drag_list, drag_item);
   /* Set velocity */
   time += drag_item->period;
+  drag_distance += ABS(drag_item->x);
   priv->velocity_x = drag_distance / time;
   if (priv->cumulative_x < 0)
     priv->velocity_x = -priv->velocity_x;
@@ -1070,7 +1071,7 @@ hd_home_applet_emit_button_release_event (
 		  &xev.x, &xev.y,
 		  &mywindow);
   }
-  
+
   XSendEvent(wm->xdpy, xev.window, True,
 	     0, (XEvent *)&xev);
 }
@@ -1108,7 +1109,7 @@ hd_home_applet_emit_button_press_event (
   xev.state = 0;
   xev.button = Button1;
   xev.same_screen = True;
-  
+
   /* We need to find the window inside the plugin. */
   XTranslateCoordinates (wm->xdpy,
 		  xev.root, xev.window,
@@ -1323,11 +1324,11 @@ hd_home_applet_motion (ClutterActor       *applet,
    * If the pointer was moved over the threshold the initial_x and initial_y is
    * -1;
    */
-  if (priv->initial_x == -1 && 
+  if (priv->initial_x == -1 &&
 		  priv->initial_x == -1)
     return TRUE;
 
-  moved_over_threshold = 
+  moved_over_threshold =
 	  ABS (priv->initial_x - event->x) > HDH_PAN_THRESHOLD ||
 	  ABS (priv->initial_y - event->y) > HDH_PAN_THRESHOLD;
 
