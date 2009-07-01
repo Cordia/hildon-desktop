@@ -13,6 +13,21 @@ hildon-desktop (1:2.2.60-1~unreleased) unstable; urgency=low
   * Fixes: NB#112246 - Hildon status menu disappearing while sharing images
     using BT
 
+  Adam:
+  * Fixes: NB#121351 - task switcher maximises applications instead of just panning
+  * Fixes: NB#125263 - Icons in task switcher are not responsive enough, need to tap them more than once to activate them
+  * Tune the responsiveness.
+  * Fixes: NB#121704 - ss application menu displayed on top of "select connection " dialog then disappeared after sometime
+  * Fixes: NB#125534 - No 'X' button to close the application
+
+  Marc:
+  * Fixes: NB#123990 - Power key menu clipped if invoked while an app is being loaded
+  * Fixes: NB#125697 - preload sequence should be speedup a bit
+  * Fixes: NB#101031 - hildon-desktop shall be maemo-launched and export restricted
+
+  Gordon:
+  * Fixes: NB#106433 - Detect XVideo Overlays and don't blur if so
+
  -- Aapo Kojo <aapo.kojo@nokia.com>  Mon, 29 Jun 2009 11:20:54 +0300
 
 hildon-desktop (1:2.2.59-1) unstable; urgency=low
