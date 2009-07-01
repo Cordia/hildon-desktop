@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.60-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.60-1) unstable; urgency=low
 
   Laszlo:
   * Fixes: NB#124242 - Can not select any option in the 'device swicth" dialog 
@@ -23,7 +23,6 @@ hildon-desktop (1:2.2.60-1~unreleased) unstable; urgency=low
   Marc:
   * Fixes: NB#123990 - Power key menu clipped if invoked while an app is being loaded
   * Fixes: NB#125697 - preload sequence should be speedup a bit
-  * Fixes: NB#101031 - hildon-desktop shall be maemo-launched and export restricted
 
   Gordon:
   * Fixes: NB#106433 - Detect XVideo Overlays and don't blur if so
