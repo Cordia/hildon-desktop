@@ -2,6 +2,9 @@
 
 	* debian/rules:
 	  Disabled --enable-launcher until we sort out what to do with hail.
+	* src/Makefile.am:
+	  Reverted $(UNWANTED) filtering.
+	  Clearly nobody understands what's libtool doing.
 
 2009-07-01  Gordon Williams <gordon.williams@collabora.co.uk>
 
