@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.61-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.61-1) unstable; urgency=low
 
   Marc:
   * Fixes: NB#101031 - hildon-desktop shall be maemo-launched and export restricted
