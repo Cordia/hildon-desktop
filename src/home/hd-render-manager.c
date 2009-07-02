@@ -1634,10 +1634,18 @@ void hd_render_manager_return_app(ClutterActor *actor)
     return;
   }
 
-  clutter_actor_reparent(actor,
-                         CLUTTER_ACTOR(the_render_manager->priv->home_blur));
-  clutter_actor_lower_bottom(actor);
-  clutter_actor_hide(actor);
+  /* ONLY reparent to home_blur if we were currently someone else's.
+   * Otherwise it's quite likely that the MBWMClutterClient has been destroyed,
+   * but this actor won't be because it would be owned by home_blur.
+   * See bug 121519.
+   */
+  if (clutter_actor_get_parent(actor))
+    {
+      clutter_actor_reparent(actor,
+                             CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+      clutter_actor_lower_bottom(actor);
+      clutter_actor_hide(actor);
+    }
 }
 
 /* Same for dialogs. */
