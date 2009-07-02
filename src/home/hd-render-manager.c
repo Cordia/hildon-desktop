@@ -1121,15 +1121,28 @@ void hd_render_manager_set_loading  (ClutterActor *item)
 
   if (priv->loading_image)
     {
-      g_object_unref(priv->loading_image);
+      /* Put the loading image back where it should be */
+      if (priv->loading_image_parent)
+        {
+          clutter_actor_reparent (priv->loading_image,
+                                  priv->loading_image_parent);
+          g_object_unref (G_OBJECT (priv->loading_image_parent));
+          priv->loading_image_parent = NULL;
+        }
+      else if (clutter_actor_get_parent(priv->loading_image))
+        {
+          /* Or just totally unparent it */
+          clutter_container_remove_actor (
+              CLUTTER_CONTAINER(clutter_actor_get_parent(priv->loading_image)),
+              priv->loading_image);
+        }
+      /* Remove our reference */
+      g_object_unref (G_OBJECT (priv->loading_image));
+      priv->loading_image = NULL;
     }
 
   if (item)
-    {
-      priv->loading_image = CLUTTER_ACTOR(g_object_ref(item));
-    }
-  else
-    priv->loading_image = NULL;
+    priv->loading_image = CLUTTER_ACTOR(g_object_ref(item));
 }
 
 void hd_render_manager_set_button (HDRMButtonEnum btn,
@@ -1306,21 +1319,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if (oldstate == HDRM_STATE_LOADING &&
           priv->loading_image)
         {
-          if (priv->loading_image_parent)
-            {
-              clutter_actor_reparent (priv->loading_image,
-                                      priv->loading_image_parent);
-              g_object_unref (G_OBJECT (priv->loading_image_parent));
-              priv->loading_image_parent = NULL;
-            }
-          else
-            {
-              clutter_actor_hide (priv->loading_image);
-              clutter_container_remove_actor (CLUTTER_CONTAINER (priv->blur_front),
-                                              priv->loading_image);
-            }
-          g_object_unref (G_OBJECT (priv->loading_image));
-          priv->loading_image = NULL;
+          hd_render_manager_set_loading(NULL);
         }
 
       /* Goto HOME instead if we tasw is not appropriate for some reason. */
