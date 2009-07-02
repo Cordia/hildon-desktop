@@ -1,8 +1,12 @@
 hildon-desktop (1:2.2.61-1~unreleased) unstable; urgency=low
 
-  * foo
+  Marc:
+  * Fixes: NB#101031 - hildon-desktop shall be maemo-launched and export restricted
 
- -- Aapo Kojo <aapo.kojo@nokia.com>  Wed, 01 Jul 2009 14:11:17 +0300
+  Gordon:
+  * Fixes: NB#121519 - A blank frame like windows is shown on the desktop
+
+ -- Aapo Kojo <aapo.kojo@nokia.com>  Thu, 02 Jul 2009 18:12:18 +0300
 
 hildon-desktop (1:2.2.60-1) unstable; urgency=low
 
