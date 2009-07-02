@@ -1,18 +1,29 @@
 {
   global:
-	main;
-	_bss_end__;
-	_init;
-	_fini;
-	_edata;
-	_end;
-	_bss_end__;
-	_init;
-	_fini;
-	_edata;
-	_end;
-	_I*;
-	__*;
-  local: _Z*;
-	*;
+	  main;
+	  _bss_end__;
+	  _init;
+	  _fini;
+	  _edata;
+	  _end;
+	  _bss_end__;
+	  _init;
+	  _fini;
+	  _edata;
+	  _end;
+	  _I*;
+	  __*;
+	  hd_home_get_type;
+	  hd_home_view_container_scroll_to_next;
+	  hd_home_view_container_scroll_to_previous;
+	  hd_launcher_grid_get_type;
+	  hd_launcher_page_get_grid;
+	  hd_launcher_page_get_type;
+	  hd_launcher_tile_get_icon_name;
+	  hd_launcher_tile_get_text;
+	  hd_launcher_tile_get_type;
+	  tidy_sub_texture_get_type;
+  local:
+    _Z*;
+	  *;
 };

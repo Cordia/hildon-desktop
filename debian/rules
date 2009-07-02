@@ -8,9 +8,9 @@ else
 ENABLE_A11Y =
 endif
 
-#ifeq (,$(findstring nolauncher,$(DEB_BUILD_OPTIONS)))
-#ENABLE_LAUNCHER += --enable-maemo-launcher
-#endif
+ifeq (,$(findstring nolauncher,$(DEB_BUILD_OPTIONS)))
+ENABLE_LAUNCHER += --enable-maemo-launcher
+endif
 
 ifeq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 CFLAGS += -DG_DEBUG_DISABLE
@@ -32,7 +32,7 @@ makebuilddir/hildon-desktop::
 	./autogen.sh $(DEB_CONFIGURE_EXTRA_FLAGS)
 
 binary-install/hildon-desktop::
-#	dh_maemolauncher
+	dh_maemolauncher
 	dh_installxsession -u 'post 05'
 	dh_installxsession --init-script='hildon-desktop-wait' -u 'post 21'
 
