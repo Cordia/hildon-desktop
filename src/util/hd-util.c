@@ -295,7 +295,6 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
   Rotation want;
   Status ret;
   int width, height, width_mm, height_mm;
-  HdCompMgr *hmgr = HD_COMP_MGR(wm->comp_mgr);
   guint one = 1, zero = 0;
 
   if (randr_supported == -1)
@@ -380,9 +379,9 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
 
   /* Stop windows being reconfigured */
   XChangeProperty(wm->xdpy, wm->root_win->xwindow,
-      hd_comp_mgr_get_atom(hmgr, HD_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION),
-                       XA_CARDINAL, 32, PropModeReplace,
-                       (unsigned char *)&one, 1);
+                  wm->atoms[MBWM_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION],
+                  XA_CARDINAL, 32, PropModeReplace,
+                  (unsigned char *)&one, 1);
 
   /* Disable the CRTC first, as it doesn't fit within our existing screen. */
   XRRSetCrtcConfig (wm->xdpy, res, crtc, crtc_info->timestamp, 0, 0, None,
@@ -397,9 +396,9 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
 
   /* Allow windows to be reconfigured again */
   XChangeProperty(wm->xdpy, wm->root_win->xwindow,
-      hd_comp_mgr_get_atom(hmgr, HD_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION),
-                       XA_CARDINAL, 32, PropModeReplace,
-                       (unsigned char *)&zero, 1);
+                  wm->atoms[MBWM_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION],
+                  XA_CARDINAL, 32, PropModeReplace,
+                  (unsigned char *)&zero, 1);
 
   XRRFreeCrtcInfo (crtc_info);
   XRRFreeScreenResources (res);

@@ -81,9 +81,7 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     RR_PROPERTY_CONNECTOR_TYPE,
     "Panel",
 
-    /* Former: used for randr
-     * Latter: use to delete legacy menus */
-    "_MAEMO_SUPPRESS_ROOT_RECONFIGURATION",
+    /* Used to delete legacy menus */
     "_GTK_DELETE_TEMPORARIES",
     /* Used to see if window has a video overlay --> can't blur it */
     "_OMAP_VIDEO_OVERLAY",
