@@ -1,5 +1,7 @@
 2009-07-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#126456 launcher transitions are not fast enough.
+
 	* data/transitions.ini:
 	  launcher_in -> 400ms, launcher_in_sub -> 700ms
 	  Requested by the ***************** product management.
