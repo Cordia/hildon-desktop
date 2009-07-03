@@ -1,5 +1,10 @@
 2009-07-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* data/transitions.ini:
+	  launcher_in -> 400ms
+
+2009-07-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/mb/hd-atoms.c
 	* src/mb/hd-atoms.h:
 	  Moved the SUPPRESS_ROOT_RECONFIG atom to libmb.
