@@ -311,6 +311,16 @@ typedef struct
        *                  if it has or had any earlier, otherwise %NULL.
        *                  They are shown along with .apwin.  Hidden if
        *                  we have a .video.
+       * -- @cemetery:    This is the resting place for .apwin:s that have
+       *                  been hd_task_navigator_replace_window()ed.
+       *                  When we're active they are hidden.  Otherwise
+       *                  we don't care.  We don't keep a string reference
+       *                  on them, but a weak reference callback removes
+       *                  them from this array when the actor is destroyed.
+       *                  The primary use of the cemetery is to grab all the
+       *                  subviews of an application when we are activated,
+       *                  so hd_render_set_visibilities() doesn't need to
+       *                  worry.
        * -- @windows:     Just 0-dimension container for @apwin and @dialogs,
        *                  its sole purpose is to make it easier to hide them
        *                  when the %Thumbnail has a @video.  Also clips its
@@ -327,7 +337,7 @@ typedef struct
        *                  notification.
        */
       ClutterActor        *apwin, *windows, *titlebar, *prison;
-      GPtrArray           *dialogs;
+      GPtrArray           *dialogs, *cemetery;
 
       /* Frame decoration.  The graphics are updated automatically whenever
        * the theme changes.  Pieces in the middle are scaled horizontally
@@ -2064,6 +2074,18 @@ free_thumb (Thumbnail * thumb)
       if (thumb->apwin)
         g_object_unref (thumb->apwin);
 
+      if (thumb->cemetery)
+        {
+          guint i;
+
+          for (i = 0; i < thumb->cemetery->len; i++)
+            g_object_weak_unref (thumb->cemetery->pdata[i],
+                                 (GWeakNotify)g_ptr_array_remove_fast,
+                                 thumb->cemetery);
+          g_ptr_array_free (thumb->cemetery, TRUE);
+          thumb->cemetery = NULL;
+        }
+
       if (thumb->dialogs)
         {
           g_ptr_array_foreach (thumb->dialogs, (GFunc)g_object_unref, NULL);
@@ -2156,6 +2178,18 @@ claim_win (Thumbnail * apthumb)
    * TODO This may not be true anymore.
    */
   clutter_actor_reparent(apthumb->apwin, apthumb->windows);
+  if (apthumb->cemetery)
+    {
+      guint i;
+
+      for (i = 0; i < apthumb->cemetery->len; i++)
+        {
+          clutter_actor_reparent (apthumb->cemetery->pdata[i],
+                                  apthumb->windows);
+          clutter_actor_hide (apthumb->cemetery->pdata[i]);
+        }
+    }
+
   if (apthumb->dialogs)
     g_ptr_array_foreach (apthumb->dialogs,
                          (GFunc)clutter_actor_reparent,
@@ -2182,8 +2216,9 @@ claim_win (Thumbnail * apthumb)
     }
 
   if (!apthumb->video)
-    /* Show .windows and its contents just in case they aren't. */
-    clutter_actor_show_all (apthumb->windows);
+    /* Needn't bother with show_all() the contents of .windows,
+     * they are shown anyway because of reparent(). */
+    clutter_actor_show (apthumb->windows);
   else
     /* Only show @apthumb->video. */
     clutter_actor_hide (apthumb->windows);
@@ -2206,6 +2241,9 @@ static void
 release_win (const Thumbnail * apthumb)
 {
   hd_render_manager_return_app (apthumb->apwin);
+  if (apthumb->cemetery)
+    g_ptr_array_foreach (apthumb->cemetery,
+                         (GFunc)hd_render_manager_return_app, NULL);
   if (apthumb->dialogs)
     g_ptr_array_foreach (apthumb->dialogs,
                          (GFunc)hd_render_manager_return_dialog, NULL);
@@ -2994,10 +3032,33 @@ hd_task_navigator_replace_window (HdTaskNavigator * self,
   if (old_win == new_win || !(apthumb = find_by_apwin (old_win)))
     return;
 
-  /* Discard current .apwin and embrace @win_win. */
+  /* Resurrect @new_win in the .cemetery. */
+  if (apthumb->cemetery)
+    {
+      guint i;
+
+      /* Verify that @old_win (current .apwin) is not in .cemetery yet. */
+      for (i = 0; i < apthumb->cemetery->len; i++)
+        g_assert (apthumb->cemetery->pdata[i] != old_win);
+      if (g_ptr_array_remove_fast (apthumb->cemetery, new_win))
+        g_object_weak_unref (G_OBJECT (new_win),
+                             (GWeakNotify)g_ptr_array_remove_fast,
+                             apthumb->cemetery);
+    }
+  else
+    apthumb->cemetery = g_ptr_array_new ();
+
+  /* Add @old_win to .cemetery.  Do it before we unref @old_win,
+   * so we don't possibly add a dangling pointer there. */
+  g_ptr_array_add (apthumb->cemetery, old_win);
+  g_object_weak_ref (G_OBJECT (old_win),
+                         (GWeakNotify)g_ptr_array_remove_fast,
+                         apthumb->cemetery);
+
+  /* Replace .apwin */
   showing = hd_task_navigator_is_active ();
-  if (showing)
-    hd_render_manager_return_app (apthumb->apwin);
+  if (showing) /* .apwin is in the cemetery */
+    clutter_actor_hide (apthumb->apwin);
   g_object_unref (apthumb->apwin);
   apthumb->apwin = g_object_ref (new_win);
   if (showing)

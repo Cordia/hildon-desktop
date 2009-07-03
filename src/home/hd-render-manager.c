@@ -2229,7 +2229,6 @@ void hd_render_manager_set_visibilities()
   MBWindowManager *wm;
   MBWindowManagerClient *c;
   gboolean has_fullscreen;
-  gboolean show_windows = TRUE;
 
   priv = the_render_manager->priv;
 
@@ -2254,13 +2253,7 @@ void hd_render_manager_set_visibilities()
     {
       clutter_actor_hide(CLUTTER_ACTOR(priv->home_blur));
     }
-  /* If we are in the task navigator, we don't want to show any of our windows.
-   * This is because the task navigator will only grab the very top window of
-   * a window stack, leaving the rest here. If we apply normal visibility
-   * checking then we inadvertantly make the next window on the stack visible
-   * in the background. */
-  if (hd_task_navigator_is_active())
-    show_windows = FALSE;
+
   /* Then work BACKWARDS through the other items, working out if they are
    * visible or not */
   n_elements = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
@@ -2271,16 +2264,11 @@ void hd_render_manager_set_visibilities()
       if (child != CLUTTER_ACTOR(priv->blur_front))
         {
           ClutterGeometry geo;
-          /* If we're not showing windows, we still want to show the home
-           * view */
-          gboolean show_window = show_windows ?
-                                    TRUE :
-                                    child==CLUTTER_ACTOR(priv->home);
 
           clutter_actor_get_geometry(child, &geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
           VISIBILITY ("IS %p (%dx%d%+d%+d) VISIBLE?", child, MBWM_GEOMETRY(&geo));
-          if (show_window && hd_render_manager_is_visible(blockers, geo) &&
+          if (hd_render_manager_is_visible(blockers, geo) &&
               !hd_render_manager_should_hide(child))
             {
               VISIBILITY ("IS");
@@ -2325,7 +2313,9 @@ void hd_render_manager_set_visibilities()
    * why to consider the state. */
   has_fullscreen = FALSE;
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
-  if (STATE_IS_APP(priv->state) || priv->state == HDRM_STATE_HOME)
+  if (STATE_IS_APP(priv->state)
+      || priv->state == HDRM_STATE_HOME
+      || priv->state == HDRM_STATE_HOME_PORTRAIT)
     for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
       {
         if (!c->cm_client || c->desktop < 0 || !c->window)
