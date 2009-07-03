@@ -3534,13 +3534,16 @@ within_grid (const ClutterButtonEvent * event)
     return FALSE;
   calc_layout (&lout);
 
-  if (event->y < lout.ypos)
+  /* y := top of the first row */
+  y = lout.ypos - hd_scrollable_group_get_viewport_y (Grid);
+  if (event->y < y)
     /* Clicked above the first row. */
     return FALSE;
-  n = NThumbnails / lout.cells_per_row;
-  m = NThumbnails % lout.cells_per_row;
-  y = lout.ypos + lout.vspace*(n-1) + lout.thumbsize->height
-    - hd_scrollable_group_get_viewport_y (Grid);
+
+  /* y := the bottom of the last complete row */
+  n  = NThumbnails / lout.cells_per_row;
+  m  = NThumbnails % lout.cells_per_row;
+  y += lout.vspace*(n-1) + lout.thumbsize->height;
 
   if (event->y <= y)
     { /* Clicked somewhere in the complete rows. */

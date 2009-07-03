@@ -1,5 +1,13 @@
 2009-07-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#121351 task switcher maximises applications instead of just panning
+
+	* src/home/hd-task-navigator.c (within_grid):
+	  we calculated the top of the grid incorrectly, didn't take
+	  panning into account
+
+2009-07-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#125361 Incoming call Dialog:Reject Button is Not shown
 		  in certain scenario
 
