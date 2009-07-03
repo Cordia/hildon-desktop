@@ -3,7 +3,7 @@
 	NB#126456 launcher transitions are not fast enough.
 
 	* data/transitions.ini:
-	  launcher_in -> 400ms, launcher_in_sub -> 700ms
+	  launcher_in -> 500ms, launcher_in_sub -> 500ms
 	  Requested by the ***************** product management.
 	  (no offense)
 
