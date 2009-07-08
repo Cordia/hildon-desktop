@@ -1,10 +1,10 @@
-hildon-desktop (1:2.2.62-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.62-1) unstable; urgency=low
 
   Laszlo:
   * Fixes: NB#125920 - [REGF]Device is unlocked without lock code from active
     call in Layout mode.
 
- -- Aapo Kojo <aapo.kojo@nokia.com>  Thu, 02 Jul 2009 18:16:38 +0300
+ -- Aapo Kojo <aapo.kojo@nokia.com>  Wed, 08 Jul 2009 13:52:44 +0300
 
 hildon-desktop (1:2.2.61-1) unstable; urgency=low
 
