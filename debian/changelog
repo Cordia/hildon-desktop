@@ -10,15 +10,17 @@ hildon-desktop (1:2.2.62-1) unstable; urgency=low
   * Fixes: NB#125920 - [REGF]Device is unlocked without lock code from active
     call in Layout mode.
 
+  Adam:
+  * Fixes: NB#121351 - task switcher maximises applications instead of just panning
+  * Fixes: NB#125361 - Incoming call Dialog:Reject Button is Not shown in certain 
+    scenario
+
  -- Aapo Kojo <aapo.kojo@nokia.com>  Wed, 08 Jul 2009 13:52:44 +0300
 
 hildon-desktop (1:2.2.61-1) unstable; urgency=low
 
   Marc:
   * Fixes: NB#101031 - hildon-desktop shall be maemo-launched and export restricted
-
-  Gordon:
-  * Fixes: NB#121519 - A blank frame like windows is shown on the desktop
 
  -- Aapo Kojo <aapo.kojo@nokia.com>  Thu, 02 Jul 2009 18:12:18 +0300
 
