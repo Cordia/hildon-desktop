@@ -1650,6 +1650,15 @@ hd_is_hildon_home_dialog (
   if (MB_WM_CLIENT_CLIENT_TYPE(c) != MBWMClientTypeDialog)
     return FALSE;
 
+  /*
+   * We do not consider any dialogs to be hildon-home dialogs over the stacking
+   * layer 0. This way we will not close anything important like the device lock
+   * dialog.
+   */
+  if (c->stacking_layer > 0)
+    return FALSE;
+
+
   if (!c->transient_for)
     return TRUE;
 
@@ -1677,7 +1686,8 @@ void hd_home_remove_dialogs(HdHome *home)
       /* We have no real way of telling what a hildon-home dialog is, but they
        * are all transient_for=NULL - and we are called when we leave
        * home_edit_dlg mode, so they are all stacked above the desktop. */
-      if (hd_is_hildon_home_dialog(c)) {
+      if (hd_is_hildon_home_dialog(c)) 
+      {
           mb_wm_client_hide (c);
           mb_wm_client_deliver_delete (c);
       } else if (MB_WM_CLIENT_CLIENT_TYPE(c) == MBWMClientTypeDesktop)

@@ -1,3 +1,12 @@
+2009-07-08  Laszlo Pere  <lpere@blumsoft.eu>
+
+	NB#125920 [REGF]Device is unlocked without lock code from active call
+	          in Layout mode
+
+	* src/home/hd-home.c: Not closing dialogs above the stacking layer 0
+	  when going back from layout mode, thus not closing the 'Enter lock
+	  code' dialog.
+
 2009-07-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#121351 task switcher maximises applications instead of just panning
