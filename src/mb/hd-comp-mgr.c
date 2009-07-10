@@ -2043,7 +2043,34 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         }
     }
 
-  if (to_replace && topmost)
+  if (to_replace && 
+		  to_replace->leader == NULL &&
+		  to_replace->stack_index == -1) 
+    {
+      ClutterActor *old_actor;
+
+      /*
+       * If we replaced an existing follower and made it a non stackable.
+       */
+      old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
+                  MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			  MB_WM_CLIENT (to_replace)->cm_client));
+ 
+      g_debug ("%s: REPLACE %p WITH %p and ADD %p BACK", __func__,
+		      old_actor, actor, old_actor);
+      hd_switcher_replace_window_actor (priv->switcher_group, old_actor, actor);
+      hd_switcher_add_window_actor (priv->switcher_group, old_actor);
+      
+      /* and make sure we're in app mode and not transitioning as
+       * we'll want to show this new app right away*/
+      if (!STATE_IS_APP(hd_render_manager_get_state()))
+        hd_render_manager_set_state(HDRM_STATE_APP);
+      hd_render_manager_stop_transition();
+      /* This forces the decors to be redone, taking into account the
+       * stack index. */
+      mb_wm_client_theme_change (c);
+      mb_wm_client_theme_change (MB_WM_CLIENT(to_replace));
+  } else if (to_replace && topmost)
     {
       ClutterActor *old_actor;
       old_actor = mb_wm_comp_mgr_clutter_client_get_actor (

@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.63-1~unreleased) unstable; urgency=low
 
-  * new
+  Laszlo
+  * Fixes: #NB121519 - A blank frame like window with out any title is shown
+    on the desktop.
 
  -- Aapo Kojo <aapo.kojo@nokia.com>  Wed, 08 Jul 2009 13:55:07 +0300
 
