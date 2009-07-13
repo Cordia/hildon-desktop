@@ -1577,6 +1577,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
              * stack index. */
             mb_wm_client_theme_change ((MBWindowManagerClient*)old_leader);
             mb_wm_client_theme_change ((MBWindowManagerClient*)app);
+	    *replaced = old_leader;
           }
         }
       else if (app->stack_index > 0 && old_leader &&
@@ -2092,6 +2093,32 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         mb_wm_client_theme_change (c);
       }
     }
+  else if (to_replace && to_replace->leader == app)
+    {
+      ClutterActor *old_actor;
+  
+      /*
+       * This is the 'old leader become a follower' use case. In this situation
+       * the visible actor remains a follower, but we need to do something with
+       * the new actor otherwise it will be unhandled by the task switcher and
+       * it will be shown in the background.
+       */
+      g_debug ("%s: ADD ACTOR %p BEHIND THE LEADER", __func__, actor);
+      old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
+		      MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			      MB_WM_CLIENT (to_replace)->cm_client));
+      hd_switcher_replace_window_actor (priv->switcher_group, old_actor, actor);
+      hd_switcher_replace_window_actor (priv->switcher_group, actor, old_actor);
+      /* and make sure we're in app mode and not transitioning as
+       * we'll want to show this new app right away*/
+      if (!STATE_IS_APP(hd_render_manager_get_state()))
+        hd_render_manager_set_state(HDRM_STATE_APP);
+      hd_render_manager_stop_transition();
+      /* This forces the decors to be redone, taking into account the
+       * stack index. */
+      mb_wm_client_theme_change (c);
+      mb_wm_client_theme_change (MB_WM_CLIENT(to_replace));
+    } 
   else if (add_to_tn)
     {
       g_debug ("%s: ADD ACTOR %p", __func__, actor);

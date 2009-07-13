@@ -1,3 +1,8 @@
+2009-07-13  Laszlo Pere  <lpere@blumsoft.eu>
+	* src/mb/hd-comp-mgr.c: A glitch has been fixed by handling the 'old
+	  leader become a follower' use case. It fixes the media player first
+	  start when the main view was previously shown in the background.
+
 2009-07-10  Laszlo Pere  <lpere@blumsoft.eu>
 
 	Fixes: #NB121519 A blank frame like window with out any title is shown
