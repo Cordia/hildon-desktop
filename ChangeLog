@@ -1,4 +1,10 @@
+2009-07-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* data/transition.ini:
+	  Tuned home::zoom and task_nav::zoom to make Martin happy.
+
 2009-07-13  Laszlo Pere  <lpere@blumsoft.eu>
+
 	* src/mb/hd-comp-mgr.c: A glitch has been fixed by handling the 'old
 	  leader become a follower' use case. It fixes the media player first
 	  start when the main view was previously shown in the background.
