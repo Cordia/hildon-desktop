@@ -1,5 +1,10 @@
 2009-07-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-task-navigator.c (NOTE_SEPARATOR_PADDING):
+	  Make the separator line in notif thumbnails edge-to-edge.
+
+2009-07-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* data/transition.ini:
 	  Tuned home::zoom and task_nav::zoom to make Martin happy.
 

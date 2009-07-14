@@ -140,7 +140,7 @@
 #define NOTE_MARGINS              MARGIN_DEFAULT
 #define NOTE_BOTTOM_MARGIN        MARGIN_HALF
 #define NOTE_ICON_GAP             MARGIN_HALF
-#define NOTE_SEPARATOR_PADDING    8
+#define NOTE_SEPARATOR_PADDING    0
 
 /*
  * %ZOOM_EFFECT_DURATION:         Determines how many miliseconds should
