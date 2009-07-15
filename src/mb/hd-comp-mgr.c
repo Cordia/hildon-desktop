@@ -1942,7 +1942,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         hd_render_manager_add_to_front_group(actor);
 
       if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c))
-        { /* let us be we who decide when the previews can be clicked */
+        { /* let's be us who decide when the previews can be clicked */
           clutter_actor_set_reactive (actor, TRUE);
           g_signal_connect_swapped (actor, "button-press-event",
                                     G_CALLBACK (hd_note_clicked), c);
