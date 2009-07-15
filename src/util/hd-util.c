@@ -475,3 +475,27 @@ gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client)
 
   return result;
 }
+
+/* Send a synthetic %ButtonPress to @c. */
+void
+hd_util_click (const MBWindowManagerClient *c)
+{
+  Window xwin;
+  Display *xdpy;
+  XButtonEvent ev;
+
+  xwin = c->window->xwindow;
+  xdpy = c->wmref->xdpy;
+
+  memset (&ev, 0, sizeof (ev));
+  ev.type         = ButtonPress;
+  ev.send_event   = True;
+  ev.display      = xdpy;
+  ev.window       = xwin;
+  ev.root         = DefaultRootWindow (xdpy);
+  ev.time         = CurrentTime;
+  ev.button       = Button1;
+  ev.same_screen  = True;
+
+  XSendEvent(xdpy, xwin, False, ButtonPressMask, (XEvent *)&ev);
+}

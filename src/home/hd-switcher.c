@@ -803,35 +803,12 @@ hd_switcher_add_window_actor (HdSwitcher * switcher, ClutterActor * actor)
   hd_task_navigator_add_window (priv->task_nav, actor);
 }
 
+/* Deliver an #XButtonEvent to @note, so #HdIncomingEventWindow will know
+ * there is a response and will invoke the appropriate action. */
 static gboolean
 hd_switcher_notification_clicked (HdSwitcher *switcher, HdNote *note)
 {
-  Window xwin;
-  Display *xdpy;
-  XButtonEvent ev;
-
-  /*
-   * Deliver an #XButtonEvent to @win, so #HdIncomingEventWindow will know
-   * there is a response and will invoke the appropriate action.
-   * Note that %MBWindowManager->root_win->xwindow is different from what
-   * DefaultRootWindow() returns, which may or may not be intentional.
-   */
-  xwin = MB_WM_CLIENT (note)->window->xwindow;
-  xdpy = MB_WM_CLIENT (note)->wmref->xdpy;
-
-  memset (&ev, 0, sizeof (ev));
-  ev.type         = ButtonPress;
-  ev.send_event   = True;
-  ev.display      = xdpy;
-  ev.window       = xwin;
-  ev.root         = DefaultRootWindow (xdpy);
-  ev.time         = CurrentTime;
-  ev.button       = Button1;
-  ev.same_screen  = True;
-
-  XSendEvent(xdpy, xwin, False, ButtonPressMask, (XEvent *)&ev);
-  XSync (xdpy, FALSE);
-
+  hd_util_click (MB_WM_CLIENT (note));
   return TRUE;
 }
 

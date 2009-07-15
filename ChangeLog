@@ -1,3 +1,26 @@
+2009-07-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#120636 [REGU]Phone application is opened in the background
+		  if tapped on missed call notification when flash message
+		  is displayed
+
+	Make incoming event previews insensitive if there's a sysmodal.
+
+	* src/mb/hd-comp-mgr.c:
+	  hd_comp_mgr_map_notify:
+	    let the cmgr decide whether the note is clicked or not
+	  hd_comp_mgr_setup_input_viewport:
+	    for this grab the input area of incoming event notifs
+	    unconditionally
+	* src/mb/hd-note.h
+	* src/mb/hd-note.c (hd_note_clicked):
+	  make the decision here and if there's no sysmodals in sight...
+	* src/util/hd-util.h
+	* src/util/hd-util.c (hd_util_clicked):
+	  ...synthetize a ButtonPress
+	* src/home/hd-switcher.c (hd_switcher_notification_clicked):
+	  which was factored out from here
+
 2009-07-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-task-navigator.c (NOTE_SEPARATOR_PADDING):

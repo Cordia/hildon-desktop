@@ -877,9 +877,10 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
   XserverRegion      region;
   MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
   MBWindowManager   *wm = mgr->wm;
+  MBWindowManagerClient *c;
 
   /* check for windows that may have a modal blocker. If anything has one
-   * we should NOT grab any part of the screen. */
+   * we should NOT grab any part of the screen, except what we really must. */
 
   mb_wm_util_trap_x_errors ();
 
@@ -900,9 +901,9 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
       region = XFixesCreateRegion (wm->xdpy, rectangle, count);
       g_free (rectangle);
 
-      /* we must subtract the regions for any dialogs + notifications
-       * from this input mask... if we are in the position of showing
-       * any of them */
+      /* we must subtract the regions for any dialogs + notes (mainly
+       * confirmation notes) from this input mask... if we are in the
+       * position of showing any of them */
       if (STATE_UNGRAB_NOTES(hd_render_manager_get_state()))
         {
           XserverRegion subtract;
@@ -927,6 +928,29 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
     }
   else
     region = XFixesCreateRegion (wm->xdpy, NULL, 0);
+
+  /* do specifically grab incoming event previews because sometimes
+   * they need to be reactive, somethes they should not.  decide it
+   * when they are actually clicked. */
+  for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
+    if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c)
+        && hd_render_manager_is_client_visible (c))
+      {
+        XRectangle rec =
+          {
+            .x      = c->frame_geometry.x,
+            .y      = c->frame_geometry.y,
+            .width  = c->frame_geometry.width,
+            .height = c->frame_geometry.height,
+          };
+        XserverRegion r;
+
+        /* creating 1 region per notification is not that bad
+         * because we should not have more than one at a time */
+        r = XFixesCreateRegion (wm->xdpy, &rec, 1);
+        XFixesUnionRegion (wm->xdpy, region, region, r);
+        XFixesDestroyRegion (wm->xdpy, r);
+      }
 
   hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
     XCompositeGetOverlayWindow (wm->xdpy, wm->root_win->xwindow),
@@ -1916,6 +1940,13 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       if (HD_IS_BANNER_NOTE (c) || HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c))
         hd_render_manager_add_to_front_group(actor);
+
+      if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c))
+        { /* let us be we who decide when the previews can be clicked */
+          clutter_actor_set_reactive (actor, TRUE);
+          g_signal_connect_swapped (actor, "button-press-event",
+                                    G_CALLBACK (hd_note_clicked), c);
+        }
 
       if (HD_IS_INCOMING_EVENT_NOTE (c))
         hd_switcher_add_notification (priv->switcher_group, HD_NOTE (c));

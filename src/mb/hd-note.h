@@ -92,6 +92,7 @@ struct HdNoteClass
 };
 
 MBWindowManagerClient* hd_note_new (MBWindowManager *wm, MBWMClientWindow *win);
+void hd_note_clicked (HdNote *self);
 const char *hd_note_get_destination (HdNote *self);
 const char *hd_note_get_message (HdNote *self);
 const char *hd_note_get_summary (HdNote *self);

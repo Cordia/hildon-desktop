@@ -24,6 +24,7 @@
 #include "hd-note.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
+#include "hd-wm.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -451,6 +452,16 @@ hd_note_new (MBWindowManager *wm, MBWMClientWindow *win)
 				      NULL));
 
   return client;
+}
+
+/* Called when the actor of the note is clicked.
+ * Synthetize a ButtonPressEvent if the circumstances allow
+ * the activation of the notification's action. */
+void
+hd_note_clicked (HdNote *self)
+{
+  if (!hd_wm_has_modal_blockers (MB_WM_CLIENT (self)->wmref))
+    hd_util_click (MB_WM_CLIENT (self));
 }
 
 /* Define an accessor function that caches @IEProperties[@prop]'s value

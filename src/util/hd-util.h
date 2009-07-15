@@ -28,4 +28,6 @@ gboolean hd_util_change_screen_orientation (MBWindowManager *wm,
 gboolean hd_util_get_cursor_position(gint *x, gint *y);
 gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client);
 
+void hd_util_click (const MBWindowManagerClient *c);
+
 #endif
