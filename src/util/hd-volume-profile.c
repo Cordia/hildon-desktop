@@ -62,7 +62,8 @@ void hd_volume_profile_set_silent(gboolean setting)
 }
 
 static void track_active(const char *profile, const char *key,
-                         const char *val, const char *type)
+                         const char *val, const char *type,
+                         void *unused)
 {
         if (key && strcmp(key, SYSTEM_SOUNDS_KEY) == 0) {
                 if (val)
@@ -70,7 +71,7 @@ static void track_active(const char *profile, const char *key,
         }
 }
 
-static void track_profile(const char *profile)
+static void track_profile(const char *profile, void *unused)
 {
         if (silenced || (profile && strcmp(SILENT_PROFILE, profile) == 0))
                 silent_profile = 1;
@@ -84,8 +85,8 @@ void hd_volume_profile_init(void)
                 silent_profile = 1;
                 system_sounds = 0;
         } else {
-                profile_track_set_profile_cb(track_profile);
-                profile_track_set_active_cb(track_active);
+                profile_track_add_profile_cb(track_profile, NULL, NULL);
+                profile_track_add_active_cb(track_active, NULL, NULL);
         }
 }
 
