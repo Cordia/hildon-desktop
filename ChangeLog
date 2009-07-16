@@ -1,3 +1,14 @@
+2009-07-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#128647 Desktop crashed when continuously tap the incoming
+		  notification above a system modal dialog
+
+	Maybe he hit it just in wrong time.
+
+	* src/mb/hd-note.h
+	* src/mb/hd-note.c (hd_note_clicked):
+	  Be more robust and don't act if the client is gone.
+
 2009-07-16  Aapo Kojo  <aapo.kojo@nokia.com>
 
         Release 2.2.63

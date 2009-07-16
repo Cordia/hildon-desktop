@@ -458,9 +458,16 @@ hd_note_new (MBWindowManager *wm, MBWMClientWindow *win)
  * Synthetize a ButtonPressEvent if the circumstances allow
  * the activation of the notification's action. */
 void
-hd_note_clicked (HdNote *self)
+hd_note_clicked (HdNote *self, void *unused, void *actor)
 {
-  if (!hd_wm_has_modal_blockers (MB_WM_CLIENT (self)->wmref))
+  const MBWindowManagerClient *c = MB_WM_CLIENT (self);
+  const MBWMCompMgrClient *cmgrc;
+
+  /* verify that the client hasn't gone yet */
+  cmgrc = g_object_get_data(actor, "HD-MBWMCompMgrClutterClient");
+  if (!cmgrc || cmgrc->wm_client != c || !c->wmref)
+    return;
+  if (!hd_wm_has_modal_blockers (c->wmref))
     hd_util_click (MB_WM_CLIENT (self));
 }
 
