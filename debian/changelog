@@ -1,10 +1,16 @@
-hildon-desktop (1:2.2.63-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.63-1) unstable; urgency=low
+
+  Adam:
+  * Fixes: NB#120636 - [REGU]Phone application is opened in the background 
+    if tapped on missed call notification when flash message is displayed
+  * Make the separator line in notif thumbnails edge-to-edge.
+  * Tuned home::zoom and task_nav::zoom
 
   Laszlo
-  * Fixes: #NB121519 - A blank frame like window with out any title is shown
+  * Fixes: NB#121519 - A blank frame like window with out any title is shown
     on the desktop.
 
- -- Aapo Kojo <aapo.kojo@nokia.com>  Wed, 08 Jul 2009 13:55:07 +0300
+ -- Aapo Kojo <aapo.kojo@nokia.com>  Thu, 16 Jul 2009 10:35:09 +0300
 
 hildon-desktop (1:2.2.62-1) unstable; urgency=low
 
