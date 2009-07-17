@@ -115,6 +115,7 @@ struct _HdAppMgrPrivate
   gboolean unlocked;
   gboolean display_on;
   gboolean slide_closed;
+  gboolean disable_callui;
 };
 
 #define HD_APP_MGR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -189,10 +190,12 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define MAEMO_LAUNCHER_APP_DIED_SIGNAL_NAME "ApplicationDied"
 
 /* Signals for showing CallUI. */
-#define CALLUI_INTERFACE      "com.nokia.CallUI"
-#define CALLUI_PORTRAIT_TIMEOUT 1
-#define GCONF_SLIDE_OPEN_DIR  "/system/osso/af"
-#define GCONF_SLIDE_OPEN_KEY  "/system/osso/af/slide-open"
+#define CALLUI_INTERFACE         "com.nokia.CallUI"
+#define CALLUI_PORTRAIT_TIMEOUT  1
+#define GCONF_SLIDE_OPEN_DIR     "/system/osso/af"
+#define GCONF_SLIDE_OPEN_KEY     "/system/osso/af/slide-open"
+#define GCONF_DISABLE_CALLUI_DIR "/apps/osso/hildon-desktop"
+#define GCONF_DISABLE_CALLUI_KEY "/apps/osso/hildon-desktop/disable_phone_gesture"
 
 /* Forward declarations */
 static void hd_app_mgr_dispose (GObject *gobject);
@@ -251,7 +254,6 @@ static void hd_app_mgr_gconf_value_changed (GConfClient *client,
                                             guint cnxn_id,
                                             GConfEntry *entry,
                                             gpointer user_data);
-static guint callui_timeout_event = 0;
 static gboolean hd_app_mgr_show_callui_cb (gpointer data);
 static void hd_app_mgr_check_show_callui (void);
 
@@ -385,6 +387,15 @@ hd_app_mgr_init (HdAppMgr *self)
       gconf_client_add_dir (priv->gconf_client, GCONF_SLIDE_OPEN_DIR,
                             GCONF_CLIENT_PRELOAD_NONE, NULL);
       gconf_client_notify_add (priv->gconf_client, GCONF_SLIDE_OPEN_KEY,
+                               hd_app_mgr_gconf_value_changed,
+                               (gpointer) self,
+                               NULL, NULL);
+      priv->disable_callui = gconf_client_get_bool (priv->gconf_client,
+                                                    GCONF_DISABLE_CALLUI_KEY,
+                                                    NULL);
+      gconf_client_add_dir (priv->gconf_client, GCONF_DISABLE_CALLUI_DIR,
+                            GCONF_CLIENT_PRELOAD_NONE, NULL);
+      gconf_client_notify_add (priv->gconf_client, GCONF_DISABLE_CALLUI_KEY,
                                hd_app_mgr_gconf_value_changed,
                                (gpointer) self,
                                NULL, NULL);
@@ -1754,13 +1765,32 @@ hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable)
   return TRUE;
 }
 
+static gboolean
+_hd_app_mgr_should_show_callui ()
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+
+  if (STATE_SHOW_CALLUI (hd_render_manager_get_state ()) &&
+      priv->portrait &&
+      priv->unlocked &&
+      priv->display_on &&
+      priv->slide_closed &&
+      !priv->disable_callui)
+    {
+      return TRUE;
+    }
+
+  return FALSE;
+}
+
 /* Callback for showing the CALL UI */
 static gboolean
 hd_app_mgr_show_callui_cb (gpointer data)
 {
-    callui_timeout_event = 0;
+  if (_hd_app_mgr_should_show_callui())
     hd_app_mgr_service_top (CALLUI_INTERFACE, NULL);
-    return FALSE;
+
+  return FALSE;
 }
 
 /* Show CallUI if
@@ -1773,17 +1803,11 @@ hd_app_mgr_show_callui_cb (gpointer data)
 static void
 hd_app_mgr_check_show_callui (void)
 {
-  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
-
-  if (STATE_SHOW_CALLUI (hd_render_manager_get_state ()) &&
-      priv->portrait &&
-      priv->unlocked &&
-      priv->display_on &&
-      priv->slide_closed)
+  if (_hd_app_mgr_should_show_callui ())
     {
-      callui_timeout_event = g_timeout_add_seconds(CALLUI_PORTRAIT_TIMEOUT,
-					     (GSourceFunc) hd_app_mgr_show_callui_cb,
-					     NULL);
+      g_timeout_add_seconds(CALLUI_PORTRAIT_TIMEOUT,
+                            (GSourceFunc) hd_app_mgr_show_callui_cb,
+                            NULL);
     }
 }
 
@@ -1883,14 +1907,6 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
           if (priv->portrait)
             hd_app_mgr_check_show_callui ();
         }
-
-      if (!priv->unlocked || !priv->display_on || !priv->portrait || !priv->slide_closed)
-        {
-          // The device state has changed, remove the callui callback.
-          if (callui_timeout_event)
-            g_source_remove(callui_timeout_event);
-          callui_timeout_event = 0;
-	}
     }
 
   if (changed)
@@ -1906,19 +1922,25 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
                                 gpointer user_data)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (HD_APP_MGR (user_data));
-  GConfValue *value;
+  GConfValue *gvalue;
+  gboolean value = FALSE;
 
-  if (entry &&
-      (value = gconf_entry_get_value (entry)) &&
-      (value->type == GCONF_VALUE_BOOL))
-    {
-      priv->slide_closed = !gconf_value_get_bool (value);
-    }
-  else {
-    /* Assume it's closed. */
-    priv->slide_closed = TRUE;
-  }
+  if (!entry)
+    return;
 
+  gvalue = gconf_entry_get_value (entry);
+  if (gvalue->type == GCONF_VALUE_BOOL)
+    value = gconf_value_get_bool (gvalue);
+
+  if (!g_strcmp0 (gconf_entry_get_key (entry),
+                  GCONF_SLIDE_OPEN_KEY))
+    priv->slide_closed = !value;
+
+  if (!g_strcmp0 (gconf_entry_get_key (entry),
+                  GCONF_DISABLE_CALLUI_KEY))
+    priv->disable_callui = value;
+
+  return;
 }
 
 static void
