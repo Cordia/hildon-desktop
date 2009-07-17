@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.65-1~unreleased) unstable; urgency=low
 
-  * new
+  Marc:
+  * Fixes: NB#128657 - Phone UI starting up automatically is annoying
 
  -- Aapo Kojo <aapo.kojo@nokia.com>  Fri, 17 Jul 2009 12:42:38 +0300
 
