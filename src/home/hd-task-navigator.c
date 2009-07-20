@@ -1671,10 +1671,10 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
   TNote *tnote;
   gboolean reload_icon;
   guint isize, msgdiv, maxmsg;
-  gint x, y;
+  gint x = 0, y = 0;
   guint width, height;
   guint xicon, ycount, xmsg;
-  guint worig, horig, wmax, hmax;
+  guint worig = 0, horig = 0, wmax, hmax;
   guint htime, hleft, hleftforme;
 
   tnote = thumb->tnote;
