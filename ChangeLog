@@ -8,6 +8,7 @@
 	variables to quiesce Coverity.
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Don't check for NULL
 	when getting the transient because it makes Coverity complain.
+	* src/hildon-desktop-views.schemas: boolean -> bool
 
 	Patch from Artem for NB#126898.
 
