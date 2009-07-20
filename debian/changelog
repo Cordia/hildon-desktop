@@ -1,7 +1,8 @@
-hildon-desktop (1:2.2.65-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.65-1) unstable; urgency=low
 
   Marc:
-  * Fixes: NB#128657 - Phone UI starting up automatically is annoying
+  * Add GConf key for disabling automatic CallUI startup. Related to
+    NB#128657.
 
   Artem:
   * Fixes: NB#126898 - Animation actors stacking order is changed by banners
