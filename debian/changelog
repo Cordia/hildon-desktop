@@ -3,7 +3,10 @@ hildon-desktop (1:2.2.65-1~unreleased) unstable; urgency=low
   Marc:
   * Fixes: NB#128657 - Phone UI starting up automatically is annoying
 
- -- Aapo Kojo <aapo.kojo@nokia.com>  Fri, 17 Jul 2009 12:42:38 +0300
+  Artem:
+  * Fixes: NB#126898 - Animation actors stacking order is changed by banners
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 20 Jul 2009 09:40:11 +0300
 
 hildon-desktop (1:2.2.64-1) unstable; urgency=low
 

@@ -245,8 +245,11 @@ hd_render_manager_set_property (GObject      *gobject,
                                 guint         prop_id,
                                 const GValue *value,
                                 GParamSpec   *pspec);
+
 static
-gboolean hd_render_manager_should_hide(ClutterActor *actor);
+gboolean hd_render_manager_should_ignore_cm_client(MBWMCompMgrClutterClient *cm_client);
+static
+gboolean hd_render_manager_should_ignore_actor(ClutterActor *actor);
 static void hd_render_manager_update_blur_state(void);
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------  RANGE      */
@@ -1724,6 +1727,13 @@ void hd_render_manager_restack()
       if (c->cm_client && c->desktop >= 0) /* FIXME: should check against
 					      current desktop? */
         {
+	  /* If the client decides its own visibility, let it figure out
+	   * its own stacking as well.
+	   */
+	  if (hd_render_manager_should_ignore_cm_client
+	      (MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client)))
+	      continue;
+
           ClutterActor *actor = 0;
           ClutterActor *desktop = mb_wm_comp_mgr_clutter_get_nth_desktop(
               MB_WM_COMP_MGR_CLUTTER(priv->comp_mgr), c->desktop);
@@ -1782,6 +1792,9 @@ void hd_render_manager_restack()
         ClutterActor *child =
           clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
 
+	/* If the client decides its own visibility, skip it */
+	if (hd_render_manager_should_ignore_actor(child))
+	    continue;
 
         if (child != CLUTTER_ACTOR(priv->home) &&
             child != CLUTTER_ACTOR(priv->blur_front))
@@ -1806,12 +1819,7 @@ void hd_render_manager_restack()
               {
                 clutter_actor_reparent(child, CLUTTER_ACTOR(priv->app_top));
                 clutter_actor_lower_bottom(child);
-
-                /* because it is in app-top, vis check does not get applied */
-                if (hd_render_manager_should_hide(child))
-                  clutter_actor_hide(child);
-                else
-                  clutter_actor_show(child);
+		clutter_actor_show(child);
               }
             /* If this is maximized, or in dialog's position, don't
              * blur anything after */
@@ -2166,7 +2174,18 @@ hd_render_manager_get_wm_client_from_actor(ClutterActor *actor)
 }
 
 static
-gboolean hd_render_manager_should_hide(ClutterActor *actor)
+gboolean hd_render_manager_should_ignore_cm_client(MBWMCompMgrClutterClient *cm_client)
+{
+  /* HdAnimationActor sets this flag to signal to whom it may concern that it
+   * want to decide the visibility and stacking order of its window's clutter
+   * client on its own.
+   */
+  return (mb_wm_comp_mgr_clutter_client_get_flags(cm_client) &
+          MBWMCompMgrClutterClientDontShow);
+}
+
+static
+gboolean hd_render_manager_should_ignore_actor(ClutterActor *actor)
 {
   MBWindowManagerClient *wm_client;
   MBWMCompMgrClutterClient *cm_client;
@@ -2176,10 +2195,7 @@ gboolean hd_render_manager_should_hide(ClutterActor *actor)
     return FALSE;
   cm_client = MB_WM_COMP_MGR_CLUTTER_CLIENT(wm_client->cm_client);
 
-  /* This flag is set for Animation Actors that don't wish to be visible
-   * before being parented */
-  return (mb_wm_comp_mgr_clutter_client_get_flags(cm_client) &
-          MBWMCompMgrClutterClientDontShow);
+  return hd_render_manager_should_ignore_cm_client(cm_client);
 }
 
 static
@@ -2265,11 +2281,14 @@ void hd_render_manager_set_visibilities()
         {
           ClutterGeometry geo;
 
+	  /* If the client decides its own visibility, skip it */
+	  if (hd_render_manager_should_ignore_actor(child))
+	      continue;
+
           clutter_actor_get_geometry(child, &geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
           VISIBILITY ("IS %p (%dx%d%+d%+d) VISIBLE?", child, MBWM_GEOMETRY(&geo));
-          if (hd_render_manager_is_visible(blockers, geo) &&
-              !hd_render_manager_should_hide(child))
+          if (hd_render_manager_is_visible(blockers, geo))
             {
               VISIBILITY ("IS");
               clutter_actor_show(child);
