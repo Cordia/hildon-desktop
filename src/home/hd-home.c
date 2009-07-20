@@ -749,7 +749,12 @@ hd_home_constructed (GObject *object)
 		  (unsigned char *)&our_pid,
 		  1);
 
-  gethostname (buf, sizeof(buf));
+  if (gethostname (buf, sizeof(buf)) < 0)
+  {
+          g_warning ("%s: gethostname() failed", __func__);
+          return;
+  }
+
   XChangeProperty(wm->xdpy, priv->desktop,
 		  wm->atoms[MBWM_ATOM_WM_CLIENT_MACHINE],
 		  XA_STRING, 8, PropModeReplace,
