@@ -1729,8 +1729,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   guint                      hkey;
   MBWMClientType             ctype;
   static gboolean            first_time = TRUE;
-  MBWindowManagerClient    * transient_for =
-    c? mb_wm_client_get_transient_for (c) : NULL;
+  MBWindowManagerClient    * transient_for;
 
   g_debug ("%s: 0x%lx", __FUNCTION__, c && c->window ? c->window->xwindow : 0);
 
@@ -1780,12 +1779,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         }
     }
 
+  transient_for = mb_wm_client_get_transient_for (c);
+
   /* Discard notification banners if do not disturb flag is set
    * and the dnd override flag is not set on the information banner
    * and the client is not topmost
    */
   if (priv->do_not_disturb_flag && HD_IS_BANNER_NOTE (c) &&
-      (!transient_for || mb_wm_client_get_next_focused_app (transient_for)!=NULL))
+      (!transient_for ||
+       mb_wm_client_get_next_focused_app (transient_for) != NULL))
     {
       guint32 *value;
       Atom dnd_override = hd_comp_mgr_get_atom (HD_COMP_MGR (mgr),

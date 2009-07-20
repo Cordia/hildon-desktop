@@ -1,5 +1,8 @@
 2009-07-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Don't check for NULL
+	when getting the transient because it makes Coverity complain.
+
 	Patch from Artem for NB#126898.
 
 	* src/home/hd-render-manager.c: Ignore animation actors when
