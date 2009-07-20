@@ -1401,7 +1401,7 @@ hd_app_mgr_check_loadavg (void)
   if (fd >= 0)
     {
       char buffer[32];
-      size_t size = read (fd, buffer, sizeof(buffer) -1);
+      int size = read (fd, buffer, sizeof(buffer) -1);
 
       close (fd);
       if (size > 0)

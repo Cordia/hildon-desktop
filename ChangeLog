@@ -1,5 +1,7 @@
 2009-07-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_check_loadavg): Use signed
+	variable for read()'s return value to catch negative values.
 	* src/home/hd-task-navigator.c (layout_notwin): Initialise some local
 	variables to quiesce Coverity.
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Don't check for NULL
