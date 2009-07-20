@@ -1,3 +1,17 @@
+2009-07-20  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#128086 - Tapping blurred status area doesn't dismiss dialogs
+	* src/util/hd-util.c
+	* src/util/hd-util.h: added hd_util_client_has_blocker to return true
+	  if a client should have a blocker window behind it. Also minor
+	  change to randr code datatype to make Oliver happy.
+	* src/home/hd-render-manager.c: Added handler for status area being 
+	  clicked to dismiss the topmost window with a blocker (as if the
+	  blocker itself were clicked). Ideally the status area would be
+	  stacked below the blocker at these times, but unfortunately this 
+	  isn't easily possible so instead we use this method (the input 
+	  viewport over status area was grabbed previously anyway).
+
 2009-07-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.65

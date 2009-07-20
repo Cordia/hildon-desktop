@@ -1048,6 +1048,33 @@ void hd_render_manager_add_to_front_group (ClutterActor *item)
   clutter_actor_reparent(item, CLUTTER_ACTOR(priv->front));
 }
 
+static gboolean hd_render_manager_status_area_clicked()
+{
+  /* When the status area is clicked and we have grabbed its input viewport,
+   * we want to do what clicking on the modal blocker would have done ->
+   * delete the frontmost dialog/menu if there was one with a blocker */
+
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  MBWindowManager *wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  MBWindowManagerClient *c;
+
+  for (c=wm->stack_top;c;c=c->stacked_below)
+  {
+    int c_type = MB_WM_CLIENT_CLIENT_TYPE(c);
+
+    if (hd_util_client_has_blocker(c))
+      {
+        mb_wm_client_deliver_delete (c);
+        break;
+      }
+    /* No point looking past an app or desktop */
+    if (c_type == MBWMClientTypeApp ||
+        c_type == MBWMClientTypeDesktop)
+      break;
+  }
+  return TRUE;
+}
+
 void hd_render_manager_set_status_area (ClutterActor *item)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
@@ -1077,6 +1104,9 @@ void hd_render_manager_set_status_area (ClutterActor *item)
       g_signal_connect(item, "notify::allocation",
                        G_CALLBACK(hd_render_manager_place_titlebar_elements),
                        NULL);
+      g_signal_connect(item, "button-release-event",
+                             G_CALLBACK(hd_render_manager_status_area_clicked),
+                             NULL);
     }
   else
     {
