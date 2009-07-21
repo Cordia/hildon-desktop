@@ -154,6 +154,10 @@ HdRunningApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
 
 static void hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr);
 
+static gboolean
+hd_comp_mgr_should_be_portrait_ignoring (HdCompMgr *hmgr,
+                                         MBWindowManagerClient *ignore);
+
 static void hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr);
 
 static MBWMCompMgrClient *
@@ -1548,9 +1552,9 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
 	    /*
 	     * It is possible that the bottommost window is mapped but we did
 	     * not get a map notify yet. In this case the leader can be found
-	     * higher (see NB#121902). 
+	     * higher (see NB#121902).
 	     */
-            if (mb_wm_client_is_map_confirmed(c_tmp)) 
+            if (mb_wm_client_is_map_confirmed(c_tmp))
               {
                 old_leader = HD_APP (c_tmp)->leader;
                 break;
@@ -1883,7 +1887,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   /* Hide status menu if any window except an applet is mapped */
   if (priv->status_menu_client &&
-      ctype != HdWmClientTypeHomeApplet && 
+      ctype != HdWmClientTypeHomeApplet &&
       ctype != MBWMClientTypeOverride)
     mb_wm_client_deliver_delete (priv->status_menu_client);
 
@@ -2077,9 +2081,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         }
     }
 
-  if (to_replace && 
+  if (to_replace &&
 		  to_replace->leader == NULL &&
-		  to_replace->stack_index == -1) 
+		  to_replace->stack_index == -1)
     {
       ClutterActor *old_actor;
 
@@ -2089,12 +2093,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
                   MB_WM_COMP_MGR_CLUTTER_CLIENT (
 			  MB_WM_CLIENT (to_replace)->cm_client));
- 
+
       g_debug ("%s: REPLACE %p WITH %p and ADD %p BACK", __func__,
 		      old_actor, actor, old_actor);
       hd_switcher_replace_window_actor (priv->switcher_group, old_actor, actor);
       hd_switcher_add_window_actor (priv->switcher_group, old_actor);
-      
+
       /* and make sure we're in app mode and not transitioning as
        * we'll want to show this new app right away*/
       if (!STATE_IS_APP(hd_render_manager_get_state()))
@@ -2129,7 +2133,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   else if (to_replace && to_replace->leader == app)
     {
       ClutterActor *old_actor;
-  
+
       /*
        * This is the 'old leader become a follower' use case. In this situation
        * the visible actor remains a follower, but we need to do something with
@@ -2151,7 +2155,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * stack index. */
       mb_wm_client_theme_change (c);
       mb_wm_client_theme_change (MB_WM_CLIENT(to_replace));
-    } 
+    }
   else if (add_to_tn)
     {
       g_debug ("%s: ADD ACTOR %p", __func__, actor);
@@ -2354,11 +2358,24 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
               HdCompMgrClient *hclient = HD_COMP_MGR_CLIENT (c->cm_client);
               HdRunningApp *app = hd_comp_mgr_client_get_app (hclient);
 
-              /* Avoid this transition if app is being hibernated. */
+              /* Avoid this transition if app is being hibernated */
+              /* FIXME: is (!a || !b) logic actually correct? it doesn't
+               * tally with the comment above */
               if (!app ||
                   !hd_running_app_is_hibernating (app))
-                /* unregister_client() will switch state if it thinks so */
-                hd_transition_close_app (hmgr, c);
+                {
+                  /* unregister_client() will switch state if it thinks so */
+
+                  /* Are we going to change from portrait to landscape? */
+                  gboolean portrait_change =
+                    STATE_IS_PORTRAIT(hd_render_manager_get_state()) &&
+                    !hd_comp_mgr_should_be_portrait_ignoring(hmgr, c);
+
+                  if (portrait_change)
+                    hd_transition_close_app_before_rotate (hmgr, c);
+                  else
+                    hd_transition_close_app (hmgr, c);
+                }
             }
           app->map_effect_before = FALSE;
         }
@@ -2624,9 +2641,11 @@ hd_comp_mgr_update_clients_portrait_flags (MBWindowManagerClient *cs,
 }
 
 /* Does any visible client request portrait mode?
- * Are all of them concerned prepared for it? */
-gboolean
-hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
+ * Are all of them concerned prepared for it? If ignore is nonzero,
+ * we ignore the given client (as it may be disappearing soon). */
+static gboolean
+hd_comp_mgr_should_be_portrait_ignoring (HdCompMgr *hmgr,
+                                         MBWindowManagerClient *ignore)
 {
   static guint counter;
   gboolean any_requests;
@@ -2642,6 +2661,9 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
     {
+      if (c == ignore)
+        continue;
+
       PORTRAIT ("CLIENT %p", c);
       PORTRAIT ("IS IGNORABLE?");
       if (c == hmgr->priv->status_area_client)
@@ -2696,6 +2718,14 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
 
   PORTRAIT ("SHOULD BE: %d", any_requests);
   return any_requests;
+}
+
+/* Does any visible client request portrait mode?
+ * Are all of them concerned prepared for it? */
+gboolean
+hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
+{
+  return hd_comp_mgr_should_be_portrait_ignoring(hmgr, 0);
 }
 
 /* Based on the visible windows decide whether we should be portrait or not.

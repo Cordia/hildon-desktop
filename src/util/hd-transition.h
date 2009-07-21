@@ -61,6 +61,9 @@ void
 hd_transition_close_app (HdCompMgr                  *mgr,
                          MBWindowManagerClient      *c);
 void
+hd_transition_close_app_before_rotate (HdCompMgr                  *mgr,
+                                       MBWindowManagerClient      *c);
+void
 hd_transition_notification(HdCompMgr                  *mgr,
                            MBWindowManagerClient      *c,
                            MBWMCompMgrClientEvent     event);

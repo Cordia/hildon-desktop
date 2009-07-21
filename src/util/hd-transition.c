@@ -35,6 +35,7 @@
 #include "hd-render-manager.h"
 #include "hildon-desktop.h"
 #include "hd-theme.h"
+#include "hd-title-bar.h"
 #include "hd-clutter-cache.h"
 #include "tidy/tidy-sub-texture.h"
 
@@ -119,6 +120,11 @@ static struct
   /* This timer counts from when we first entered the WAITING state,
    * so if we are continually getting damage we don't just hang there. */
   GTimer *timer;
+
+  /* If a client (like CallUI) was forcing portrait mode and it quits,
+   * we leave it visible and put an HDEffectData this list. During blanking we
+   * remove the actor by calling hd_transition_completed. */
+  GList *effects_waiting;
 } Orientation_change;
 
 /* ------------------------------------------------------------------------- */
@@ -618,7 +624,8 @@ hd_transition_completed (ClutterTimeline* timeline, HDEffectData *data)
 
 /*   dump_clutter_tree (CLUTTER_CONTAINER (clutter_stage_get_default()), 0); */
 
-  g_object_unref ( timeline );
+  if (timeline)
+    g_object_unref ( timeline );
 
   if (hmgr)
     hd_comp_mgr_set_effect_running(hmgr, FALSE);
@@ -823,6 +830,57 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   clutter_timeline_start (data->timeline);
 
   hd_transition_play_sound ("/usr/share/sounds/ui-window_close.wav");
+}
+
+void
+hd_transition_close_app_before_rotate (HdCompMgr                  *hmgr,
+                                       MBWindowManagerClient      *c)
+{
+  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
+  MBWMCompMgrClutterClient * cclient;
+  HDEffectData             * data;
+  ClutterActor             * actor;
+  ClutterContainer         * parent;
+
+  /* proper app close animation */
+  if (c_type != MBWMClientTypeApp)
+    return;
+
+  /* The switcher will do the effect if it's active,
+   * don't interfere. */
+  if (hd_render_manager_get_state()==HDRM_STATE_TASK_NAV)
+    return;
+
+  cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+  if (!actor || !CLUTTER_ACTOR_IS_VISIBLE(actor))
+    return;
+
+  data = g_new0 (HDEffectData, 1);
+  data->event = MBWMCompMgrClientEventUnmap;
+  data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
+  data->cclient_actor = g_object_ref (actor);
+  data->hmgr = hmgr;
+
+
+  mb_wm_comp_mgr_clutter_client_set_flags (cclient,
+                                    MBWMCompMgrClutterClientDontUpdate |
+                                    MBWMCompMgrClutterClientDontShow |
+                                    MBWMCompMgrClutterClientEffectRunning);
+
+  /* reparent our actor so it will be visible when we switch views */
+  parent = hd_render_manager_get_front_group();
+  clutter_actor_reparent(actor,
+      CLUTTER_ACTOR(parent));
+  clutter_actor_lower_bottom(actor);
+  /* Also add a fake titlebar background, as the real one will disappear
+   * immediately because the app has closed. */
+  data->particles[0] = hd_title_bar_create_fake(HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  clutter_container_add_actor(parent, data->particles[0]);
+
+  Orientation_change.effects_waiting = g_list_append(
+      Orientation_change.effects_waiting, data);
+  hd_comp_mgr_set_effect_running(hmgr, TRUE);
 }
 
 void
@@ -1056,16 +1114,30 @@ hd_transition_fade_and_rotate(gboolean first_part,
   if (first_part == goto_portrait)
     data->angle *= -1;
   /* Add the actor we use to dim out the screen */
-  data->particles[0] = g_object_ref(clutter_rectangle_new());
+  data->particles[0] = g_object_ref(clutter_rectangle_new_with_color(&black));
   clutter_actor_set_size(data->particles[0],
       hd_comp_mgr_get_current_screen_width (),
       hd_comp_mgr_get_current_screen_height ());
   clutter_container_add_actor(
             CLUTTER_CONTAINER(clutter_stage_get_default()),
             data->particles[0]);
-  clutter_rectangle_set_color(CLUTTER_RECTANGLE(data->particles[0]),
-                              &black);
   clutter_actor_show(data->particles[0]);
+  if (!goto_portrait && first_part)
+    {
+      /* Add the actor we use to mask out the landscape part of the screen in the
+       * portrait half of the animation. This is pretty nasty, but as the home
+       * applets aren't repositioned they can sometimes be seen in the background.*/
+       data->particles[1] = g_object_ref(clutter_rectangle_new_with_color(&black));
+       clutter_actor_set_position(data->particles[1],
+           HD_COMP_MGR_LANDSCAPE_HEIGHT, 0);
+       clutter_actor_set_size(data->particles[1],
+           HD_COMP_MGR_LANDSCAPE_WIDTH-HD_COMP_MGR_LANDSCAPE_HEIGHT,
+           HD_COMP_MGR_LANDSCAPE_HEIGHT);
+       clutter_container_add_actor(
+                 CLUTTER_CONTAINER(hd_render_manager_get()),
+                 data->particles[1]);
+       clutter_actor_show(data->particles[1]);
+    }
 
   /* stop flicker by calling the first frame directly */
   on_rotate_screen_timeline_new_frame(data->timeline, 0, data);
@@ -1105,7 +1177,7 @@ hd_transition_rotating_fsm(void)
         /*
          * We're faded out, now it is time to change HDRM state
          * if* requested and possible.  Take care not to switch
-         * to states which don't support the orientatcion we're
+         * to states which don't support the orientation we're
          * going to.
          */
         state = Orientation_change.goto_state;
@@ -1117,6 +1189,17 @@ hd_transition_rotating_fsm(void)
             Orientation_change.goto_state = HDRM_STATE_UNDEFINED;
             hd_render_manager_set_state(state);
           }
+
+        /* Now go through our list of waiting effects and complete them */
+        while (Orientation_change.effects_waiting)
+          {
+            hd_transition_completed(0,
+                (HDEffectData*)Orientation_change.effects_waiting->data);
+            Orientation_change.effects_waiting =
+              Orientation_change.effects_waiting->next;
+          }
+        g_list_free(Orientation_change.effects_waiting);
+        Orientation_change.effects_waiting = 0;
 
         if (Orientation_change.direction == Orientation_change.new_direction)
           {

@@ -108,7 +108,7 @@ void
 hd_title_bar_right_pressed(HdTitleBar *bar, gboolean pressed);
 
 ClutterActor *
-hd_title_bar_create_fake(HdTitleBar *bar);
+hd_title_bar_create_fake(gboolean portrait);
 
 void
 hd_title_bar_get_xy (HdTitleBar *bar, int *x, int *y);

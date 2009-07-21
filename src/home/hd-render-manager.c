@@ -1663,10 +1663,18 @@ void hd_render_manager_return_app(ClutterActor *actor)
 {
   HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE (
 		  the_render_manager);
+  MBWMCompMgrClutterClient *cc;
 
   if (priv->disposed) {
     return;
   }
+
+  /* If we can get the clutter client, and it says it is in an effect, leave
+   * it alone as we don't want to be hiding/reparenting it.  */
+  cc = g_object_get_data (G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
+  if (cc && (mb_wm_comp_mgr_clutter_client_get_flags(cc) &
+             MBWMCompMgrClutterClientEffectRunning))
+    return;
 
   /* ONLY reparent to home_blur if we were currently someone else's.
    * Otherwise it's quite likely that the MBWMClutterClient has been destroyed,

@@ -10,8 +10,8 @@
  *   @Scroller                  #TidyFingerScroll
  *     @Grid                    #HdScrollableGroup
  *       @Thumbnails            #ClutterGroup:s
- *                             
- * Thumbnail.thwin hierarchy: 
+ *
+ * Thumbnail.thwin hierarchy:
  *   .prison                    #ClutterGroup         applications
  *     .titlebar                #ClutterGroup
  *     .windows                 #ClutterGroup
@@ -411,7 +411,7 @@ typedef struct
       time_t               video_mtime;
     };
 
-    /* Currently we don't have notification-specific fields. */ 
+    /* Currently we don't have notification-specific fields. */
   };
 
   /*
@@ -2715,7 +2715,7 @@ create_appthumb (ClutterActor * apwin)
 
   /* Now the actors: .apwin, .titlebar, .windows. */
   apthumb->apwin = g_object_ref (apwin);
-  apthumb->titlebar = hd_title_bar_create_fake (NULL);
+  apthumb->titlebar = hd_title_bar_create_fake(HD_COMP_MGR_LANDSCAPE_WIDTH);
   apthumb->windows = clutter_group_new ();
   clutter_actor_set_name (apthumb->windows, "windows");
   clutter_actor_set_clip (apthumb->windows,
