@@ -985,7 +985,7 @@ hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm)
       hd_title_bar_set_for_edit_mode(bar);
       clutter_actor_set_reactive (bar->priv->title_bg, TRUE);
     }
-  else if (hd_render_manager_get_state() == HDRM_STATE_LOADING)
+  else if (STATE_IS_LOADING(hd_render_manager_get_state()))
     {
       hd_title_bar_set_for_loading (bar);
       clutter_actor_set_reactive (bar->priv->title_bg, FALSE);

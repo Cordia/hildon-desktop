@@ -70,7 +70,7 @@
 #define HDH_PAN_THRESHOLD 20
 #define PAN_NEXT_PREVIOUS_PERCENTAGE 0.25
 /* Time in secs to look back when finding average velocity */
-#define HDH_PAN_VELOCITY_HISTORY 0.5
+#define HDH_PAN_VELOCITY_HISTORY 0.125
 
 #define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home"
 #define HD_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
@@ -254,7 +254,9 @@ hd_home_desktop_do_motion (
   while (list)
     {
       GList *next = list->next;
-      if (time > HDH_PAN_VELOCITY_HISTORY)
+      /* '&& next' ensures that we always average at least one previous
+       * movement event to get our velocity, even if it is too old. */
+      if (time > HDH_PAN_VELOCITY_HISTORY && next)
         priv->drag_list = g_list_remove_link(priv->drag_list, list);
       else
         {
@@ -1691,7 +1693,7 @@ void hd_home_remove_dialogs(HdHome *home)
       /* We have no real way of telling what a hildon-home dialog is, but they
        * are all transient_for=NULL - and we are called when we leave
        * home_edit_dlg mode, so they are all stacked above the desktop. */
-      if (hd_is_hildon_home_dialog(c)) 
+      if (hd_is_hildon_home_dialog(c))
       {
           mb_wm_client_hide (c);
           mb_wm_client_deliver_delete (c);

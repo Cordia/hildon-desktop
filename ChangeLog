@@ -1,5 +1,22 @@
 2009-07-20  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#126970 - Conversation view opening animation could be better
+	* src/home/hd-render-manager.h 	
+	* src/home/hd-render-manager.c: added STATE_LOADING_SUBWIN for loading
+	  windows over the top of an existing app. This is safer than just
+	  disabling restacking during STATE_LOADING. Added STATE_IS_LOADING to
+	  provide a nice way of checking for loading screen presence.
+	* src/home/hd-title-bar.c
+	* src/home/hd-switcher.c: Changes to use STATE_IS_LOADING rather than
+	  explicit checks for STATE_LOADING.  
+	* src/launcher/hd-launcher.c: Use STATE_LOADING_SUBWIN if we are 
+	  triggering a loading screen while showing an application. This allows
+	  the previous app to stay shown in the background during the loading
+	  animation.
+	  
+	* src/home/hd-home.c: minor home panning tweaks to make it more
+	  responsive.	
+
 	Fixes: NB#128086 - Tapping blurred status area doesn't dismiss dialogs
 	* src/util/hd-util.c
 	* src/util/hd-util.h: added hd_util_client_has_blocker to return true

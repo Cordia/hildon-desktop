@@ -290,8 +290,8 @@ hd_switcher_dispose (GObject *object)
       g_source_remove (priv->press_timeout);
       priv->press_timeout = 0;
     }
-  
-  if (priv->wakeup_timeout) 
+
+  if (priv->wakeup_timeout)
     {
       g_source_remove (priv->wakeup_timeout);
       priv->wakeup_timeout = 0;
@@ -582,7 +582,7 @@ hd_switcher_loading_fail (HdSwitcher *switcher,
                           gpointer data)
 {
   hd_launcher_stop_loading_transition ();
-  if (hd_render_manager_get_state () == HDRM_STATE_LOADING)
+  if (STATE_IS_LOADING(hd_render_manager_get_state ()))
     {
       if (hd_task_navigator_has_apps ())
         hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
@@ -642,7 +642,7 @@ hd_switcher_waking_fail (HdSwitcher *switcher)
   banner = hildon_banner_show_information (NULL, NULL,
                         _("ckct_ib_application_loading_failed"));
   hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
-  
+
   hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
 }
 
@@ -655,7 +655,7 @@ hd_switcher_wakeup_timeout(gpointer data)
   HdSwitcher *switcher = HD_SWITCHER (data);
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
 
-  if (hd_render_manager_get_state () == HDRM_STATE_LOADING) {
+  if (STATE_IS_LOADING(hd_render_manager_get_state ())) {
     hd_switcher_waking_fail (switcher);
   }
 
@@ -682,7 +682,7 @@ hd_switcher_render_manager_notify_state (
       G_CALLBACK(hd_switcher_render_manager_notify_state),
       data);
 
-  if (priv->wakeup_timeout) 
+  if (priv->wakeup_timeout)
     {
       g_source_remove (priv->wakeup_timeout);
       priv->wakeup_timeout = 0;

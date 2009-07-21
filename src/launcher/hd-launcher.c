@@ -683,7 +683,11 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
    * the timeline is called */
   hd_launcher_transition_new_frame(priv->launch_transition,
                                    0, launcher);
-  hd_render_manager_set_state (HDRM_STATE_LOADING);
+  if (STATE_IS_APP(hd_render_manager_get_state()))
+    hd_render_manager_set_state (HDRM_STATE_LOADING_SUBWIN);
+  else
+    hd_render_manager_set_state (HDRM_STATE_LOADING);
+
   HdTitleBar *tbar = HD_TITLE_BAR (hd_render_manager_get_title_bar());
   const gchar *title = "";
   if (item)

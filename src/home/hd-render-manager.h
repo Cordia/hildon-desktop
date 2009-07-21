@@ -88,7 +88,9 @@ typedef enum
   HDRM_STATE_TASK_NAV       = 1 << 6,
   HDRM_STATE_LAUNCHER       = 1 << 7,
   HDRM_STATE_NON_COMPOSITED = 1 << 8, /* non-composited fullscreen mode */
-  HDRM_STATE_LOADING        = 1 << 9
+  HDRM_STATE_LOADING        = 1 << 9, /* Loading screen */
+  HDRM_STATE_LOADING_SUBWIN = 1 << 10 /* Loading screen, but displaying
+                                         background apps */
 } HDRMStateEnum;
 
 /* Does the desktop need to be above apps? */
@@ -105,7 +107,7 @@ typedef enum
 
 #define STATE_NEED_WHOLE_SCREEN_INPUT(s) \
   STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
-                    HDRM_STATE_HOME_EDIT)
+                    HDRM_STATE_HOME_EDIT | HDRM_STATE_LOADING_SUBWIN)
 
 #define STATE_NEED_TASK_NAV(s) \
   STATE_ONE_OF((s), HDRM_STATE_TASK_NAV)
@@ -123,6 +125,10 @@ typedef enum
 
 #define STATE_IS_EDIT_MODE(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG)
+
+/* Are we displaying a loading screen? */
+#define STATE_IS_LOADING(s) \
+  STATE_ONE_OF((s), HDRM_STATE_LOADING | HDRM_STATE_LOADING_SUBWIN)
 
 #define STATE_SHOW_OPERATOR(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT)

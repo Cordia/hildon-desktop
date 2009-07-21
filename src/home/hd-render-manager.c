@@ -78,6 +78,7 @@ hd_render_manager_state_get_type (void)
         { HDRM_STATE_LAUNCHER,       "HDRM_STATE_LAUNCHER",       "Task launcher" },
         { HDRM_STATE_NON_COMPOSITED, "HDRM_STATE_NON_COMPOSITED", "Non-composited" },
         { HDRM_STATE_LOADING,        "HDRM_STATE_LOADING",        "Loading" },
+        { HDRM_STATE_LOADING_SUBWIN, "HDRM_STATE_LOADING_SUBWIN", "Loading Subwindow" },
         { 0, NULL, NULL }
       };
 
@@ -840,7 +841,8 @@ void hd_render_manager_sync_clutter_before ()
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         hd_home_update_layout (priv->home);
         break;
-      case HDRM_STATE_LOADING:
+      case HDRM_STATE_LOADING: /* fall through intentionally */
+      case HDRM_STATE_LOADING_SUBWIN:
         if (hd_task_navigator_is_empty())
           visible_top_left = HDRM_BUTTON_LAUNCHER;
         else
@@ -1349,7 +1351,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 	}
 
       /* Return the actor if we used it for loading. */
-      if (oldstate == HDRM_STATE_LOADING &&
+      if (STATE_IS_LOADING(oldstate) &&
           priv->loading_image)
         {
           hd_render_manager_set_loading(NULL);
@@ -1447,7 +1449,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         hd_launcher_hide();
 
       /* Show/hide the loading image. */
-      if (state == HDRM_STATE_LOADING &&
+      if (STATE_IS_LOADING(state) &&
           priv->loading_image)
         {
           ClutterActor *parent = clutter_actor_get_parent (priv->loading_image);
