@@ -1,4 +1,12 @@
-2009-07-20  Gordon Williams <gordon.williams@collabora.co.uk>
+2009-07-21  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#127016 - Background shows edges when scaled back to 
+	                   full-screen
+	* src/tidy/tidy-blur-group.c: If we are zoomed outwards and unblurring,
+	  draw the edges by rendering the background 8 times more to mirror it 
+	  around the edges. Only happens when unblurring so this is not such a
+	  big speed problem. Also fix the vignette effect so it goes completely
+	  to the edges of the screen.
 
 	Fixes: NB#126970 - Conversation view opening animation could be better
 	* src/home/hd-render-manager.h 	
@@ -16,6 +24,8 @@
 	  
 	* src/home/hd-home.c: minor home panning tweaks to make it more
 	  responsive.	
+
+2009-07-20  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#128086 - Tapping blurred status area doesn't dismiss dialogs
 	* src/util/hd-util.c

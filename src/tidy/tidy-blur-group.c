@@ -545,6 +545,38 @@ tidy_blur_group_paint (ClutterActor *actor)
                     CLUTTER_INT_TO_FIXED(height));
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
       cogl_clip_unset();
+
+      /* If we're zooming less than 1, we want to re-render everything
+       * mirrored around each edge. So render a 3x3 box, and flip the
+       *  */
+      if (priv->zoom < 1)
+        {
+          gint x,y;
+          for (y=0;y<3;y++)
+            for (x=0;x<3;x++)
+              if (x!=1 || y!=1)
+                {
+                  gint sx = (x==1) ? 1 : -1;
+                  gint sy = (y==1) ? 1 : -1;
+                  cogl_push_matrix();
+                  cogl_translatex(
+                             CLUTTER_FLOAT_TO_FIXED(width*(x-1) + width/2),
+                             CLUTTER_FLOAT_TO_FIXED(height*(y-1) + height/2),
+                             0);
+                  cogl_scale( sx*CFX_ONE, sy*CFX_ONE );
+                  cogl_translatex(
+                                  CLUTTER_FLOAT_TO_FIXED(-width/2),
+                                  CLUTTER_FLOAT_TO_FIXED(-height/2),
+                                  0);
+                  cogl_clip_set(0, 0,
+                                CLUTTER_INT_TO_FIXED(width),
+                                CLUTTER_INT_TO_FIXED(height));
+                  TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
+                  cogl_clip_unset();
+                  cogl_pop_matrix();
+                }
+        }
+
       cogl_pop_matrix();
     }
 
@@ -596,9 +628,11 @@ tidy_blur_group_paint (ClutterActor *actor)
       CoglTextureVertex *v = grid;
       gint x,y;
 
-      /* work out how much we must expand our mirrored edges to get to the
-       * edge of the screen */
-      edge_expand = (VIGNETTE_TILES-2)*(1-priv->zoom)*0.5f;
+      /* Work out how much we must expand our mirrored edges to get to the
+       * edge of the screen. This rather hideous equation comes from working
+       * backwards to ensure that in the line "v->x = mx+(zx*(fx...",
+       * "(zx*(fx..." = mx */
+      edge_expand = (VIGNETTE_TILES-2) / (priv->zoom*2.0) + VIGNETTE_TILES/2.0;
 
       vignette_amt = (int)((1-priv->zoom)*2048);
       if (vignette_amt<0) vignette_amt = 0;
@@ -613,10 +647,10 @@ tidy_blur_group_paint (ClutterActor *actor)
             gint c = 255;
             gint edge;
             /* we don't want full-size tiles for the edges - just half-size */
-            if (x==0) fx = 1-edge_expand;
-            if (x==VIGNETTE_TILES) fx = VIGNETTE_TILES+edge_expand-1;
-            if (y==0) fy = 1-edge_expand;
-            if (y==VIGNETTE_TILES) fy = VIGNETTE_TILES+edge_expand-1;
+            if (x==0) fx = VIGNETTE_TILES - edge_expand;
+            if (x==VIGNETTE_TILES) fx = edge_expand;
+            if (y==0) fy = VIGNETTE_TILES - edge_expand;
+            if (y==VIGNETTE_TILES) fy = edge_expand;
             /* work out vertex coords */
             v->x = mx+(zx*(fx*2-VIGNETTE_TILES)/(VIGNETTE_TILES-2));
             v->y = my+(zy*(fy*2-VIGNETTE_TILES)/(VIGNETTE_TILES-2));
