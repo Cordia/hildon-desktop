@@ -1,8 +1,17 @@
 hildon-desktop (1:2.2.66-1~unreleased) unstable; urgency=low
 
   Laszlo:
+  * Fixes: NB#123486 - hildon-desktop should recover from a corrupt theme
   * Fixes: NB#121519 - A blank frame like window with out any title is 
     shown on the desktop.
+
+  Gordon:
+  * Fixes: NB#129084 - Transition from Call UI to Desktop not according to
+    spec
+  * Fixes: NB#127016 - Background shows edges when scaled back to 
+    full-screen
+  * Fixes: NB#126970 - Conversation view opening animation could be better
+  * Fixes: NB#128086 - Tapping blurred status area doesn't dismiss dialogs
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 20 Jul 2009 12:43:55 +0300
 

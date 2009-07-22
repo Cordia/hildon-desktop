@@ -1,4 +1,5 @@
 2009-07-22  Laszlo Pere  <lpere@blumsoft.eu>
+
 	Fixes: NB#121519 - A blank frame like window with out any title is 
 	                   shown on the desktop.
 
