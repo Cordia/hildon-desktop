@@ -546,15 +546,15 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
 				     service_name);
 
       if (access (cached_image, R_OK)==0)
-	loading_image = cached_image;
+        loading_image = cached_image;
     }
 
   /* If not, does the .desktop file specify an image? */
   if (!loading_image && item)
     loading_image = hd_launcher_app_get_loading_image( item );
 
-  if (loading_image && !strlen(loading_image))
-    loading_image = 0;
+  if (loading_image && !g_strcmp0(loading_image, HD_LAUNCHER_NO_TRANSITION))
+    return FALSE;
 
   if (priv->launch_image)
     {
