@@ -1597,7 +1597,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
             g_debug ("%s: OLD LEADER %p IS NOW A FOLLOWER\n", __func__, app);
             app->followers = g_list_prepend (old_leader->followers,
                                              old_leader);
-            old_leader->followers = NULL;
+            old_leader->followers = app->followers;
             old_leader->leader = app;
             fix_transiency ((MBWindowManagerClient*)old_leader);
 
@@ -1606,6 +1606,8 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
             mb_wm_client_theme_change ((MBWindowManagerClient*)old_leader);
             mb_wm_client_theme_change ((MBWindowManagerClient*)app);
 	    *replaced = old_leader;
+	    if (HD_APP(*replaced)->followers)
+	        *replaced = g_list_last (HD_APP(*replaced)->followers)->data;
           }
         }
       else if (app->stack_index > 0 && old_leader &&
