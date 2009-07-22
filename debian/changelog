@@ -1,4 +1,7 @@
-hildon-desktop (1:2.2.66-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.66-1) unstable; urgency=low
+
+  Marc:
+  * Fixes: NB#128881 - Added setting for disabling launch transition.
 
   Laszlo:
   * Fixes: NB#123486 - hildon-desktop should recover from a corrupt theme
@@ -13,7 +16,7 @@ hildon-desktop (1:2.2.66-1~unreleased) unstable; urgency=low
   * Fixes: NB#126970 - Conversation view opening animation could be better
   * Fixes: NB#128086 - Tapping blurred status area doesn't dismiss dialogs
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 20 Jul 2009 12:43:55 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 22 Jul 2009 13:22:39 +0300
 
 hildon-desktop (1:2.2.65-1) unstable; urgency=low
 
