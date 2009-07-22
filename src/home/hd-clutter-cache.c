@@ -47,6 +47,7 @@ G_DEFINE_TYPE (HdClutterCache, hd_clutter_cache, CLUTTER_TYPE_GROUP);
 static HdClutterCache *the_clutter_cache = 0;
 
 #define HD_CLUTTER_CACHE_THEME_PATH "/etc/hildon/theme/images/"
+#define HD_CLUTTER_CACHE_FALLBACK_THEME_PATH "/usr/share/themes/default/images/"
 
 /* ------------------------------------------------------------------------- */
 
@@ -104,9 +105,17 @@ hd_clutter_cache_get_real_texture(const char *filename, gboolean from_theme)
 
   if (from_theme)
     {
-      filename_alloc = g_malloc(strlen(HD_CLUTTER_CACHE_THEME_PATH) +
-                               strlen(filename) + 1);
-      strcpy(filename_alloc, HD_CLUTTER_CACHE_THEME_PATH);
+      const char *theme_path;
+
+      /*
+       * If the theme is broken we have to use the fallback theme path.
+       */
+      theme_path = mb_wm_theme_is_broken () ?
+	      HD_CLUTTER_CACHE_FALLBACK_THEME_PATH :
+	      HD_CLUTTER_CACHE_THEME_PATH;
+
+      filename_alloc = g_malloc(strlen(theme_path) + strlen(filename) + 1);
+      strcpy(filename_alloc, theme_path);
       strcat(filename_alloc, filename);
       filename_real = filename_alloc;
     }
@@ -130,7 +139,28 @@ hd_clutter_cache_get_real_texture(const char *filename, gboolean from_theme)
     {
       if (filename_alloc)
         g_free(filename_alloc);
-      return 0;
+
+      /*
+       * If this was the fallback theme path we can not anything else,
+       * othwerwise we still can try to load from the fallback path.
+       */
+      if (mb_wm_theme_is_broken())
+        return 0;
+
+      filename_alloc = g_malloc (strlen(HD_CLUTTER_CACHE_FALLBACK_THEME_PATH) +
+		      strlen(filename) + 1);
+
+      strcpy(filename_alloc, HD_CLUTTER_CACHE_FALLBACK_THEME_PATH);
+      strcat(filename_alloc, filename);
+      filename_real = filename_alloc;
+  
+      texture = clutter_texture_new_from_file(filename_real, 0);
+      if (!texture) 
+        {
+          if (filename_alloc)
+            g_free(filename_alloc);
+          return 0;
+        }
     }
 
   clutter_actor_set_name(texture, filename_real);
