@@ -88,6 +88,10 @@
 
 #define MAX_VIEWS 4
 
+/* for debugging dragging of home view backgrounds */
+#define DRAG_DEBUG(...)
+//#define DRAG_DEBUG g_debug
+
 enum
 {
   PROP_COMP_MGR = 1,
@@ -240,12 +244,22 @@ hd_home_desktop_do_motion (
   gint drag_distance;
   GList  *list;
 
+  /* If the callback is 0, we're getting events after we got a do_release.
+   * This is because clutter has stored up the events, and we're called from
+   * hd_home_applet_motion instead. In this case just ignore, or we end up
+   * in the wrong position (bug 127320) */
+  if (!priv->desktop_motion_cb)
+    return;
+
   drag_item = g_malloc(sizeof(HdHomeDrag));
   drag_item->period = g_timer_elapsed(priv->last_move_time, NULL);
   g_timer_reset(priv->last_move_time);
 
   drag_item->x = x - priv->last_x;
   priv->cumulative_x += drag_item->x;
+
+  DRAG_DEBUG("drag motion %dms, %dx%d -> %d", (int)(drag_item->period*1000),
+             x, y, drag_item->x);
 
   /* Remove any items older than a certain age */
   time = 0;
@@ -311,6 +325,7 @@ hd_home_desktop_do_release (
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
 
   /*g_debug("%s:", __FUNCTION__);*/
+  DRAG_DEBUG("drag release");
 
   if (priv->desktop_motion_cb)
     mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
@@ -328,12 +343,21 @@ hd_home_desktop_do_release (
       if (ABS (priv->cumulative_x) >= PAN_NEXT_PREVIOUS_PERCENTAGE * HD_COMP_MGR_LANDSCAPE_WIDTH) /* */
         {
           if (priv->cumulative_x > 0)
-            hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
+            {
+              hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
+              DRAG_DEBUG("drag to_previous, vel=%d", priv->velocity_x);
+            }
           else
-            hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
+            {
+              hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
+              DRAG_DEBUG("drag to_next, vel=%d", priv->velocity_x);
+            }
         }
       else
-        hd_home_view_container_scroll_back (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
+        {
+          hd_home_view_container_scroll_back (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
+          DRAG_DEBUG("drag scroll_back, vel=%d", priv->velocity_x);
+        }
     }
   else if (hd_render_manager_get_state() == HDRM_STATE_HOME &&
 		  priv->initial_x == -1 &&
@@ -364,6 +388,8 @@ hd_home_desktop_do_press (
 {
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+
+  DRAG_DEBUG("drag press %dx%d", x, y);
 
   if (priv->desktop_motion_cb)
     {
