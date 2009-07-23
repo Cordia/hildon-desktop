@@ -87,6 +87,7 @@ void hd_volume_profile_init(void)
         } else {
                 profile_track_add_profile_cb(track_profile, NULL, NULL);
                 profile_track_add_active_cb(track_active, NULL, NULL);
+                profile_tracker_init();
         }
 }
 

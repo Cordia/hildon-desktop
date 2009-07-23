@@ -1,6 +1,11 @@
 hildon-desktop (1:2.2.67-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#129227 - Able to hear application opening sounds when silent
+    mode is selected
+
+  Gordon:
+  * Fixes: NB#129404 - redrawing title bar text too often
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 22 Jul 2009 13:24:22 +0300
 
