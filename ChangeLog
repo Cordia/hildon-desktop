@@ -1,3 +1,12 @@
+2009-07-23  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	This resolves 129404 - redrawing title bar text too often
+	* src/home/hd-title-bar.c: Set visibility detection on individual
+	  title bar elements, so that even when status area is being updated,
+	  text and buttons can be left unrendered. Also had to explicitly set
+	  the group size, as it appeared to be being set to 800x480 at some
+	  point.
+
 2009-07-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.66

@@ -289,6 +289,11 @@ hd_title_bar_init (HdTitleBar *bar)
                                       (HD_COMP_MGR_TOP_MARGIN - h) / 2);
         }
 
+      /* Explicitly enable maemo-specific visibility detection to cut down
+       * spurious paints */
+      clutter_actor_set_visibility_detect(
+          CLUTTER_ACTOR(priv->buttons[i]), TRUE);
+
       /* The position of left-aligned buttons is (0, 0) by default,
        * and right aligned ones will be placed on the initial
        * stage_allocation_changed(). */
@@ -330,6 +335,9 @@ hd_title_bar_init (HdTitleBar *bar)
 
   /* Create the title */
   priv->title = CLUTTER_LABEL(clutter_label_new());
+  /* Explicitly enable maemo-specific visibility detection to cut down
+   * spurious paints */
+  clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->title), TRUE);
   clutter_label_set_color(priv->title, &title_color);
   /* do not call clutter_label_set_use_markup() until we know whether
    * or not the text has markup */
@@ -726,6 +734,12 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
       else
         clutter_actor_hide(priv->buttons[BTN_BG_RIGHT_END]);
     }
+
+  /* Set the size of this group, so visibility detection on it
+   * will work */
+  clutter_actor_set_size(CLUTTER_ACTOR(bar),
+                         hd_comp_mgr_get_current_screen_width(),
+                         HD_COMP_MGR_TOP_MARGIN);
 }
 
 void
