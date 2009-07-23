@@ -1,3 +1,14 @@
+2009-07-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#103753 Dialpad comes up on when FN and a number key is pressed
+		  simultaneously.
+
+	* src/mb/hd-comp-mgr.c
+	* src/home/hd-home.c:
+	  Track FN-key pressing.
+
+	Make sure to update libmatchbox.
+
 2009-07-23  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	This resolves 127320 - home screen panning gets stuck in middle

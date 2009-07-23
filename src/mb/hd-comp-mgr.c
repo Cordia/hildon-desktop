@@ -562,6 +562,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 		                                  hd_launcher_get(),
 		                                  HD_HOME(priv->home),
 						  task_nav);
+  g_object_set(priv->home, "hdrm", priv->render_manager, NULL);
   clutter_container_add_actor(CLUTTER_CONTAINER (stage),
                               CLUTTER_ACTOR(priv->render_manager));
 

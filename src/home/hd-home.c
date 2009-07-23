@@ -57,7 +57,9 @@
 #include <strings.h>
 #include <unistd.h>
 
+#include <X11/XKBlib.h>
 #include <gdk/gdkx.h>
+#include <gdk/gdkkeysyms.h>
 #include <libhildondesktop/hd-pvr-texture.h>
 
 #define HDH_EDIT_BUTTON_DURATION 200
@@ -88,6 +90,9 @@
 
 #define MAX_VIEWS 4
 
+#define FN_KEY GDK_ISO_Level3_Shift
+#define FN_MODIFIER Mod5Mask
+
 /* for debugging dragging of home view backgrounds */
 #define DRAG_DEBUG(...)
 //#define DRAG_DEBUG g_debug
@@ -95,6 +100,7 @@
 enum
 {
   PROP_COMP_MGR = 1,
+  PROP_HDRM,
 };
 
 enum
@@ -148,6 +154,19 @@ struct _HdHomePrivate
   /* DBus Proxy for the call to com.nokia.CallUI.ShowDialpad */
   DBusGProxy            *call_ui_proxy;
   DBusGProxy            *osso_addressbook_proxy;
+
+  /* For hd_home_desktop_key_press() */
+  enum
+  {
+    FN_STATE_NONE,      // interpret the KeyPress as it is
+    FN_STATE_NEXT,      // the next key is Fn-modified
+    FN_STATE_LOCKED,    // until turned off all key press are Fn-modified
+  } fn_state;
+
+  /* Fro hd_home_desktop_key_release():
+   * Don't change @fn_state if it was wasn't pressed alone. */
+  gboolean ignore_next_fn_release;
+  /* Both are reset when the HDRM state is changed. */
 };
 
 typedef struct {
@@ -194,8 +213,13 @@ hd_home_class_init (HdHomeClass *klass)
 				"Composite Manager",
 				"MBWMCompMgrClutter Object",
 				G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
-
   g_object_class_install_property (object_class, PROP_COMP_MGR, pspec);
+
+  pspec = g_param_spec_pointer ("hdrm",
+				"HdRenderManager",
+				"--""--",
+				G_PARAM_WRITABLE);
+  g_object_class_install_property (object_class, PROP_HDRM, pspec);
 
   signals[SIGNAL_BACKGROUND_CLICKED] =
       g_signal_new ("background-clicked",
@@ -435,15 +459,17 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
   GdkKeymap *keymap = gdk_keymap_get_for_display (display);
   guint keyval;
   guint32 unicode;
+  unsigned pretend_fn;
 
   if (STATE_NO_CALL_FROM_HOME (hd_render_manager_get_state ()))
     return;
 
 /*  g_debug ("%s, display: %p, keymap: %p", __FUNCTION__, display, keymap); */
 
+  pretend_fn = priv->fn_state != FN_STATE_NONE ? FN_MODIFIER : 0;
   gdk_keymap_translate_keyboard_state (keymap,
                                        xev->keycode,
-                                       (GdkModifierType) xev->state,
+                                       xev->state | pretend_fn,
                                        0,
                                        &keyval,
                                        NULL, NULL, NULL);
@@ -480,8 +506,44 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
                                       G_TYPE_INVALID);
         }
     }
+  else
+    return;
+
+ if (xev->state & FN_MODIFIER)
+  {
+    priv->fn_state = FN_STATE_NONE;
+    priv->ignore_next_fn_release = TRUE;
+  } else if (priv->fn_state == FN_STATE_NEXT)
+    priv->fn_state = FN_STATE_NONE;
 }
 
+static void
+hd_home_desktop_key_release (XKeyEvent *xev, void *userdata)
+{
+  HdHome *home = userdata;
+  HdHomePrivate *priv = home->priv;
+
+  if (STATE_NO_CALL_FROM_HOME (hd_render_manager_get_state ())
+      || XkbKeycodeToKeysym(clutter_x11_get_default_display(),
+                            xev->keycode, 0, 0) != FN_KEY)
+    return;
+
+  if (priv->ignore_next_fn_release)
+    priv->ignore_next_fn_release = FALSE;
+  else if (priv->fn_state == FN_STATE_NONE)
+    priv->fn_state = FN_STATE_NEXT;
+  else if (priv->fn_state == FN_STATE_NEXT)
+    priv->fn_state = FN_STATE_LOCKED;
+  else
+    priv->fn_state = FN_STATE_NONE;
+}
+
+static void
+hd_home_reset_fn_state (HdHome *home)
+{
+  home->priv->fn_state = FN_STATE_NONE;
+  home->priv->ignore_next_fn_release = FALSE;
+}
 
 static void
 hd_property_notify_message (XPropertyEvent *xev, void *userdata)
@@ -746,7 +808,7 @@ hd_home_constructed (GObject *object)
   attr.event_mask = MBWMChildMask |
     ButtonPressMask | ButtonReleaseMask |
     PointerMotionMask | ExposureMask |
-    KeyPressMask;
+    KeyPressMask | KeyReleaseMask;
   wmhints.input = True;
   wmhints.flags = InputHint;
 
@@ -810,6 +872,13 @@ hd_home_constructed (GObject *object)
 					  KeyPress,
 					  (MBWMXEventFunc)
 					  hd_home_desktop_key_press,
+					  object);
+
+  mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+					  priv->desktop,
+					  KeyRelease,
+					  (MBWMXEventFunc)
+					  hd_home_desktop_key_release,
 					  object);
 
   mb_wm_main_context_x_event_handler_add (wm->main_ctx,
@@ -942,6 +1011,12 @@ hd_home_set_property (GObject       *object,
     {
     case PROP_COMP_MGR:
       priv->comp_mgr = g_value_get_pointer (value);
+      break;
+    case PROP_HDRM:
+      g_signal_connect_swapped (g_value_get_pointer (value),
+                                "notify::state",
+                                G_CALLBACK (hd_home_reset_fn_state),
+                                object);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
