@@ -22,7 +22,6 @@ char * hd_util_get_x_window_string_property (MBWindowManager  *wm,
 unsigned long hd_util_modal_blocker_realize(MBWindowManagerClient *client,
                                             gboolean ping_only);
 Bool hd_util_client_has_modal_blocker (MBWindowManagerClient *c);
-Bool hd_util_client_has_blocker (MBWindowManagerClient *c);
 gboolean hd_util_change_screen_orientation (MBWindowManager *wm,
                                             gboolean goto_portrait);
 

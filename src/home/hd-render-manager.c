@@ -1050,7 +1050,9 @@ void hd_render_manager_add_to_front_group (ClutterActor *item)
   clutter_actor_reparent(item, CLUTTER_ACTOR(priv->front));
 }
 
-static gboolean hd_render_manager_status_area_clicked()
+static gboolean hd_render_manager_status_area_clicked(ClutterActor *actor,
+                                                      ClutterEvent *event,
+                                                      gpointer data)
 {
   /* When the status area is clicked and we have grabbed its input viewport,
    * we want to do what clicking on the modal blocker would have done ->
@@ -1064,9 +1066,39 @@ static gboolean hd_render_manager_status_area_clicked()
   {
     int c_type = MB_WM_CLIENT_CLIENT_TYPE(c);
 
-    if (hd_util_client_has_blocker(c))
+    if (c->xwin_modal_blocker)
       {
-        mb_wm_client_deliver_delete (c);
+        /* Create fake button release event */
+        int tint;
+        struct timeval tv;
+        XButtonEvent ev;
+        memset(&ev, 0, sizeof(ev));
+        ev.type = ButtonRelease;
+        ev.send_event = True;
+        ev.display = wm->xdpy;
+        /* create fake timestamp */
+        gettimeofday(&tv, 0);
+        tint = (int) tv.tv_sec * 1000;
+        tint = tint / 1000 * 1000;
+        tint = tint + tv.tv_usec / 1000;
+        ev.time = (Time) tint;
+        ev.root = wm->root_win->xwindow;
+        ev.window = c->xwin_modal_blocker;
+        ev.subwindow = None;
+        ev.x = event->button.x;
+        ev.y = event->button.y;
+        ev.x_root = 1;
+        ev.y_root = 1;
+        ev.state = 0;
+        ev.button = Button1;
+        ev.same_screen = True;
+        /* send event - trap errors just in case the window has been
+         * removed already (very unlikely) */
+        mb_wm_util_trap_x_errors();
+        XSendEvent(wm->xdpy, c->xwin_modal_blocker, False,
+                   ButtonReleaseMask, (XEvent *)&ev);
+        mb_wm_util_untrap_x_errors();
+        /* Now ignore the click on any client below */
         break;
       }
     /* No point looking past an app or desktop */

@@ -200,25 +200,6 @@ hd_util_client_has_modal_blocker (MBWindowManagerClient *c)
       mb_wm_get_modality_type (c->wmref) == MBWMModalitySystem;
 }
 
-Bool hd_util_client_has_blocker (MBWindowManagerClient *c)
-{
-  /* Here we check if the client is something that has a blocker
-   * window behind. This is not the same as
-   * hd_util_client_has_modal_blocker, which requires that the
-   * client is system modal.
-   */
-  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE(c);
-  return
-    (c_type == MBWMClientTypeDialog) ||
-    (c_type == MBWMClientTypeMenu) ||
-    (c_type == HdWmClientTypeAppMenu) ||
-    (c_type == HdWmClientTypeStatusMenu) ||
-    (c_type == MBWMClientTypeNote &&
-     HD_NOTE (c)->note_type != HdNoteTypeIncomingEventPreview &&
-     HD_NOTE (c)->note_type != HdNoteTypeIncomingEvent &&
-     HD_NOTE (c)->note_type != HdNoteTypeBanner);
-}
-
 /* Queries the current input viewport and flips the coordinates
  * of the rectangles. */
 static void

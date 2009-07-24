@@ -1,3 +1,15 @@
+2009-07-24  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Resolves 129741 - Confirmation note getting closed by tapping on 
+	                  status area. 
+	Regression caused by 128086's fix. Re-implemented in a better way
+	by sending an X event to the existing blocker window.
+	* src/util/hd-util.c
+	* src/util/hd-util.h: removed hd_util_client_has_blocker
+	* src/home/hd-render-manager.c: Now check xwin_modal_blocker to see
+	if the window has a blocker, and if so, send a fake button release
+	event to it.
+	
 2009-07-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#103753 Dialpad comes up on when FN and a number key is pressed
