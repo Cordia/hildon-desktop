@@ -55,6 +55,11 @@
 
 #define I_(str) (g_intern_static_string ((str)))
 
+typedef struct
+{
+  GList *items;
+} HdLauncherTraverseData;
+
 struct _HdLauncherPrivate
 {
   GData *pages;
@@ -68,6 +73,7 @@ struct _HdLauncherPrivate
   ClutterVertex launch_position; /* where were we clicked? */
 
   HdLauncherTree *tree;
+  HdLauncherTraverseData *current_traversal;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -106,6 +112,7 @@ static void hd_launcher_populate_tree_starting (HdLauncherTree *tree,
                                                 gpointer data);
 static void hd_launcher_populate_tree_finished (HdLauncherTree *tree,
                                                 gpointer data);
+static void hd_launcher_lazy_traverse_cleanup  (gpointer data);
 static void hd_launcher_transition_new_frame(ClutterTimeline *timeline,
                                              gint frame_num, gpointer data);
 
@@ -369,6 +376,12 @@ hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
   HdLauncher *launcher = HD_LAUNCHER (data);
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
 
+  if (priv->current_traversal)
+    {
+      g_idle_remove_by_data (priv->current_traversal);
+      hd_launcher_lazy_traverse_cleanup (priv->current_traversal);
+    }
+
   if (priv->pages)
     {
       g_datalist_foreach (&priv->pages, _hd_launcher_clear_page, NULL);
@@ -381,11 +394,6 @@ hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
 /*
  * Creating the pages and tiles
  */
-
-typedef struct
-{
-  GList *items;
-} HdLauncherTraverseData;
 
 static void
 hd_launcher_create_page (HdLauncherItem *item, gpointer data)
@@ -456,7 +464,9 @@ hd_launcher_lazy_traverse_tree (gpointer data)
 static void
 hd_launcher_lazy_traverse_cleanup (gpointer data)
 {
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
   g_free (data);
+  priv->current_traversal = NULL;
 }
 
 static void
@@ -466,6 +476,13 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
   HdLauncherTraverseData *tdata = g_new0 (HdLauncherTraverseData, 1);
   tdata->items = hd_launcher_tree_get_items(tree);
+
+  if (priv->current_traversal)
+    {
+      g_idle_remove_by_data (priv->current_traversal);
+      hd_launcher_lazy_traverse_cleanup (priv->current_traversal);
+    }
+  priv->current_traversal = tdata;
 
   /* First we traverse the list and create all the categories,
    * so that apps can be correctly put into them.
