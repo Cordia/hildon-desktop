@@ -1,13 +1,23 @@
-hildon-desktop (1:2.2.67-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.67-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#129227 - Able to hear application opening sounds when silent
     mode is selected
 
+  Marc:
+  * Fixes: NB#129747 - Hildon desktop crashes while performing SSU
+
   Gordon:
   * Fixes: NB#129404 - redrawing title bar text too often
+  * Fixes: NB#129741 - Confirmation note getting closed by tapping on 
+    status area. 
+  * Fixes: NB#127320 - home screen panning gets stuck in middle
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 22 Jul 2009 13:24:22 +0300
+  Adam:
+  * Fixes: NB#103753 - Dialpad comes up on when FN and a number key is pressed
+    simultaneously.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 27 Jul 2009 15:26:41 +0300
 
 hildon-desktop (1:2.2.66-1) unstable; urgency=low
 
