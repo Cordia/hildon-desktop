@@ -1,3 +1,10 @@
+2009-07-27  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	Do not restack the parent windows of notes when the notes map.
+	Fixes NB#121341.
+
+	* src/mb/hd-note.c:
+
 2009-07-24  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Prevent a race condition when reloading the apps menu.
