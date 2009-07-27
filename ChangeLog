@@ -1,5 +1,10 @@
 2009-07-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-render-manager.h (STATE_DISCARD_PREVIEW_NOTE):
+	  Don't show notification previews in launcher view.
+
+2009-07-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* data/transitions.ini
 	* src/util/hd-transition.c (on_notification_timeline_new_frame):
 	  Reworked the closing part of the notification preview transition
