@@ -394,7 +394,7 @@ static void
 on_notification_timeline_new_frame(ClutterTimeline *timeline,
                                    gint frame_num, HDEffectData *data)
 {
-  float amt;
+  float now;
   ClutterActor *actor;
   guint width, height;
 
@@ -404,31 +404,54 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
 
   clutter_actor_get_size(actor, &width, &height);
 
-  amt = frame_num / (float)clutter_timeline_get_n_frames(timeline);
-  amt = hd_transition_smooth_ramp( amt );
+  now = frame_num / (float)clutter_timeline_get_n_frames(timeline);
+
   if (data->event == MBWMCompMgrClientEventUnmap)
     {
-      /* Closing Animation - we shrink down into the top-left button's area,
-       * then fade out.*/
-      float a1 = MIN(amt*2,1);
-      float a2 = MAX(amt*2-1,0);
-      /* We set anchor point so if the notification
-       * resizes/positions in flight, we're ok */
-      float min_scale = HDCM_NOTIFICATION_END_SIZE / (float)width;
-      float scale = (1-a1) + a1*min_scale;
-      float corner_x = -a1*(HD_COMP_MGR_TOP_LEFT_BTN_WIDTH +width *scale)*0.5f;
-      float corner_y =  a1*(HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT-height*scale)*0.5f;
+      float t, thr;
 
-      clutter_actor_set_opacity(actor, (int)(255*(1-a2)));
-      clutter_actor_set_scale(actor, scale, scale);
-      clutter_actor_set_anchor_pointu(actor,
-         CLUTTER_FLOAT_TO_FIXED( -corner_x / scale ),
-         CLUTTER_FLOAT_TO_FIXED( -corner_y / scale) );
+      /*
+       * Timeline is broken into two pieces.  The first part takes
+       * @thr seconds and during that the notification actor is moved
+       * to its final place,  The second part is much shorter and
+       * during that it's faded to nothingness.
+       */
+      thr = 400.0 / (150+400);
+
+      if (now < thr)
+        { /* fade, move, resize */
+          gint cx, cy;
+          float sx, sy;
+
+          /*
+           * visual geometry: 366x88+112+0 -> 96x23+8+17
+           *                  scale it down proportionally
+           *                  and place it in the middle of the tasks button
+           *                  leaving 8 pixels left and right
+           * opacity:         1 -> 0.75
+           * use smooth ramping
+           */
+          t = hd_transition_smooth_ramp(now / thr);
+          cx = ( 8 - clutter_actor_get_x(actor))*t;
+          cy = (17 - clutter_actor_get_y(actor))*t;
+          sx = ((96.0/width  - 1)*t + 1);
+          sy = ((23.0/height - 1)*t + 1);
+
+          clutter_actor_set_scale (actor, sx, sy);
+          clutter_actor_set_anchor_point (actor, -cx/sx, -cy/sy);
+          clutter_actor_set_opacity(actor, 255 * ((0.75 - 1)*t + 1));
+        }
+      else
+        { /* fade: 0.75 -> 0 linearly */
+          t = (now - thr) / (1.0 - thr);
+          clutter_actor_set_opacity(actor, 255 * (-0.75*t + 0.75));
+        }
     }
   else
     {
       /* Opening Animation - we fade in, and move in from the top-right
        * edge of the screen in an arc */
+      float amt = hd_transition_smooth_ramp(now);
       float scale =  1 + (1-amt)*0.5f;
       float ang = amt * 3.141592f * 0.5f;
       float corner_x = (hd_comp_mgr_get_current_screen_width()*0.5f
