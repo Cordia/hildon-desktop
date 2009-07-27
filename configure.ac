@@ -39,7 +39,7 @@ AC_PATH_PROG(DBUS_BINDING_TOOL, dbus-binding-tool)
 # Misc build flags
 #++++++++++++++++++
 
-CFLAGS="$CFLAGS -Wall -Wno-format-extra-args -ansi -Wmissing-prototypes -Wmissing-declarations -Werror -std=gnu99 -fgnu89-inline"
+CFLAGS="$CFLAGS -Wall -Wno-format-extra-args -ansi -Wmissing-prototypes -Wmissing-declarations -Werror -std=gnu99 -DG_DISABLE_CAST_CHECKS -fgnu89-inline"
 
 AC_SUBST(CFLAGS)
 
