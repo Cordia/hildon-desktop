@@ -1,5 +1,10 @@
 2009-07-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-render-manager.c:
+	  Adding missing <sys/time.h>
+
+2009-07-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/mb/hd-note.c: reverting, it's incomplete (doesn't cover
 	dialogs) and it breaks system-modal notes in application view.
 

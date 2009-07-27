@@ -44,6 +44,8 @@
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
+#include <sys/time.h>
+
 /* This is to dump debug information to the console to help see whether the
  * order of clutter actors matches that of matchbox. */
 #define STACKING_DEBUG 0
