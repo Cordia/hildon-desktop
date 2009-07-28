@@ -1,8 +1,15 @@
-hildon-desktop (1:2.2.68-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.68-1) unstable; urgency=low
 
-  * foo
+  Adam:
+  * src/util/hd-util.c (hd_util_change_screen_orientation):
+    Use XChangeProperty()/XDeleteProperty() to communicate
+    SUPPRESS_ROOT_RECONFIGURATION to the X server rather than
+    setting and clearing the property.  Requires newer libmatchbox2
+    and Xorg.
+  * src/home/hd-render-manager.h (STATE_DISCARD_PREVIEW_NOTE):
+    Don't show notification previews in launcher view.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 27 Jul 2009 15:29:14 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 28 Jul 2009 15:59:01 +0300
 
 hildon-desktop (1:2.2.67-1) unstable; urgency=low
 
