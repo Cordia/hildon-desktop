@@ -1,3 +1,11 @@
+2009-07-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-util.c (hd_util_change_screen_orientation):
+	  Use XChangeProperty()/XDeleteProperty() to communicate
+	  SUPPRESS_ROOT_RECONFIGURATION to the X server rather than
+	  setting and clearing the property.  Requires newer libmatchbox2
+	  and Xorg.
+
 2009-07-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-render-manager.h (STATE_DISCARD_PREVIEW_NOTE):

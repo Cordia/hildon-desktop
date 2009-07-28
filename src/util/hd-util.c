@@ -295,7 +295,7 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
   Rotation want;
   Status ret;
   int width, height, width_mm, height_mm;
-  unsigned long one = 1, zero = 0;
+  unsigned long one = 1;
 
   if (randr_supported == -1)
     {
@@ -377,6 +377,9 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
    * causes rubbish to be displayed. */
   glFinish();
 
+  /* Grab the server around rotation to prevent clients attempting to
+   * draw at inopportune times. */
+  XGrabServer (wm->xdpy);
   /* Stop windows being reconfigured */
   XChangeProperty(wm->xdpy, wm->root_win->xwindow,
                   wm->atoms[MBWM_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION],
@@ -395,10 +398,10 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
                           crtc_info->outputs, crtc_info->noutput);
 
   /* Allow windows to be reconfigured again */
-  XChangeProperty(wm->xdpy, wm->root_win->xwindow,
-                  wm->atoms[MBWM_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION],
-                  XA_CARDINAL, 32, PropModeReplace,
-                  (unsigned char *)&zero, 1);
+  XDeleteProperty(wm->xdpy, wm->root_win->xwindow,
+                  wm->atoms[MBWM_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION]);
+  /* Allow clients to redraw. */
+  XUngrabServer (wm->xdpy);
 
   XRRFreeCrtcInfo (crtc_info);
   XRRFreeScreenResources (res);
