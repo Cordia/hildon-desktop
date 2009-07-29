@@ -127,6 +127,7 @@ struct _TidyBlurGroupPrivate
   CoglHandle fbo_b;
   CoglHandle tex_chequer; /* chequer texture used for dimming video overlays */
   gboolean current_is_a;
+  gboolean current_is_rotated;
 
   gboolean use_shader;
   float saturation; /* 0->1 how much colour there is */
@@ -424,6 +425,13 @@ tidy_blur_group_paint (ClutterActor *actor)
    * If so, try and keep blurring 'nice' by rotating so that
    * we don't have a texture that is totally the wrong aspect ratio */
   rotate_90 = (tex_width > tex_height) != (width > height);
+  /* If rotation has changed, trigger a redraw */
+  if (priv->current_is_rotated != rotate_90)
+    {
+      priv->current_is_rotated = rotate_90;
+      priv->source_changed = TRUE;
+      priv->current_blur_step = 0;
+    }
 
   /* Draw children into an offscreen buffer */
   if (priv->source_changed && priv->current_blur_step==0)
@@ -812,7 +820,7 @@ tidy_blur_group_init (TidyBlurGroup *self)
   priv->tex_b = 0;
   priv->fbo_b = 0;
   priv->current_is_a = TRUE;
-
+  priv->current_is_rotated = FALSE;
   /* dimming for the vignette */
   for (i=0;i<VIGNETTE_COLOURS;i++)
     priv->vignette_colours[i] = 255;

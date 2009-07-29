@@ -1,3 +1,10 @@
+2009-07-29  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Applied Gordon's patch for updating blur area on rotation.
+	Fixes: NB#125749
+
+	* src/tidy/tidy-blur-group.c:
+
 2009-07-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.68
