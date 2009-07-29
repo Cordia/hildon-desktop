@@ -467,6 +467,7 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 /*  g_debug ("%s, display: %p, keymap: %p", __FUNCTION__, display, keymap); */
 
   pretend_fn = priv->fn_state != FN_STATE_NONE ? FN_MODIFIER : 0;
+  g_debug ("pretend_fn: %d", pretend_fn);
   gdk_keymap_translate_keyboard_state (keymap,
                                        xev->keycode,
                                        xev->state | pretend_fn,
@@ -510,11 +511,15 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
     return;
 
  if (xev->state & FN_MODIFIER)
-  {
-    priv->fn_state = FN_STATE_NONE;
-    priv->ignore_next_fn_release = TRUE;
-  } else if (priv->fn_state == FN_STATE_NEXT)
-    priv->fn_state = FN_STATE_NONE;
+   {
+     priv->fn_state = FN_STATE_NONE;
+     priv->ignore_next_fn_release = TRUE;
+   }
+ else if (priv->fn_state == FN_STATE_NEXT)
+   {
+     priv->fn_state = FN_STATE_NONE;
+     g_debug ("FN state: %d", priv->fn_state);
+   }
 }
 
 static void
@@ -536,6 +541,7 @@ hd_home_desktop_key_release (XKeyEvent *xev, void *userdata)
     priv->fn_state = FN_STATE_LOCKED;
   else
     priv->fn_state = FN_STATE_NONE;
+  g_debug ("FN state: %d", priv->fn_state);
 }
 
 static void
