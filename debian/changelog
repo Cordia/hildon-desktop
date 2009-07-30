@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.69-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.69-1) unstable; urgency=low
 
   Marc:
   * Applied Gordon's patch for updating blur area on rotation:
@@ -9,7 +9,7 @@ hildon-desktop (1:2.2.69-1~unreleased) unstable; urgency=low
   * Fixes: NB#130492 - moving Hildon Desktop start at the end of desktop
     sequence
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 28 Jul 2009 16:00:18 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 30 Jul 2009 13:45:49 +0300
 
 hildon-desktop (1:2.2.68-1) unstable; urgency=low
 
