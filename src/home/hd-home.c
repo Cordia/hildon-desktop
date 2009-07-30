@@ -487,9 +487,9 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 
       if (priv->call_ui_proxy)
         {
-          dbus_g_proxy_call_no_reply (priv->call_ui_proxy, CALL_UI_DBUS_METHOD_SHOW_DIALPAD,
-                                      G_TYPE_STRING, buffer,
-                                      G_TYPE_INVALID);
+          dbus_g_proxy_call_no_reply (priv->call_ui_proxy,
+                CALL_UI_DBUS_METHOD_SHOW_DIALPAD,
+                G_TYPE_STRING, buffer, G_TYPE_INVALID);
         }
     }
   else if (g_unichar_isalpha (unicode))
@@ -502,9 +502,9 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 
       if (priv->osso_addressbook_proxy)
         {
-          dbus_g_proxy_call_no_reply (priv->osso_addressbook_proxy, OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND,
-                                      G_TYPE_STRING, buffer,
-                                      G_TYPE_INVALID);
+          dbus_g_proxy_call_no_reply (priv->osso_addressbook_proxy,
+                OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND,
+                G_TYPE_STRING, buffer, G_TYPE_INVALID);
         }
     }
   else
