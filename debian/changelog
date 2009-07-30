@@ -1,6 +1,13 @@
 hildon-desktop (1:2.2.69-1~unreleased) unstable; urgency=low
 
-  * foo
+  Marc:
+  * Applied Gordon's patch for updating blur area on rotation:
+  * Fixes: NB#125749 - The blurred area does not update correctly on rotation
+    (was: Bad behavior in phone UI)
+
+  Kimmo:
+  * Fixes: NB#130492 - moving Hildon Desktop start at the end of desktop
+    sequence
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 28 Jul 2009 16:00:18 +0300
 
