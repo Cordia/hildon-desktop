@@ -25,10 +25,6 @@
   and 1 (on). Other values can be used in future if needed.
 - Implement support for speech bubbles in Contacts applets.
 
-hd-transitions:
-- reread transitions.ini ONLY IF IT HAS CHANGED
-- it's leaking
-
 Notifications:
 - Use ATOM:ic property values in hd-note.c.
 
@@ -37,3 +33,5 @@ Switcher:
 - Update label colors with theme change.
 - Zoom+fly: don't slow down at the end of zoom and don't start slowly
 - Shadowed text in switcher (wishlist).
+
+- mapping a subview in the background brings the app into the foreground

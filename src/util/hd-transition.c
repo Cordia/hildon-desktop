@@ -25,8 +25,13 @@
 #include "config.h"
 #endif
 
-#include <clutter/clutter.h>
+#include <unistd.h>
+#include <errno.h>
 #include <math.h>
+#include <fcntl.h>
+#include <sys/inotify.h>
+
+#include <clutter/clutter.h>
 #include <canberra.h>
 
 #include "hd-transition.h"
@@ -43,7 +48,8 @@
 #include "hd-volume-profile.h"
 #include "hd-util.h"
 
-#define HDCM_NOTIFICATION_END_SIZE 32
+/* The master of puppets */
+#define TRANSITIONS_INI "/usr/share/hildon-desktop/transitions.ini"
 
 /* In the rotation transition, the amount of milliseconds to leave after we
  * get a damage event before we transition back from blanking */
@@ -126,6 +132,10 @@ static struct
    * remove the actor by calling hd_transition_completed. */
   GList *effects_waiting;
 } Orientation_change;
+
+/* If %TRUE keep reloading transitions.ini until we can
+ * and we can watch it. */
+static gboolean transitions_ini_is_dirty;
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -1406,99 +1416,136 @@ hd_transition_play_sound (const gchar * fname)
 
 }
 
-static GKeyFile *
-hd_transition_get_keyfile(const gchar *transition,
-                      const char *key)
+static gboolean
+transitions_ini_changed(GIOChannel *chnl, GIOCondition cond, gpointer unused)
 {
-  GError *error = NULL;
-  GKeyFile *key_file = NULL;
-  const char *full_path = "/usr/share/hildon-desktop/transitions.ini";
+  struct inotify_event ibuf;
 
-  key_file = g_key_file_new ();
-  g_key_file_load_from_file (key_file, full_path, 0, &error);
-  if (error)
+  g_io_channel_read_chars(chnl, (void *)&ibuf, sizeof(ibuf), NULL, NULL);
+  if (ibuf.mask & (IN_MODIFY | IN_DELETE_SELF | IN_MOVE_SELF | IN_IGNORED))
     {
-      g_warning ("Unable to load file  '%s' : %s",
-                 full_path,
-                 error->message);
+      g_debug("disposing transitions.ini");
+      transitions_ini_is_dirty = TRUE;
 
-      g_error_free (error);
-      g_key_file_free (key_file);
-      return NULL;
+      /* Track no more if the dirent changed or disappeared. */
+      if (ibuf.mask & (IN_MOVE_SELF | IN_DELETE_SELF | IN_IGNORED))
+        {
+          g_debug("watching no more");
+          g_io_channel_unref(chnl);
+          return FALSE;
+        }
+    }
+  return TRUE;
+}
+
+static GKeyFile *
+hd_transition_get_keyfile(void)
+{
+  static GKeyFile *transitions_ini;
+  static GIOChannel *transitions_ini_watcher;
+  GError *error;
+  GKeyFile *ini;
+
+  if (transitions_ini && !transitions_ini_is_dirty)
+    return transitions_ini;
+  g_debug("%s transitions.ini",
+          transitions_ini_is_dirty ? "reloading" : "loading");
+
+  error = NULL;
+  ini = g_key_file_new();
+  if (!g_key_file_load_from_file (ini, TRANSITIONS_INI, 0, &error))
+    { /* Use the previous @transitions_ini. */
+      g_warning("couldn't load %s: %s", TRANSITIONS_INI, error->message);
+      if (!transitions_ini)
+        g_warning("using default settings");
+      g_error_free(error);
+      g_key_file_free(ini);
+      return transitions_ini;
     }
 
-  if (!g_key_file_has_group (key_file, transition))
+  /* Use the new @transitions_ini. */
+  transitions_ini = ini;
+
+  if (!transitions_ini_watcher)
     {
-      g_key_file_free (key_file);
-      return NULL;
+      static int inofd = -1, watch = -1;
+
+      /* Create an inotify if we haven't. */
+      if (inofd < 0 && (inofd = inotify_init()) < 0)
+        {
+          g_warning("inotify_init: %s", strerror(errno));
+          goto out;
+        }
+
+      if (watch >= 0)
+        /* Remove the previous watch. */
+        inotify_rm_watch(inofd, watch);
+      watch = inotify_add_watch(inofd, TRANSITIONS_INI,
+                              IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
+      if (watch < 0)
+        {
+          g_warning("inotify_add_watch: %s", strerror(errno));
+          goto out;
+        }
+
+      transitions_ini_watcher = g_io_channel_unix_new(inofd);
+      g_io_add_watch_full(transitions_ini_watcher, G_PRIORITY_DEFAULT, G_IO_IN,
+                          transitions_ini_changed, &transitions_ini_watcher,
+                          (GDestroyNotify)g_nullify_pointer);
+      g_debug("watching transitions.ini");
     }
 
-  if (!g_key_file_has_key (key_file,
-                           transition,
-                           key,
-                           &error))
-    {
-      g_key_file_free (key_file);
-      return NULL;
-    }
+  /* Stop reloading @transitions_ini if we can watch it. */
+  transitions_ini_is_dirty = FALSE;
 
-  return key_file;
+out:
+  return transitions_ini;
 }
 
 gint
-hd_transition_get_int(const gchar *transition,
-                      const char *key,
+hd_transition_get_int(const gchar *transition, const char *key,
                       gint default_val)
 {
   gint value;
-  GError *error = NULL;
-  GKeyFile *key_file =
-          hd_transition_get_keyfile(transition, key);
-  if (!key_file)
+  GError *error;
+  GKeyFile *ini;
+
+  if (!(ini = hd_transition_get_keyfile()))
     return default_val;
-  /* skip NoDisplay entries */
-  value = g_key_file_get_integer (key_file,
-                                  transition,
-                                  key,
-                                  &error);
+
+  error = NULL;
+  value = g_key_file_get_integer(ini, transition, key, &error);
   if (error)
     {
-      g_warning("%s: g_key_file Error %s", __FUNCTION__,
-                error->message?error->message:"null");
-      g_error_free (error);
-      g_key_file_free (key_file);
+      g_warning("couldn't read %s::%s from transitions.ini: %s",
+                transition, key, error->message);
+      g_error_free(error);
       return default_val;
     }
-
-  g_key_file_free (key_file);
 
   return value;
 }
 
 gdouble
 hd_transition_get_double(const gchar *transition,
-                         const char *key,
-                         gdouble default_val)
+                         const char *key, gdouble default_val)
 {
   gdouble value;
-  GError *error = NULL;
-  GKeyFile *key_file =
-          hd_transition_get_keyfile(transition, key);
-  if (!key_file)
+  GError *error;
+  GKeyFile *ini;
+
+  if (!(ini = hd_transition_get_keyfile()))
     return default_val;
-  /* skip NoDisplay entries */
-  value = g_key_file_get_double (key_file,
-                                  transition,
-                                  key,
-                                  &error);
+
+  error = NULL;
+  value = g_key_file_get_double (ini, transition, key, &error);
   if (error)
     {
-      g_error_free (error);
-      g_key_file_free (key_file);
+      g_warning("couldn't read %s::%s from transitions.ini: %s",
+                transition, key, error->message);
+      g_error_free(error);
       return default_val;
     }
-
-  g_key_file_free (key_file);
 
   return value;
 }

@@ -1,3 +1,11 @@
+2009-07-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Performance improvement.
+
+	* src/util/hd-transition.c (hd_transition_get_keyfile):
+	  Don't reload transitions.ini every time we need something
+	  but only after it has changed.
+
 2009-07-31  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.70
