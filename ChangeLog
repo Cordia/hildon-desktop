@@ -1,5 +1,7 @@
 2009-07-31  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.70
+
 	* src/util/hd-transition.c: Cut the waiting time between landscape and
 	portrait transitions to 40 ms. Shorter time sometimes skips or cuts
 	the fade out transition. Fixes: NB#130870
