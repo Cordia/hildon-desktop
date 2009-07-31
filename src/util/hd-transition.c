@@ -47,9 +47,9 @@
 
 /* In the rotation transition, the amount of milliseconds to leave after we
  * get a damage event before we transition back from blanking */
-#define HD_TRANSITION_ROTATION_DAMAGE_TIMEOUT (200)
+#define HD_TRANSITION_ROTATION_DAMAGE_TIMEOUT (40)
 /* Maximum amount of time we may wait if we keep getting damage events */
-#define HD_TRANSITION_ROTATION_MAX_TIMEOUT (1000)
+#define HD_TRANSITION_ROTATION_MAX_TIMEOUT (40)
 /* TODO: These timings should be lower, but currently the resizing of
  * windows is so slow that we're having to wait for ages or we start the
  * transition back while drawing is still happening. It is not uncommon

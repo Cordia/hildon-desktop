@@ -1,8 +1,9 @@
-hildon-desktop (1:2.2.70-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.70-1) unstable; urgency=low
 
-  * foo
+  * Fixes: NB#130870 - Rotation: Hildon Desktop blanking period needs to be
+    reduced
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 30 Jul 2009 13:53:49 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 31 Jul 2009 17:36:12 +0300
 
 hildon-desktop (1:2.2.69-1) unstable; urgency=low
 
