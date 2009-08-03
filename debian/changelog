@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.72-1~unreleased) unstable; urgency=low
+
+  * foo
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  3 Aug 2009 10:19:55 +0300
+
 hildon-desktop (1:2.2.71-1) unstable; urgency=low
 
   * Patch from Oliver McFadden to have rotation damage timeouts in
