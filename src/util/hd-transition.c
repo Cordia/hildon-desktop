@@ -51,16 +51,6 @@
 /* The master of puppets */
 #define TRANSITIONS_INI "/usr/share/hildon-desktop/transitions.ini"
 
-/* In the rotation transition, the amount of milliseconds to leave after we
- * get a damage event before we transition back from blanking */
-#define HD_TRANSITION_ROTATION_DAMAGE_TIMEOUT (40)
-/* Maximum amount of time we may wait if we keep getting damage events */
-#define HD_TRANSITION_ROTATION_MAX_TIMEOUT (40)
-/* TODO: These timings should be lower, but currently the resizing of
- * windows is so slow that we're having to wait for ages or we start the
- * transition back while drawing is still happening. It is not uncommon
- * for damage events to be 280ms apart according to xresponse. */
-
 typedef struct _HDEffectData
 {
   MBWMCompMgrClientEvent   event;
@@ -1247,9 +1237,9 @@ hd_transition_rotating_fsm(void)
             clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
             hd_util_change_screen_orientation(Orientation_change.wm,
                          Orientation_change.direction == GOTO_PORTRAIT);
-            Orientation_change.timeout_id = g_timeout_add(
-                HD_TRANSITION_ROTATION_DAMAGE_TIMEOUT,
-                (GSourceFunc)hd_transition_rotating_fsm, NULL);
+            Orientation_change.timeout_id =
+              g_timeout_add(hd_transition_get_double("rotate", "damage_timeout", 50),
+                            (GSourceFunc) hd_transition_rotating_fsm, NULL);
             Orientation_change.timer = g_timer_new();
             break;
           }
@@ -1336,13 +1326,13 @@ hd_transition_rotate_ignore_damage()
        * it too long already. This stops us getting stuck
        * in the WAITING state if an app keeps redrawing. */
       if (g_timer_elapsed(Orientation_change.timer, NULL) <
-          (HD_TRANSITION_ROTATION_MAX_TIMEOUT / 1000.0))
+          (hd_transition_get_double("rotate", "damage_timeout_max", 1000) / 1000.0))
         {
           /* Reset the timeout to be a little longer */
           if (Orientation_change.timeout_id)
             g_source_remove(Orientation_change.timeout_id);
           Orientation_change.timeout_id = g_timeout_add(
-                HD_TRANSITION_ROTATION_DAMAGE_TIMEOUT,
+                hd_transition_get_double("rotate", "damage_timeout", 50),
                 (GSourceFunc)hd_transition_rotating_fsm, NULL);
         }
 

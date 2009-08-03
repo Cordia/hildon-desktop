@@ -1,3 +1,12 @@
+2009-08-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Patch from Oliver McFadden to add damage timeouts to transitions.ini
+	and to change the rotation angle from 70 to 90.
+
+	* src/util/hd-transition.c (hd_transition_rotating_fsm): Read damage
+	timeouts from transitions.ini.
+	* data/transitions.ini: Change rotation angle to 90.
+
 2009-07-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Performance improvement.
