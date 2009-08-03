@@ -1,5 +1,7 @@
 2009-08-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.71
+
 	Patch from Oliver McFadden to add damage timeouts to transitions.ini
 	and to change the rotation angle from 70 to 90.
 

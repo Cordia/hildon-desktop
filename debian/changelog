@@ -1,8 +1,9 @@
-hildon-desktop (1:2.2.71-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.71-1) unstable; urgency=low
 
-  * foo
+  * Patch from Oliver McFadden to have rotation damage timeouts in
+    transitions.ini. Also changes the angle from 70 to 90.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 31 Jul 2009 18:41:45 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 03 Aug 2009 10:18:03 +0300
 
 hildon-desktop (1:2.2.70-1) unstable; urgency=low
 
