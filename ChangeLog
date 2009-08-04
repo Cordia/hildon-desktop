@@ -1,3 +1,19 @@
+2009-08-04  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Optimise Clutter's mutex so that we do the real locking only when
+	we have multiple threads using Clutter, i.e. during scanning of
+	.desktop files.
+
+	* src/main.c (hd_mutex_enable): New function to toggle mutex
+	functionality on/off.
+	(hd_mutex_lock, hd_mutex_unlock): Lock/unlock functions for the mutex.
+	(hd_mutex_init): Called in startup to override Clutter's default
+	locking functions.
+	* src/launcher/hd-launcher-tree.c
+	(hd_launcher_tree_handle_tree_changed): Activate the mutex before
+	going multi threaded.
+	(walk_thread_done_idle): Deactivate the mutex.
+
 2009-08-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.71

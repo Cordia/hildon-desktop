@@ -38,4 +38,6 @@
 # define hd_disable_threads()          0
 #endif
 
+void hd_mutex_enable (int setting);
+
 #endif

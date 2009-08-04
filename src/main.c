@@ -68,6 +68,51 @@ static __attribute__((unused)) const char mbver[] =
 #endif
 
 MBWindowManager *hd_mb_wm = NULL;
+static int hd_clutter_mutex_enabled = FALSE;
+static int hd_clutter_mutex_do_unlock_after_disabling = FALSE;
+static GStaticMutex hd_clutter_mutex = G_STATIC_MUTEX_INIT;
+
+void hd_mutex_enable (int setting)
+{
+  /*g_printerr ("%s, setting %d\n", __func__, setting);*/
+  if (hd_clutter_mutex_enabled && !setting)
+    /* deactivating mutex, make sure the mutex is unlocked if
+     * hd_mutex_unlock is called later */
+    hd_clutter_mutex_do_unlock_after_disabling = TRUE;
+
+  hd_clutter_mutex_enabled = setting;
+}
+
+static void
+hd_mutex_lock (void)
+{
+  /*g_printerr ("%s, enabled %d\n", __func__, hd_clutter_mutex_enabled);*/
+  if (hd_clutter_mutex_enabled)
+    g_static_mutex_lock (&hd_clutter_mutex);
+}
+
+static void
+hd_mutex_unlock (void)
+{
+  /*g_printerr ("%s, enabled %d\n", __func__, hd_clutter_mutex_enabled);*/
+  if (hd_clutter_mutex_enabled)
+    g_static_mutex_unlock (&hd_clutter_mutex);
+  else if (hd_clutter_mutex_do_unlock_after_disabling)
+    {
+      g_static_mutex_unlock (&hd_clutter_mutex);
+      hd_clutter_mutex_do_unlock_after_disabling = FALSE;
+    }
+}
+
+static void
+hd_mutex_init (void)
+{
+  /* g_printerr ("%s%d\n", __func__); */
+  if (!g_thread_supported ())
+    g_error ("g_thread_init() must be called before %s", __func__);
+
+  clutter_threads_set_lock_functions (hd_mutex_lock, hd_mutex_unlock);
+}
 
 /* Take screenshot */
 static void
@@ -449,6 +494,8 @@ main (int argc, char **argv)
   mb_wm_theme_set_custom_button_type_func (theme_button_type_func, NULL);
 
   gtk_init (&argc, &argv);
+
+  hd_mutex_init ();
 
   /* NB: We _dont_ pass the X display from gtk into clutter because
    * it makes life far too complicated to have gtkish things like
