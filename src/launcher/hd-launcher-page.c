@@ -73,6 +73,10 @@ struct _HdLauncherPagePrivate
    * is playing right after saying _start() - so we have a boolean to figure
    * out for ourselves */
   gboolean         transition_playing;
+  /* How far should icons move? - this is loaded from the transitions.ini file
+   * before each transition */
+  gint             transition_depth;
+
   /* When the user clicks and drags more than a certain amount, we want
    * to deselect what they had clicked on - so we must keep track of
    * movement */
@@ -769,6 +773,12 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
          break;
   }
 
+  priv->transition_depth =
+      hd_transition_get_int(
+                hd_launcher_page_get_transition_string(priv->transition_type),
+                "depth",
+                100 /* default value */);
+
   clutter_timeline_pause(priv->transition);
   clutter_timeline_rewind(priv->transition);
 
@@ -822,6 +832,7 @@ hd_launcher_page_new_frame(ClutterTimeline *timeline,
   hd_launcher_grid_transition(HD_LAUNCHER_GRID(priv->grid),
                               page,
                               priv->transition_type,
+                              priv->transition_depth,
                               amt);
 
     switch (priv->transition_type)
@@ -864,6 +875,7 @@ hd_launcher_page_transition_end(ClutterTimeline *timeline,
   hd_launcher_grid_transition(HD_LAUNCHER_GRID(priv->grid),
                               page,
                               priv->transition_type,
+                              priv->transition_depth,
                               1.0f);
 
   switch (priv->transition_type) {

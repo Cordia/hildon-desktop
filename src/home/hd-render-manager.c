@@ -650,7 +650,6 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 
   blur_home = blur & (HDRM_BLUR_BACKGROUND | HDRM_BLUR_HOME);
 
-  /* FIXME: cache the settings file */
   if (blur_home)
     {
       priv->home_saturation.b =
@@ -666,10 +665,11 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
     {
       float zoom =
               hd_transition_get_double("home", "zoom", 1);
-      /* We want to zoom the home screen out slightly more than the applets
-       * so we get a perspective effect */
+      /* We zoom the home multiple different levels */
       priv->home_zoom.b = 1 - (1-zoom)*(zoom_home+1);
-      priv->applets_zoom.b = 1 - (1-zoom)*zoom_home;
+      /* However applets are either zoomed or not (because they are
+       * faded out in every zoom level apart from the first) */
+      priv->applets_zoom.b = hd_transition_get_double("home", "zoom_applets", 1);
     }
 
   if (blur & HDRM_SHOW_TASK_NAV)

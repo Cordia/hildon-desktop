@@ -1,3 +1,14 @@
+2009-08-05  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c: Now treat applet zoom amount as a 
+	  separate value, and add that to transitions.ini.
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-grid.c
+	* src/launcher/hd-launcher-grid.h: Moved 'depth' parameters for the
+	  launcher transitions into transitions.ini
+	* data/transitions.ini: Added zoom_applets value, launcher depth 
+	  values. Added more comments.
+
 2009-08-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.72

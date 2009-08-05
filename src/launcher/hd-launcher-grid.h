@@ -70,6 +70,7 @@ void          hd_launcher_grid_reset_v_adjustment (HdLauncherGrid *grid);
 void          hd_launcher_grid_transition(HdLauncherGrid *grid,
                                           HdLauncherPage *page,
                                           HdLauncherPageTransition trans_type,
+                                          int transition_depth,
                                           float amount);
 void          hd_launcher_grid_reset(HdLauncherGrid *grid);
 
