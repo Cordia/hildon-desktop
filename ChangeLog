@@ -1,5 +1,11 @@
 2009-08-05  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* data/transitions.ini: Modified damage_timeout value to their
+	  original (pre-2.2.69) state. If kept at the 40/40 ms values
+	  dialpad -> show menu -> rotate displays a black background,
+	  and often the rotation transition coming back from blanking
+	  does not appear.
+
 	* src/home/hd-render-manager.c: Now treat applet zoom amount as a 
 	  separate value, and add that to transitions.ini.
 	* src/launcher/hd-launcher-page.c
