@@ -101,8 +101,30 @@ hd_util_modal_blocker_release_handler (XButtonEvent    *xev,
 {
   MBWindowManagerClient *c = userdata;
 
-  g_debug ("%s: c %p", __FUNCTION__, c);
-  mb_wm_client_deliver_delete (c);
+  g_debug ("%s: c %p\n", __FUNCTION__, c);
+  if (mb_wm_client_is_map_confirmed (c) && c->cm_client)
+    {
+      ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor(
+                               MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
+      if (actor) 
+        {
+          int x, y;
+          unsigned int h, w;
+
+          w = h = x = y = 0;
+          clutter_actor_get_size (actor, &w, &h);
+          clutter_actor_get_position (actor, &x, &y);
+
+          if (xev->x < x || xev->x > x + w || xev->y < y || xev->y > y + h)
+            mb_wm_client_deliver_delete (c);
+          else
+            g_debug ("%s: ignoring ButtonRelease because "
+                     "it happened on top of the window\n", __func__);
+        }
+    }
+  else
+    g_debug ("%s: ignoring ButtonRelease because "
+             "window for this blocker is not mapped yet\n", __func__);
 }
 
 static void

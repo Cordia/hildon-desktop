@@ -1,3 +1,14 @@
+2009-08-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/util/hd-util.c (hd_util_modal_blocker_release_handler): Before
+	sending delete to the client, check that the client's actor is not on
+	top of the place where the ButtonRelease is reported, because that
+	means that the ButtonRelease is just reported for the blocker window
+	because the corresponding ButtonPress was reported to the blocker (X
+	server always sends the press and release events to the same window).
+	Fixes: NB#131259 - HildonAppMenu getting extra
+	mb_wm_client_deliver_delete() calls
+
 2009-08-05  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* data/transitions.ini: Modified damage_timeout value to their

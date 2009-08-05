@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.73-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#131259 - HildonAppMenu getting extra
+    mb_wm_client_deliver_delete() calls
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  5 Aug 2009 10:45:40 +0300
 
