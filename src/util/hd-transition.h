@@ -31,6 +31,11 @@
  * and the number of them to show in the transition. */
 #define HDCM_UNMAP_PARTICLES        8
 
+/* What noise to make when a new application is started or when the last
+ * window of an application window stack is closed. */
+#define HDCM_WINDOW_OPENED_SOUND    "/usr/share/sounds/ui-window_open.wav"
+#define HDCM_WINDOW_CLOSED_SOUND    "/usr/share/sounds/ui-window_close.wav"
+
 float
 hd_transition_overshoot(float x);
 

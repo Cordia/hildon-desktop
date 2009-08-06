@@ -1,5 +1,20 @@
 2009-08-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#128667 [AF Checked] No "window close" sound when >= 2 windows open
+
+	* src/home/hd-task-navigator.c (turnoff_effect):
+	  Play the window-closed sound at the beginning of the effect.
+	* src/util/hd-transition.c (hd_transition_close_app_before_rotate):
+	  Same for the case when a portrait app is closed.
+	* src/util/hd-transition.h (HDCM_WINDOW_OPENED_SOUND, HDCM_WINDOW_CLOSED_SOUND):
+	  Added #define:s for the sound file paths.
+	* src/launcher/hd-launcher.c (hd_launcher_transition_app_start):
+	  Use them.
+
+	Enjoy the hundreds of miliseconds delays.
+
+2009-08-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#130530 Still in task switch view after closing camera lens cover
 
 	At the point of coming back from portrait mode we didn't find

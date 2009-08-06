@@ -852,7 +852,7 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   hd_comp_mgr_set_effect_running(mgr, TRUE);
   clutter_timeline_start (data->timeline);
 
-  hd_transition_play_sound ("/usr/share/sounds/ui-window_close.wav");
+  hd_transition_play_sound (HDCM_WINDOW_CLOSED_SOUND);
 }
 
 void
@@ -904,6 +904,8 @@ hd_transition_close_app_before_rotate (HdCompMgr                  *hmgr,
   Orientation_change.effects_waiting = g_list_append(
       Orientation_change.effects_waiting, data);
   hd_comp_mgr_set_effect_running(hmgr, TRUE);
+
+  hd_transition_play_sound (HDCM_WINDOW_CLOSED_SOUND);
 }
 
 void

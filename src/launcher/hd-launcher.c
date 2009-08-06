@@ -719,7 +719,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
 
   launch_anim = TRUE;
 
-  hd_transition_play_sound ("/usr/share/sounds/ui-window_open.wav");
+  hd_transition_play_sound (HDCM_WINDOW_OPENED_SOUND);
   g_free (cached_image);
 
   return launch_anim;
