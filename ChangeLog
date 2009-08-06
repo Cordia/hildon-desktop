@@ -1,3 +1,13 @@
+2009-08-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#129745 [AF Checked] [REGF] Incoming call UI is not coming in
+		  Portrait mode when device is locked from layout view
+
+	* src/home/hd-render-manager.h (STATE_IS_PORTRAIT_CAPABLE):
+	  Mark HOME_EDIT state as one which we can switch to portrait mode from.
+
+	Happy atomic explosion anniversary.
+
 2009-08-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/util/hd-util.c (hd_util_modal_blocker_release_handler): Before
