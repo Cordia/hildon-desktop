@@ -2636,8 +2636,10 @@ void hd_render_manager_remove_input_blocker() {
 
  gboolean hd_render_manager_allow_dbus_launch_transition() {
    HdRenderManagerPrivate *priv = the_render_manager->priv;
-   /* We only allow a launch transition from dbug if a window hasn't been
+   /* We only allow a launch transition from dbus if a window hasn't been
     * mapped within a short time period - otherwise it is most likely
-    * that the dbus signal arrived after the window was mapped. */
-   return hd_comp_mgr_time_since_last_map(priv->comp_mgr) > 250;
+    * that the dbus signal arrived after the window was mapped. This has
+    * had to be extended because under system load from things like flash,
+    * dbus is so slow the message will often take >250ms. bug 128009 */
+   return hd_comp_mgr_time_since_last_map(priv->comp_mgr) > 1000;
  }

@@ -1,3 +1,15 @@
+2009-08-06  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#128009 - Opening a new message takes two minutes during 
+	                   yuotube playback
+	* src/home/hd-render-manager.c: Increase delay to 1000ms from 250ms,
+	  because dbus is often so amazingly slow that the 'window open' 
+	  message arrives over 250ms after the window that was supposed to
+	  be opening has appeared.
+
+	* src/mb/hd-animation-actor.c: Made some debug prints that spam syslog
+	during image viewer #defined.
+
 2009-08-06  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.73

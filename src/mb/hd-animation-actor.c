@@ -326,8 +326,8 @@ hd_animation_actor_realize (MBWindowManagerClient *client)
 
   long event_mask = xwa.your_event_mask | StructureNotifyMask;
 
-  g_debug ("updating event mask: 0x%08lx -> 0x%08lx\n",
-	   xwa.your_event_mask, event_mask);
+  CM_DEBUG ("updating event mask: 0x%08lx -> 0x%08lx\n",
+	    xwa.your_event_mask, event_mask);
   XSelectInput (wm->xdpy, window, event_mask);
 
   /* Set the ready atom on the window -- everything is in place to receive
@@ -449,7 +449,7 @@ hd_animation_actor_request_geometry (MBWindowManagerClient *client,
 				     MBGeometry            *new_geometry,
 				     MBWMClientReqGeomType  flags)
 {
-    g_debug ("%s: x=%d y=%d w=%d h=%d f=0x%x\n",
+    CM_DEBUG ("%s: x=%d y=%d w=%d h=%d f=0x%x\n",
 	     __FUNCTION__,
 	     new_geometry->x,
 	     new_geometry->y,
