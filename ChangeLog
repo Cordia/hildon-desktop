@@ -1,5 +1,7 @@
 2009-08-06  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Release 2.2.74
+
 	Fixes: NB#128009 - Opening a new message takes two minutes during 
 	                   yuotube playback
 	* src/home/hd-render-manager.c: Increase delay to 1000ms from 250ms,

@@ -1,8 +1,17 @@
-hildon-desktop (1:2.2.74-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.75-1~unreleased) unstable; urgency=low
 
   * foo
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  6 Aug 2009 10:49:43 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  6 Aug 2009 18:49:43 +0300
+
+
+hildon-desktop (1:2.2.74-1) unstable; urgency=low
+
+  Gordon:
+  * Fixes: NB#128009 - Opening a new message takes two minutes
+  * Minor optimisation - remove debug prints for animation actor
+
+ -- Gordon Williams <gordon.williams@collabora.co.uk>  Thu,  6 Aug 2009 16:33:43 +0100
 
 hildon-desktop (1:2.2.73-1) unstable; urgency=low
 
