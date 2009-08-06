@@ -1,10 +1,16 @@
-hildon-desktop (1:2.2.73-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.73-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#131259 - HildonAppMenu getting extra
     mb_wm_client_deliver_delete() calls
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  5 Aug 2009 10:45:40 +0300
+  Adam:
+  * Fixes: NB#128667 - No "window close" sound when >= 2 windows open
+  * Fixes: NB#130530 - Still in task switch view after closing camera lens cover
+  * Fixes: NB#129745 - Incoming call UI is not coming in portrait mode when
+    device is locked from layout view
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 06 Aug 2009 10:46:55 +0300
 
 hildon-desktop (1:2.2.72-1) unstable; urgency=low
 
