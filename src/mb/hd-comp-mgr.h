@@ -185,13 +185,17 @@ static inline gboolean
 hd_comp_mgr_client_is_maximized (MBGeometry geom)
 {
   extern MBWindowManager *hd_mb_wm;
-  if ((geom).x == 0 &&
-      (geom).width >= hd_mb_wm->xdpy_width
-      && (geom).y == 0
-      && (geom).height >= hd_mb_wm->xdpy_height)
-          return TRUE;
-  else
-          return FALSE;
+
+  if (geom.x != 0 || geom.y != 0)
+    return FALSE;
+  if (geom.width >= hd_mb_wm->xdpy_width && geom.height >= hd_mb_wm->xdpy_height)
+    return TRUE;
+  if (geom.width >= hd_mb_wm->xdpy_height && geom.height >= hd_mb_wm->xdpy_width)
+    /* Client covers the rotated screen.  If we select it as the CURRENT_APP,
+     * we'll rotate [back] and everything will make sense. */
+    return TRUE;
+
+  return FALSE;
 }
 
 gint hd_comp_mgr_time_since_last_map(HdCompMgr *hmgr);

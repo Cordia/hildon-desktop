@@ -1,5 +1,15 @@
 2009-08-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#130530 Still in task switch view after closing camera lens cover
+
+	At the point of coming back from portrait mode we didn't find
+	Camera as current application and confused the hdrm state.
+
+	* src/mb/hd-comp-mgr.h (hd_comp_mgr_client_is_maximized):
+	  So be smarter and find it.
+
+2009-08-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#129745 [AF Checked] [REGF] Incoming call UI is not coming in
 		  Portrait mode when device is locked from layout view
 
