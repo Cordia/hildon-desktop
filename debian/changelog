@@ -1,9 +1,10 @@
-hildon-desktop (1:2.2.75-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.75-1) unstable; urgency=low
 
-  * foo
+  Adam:
+  * Fixes: NB#127962 - Incoming chat notification NOT shown in potrait mode in
+    a scenario
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  6 Aug 2009 18:49:43 +0300
-
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 07 Aug 2009 12:32:31 +0300
 
 hildon-desktop (1:2.2.74-1) unstable; urgency=low
 
