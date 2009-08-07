@@ -1,3 +1,15 @@
+2009-08-07  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#117646 - hildon-desktop rewrites applet related GConf keys
+	during bootup
+
+	* src/home/hd-home-view.c (hd_home_view_store_applet_position,
+	  hd_home_view_applet_release, hd_home_view_load_applet_position,
+	  hd_home_view_add_applet): Do not store position key if they are not
+	  changed.
+
+	* debian/changelog: update.
+
 2009-08-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.75

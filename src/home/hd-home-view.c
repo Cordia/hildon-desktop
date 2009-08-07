@@ -719,16 +719,14 @@ hd_home_view_applet_press (ClutterActor       *applet,
 
 static void
 hd_home_view_store_applet_position (HdHomeView   *view,
-                                    ClutterActor *applet)
+                                    ClutterActor *applet,
+                                    gint          old_x,
+                                    gint          old_y)
 {
   HdHomeViewPrivate *priv = view->priv;
   HdHomeViewAppletData *data;
   ClutterGeometry c_geom;
   MBGeometry mb_geom;
-  const gchar *applet_id;
-  gchar *position_key;
-  GSList *position_value;
-  GError *error = NULL;
 
   data = g_hash_table_lookup (priv->applets, applet);
 
@@ -755,37 +753,46 @@ hd_home_view_store_applet_position (HdHomeView   *view,
                                  &mb_geom,
                                  MBWMClientReqGeomIsViaUserAction);
 
-  applet_id = HD_HOME_APPLET (data->cc->wm_client)->applet_id;
-
-  position_key = g_strdup_printf (GCONF_KEY_POSITION, applet_id);
-  position_value = g_slist_prepend (g_slist_prepend (NULL,
-                                                     GINT_TO_POINTER (c_geom.y)),
-                                    GINT_TO_POINTER (c_geom.x));
-  gconf_client_set_list (priv->gconf_client,
-                         position_key,
-                         GCONF_VALUE_INT,
-                         position_value,
-                         &error);
-  if (G_UNLIKELY (error))
+  if (old_x != c_geom.x ||
+      old_y != c_geom.y)
     {
-      g_warning ("Could not store new applet position for applet %s to GConf. %s",
-                 applet_id,
-                 error->message);
-      g_clear_error (&error);
-    }
+      const gchar *applet_id;
+      gchar *position_key;
+      GSList *position_value;
+      GError *error = NULL;
 
-  gconf_client_suggest_sync (priv->gconf_client,
+      applet_id = HD_HOME_APPLET (data->cc->wm_client)->applet_id;
+
+      position_key = g_strdup_printf (GCONF_KEY_POSITION, applet_id);
+      position_value = g_slist_prepend (g_slist_prepend (NULL,
+                                                         GINT_TO_POINTER (c_geom.y)),
+                                        GINT_TO_POINTER (c_geom.x));
+      gconf_client_set_list (priv->gconf_client,
+                             position_key,
+                             GCONF_VALUE_INT,
+                             position_value,
                              &error);
-  if (G_UNLIKELY (error))
-    {
-      g_warning ("%s. Could not sync GConf. %s",
-                 __FUNCTION__,
-                 error->message);
-      g_clear_error (&error);
-    }
+      if (G_UNLIKELY (error))
+        {
+          g_warning ("Could not store new applet position for applet %s to GConf. %s",
+                     applet_id,
+                     error->message);
+          g_clear_error (&error);
+        }
 
-  g_free (position_key);
-  g_slist_free (position_value);
+      gconf_client_suggest_sync (priv->gconf_client,
+                                 &error);
+      if (G_UNLIKELY (error))
+        {
+          g_warning ("%s. Could not sync GConf. %s",
+                     __FUNCTION__,
+                     error->message);
+          g_clear_error (&error);
+        }
+
+      g_free (position_key);
+      g_slist_free (position_value);
+    }
 }
 
 static gboolean
@@ -849,7 +856,9 @@ hd_home_view_applet_release (ClutterActor       *applet,
            * Move the underlying window to match the actor's position
            */
           hd_home_view_store_applet_position (view,
-                                              applet);
+                                              applet,
+                                              -1,
+                                              -1);
           hd_home_view_layout_reset (priv->layout);
         }
     }
@@ -912,7 +921,9 @@ static void
 hd_home_view_load_applet_position (HdHomeView           *view,
                                    ClutterActor         *applet,
                                    HdHomeViewAppletData *data,
-                                   gboolean              force_arrange)
+                                   gboolean              force_arrange,
+                                   gint                 *old_x,
+                                   gint                 *old_y)
 {
   HdHomeViewPrivate *priv = view->priv;
   const gchar *applet_id;
@@ -932,6 +943,12 @@ hd_home_view_load_applet_position (HdHomeView           *view,
       clutter_actor_set_position (applet,
                                   GPOINTER_TO_INT (position->data),
                                   GPOINTER_TO_INT (position->next->data));
+
+      if (old_x)
+        *old_x = GPOINTER_TO_INT (position->data);
+
+      if (old_y)
+        *old_y = GPOINTER_TO_INT (position->next->data);
 
       hd_home_view_layout_reset (priv->layout);
     }
@@ -1035,6 +1052,7 @@ hd_home_view_add_applet (HdHomeView   *view,
   HdHomeViewAppletData *data;
   ClutterActor *close_button;
   MBWindowManagerClient *desktop;
+  gint old_x = -1, old_y = -1;
 
   /*
    * Reparent the applet to ourselves; note that this automatically
@@ -1089,14 +1107,18 @@ hd_home_view_add_applet (HdHomeView   *view,
   hd_home_view_load_applet_position (view,
                                      applet,
                                      data,
-                                     force_arrange);
+                                     force_arrange,
+                                     &old_x,
+                                     &old_y);
 
   g_hash_table_insert (priv->applets,
                        applet,
                        data);
 
   hd_home_view_store_applet_position (view,
-                                      applet);
+                                      applet,
+                                      old_x,
+                                      old_y);
 
   desktop = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
   if (desktop)
