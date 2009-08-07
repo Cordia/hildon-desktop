@@ -181,7 +181,7 @@ typedef enum
 
 #define STATE_DISCARD_PREVIEW_NOTE(s) \
   (STATE_ONE_OF((s), HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER \
-                 | HDRM_STATE_APP_PORTRAIT | HDRM_STATE_NON_COMPOSITED))
+                 | HDRM_STATE_NON_COMPOSITED))
 
 /* If we have notes then we may want to be able to click on them. If so
  * then we don't want h-d to have a grab over the notification, so subtract

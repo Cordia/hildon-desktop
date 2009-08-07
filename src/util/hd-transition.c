@@ -390,6 +390,18 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
 	clutter_actor_hide( data->particles[i] );
 }
 
+/* Returns the cubic bezier curve at @t defined by
+ * (@p0, @p1) and (@p2, @p3). */
+static float __attribute__((const))
+bezier(float t, float p0, float p1, float p2, float p3)
+{
+  /* B(t) = (1-t)^3*P0 + (1-t)^2*t*P1 + (1-t)*t^2*P2 + t^3*P3 */
+  return powf((1-t), 3)*p0
+    + 3*powf((1-t), 2)*t*p1
+    + 3*(1-t)*powf(t, 2)*p2
+    + powf(t, 3)*p3;
+}
+
 static void
 on_notification_timeline_new_frame(ClutterTimeline *timeline,
                                    gint frame_num, HDEffectData *data)
@@ -406,7 +418,43 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
 
   now = frame_num / (float)clutter_timeline_get_n_frames(timeline);
 
-  if (data->event == MBWMCompMgrClientEventUnmap)
+  if (hd_comp_mgr_is_portrait())
+    {
+      /* In portrait swipe from right to left, stay in the corner
+       * then swipe out, following a bezier curve.  At the start
+       * the notification's bottom-center is at the screen's
+       * top-right.  By the end the notification's bottom-right
+       * is at the screen's top-left. */
+      static struct
+      {
+        float x, y;
+      } const cpin[] =
+      { /* Bezier curve control points for the opening part. */
+        { 217.000000, -144.000015 },
+        { 217.000000, -88.000000  },
+        { 144.892090,   0         },
+        {   0,          0         },
+      }, cpout[] =
+      { /* and for MBWMCompMgrClientEventUnmap. */
+        {    0,           0        },
+        { -144.892090,    0        },
+        { -366.000000,  -88.000000 },
+        { -366.000000, -143.999985 },
+      }, *curve;
+
+      /* Set the position to @curve(@now). */
+      curve = data->event == MBWMCompMgrClientEventUnmap ? cpout : cpin;
+      clutter_actor_set_anchor_pointu(actor,
+               CLUTTER_FLOAT_TO_FIXED(-bezier(now,
+                        curve[0].x, curve[1].x, curve[2].x, curve[3].x)),
+               CLUTTER_FLOAT_TO_FIXED(-bezier(now,
+                        curve[0].y, curve[1].y, curve[2].y, curve[3].y)));
+
+      /* We should restore the opacity and scaling of @actor in case
+       * we were switched orientation during the transition somehow
+       * but it seems unlikely enough not to justify the cycles. */
+    }
+  else if (data->event == MBWMCompMgrClientEventUnmap)
     {
       float t, thr;
 

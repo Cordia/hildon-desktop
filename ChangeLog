@@ -1,3 +1,17 @@
+2009-08-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#127962 [AF Checked] [S3 proposal] [Erik no S3] Incoming chat
+		  notification NOT shown in potrait mode in a scenario 
+
+	Then show them with a new nice transition.
+
+	* src/home/hd-render-manager.h (STATE_DISCARD_PREVIEW_NOTE):
+	  Don't discard notif previews in APP_PORTRAIT state.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_should_be_portrait_ignoring):
+	  Assume portrait-capability of notif previews.
+	* src/util/hd-transition.c (on_notification_timeline_new_frame):
+	  New transition for notif previews in portrait.
+
 2009-08-06  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Release 2.2.74
