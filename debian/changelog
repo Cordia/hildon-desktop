@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.76-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.76-1) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#117646 - hildon-desktop rewrites applet related GConf keys

@@ -1,3 +1,7 @@
+2009-08-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.76
+
 2009-08-07  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#117646 - hildon-desktop rewrites applet related GConf keys
