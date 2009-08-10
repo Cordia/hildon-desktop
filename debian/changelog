@@ -1,8 +1,12 @@
-hildon-desktop (1:2.2.77-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.77-1) unstable; urgency=low
 
-  * foo
+  Thomas:
+  * Fixes: NB#122930 - Using hildon_banner_show_information always brings
+    owner of the banner to foreground.
+  * Fixes: NB#129485 - Call UI goes to background when importing contacts
+    finishes.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  7 Aug 2009 13:18:05 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 10 Aug 2009 09:52:46 +0300
 
 hildon-desktop (1:2.2.76-1) unstable; urgency=low
 

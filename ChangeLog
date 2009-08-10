@@ -1,3 +1,14 @@
+2009-08-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.77
+
+	Apply a patch from Thomas Thurman for different banner stacking.
+
+	* src/mb/hd-note.c (hd_note_stack): New stacking function to override
+	the default behaviour of raising the window that a banner is transient
+	for even if the window belongs to a background application.
+	Fixes: NB#122930, NB#129485
+
 2009-08-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.76

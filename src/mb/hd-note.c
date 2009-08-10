@@ -42,6 +42,7 @@ static Bool hd_note_request_geometry (MBWindowManagerClient *client,
 				      MBGeometry            *new_geometry,
 				      MBWMClientReqGeomType  flags);
 static MBWMStackLayerType hd_note_stacking_layer(MBWindowManagerClient *client);
+static void hd_note_stack (MBWindowManagerClient *client, int flags);
 
 /* Properties of an IncomingEvent that can be queried, we cache
  * and notice if change. */
@@ -163,6 +164,7 @@ hd_note_class_init (MBWMObjectClass *klass)
   client->client_type  = MBWMClientTypeNote;
   client->realize      = hd_note_realize;
   client->geometry     = hd_note_request_geometry;
+  client->stack        = hd_note_stack;
   client->stacking_layer = hd_note_stacking_layer;
 
 #if MBWM_WANT_DEBUG
@@ -470,6 +472,29 @@ hd_note_clicked (HdNote *self, void *unused, void *actor)
   if (!hd_wm_has_modal_blockers (c->wmref))
     hd_util_click (MB_WM_CLIENT (self));
 }
+
+static void
+hd_note_stack (MBWindowManagerClient *client,
+	       int                    flags)
+{
+  if ((HD_NOTE (client)->note_type == HdNoteTypeBanner ||
+       HD_NOTE (client)->note_type == HdNoteTypeInfo) &&
+      mb_wm_client_get_transient_for (client))
+    {
+      /* we need do nothing here; we are only overriding
+       * the base routine which restacks the parent window,
+       * which we don't want to do.  See NB#121341.
+       */
+    }
+  else
+    {
+      MBWindowManagerClientClass* parent_klass =
+	MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
+
+      parent_klass->stack (client, flags);
+    }
+}
+
 
 /* Define an accessor function that caches @IEProperties[@prop]'s value
  * in #HdNote.properties and returns it, which must not be XFree()d. */
