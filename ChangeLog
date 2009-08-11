@@ -5,6 +5,7 @@
 
 	* src/mb/hd-comp-mgr.c: If we have an app or dialog on top of a window
 	  that is closing, skip the close animation (but still play the sound).
+	  Remove FIXME comment I added before, as not required.
 	
 	Added extra test for when a window is opened via hildon_uri_open  
 	* tests/test-app-launch.c: Added hildon_uri_open button

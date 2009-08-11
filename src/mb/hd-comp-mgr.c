@@ -2362,8 +2362,6 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
               HdRunningApp *app = hd_comp_mgr_client_get_app (hclient);
 
               /* Avoid this transition if app is being hibernated */
-              /* FIXME: is (!a || !b) logic actually correct? it doesn't
-               * tally with the comment above */
               if (!app ||
                   !hd_running_app_is_hibernating (app))
                 {
