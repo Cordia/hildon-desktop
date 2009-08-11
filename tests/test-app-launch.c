@@ -23,6 +23,7 @@
 
 #include <gtk/gtk.h>
 #include <dbus/dbus-glib.h>
+#include <hildon-uri.h>
 
 static void
 launch_app(const gchar *app)
@@ -91,6 +92,13 @@ new_window_never (GtkButton *button)
   launch_app("");
 }
 
+static void
+new_window_mail (GtkButton *button)
+{
+  launch_app("");
+  hildon_uri_open("mailto:foo@bar.com", NULL, NULL);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -133,6 +141,15 @@ main (int argc, char **argv)
                     "clicked",
                     G_CALLBACK (new_window_never),
                     0);
+
+  button = gtk_button_new_with_label ("New Window (for e-mail)");
+    g_signal_connect (button,
+                      "clicked",
+                      G_CALLBACK (new_window_mail),
+                      0);
+
+
+
   gtk_box_pack_start (GTK_BOX (vbox), button, TRUE, TRUE, 0);
 
   gtk_box_pack_start (GTK_BOX (hbox), vbox, FALSE, TRUE, 0);

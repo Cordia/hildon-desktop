@@ -2368,16 +2368,37 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                   !hd_running_app_is_hibernating (app))
                 {
                   /* unregister_client() will switch state if it thinks so */
+                  gboolean window_on_top = FALSE;
+                  MBWindowManagerClient *cit = c->stacked_above;
+                  while (cit)
+                    {
+                      MBWMClientType cit_type = MB_WM_CLIENT_CLIENT_TYPE(cit);
+                      if (cit_type == MBWMClientTypeApp ||
+                          cit_type == MBWMClientTypeDialog)
+                        {
+                          window_on_top = TRUE;
+                          break;
+                        }
+                      cit = cit->stacked_above;
+                    }
 
-                  /* Are we going to change from portrait to landscape? */
-                  gboolean portrait_change =
-                    STATE_IS_PORTRAIT(hd_render_manager_get_state()) &&
-                    !hd_comp_mgr_should_be_portrait_ignoring(hmgr, c);
+                  /* if the window has another app/dialog on top of it then
+                   * don't show the closing animation - but still play the
+                   * sound */
+                  if (!window_on_top)
+                    {
+                      /* Are we going to change from portrait to landscape? */
+                      gboolean portrait_change =
+                        STATE_IS_PORTRAIT(hd_render_manager_get_state()) &&
+                        !hd_comp_mgr_should_be_portrait_ignoring(hmgr, c);
 
-                  if (portrait_change)
-                    hd_transition_close_app_before_rotate (hmgr, c);
+                      if (portrait_change)
+                        hd_transition_close_app_before_rotate (hmgr, c);
+                      else
+                        hd_transition_close_app (hmgr, c);
+                    }
                   else
-                    hd_transition_close_app (hmgr, c);
+                    hd_transition_play_sound (HDCM_WINDOW_CLOSED_SOUND);
                 }
             }
           app->map_effect_before = FALSE;
