@@ -1,5 +1,10 @@
 2009-08-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Corrects one of the scenarios for the wrong closing animation,
+	bug 131647
+	* src/mb/hd-comp-mgr.c: Add check for desktop as window type that
+	can cover an application and stop the closing animation.
+
 	Fixes: NB#131502 - When moving from app to Switcher, background 
 	                   flickers
 	* src/home/hd-render-manager.c: When changing from APP to TASK_NAV

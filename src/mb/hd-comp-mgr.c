@@ -2372,7 +2372,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                     {
                       MBWMClientType cit_type = MB_WM_CLIENT_CLIENT_TYPE(cit);
                       if (cit_type == MBWMClientTypeApp ||
-                          cit_type == MBWMClientTypeDialog)
+                          cit_type == MBWMClientTypeDialog ||
+                          cit_type == MBWMClientTypeDesktop)
                         {
                           window_on_top = TRUE;
                           break;
