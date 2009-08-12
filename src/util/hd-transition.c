@@ -1461,7 +1461,13 @@ transitions_ini_changed(GIOChannel *chnl, GIOCondition cond, gpointer unused)
 {
   struct inotify_event ibuf;
 
-  g_io_channel_read_chars(chnl, (void *)&ibuf, sizeof(ibuf), NULL, NULL);
+  if (g_io_channel_read_chars(chnl, (void *)&ibuf, sizeof(ibuf), NULL, NULL)
+      != G_IO_STATUS_NORMAL)
+    {
+      g_warning("%s: g_io_channel_read_chars failed", __func__);
+      g_io_channel_unref(chnl);
+      return FALSE;
+    }
   if (ibuf.mask & (IN_MODIFY | IN_DELETE_SELF | IN_MOVE_SELF | IN_IGNORED))
     {
       g_debug("disposing transitions.ini");

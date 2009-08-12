@@ -115,6 +115,8 @@ hd_clutter_cache_get_real_texture(const char *filename, gboolean from_theme)
 	      HD_CLUTTER_CACHE_THEME_PATH;
 
       filename_alloc = g_malloc(strlen(theme_path) + strlen(filename) + 1);
+      if (!filename_alloc)
+        return 0;
       strcpy(filename_alloc, theme_path);
       strcat(filename_alloc, filename);
       filename_real = filename_alloc;
@@ -148,7 +150,9 @@ hd_clutter_cache_get_real_texture(const char *filename, gboolean from_theme)
         return 0;
 
       filename_alloc = g_malloc (strlen(HD_CLUTTER_CACHE_FALLBACK_THEME_PATH) +
-		      strlen(filename) + 1);
+                                 strlen(filename) + 1);
+      if (!filename_alloc)
+        return 0;
 
       strcpy(filename_alloc, HD_CLUTTER_CACHE_FALLBACK_THEME_PATH);
       strcat(filename_alloc, filename);

@@ -1,3 +1,14 @@
+2009-08-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.79
+
+	Fix some Coverity issues.
+
+	* src/home/hd-clutter-cache.c (hd_clutter_cache_get_real_texture): Add
+	NULL checks for g_malloc calls.
+	* src/util/hd-transition.c (transitions_ini_changed): Check the return
+	status of g_io_channel_read_chars.
+
 2009-08-12  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Corrects one of the scenarios for the wrong closing animation,
