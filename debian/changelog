@@ -1,8 +1,10 @@
-hildon-desktop (1:2.2.78-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.78-1) unstable; urgency=low
 
-  * foo
+  Gordon:
+  * Fixes: NB#131647 - Able see the camera closing transition on top of the
+    lock code dialog.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 10 Aug 2009 09:57:46 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 12 Aug 2009 10:39:58 +0300
 
 hildon-desktop (1:2.2.77-1) unstable; urgency=low
 
