@@ -1,3 +1,13 @@
+2009-08-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#131502 - When moving from app to Switcher, background 
+	                   flickers
+	* src/home/hd-render-manager.c: When changing from APP to TASK_NAV
+	  state, stop the transition of the background brightness/blur at
+	  its final values immediately. This makes sure that as soon as
+	  the background is visible, it is darkened (rather than slowly
+	  becoming darkened as before).
+
 2009-08-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.78
