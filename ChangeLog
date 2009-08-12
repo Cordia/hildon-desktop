@@ -1,3 +1,16 @@
+2009-08-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#132456 - Status menu should not grab pointer
+
+	* src/mb/hd-status-menu.c (hd_status_menu_class_init,
+	  hd_status_menu_destroy, hd_status_menu_class_type,
+	  hd_status_menu_new, hd_status_menu_realize):
+	* src/mb/hd-status-menu.h (HdStatusMenu::parent,
+	  HdStatusMenu::release_cb_id): Use a modal blocker window for the
+	  status menu to be able to remove the pointer grab.
+
+	* debian/changelog: update.
+
 2009-08-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.79

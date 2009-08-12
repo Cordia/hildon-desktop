@@ -39,6 +39,8 @@ typedef struct HdStatusMenuClass HdStatusMenuClass;
 struct HdStatusMenu
 {
   MBWMClientNote  parent;
+
+  unsigned long   release_cb_id;
 };
 
 struct HdStatusMenuClass
