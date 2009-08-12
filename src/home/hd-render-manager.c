@@ -1569,6 +1569,15 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 	  hd_comp_mgr_sync_stacking (HD_COMP_MGR (priv->comp_mgr));
 	}
 
+      /* When moving from an app to the task navigator, stop the transition
+       * (brightness, saturation, blurring) at the final values, so that
+       * while the app zooms out, the background is already dimmed with the
+       * vignette effect (and you tend not to notice the blur iterating to
+       * the correct value). Solves 131502 */
+      if (oldstate==HDRM_STATE_APP &&
+          state==HDRM_STATE_TASK_NAV)
+        hd_render_manager_stop_transition();
+
       if (state == HDRM_STATE_NON_COMPOSITED)
         {
           MBWindowManagerClient *c;
