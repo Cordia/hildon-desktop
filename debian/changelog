@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.80-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.80-1) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#132456 - Status menu should not grab pointer
