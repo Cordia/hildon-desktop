@@ -571,7 +571,11 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
     loading_image = hd_launcher_app_get_loading_image( item );
 
   if (loading_image && !g_strcmp0(loading_image, HD_LAUNCHER_NO_TRANSITION))
-    return FALSE;
+    {
+      /* If the app specified no transition, just play the sound and return. */
+      hd_transition_play_sound (HDCM_WINDOW_OPENED_SOUND);
+      return FALSE;
+    }
 
   if (priv->launch_image)
     {

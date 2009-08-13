@@ -1,3 +1,10 @@
+2009-08-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Restore launching sound for apps with no loading screen.
+	Fixes: NB#131160
+
+	* src/launcher/hd-launcher.c:
+
 2009-08-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.80
