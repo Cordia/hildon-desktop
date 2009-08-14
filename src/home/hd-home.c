@@ -467,13 +467,16 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 /*  g_debug ("%s, display: %p, keymap: %p", __FUNCTION__, display, keymap); */
 
   pretend_fn = priv->fn_state != FN_STATE_NONE ? FN_MODIFIER : 0;
-  g_debug ("pretend_fn: %d", pretend_fn);
+  g_debug ("%s. pretend_fn: %d", __FUNCTION__, pretend_fn);
   gdk_keymap_translate_keyboard_state (keymap,
                                        xev->keycode,
                                        xev->state | pretend_fn,
                                        0,
                                        &keyval,
                                        NULL, NULL, NULL);
+
+  g_debug ("%s. keycode: %u, state: %u, keyval: %u", __FUNCTION__,
+           xev->keycode, xev->state, keyval);
 
   unicode = gdk_keyval_to_unicode (keyval);
   if (g_unichar_isdigit (unicode) ||
@@ -498,7 +501,8 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 
       g_unichar_to_utf8 (unicode, buffer);
 
-/*      g_debug ("%s, letter: keyval: %u, unicode: %u, buffer: %s", __FUNCTION__, keyval, unicode, buffer); */
+      g_debug ("%s, letter: keyval: %u, unicode: %u, buffer: %s",
+               __FUNCTION__, keyval, unicode, buffer);
 
       if (priv->osso_addressbook_proxy)
         {
@@ -507,8 +511,6 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
                 G_TYPE_STRING, buffer, G_TYPE_INVALID);
         }
     }
-  else
-    return;
 
  if (xev->state & FN_MODIFIER)
    {
@@ -518,7 +520,7 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
  else if (priv->fn_state == FN_STATE_NEXT)
    {
      priv->fn_state = FN_STATE_NONE;
-     g_debug ("FN state: %d", priv->fn_state);
+     g_debug ("%s, FN state: %d", __FUNCTION__, priv->fn_state);
    }
 }
 
@@ -541,7 +543,7 @@ hd_home_desktop_key_release (XKeyEvent *xev, void *userdata)
     priv->fn_state = FN_STATE_LOCKED;
   else
     priv->fn_state = FN_STATE_NONE;
-  g_debug ("FN state: %d", priv->fn_state);
+  g_debug ("%s. FN state: %d", __FUNCTION__, priv->fn_state);
 }
 
 static void
