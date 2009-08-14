@@ -2601,12 +2601,6 @@ hd_comp_mgr_close_app (HdCompMgr *hmgr, MBWMCompMgrClutterClient *cc,
         }
       else /* Either primary or a secondary who's lost its leader. */
         mb_wm_client_deliver_delete (c);
-
-      if (h_client->priv->app)
-        {
-          /* Notify HdAppMgr that the application has been closed. */
-          hd_app_mgr_app_closed (h_client->priv->app);
-        }
     }
 }
 
