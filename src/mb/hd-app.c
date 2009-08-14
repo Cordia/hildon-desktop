@@ -31,6 +31,9 @@ hd_app_request_geometry (MBWindowManagerClient *client,
                          MBWMClientReqGeomType  flags);
 
 static void
+hd_app_detransitise (MBWindowManagerClient     *client);
+
+static void
 hd_app_class_init (MBWMObjectClass *klass)
 {
 #if MBWM_WANT_DEBUG
@@ -38,6 +41,7 @@ hd_app_class_init (MBWMObjectClass *klass)
 #endif
 
   MB_WM_CLIENT_CLASS (klass)->geometry = hd_app_request_geometry;
+  MB_WM_CLIENT_CLASS (klass)->detransitise = hd_app_detransitise;
 }
 
 static void
@@ -159,6 +163,21 @@ hd_app_request_geometry (MBWindowManagerClient *client,
     return False;
   return MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)))
     ->geometry (client, new_geometry, flags);
+}
+
+static void
+hd_app_detransitise (MBWindowManagerClient     *client)
+{
+  HdApp                      *app = HD_APP (client);
+  MBWindowManagerClientClass *klass;
+
+  app->detransitised_from = client->window ? 
+	  client->window->xwin_transient_for : None;
+
+  klass = MB_WM_CLIENT_CLASS(
+		  MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
+  if (klass->detransitise)
+    klass->detransitise (client);
 }
 
 MBWindowManagerClient*

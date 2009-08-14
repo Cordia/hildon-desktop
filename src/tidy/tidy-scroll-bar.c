@@ -567,7 +567,7 @@ adjustment_changed_cb (TidyScrollBar *bar)
   TidyScrollBarPrivate *priv = bar->priv;
   
   if (!priv->refresh_source)
-    priv->refresh_source = g_idle_add_full (CLUTTER_PRIORITY_EVENTS,
+    priv->refresh_source = g_idle_add_full (CLUTTER_PRIORITY_REDRAW,
                                             (GSourceFunc)
                                             tidy_scroll_bar_refresh,
                                             bar,

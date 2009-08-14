@@ -979,8 +979,8 @@ void hd_render_manager_sync_clutter_before ()
    * because currently we move status area right out of the way if we don't
    * think it's visible (to make it non-clickable). A fullscreen app->home
    * transition tends to leave the status area off the screen. NB#112996 */
-  if (STATE_IS_APP(priv->state) !=
-      STATE_IS_APP(priv->previous_state))
+  if (STATE_IS_APP(priv->state) != STATE_IS_APP(priv->previous_state) ||
+      (priv->previous_state == HDRM_STATE_NON_COMPOSITED))
       hd_render_manager_set_visibilities();
 
   /* Now look at what buttons we have showing, and add each visible button X

@@ -692,7 +692,20 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   dnd = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_DO_NOT_DISTURB);
 
   wm = MB_WM_COMP_MGR (hmgr)->wm;
+  if (event->atom == wm->atoms[MBWM_ATOM_NET_WM_STATE]) {
+    c = mb_wm_managed_client_from_xwindow (wm, event->window);
+    if (c) {
+      gboolean client_non_comp;
 
+      client_non_comp = hd_comp_mgr_is_non_composited (c);
+      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED && 
+	  !client_non_comp)
+          hd_render_manager_set_state (HDRM_STATE_APP);
+      else if (hd_render_manager_get_state () == HDRM_STATE_APP &&
+	       client_non_comp)
+          hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+    }
+  }
   /* Check for changes to the hibernable state. */
   if (event->atom == killable ||
       event->atom == able_to_hibernate)
@@ -1137,7 +1150,9 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                   hd_switcher_remove_window_actor (priv->switcher_group,
                                                    actor, cclient);
 
-                  if (c->window->xwindow == hd_wm_current_app_is (NULL, 0))
+                  if (c->window->xwindow == hd_wm_current_app_is (NULL, 0) && 
+                       (app->detransitised_from == None ||
+                        !mb_wm_managed_client_from_xwindow (mgr->wm, app->detransitised_from)))
 		    {
 		      /* We are in APP state and foreground application closed. */
 		      if (hd_wm_has_modal_blockers (mgr->wm))
@@ -1455,7 +1470,8 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client)
 
   if (HD_APP (client)->non_composited_read)
     {
-      if (HD_APP (client)->non_composited)
+      if (HD_APP (client)->non_composited &&
+          client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
         return TRUE;
       else
         return FALSE;
@@ -1485,7 +1501,10 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client)
   if (actual_type == XA_INTEGER)
     {
       HD_APP (client)->non_composited = True;
-      return TRUE;
+      if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+        return TRUE;
+      else
+        return FALSE;
     }
   else
    {
@@ -1513,6 +1532,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
   app->stack_index = -1;  /* initially a non-stackable */
   *replaced = *add_to_tn = NULL;
 
+  fix_transiency (client);
   stack_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_STACKABLE_WINDOW);
 
   mb_wm_util_trap_x_errors ();
@@ -2354,8 +2374,11 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                    && hd_task_navigator_is_crowded ()
                    && c->window->xwindow == hd_wm_current_app_is (NULL, 0)
                    && hd_render_manager_get_state () != HDRM_STATE_APP_PORTRAIT
-                   && !hd_wm_has_modal_blockers (mgr->wm))
+                   && !hd_wm_has_modal_blockers (mgr->wm)
+                   && !c->transient_for) 
+	  {
             hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+	  }
           else
             {
               HdCompMgrClient *hclient = HD_COMP_MGR_CLIENT (c->cm_client);
