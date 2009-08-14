@@ -1,6 +1,19 @@
 hildon-desktop (1:2.2.81-1~unreleased) unstable; urgency=low
 
-  * foo
+  Laszlo:
+  * Fixes: NB#128223 - Disable task switcher invocation based on window
+    property
+
+  Marc:
+  * Fixes: NB#114733 - When trying to open web start-up view second time,
+    weird window and "Unable to load" banner is displayed
+  * Fixes: NB#131160 - TaskSwitcher Blurs for sometime before the call-ui is
+    launched
+
+  Jan Arne:
+  * Fixes: NB#132718 - Home screen fn+ctrl mode keypresses do not open
+    contacts as they should
+
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 12 Aug 2009 18:22:45 +0300
 
