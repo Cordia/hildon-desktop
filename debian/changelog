@@ -3,6 +3,12 @@ hildon-desktop (1:2.2.81-1~unreleased) unstable; urgency=low
   Laszlo:
   * Fixes: NB#128223 - Disable task switcher invocation based on window
     property
+  * Fix problem with application title bar when going out of the
+    non-composited mode.
+
+  Kimmo:
+  * Make sure the window is in the fullscreen mode before automatically going
+    into the non-composited mode.
 
   Marc:
   * Fixes: NB#114733 - When trying to open web start-up view second time,
