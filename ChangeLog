@@ -1,5 +1,11 @@
 2009-08-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Apply additional patch from Laszlo for NB#128223.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify): Switch back to
+	composited mode if non-composited window was unmapped and the next
+	window in the stack does not request non-composited mode.
+
 	Release 2.2.81
 
 2009-08-14  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>

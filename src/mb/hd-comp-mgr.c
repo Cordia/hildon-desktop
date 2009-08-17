@@ -2255,6 +2255,18 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
             break;
           }
     }
+  else if (hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED)
+    {
+      MBWindowManagerClient *below;
+      /* check if we should go back from non-composited mode */
+      for (below = c->stacked_below; below; below = below->stacked_below)
+        if (MB_WM_CLIENT_CLIENT_TYPE (below) != HdWmClientTypeStatusArea)
+          {
+            if (!HD_IS_APP (below) || !hd_comp_mgr_is_non_composited (below))
+              hd_render_manager_set_state (HDRM_STATE_APP);
+            break;
+          }
+    }
 
   if (HD_IS_APP (c) && HD_APP (c)->stack_index > 0 &&
       HD_APP (c)->leader != HD_APP (c))
