@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.81-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.81-1) unstable; urgency=low
 
   Laszlo:
   * Fixes: NB#128223 - Disable task switcher invocation based on window
@@ -20,8 +20,7 @@ hildon-desktop (1:2.2.81-1~unreleased) unstable; urgency=low
   * Fixes: NB#132718 - Home screen fn+ctrl mode keypresses do not open
     contacts as they should
 
-
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 12 Aug 2009 18:22:45 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 17 Aug 2009 10:45:23 +0300
 
 hildon-desktop (1:2.2.80-1) unstable; urgency=low
 
