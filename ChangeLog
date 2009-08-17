@@ -1,5 +1,13 @@
 2009-08-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.82
+
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler): Update a
+	global variable when the display goes on/off.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_texture_update_area): New commented
+	out code for detecting actors that are updated when the display is
+	off.
+
 	Apply additional patch from Laszlo for NB#128223.
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify): Switch back to

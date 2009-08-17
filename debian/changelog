@@ -1,3 +1,11 @@
+hildon-desktop (1:2.2.82-1) unstable; urgency=low
+
+  Laszlo:
+  * Fixes: NB#128223 - Disable task switcher invocation based on window
+    property
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 17 Aug 2009 14:53:06 +0300
+
 hildon-desktop (1:2.2.81-1) unstable; urgency=low
 
   Laszlo:

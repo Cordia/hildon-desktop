@@ -149,6 +149,8 @@ struct HdCompMgrClientPrivate
   guint                 portrait_timestamp;
 };
 
+extern gboolean hd_dbus_display_is_off;
+
 HdRunningApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
                                                HdCompMgr *hmgr);
 
@@ -1265,6 +1267,15 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
 
   if (!actor || !CLUTTER_ACTOR_IS_VISIBLE(actor) || hmgr == 0)
     return;
+
+  /*
+  if (hd_dbus_display_is_off)
+    {
+      g_printerr ("%s: update for actor %p (%d,%d) %dx%d '%s'"
+                  " while display is off\n", __func__, actor, x, y,
+                  width, height, clutter_actor_get_name (actor));
+    }
+    */
 
   /* If we are in the blanking period of the rotation transition
    * then we don't want to issue a redraw every time something changes.

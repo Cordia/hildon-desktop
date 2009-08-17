@@ -20,6 +20,8 @@
 #define DSME_SIGNAL_INTERFACE "com.nokia.dsme.signal"
 #define DSME_SHUTDOWN_SIGNAL_NAME "shutdown_ind"
 
+gboolean hd_dbus_display_is_off = FALSE;
+
 static DBusConnection *connection, *sysbus_conn;
 
 static DBusHandlerResult
@@ -70,6 +72,23 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                                  DBUS_TYPE_INVALID));
         {
           hd_comp_mgr_tklocked (hmgr, !strcmp(mode, MCE_TK_LOCKED));
+        }
+    }
+  else if (dbus_message_is_signal (msg, MCE_SIGNAL_IF, "display_status_ind"))
+    {
+      DBusMessageIter iter;
+
+      if (dbus_message_iter_init(msg, &iter))
+        {
+          char *str = NULL;
+          dbus_message_iter_get_basic(&iter, &str);
+          if (str)
+            {
+              if (strcmp (str, "on") == 0)
+                hd_dbus_display_is_off = FALSE;
+              else if (strcmp (str, "off") == 0)
+                hd_dbus_display_is_off = TRUE;
+            }
         }
     }
 
