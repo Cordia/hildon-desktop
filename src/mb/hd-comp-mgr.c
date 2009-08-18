@@ -696,7 +696,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   if (event->atom == wm->atoms[MBWM_ATOM_NET_WM_STATE]) {
     c = mb_wm_managed_client_from_xwindow (wm, event->window);
-    if (c) {
+    if (c && HD_IS_APP (c)) {
       gboolean client_non_comp;
 
       client_non_comp = hd_comp_mgr_is_non_composited (c);
