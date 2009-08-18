@@ -700,7 +700,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
       gboolean client_non_comp;
 
       client_non_comp = hd_comp_mgr_is_non_composited (c);
-      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED && 
+      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED &&
 	  !client_non_comp)
           hd_render_manager_set_state (HDRM_STATE_APP);
       else if (hd_render_manager_get_state () == HDRM_STATE_APP &&
@@ -1152,7 +1152,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                   hd_switcher_remove_window_actor (priv->switcher_group,
                                                    actor, cclient);
 
-                  if (c->window->xwindow == hd_wm_current_app_is (NULL, 0) && 
+                  if (c->window->xwindow == hd_wm_current_app_is (NULL, 0) &&
                        (app->detransitised_from == None ||
                         !mb_wm_managed_client_from_xwindow (mgr->wm, app->detransitised_from)))
 		    {
@@ -2398,7 +2398,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                    && c->window->xwindow == hd_wm_current_app_is (NULL, 0)
                    && hd_render_manager_get_state () != HDRM_STATE_APP_PORTRAIT
                    && !hd_wm_has_modal_blockers (mgr->wm)
-                   && !c->transient_for) 
+                   && !c->transient_for)
 	  {
             hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
 	  }
@@ -2458,7 +2458,9 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventMap);
       else if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
         hd_transition_notification(hmgr, c, MBWMCompMgrClientEventMap);
-      else if (c_type == MBWMClientTypeNote)
+      else if (c_type == MBWMClientTypeNote && !HD_IS_INCOMING_EVENT_NOTE(c))
+        /* std event notes go direct to the switcher, so we don't want to
+         * use a transition for them */
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventMap);
       else if (c_type == MBWMClientTypeApp)
         {

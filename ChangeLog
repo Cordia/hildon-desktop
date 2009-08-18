@@ -1,3 +1,10 @@
+2009-08-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	More improvements for NB#113278
+	* src/mb/hd-comp-mgr.c: Make sure hd_transition fade is not called
+	  for incoming event notes (which go straight into switcher anyway).
+	  This saves a few redraws the very first time a notification appears.
+
 2009-08-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.84
