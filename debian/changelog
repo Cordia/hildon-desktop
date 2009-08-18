@@ -1,8 +1,11 @@
-hildon-desktop (1:2.2.83-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.83-1) unstable; urgency=low
 
-  * foo
+  Kimmo (possible regression fix):
+  * src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Make
+    sure the client is HdApp before calling hd_comp_mgr_is_non_composited
+    for it.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 17 Aug 2009 14:58:55 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Aug 2009 11:00:16 +0300
 
 hildon-desktop (1:2.2.82-1) unstable; urgency=low
 

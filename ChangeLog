@@ -1,5 +1,7 @@
 2009-08-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.83
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Make
 	sure the client is HdApp before calling hd_comp_mgr_is_non_composited
 	for it.
