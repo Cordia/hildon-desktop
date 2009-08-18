@@ -1069,7 +1069,7 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
   HdTitleBarPrivate *priv;
   float amt;
   gint opacity;
-  ClutterActor *actor;
+  ClutterActor *actor, *stage;
   gboolean is_visible = TRUE;
 
   if (!HD_IS_TITLE_BAR(bar))
@@ -1080,8 +1080,9 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
    * Clutter should do this, but it only checks the actor for visibility,
    * not its parents. Changing clutter at this stage might risk regressing
    * things too much... */
+  stage = clutter_actor_get_stage(CLUTTER_ACTOR(bar));
   for (actor=CLUTTER_ACTOR(bar);actor;actor=clutter_actor_get_parent(actor))
-    if (!CLUTTER_ACTOR_IS_VISIBLE(actor))
+    if (actor!=stage && !CLUTTER_ACTOR_IS_VISIBLE(actor))
       is_visible = FALSE;
 
   if (!is_visible)
