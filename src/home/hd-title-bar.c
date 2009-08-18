@@ -1069,10 +1069,23 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
   HdTitleBarPrivate *priv;
   float amt;
   gint opacity;
+  ClutterActor *actor;
+  gboolean is_visible = TRUE;
 
   if (!HD_IS_TITLE_BAR(bar))
     return;
   priv = bar->priv;
+
+  /* Only get this to fire a redraw if it is visible... fixes bug 113278.
+   * Clutter should do this, but it only checks the actor for visibility,
+   * not its parents. Changing clutter at this stage might risk regressing
+   * things too much... */
+  for (actor=CLUTTER_ACTOR(bar);actor;actor=clutter_actor_get_parent(actor))
+    if (!CLUTTER_ACTOR_IS_VISIBLE(actor))
+      is_visible = FALSE;
+
+  if (!is_visible)
+    clutter_actor_set_allow_redraw(CLUTTER_ACTOR(bar), FALSE);
 
   amt =  (float)clutter_timeline_get_progress(timeline)
               * HD_TITLE_BAR_SWITCHER_PULSE_NPULSES / 2;
@@ -1081,6 +1094,9 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
       opacity = (gint)((1-cos(amt*2*3.141592))*127);
       clutter_actor_set_opacity(priv->buttons[BTN_SWITCHER_HIGHLIGHT], opacity);
     }
+
+  if (!is_visible)
+      clutter_actor_set_allow_redraw(CLUTTER_ACTOR(bar), TRUE);
 }
 
 /* Realign all right-aligned buttons when the screen size changes. */

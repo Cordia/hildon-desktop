@@ -1,3 +1,16 @@
+2009-08-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#113278 - Choppy playback when receiving notification
+	                   Not 100% fixed, but massively improved.
+	* src/home/hd-render-manager.c: No longer hide task nav button,
+	  as it will be done by hiding blur_front. Button vis should be 
+	  handled by hd_tb_set_state anyway.
+	* src/home/hd-title-bar.c: Now check visibility state of the
+	  title bar before allowing redraws to be queued for the flashing
+	  task navigator button.
+	* debian/control: Set depends on new clutter (maemo45) with 
+	  the redraw improvements
+	
 2009-08-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.83

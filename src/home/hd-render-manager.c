@@ -2436,7 +2436,6 @@ void hd_render_manager_set_visibilities()
   if (has_fullscreen)
     { VISIBILITY ("SA GO AWAY");
       clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
-      clutter_actor_hide(CLUTTER_ACTOR(priv->button_task_nav));
       if (c && c->frame_geometry.y >= 0)
         { /* Move SA out of the way. */
           c->frame_geometry.y   = -c->frame_geometry.height;
