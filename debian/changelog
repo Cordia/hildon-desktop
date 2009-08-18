@@ -1,6 +1,7 @@
-hildon-desktop (1:2.2.85-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.85-1) unstable; urgency=low
 
-  * foo
+  Gordon (improved the fix):
+  * Fixes: NB#113278 - Choppy playback when receiving notification
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Aug 2009 16:03:58 +0300
 
