@@ -2380,7 +2380,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
       else if ((c_type == MBWMClientTypeDialog) ||
                (c_type == HdWmClientTypeAppMenu))
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventUnmap);
-      else if (c_type == MBWMClientTypeNote)
+      else if (c_type == MBWMClientTypeNote && !HD_IS_INCOMING_EVENT_NOTE(c))
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (c_type == MBWMClientTypeApp)
         {

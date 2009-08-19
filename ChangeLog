@@ -1,5 +1,13 @@
 2009-08-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Little performance improvements, one by one so it'll be easy to revert.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_effect):
+	  Now don't hd_transition_fade(a_notification) even when the thing
+	  is being unmapped.
+
+2009-08-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/main.c:
 	  Make sure "built with libmatchbox2 ..." remains
 	  in the hildon-desktop executable.
