@@ -1854,10 +1854,14 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         XFree (value);
     }
 
-  /* #MBWMCompMgrClutterClient already has an actor, now it's time
+  /*
+   * #MBWMCompMgrClutterClient already has an actor, now it's time
    * for #MBWMCompMgrClutter to create its texture and bind it to
-   * the window's pixmap. */
-  if (parent_klass->map_notify)
+   * the window's pixmap.  This is not necessary for notifications
+   * whose windows we don't use for anything at all and not creating
+   * the texture saves precious miliseconds.
+   */
+  if (!HD_IS_INCOMING_EVENT_NOTE(c))
     parent_klass->map_notify (mgr, c);
 
   /* Now the actor has been created and added to the desktop, make sure we

@@ -1,5 +1,11 @@
 2009-08-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
+	  Don't create a texture for notification windows,
+	  we don't use it for anything.
+
+2009-08-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/tidy/tidy_blur_group.c:
 	  Don't check for TIDY_IS_BLUR_GROUP().  This is done literally
 	  a hundred times during an innocent map and we shoudl be grown
