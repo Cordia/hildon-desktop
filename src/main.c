@@ -63,8 +63,9 @@ enum {
 };
 
 #ifdef MBWM_DEB_VERSION
-static __attribute__((unused)) const char mbver[] =
-  "built with libmatchbox2 " MBWM_DEB_VERSION;
+asm(".section .rodata");
+asm(".string \"built with libmatchbox2 "MBWM_DEB_VERSION"\"");
+asm(".previous");
 #endif
 
 MBWindowManager *hd_mb_wm = NULL;

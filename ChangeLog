@@ -1,3 +1,9 @@
+2009-08-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/main.c:
+	  Make sure "built with libmatchbox2 ..." remains
+	  in the hildon-desktop executable.
+
 2009-08-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.86
