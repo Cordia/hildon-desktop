@@ -177,7 +177,10 @@ gboolean hd_comp_mgr_is_portrait(void)
   return hd_mb_wm->xdpy_width < hd_mb_wm->xdpy_height;
 }
 
-gboolean hd_comp_mgr_is_non_composited (MBWindowManagerClient *client);
+gboolean 
+hd_comp_mgr_is_non_composited (
+		MBWindowManagerClient *client,
+		gboolean               force_re_read);
 
 static inline gboolean
 hd_comp_mgr_client_is_maximized (MBGeometry geom);

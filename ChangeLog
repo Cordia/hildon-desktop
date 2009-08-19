@@ -1,3 +1,14 @@
+2009-08-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Apply patch from Laszlo Pere for NB#127974.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Track
+	changes to HILDON_NON_COMPOSITED_WINDOW property.
+	(hd_comp_mgr_is_non_composited): Add argument to force re-reading the
+	property.
+	* src/mb/hd-wm.c: Use the new calling convention for
+	hd_comp_mgr_is_non_composited.
+
 2009-08-19  Thomas Thurman  <thomas.thurman@collabora.co.uk>
 
 	* src/mb/hd-app-mgr.c (hd_app_mgr_execute): Fix memory leak

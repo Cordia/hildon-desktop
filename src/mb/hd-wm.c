@@ -351,7 +351,7 @@ hd_wm_activate_zoomed_client (MBWindowManager *wm,
 
   gboolean ret = wm_class->client_activate (wm, c);
 
-  if (hd_comp_mgr_is_non_composited (c))
+  if (hd_comp_mgr_is_non_composited (c, FALSE))
     hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
   else
     hd_render_manager_set_state (HDRM_STATE_APP);

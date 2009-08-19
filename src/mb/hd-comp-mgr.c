@@ -680,6 +680,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
 {
   static gint32 idontcare[] = { -1 };
   Atom pok, prq, killable, able_to_hibernate, dnd, nothread;
+  gboolean non_comp_changed;
   gint32 *value;
   MBWindowManager *wm;
   HdCompMgrClient *cc;
@@ -694,20 +695,25 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   dnd = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_DO_NOT_DISTURB);
 
   wm = MB_WM_COMP_MGR (hmgr)->wm;
-  if (event->atom == wm->atoms[MBWM_ATOM_NET_WM_STATE]) {
-    c = mb_wm_managed_client_from_xwindow (wm, event->window);
-    if (c && HD_IS_APP (c)) {
-      gboolean client_non_comp;
 
-      client_non_comp = hd_comp_mgr_is_non_composited (c);
-      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED &&
-	  !client_non_comp)
-          hd_render_manager_set_state (HDRM_STATE_APP);
-      else if (hd_render_manager_get_state () == HDRM_STATE_APP &&
-	       client_non_comp)
-          hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+  non_comp_changed = event->atom == 
+        hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_NON_COMPOSITED_WINDOW);
+  if (event->atom == wm->atoms[MBWM_ATOM_NET_WM_STATE] || non_comp_changed)
+    {
+      c = mb_wm_managed_client_from_xwindow (wm, event->window);
+      if (c && HD_IS_APP (c))
+        {
+          gboolean client_non_comp;
+
+          client_non_comp = hd_comp_mgr_is_non_composited (c, non_comp_changed);
+          if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED &&
+	      !client_non_comp)
+            hd_render_manager_set_state (HDRM_STATE_APP);
+          else if (hd_render_manager_get_state () == HDRM_STATE_APP &&
+	           client_non_comp)
+            hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+        }
     }
-  }
   /* Check for changes to the hibernable state. */
   if (event->atom == killable ||
       event->atom == able_to_hibernate)
@@ -1468,7 +1474,8 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
 }
 
 gboolean
-hd_comp_mgr_is_non_composited (MBWindowManagerClient *client)
+hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
+                               gboolean force_re_read)
 {
   MBWindowManager *wm;
   HdCompMgr *hmgr;
@@ -1479,7 +1486,7 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client)
   unsigned char *prop;
   Status ret;
 
-  if (HD_APP (client)->non_composited_read)
+  if (HD_APP (client)->non_composited_read && !force_re_read)
     {
       if (HD_APP (client)->non_composited &&
           client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
@@ -2049,7 +2056,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       g_hash_table_remove (priv->hibernating_apps, (gpointer)hkey);
     }
 
-  if (hd_comp_mgr_is_non_composited (c))
+  if (hd_comp_mgr_is_non_composited (c, FALSE))
     {
       /* g_warning ("%s: client requests non-composited mode", __func__); */
       hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
@@ -2261,7 +2268,8 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       for (below = c->stacked_below; below; below = below->stacked_below)
         if (MB_WM_CLIENT_CLIENT_TYPE (below) != HdWmClientTypeStatusArea)
           {
-            if (HD_IS_APP (below) && hd_comp_mgr_is_non_composited (below))
+            if (HD_IS_APP (below) && 
+			    hd_comp_mgr_is_non_composited (below, FALSE))
               hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
             break;
           }
@@ -2273,7 +2281,8 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       for (below = c->stacked_below; below; below = below->stacked_below)
         if (MB_WM_CLIENT_CLIENT_TYPE (below) != HdWmClientTypeStatusArea)
           {
-            if (!HD_IS_APP (below) || !hd_comp_mgr_is_non_composited (below))
+            if (!HD_IS_APP (below) || 
+			    !hd_comp_mgr_is_non_composited (below, FALSE))
               hd_render_manager_set_state (HDRM_STATE_APP);
             break;
           }

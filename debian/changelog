@@ -1,6 +1,11 @@
 hildon-desktop (1:2.2.86-1~unreleased) unstable; urgency=low
 
-  * foo
+  Laszlo:
+  * Fixes: NB#127974 - support for after-mapping-time changing of composite
+    mode
+
+  Thomas:
+  * Fix a memory leak.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Aug 2009 16:53:06 +0300
 
