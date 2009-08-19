@@ -1,5 +1,12 @@
 2009-08-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/tidy/tidy_blur_group.c:
+	  Don't check for TIDY_IS_BLUR_GROUP().  This is done literally
+	  a hundred times during an innocent map and we shoudl be grown
+	  up enough not to need it anymore.
+
+2009-08-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Little performance improvements, one by one so it'll be easy to revert.
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_effect):
