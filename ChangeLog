@@ -1,3 +1,9 @@
+2009-08-19  Thomas Thurman  <thomas.thurman@collabora.co.uk>
+
+	* src/mb/hd-app-mgr.c (hd_app_mgr_execute): Fix memory leak
+	caused by removal of warning without removal of preceding
+	"if" statement.
+
 2009-08-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.85

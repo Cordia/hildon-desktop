@@ -1282,7 +1282,6 @@ hd_app_mgr_execute (const gchar *exec, GPid *pid)
   gchar *exec_cmd;
   gint argc;
   gchar **argv = NULL;
-  GError *internal_error = NULL;
 
   if (space)
   {
@@ -1298,7 +1297,7 @@ hd_app_mgr_execute (const gchar *exec, GPid *pid)
     exec_cmd = g_find_program_in_path (exec);
 
   if (!exec_cmd ||
-      !g_shell_parse_argv (exec_cmd, &argc, &argv, &internal_error))
+      !g_shell_parse_argv (exec_cmd, &argc, &argv, NULL))
   {
     g_free (exec_cmd);
     if (argv)
@@ -1312,9 +1311,7 @@ hd_app_mgr_execute (const gchar *exec, GPid *pid)
                        0,
                        _hd_app_mgr_child_setup, NULL,
                        pid,
-                       &internal_error);
-  if (internal_error)
-
+                       NULL);
   g_free (exec_cmd);
 
   if (argv)
