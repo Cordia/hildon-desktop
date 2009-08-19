@@ -7,6 +7,9 @@ hildon-desktop (1:2.2.86-1~unreleased) unstable; urgency=low
   Thomas:
   * Fix a memory leak.
 
+  Jan Arne:
+  * Fixes: NB#133432 - long press to go to edit mode
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Aug 2009 16:53:06 +0300
 
 hildon-desktop (1:2.2.85-1) unstable; urgency=low

@@ -93,6 +93,8 @@
 #define FN_KEY GDK_ISO_Level3_Shift
 #define FN_MODIFIER Mod5Mask
 
+#define LONG_PRESS_DUR 1
+
 /* for debugging dragging of home view backgrounds */
 #define DRAG_DEBUG(...)
 //#define DRAG_DEBUG g_debug
@@ -148,6 +150,9 @@ struct _HdHomePrivate
    * average velocity */
 
   gboolean               moved_over_threshold : 1;
+  gboolean               long_press : 1;
+  guint                  press_timeout;
+  ClutterActor          *pressed_applet;
 
   Window                 desktop;
 
@@ -192,6 +197,10 @@ static void hd_home_get_property (GObject      *object,
 static void hd_home_constructed (GObject *object);
 
 static void hd_home_show_edit_button (HdHome *home);
+
+static void do_applet_release (HdHome             *home,
+                               ClutterActor       *applet,
+                               ClutterButtonEvent *event);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -257,10 +266,9 @@ hd_home_back_button_clicked (ClutterActor *button,
 }
 
 static void
-hd_home_desktop_do_motion (
-		HdHome     *home,
-		int         x,
-		int         y)
+hd_home_desktop_do_motion (HdHome *home,
+                           int     x,
+                           int     y)
 {
   HdHomePrivate   *priv = home->priv;
   HdHomeDrag *drag_item;
@@ -320,6 +328,9 @@ hd_home_desktop_do_motion (
       ABS (priv->cumulative_x) > HDH_PAN_THRESHOLD)
     {
       priv->moved_over_threshold = TRUE;
+      if (priv->press_timeout)
+        priv->press_timeout = (g_source_remove (priv->press_timeout), 0);
+
       /* Remove initial jump caused by the threshold */
       if (priv->cumulative_x > 0)
         priv->cumulative_x -= HDH_PAN_THRESHOLD;
@@ -329,7 +340,7 @@ hd_home_desktop_do_motion (
 
   if (priv->moved_over_threshold)
     hd_home_view_container_set_offset (HD_HOME_VIEW_CONTAINER (priv->view_container),
-                                  CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_x));
+                                       CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_x));
 
   priv->last_x = x;
 }
@@ -337,19 +348,22 @@ hd_home_desktop_do_motion (
 static void
 hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
 {
-  HdHome          *home = userdata;
+  HdHome *home = userdata;
+
   hd_home_desktop_do_motion (home, xev->x, xev->y);
 }
 
 static void
-hd_home_desktop_do_release (
-		HdHome     *home)
+hd_home_desktop_do_release (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
 
   /*g_debug("%s:", __FUNCTION__);*/
   DRAG_DEBUG("drag release");
+
+  if (priv->press_timeout)
+    priv->press_timeout = (g_source_remove (priv->press_timeout), 0);
 
   if (priv->desktop_motion_cb)
     mb_wm_main_context_x_event_handler_remove (wm->main_ctx,
@@ -362,7 +376,7 @@ hd_home_desktop_do_release (
   g_list_free(priv->drag_list);
   priv->drag_list = 0;
 
-  if (priv->moved_over_threshold)
+  if (!priv->long_press && priv->moved_over_threshold)
     {
       if (ABS (priv->cumulative_x) >= PAN_NEXT_PREVIOUS_PERCENTAGE * HD_COMP_MGR_LANDSCAPE_WIDTH) /* */
         {
@@ -383,9 +397,9 @@ hd_home_desktop_do_release (
           DRAG_DEBUG("drag scroll_back, vel=%d", priv->velocity_x);
         }
     }
-  else if (hd_render_manager_get_state() == HDRM_STATE_HOME &&
-		  priv->initial_x == -1 &&
-		  priv->initial_y == -1)
+  else if (!priv->long_press && hd_render_manager_get_state() == HDRM_STATE_HOME &&
+           priv->initial_x == -1 &&
+           priv->initial_y == -1)
     {
       /*
        * If the button was not pressed over an applet we start up the edit
@@ -396,19 +410,36 @@ hd_home_desktop_do_release (
 
   priv->cumulative_x = 0;
   priv->moved_over_threshold = FALSE;
+  priv->long_press = FALSE;
 }
 
-static void
-hd_home_desktop_release (XButtonEvent *xev, void *userdata)
+static gboolean 
+press_timeout_cb (gpointer data)
 {
-  hd_home_desktop_do_release (userdata);
+  HdHome *home = data;
+  HdHomePrivate *priv = home->priv;
+
+  if (priv->press_timeout)
+    priv->press_timeout = 0;
+
+  priv->long_press = TRUE;
+
+  hd_render_manager_set_state (HDRM_STATE_HOME_EDIT);
+
+  if (priv->pressed_applet)
+    do_applet_release (home,
+                       priv->pressed_applet,
+                       NULL);
+  else
+    hd_home_desktop_do_release (home);
+
+  return FALSE;
 }
 
 static Bool
-hd_home_desktop_do_press (
-		HdHome     *home,
-		int         x,
-		int         y)
+hd_home_desktop_do_press (HdHome *home,
+                          int     x,
+                          int     y)
 {
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
@@ -423,6 +454,13 @@ hd_home_desktop_do_press (
 
       priv->desktop_motion_cb = 0;
     }
+
+  priv->long_press = FALSE;
+  if (priv->press_timeout)
+    priv->press_timeout = (g_source_remove (priv->press_timeout), 0);
+  priv->press_timeout = g_timeout_add_seconds (LONG_PRESS_DUR,
+                                               press_timeout_cb,
+                                               home);
 
   priv->last_x = x;
   priv->cumulative_x = 0;
@@ -444,9 +482,18 @@ hd_home_desktop_do_press (
 }
 
 static Bool
+hd_home_desktop_release (XButtonEvent *xev, void *userdata)
+{
+  hd_home_desktop_do_release (userdata);
+
+  return True;
+}
+
+static Bool
 hd_home_desktop_press (XButtonEvent *xev, void *userdata)
 {
   HdHome *home = userdata;
+
   return hd_home_desktop_do_press (home, xev->x, xev->y);
 }
 
@@ -998,6 +1045,9 @@ hd_home_dispose (GObject *object)
       priv->last_move_time = 0;
     }
 
+  if (priv->press_timeout)
+    priv->press_timeout = (g_source_remove (priv->press_timeout), 0);
+
   G_OBJECT_CLASS (hd_home_parent_class)->dispose (object);
 }
 
@@ -1360,6 +1410,8 @@ hd_home_applet_press (ClutterActor       *applet,
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
 
+  g_warning ("%s", __FUNCTION__);
+
   /*
    * We always emit a button press event to animate it on the screen. Later we
    * can abort the click with a LeaveNotify event.
@@ -1376,20 +1428,20 @@ hd_home_applet_press (ClutterActor       *applet,
 
   clutter_grab_pointer (applet);
   hd_home_desktop_do_press (home, event->x, event->y);
+
+  priv->pressed_applet = applet;
+
   return TRUE;
 }
 
-static gboolean
-hd_home_applet_release (ClutterActor       *applet,
-	  	        ClutterButtonEvent *event,
-			HdHome             *home)
+static void
+do_applet_release (HdHome             *home,
+                   ClutterActor       *applet,
+                   ClutterButtonEvent *event)
 {
   HdHomePrivate   *priv = home->priv;
-  /*
-   * If we are in edit mode the HdHomeView will have to deal with this event.
-   */
-  if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
-    return FALSE;
+
+  priv->pressed_applet = NULL;
 
   hd_home_desktop_do_release (home);
   clutter_ungrab_pointer ();
@@ -1399,22 +1451,38 @@ hd_home_applet_release (ClutterActor       *applet,
    * treshold to pan the desktop.
    */
   if (priv->initial_x > -1 && priv->initial_y > -1) {
-    /*
-     * If we are still inside the applet (and did not get the event because of
-     * the pointer grab) we send a click to the applet window.
-     */
-    if (event->source == applet)
-      hd_home_applet_emit_button_release_event (home, applet,
-	    priv->initial_x,
-	    priv->initial_y);
-    else
-      hd_home_applet_emit_leave_event (home, applet,
-        priv->initial_x,
-        priv->initial_y);
+      /*
+       * If we are still inside the applet (and did not get the event because of
+       * the pointer grab) we send a click to the applet window.
+       */
+      if (event && event->source == applet)
+        hd_home_applet_emit_button_release_event (home, applet,
+                                                  priv->initial_x,
+                                                  priv->initial_y);
+      else
+        hd_home_applet_emit_leave_event (home, applet,
+                                         priv->initial_x,
+                                         priv->initial_y);
 
-    priv->initial_x = -1;
-    priv->initial_y = -1;
+      priv->initial_x = -1;
+      priv->initial_y = -1;
   }
+}
+
+static gboolean
+hd_home_applet_release (ClutterActor       *applet,
+	  	        ClutterButtonEvent *event,
+			HdHome             *home)
+{
+  /*
+   * If we are in edit mode the HdHomeView will have to deal with this event.
+   */
+  if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
+    return FALSE;
+
+  g_warning ("%s", __FUNCTION__);
+
+  do_applet_release (home, applet, event);
 
   return TRUE;
 }
@@ -1444,7 +1512,7 @@ hd_home_applet_motion (ClutterActor       *applet,
    * -1;
    */
   if (priv->initial_x == -1 &&
-		  priv->initial_x == -1)
+      priv->initial_x == -1)
     return TRUE;
 
   moved_over_threshold =
@@ -1452,11 +1520,14 @@ hd_home_applet_motion (ClutterActor       *applet,
 	  ABS (priv->initial_y - event->y) > HDH_PAN_THRESHOLD;
 
   if (moved_over_threshold) {
-    hd_home_applet_emit_leave_event (home, applet,
-      priv->initial_x,
-      priv->initial_y);
-    priv->initial_x = -1;
-    priv->initial_y = -1;
+      if (priv->press_timeout)
+        priv->press_timeout = (g_source_remove (priv->press_timeout), 0);
+
+      hd_home_applet_emit_leave_event (home, applet,
+                                       priv->initial_x,
+                                       priv->initial_y);
+      priv->initial_x = -1;
+      priv->initial_y = -1;
   }
 
 

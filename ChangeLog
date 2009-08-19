@@ -1,3 +1,18 @@
+2009-08-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#133432 - long press to go to edit mode
+
+	* src/home/hd-home.c (LONG_PRESS_DUR, _HdHomePrivate::long_press,
+	  _HdHomePrivate::press_timeout, _HdHomePrivate::pressed_applet,
+	  HdHomeDrag, hd_home_desktop_do_motion, hd_home_desktop_motion,
+	  hd_home_desktop_do_release, press_timeout_cb,
+	  hd_home_desktop_do_press, hd_home_desktop_release,
+	  hd_home_desktop_press, hd_home_dispose, hd_home_applet_press,
+	  do_applet_release, hd_home_applet_release, hd_home_applet_motion):
+	  Implement long press to go to edit mode.
+
+	* debian/changelog: update.
+
 2009-08-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Apply patch from Laszlo Pere for NB#127974.
