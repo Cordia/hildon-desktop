@@ -24,6 +24,7 @@ unsigned long hd_util_modal_blocker_realize(MBWindowManagerClient *client,
 Bool hd_util_client_has_modal_blocker (MBWindowManagerClient *c);
 gboolean hd_util_change_screen_orientation (MBWindowManager *wm,
                                             gboolean goto_portrait);
+void hd_util_set_rotating_property(MBWindowManager *wm, gboolean is_rotating);
 
 gboolean hd_util_get_cursor_position(gint *x, gint *y);
 gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client);

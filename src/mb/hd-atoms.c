@@ -85,6 +85,8 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     "_GTK_DELETE_TEMPORARIES",
     /* Used to see if window has a video overlay --> can't blur it */
     "_OMAP_VIDEO_OVERLAY",
+    /* Signal that we are in a rotation transition */
+    "_MAEMO_ROTATION_TRANSITION",
   };
 
   XInternAtoms (xdpy,

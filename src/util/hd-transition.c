@@ -1258,6 +1258,7 @@ hd_transition_rotating_fsm(void)
         hd_transition_fade_and_rotate(
                 TRUE, Orientation_change.direction == GOTO_PORTRAIT,
                 G_CALLBACK(hd_transition_rotating_fsm), NULL);
+        hd_util_set_rotating_property(Orientation_change.wm, TRUE);
         break;
       case FADE_OUT:
         /*
@@ -1329,6 +1330,7 @@ hd_transition_rotating_fsm(void)
         break;
       case FADE_IN:
         Orientation_change.phase = IDLE;
+        hd_util_set_rotating_property(Orientation_change.wm, FALSE);
         if (Orientation_change.direction != Orientation_change.new_direction)
           hd_transition_rotating_fsm();
         break;

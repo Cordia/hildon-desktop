@@ -1,3 +1,16 @@
+2009-08-20  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	We now set the _MAEMO_ROTATION_TRANSITION property to show if we are
+	currently doing a rotation transition or not.
+
+	* src/mb/hd-atoms.c
+	* src/mb/hd-atoms.h: added _MAEMO_ROTATION_TRANSITION	
+	* src/util/hd-util.c
+	* src/util/hd-util.h: added hd_util_set_rotating_property to set the
+	  _MAEMO_ROTATION_TRANSITION property
+	* src/util/hd-transition.c: call hd_util_set_rotating_property
+	  before and after the transition
+
 2009-08-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Task navigation in p-mode.

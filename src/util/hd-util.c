@@ -106,7 +106,7 @@ hd_util_modal_blocker_release_handler (XButtonEvent    *xev,
     {
       ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor(
                                MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
-      if (actor) 
+      if (actor)
         {
           int x, y;
           unsigned int h, w;
@@ -523,4 +523,16 @@ hd_util_click (const MBWindowManagerClient *c)
   ev.same_screen  = True;
 
   XSendEvent(xdpy, xwin, False, ButtonPressMask, (XEvent *)&ev);
+}
+
+/* Set a property on the root window to tell others whether we are doing
+ * rotation or not */
+void hd_util_set_rotating_property(MBWindowManager *wm, gboolean is_rotating)
+{
+  HdCompMgr *hmgr = HD_COMP_MGR(wm->comp_mgr);
+  guint value = is_rotating ? 1 : 0;
+  XChangeProperty(wm->xdpy, wm->root_win->xwindow,
+      hd_comp_mgr_get_atom (hmgr, HD_ATOM_MAEMO_ROTATION_TRANSITION),
+                  XA_CARDINAL, 32, PropModeReplace,
+                  (unsigned char *)&value, 1);
 }

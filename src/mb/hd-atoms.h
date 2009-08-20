@@ -80,6 +80,8 @@ typedef enum HdAtoms
 
   HD_ATOM_OMAP_VIDEO_OVERLAY,
 
+  HD_ATOM_MAEMO_ROTATION_TRANSITION,
+
   _HD_ATOM_LAST
 } HdAtoms;
 
