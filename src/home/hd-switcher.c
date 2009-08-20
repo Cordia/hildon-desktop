@@ -409,7 +409,7 @@ press_timeout_cb (gpointer data)
 
   priv->long_press = TRUE;
 
-  if (hd_render_manager_get_state () == HDRM_STATE_APP)
+  if (STATE_IS_APP (hd_render_manager_get_state ()))
     hd_render_manager_set_state (HDRM_STATE_HOME);
 
   return FALSE;
@@ -427,7 +427,7 @@ hd_switcher_press (HdSwitcher *switcher)
 
   priv->long_press = FALSE;
 
-  if (hd_render_manager_get_state () == HDRM_STATE_APP)
+  if (STATE_IS_APP (hd_render_manager_get_state ()))
     {
       priv->press_timeout = g_timeout_add_seconds (LONG_PRESS_DUR,
                                                    press_timeout_cb,

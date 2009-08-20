@@ -1,3 +1,15 @@
+2009-08-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Task navigation in p-mode.
+
+	* src/home/hd-render-manager.c:
+	  Show the Tasks button in p-mode.
+	* src/home/hd-switcher.c:
+	  Make long pressing the Tasks button work in p-mode.
+
+	If you begin complaining about the unsmooth transition
+	i'll slaughter you.
+
 2009-08-20  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: hildon-desktop's half of 133950 (transparency), the other

@@ -825,12 +825,12 @@ void hd_render_manager_sync_clutter_before ()
         g_error("%s: NEVER supposed to be in HDRM_STATE_UNDEFINED", __func__);
 	return;
       case HDRM_STATE_HOME:
+        blur |=  HDRM_ZOOM_FOR_HOME;
+      case HDRM_STATE_HOME_PORTRAIT: /* Fallen truth */
         if (hd_task_navigator_is_empty())
           visible_top_left = HDRM_BUTTON_LAUNCHER;
         else
           visible_top_left = HDRM_BUTTON_TASK_NAV;
-        blur |=  HDRM_ZOOM_FOR_HOME;
-      case HDRM_STATE_HOME_PORTRAIT: /* Fallen truth */
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         hd_home_update_layout (priv->home);
@@ -853,10 +853,9 @@ void hd_render_manager_sync_clutter_before ()
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         break;
       case HDRM_STATE_APP:
+      case HDRM_STATE_APP_PORTRAIT:
         visible_top_left = HDRM_BUTTON_TASK_NAV;
         visible_top_right = HDRM_BUTTON_NONE;
-        /* Fall through */
-      case HDRM_STATE_APP_PORTRAIT:
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
         break;
       case HDRM_STATE_TASK_NAV:
@@ -1391,7 +1390,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           hd_render_manager_set_loading(NULL);
         }
 
-      /* Goto HOME instead if we tasw is not appropriate for some reason. */
+      /* Goto HOME instead if tasw is not appropriate for some reason. */
       if (state == HDRM_STATE_TASK_NAV)
         {
           gboolean goto_tasw_now, goto_tasw_later;
@@ -1411,7 +1410,12 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
           if (!goto_tasw_now)
             {
-              state = priv->state = HDRM_STATE_HOME;
+              /* It may not be very intuitive what we're doing if in APP state
+               * you have a sysmodal and hit CTRL-Backspace (we go to HOME),
+               * but whatever. */
+              state = priv->state = 
+                goto_tasw_later && oldstate == HDRM_STATE_APP_PORTRAIT
+                  ? HDRM_STATE_APP : HDRM_STATE_HOME;
               g_debug("you must have meant STATE %s -> STATE %s",
                       hd_render_manager_state_str(oldstate),
                       hd_render_manager_state_str(state));
