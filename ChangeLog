@@ -1,3 +1,8 @@
+2009-08-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/tidy/tidy_blur_group.c:
+	  NULL pointer checks.
+
 2009-08-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
@@ -8,7 +13,7 @@
 
 	* src/tidy/tidy_blur_group.c:
 	  Don't check for TIDY_IS_BLUR_GROUP().  This is done literally
-	  a hundred times during an innocent map and we shoudl be grown
+	  a hundred times during an innocent map and we should be grown
 	  up enough not to need it anymore.
 
 2009-08-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>

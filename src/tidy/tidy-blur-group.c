@@ -19,6 +19,8 @@
 #include <string.h>
 #include <locale.h>
 
+/* #define it something sane */
+#define TIDY_IS_SANE_BLUR_GROUP(obj)    ((obj) != NULL)
 
 /* This destroys and re-allocates the texture if the actor size changes
  * (eg. screen rotation). We may not want to do this as it takes some time. */
@@ -168,6 +170,9 @@ static
 gboolean tidy_blur_group_notify_modified_real(ClutterActor          *actor,
                                               ClutterActor          *child)
 {
+  if (!TIDY_IS_SANE_BLUR_GROUP(actor))
+    return TRUE;
+
   TidyBlurGroup *container = TIDY_BLUR_GROUP(actor);
   TidyBlurGroupPrivate *priv = container->priv;
   if (child != NULL)
@@ -317,6 +322,9 @@ tidy_blur_group_paint (ClutterActor *actor)
   ClutterColor    bgcol = { 0x00, 0x00, 0x00, 0xff };
   gint            x_1, y_1, x_2, y_2;
   gint            steps_this_frame = 0;
+
+  if (!TIDY_IS_SANE_BLUR_GROUP(actor))
+    return;
 
   ClutterGroup *group = CLUTTER_GROUP(actor);
   TidyBlurGroup *container = TIDY_BLUR_GROUP(group);
@@ -870,6 +878,9 @@ void tidy_blur_group_set_chequer(ClutterActor *blur_group, gboolean chequer)
 {
   TidyBlurGroupPrivate *priv;
 
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return;
+
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
 
   if (priv->chequer != chequer)
@@ -894,6 +905,9 @@ void tidy_blur_group_set_blur(ClutterActor *blur_group, float blur)
   if (step==0 && blur!=0)
     step = 1;
 
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return;
+
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
 
   if (priv->blur_step != step)
@@ -916,6 +930,9 @@ void tidy_blur_group_set_saturation(ClutterActor *blur_group, float saturation)
 {
   TidyBlurGroupPrivate *priv;
 
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return;
+
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
 
   if (priv->saturation != saturation)
@@ -934,6 +951,9 @@ void tidy_blur_group_set_saturation(ClutterActor *blur_group, float saturation)
 void tidy_blur_group_set_brightness(ClutterActor *blur_group, float brightness)
 {
   TidyBlurGroupPrivate *priv;
+
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return;
 
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
 
@@ -956,6 +976,9 @@ void tidy_blur_group_set_zoom(ClutterActor *blur_group, float zoom)
 {
   TidyBlurGroupPrivate *priv;
 
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return;
+
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
 
   if (priv->zoom != zoom)
@@ -976,6 +999,9 @@ float tidy_blur_group_get_zoom(ClutterActor *blur_group)
 {
   TidyBlurGroupPrivate *priv;
 
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return 1.0f;
+
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
 
   return priv->zoom;
@@ -990,6 +1016,9 @@ float tidy_blur_group_get_zoom(ClutterActor *blur_group)
 void tidy_blur_group_set_use_alpha(ClutterActor *blur_group, gboolean alpha)
 {
   TidyBlurGroupPrivate *priv;
+
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return;
 
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
 
@@ -1006,6 +1035,9 @@ void tidy_blur_group_set_use_mirror(ClutterActor *blur_group, gboolean mirror)
 {
   TidyBlurGroupPrivate *priv;
 
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return;
+
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
 
   priv->use_mirror = mirror;
@@ -1020,6 +1052,9 @@ void tidy_blur_group_set_use_mirror(ClutterActor *blur_group, gboolean mirror)
 void tidy_blur_group_set_source_changed(ClutterActor *blur_group)
 {
   TidyBlurGroupPrivate *priv;
+
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return;
 
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
   priv->source_changed = TRUE;
@@ -1038,6 +1073,9 @@ void tidy_blur_group_hint_source_changed(ClutterActor *blur_group)
 {
   TidyBlurGroupPrivate *priv;
 
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return;
+
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
   priv->source_changed = TRUE;
 }
@@ -1052,6 +1090,9 @@ void tidy_blur_group_hint_source_changed(ClutterActor *blur_group)
 gboolean tidy_blur_group_source_buffered(ClutterActor *blur_group)
 {
   TidyBlurGroupPrivate *priv;
+
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return FALSE;
 
   priv = TIDY_BLUR_GROUP(blur_group)->priv;
   return !(priv->blur_step==0 && priv->saturation==1 && priv->brightness==1);
