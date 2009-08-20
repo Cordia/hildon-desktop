@@ -387,7 +387,7 @@ load_background_idle (gpointer data)
   HdHomeViewPrivate *priv = self->priv;
   ClutterActor *actor = CLUTTER_ACTOR (self);
   gchar *cached_background_image_file;
-  ClutterActor *new_bg;
+  ClutterActor *new_bg = 0;
   TidySubTexture *new_bg_sub = 0;
   ClutterColor clr = BACKGROUND_COLOR;
   GError *error = NULL;
@@ -405,17 +405,84 @@ load_background_idle (gpointer data)
       cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PVR,
                                                       g_get_home_dir (),
                                                       priv->id + 1);
+      new_bg = clutter_texture_new_from_file (cached_background_image_file,
+                                                &error);
     }
+  else
+    {
+      GdkPixbuf        *pixbuf;
 
-  new_bg = clutter_texture_new_from_file (cached_background_image_file,
-                                          &error);
+      /* Load image directly. We actually want to dither it on the fly to
+       * 16 bit, and clutter doesn't do this for us so we implement a very
+       * quick dither here. */
+      pixbuf = gdk_pixbuf_new_from_file (cached_background_image_file, &error);
+      if (pixbuf != NULL)
+        {
+          gboolean          has_alpha;
+          gint              width;
+          gint              height;
+          gint              rowstride;
+          gint              n_channels;
+          guchar           *pixels;
+          gushort          *out_pixels, *out;
+          guint             lfsr = 1;
+          gint x,y;
+
+          /* Get pixbuf properties */
+          has_alpha       = gdk_pixbuf_get_has_alpha (pixbuf);
+          width           = gdk_pixbuf_get_width (pixbuf);
+          height          = gdk_pixbuf_get_height (pixbuf);
+          rowstride       = gdk_pixbuf_get_rowstride (pixbuf);
+          n_channels      = gdk_pixbuf_get_n_channels (pixbuf);
+          pixels          = gdk_pixbuf_get_pixels (pixbuf);
+
+          if (gdk_pixbuf_get_bits_per_sample (pixbuf)==8 &&
+              (n_channels==3 || n_channels==4))
+            {
+              out_pixels = g_malloc(width*height*2);
+              out = out_pixels;
+              for (y=0;y<height;y++) {
+                for (x=0;x<width;x++) {
+                  /* http://en.wikipedia.org/wiki/Linear_feedback_shift_register */
+                  lfsr = (lfsr >> 1) ^ (unsigned int)((0 - (lfsr & 1u)) & 0xd0000001u);
+
+                  /* dither 565 - by adding random noise and then truncating
+                   * (r>>8)*0xFF makes sure our bottom 8 bits are 0xFF if we
+                   * overflow.
+                   */
+                  guint r,g,b;
+                  r = pixels[0] + (lfsr&7);
+                  r |= (r>>8)*0xFF;
+                  g = pixels[1] + ((lfsr>>3)&3);
+                  g |= (g>>8)*0xFF;
+                  b = pixels[2] + ((lfsr>>5)&7);
+                  b |= (b>>8)*0xFF;
+                  *out = ((r<<8)&0xF800) |
+                         ((g<<3)&0x07E0) |
+                         ((b>>3)&0x001F);
+
+                  pixels += n_channels;
+                  out++;
+                }
+                pixels += rowstride - width*n_channels;
+              }
+              new_bg = clutter_texture_new();
+              clutter_texture_set_from_rgb_data(CLUTTER_TEXTURE(new_bg),
+                    (guchar*)out_pixels, FALSE,
+                    width, height, width*2, 2, CLUTTER_TEXTURE_FLAG_16_BIT, &error);
+              g_free(out_pixels);
+            }
+          g_object_unref (pixbuf);
+        }
+    }
 
   if (!new_bg)
     {
       g_warning ("Error loading cached background image %s. %s",
                  cached_background_image_file,
-                 error->message);
-      g_error_free (error);
+                 error?error->message:"");
+      if (error)
+        g_error_free (error);
 
       /* Add a black background */
       new_bg = clutter_rectangle_new_with_color (&clr);

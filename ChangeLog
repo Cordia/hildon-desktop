@@ -1,5 +1,11 @@
 2009-08-20  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#134110: Need to dither backgrounds down to device's 
+	                  capabilities
+	* src/home/hd-home-view.c: Dither png files down to 16 bits. This makes
+	  a better quality image than letting GLES dither to 16 bits, and 
+	  increases performance and decreases memory usage.
+
 	We now set the _MAEMO_ROTATION_TRANSITION property to show if we are
 	currently doing a rotation transition or not.
 
