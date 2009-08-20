@@ -78,6 +78,14 @@ typedef enum
   PRESTART_ALWAYS  /* Used in scratchbox where we don't have memory limits. */
 } HdAppMgrPrestartMode;
 
+/* Trying to launch an app can have different results. */
+typedef enum
+{
+  LAUNCH_OK,
+  LAUNCH_FAILED,
+  LAUNCH_NO_MEM
+} HdAppMgrLaunchResult;
+
 struct _HdAppMgrPrivate
 {
   HdLauncherTree *tree;
@@ -129,7 +137,7 @@ enum
   APP_SHOWN,
   APP_LOADING_FAIL,
   APP_CRASHED,
-  NOT_ENOUGH_MEMORY,
+  NOT_ENOUGH_MEMORY,  /* The boolean argument tells if it was waking up. */
 
   LAST_SIGNAL
 };
@@ -203,11 +211,12 @@ static void hd_app_mgr_dispose (GObject *gobject);
 static void hd_app_mgr_populate_tree_finished (HdLauncherTree *tree,
                                                gpointer data);
 
-gboolean hd_app_mgr_start     (HdRunningApp *app);
-gboolean hd_app_mgr_relaunch  (HdRunningApp *app);
+HdAppMgrLaunchResult hd_app_mgr_start     (HdRunningApp *app);
+HdAppMgrLaunchResult hd_app_mgr_relaunch  (HdRunningApp *app);
+HdAppMgrLaunchResult hd_app_mgr_wakeup    (HdRunningApp *app);
 gboolean hd_app_mgr_prestart  (HdRunningApp *app);
 gboolean hd_app_mgr_hibernate (HdRunningApp *app);
-gboolean hd_app_mgr_wakeup    (HdRunningApp *app);
+
 static gboolean hd_app_mgr_service_top (const gchar *service,
                                         const gchar *param);
 static gboolean  hd_app_mgr_execute (const gchar *exec, GPid *pid);
@@ -231,7 +240,7 @@ static void
 hd_app_mgr_setup_launch (size_t high_pages,
                          size_t nr_decay_pages,
                          size_t *launch_required_pages);
-static gboolean hd_app_mgr_can_launch   (void);
+static gboolean hd_app_mgr_can_launch   (HdLauncherApp *launcher);
 static gboolean hd_app_mgr_can_prestart (void);
 static void     hd_app_mgr_hdrm_state_change (gpointer hdrm,
                                               GParamSpec *pspec,
@@ -329,8 +338,8 @@ hd_app_mgr_class_init (HdAppMgrClass *klass)
                   HD_TYPE_APP_MGR,
                   G_SIGNAL_RUN_FIRST,
                   0, NULL, NULL,
-                  g_cclosure_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0, NULL);
+                  g_cclosure_marshal_VOID__BOOLEAN,
+                  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
   /* Bind D-Bus info. */
   dbus_g_object_type_install_info (HD_TYPE_APP_MGR,
@@ -782,7 +791,7 @@ hd_app_mgr_launch (HdLauncherApp *launcher)
 gboolean
 hd_app_mgr_activate (HdRunningApp *app)
 {
-  gboolean result = FALSE;
+  HdAppMgrLaunchResult result = LAUNCH_FAILED;
   gboolean timer = FALSE;
   HdRunningAppState state;
 
@@ -804,49 +813,52 @@ hd_app_mgr_activate (HdRunningApp *app)
     case HD_APP_STATE_LOADING:
     case HD_APP_STATE_WAKING:
       /* Do nothing, keep on waiting. */
-      result = TRUE;
+      result = LAUNCH_OK;
       break;
     default:
-      result = FALSE;
+      result = LAUNCH_FAILED;
   }
 
-  if (!result)
-    {
+  switch (result)
+  {
+    case LAUNCH_OK:
+      if (timer)
+          {
+            /* Start a loading timer. */
+            time_t now;
+            time (&now);
+            hd_running_app_set_last_launch (app, now);
+            g_timeout_add_seconds (LOADING_TIMEOUT,
+                                   (GSourceFunc)hd_app_mgr_loading_timeout,
+                                   g_object_ref (app));
+          }
+      break;
+    case LAUNCH_FAILED:
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LOADING_FAIL],
-          0, hd_running_app_get_launcher_app (app), NULL);
-    }
-  else if (timer)
-    {
-      /* Start a loading timer. */
-      time_t now;
-      time (&now);
-      hd_running_app_set_last_launch (app, now);
-      g_timeout_add_seconds (LOADING_TIMEOUT,
-                             (GSourceFunc)hd_app_mgr_loading_timeout,
-                             g_object_ref (app));
-    }
+                0, hd_running_app_get_launcher_app (app), NULL);
+      break;
+    case LAUNCH_NO_MEM:
+      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[NOT_ENOUGH_MEMORY], 0,
+          (state == HD_APP_STATE_HIBERNATED));
+      break;
+  }
 
-  return result;
+  return (result == LAUNCH_OK)? TRUE : FALSE;
 }
 
-gboolean
+HdAppMgrLaunchResult
 hd_app_mgr_start (HdRunningApp *app)
 {
   gboolean result = FALSE;
   HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
   if (!launcher)
-    return FALSE;
+    return LAUNCH_FAILED;
 
   const gchar *service = hd_launcher_app_get_service (launcher);
   const gchar *exec;
 
-  if (!hd_app_mgr_can_launch ())
-    {
-      g_debug ("%s: Not enough memory to start application %s.",
-               __FUNCTION__, hd_launcher_item_get_id (HD_LAUNCHER_ITEM (app)));
-      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[NOT_ENOUGH_MEMORY], 0);
-      return FALSE;
-    }
+  if (!hd_app_mgr_can_launch (launcher))
+    return LAUNCH_NO_MEM;
 
   if (service)
     {
@@ -877,10 +889,10 @@ hd_app_mgr_start (HdRunningApp *app)
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LAUNCHED],
           0, launcher, NULL);
     }
-  return result;
+  return result ? LAUNCH_OK : LAUNCH_FAILED;
 }
 
-gboolean
+HdAppMgrLaunchResult
 hd_app_mgr_relaunch (HdRunningApp *app)
 {
   /* we have to call hd_app_mgr_service_top when we relaunch an app,
@@ -891,10 +903,10 @@ hd_app_mgr_relaunch (HdRunningApp *app)
 
   HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
   if (launcher)
-  g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_RELAUNCHED],
-        0, launcher, NULL);
+    g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_RELAUNCHED],
+                   0, launcher, NULL);
 
-  return TRUE;
+  return LAUNCH_OK;
 }
 
 static gboolean
@@ -1214,7 +1226,7 @@ hd_app_mgr_hibernate (HdRunningApp *app)
   return TRUE;
 }
 
-gboolean
+HdAppMgrLaunchResult
 hd_app_mgr_wakeup   (HdRunningApp *app)
 {
   g_return_val_if_fail (app, FALSE);
@@ -1224,20 +1236,17 @@ hd_app_mgr_wakeup   (HdRunningApp *app)
 
   /* If the app is not hibernating, do nothing. */
   if (hd_running_app_get_state (app) != HD_APP_STATE_HIBERNATED)
-    return TRUE;
+    return LAUNCH_OK;
 
   if (!service)
     {
       g_warning ("%s: Can't wake up an app without service.\n", __FUNCTION__);
-      return FALSE;
+      return LAUNCH_FAILED;
     }
 
-  if (!hd_app_mgr_can_launch ())
+  if (!hd_app_mgr_can_launch (hd_running_app_get_launcher_app (app)))
     {
-      g_debug ("%s: Not enough memory to start application %s.",
-               __FUNCTION__, service);
-      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[NOT_ENOUGH_MEMORY], 0);
-      return FALSE;
+      return LAUNCH_NO_MEM;
     }
 
   res = hd_app_mgr_service_top (service, "RESTORE");
@@ -1245,7 +1254,7 @@ hd_app_mgr_wakeup   (HdRunningApp *app)
     hd_running_app_set_state (app, HD_APP_STATE_WAKING);
   }
 
-  return res;
+  return res ? LAUNCH_OK : LAUNCH_FAILED;
 }
 
 #define OOM_DISABLE "0"
@@ -1467,9 +1476,13 @@ hd_app_mgr_setup_launch (size_t high_pages,
 }
 
 static gboolean
-hd_app_mgr_can_launch (void)
+hd_app_mgr_can_launch (HdLauncherApp *launcher)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+
+  if (launcher && hd_launcher_app_get_ignore_lowmem (launcher))
+    return TRUE;
+
   return !priv->lowmem;
 }
 
@@ -1565,7 +1578,7 @@ hd_app_mgr_state_check_loop (gpointer data)
    * TODO: Add some way to avoid waking-up apps from being shown immediately
    * to the user as if launched anew.
   else if (!g_queue_is_empty (priv->queues[QUEUE_HIBERNATED]) &&
-           hd_app_mgr_can_launch ())
+           hd_app_mgr_can_launch (NULL))
     {
       HdLauncherApp *app = g_queue_peek_head (priv->queues[QUEUE_HIBERNATED]);
       hd_app_mgr_wakeup (app);

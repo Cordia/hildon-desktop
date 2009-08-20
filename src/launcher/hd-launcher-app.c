@@ -40,6 +40,7 @@
 #define HD_DESKTOP_ENTRY_WM_CLASS       "X-Maemo-Wm-Class"
 #define HD_DESKTOP_ENTRY_PRIORITY       "X-Maemo-Prestarted-Priority"
 #define HD_DESKTOP_ENTRY_SWITCHER_ICON  "X-Maemo-Switcher-Icon"
+#define HD_DESKTOP_ENTRY_IGNORE_LOWMEM  "X-Maemo-Ignore-Lowmem"
 
 /* DBus names */
 #define OSSO_BUS_ROOT          "com.nokia"
@@ -58,6 +59,7 @@ struct _HdLauncherAppPrivate
   HdLauncherAppPrestartMode prestart_mode;
 
   gint priority;
+  gboolean ignore_lowmem;
 };
 
 G_DEFINE_TYPE (HdLauncherApp, hd_launcher_app, HD_TYPE_LAUNCHER_ITEM);
@@ -188,6 +190,11 @@ hd_launcher_app_parse_keyfile (HdLauncherItem *item,
                                            HD_DESKTOP_ENTRY_PRIORITY,
                                            NULL);
 
+  priv->ignore_lowmem = g_key_file_get_boolean (key_file,
+                                                HD_DESKTOP_ENTRY_GROUP,
+                                                HD_DESKTOP_ENTRY_IGNORE_LOWMEM,
+                                                NULL);
+
   return TRUE;
 }
 
@@ -244,6 +251,13 @@ hd_launcher_app_get_priority (HdLauncherApp *app)
 {
   HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
   return priv->priority;
+}
+
+gboolean
+hd_launcher_app_get_ignore_lowmem (HdLauncherApp *app)
+{
+  HdLauncherAppPrivate *priv = HD_LAUNCHER_APP_GET_PRIVATE (app);
+  return priv->ignore_lowmem;
 }
 
 gboolean hd_launcher_app_match_window (HdLauncherApp *app,

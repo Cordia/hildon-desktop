@@ -137,6 +137,7 @@ static void hd_switcher_app_crashed (HdSwitcher *switcher,
                                      HdLauncherApp *app,
                                      gpointer data);
 static void hd_switcher_insufficient_memory(HdSwitcher *switcher,
+                                            gboolean waking_up,
                                             gpointer data);
 
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, G_TYPE_OBJECT);
@@ -618,6 +619,7 @@ hd_switcher_app_crashed (HdSwitcher *switcher,
  */
 static void
 hd_switcher_insufficient_memory(HdSwitcher *switcher,
+                                gboolean waking_up,
                                 gpointer data)
 {
   if (hd_task_navigator_has_apps ())
@@ -626,7 +628,9 @@ hd_switcher_insufficient_memory(HdSwitcher *switcher,
     hd_render_manager_set_state (HDRM_STATE_HOME);
 
   GtkWidget* banner = hildon_banner_show_information (NULL, NULL,
-                        _("memr_ti_close_applications"));
+                        dgettext("ke-recv", (waking_up ?
+                            "memr_ia_close_applications_switching" :
+                            "memr_ia_close_applications_opening")));
   hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
 }
 
