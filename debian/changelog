@@ -1,8 +1,13 @@
-hildon-desktop (1:2.2.87-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.87-1) unstable; urgency=low
 
-  * foo
+  Marc:
+  * Fixes: NB#132749 - Unable to launch Call application in low memory
+    situation
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 19 Aug 2009 13:10:33 +0300
+  Adam:
+  * Small performance improvements.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 20 Aug 2009 15:18:49 +0300
 
 hildon-desktop (1:2.2.86-1) unstable; urgency=low
 

@@ -1,7 +1,12 @@
+2009-08-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.87
+
 2009-08-20  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
-	Add desktop file option X-Maemo-Ignore-Lowmem to allow apps to start even
-	in lowmem condition. Also, show correct message when unable to start app.
+	Add desktop file option X-Maemo-Ignore-Lowmem to allow apps to start
+	even in lowmem condition. Also, show correct message when unable to
+	start app.
 	Fixes: NB#132749
 
 	* src/home/hd-switcher.c:
