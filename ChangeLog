@@ -1,3 +1,12 @@
+2009-08-20  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: hildon-desktop's half of 133950 (transparency), the other
+	       half is in hildon-widgets.
+	       
+	* src/util/hd-transition.c: Code to only fade certain notes in
+	  and out to the alpha values given in data/transitions.ini	  
+	* data/transitions.ini: added banner_note_alpha/info_note_alpha
+
 2009-08-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.87

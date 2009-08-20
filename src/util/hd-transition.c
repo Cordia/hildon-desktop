@@ -67,6 +67,9 @@ typedef struct _HDEffectData
   float                     angle;
   /* Any extra particles if they are used for this effect */
   ClutterActor             *particles[HDCM_UNMAP_PARTICLES];
+  /* In Fade effects, final_alpha specifies the alpha value when the
+   * window/note if fully faded in. */
+  float                     final_alpha;
 } HDEffectData;
 
 /* Describes the state of hd_transition_rotating_fsm(). */
@@ -323,7 +326,7 @@ on_fade_timeline_new_frame(ClutterTimeline *timeline,
     amt = 1-amt;
   amt = hd_transition_smooth_ramp(amt);
 
-  clutter_actor_set_opacity(actor, (int)(255*amt));
+  clutter_actor_set_opacity(actor, (int)(255*amt*data->final_alpha));
 }
 
 static void
@@ -778,8 +781,17 @@ hd_transition_fade(HdCompMgr                  *mgr,
 {
   MBWMCompMgrClutterClient * cclient;
   HDEffectData             * data;
+  float                      real_alpha = 1.0f;
+
+  if (HD_IS_BANNER_NOTE(c))
+    real_alpha =
+      (float)hd_transition_get_double("fade", "banner_note_alpha", 1.0);
+  if (HD_IS_INFO_NOTE(c))
+    real_alpha =
+      (float)hd_transition_get_double("fade", "info_note_alpha", 1.0);
 
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+
 
   /* Need to store also pointer to the manager, as by the time
    * the effect finishes, the back pointer in the cm_client to
@@ -793,6 +805,7 @@ hd_transition_fade(HdCompMgr                  *mgr,
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline =
         g_object_ref( hd_transition_timeline_new("fade", event, 250) );
+  data->final_alpha = real_alpha;
   g_signal_connect (data->timeline, "new-frame",
                         G_CALLBACK (on_fade_timeline_new_frame), data);
   g_signal_connect (data->timeline, "completed",
