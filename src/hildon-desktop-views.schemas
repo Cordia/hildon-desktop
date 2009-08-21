@@ -27,7 +27,7 @@
       <applyto>/apps/osso/hildon-desktop/disable_phone_gesture</applyto>
       <owner>hildon-desktop</owner>
       <type>bool</type>
-      <default>false</default>
+      <default>true</default>
       <locale name="C">
         <short>Disable showing CallUI when desktop is rotated to portrait.</short>
       </locale>

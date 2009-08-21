@@ -1,6 +1,7 @@
-hildon-desktop (1:2.2.89-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.89-1) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#134396 - Rotation should not open call ui by defautl
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 21 Aug 2009 10:41:48 +0300
 

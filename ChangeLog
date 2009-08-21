@@ -1,5 +1,10 @@
 2009-08-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.89
+
+	* src/hildon-desktop-views.schemas: Default value for
+	disable_phone_gesture is now true. Fixes: NB#134396
+
 	Release 2.2.88
 
 2009-08-20  Gordon Williams <gordon.williams@collabora.co.uk>
