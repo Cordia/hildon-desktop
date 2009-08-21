@@ -812,7 +812,8 @@ void hd_render_manager_sync_clutter_before ()
   HDRMButtonEnum visible_top_right = HDRM_BUTTON_NONE;
   HdTitleBarVisEnum btn_state = hd_title_bar_get_state(priv->title_bar) &
     ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH |
-      HDTB_VIS_BTN_RIGHT_MASK | HDTB_VIS_FOREGROUND);
+      HDTB_VIS_BTN_RIGHT_MASK | HDTB_VIS_FOREGROUND |
+      HDTB_VIS_SMALL_BUTTONS);
   HDRMBlurEnum blur = 0;
   gboolean blurred_changed = FALSE;
 
@@ -888,6 +889,9 @@ void hd_render_manager_sync_clutter_before ()
   clutter_actor_show(CLUTTER_ACTOR(priv->front));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->app_top));
   clutter_actor_raise_top(CLUTTER_ACTOR(priv->front));
+
+  if (STATE_IS_PORTRAIT(priv->state))
+    btn_state |= HDTB_VIS_SMALL_BUTTONS;
 
   if (STATE_SHOW_OPERATOR(priv->state))
     clutter_actor_show(priv->operator);
@@ -1413,7 +1417,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
               /* It may not be very intuitive what we're doing if in APP state
                * you have a sysmodal and hit CTRL-Backspace (we go to HOME),
                * but whatever. */
-              state = priv->state = 
+              state = priv->state =
                 goto_tasw_later && oldstate == HDRM_STATE_APP_PORTRAIT
                   ? HDRM_STATE_APP : HDRM_STATE_HOME;
               g_debug("you must have meant STATE %s -> STATE %s",
@@ -2514,7 +2518,7 @@ void hd_render_manager_place_titlebar_elements (void)
 
   if (CLUTTER_ACTOR_IS_VISIBLE(priv->button_task_nav)
       || CLUTTER_ACTOR_IS_VISIBLE(priv->button_launcher))
-    x += HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+    x += hd_title_bar_get_button_width(priv->title_bar);
 
   if (priv->status_area && CLUTTER_ACTOR_IS_VISIBLE(priv->status_area))
     {

@@ -65,6 +65,8 @@ typedef enum {
   /* do we want a 'foreground' part shown out the front of the blur?
    * As in when a non-system-modal dialog blurs the background */
   HDTB_VIS_FOREGROUND      = 256,
+  /* do we use small buttons (for portrait) or not */
+  HDTB_VIS_SMALL_BUTTONS   = 512,
 
 
   HDTB_VIS_BTN_LEFT_MASK   = HDTB_VIS_BTN_LAUNCHER |
@@ -112,5 +114,8 @@ hd_title_bar_create_fake(gboolean portrait);
 
 void
 hd_title_bar_get_xy (HdTitleBar *bar, int *x, int *y);
+
+gint
+hd_title_bar_get_button_width(HdTitleBar *bar);
 
 #endif

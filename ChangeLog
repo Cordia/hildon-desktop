@@ -1,3 +1,15 @@
+2009-08-21  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Added small title bar buttons for portrait mode.
+	
+	* src/home/hd-render-manager.c: Set HDTB_VIS_SMALL_BUTTONS when in
+	  portrait mode.
+	* src/home/hd-title-bar.c
+	* src/home/hd-title-bar.h: Added hd_title_bar_get_button_width and
+	  HDTB_VIS_SMALL_BUTTONS, and reposition icons accordingly when
+	  the state flag is set.
+	* src/mb/hd-status-area.c: Added comment about positioning
+
 2009-08-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.90

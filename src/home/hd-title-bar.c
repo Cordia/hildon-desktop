@@ -117,35 +117,42 @@ static const char *const BTN_LABELS[BTN_COUNT * 2] = {
 
 enum {
   BTN_FLAG_ALIGN_RIGHT = 1,
+  BTN_FLAG_ALIGN_LEFT = 2,
 
   /* We try and set sizes for what we can, because if we get images
      * we couldn't load, they won't show properly otherwise */
-  BTN_FLAG_SET_SIZE = 2,
+  BTN_FLAG_SET_SIZE = 4,
 
   /* should this be a member of the 'foreground' group, so it can
    * be pulled out above the blur if needed */
-  BTN_FLAG_FOREGROUND = 4,
+  BTN_FLAG_FOREGROUND = 8,
+
+  /* Should the button be centred in the area allocated for it
+   * (or aligned to the edge). This is used for button images,
+   * vs. the button backgrounds which must be pulled right to
+   * the edge. */
+  BTN_FLAG_CENTRE = 16,
 };
 
 static const gboolean BTN_FLAGS[BTN_COUNT] = {
    BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_BG_ATTACHED = 0,
    BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_BG_LEFT_END,
    BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_BG_RIGHT_END,
-   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_BG_LEFT_PRESSED,
+   BTN_FLAG_ALIGN_LEFT | BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_BG_LEFT_PRESSED,
    BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_BG_LEFT_ATTACHED_PRESSED,
    BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_BG_RIGHT_PRESSED,
    BTN_FLAG_FOREGROUND, // BTN_SEPARATOR_LEFT,
    0, // BTN_SEPARATOR_STATUS,
    0, // BTN_SEPARATOR_RIGHT,
-   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_SWITCHER,
-   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_SWITCHER_HIGHLIGHT,
-   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_SWITCHER_PRESSED,
-   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_LAUNCHER,
-   BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND, // BTN_LAUNCHER_PRESSED,
-   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_BACK,
-   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_BACK_PRESSED,
-   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_CLOSE,
-   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE,  // BTN_CLOSE_PRESSED,
+   BTN_FLAG_ALIGN_LEFT | BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND | BTN_FLAG_CENTRE, // BTN_SWITCHER,
+   BTN_FLAG_ALIGN_LEFT | BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND | BTN_FLAG_CENTRE, // BTN_SWITCHER_HIGHLIGHT,
+   BTN_FLAG_ALIGN_LEFT | BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND | BTN_FLAG_CENTRE, // BTN_SWITCHER_PRESSED,
+   BTN_FLAG_ALIGN_LEFT | BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND | BTN_FLAG_CENTRE, // BTN_LAUNCHER,
+   BTN_FLAG_ALIGN_LEFT | BTN_FLAG_SET_SIZE | BTN_FLAG_FOREGROUND | BTN_FLAG_CENTRE, // BTN_LAUNCHER_PRESSED,
+   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE | BTN_FLAG_CENTRE,  // BTN_BACK,
+   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE | BTN_FLAG_CENTRE,  // BTN_BACK_PRESSED,
+   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE | BTN_FLAG_CENTRE,  // BTN_CLOSE,
+   BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE | BTN_FLAG_CENTRE,  // BTN_CLOSE_PRESSED,
    0, // BTN_MENU,
    BTN_FLAG_ALIGN_RIGHT, // BTN_DONE,
 };
@@ -191,6 +198,7 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
                                gint frame_num, HdTitleBar *bar);
 static void
 hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size);
+static void hd_title_bar_set_button_positions(HdTitleBar *bar);
 
 /* ------------------------------------------------------------------------- */
 
@@ -202,6 +210,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size);
 /* margin to left of the app title */
 #define HD_TITLE_BAR_TITLE_MARGIN 24
 #define HD_TITLE_BAR_TEXT_MARGIN 24
+#define HD_TITLE_BAR_TITLE_MARGIN_SMALL 8
 
 #define HD_TITLE_BAR_TITLE_FONT "SystemFont"
 
@@ -406,6 +415,15 @@ status_area_is_visible (void)
    */
 }
 
+gint
+hd_title_bar_get_button_width(HdTitleBar *bar) {
+  HdTitleBarPrivate *priv = bar->priv;
+  if (priv->state & HDTB_VIS_SMALL_BUTTONS)
+    return 80;
+  else
+    return HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+}
+
 static void
 hd_title_bar_dispose (GObject *obj)
 {
@@ -477,6 +495,10 @@ void hd_title_bar_set_state(HdTitleBar *bar,
   priv = bar->priv;
 
   priv->state = button;
+
+  /* The state may have changed to use/not use small
+   * buttons - in check case we must update positions */
+  hd_title_bar_set_button_positions(bar);
 
   /* if a button isn't in the top-left or right, we want to make
    * sure we don't display the pressed state */
@@ -627,6 +649,8 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
 
   status_area = hd_render_manager_get_status_area();
 
+  hd_title_bar_set_button_positions(bar);
+
   if (full_size)
     {
       /* If we want the full-size opaque background */
@@ -648,7 +672,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
                                 clutter_actor_get_width(priv->buttons[BTN_SEPARATOR_LEFT]));
           else
             clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_LEFT],
-                                HD_COMP_MGR_TOP_LEFT_BTN_WIDTH -
+                                hd_title_bar_get_button_width(bar) -
                                 clutter_actor_get_width(priv->buttons[BTN_SEPARATOR_LEFT]));
         }
       else
@@ -660,7 +684,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
 
 	  if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
             clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_STATUS],
-                HD_COMP_MGR_TOP_LEFT_BTN_WIDTH +
+                hd_title_bar_get_button_width(bar) +
                 clutter_actor_get_width(status_area));
           else
             clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_STATUS],
@@ -679,7 +703,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
           else
             clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_RIGHT],
                                 hd_comp_mgr_get_current_screen_width ()
-                                - HD_COMP_MGR_TOP_LEFT_BTN_WIDTH);
+                                - hd_title_bar_get_button_width(bar));
         }
       else
         clutter_actor_hide(priv->buttons[BTN_SEPARATOR_RIGHT]);
@@ -703,7 +727,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
           left_width += clutter_actor_get_width(status_area);
           clutter_actor_show(priv->buttons[BTN_SEPARATOR_LEFT]);
           clutter_actor_set_x(priv->buttons[BTN_SEPARATOR_LEFT],
-              HD_COMP_MGR_TOP_LEFT_BTN_WIDTH);
+              hd_title_bar_get_button_width(bar));
         }
       else
         clutter_actor_hide(priv->buttons[BTN_SEPARATOR_LEFT]);
@@ -910,11 +934,14 @@ void hd_title_bar_set_title (HdTitleBar *bar,
       gint h, w;
       int x_start = 0;
       int x_end = hd_comp_mgr_get_current_screen_width ()
-                  - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH
+                  - hd_title_bar_get_button_width(bar)
                   - (waiting ? HD_THEME_IMG_PROGRESS_SIZE : 0);
+      int title_margin = (priv->state & HDTB_VIS_SMALL_BUTTONS) ?
+                         HD_TITLE_BAR_TITLE_MARGIN_SMALL :
+                         HD_TITLE_BAR_TITLE_MARGIN;
 
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
-        x_start += HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+        x_start += hd_title_bar_get_button_width(bar);
       status_area = hd_render_manager_get_status_area();
       if (status_area_is_visible())
         x_start += clutter_actor_get_width(status_area);
@@ -927,11 +954,11 @@ void hd_title_bar_set_title (HdTitleBar *bar,
       clutter_label_set_use_markup(priv->title, has_markup);
 
       h = clutter_actor_get_height(CLUTTER_ACTOR(priv->title));
-      w = x_end - (x_start + HD_TITLE_BAR_TITLE_MARGIN);
+      w = x_end - (x_start + title_margin);
 
       clutter_actor_set_width(CLUTTER_ACTOR(priv->title), w);
       clutter_actor_set_position(CLUTTER_ACTOR(priv->title),
-                                 x_start+HD_TITLE_BAR_TITLE_MARGIN,
+                                 x_start+title_margin,
                                  (HD_COMP_MGR_TOP_MARGIN-h)/2);
       clutter_label_set_ellipsize(priv->title, PANGO_ELLIPSIZE_NONE);
       clutter_actor_set_clip(CLUTTER_ACTOR(priv->title), 0, 0, w, h);
@@ -1060,6 +1087,36 @@ hd_title_bar_set_switcher_pulse(HdTitleBar *bar, gboolean pulse)
     }
 }
 
+
+static void hd_title_bar_set_button_positions(HdTitleBar *bar)
+{
+  HdTitleBarPrivate *priv = bar->priv;
+  /* In HDTB_VIS_SMALL_BUTTONS, the area allocated for
+   * buttons is smaller than their images - so we must
+   * move the images slightly off-screen. */
+  gint offset = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH -
+                hd_title_bar_get_button_width(bar);
+  gint i, wscr;
+
+  wscr = hd_comp_mgr_get_current_screen_width ();
+
+  for (i = 0; i < BTN_COUNT; i++) {
+    int button_offset = offset;
+    /* If the button is supposed to be centred in the area,
+     * do that. */
+    if (BTN_FLAGS[i] & BTN_FLAG_CENTRE)
+      button_offset /= 2;
+
+    if (BTN_FLAGS[i] & BTN_FLAG_ALIGN_LEFT)
+      clutter_actor_set_x(priv->buttons[i],
+                          -button_offset);
+
+    if (BTN_FLAGS[i] & BTN_FLAG_ALIGN_RIGHT)
+      clutter_actor_set_x(priv->buttons[i],
+          button_offset + wscr - clutter_actor_get_width(priv->buttons[i]));
+  }
+}
+
 /* ------------------------------------------------------------------------- */
 
 static void
@@ -1105,14 +1162,7 @@ static void
 hd_title_bar_stage_allocation_changed (HdTitleBar *bar, GParamSpec *unused,
                                        ClutterActor *stage)
 {
-  HdTitleBarPrivate *priv = bar->priv;
-  guint i, wscr;
-
-  wscr = hd_comp_mgr_get_current_screen_width ();
-  for (i = 0; i < BTN_COUNT; i++)
-    if (BTN_FLAGS[i] & BTN_FLAG_ALIGN_RIGHT)
-      clutter_actor_set_x(priv->buttons[i],
-                          wscr - clutter_actor_get_width(priv->buttons[i]));
+  hd_title_bar_set_button_positions(bar);
 }
 
 static void

@@ -66,6 +66,8 @@ hd_status_area_init (MBWMObject *this, va_list vap)
 
   client->stacking_layer = MBWMStackLayerTopMid;
 
+  /* This is re-adjusted by hd_render_manager_place_titlebar_elements
+   * anyway... */
   geom.x      =      hd_render_manager_get_visible (HDRM_BUTTON_TASK_NAV)
                   || hd_render_manager_get_visible (HDRM_BUTTON_LAUNCHER)
                 ? HD_COMP_MGR_TOP_LEFT_BTN_WIDTH : 0;
