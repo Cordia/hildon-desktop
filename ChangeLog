@@ -1,3 +1,8 @@
+2009-08-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-title-bar (hd_title_bar_init):
+	  Minor typo correction just to commit something today.
+
 2009-08-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#134286 - can't switch from maps using onscreen button

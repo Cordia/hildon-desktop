@@ -316,11 +316,11 @@ hd_title_bar_init (HdTitleBar *bar)
 
       if (BTN_FLAGS[i] & BTN_FLAG_SET_SIZE)
         {
-          if (!BTN_FLAGS[i] & BTN_FLAG_ALIGN_RIGHT)
+          if (!(BTN_FLAGS[i] & BTN_FLAG_ALIGN_RIGHT))
             clutter_actor_set_size(priv->buttons[i],
               HD_COMP_MGR_TOP_LEFT_BTN_WIDTH,
               HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT);
-          else if (BTN_FILENAMES[i])
+          else
             clutter_actor_set_size(priv->buttons[i],
               HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH,
               HD_COMP_MGR_TOP_RIGHT_BTN_HEIGHT);
@@ -421,6 +421,7 @@ hd_title_bar_get_button_width(HdTitleBar *bar) {
   if (priv->state & HDTB_VIS_SMALL_BUTTONS)
     return 80;
   else
+    /* TODO someday, in some cases this should return the TOP_RIGHT_BIN_WIDTH */
     return HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
 }
 
@@ -734,7 +735,6 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
 
       clutter_actor_hide(priv->buttons[BTN_SEPARATOR_STATUS]);
       clutter_actor_hide(priv->buttons[BTN_SEPARATOR_RIGHT]);
-
 
       /* move the rounded actor to the furthest right we want it
        * (edge of status area or button) */
