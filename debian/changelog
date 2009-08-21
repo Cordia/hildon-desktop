@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.90-1~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#132154 - USE-TIME F-MEDIA PLAYER: UI components visibility when
+    device is dimmed
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 21 Aug 2009 11:17:53 +0300
 

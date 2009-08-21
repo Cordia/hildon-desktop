@@ -3048,3 +3048,54 @@ void hd_comp_mgr_tklocked (HdCompMgr *hmgr, gboolean isit)
   hmgr->priv->tklocked = isit;
   g_debug ("tklocked: %d", isit);
 }
+
+void
+hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
+{
+  HdHome *home = HD_HOME (hmgr->priv->home);
+  GSList *applets = NULL, *a;
+  GSList *views, *v;
+
+   applets = hd_home_view_get_all_applets (HD_HOME_VIEW (hd_home_get_current_view (home)));
+
+   /* Now stack all applets */
+   for (a = applets; a; a = a->next)
+     {
+       MBWindowManagerClient *wm_client = MB_WM_COMP_MGR_CLIENT (a->data)->wm_client;
+       guint32 on_desktop = 1;
+       if (STATE_NEED_DESKTOP (hd_render_manager_get_state ()) &&
+           STATE_SHOW_APPLETS (hd_render_manager_get_state ()))
+         {
+           XChangeProperty (wm_client->wmref->xdpy,
+                            wm_client->window->xwindow,
+                            hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP),
+                            XA_CARDINAL,
+                            32,
+                            PropModeReplace,
+                            (const guchar *) &on_desktop,
+                            1);
+         }
+       else
+         {
+           XDeleteProperty (wm_client->wmref->xdpy,
+                            wm_client->window->xwindow,
+                            hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP));
+         }
+     }
+   g_slist_free (applets);
+
+   views = hd_home_get_not_visible_views (home);
+   for (v = views; v; v = v->next)
+     {
+       applets = hd_home_view_get_all_applets (HD_HOME_VIEW (v->data));
+       for (a = applets; a; a = a->next)
+         {
+           MBWindowManagerClient *wm_client = MB_WM_COMP_MGR_CLIENT (a->data)->wm_client;
+           XDeleteProperty (wm_client->wmref->xdpy,
+                            wm_client->window->xwindow,
+                            hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP));
+         }
+       g_slist_free (applets);
+     }
+   g_slist_free (views);
+}
