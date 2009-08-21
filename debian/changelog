@@ -1,8 +1,14 @@
-hildon-desktop (1:2.2.88-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.88-1) unstable; urgency=low
 
-  * foo
+  Gordon:
+  * Fixes: NB#134359 - H-D support for rotation-time kernel priority change
+  * hildon-desktop's half of 133950 (transparency), the other half is in
+    hildon-widgets.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 20 Aug 2009 15:20:11 +0300
+  Adam:
+  * Fixes: NB#134381 - portrait mode to have task switcher button.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 21 Aug 2009 10:39:51 +0300
 
 hildon-desktop (1:2.2.87-1) unstable; urgency=low
 
