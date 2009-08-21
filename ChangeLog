@@ -1,5 +1,11 @@
 2009-08-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#134286 - can't switch from maps using onscreen button
+	* src/home/hd-render-manager.c: Now we check the whole clutter tree
+	  for visibility before setting the input mask for an button. This
+	  is more robust, as any actor up the tree that is invisible can
+	  mean that the input mask should not be set.
+
 	Added small title bar buttons for portrait mode.
 	
 	* src/home/hd-render-manager.c: Set HDTB_VIS_SMALL_BUTTONS when in
