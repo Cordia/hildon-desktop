@@ -1,3 +1,7 @@
+2009-08-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.90
+
 2009-08-21  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#132154 - USE-TIME F-MEDIA PLAYER: UI components visibility
@@ -10,7 +14,8 @@
 	* src/mb/hd-desktop.c (hd_desktop_stack): Extract function to update
 	on_current_desktop window property.
 
-	* src/mb/hd-comp-mgr.c (hd_comp_mgr_update_applets_on_current_desktop_property):
+	* src/mb/hd-comp-mgr.c
+	(hd_comp_mgr_update_applets_on_current_desktop_property):
 	* src/mb/hd-comp-mgr.h: Move function to update applets
 	on_current_desktop window property to here. Only set the property if
 	the applets are shown state is set.
