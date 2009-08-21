@@ -1,8 +1,9 @@
-hildon-desktop (1:2.2.91-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.91-1) unstable; urgency=low
 
-  * foo
+  Gordon:
+  * Fixes: NB#134286 - can't switch from maps using onscreen button
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 21 Aug 2009 15:34:56 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 21 Aug 2009 17:26:47 +0300
 
 hildon-desktop (1:2.2.90-1) unstable; urgency=low
 
