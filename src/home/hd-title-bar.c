@@ -720,7 +720,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
     {
       gint left_width = 0;
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
-        left_width = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+        left_width = hd_title_bar_get_button_width(bar);
 
       // we don't show the status area in foreground mode
       if (status_area_is_visible() && !(priv->state & HDTB_VIS_FOREGROUND))

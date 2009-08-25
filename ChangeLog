@@ -1,5 +1,10 @@
 2009-08-25  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#134958 - Task switcher button in portrait mode is the wrong 
+	                   size
+	* src/home/hd-title-bar.c: Now set left_width to the actual button
+	  width, rather than the width of the button image.
+
 	Fixes: NB#134348 - black rectangle flickers for notifications in
 	                   non-composited mode
 	* src/mb/hd-note.c: Now move notifications off the screen if created
