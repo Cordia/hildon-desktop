@@ -1,6 +1,7 @@
-hildon-desktop (1:2.2.93-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.93-1) unstable; urgency=low
 
-  * foo
+  Adam:
+  * Fixes: NB#135094 - Infonote and banner tuneups phase 3
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 25 Aug 2009 15:44:07 +0300
  
