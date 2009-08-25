@@ -1,3 +1,11 @@
+2009-08-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#135094 Infonote and banner tuneups phase 3
+
+	* src/util/hd-transition.c (hd_transition_fade, on_fade_timeline_new_frame):
+	  Changed the transition for info notes and banners to slide them
+	  from/to the top.
+
 2009-08-25  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Release 2.2.92

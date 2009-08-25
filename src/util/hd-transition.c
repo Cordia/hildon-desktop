@@ -313,7 +313,7 @@ static void
 on_fade_timeline_new_frame(ClutterTimeline *timeline,
                             gint frame_num, HDEffectData *data)
 {
-  float amt;
+  float amt, ramt;
   ClutterActor *actor;
 
   actor = data->cclient_actor;
@@ -324,9 +324,14 @@ on_fade_timeline_new_frame(ClutterTimeline *timeline,
   /* reverse if we're removing this */
   if (data->event == MBWMCompMgrClientEventUnmap)
     amt = 1-amt;
+  ramt = hd_transition_smooth_ramp(1-amt);
   amt = hd_transition_smooth_ramp(amt);
 
   clutter_actor_set_opacity(actor, (int)(255*amt*data->final_alpha));
+
+  /* Slide information notes and banners from top to their final position. */
+  if (data->geo.width)
+    clutter_actor_set_anchor_point(actor, 0, ramt*data->geo.y);
 }
 
 static void
@@ -774,6 +779,7 @@ hd_transition_popup(HdCompMgr                  *mgr,
   clutter_timeline_start (data->timeline);
 }
 
+/* For banners, information notes and confirmation notes. */
 void
 hd_transition_fade(HdCompMgr                  *mgr,
                    MBWindowManagerClient      *c,
@@ -781,22 +787,9 @@ hd_transition_fade(HdCompMgr                  *mgr,
 {
   MBWMCompMgrClutterClient * cclient;
   HDEffectData             * data;
-  float                      real_alpha = 1.0f;
-
-  if (HD_IS_BANNER_NOTE(c))
-    real_alpha =
-      (float)hd_transition_get_double("fade", "banner_note_alpha", 1.0);
-  if (HD_IS_INFO_NOTE(c))
-    real_alpha =
-      (float)hd_transition_get_double("fade", "info_note_alpha", 1.0);
 
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
 
-
-  /* Need to store also pointer to the manager, as by the time
-   * the effect finishes, the back pointer in the cm_client to
-   * MBWindowManagerClient is not longer valid/set.
-   */
   data = g_new0 (HDEffectData, 1);
   data->event = event;
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
@@ -805,7 +798,23 @@ hd_transition_fade(HdCompMgr                  *mgr,
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline =
         g_object_ref( hd_transition_timeline_new("fade", event, 250) );
-  data->final_alpha = real_alpha;
+
+  if (HD_IS_BANNER_NOTE(c))
+    {
+      clutter_actor_get_geometry(data->cclient_actor, &data->geo);
+      data->final_alpha = hd_transition_get_double("fade", "banner_note_alpha",
+                                                   1.0);
+    }
+  else if (HD_IS_INFO_NOTE(c))
+    {
+      clutter_actor_get_geometry(data->cclient_actor, &data->geo);
+      data->final_alpha = hd_transition_get_double("fade", "info_note_alpha",
+                                                   1.0);
+    }
+  else
+    /* Leave @data->geo 0, we needn't move the actor around. */
+    data->final_alpha = 1;
+
   g_signal_connect (data->timeline, "new-frame",
                         G_CALLBACK (on_fade_timeline_new_frame), data);
   g_signal_connect (data->timeline, "completed",
