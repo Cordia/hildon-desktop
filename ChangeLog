@@ -1,5 +1,9 @@
 2009-08-25  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#134956 - infonote + banner tuneups
+	* data/transitions.ini: Changed transparency of infonotes and banners
+	  from 20% from 15%
+
 	Very minor bugfix for title bar button width in portrait.
 	* src/home/hd-title-bar.c: Make sure that the background of the 
 	  top-left button is the correct width when showing task switcher
