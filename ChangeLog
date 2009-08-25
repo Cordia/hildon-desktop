@@ -1,3 +1,10 @@
+2009-08-25  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Very minor bugfix for title bar button width in portrait.
+	* src/home/hd-title-bar.c: Make sure that the background of the 
+	  top-left button is the correct width when showing task switcher
+	  button while a dialog is up and the background is blurred.
+
 2009-08-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.91
