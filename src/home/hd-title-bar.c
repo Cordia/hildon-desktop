@@ -737,14 +737,10 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
       clutter_actor_hide(priv->buttons[BTN_SEPARATOR_RIGHT]);
 
       /* move the rounded actor to the furthest right we want it
-       * (edge of status area or button). Note that the images are
-       * HD_COMP_MGR_TOP_LEFT_BTN_WIDTH in width, but the apparent
-       * size of a button is actually hd_title_bar_get_button_width,
-       * hence the slightly odd mix here. */
+       * (edge of status area or button) */
       clutter_actor_show(priv->buttons[BTN_BG_LEFT_END]);
       clutter_actor_set_x(priv->buttons[BTN_BG_LEFT_END],
-          left_width + hd_title_bar_get_button_width(bar) -
-          HD_COMP_MGR_TOP_LEFT_BTN_WIDTH*2);
+          left_width-HD_COMP_MGR_TOP_LEFT_BTN_WIDTH);
       /* Use the 'attached' actor to fill in the gap on the left */
       if (left_width>HD_COMP_MGR_TOP_LEFT_BTN_WIDTH)
         {
