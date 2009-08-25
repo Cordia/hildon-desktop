@@ -1,8 +1,12 @@
-hildon-desktop (1:2.2.92-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.92-1) unstable; urgency=low
 
-  * foo
+  Gordon:
+  * Fixes: NB#134958 - Task switcher button in portrait mode is the wrong size
+  * Fixes: NB#134348 - black rectangle flickers for notifications in
+                       non-composited mode
+  * Fixes: NB#134956 - infonote + banner tuneups
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 21 Aug 2009 17:30:07 +0300
+ -- Gordon Williams <gordon.williams@collabora.co.uk>  Tue, 25 Aug 2009 13:44:07 +0100
 
 hildon-desktop (1:2.2.91-1) unstable; urgency=low
 

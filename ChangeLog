@@ -1,5 +1,7 @@
 2009-08-25  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Release 2.2.92
+
 	Fixes: NB#134958 - Task switcher button in portrait mode is the wrong 
 	                   size
 	* src/home/hd-title-bar.c: Now set left_width to the actual button
