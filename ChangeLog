@@ -1,5 +1,11 @@
 2009-08-25  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#134348 - black rectangle flickers for notifications in
+	                   non-composited mode
+	* src/mb/hd-note.c: Now move notifications off the screen if created
+	  in non-composited mode. See the comments next to the changes as to 
+	  why changing stacking order does not work.
+
 	Fixes: NB#134956 - infonote + banner tuneups
 	* data/transitions.ini: Changed transparency of infonotes and banners
 	  from 20% from 15%

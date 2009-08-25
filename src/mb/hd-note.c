@@ -25,6 +25,7 @@
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
 #include "hd-wm.h"
+#include "hd-render-manager.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -263,6 +264,25 @@ hd_note_init (MBWMObject *this, va_list vap)
       geom.y = 0;
       geom.width  = w + client->window->geometry.width  + e;
       geom.height = n + client->window->geometry.height + s;
+
+      if (hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED)
+        {
+          /* This is to fix bug 134348 - preview notes momentarily
+           * visible over non-composited mode.
+           *
+           * Stacking these notes lower has no effect on the flicker.
+           * We assume this is because the stacking occurs after the window
+           * is mapped. In composited mode this is no problem, but in
+           * non-composited mode it means flicker.
+           *
+           * Since the stacking has no effect, I have left it as before,
+           * and instead moved the preview notes off of the screen. It
+           * may be that stacking can be fixed so there is no flicker,
+           * however while in code freeze we want the solution that is
+           * least likely to cause regression. */
+          geom.y = -(geom.height+1);
+        }
+
       hd_note_request_geometry (client, &geom, MBWMClientReqGeomForced);
     }
   else /* Banner, Info, Confirmation */
@@ -319,12 +339,16 @@ hd_note_realize (MBWindowManagerClient *client)
 
 static Bool
 hd_note_request_geometry (MBWindowManagerClient *client,
-			  MBGeometry            *new_geometry,
+			  MBGeometry            *new_geometryp,
 			  MBWMClientReqGeomType  flags)
 {
   const MBGeometry * geom;
   Bool               change_pos;
   Bool               change_size;
+
+  /* create a copy here, as we don't want to change the value that
+   * was passed in... */
+  MBGeometry         new_geometry = *new_geometryp;
 
   /*
    * When we get an internal geometry request, like from the layout manager,
@@ -335,12 +359,19 @@ hd_note_request_geometry (MBWindowManagerClient *client,
   geom = (flags & MBWMClientReqGeomIsViaConfigureReq) ?
     &client->window->geometry : &client->frame_geometry;
 
+  /* Make absolutely sure that the note is placed offscreen when in
+   * non-composited mode, as stacking it low still appears to cause
+   * some flickering. See the comments in hd_note_init. */
+  if (HD_NOTE (client)->note_type == HdNoteTypeIncomingEventPreview &&
+      hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED)
+    new_geometry.y = -(1 + new_geometry.height);
+
   /*
    * We only allow resizing and moving in the y axis, since notes are
    * fullscreen.
    */
-  change_pos = (geom->y != new_geometry->y);
-  change_size = (geom->height != new_geometry->height);
+  change_pos = (geom->y != new_geometry.y);
+  change_size = (geom->height != new_geometry.height);
 
   if (change_size || (flags & MBWMClientReqGeomForced))
     {
@@ -361,15 +392,15 @@ hd_note_request_geometry (MBWindowManagerClient *client,
 		    client->window->geometry.y,
 		    client->window->geometry.width,
 		    client->window->geometry.height,
-		    new_geometry->x,
-		    new_geometry->y,
-		    new_geometry->width,
-		    new_geometry->height);
+		    new_geometry.x,
+		    new_geometry.y,
+		    new_geometry.width,
+		    new_geometry.height);
 
-	  client->window->geometry.x      = new_geometry->x;
-	  client->window->geometry.y      = new_geometry->y;
-	  client->window->geometry.width  = new_geometry->width;
-	  client->window->geometry.height = new_geometry->height;
+	  client->window->geometry.x      = new_geometry.x;
+	  client->window->geometry.y      = new_geometry.y;
+	  client->window->geometry.width  = new_geometry.width;
+	  client->window->geometry.height = new_geometry.height;
 
 	  client->frame_geometry.x
 	    = client->window->geometry.x - west;
@@ -387,10 +418,10 @@ hd_note_request_geometry (MBWindowManagerClient *client,
 	   * Internal request, e.g., from layout manager; work out client
 	   * window size from the provided frame size.
 	   */
-	  client->frame_geometry.x      = new_geometry->x;
-	  client->frame_geometry.y      = new_geometry->y;
-	  client->frame_geometry.width  = new_geometry->width;
-	  client->frame_geometry.height = new_geometry->height;
+	  client->frame_geometry.x      = new_geometry.x;
+	  client->frame_geometry.y      = new_geometry.y;
+	  client->frame_geometry.width  = new_geometry.width;
+	  client->frame_geometry.height = new_geometry.height;
 
 	  client->window->geometry.x
 	    = client->frame_geometry.x + west;
@@ -412,8 +443,8 @@ hd_note_request_geometry (MBWindowManagerClient *client,
        * Change of position only, just move both windows, no need to
        * mess about with the decor.
        */
-      int x_diff = geom->x - new_geometry->x;
-      int y_diff = geom->y - new_geometry->y;
+      int x_diff = geom->x - new_geometry.x;
+      int y_diff = geom->y - new_geometry.y;
 
       client->frame_geometry.x -= x_diff;
       client->frame_geometry.y -= y_diff;
