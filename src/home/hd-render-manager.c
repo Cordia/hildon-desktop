@@ -1346,6 +1346,8 @@ static void zoom_out_completed(ClutterActor *actor,
   mb_wm_object_unref(MB_WM_OBJECT(cmgrcc));
 }
 
+static MBWindowManagerClient *unredir_client;
+
 void hd_render_manager_set_state(HDRMStateEnum state)
 {
   HdRenderManagerPrivate *priv;
@@ -1385,15 +1387,22 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if (oldstate == HDRM_STATE_NON_COMPOSITED)
         {
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
-	  mb_wm_setup_redirection (wm, 1);
 
           /* track damage again */
           for (c = wm->stack_top; c; c = c->stacked_below)
             {
+              if (unredir_client && unredir_client == c)
+                {
+                  mb_wm_comp_mgr_clutter_set_client_redirection (
+                        unredir_client->cm_client, TRUE);
+                  unredir_client = NULL;
+                }
+
               if (c->cm_client)
                 mb_wm_comp_mgr_clutter_client_track_damage (
                         MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client), True);
             }
+          unredir_client = NULL;
 	}
 
       /* Return the actor if we used it for loading. */
@@ -1612,13 +1621,22 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             }
 
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
-	  mb_wm_setup_redirection (wm, 0);
 
-          /* do not track damage in non-composited mode */
-          for (c = wm->stack_bottom; c; c = c->stacked_above)
-            if (c->cm_client)
-              mb_wm_comp_mgr_clutter_client_track_damage (
+          for (c = wm->stack_top; c; c = c->stacked_below)
+            {
+              /* unredirect and do not track damage of the topmost
+               * application window */
+              if (c->cm_client && c->window->net_type ==
+                  wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NORMAL])
+                {
+                  mb_wm_comp_mgr_clutter_client_track_damage (
                         MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client), False);
+                  mb_wm_comp_mgr_clutter_set_client_redirection (c->cm_client,
+                                                                 FALSE);
+                  unredir_client = c;
+                  break;
+                }
+            }
 	}
     }
 

@@ -1453,7 +1453,6 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
       /* g_warning ("%s: COMPOSITING: ZERO REGION\n", __FUNCTION__); */
       /* tell Clutter not to draw on the window */
       clutter_stage_set_shaped_mode (stage, 1);
-      clutter_stage_queue_redraw (CLUTTER_STAGE (stage));
       r.width = r.height = 0;
     }
 
@@ -1862,7 +1861,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * the texture saves precious miliseconds.
    */
   if (!HD_IS_INCOMING_EVENT_NOTE(c))
-    parent_klass->map_notify (mgr, c);
+    {
+      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED
+          && !(HD_IS_APP (c) && hd_comp_mgr_is_non_composited (c, FALSE)))
+        /* switch away from non-composited mode to enable creating the
+         * texture   TODO: non-comp. in portrait mode */
+        hd_render_manager_set_state (HDRM_STATE_APP);
+
+      parent_klass->map_notify (mgr, c);
+    }
 
   /* Now the actor has been created and added to the desktop, make sure we
    * call hdrm_restack to put it in the correct group in hd-render-manager */

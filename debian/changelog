@@ -1,8 +1,13 @@
-hildon-desktop (1:2.2.94-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.94-1) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#126626 - Switching between non/composite modes, make screen
+    blank for short time  (partial fix)
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 25 Aug 2009 16:47:14 +0300
+  Gordon:
+  * Fixes: NB#134962 - Device gets stuck showing rotated image
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 26 Aug 2009 18:56:53 +0300
 
 hildon-desktop (1:2.2.93-1) unstable; urgency=low
 
