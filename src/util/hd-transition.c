@@ -1301,11 +1301,11 @@ hd_transition_rotating_fsm(void)
           {
             /*
              * Wait for the screen change. During this period, blank the
-             * screen by hiding %HdRenderManager. Note that we could wait
-             * until redraws have finished here, but currently X blanks us
-             * for a set time period anyway - and this way it is easier
-             * to get rotation speeds sorted.
-             */
+             * screen by hiding %HdRenderManager. We wait here until
+             * until damage_timeout ms has passed since the last damage event,
+             * or until damage_timeout_max is reached. There is a lot of X
+             * traffic during this time, so g_timeout is often delayed past
+             * damage_timeout_max. */
             Orientation_change.phase = WAITING;
             clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
             hd_util_change_screen_orientation(Orientation_change.wm,
@@ -1339,6 +1339,13 @@ hd_transition_rotating_fsm(void)
         break;
       case FADE_IN:
         Orientation_change.phase = IDLE;
+        {
+          ClutterActor *actor = CLUTTER_ACTOR(hd_render_manager_get());
+          /* Reset values in case for some reason the timeline failed to do it */
+          clutter_actor_set_rotation(actor, CLUTTER_X_AXIS, 0, 0, 0, 0);
+          clutter_actor_set_rotation(actor, CLUTTER_Y_AXIS, 0, 0, 0, 0);
+          clutter_actor_set_depthu(actor, 0);
+        }
         hd_util_set_rotating_property(Orientation_change.wm, FALSE);
         if (Orientation_change.direction != Orientation_change.new_direction)
           hd_transition_rotating_fsm();
