@@ -1,5 +1,12 @@
 2009-08-26  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Regression fix for crash in malloc from tidy-sub-texture, core
+	  627a29d3507b7c8634fae14048968855801030da.
+	
+	* src/tidy/tidy-sub-texture.c: Better check for width and height of
+	0, and also avoid mallocing 0 bytes if the sub-texture has a width or
+	height of 0.
+
 	Fixes: NB#134962 - Device gets stuck showing rotated image
 	
 	* src/util/hd-transition.c: Make sure we reset the rotation values

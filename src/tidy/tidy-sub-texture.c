@@ -140,7 +140,9 @@ tidy_sub_texture_paint (ClutterActor *self)
   tex_width = cogl_texture_get_width (cogl_texture);
   tex_height = cogl_texture_get_height (cogl_texture);
   region = priv->region;
-  if (region.width==0 && region.height==0)
+  /* a region width/height of 0 is invalid, so use
+   * the entire texture */
+  if (region.width==0 || region.height==0)
     {
       region.x = 0;
       region.y = 0;
@@ -165,7 +167,7 @@ tidy_sub_texture_paint (ClutterActor *self)
     }
   else
     {
-      gint x,y,c;
+      gint x,y,c,cx,cy;
       CoglTextureVertex *verts, *rect;
       /* For tiling, we draw a rectangles for each tile that we repeat.
        * We do this using draw_triangles as it is way more efficient
@@ -173,57 +175,62 @@ tidy_sub_texture_paint (ClutterActor *self)
        * has 6 elements = 2 triangles.  */
 
       /* max number of items needed */
-      c = ((width / region.width)+1) * ((height / region.height)+1);
-      verts = g_malloc(sizeof(CoglTextureVertex)*c*6);
-      c = 0;
-      rect = verts;
+      cx = ((width / region.width)+1);
+      cy = ((height / region.height)+1);
+      if (cx > 0 && cy > 0)
+        {
+          c = cx * cy;
+          verts = g_malloc(sizeof(CoglTextureVertex)*c*6);
+          c = 0;
+          rect = verts;
 
 
-      for (y=0;y<height;y+=region.height)
-        for (x=0;x<width;x+=region.width)
-          {
-            gint w,h;
-            /* Clip width and height to the edges of the image */
-            w = region.width;
-            if (x+w > width)
-              w = width-x;
-            h = region.height;
-            if (y+h > height)
-              h = height-y;
+          for (y=0;y<height;y+=region.height)
+            for (x=0;x<width;x+=region.width)
+              {
+                gint w,h;
+                /* Clip width and height to the edges of the image */
+                w = region.width;
+                if (x+w > width)
+                  w = width-x;
+                h = region.height;
+                if (y+h > height)
+                  h = height-y;
 
-            rect[0].x = CLUTTER_INT_TO_FIXED(x);
-            rect[0].y = CLUTTER_INT_TO_FIXED(y);
-            rect[0].z = 0;
-            rect[0].tx = t_x;
-            rect[0].ty = t_y;
-            rect[1].x = CLUTTER_INT_TO_FIXED(x+w);
-            rect[1].y = CLUTTER_INT_TO_FIXED(y);
-            rect[1].z = 0;
-            rect[1].tx = t_x+(t_w*w/region.width);
-            rect[1].ty = t_y;
-            rect[2].x = CLUTTER_INT_TO_FIXED(x+w);
-            rect[2].y = CLUTTER_INT_TO_FIXED(y+h);
-            rect[2].z = 0;
-            rect[2].tx = t_x+(t_w*w/region.width);
-            rect[2].ty = t_y+(t_h*h/region.height);
-            rect[3] = rect[0];
-            rect[4] = rect[2];
-            rect[5].x = CLUTTER_INT_TO_FIXED(x);
-            rect[5].y = CLUTTER_INT_TO_FIXED(y+h);
-            rect[5].z = 0;
-            rect[5].tx = t_x;
-            rect[5].ty = t_y+(t_h*h/region.height);
+                rect[0].x = CLUTTER_INT_TO_FIXED(x);
+                rect[0].y = CLUTTER_INT_TO_FIXED(y);
+                rect[0].z = 0;
+                rect[0].tx = t_x;
+                rect[0].ty = t_y;
+                rect[1].x = CLUTTER_INT_TO_FIXED(x+w);
+                rect[1].y = CLUTTER_INT_TO_FIXED(y);
+                rect[1].z = 0;
+                rect[1].tx = t_x+(t_w*w/region.width);
+                rect[1].ty = t_y;
+                rect[2].x = CLUTTER_INT_TO_FIXED(x+w);
+                rect[2].y = CLUTTER_INT_TO_FIXED(y+h);
+                rect[2].z = 0;
+                rect[2].tx = t_x+(t_w*w/region.width);
+                rect[2].ty = t_y+(t_h*h/region.height);
+                rect[3] = rect[0];
+                rect[4] = rect[2];
+                rect[5].x = CLUTTER_INT_TO_FIXED(x);
+                rect[5].y = CLUTTER_INT_TO_FIXED(y+h);
+                rect[5].z = 0;
+                rect[5].tx = t_x;
+                rect[5].ty = t_y+(t_h*h/region.height);
 
-            rect += 6;
-            c++;
-          }
+                rect += 6;
+                c++;
+              }
 
-      /* render! */
-      cogl_texture_triangles (cogl_texture,
-                              6*c,
-                              verts,
-                              FALSE);
-      g_free(verts);
+          /* render! */
+          cogl_texture_triangles (cogl_texture,
+                                  6*c,
+                                  verts,
+                                  FALSE);
+          g_free(verts);
+        }
     }
 }
 
