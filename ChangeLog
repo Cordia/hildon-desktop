@@ -1,5 +1,10 @@
 2009-08-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/home/hd-home.c (hd_home_remove_dialogs): Close transients (such
+	as drop down menus) of dialogs as well.
+	Fixes: NB#135459 - Unable to use home layout mode once camera is
+	launched after opening settings of rss
+
 	* src/util/hd-transition.c (hd_transition_play_sound): Tell Canberra
 	to use whatever volume is specified for system sounds.
 	Fixes: NB#129527 - Application opening and closing sound is same at
