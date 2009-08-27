@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.95-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.95-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#129527 - Application opening and closing sound is same at Level
@@ -6,7 +6,11 @@ hildon-desktop (1:2.2.95-1~unreleased) unstable; urgency=low
   * Fixes: NB#135459 - Unable to use home layout mode once camera is launched
     after opening settings of rss
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 26 Aug 2009 19:03:46 +0300
+  Gordon:
+  * Fixes: NB#134348 - SMS notifications in non-composited mode. Other issues
+    as reported by testers.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 27 Aug 2009 16:39:27 +0300
 
 hildon-desktop (1:2.2.94-1) unstable; urgency=low
 
