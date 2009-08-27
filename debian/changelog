@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.95-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#129527 - Application opening and closing sound is same at Level
+    1 and Level 2
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 26 Aug 2009 19:03:46 +0300
 

@@ -1475,8 +1475,12 @@ hd_transition_play_sound (const gchar * fname)
     ca_proplist_sets (pl, CA_PROP_CANBERRA_CACHE_CONTROL, "permanent");
     ca_proplist_sets (pl, CA_PROP_MEDIA_FILENAME, fname);
     ca_proplist_sets (pl, CA_PROP_MEDIA_ROLE, "event");
+    /* set the volume */
+    ca_proplist_sets (pl, "module-stream-restore.id", "x-maemo-system-sound");
+
     if ((ret = ca_context_play_full (ca, 0, pl, NULL, NULL)) != CA_SUCCESS)
       g_warning("%s: %s", fname, ca_strerror (ret));
+
     ca_proplist_destroy(pl);
     millisec = (gint)(g_timer_elapsed(timer, 0)*1000);
     g_timer_destroy(timer);

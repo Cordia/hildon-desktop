@@ -1,3 +1,10 @@
+2009-08-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/util/hd-transition.c (hd_transition_play_sound): Tell Canberra
+	to use whatever volume is specified for system sounds.
+	Fixes: NB#129527 - Application opening and closing sound is same at
+	Level 1 and Level 2
+
 2009-08-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.94
