@@ -696,7 +696,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
 
   wm = MB_WM_COMP_MGR (hmgr)->wm;
 
-  non_comp_changed = event->atom == 
+  non_comp_changed = event->atom ==
         hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_NON_COMPOSITED_WINDOW);
   if (event->atom == wm->atoms[MBWM_ATOM_NET_WM_STATE] || non_comp_changed)
     {
@@ -2274,29 +2274,43 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (hd_render_manager_get_state() == HDRM_STATE_APP)
     {
-      MBWindowManagerClient *below;
-      /* check if we should go back to non-composited mode */
-      for (below = c->stacked_below; below; below = below->stacked_below)
-        if (MB_WM_CLIENT_CLIENT_TYPE (below) != HdWmClientTypeStatusArea)
-          {
-            if (HD_IS_APP (below) && 
-			    hd_comp_mgr_is_non_composited (below, FALSE))
-              hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
-            break;
-          }
+      if (!HD_IS_BANNER_NOTE(c) &&
+          !HD_IS_INCOMING_EVENT_NOTE(c) &&
+          !HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
+        {
+          MBWindowManagerClient *below;
+          /* check if we should go back to non-composited mode */
+          /* TODO: This could produce undesired behaviour if the unmapped
+           * window is not topmost */
+          for (below = c->stacked_below; below; below = below->stacked_below)
+            if (MB_WM_CLIENT_CLIENT_TYPE (below) != HdWmClientTypeStatusArea)
+              {
+                if (HD_IS_APP (below) &&
+                                hd_comp_mgr_is_non_composited (below, FALSE))
+                  hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+                break;
+              }
+        }
     }
   else if (hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED)
     {
-      MBWindowManagerClient *below;
-      /* check if we should go back from non-composited mode */
-      for (below = c->stacked_below; below; below = below->stacked_below)
-        if (MB_WM_CLIENT_CLIENT_TYPE (below) != HdWmClientTypeStatusArea)
-          {
-            if (!HD_IS_APP (below) || 
-			    !hd_comp_mgr_is_non_composited (below, FALSE))
-              hd_render_manager_set_state (HDRM_STATE_APP);
-            break;
-          }
+      if (!HD_IS_BANNER_NOTE(c) &&
+          !HD_IS_INCOMING_EVENT_NOTE(c) &&
+          !HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
+        {
+          MBWindowManagerClient *below;
+          /* check if we should go back from non-composited mode */
+          /* TODO: This could produce undesired behaviour if the unmapped
+           * window is not topmost */
+          for (below = c->stacked_below; below; below = below->stacked_below)
+            if (MB_WM_CLIENT_CLIENT_TYPE (below) != HdWmClientTypeStatusArea)
+              {
+                if (!HD_IS_APP (below) ||
+                                !hd_comp_mgr_is_non_composited (below, FALSE))
+                  hd_render_manager_set_state (HDRM_STATE_APP);
+                break;
+              }
+        }
     }
 
   if (HD_IS_APP (c) && HD_APP (c)->stack_index > 0 &&

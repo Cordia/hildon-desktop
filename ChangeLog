@@ -1,3 +1,14 @@
+2009-08-27  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#134348 - SMS notifications in non-composited mode. Other
+	                   issues as reported by testers.
+	* src/mb/hd-comp-mgr.c: When checking for non-composited mode on 
+	unmap, ignore banners and incoming event notes.
+	* src/mb/hd-note.c: Now position incoming event windows off of the
+	screen, as there was never any need for them to be visible (and
+	they cause flicker on the very first event received in non-composited
+	mode).	  	
+
 2009-08-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-home.c (hd_home_remove_dialogs): Close transients (such
