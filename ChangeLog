@@ -1,3 +1,13 @@
+2009-08-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.96
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state): Check
+	that the client selected for unredirection is fullscreen. This avoids
+	selecting e.g. the tklock window for unredirection...
+	Fixes: NB#135542 - Browser in full screen mode displays only blank
+	screen after going out from idle state
+
 2009-08-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.95

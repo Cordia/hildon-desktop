@@ -1622,12 +1622,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
 
-          for (c = wm->stack_top; c; c = c->stacked_below)
+          for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
             {
               /* unredirect and do not track damage of the topmost
-               * application window */
+               * application window that is fullscreen */
               if (c->cm_client && c->window->net_type ==
-                  wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NORMAL])
+                    wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NORMAL] &&
+                  c->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
                 {
                   mb_wm_comp_mgr_clutter_client_track_damage (
                         MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client), False);
@@ -1637,6 +1638,11 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                   break;
                 }
             }
+          /*
+          if (unredir_client)
+            g_printerr ("%s: unredirected client '%s'\n", __func__,
+                        mb_wm_client_get_name (unredir_client));
+                        */
 	}
     }
 

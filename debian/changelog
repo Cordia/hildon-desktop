@@ -1,8 +1,9 @@
-hildon-desktop (1:2.2.96-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.96-1) unstable; urgency=low
 
-  * foo
+  * Fixes: NB#135542 - Browser in full screen mode displays only blank screen
+    after going out from idle state
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 27 Aug 2009 16:41:31 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 28 Aug 2009 18:02:46 +0300
 
 hildon-desktop (1:2.2.95-1) unstable; urgency=low
 
