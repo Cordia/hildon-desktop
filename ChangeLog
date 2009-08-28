@@ -1,5 +1,14 @@
 2009-08-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.97
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state): Redirect
+	all unredirected clients.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unredirect_topmost_client):
+	Centralise unredirecting here.
+	(hd_comp_mgr_map_notify): Unredirect new non-composited clients when
+	we are in the non-composited mode.
+
 	Release 2.2.96
 
 	* src/home/hd-render-manager.c (hd_render_manager_set_state): Check

@@ -1472,6 +1472,37 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
   fs_comp = want_fs_comp;
 }
 
+void
+hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm)
+{
+  MBWindowManagerClient *c, *unredir_client = NULL;
+
+  for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
+    {
+      /* unredirect and do not track damage of the topmost
+       * application window that is fullscreen */
+      if (c->cm_client && c->window->net_type ==
+            wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NORMAL] &&
+          c->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+        {
+          if (!mb_wm_comp_mgr_clutter_client_is_unredirected (c->cm_client))
+            {
+              mb_wm_comp_mgr_clutter_client_track_damage (
+                MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client), False);
+              mb_wm_comp_mgr_clutter_set_client_redirection (c->cm_client,
+                                                             FALSE);
+              unredir_client = c;
+            }
+          break;
+        }
+    }
+  /*
+  if (unredir_client)
+    g_printerr ("%s: unredirected client '%s'\n", __func__,
+                mb_wm_client_get_name (unredir_client));
+                */
+}
+
 gboolean
 hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
                                gboolean force_re_read)
@@ -2070,7 +2101,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (hd_comp_mgr_is_non_composited (c, FALSE))
     {
       /* g_warning ("%s: client requests non-composited mode", __func__); */
-      hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+      if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED)
+        hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+      else
+        hd_comp_mgr_unredirect_topmost_client (c->wmref);
     }
   else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
     {

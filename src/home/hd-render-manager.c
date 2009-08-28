@@ -1346,7 +1346,6 @@ static void zoom_out_completed(ClutterActor *actor,
   mb_wm_object_unref(MB_WM_OBJECT(cmgrcc));
 }
 
-static MBWindowManagerClient *unredir_client;
 
 void hd_render_manager_set_state(HDRMStateEnum state)
 {
@@ -1388,21 +1387,20 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         {
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
 
-          /* track damage again */
+          /* redirect and track damage again */
           for (c = wm->stack_top; c; c = c->stacked_below)
             {
-              if (unredir_client && unredir_client == c)
+              if (c->cm_client &&
+                  mb_wm_comp_mgr_clutter_client_is_unredirected (c->cm_client))
                 {
-                  mb_wm_comp_mgr_clutter_set_client_redirection (
-                        unredir_client->cm_client, TRUE);
-                  unredir_client = NULL;
+                  mb_wm_comp_mgr_clutter_set_client_redirection (c->cm_client,
+                                                                 TRUE);
                 }
 
               if (c->cm_client)
                 mb_wm_comp_mgr_clutter_client_track_damage (
                         MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client), True);
             }
-          unredir_client = NULL;
 	}
 
       /* Return the actor if we used it for loading. */
@@ -1622,27 +1620,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
 
-          for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
-            {
-              /* unredirect and do not track damage of the topmost
-               * application window that is fullscreen */
-              if (c->cm_client && c->window->net_type ==
-                    wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NORMAL] &&
-                  c->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
-                {
-                  mb_wm_comp_mgr_clutter_client_track_damage (
-                        MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client), False);
-                  mb_wm_comp_mgr_clutter_set_client_redirection (c->cm_client,
-                                                                 FALSE);
-                  unredir_client = c;
-                  break;
-                }
-            }
-          /*
-          if (unredir_client)
-            g_printerr ("%s: unredirected client '%s'\n", __func__,
-                        mb_wm_client_get_name (unredir_client));
-                        */
+          hd_comp_mgr_unredirect_topmost_client (wm);
 	}
     }
 
