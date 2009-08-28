@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.97-1~unreleased) unstable; urgency=low
+
+  * foo
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 28 Aug 2009 18:05:13 +0300
+
 hildon-desktop (1:2.2.96-1) unstable; urgency=low
 
   * Fixes: NB#135542 - Browser in full screen mode displays only blank screen
