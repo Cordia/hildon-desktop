@@ -1443,14 +1443,14 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
   r.x = r.y = 0;
   if (want_fs_comp)
     {
-      /* g_warning ("%s: COMPOSITING: FULL SCREEN\n", __FUNCTION__); */
+      /* g_printerr ("%s: COMPOSITING: FULL SCREEN\n", __FUNCTION__); */
       clutter_stage_set_shaped_mode (stage, 0);
       r.width = wm->xdpy_width;
       r.height = wm->xdpy_height;
     }
   else
     {
-      /* g_warning ("%s: COMPOSITING: ZERO REGION\n", __FUNCTION__); */
+      /* g_printerr ("%s: COMPOSITING: ZERO REGION\n", __FUNCTION__); */
       /* tell Clutter not to draw on the window */
       clutter_stage_set_shaped_mode (stage, 1);
       r.width = r.height = 0;
@@ -1502,6 +1502,21 @@ hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm)
                 mb_wm_client_get_name (unredir_client));
                 */
 }
+
+#if 0
+static void
+hd_comp_mgr_unredirect_client (MBWindowManagerClient *c)
+{
+  if (c->cm_client &&
+      !mb_wm_comp_mgr_clutter_client_is_unredirected (c->cm_client))
+    {
+      mb_wm_comp_mgr_clutter_client_track_damage (
+        MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client), False);
+      mb_wm_comp_mgr_clutter_set_client_redirection (c->cm_client,
+                                                     FALSE);
+    }
+}
+#endif
 
 gboolean
 hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
@@ -1884,6 +1899,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         XFree (value);
     }
 
+  ctype = MB_WM_CLIENT_CLIENT_TYPE (c);
+
   /*
    * #MBWMCompMgrClutterClient already has an actor, now it's time
    * for #MBWMCompMgrClutter to create its texture and bind it to
@@ -1894,10 +1911,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (!HD_IS_INCOMING_EVENT_NOTE(c))
     {
       if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED
-          && !(HD_IS_APP (c) && hd_comp_mgr_is_non_composited (c, FALSE)))
-        /* switch away from non-composited mode to enable creating the
-         * texture   TODO: non-comp. in portrait mode */
-        hd_render_manager_set_state (HDRM_STATE_APP);
+          && !HD_IS_BANNER_NOTE (c) &&
+          !(HD_IS_APP (c) && hd_comp_mgr_is_non_composited (c, FALSE)))
+        {
+          /* switch away from non-composited mode to enable creating the
+           * texture   TODO: non-comp. in portrait mode */
+          /* TODO: should check that this client really is above the
+           * non-composited client */
+          hd_render_manager_set_state (HDRM_STATE_APP);
+        }
 
       parent_klass->map_notify (mgr, c);
     }
@@ -1915,7 +1937,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * If the actor is an application, add it also to the switcher
    * If it is Home applet, add it to the home
    */
-  ctype = MB_WM_CLIENT_CLIENT_TYPE (c);
 
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
   hclient = HD_COMP_MGR_CLIENT (cclient);

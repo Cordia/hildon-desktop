@@ -1,3 +1,8 @@
+2009-08-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Do not switch away
+	from non-composited mode if a mere banner is mapped.
+
 2009-08-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.97
