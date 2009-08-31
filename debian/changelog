@@ -1,8 +1,13 @@
-hildon-desktop (1:2.2.98-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.98-1) unstable; urgency=low
 
-  * foo
+  Adam (partial fix):
+  * Fixes: NB#134557 - Rotation suffers from too early mapping
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 28 Aug 2009 20:26:31 +0300
+  Kimmo:
+  * Fixes: NB#135950 - fullscreen youtube video launched from non-composited
+    fullscreen browser does not paint 
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 31 Aug 2009 14:09:31 +0300
 
 hildon-desktop (1:2.2.97-1) unstable; urgency=low
 

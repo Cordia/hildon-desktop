@@ -1519,7 +1519,6 @@ hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm)
                 */
 }
 
-#if 0
 static void
 hd_comp_mgr_unredirect_client (MBWindowManagerClient *c)
 {
@@ -1531,8 +1530,9 @@ hd_comp_mgr_unredirect_client (MBWindowManagerClient *c)
       mb_wm_comp_mgr_clutter_set_client_redirection (c->cm_client,
                                                      FALSE);
     }
+  else
+    g_printerr("%s: ain't no doing no unredirection\n", __func__);
 }
-#endif
 
 gboolean
 hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
@@ -1928,6 +1928,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED
           && !HD_IS_BANNER_NOTE (c) &&
+          !(ctype == HdWmClientTypeStatusMenu) &&
+          !(ctype == HdWmClientTypeAppMenu) &&
+          !(ctype == MBWMClientTypeOverride) &&
+          !(ctype == MBWMClientTypeMenu) &&
           !(HD_IS_APP (c) && hd_comp_mgr_is_non_composited (c, FALSE)))
         {
           /* switch away from non-composited mode to enable creating the
@@ -2044,7 +2048,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         hd_render_manager_set_state(HDRM_STATE_HOME);
       else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
         {
+          hd_comp_mgr_unredirect_client (c);
+                /*
           hd_render_manager_set_state (HDRM_STATE_APP);
+          */
         }
       hd_home_add_status_menu (HD_HOME (priv->home), actor);
       priv->status_menu_client = c;
@@ -2056,10 +2063,16 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (ctype == HdWmClientTypeAppMenu)
     {
+#if 0
       /* If we're in a state that needs a grab,
        * go back to home as the dialog will need the grab. */
       if (STATE_NEED_WHOLE_SCREEN_INPUT(hd_render_manager_get_state()))
         hd_render_manager_set_state(HDRM_STATE_HOME);
+#endif
+      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+        {
+          hd_comp_mgr_unredirect_client (c);
+        }
       return;
     }
   else if (ctype == MBWMClientTypeNote)
@@ -2108,6 +2121,11 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 	   c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
     {
       MBWindowManagerClient *transfor;
+
+      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+        {
+          hd_comp_mgr_unredirect_client (c);
+        }
 
       if ((transfor = hd_comp_mgr_get_client_transient_for (c)) != NULL)
         {
