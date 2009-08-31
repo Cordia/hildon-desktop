@@ -1,3 +1,15 @@
+2009-08-31  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c:
+	  Begin to rotate when we get a MBWindowManagerSignalPortraitForecast.
+	* src/util/hd-transition.c:
+	  Don't spin the main-main loop until the FADE_OUT phase of the
+	  rotation transition is over.
+	* data/transitions.ini:
+	  Changed damage_timeout to 120.
+
+	svn up clutter libmatchbox
+
 2009-08-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Do not switch away
