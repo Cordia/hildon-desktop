@@ -32,7 +32,6 @@
 #include <sys/inotify.h>
 
 #include <clutter/clutter.h>
-#include <clutter/x11/clutter-x11.h>
 #include <canberra.h>
 
 #include "hd-transition.h"
@@ -71,9 +70,6 @@ typedef struct _HDEffectData
   /* In Fade effects, final_alpha specifies the alpha value when the
    * window/note if fully faded in. */
   float                     final_alpha;
-  /* Indicates that the transition is synchronous, spinning the main loop
-   * itself. */
-  int                       quit_when_done;
 } HDEffectData;
 
 /* Describes the state of hd_transition_rotating_fsm(). */
@@ -728,12 +724,6 @@ hd_transition_completed (ClutterTimeline* timeline, HDEffectData *data)
                                         G_CALLBACK (on_screen_size_changed),
                                         data);
 
-  if (data->quit_when_done)
-    {
-      clutter_x11_event_processing_blocked = FALSE;
-      clutter_main_quit();
-    }
-
   g_free (data);
 }
 
@@ -1247,21 +1237,6 @@ hd_transition_fade_and_rotate(gboolean first_part,
   /* stop flicker by calling the first frame directly */
   on_rotate_screen_timeline_new_frame(data->timeline, 0, data);
   clutter_timeline_start (data->timeline);
-
-  /*
-   * Do the opening half of the transition synchronously, ensuring that
-   * we absolutely don't do anything else, in particular we don't map
-   * new windows which trash would trash the picture.  We can't do that
-   * if we are called indirectly by hdrm_set_state() through rotating_fsm()
-   * because the latter may want to change state after we've finished,
-   * reentering set_state(), so don't even attempt.
-   */
-  if (first_part && !hd_render_manager_is_changing_state())
-    {
-      data->quit_when_done = TRUE;
-      clutter_x11_event_processing_blocked = TRUE;
-      clutter_main();
-    }
 }
 
 static gboolean
