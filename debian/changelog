@@ -1,8 +1,12 @@
-hildon-desktop (1:2.2.99-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.99-1) unstable; urgency=low
 
-  * foo
+  Adam:
+  * Revert NB#134557 fixes due to complications. 
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 31 Aug 2009 14:12:45 +0300
+  Kimmo:
+  * Fixes: NB#135261 - Switching to portrait mode does not work in MicroB
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 01 Sep 2009 12:30:58 +0300
 
 hildon-desktop (1:2.2.98-1) unstable; urgency=low
 

@@ -89,8 +89,9 @@ typedef enum
   HDRM_STATE_LAUNCHER       = 1 << 7,
   HDRM_STATE_NON_COMPOSITED = 1 << 8, /* non-composited fullscreen mode */
   HDRM_STATE_LOADING        = 1 << 9, /* Loading screen */
-  HDRM_STATE_LOADING_SUBWIN = 1 << 10 /* Loading screen, but displaying
+  HDRM_STATE_LOADING_SUBWIN = 1 << 10, /* Loading screen, but displaying
                                          background apps */
+  HDRM_STATE_NON_COMP_PORT  = 1 << 11 /* non-composited portrait mode */
 } HDRMStateEnum;
 
 /* Does the desktop need to be above apps? */
@@ -114,14 +115,17 @@ typedef enum
 
 #define STATE_IS_APP(s) \
   STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT | \
-		    HDRM_STATE_NON_COMPOSITED)
+		    HDRM_STATE_NON_COMPOSITED | HDRM_STATE_NON_COMP_PORT)
 
-/* Can switch to portrait mode? */
+/* Can we switch to portrait mode? */
 #define STATE_IS_PORTRAIT_CAPABLE(s) \
-  (STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_HOME) || STATE_IS_EDIT_MODE (s))
+  (STATE_ONE_OF((s), \
+   HDRM_STATE_APP | HDRM_STATE_HOME | HDRM_STATE_NON_COMPOSITED) \
+   || STATE_IS_EDIT_MODE (s))
 
 #define STATE_IS_PORTRAIT(s) \
-  STATE_ONE_OF((s), HDRM_STATE_APP_PORTRAIT | HDRM_STATE_HOME_PORTRAIT)
+  STATE_ONE_OF((s), HDRM_STATE_APP_PORTRAIT | HDRM_STATE_HOME_PORTRAIT | \
+               HDRM_STATE_NON_COMP_PORT)
 
 #define STATE_IS_EDIT_MODE(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG)

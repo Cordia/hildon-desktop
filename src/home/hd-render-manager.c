@@ -79,6 +79,7 @@ hd_render_manager_state_get_type (void)
         { HDRM_STATE_TASK_NAV,       "HDRM_STATE_TASK_NAV",       "Task switcher" },
         { HDRM_STATE_LAUNCHER,       "HDRM_STATE_LAUNCHER",       "Task launcher" },
         { HDRM_STATE_NON_COMPOSITED, "HDRM_STATE_NON_COMPOSITED", "Non-composited" },
+        { HDRM_STATE_NON_COMP_PORT, "HDRM_STATE_NON_COMP_PORT", "Non-composited portrait" },
         { HDRM_STATE_LOADING,        "HDRM_STATE_LOADING",        "Loading" },
         { HDRM_STATE_LOADING_SUBWIN, "HDRM_STATE_LOADING_SUBWIN", "Loading Subwindow" },
         { 0, NULL, NULL }
@@ -887,6 +888,7 @@ void hd_render_manager_sync_clutter_before ()
                 HDRM_ZOOM_FOR_TASK_NAV : 0);
         break;
       case HDRM_STATE_NON_COMPOSITED:
+      case HDRM_STATE_NON_COMP_PORT:
         visible_top_left = HDRM_BUTTON_NONE;
         visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
@@ -992,8 +994,9 @@ void hd_render_manager_sync_clutter_before ()
    * think it's visible (to make it non-clickable). A fullscreen app->home
    * transition tends to leave the status area off the screen. NB#112996 */
   if (STATE_IS_APP(priv->state) != STATE_IS_APP(priv->previous_state) ||
-      (priv->previous_state == HDRM_STATE_NON_COMPOSITED))
-      hd_render_manager_set_visibilities();
+      priv->previous_state == HDRM_STATE_NON_COMPOSITED ||
+      priv->previous_state == HDRM_STATE_NON_COMP_PORT)
+    hd_render_manager_set_visibilities();
 
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport */
@@ -1383,7 +1386,10 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       priv->previous_state = priv->state;
       priv->state = state;
 
-      if (oldstate == HDRM_STATE_NON_COMPOSITED)
+      if ((oldstate == HDRM_STATE_NON_COMPOSITED &&
+           state != HDRM_STATE_NON_COMP_PORT) ||
+          (oldstate == HDRM_STATE_NON_COMP_PORT &&
+           state != HDRM_STATE_NON_COMPOSITED))
         {
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
 
@@ -1605,7 +1611,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           state==HDRM_STATE_TASK_NAV)
         hd_render_manager_stop_transition();
 
-      if (state == HDRM_STATE_NON_COMPOSITED)
+      if (state == HDRM_STATE_NON_COMPOSITED ||
+          state == HDRM_STATE_NON_COMP_PORT)
         {
           MBWindowManagerClient *c;
 
@@ -1634,16 +1641,20 @@ void hd_render_manager_set_state_portrait (void)
   g_assert (STATE_IS_PORTRAIT_CAPABLE (the_render_manager->priv->state));
   if (the_render_manager->priv->state == HDRM_STATE_APP)
     hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+  else if (the_render_manager->priv->state == HDRM_STATE_NON_COMPOSITED)
+    hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
 }
 
-/* ...and the opposit. */
+/* ...and the opposite. */
 void hd_render_manager_set_state_unportrait (void)
 {
   g_assert (STATE_IS_PORTRAIT (the_render_manager->priv->state));
   if (the_render_manager->priv->state == HDRM_STATE_APP_PORTRAIT)
     hd_render_manager_set_state (HDRM_STATE_APP);
+  else if (the_render_manager->priv->state == HDRM_STATE_NON_COMP_PORT)
+    hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME);
 }
@@ -2159,6 +2170,7 @@ hd_render_manager_is_visible(GList *blockers,
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
   if (priv->state == HDRM_STATE_NON_COMPOSITED ||
+      priv->state == HDRM_STATE_NON_COMP_PORT ||
       !hd_render_manager_clip_geo(&rect))
     return FALSE;
 
@@ -2354,7 +2366,8 @@ void hd_render_manager_set_visibilities()
   priv = the_render_manager->priv;
 
   /* shortcut for non-composited mode */
-  if (priv->state == HDRM_STATE_NON_COMPOSITED)
+  if (priv->state == HDRM_STATE_NON_COMPOSITED ||
+      priv->state == HDRM_STATE_NON_COMP_PORT)
     {
       hd_render_manager_set_input_viewport();
       return;
@@ -2493,7 +2506,8 @@ gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c)
   MBWMCompMgrClutterClient *cc;
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  if (priv->state == HDRM_STATE_NON_COMPOSITED)
+  if (priv->state == HDRM_STATE_NON_COMPOSITED ||
+      priv->state == HDRM_STATE_NON_COMP_PORT)
     return FALSE;
   if (!(cc = MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client)))
     return FALSE;

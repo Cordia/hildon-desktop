@@ -1,3 +1,12 @@
+2009-09-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.99
+
+	* src/home/hd-render-manager.[ch], src/mb/hd-comp-mgr.c: Add a new
+	HDRM state HDRM_STATE_NON_COMP_PORT for non-composited portrait
+	applications.
+	Fixes: NB#135261 - Switching to portrait mode does not work in MicroB
+
 2009-09-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	reverting NB#134557

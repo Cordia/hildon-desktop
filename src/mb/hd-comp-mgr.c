@@ -709,9 +709,15 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
           if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED &&
 	      !client_non_comp)
             hd_render_manager_set_state (HDRM_STATE_APP);
+          else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT
+                   && !client_non_comp)
+            hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
           else if (hd_render_manager_get_state () == HDRM_STATE_APP &&
 	           client_non_comp)
             hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+          else if (hd_render_manager_get_state () == HDRM_STATE_APP_PORTRAIT &&
+	           client_non_comp)
+            hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
         }
     }
   /* Check for changes to the hibernable state. */
@@ -889,7 +895,8 @@ hd_comp_mgr_set_input_viewport_for_window (Display *xdpy, Window  win,
   XSelectInput (xdpy, win, FocusChangeMask | ExposureMask
                 | PropertyChangeMask | ButtonPressMask | ButtonReleaseMask
                 | KeyPressMask | KeyReleaseMask | PointerMotionMask);
-  if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED)
+  if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED &&
+      hd_render_manager_get_state () != HDRM_STATE_NON_COMP_PORT)
     /* nobody knows what this actually is, let alone why shouldn't be
      * reset in non-composited mode */
     XFixesSetWindowShapeRegion (xdpy, win, ShapeBounding, 0, 0, None);
@@ -1427,7 +1434,8 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
   XRectangle         r;
   ClutterActor      *stage;
 
-  if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+  if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
+      hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
     want_fs_comp = FALSE;
   else
     want_fs_comp = TRUE;
@@ -1443,7 +1451,7 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
   r.x = r.y = 0;
   if (want_fs_comp)
     {
-      /* g_printerr ("%s: COMPOSITING: FULL SCREEN\n", __FUNCTION__); */
+       /* g_printerr ("%s: COMPOSITING: FULL SCREEN\n", __FUNCTION__); */
       clutter_stage_set_shaped_mode (stage, 0);
       r.width = wm->xdpy_width;
       r.height = wm->xdpy_height;
@@ -1910,8 +1918,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    */
   if (!HD_IS_INCOMING_EVENT_NOTE(c))
     {
-      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED
-          && !HD_IS_BANNER_NOTE (c) &&
+      if ((hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
+           hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT) &&
+          !HD_IS_BANNER_NOTE (c) &&
           !(ctype == HdWmClientTypeStatusMenu) &&
           !(ctype == HdWmClientTypeAppMenu) &&
           !(ctype == MBWMClientTypeOverride) &&
@@ -2030,7 +2039,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       if (STATE_ONE_OF(hd_render_manager_get_state(),
                        HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
         hd_render_manager_set_state(HDRM_STATE_HOME);
-      else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+      else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
+               hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
         {
           hd_comp_mgr_unredirect_client (c);
                 /*
@@ -2053,7 +2063,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       if (STATE_NEED_WHOLE_SCREEN_INPUT(hd_render_manager_get_state()))
         hd_render_manager_set_state(HDRM_STATE_HOME);
 #endif
-      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
+          hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
         {
           hd_comp_mgr_unredirect_client (c);
         }
@@ -2099,6 +2110,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
            * (the title is drawn in Clutter) */
           hd_render_manager_set_state (HDRM_STATE_APP);
         }
+      else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
+        {
+          hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+        }
       return;
     }
   else if (c->window->net_type ==
@@ -2106,7 +2121,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       MBWindowManagerClient *transfor;
 
-      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
+      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
+          hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
         {
           hd_comp_mgr_unredirect_client (c);
         }
@@ -2140,14 +2156,25 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (hd_comp_mgr_is_non_composited (c, FALSE))
     {
       /* g_warning ("%s: client requests non-composited mode", __func__); */
-      if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED)
+      if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED &&
+          !STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
         hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
-      else
+      else if (hd_render_manager_get_state () != HDRM_STATE_NON_COMP_PORT &&
+               STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
+        hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
+      else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
+               hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
         hd_comp_mgr_unredirect_topmost_client (c->wmref);
+      else
+        g_warning ("%s: shouldn't come here, right?", __func__);
     }
   else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
     {
       hd_render_manager_set_state (HDRM_STATE_APP);
+    }
+  else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
+    {
+      hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
     }
 
   int topmost;
@@ -2323,13 +2350,15 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   MBWMClientType            c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
   MBWMCompMgrClutterClient *cclient;
   MBWindowManagerClient    *transfor = 0;
+  HDRMStateEnum             hdrm_state;
 
   g_debug ("%s: 0x%lx", __FUNCTION__, c && c->window ? c->window->xwindow : 0);
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+  hdrm_state = hd_render_manager_get_state ();
 
   /* if we are in home_edit_dlg mode, check and see if there is stuff
    * that would spoil our grab now - and if not, return to home_edit mode */
-  if (hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT_DLG)
+  if (hdrm_state == HDRM_STATE_HOME_EDIT_DLG)
     {
       gboolean grab_spoil = FALSE;
       MBWindowManagerClient *above = mgr->wm->desktop;
@@ -2345,7 +2374,8 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       if (!grab_spoil)
         hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
     }
-  else if (hd_render_manager_get_state() == HDRM_STATE_APP)
+  else if (hdrm_state == HDRM_STATE_APP ||
+           hdrm_state == HDRM_STATE_APP_PORTRAIT)
     {
       if (!HD_IS_BANNER_NOTE(c) &&
           !HD_IS_INCOMING_EVENT_NOTE(c) &&
@@ -2359,13 +2389,19 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
             if (MB_WM_CLIENT_CLIENT_TYPE (below) != HdWmClientTypeStatusArea)
               {
                 if (HD_IS_APP (below) &&
-                                hd_comp_mgr_is_non_composited (below, FALSE))
-                  hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+                    hd_comp_mgr_is_non_composited (below, FALSE))
+                  {
+                    if (hdrm_state == HDRM_STATE_APP)
+                      hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+                    else
+                      hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
+                  }
                 break;
               }
         }
     }
-  else if (hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED)
+  else if (hdrm_state == HDRM_STATE_NON_COMPOSITED ||
+           hdrm_state == HDRM_STATE_NON_COMP_PORT)
     {
       if (!HD_IS_BANNER_NOTE(c) &&
           !HD_IS_INCOMING_EVENT_NOTE(c) &&
@@ -2379,8 +2415,13 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
             if (MB_WM_CLIENT_CLIENT_TYPE (below) != HdWmClientTypeStatusArea)
               {
                 if (!HD_IS_APP (below) ||
-                                !hd_comp_mgr_is_non_composited (below, FALSE))
-                  hd_render_manager_set_state (HDRM_STATE_APP);
+                    !hd_comp_mgr_is_non_composited (below, FALSE))
+                  {
+                    if (hdrm_state == HDRM_STATE_NON_COMPOSITED)
+                      hd_render_manager_set_state (HDRM_STATE_APP);
+                    else
+                      hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+                  }
                 break;
               }
         }
