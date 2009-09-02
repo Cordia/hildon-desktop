@@ -216,8 +216,8 @@ back_button_press_handler (MBWindowManager   *wm,
   BackButtonData *bd = userdata;
 
   /*
-   * The user might released outside the back button and pressed the button
-   * again.
+   * The user might have released outside the back button and pressed
+   * the button again.
    */
   if (bd->timeout_id != 0) {
     /*
@@ -228,10 +228,9 @@ back_button_press_handler (MBWindowManager   *wm,
   }
 
   /*
-   * The timeout function need a reference for the button, it will unreference
-   * it.
+   * We already have a reference for the button, it was referenced when
+   * this handler was registered.
    */
-  mb_wm_object_ref (MB_WM_OBJECT(button));
 
   bd->timeout_id =
     g_timeout_add_full (G_PRIORITY_HIGH_IDLE,
@@ -260,6 +259,10 @@ back_button_release_handler (MBWindowManager   *wm,
 
   c = button->decor->parent_client;
   mb_wm_client_deliver_delete (c);
+
+  /* the button was referenced when press and release handler was
+   * installed */
+  mb_wm_object_unref (MB_WM_OBJECT(button));
 }
 
 static void
@@ -373,6 +376,9 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
                                        0);
 
 	  bd = g_new0 (BackButtonData, 1);
+          /* reference back button for the press handler */
+          mb_wm_object_ref (MB_WM_OBJECT (button));
+
 	  mb_wm_decor_button_set_user_data (MB_WM_DECOR_BUTTON(button), bd,
 					    back_button_data_destroy);
 	}
