@@ -165,6 +165,8 @@ back_button_timeout (gpointer data)
     goto finalize;
   /*
    * We protect ourselves against the non-app windows.
+   * NOTE: we don't have reference for decor or parent_client so this
+   * relies on setting the parent_client NULL when it's destroyed.
    */
   if (bd->button->decor && (c = bd->button->decor->parent_client) &&
       !HD_IS_APP (c))
@@ -202,6 +204,7 @@ back_button_data_destroy (MBWMDecorButton *button, void *data)
     {
       g_source_remove( bd->timeout_id );
       bd->timeout_id = 0;
+      /* the button is unreferenced here */
       back_button_timeout(data);
     }
 
@@ -219,18 +222,11 @@ back_button_press_handler (MBWindowManager   *wm,
    * The user might have released outside the back button and pressed
    * the button again.
    */
-  if (bd->timeout_id != 0) {
-    /*
-     * We unref the button on behalf the timeout function.
-     */
+  if (bd->timeout_id != 0)
     g_source_remove (bd->timeout_id);
-    mb_wm_object_unref (MB_WM_OBJECT(bd->button));
-  }
-
-  /*
-   * We already have a reference for the button, it was referenced when
-   * this handler was registered.
-   */
+  else
+    /* reference for the timeout handler */
+    mb_wm_object_ref (MB_WM_OBJECT(bd->button));
 
   bd->timeout_id =
     g_timeout_add_full (G_PRIORITY_HIGH_IDLE,
@@ -258,10 +254,10 @@ back_button_release_handler (MBWindowManager   *wm,
   bd->timeout_id = 0;
 
   c = button->decor->parent_client;
-  mb_wm_client_deliver_delete (c);
+  if (c)
+    mb_wm_client_deliver_delete (c);
 
-  /* the button was referenced when press and release handler was
-   * installed */
+  /* the button was referenced when timeout was installed */
   mb_wm_object_unref (MB_WM_OBJECT(button));
 }
 
@@ -304,8 +300,6 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 
 	      bd = g_new0 (BackButtonData, 1);
 	      bd->button = MB_WM_DECOR_BUTTON(button);
-              /* reference back button for the press handler */
-	      mb_wm_object_ref (MB_WM_OBJECT (button));
 
 	      mb_wm_decor_button_set_user_data (MB_WM_DECOR_BUTTON(button), bd,
 						back_button_data_destroy);
@@ -376,8 +370,6 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
                                        0);
 
 	  bd = g_new0 (BackButtonData, 1);
-          /* reference back button for the press handler */
-          mb_wm_object_ref (MB_WM_OBJECT (button));
 
 	  mb_wm_decor_button_set_user_data (MB_WM_DECOR_BUTTON(button), bd,
 					    back_button_data_destroy);

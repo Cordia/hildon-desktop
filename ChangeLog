@@ -2,10 +2,10 @@
 
 	Fix a memory leak. Related to NB#98132 and NB#134230
 
-	* src/mb/hd-theme.c (back_button_press_handler): Do not reference the
-	button here, it's already done earlier.
-	(construct_buttons): Reference the button (also in the latter part of
-	the code) when press and release handlers are installed.
+	* src/mb/hd-theme.c (back_button_press_handler): Reference the button
+	if we put a new timeout handler.
+	(construct_buttons): Do not reference the button for press handler,
+	because it's not called if the button is destroyed.
 	(back_button_release_handler): Unreference the button to destroy it.
 
 2009-09-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
