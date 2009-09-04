@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.100-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#133517 - possible memory leak in libosso-abook
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue,  1 Sep 2009 12:34:30 +0300
 

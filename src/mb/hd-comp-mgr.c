@@ -2349,7 +2349,6 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   HdCompMgrPrivate          * priv = HD_COMP_MGR (mgr)->priv;
   MBWMClientType            c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
   MBWMCompMgrClutterClient *cclient;
-  MBWindowManagerClient    *transfor = 0;
   HDRMStateEnum             hdrm_state;
 
   g_debug ("%s: 0x%lx", __FUNCTION__, c && c->window ? c->window->xwindow : 0);
@@ -2479,22 +2478,16 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                                        HD_NOTE (c));
       return;
     }
-  else if (c_type == MBWMClientTypeNote || c_type == MBWMClientTypeDialog)
-    transfor = c->transient_for;
-  else if (c->window->net_type ==
-	   c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
-    transfor = hd_comp_mgr_get_client_transient_for (c);
-  else
-    return;
-
-  if (transfor)
-    { /* Remove application-transient dialogs from the switcher. */
+  else if (c_type == MBWMClientTypeNote || c_type == MBWMClientTypeDialog ||
+           c->window->net_type ==
+           c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
+    {
       ClutterActor *actor;
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      /* checking for transiency is not enough because nowadays dialogs
+       * can become non-transient after they have been transient */
       if (actor)
-        {
-          hd_switcher_remove_dialog (priv->switcher_group, actor);
-        }
+        hd_switcher_remove_dialog (priv->switcher_group, actor);
     }
 }
 
