@@ -1,5 +1,7 @@
 2009-09-04  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.100
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify): Do not leak dialogs
 	that went from transient to intransient in task navigator.
 	Fixes: NB#133517 - possible memory leak in libosso-abook
