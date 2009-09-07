@@ -1394,6 +1394,16 @@ hd_transition_rotate_screen_and_change_state (HDRMStateEnum state)
   Orientation_change.goto_state = state;
 }
 
+/* Returns whether the rotating fsm is going to change hdrm state.
+ * In theory it may be wrong but in practice it's only used for
+ * APP->TASK_NAV and hdrm make sure @goto_state is cleared otherwise. */
+gboolean
+hd_transition_rotation_will_change_state (void)
+{
+  return Orientation_change.phase == FADE_OUT 
+    && Orientation_change.goto_state != HDRM_STATE_UNDEFINED;
+}
+
 /* Returns whether we are in a state where we should ignore any
  * damage requests. This also checks and possibly prolongs how long
  * we stay in the WAITING state, so we can be sure that all windows

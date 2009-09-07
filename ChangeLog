@@ -1,5 +1,18 @@
 2009-09-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	136911 [PR1.1 proposal] Windows is-topmost property is TRUE
+	       for a second after call ui closes
+
+	* src/util/hd-transition.h
+	* src/util/hd-transition.c (hd_transition_rotating_will_change_state):
+	  Added function to tell whether the rotating fsm is known to be
+	  changing state...
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_restack):
+	  ...in which case don't set CURRENT_APP_WIN and don't play with
+	  hibernation either.
+
+2009-09-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	132220 [PATCH] Empty title bar in a particular scenario
 
 	* src/home/hd-task-navigator.c (appthumb_clicked,

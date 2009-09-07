@@ -2670,8 +2670,11 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   if (parent_klass->restack)
     parent_klass->restack (mgr);
 
-  /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed. */
-  if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop)
+  /* Update _MB_CURRENT_APP_WINDOW if we're ready and it's changed.
+   * Don't if we're in the middle of a transition which will change
+   * state one again because getting is-topmost wrong is frowned upon. */
+  if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop
+      && !hd_transition_rotation_will_change_state ())
     {
       MBWindowManagerClient *current_client =
                               hd_wm_determine_current_app (mgr->wm);
@@ -2705,6 +2708,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
         }
 
       hd_wm_current_app_is (mgr->wm, current_client->window->xwindow);
+
       /* If we have an app as the current client and we're not in
        * app mode - enter app mode. */
       if (!(MB_WM_CLIENT_CLIENT_TYPE(current_client) &
