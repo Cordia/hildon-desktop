@@ -2584,6 +2584,12 @@ actor_to_client_window (ClutterActor * win, const HdCompMgrClient **hcmgrcp)
 static gboolean
 appthumb_clicked (const Thumbnail * apthumb)
 {
+  if (hd_render_manager_get_state () != HDRM_STATE_TASK_NAV)
+    /* Bloke clicked a home applet while exiting the switcher,
+     * which got through the input viewport and would mess up
+     * things in hd_switcher_zoom_in_complete(). */
+    return TRUE;
+
   if (animation_in_progress (Fly_effect_timeline)
       || animation_in_progress (Zoom_effect_timeline))
     /* Clicking on the thumbnail while it's zooming would result in multiple
@@ -2604,6 +2610,10 @@ appthumb_clicked (const Thumbnail * apthumb)
 static gboolean
 appthumb_close_clicked (const Thumbnail * apthumb)
 {
+  if (hd_render_manager_get_state () != HDRM_STATE_TASK_NAV)
+    /* Be consistent with appthumb_clicked(). */
+    return TRUE;
+
   if (animation_in_progress (Fly_effect_timeline)
       || animation_in_progress (Zoom_effect_timeline))
     /* Closing an application while it's zooming would crash us. */
@@ -3349,6 +3359,10 @@ tnote_matches_thumb (const TNote * tnote, const Thumbnail * thumb)
 static gboolean
 nothumb_clicked (Thumbnail * nothumb)
 {
+  if (hd_render_manager_get_state () != HDRM_STATE_TASK_NAV)
+    /* Be consistent with appthumb_clicked(). */
+    return TRUE;
+
   g_signal_emit_by_name (Navigator, "notification-clicked",
                          nothumb->tnote->hdnote);
   return TRUE;
@@ -3359,6 +3373,9 @@ static gboolean
 nothumb_close_clicked (Thumbnail * nothumb)
 {
   g_assert (thumb_has_notification (nothumb));
+  if (hd_render_manager_get_state () != HDRM_STATE_TASK_NAV)
+    /* Be consistent with appthumb_clicked(). */
+    return TRUE;
   g_signal_emit_by_name (Navigator, "notification-closed",
                          nothumb->tnote->hdnote);
   return TRUE;

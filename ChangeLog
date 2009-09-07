@@ -1,3 +1,13 @@
+2009-09-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	132220 [PATCH] Empty title bar in a particular scenario
+
+	* src/home/hd-task-navigator.c (appthumb_clicked,
+	  appthumb_close_clicked, nothumb_clicked):
+	  Ignore clicks in inappropriate states.  The previous assumption
+	  was that those callbacks won't be activated if we're not in
+	  TASK_NAV state, but it turns out to be a dream.
+
 2009-09-04  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.100
