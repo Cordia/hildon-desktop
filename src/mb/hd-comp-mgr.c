@@ -2057,12 +2057,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (ctype == HdWmClientTypeAppMenu)
     {
-#if 0
-      /* If we're in a state that needs a grab,
-       * go back to home as the dialog will need the grab. */
+      /* This is mainly for the power key menu, but we must not allow
+       * menus is general when not in APP state because they are not
+       * added to the switcher.  This can be considered a shortcoming. */
       if (STATE_NEED_WHOLE_SCREEN_INPUT(hd_render_manager_get_state()))
         hd_render_manager_set_state(HDRM_STATE_HOME);
-#endif
+
       if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
           hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
         {

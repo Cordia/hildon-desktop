@@ -1,7 +1,18 @@
 2009-09-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-	136911 [PR1.1 proposal] Windows is-topmost property is TRUE
-	       for a second after call ui closes
+	NB#137478 [S3 PROPOSAL]Switcher becomes non responding on opening
+		  power menu while on switcher view.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
+	  Go HOME again if an application menu is mapped.  This is for the
+	  pwk menu -- ordinary appmenus are not supposed to be mapped when
+	  the application is not in the foreground (ie. we're not in APP
+	  state).
+
+2009-09-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#136911 [PR1.1 proposal] Windows is-topmost property is TRUE
+		  for a second after call ui closes
 
 	* src/util/hd-transition.h
 	* src/util/hd-transition.c (hd_transition_rotating_will_change_state):
@@ -13,7 +24,7 @@
 
 2009-09-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-	132220 [PATCH] Empty title bar in a particular scenario
+	NB#132220 [PATCH] Empty title bar in a particular scenario
 
 	* src/home/hd-task-navigator.c (appthumb_clicked,
 	  appthumb_close_clicked, nothumb_clicked):
