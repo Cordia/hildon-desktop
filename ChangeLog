@@ -1,3 +1,10 @@
+2009-09-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Apply patch from Phil Carmody to add X Terminal keyboard shortcut.
+
+	* src/main.c: "<shift><ctrl>x" causes execution of osso-xterm.
+	Fixes: NB#136949 - Feature/Info request - new 'magic keys' on the
+
 2009-09-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#136031 [PATCH] The window closing tone is played twice on closing

@@ -59,7 +59,8 @@
 enum {
   KEY_ACTION_TOGGLE_SWITCHER = 1,
   KEY_ACTION_TOGGLE_NON_COMP_MODE,
-  KEY_ACTION_TAKE_SCREENSHOT
+  KEY_ACTION_TAKE_SCREENSHOT,
+  KEY_ACTION_XTERMINAL,
 };
 
 #ifdef MBWM_DEB_VERSION
@@ -224,6 +225,18 @@ key_binding_func (MBWindowManager   *wm,
     case KEY_ACTION_TAKE_SCREENSHOT:
         take_screenshot();
 	break;
+    case KEY_ACTION_XTERMINAL:
+      {
+	pid_t fork(void);
+	int execl(const char *path, const char *arg, ...);
+
+	pid_t havechild=fork();
+	if (!havechild)
+	  execl("/usr/bin/osso-xterm", 
+		"/usr/bin/osso-xterm", NULL);
+	/* This is a hack - don't care about the kid */
+      }
+      break;
     }
 }
 
@@ -544,6 +557,11 @@ main (int argc, char **argv)
 				    key_binding_func,
 				    NULL,
 				    (void*)KEY_ACTION_TOGGLE_SWITCHER);
+  mb_wm_keys_binding_add_with_spec (wm,
+				    "<shift><ctrl>x",
+				    key_binding_func,
+				    NULL,
+				    (void*)KEY_ACTION_XTERMINAL);
   mb_wm_keys_binding_add_with_spec (wm,
 				    "<shift><ctrl>n",
 				    key_binding_func,
