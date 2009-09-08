@@ -1,4 +1,12 @@
-2009-09-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-09-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#136031 [PATCH] The window closing tone is played twice on closing
+		  an app from the switcher
+
+	* src/home/hd-task-navigator.c (turnoff_effect):
+	  Don't make redundant noise as it is made by hd_comp_mgr_effect() now.
+
+2009-09-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#135948 [PATCH] 'Zombie window' seen in email
 

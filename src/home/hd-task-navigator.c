@@ -1372,9 +1372,6 @@ turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
       closure->particles[i].ang0 = 2*M_PI * g_random_double ();
       closure->particles[i].particle = particle;
     }
-
-  /* Make noise. */
-  hd_transition_play_sound (HDCM_WINDOW_CLOSED_SOUND);
 }
 /* Boom effect }}} */
 
