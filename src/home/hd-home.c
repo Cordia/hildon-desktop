@@ -413,7 +413,7 @@ hd_home_desktop_do_release (HdHome *home)
   priv->long_press = FALSE;
 }
 
-static gboolean 
+static gboolean
 press_timeout_cb (gpointer data)
 {
   HdHome *home = data;
@@ -1426,7 +1426,7 @@ hd_home_applet_press (ClutterActor       *applet,
   priv->initial_x = event->x;
   priv->initial_y = event->y;
 
-  clutter_grab_pointer (applet);
+  clutter_grab_pointer_without_pick (applet);
   hd_home_desktop_do_press (home, event->x, event->y);
 
   priv->pressed_applet = applet;

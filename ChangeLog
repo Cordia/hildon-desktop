@@ -1,3 +1,13 @@
+2009-09-08  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#135059 - (S3)Home view panning slower over applets than
+	                       desktop
+	
+	* control: Requires clutter maemo49, so updated
+	* src/home/hd-home.c: use clutter_grab_pointer_without_pick to let us
+	grab clutter input without having clutter do costly selection for us
+	each frame.
+
 2009-09-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Apply patch from Phil Carmody to add X Terminal keyboard shortcut.
