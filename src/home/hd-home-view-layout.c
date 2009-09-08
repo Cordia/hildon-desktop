@@ -22,7 +22,10 @@
 #include "hd-home-view-layout.h"
 #include "hd-comp-mgr.h"
 
-#define PADDING 16
+/* Padding between applets - Just enough to get 5 contacts onto the screen.
+ * See bug 137601
+ */
+#define PADDING 13
 #define MIN_SIZE (2 * PADDING + 1)
 
 typedef struct rect_t rect_t;
@@ -39,7 +42,7 @@ struct rect_t
 struct layer_t
 {
   layer_t *child;
-  GList *rectangles;  
+  GList *rectangles;
 };
 
 struct _HdHomeViewLayoutPrivate
@@ -168,7 +171,7 @@ layer_new (GSList *applets)
 {
   layer_t *layer = g_slice_new0 (layer_t);
   GSList *a;
- 
+
   layer->rectangles = g_list_prepend (NULL, rect_new (0,
                                                       HD_COMP_MGR_TOP_MARGIN,
                                                       HD_COMP_MGR_LANDSCAPE_WIDTH,

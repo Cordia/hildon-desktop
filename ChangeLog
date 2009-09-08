@@ -1,5 +1,11 @@
 2009-09-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#137601 - Cannot add 5 contacts on a row to desktop
+	
+	* src/home/hd-home-view-layout.c: reduced padding from 16px to 13px
+
+2009-09-08  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Fixes: NB#135059 - (S3)Home view panning slower over applets than
 	                       desktop
 	
