@@ -3392,8 +3392,11 @@ add_nothumb (TNote * tnote)
   nothumb->type = NOTIFICATION;
   nothumb->tnote = tnote;
 
+  /* Reset @notwin's opacity, it might have belonged to an application,
+   * which was zoomed in then closed. */
   create_thwin (nothumb, tnote->notwin);
   reset_thumb_title (nothumb);
+  clutter_actor_set_opacity (tnote->notwin, 255);
   g_signal_connect_swapped (nothumb->thwin, "button-release-event",
                             G_CALLBACK (nothumb_clicked), nothumb);
   g_signal_connect_swapped (nothumb->close, "button-release-event",

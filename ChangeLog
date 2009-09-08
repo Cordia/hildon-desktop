@@ -1,5 +1,13 @@
 2009-09-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#135948 [PATCH] 'Zombie window' seen in email
+
+	* src/home/hd-task-navigator.c (add_nothumb):
+	  Reset the new nothumb's opacity as it may have been orphaned
+	  when it was transparent.
+
+2009-09-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#137478 [S3 PROPOSAL]Switcher becomes non responding on opening
 		  power menu while on switcher view.
 
