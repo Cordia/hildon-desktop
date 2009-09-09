@@ -63,5 +63,7 @@ void hd_decor_sync(HdDecor   *decor);
 
 gboolean
 hd_decor_window_is_waiting (MBWindowManager *wm, Window w);
+gboolean
+hd_decor_window_has_menu_indicator (MBWindowManager *wm, Window w);
 
 #endif

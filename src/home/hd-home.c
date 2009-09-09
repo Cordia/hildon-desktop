@@ -600,35 +600,6 @@ hd_home_reset_fn_state (HdHome *home)
   home->priv->ignore_next_fn_release = FALSE;
 }
 
-static void
-hd_property_notify_message (XPropertyEvent *xev, void *userdata)
-{
-  HdHome          *home = userdata;
-  HdHomePrivate *priv = home->priv;
-  HdCompMgr     *hmgr = HD_COMP_MGR (priv->comp_mgr);
-
-  if (xev->atom==hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_PROGRESS_INDICATOR))
-    { /* Redraw the title to display/remove the progress indicator. */
-      MBWindowManagerClient *top;
-      /* previous mb_wm_client_decor_mark_dirty didn't actually cause a redraw,
-       * so mark the decor itself dirty */
-      top = mb_wm_managed_client_from_xwindow(MB_WM_COMP_MGR (hmgr)->wm,
-					      xev->window);
-
-      if (top)
-        {
-          MBWMList *l = top->decor;
-          while (l)
-            {
-              MBWMDecor *decor = l->data;
-              if (decor->type == MBWMDecorTypeNorth)
-                mb_wm_decor_mark_dirty (decor);
-              l = l->next;
-            }
-        }
-    }
-}
-
 /* Called when a client message is sent to the root window. */
 static void
 root_window_client_message (XClientMessageEvent *event, HdHome *home)
@@ -941,13 +912,6 @@ hd_home_constructed (GObject *object)
 					  ClientMessage,
 					  (MBWMXEventFunc)
 					  root_window_client_message,
-					  object);
-
-  mb_wm_main_context_x_event_handler_add (wm->main_ctx,
-					  None,
-					  PropertyNotify,
-					  (MBWMXEventFunc)
-					  hd_property_notify_message,
 					  object);
 }
 

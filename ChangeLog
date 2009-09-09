@@ -1,5 +1,23 @@
 2009-09-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#137793 - Indicator for view menu in app title area
+	* src/mb/hd-atoms.c
+	* src/mb/hd-atoms.h: Added menu indicator atom	
+	* src/mb/hd-theme.h: Add #defines for new theme image
+	* src/mb/hd-decor.c
+	* src/mb/hd-decor.h: Added function to check for presence of menu
+	  indicator atom.	
+	* src/home/hd-title-bar.c
+	* src/home/hd-title-bar.h: Added code to load and show menu indicator
+	  atom.
+	* src/home/hd-home.c
+	* src/mb/hd-comp-mgr.c: Simplified title bar progress indicator code,
+	  and moved into hd-comp-mgr's property listener, removing a whole
+	  extra property listener function. Also added listener for menu
+	  indicator atom.
+
+2009-09-08  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Fixes: NB#137601 - Cannot add 5 contacts on a row to desktop
 	
 	* src/home/hd-home-view-layout.c: reduced padding from 16px to 13px

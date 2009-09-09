@@ -66,6 +66,7 @@ enum
   BTN_CLOSE_PRESSED,
   BTN_MENU,
   BTN_DONE,
+  BTN_MENU_INDICATOR,
   BTN_COUNT
 };
 
@@ -90,6 +91,7 @@ static const char *const BTN_FILENAMES[BTN_COUNT] = {
     HD_THEME_IMG_CLOSE_PRESSED,
     HD_THEME_IMG_EDIT_ICON,
     NULL, // BTN_DONE
+    HD_THEME_IMG_MENU_INDICATOR,
 };
 
 static const char *const BTN_LABELS[BTN_COUNT * 2] = {
@@ -113,6 +115,7 @@ static const char *const BTN_LABELS[BTN_COUNT * 2] = {
     NULL, NULL,  // BTN_CLOSE_PRESSED,
     NULL, NULL,  // BTN_MENU
     "hildon-libs", "wdgt_bd_done", // BTN_DONE
+    NULL, NULL,  // BTN_MENU_INDICATOR
 };
 
 enum {
@@ -155,6 +158,7 @@ static const gboolean BTN_FLAGS[BTN_COUNT] = {
    BTN_FLAG_ALIGN_RIGHT | BTN_FLAG_SET_SIZE | BTN_FLAG_CENTRE,  // BTN_CLOSE_PRESSED,
    0, // BTN_MENU,
    BTN_FLAG_ALIGN_RIGHT, // BTN_DONE,
+   0, // BTN_MENU_INDICATOR,
 };
 
 struct _HdTitleBarPrivate
@@ -175,6 +179,9 @@ struct _HdTitleBarPrivate
   ClutterActor          *progress_texture;
 
   HdTitleBarVisEnum      state;
+  /* Do we show the menu indicator? This isn't included in state because
+   * it could be unwillingly cleared by calls to set_state */
+  gboolean               has_menu_indicator;
 };
 
 /* HdHomeThemeButtonBack, MBWMDecorButtonClose */
@@ -714,6 +721,7 @@ hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size)
       clutter_actor_hide(priv->title_bg);
       clutter_actor_hide(priv->progress_texture);
       clutter_timeline_stop(priv->progress_timeline);
+      clutter_actor_hide(priv->buttons[BTN_MENU_INDICATOR]);
     }
   /* If we want the slightly translucent 'tab-style' background */
   if ((!full_size) || (priv->state & HDTB_VIS_FOREGROUND))
@@ -845,6 +853,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
 
   priv = bar->priv;
 
+  priv->has_menu_indicator = FALSE;
   if (client != NULL)
     {
       c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
@@ -857,6 +866,9 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
         }
 
       is_waiting = hd_decor_window_is_waiting(client->wmref,
+                                              client->window->xwindow);
+      priv->has_menu_indicator = hd_decor_window_has_menu_indicator(
+                                              client->wmref,
                                               client->window->xwindow);
 
       for (l = client->decor; l; l = l->next)
@@ -917,6 +929,35 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
   hd_title_bar_right_pressed(bar, pressed);
 }
 
+/* Get the position at the end of the title where the progress indicator
+ * and app menu indicator should be... */
+static gint hd_title_bar_get_end_of_title(HdTitleBar *bar,
+                                          int width,
+                                          gboolean allow_title_overlap) {
+  HdTitleBarPrivate *priv = bar->priv;
+  gint x = 0;
+  gint max_x = hd_comp_mgr_get_current_screen_width () -
+              (width + hd_title_bar_get_button_width(bar));
+  PangoRectangle logical_rect = { 0, };
+  PangoLayout *layout;
+
+  layout = clutter_label_get_layout (priv->title);
+  pango_layout_get_extents (layout, NULL, &logical_rect);
+
+  x = clutter_actor_get_x(CLUTTER_ACTOR(priv->title)) +
+      (int)pango_units_to_double(logical_rect.width) +
+      HD_TITLE_BAR_PROGRESS_MARGIN;
+
+  if (x > max_x)
+    {
+      if (allow_title_overlap)
+        x = max_x;
+      else
+        x = -width;
+    }
+  return x;
+}
+
 void hd_title_bar_set_title (HdTitleBar *bar,
                              const char *title,
                              gboolean has_markup,
@@ -969,26 +1010,12 @@ void hd_title_bar_set_title (HdTitleBar *bar,
 
   if (waiting)
     {
-      gint x = 0;
-      gint max_x = hd_comp_mgr_get_current_screen_width () -
-                  (HD_THEME_IMG_PROGRESS_SIZE +
-                   HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH);
-      PangoRectangle logical_rect = { 0, };
-      PangoLayout *layout;
-
       clutter_actor_show(priv->progress_texture);
       clutter_timeline_start(priv->progress_timeline);
-
-      layout = clutter_label_get_layout (priv->title);
-      pango_layout_get_extents (layout, NULL, &logical_rect);
-
-      x = clutter_actor_get_x(CLUTTER_ACTOR(priv->title)) +
-          (int)pango_units_to_double(logical_rect.width) +
-          HD_TITLE_BAR_PROGRESS_MARGIN;
-      if (x > max_x) x = max_x;
-
       clutter_actor_set_position(priv->progress_texture,
-                x,
+                hd_title_bar_get_end_of_title(bar,
+                                              HD_THEME_IMG_PROGRESS_SIZE,
+                                              TRUE/*allow title overlap*/),
                 (HD_COMP_MGR_TOP_MARGIN - HD_THEME_IMG_PROGRESS_SIZE)/2);
     }
   else
@@ -996,6 +1023,28 @@ void hd_title_bar_set_title (HdTitleBar *bar,
       clutter_actor_hide(priv->progress_texture);
       clutter_timeline_stop(priv->progress_timeline);
     }
+
+  /* Only show the indicator if we are asked to, and we're not
+   * showing the waiting indicator. */
+  if (priv->has_menu_indicator && !waiting)
+     {
+       gint x = hd_title_bar_get_end_of_title(bar,
+                                              HD_THEME_IMG_MENU_INDICATOR_SIZE,
+                                              FALSE/* don't allow title overlap */);
+       /* x<0 is used to signify that there was overlap with the title so we
+        * should not display it. */
+       if (x >= 0)
+         {
+           clutter_actor_show(priv->buttons[BTN_MENU_INDICATOR]);
+           clutter_actor_set_position(priv->buttons[BTN_MENU_INDICATOR],
+               x,
+               (HD_COMP_MGR_TOP_MARGIN - HD_THEME_IMG_MENU_INDICATOR_SIZE)/2);
+         }
+       else
+         clutter_actor_hide(priv->buttons[BTN_MENU_INDICATOR]);
+     }
+   else
+     clutter_actor_hide(priv->buttons[BTN_MENU_INDICATOR]);
 }
 
 void

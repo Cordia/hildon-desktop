@@ -68,7 +68,6 @@ typedef enum {
   /* do we use small buttons (for portrait) or not */
   HDTB_VIS_SMALL_BUTTONS   = 512,
 
-
   HDTB_VIS_BTN_LEFT_MASK   = HDTB_VIS_BTN_LAUNCHER |
                              HDTB_VIS_BTN_SWITCHER |
                              HDTB_VIS_BTN_MENU,

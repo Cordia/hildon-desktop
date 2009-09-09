@@ -37,6 +37,7 @@
 #include "hd-note.h"
 #include "hd-animation-actor.h"
 #include "hd-render-manager.h"
+#include "hd-title-bar.h"
 #include "launcher/hd-app-mgr.h"
 
 #include <matchbox/core/mb-wm.h>
@@ -695,6 +696,17 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   dnd = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_DO_NOT_DISTURB);
 
   wm = MB_WM_COMP_MGR (hmgr)->wm;
+
+  if (event->atom==
+    hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_PROGRESS_INDICATOR) ||
+      event->atom==
+    hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_MENU_INDICATOR))
+    {
+      /* Redraw the title to display/remove the progress indicator or app
+       * menu indicator. The call itself checks what the new state should be. */
+      hd_title_bar_update(HD_TITLE_BAR(hd_render_manager_get_title_bar()),
+                          MB_WM_COMP_MGR (hmgr));
+    }
 
   non_comp_changed = event->atom ==
         hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_NON_COMPOSITED_WINDOW);

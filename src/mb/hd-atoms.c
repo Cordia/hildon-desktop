@@ -48,6 +48,7 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     "_HILDON_APPLET_ON_CURRENT_DESKTOP",
 
     "_HILDON_WM_WINDOW_PROGRESS_INDICATOR",
+    "_HILDON_WM_WINDOW_MENU_INDICATOR",
 
     "WM_WINDOW_ROLE",
 

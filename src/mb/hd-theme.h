@@ -51,6 +51,8 @@
 
 #define HD_THEME_IMG_SEPARATOR "wmSeparator.png"
 
+#define HD_THEME_IMG_MENU_INDICATOR "wmMenuIndicator.png"
+#define HD_THEME_IMG_MENU_INDICATOR_SIZE 48 /* width/height of indicator */
 #define HD_THEME_IMG_PROGRESS "wmProgressIndicator.png"
 #define HD_THEME_IMG_PROGRESS_SIZE 48 /* width/height of frame */
 #define HD_THEME_IMG_PROGRESS_FRAMES 8 /*frames in animation */

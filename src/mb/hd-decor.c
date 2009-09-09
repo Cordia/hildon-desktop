@@ -105,12 +105,12 @@ hd_decor_class_type ()
   return type;
 }
 
-gboolean
-hd_decor_window_is_waiting (MBWindowManager *wm, Window w)
+static gboolean
+hd_decor_window_check_prop (MBWindowManager *wm, Window w, HdAtoms atom)
 {
   HdCompMgr *hmgr = HD_COMP_MGR (wm->comp_mgr);
   Atom progress_indicator =
-      hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_PROGRESS_INDICATOR);
+      hd_comp_mgr_get_atom (hmgr, atom);
   Atom actual_type_return;
   int actual_format_return;
   unsigned long nitems_return;
@@ -137,6 +137,20 @@ hd_decor_window_is_waiting (MBWindowManager *wm, Window w)
   mb_wm_util_untrap_x_errors();
 
   return result;
+}
+
+gboolean
+hd_decor_window_is_waiting (MBWindowManager *wm, Window w)
+{
+  return hd_decor_window_check_prop(wm, w,
+      HD_ATOM_HILDON_WM_WINDOW_PROGRESS_INDICATOR);
+}
+
+gboolean
+hd_decor_window_has_menu_indicator (MBWindowManager *wm, Window w)
+{
+  return hd_decor_window_check_prop(wm, w,
+      HD_ATOM_HILDON_WM_WINDOW_MENU_INDICATOR);
 }
 
 static
