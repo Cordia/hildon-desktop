@@ -31,4 +31,10 @@ gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client);
 
 void hd_util_click (const MBWindowManagerClient *c);
 
+/* This is called on the MBWindowManagerSignalRootConfigure signal,
+ * and is used for XRR rotation */
+Bool hd_util_root_window_configured(MBWMObject *obj,
+                                    int         mask,
+                                    void       *userdata);
+
 #endif

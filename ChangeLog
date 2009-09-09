@@ -1,3 +1,16 @@
+2009-09-09  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#119749 - Redundant exposure causing glitches on rotation
+	
+	* debian/control: Make hildon-desktop depend on newer libmatchbox
+	* src/util/hd-util.h
+	* src/util/hd-util.c: Remove deleting of the ROOT_RECONFIGURATION
+	  property until hd_util_root_window_configured is called.
+	* src/util/hd-transition.c: Stop anything from causing hildon-desktop
+	  to redraw the screen during the blanking period.
+	* src/mb/hd-wm.c: On root reconfiguration, call the function
+	  hd_util_root_window_configured to remove the RECONFIGURATION atom.
+
 2009-09-09  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Delay launching timeout depending on loadavg, Thomas Thurman's patch.

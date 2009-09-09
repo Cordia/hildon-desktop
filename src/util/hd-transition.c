@@ -1307,7 +1307,14 @@ hd_transition_rotating_fsm(void)
              * traffic during this time, so g_timeout is often delayed past
              * damage_timeout_max. */
             Orientation_change.phase = WAITING;
+            /* Don't allow anything inside the render manager to tell clutter
+             * to redraw. actor_hide should have done this, but it doesn't.
+             * We now need to totally blank the screen before the rotation,
+             * so we explicitly call clutter to redraw *right now*. */
+            clutter_actor_set_allow_redraw(
+                CLUTTER_ACTOR(hd_render_manager_get()), FALSE);
             clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
+            clutter_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
             hd_util_change_screen_orientation(Orientation_change.wm,
                          Orientation_change.direction == GOTO_PORTRAIT);
             Orientation_change.timeout_id =
@@ -1320,6 +1327,10 @@ hd_transition_rotating_fsm(void)
           Orientation_change.direction = Orientation_change.new_direction;
         /* Fall through */
       case WAITING:
+        /* Undo the redraw stopping that happened in FADE_OUT */
+        clutter_actor_set_allow_redraw(
+                        CLUTTER_ACTOR(hd_render_manager_get()), TRUE);
+
         if (Orientation_change.direction == Orientation_change.new_direction)
           { /* Fade back in */
             Orientation_change.phase = FADE_IN;

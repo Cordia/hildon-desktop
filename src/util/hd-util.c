@@ -302,6 +302,22 @@ get_primary_crtc (MBWindowManager *wm, XRRScreenResources *res)
   return ret;
 }
 
+/* This is called on the MBWindowManagerSignalRootConfigure signal,
+ * and is used for XRR rotation. See hd_util_change_screen_orientation */
+Bool hd_util_root_window_configured(MBWMObject *obj,
+                                    int         mask,
+                                    void       *userdata)
+{
+  MBWindowManager *wm = MB_WINDOW_MANAGER(obj);
+  mb_wm_util_trap_x_errors ();
+  /* Allow windows to be reconfigured again */
+  XDeleteProperty(wm->xdpy, wm->root_win->xwindow,
+                  wm->atoms[MBWM_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION]);
+  XSync(wm->xdpy, False);
+  mb_wm_util_untrap_x_errors ();
+  return True;
+}
+
 /* Change the screen's orientation by rotating 90 degrees
  * (portrait mode) or going back to landscape.
  * Returns whether the orientation has actually changed. */
@@ -419,9 +435,9 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
                           crtc_info->x, crtc_info->y, crtc_info->mode, want,
                           crtc_info->outputs, crtc_info->noutput);
 
-  /* Allow windows to be reconfigured again */
-  XDeleteProperty(wm->xdpy, wm->root_win->xwindow,
-                  wm->atoms[MBWM_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION]);
+  /* hd_util_root_window_configured will be called directly after this root
+   * window has been reconfigured */
+
   /* Allow clients to redraw. */
   XUngrabServer (wm->xdpy);
 

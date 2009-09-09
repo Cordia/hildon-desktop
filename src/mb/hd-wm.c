@@ -109,6 +109,11 @@ hd_wm_init (MBWMObject *object, va_list vap)
 
   hdwm->priv = mb_wm_util_malloc0 (sizeof (struct HdWmPrivate));
 
+  mb_wm_object_signal_connect (MB_WM_OBJECT (wm),
+                   MBWindowManagerSignalRootConfigure,
+                   (MBWMObjectCallbackFunc)hd_util_root_window_configured,
+                   0);
+
   return 1;
 }
 
