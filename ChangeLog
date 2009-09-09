@@ -1,3 +1,11 @@
+2009-09-09  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Delay launching timeout depending on loadavg, Thomas Thurman's patch.
+	Fixes: NB#134696
+
+	* data/transitions.ini:
+	* src/launcher/hd-app-mgr.c:
+
 2009-09-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#137793 - Indicator for view menu in app title area

@@ -47,6 +47,7 @@
 #include "hd-launcher.h"
 #include "hd-launcher-tree.h"
 #include "home/hd-render-manager.h"
+#include "hd-transition.h"
 
 #undef  G_LOG_DOMAIN
 #define G_LOG_DOMAIN "hd-app-mgr"
@@ -783,6 +784,43 @@ hd_app_mgr_launch (HdLauncherApp *launcher)
   return result;
 }
 
+static gdouble
+hd_app_mgr_timeout_backoff_factor ()
+{
+  return hd_transition_get_double("loading_timeout",
+                                  "load_average_factor",
+                                  0.0);
+}
+
+/*
+ * Returns the current system load average.
+ * Returns a negative value iff the load average
+ * cannot be found.
+ */
+static gdouble
+hd_app_mgr_system_load_average (void)
+{
+  int fd = open ("/proc/loadavg", O_RDONLY);
+
+  if (fd >= 0)
+    {
+      char buffer[32];
+      int size = read (fd, buffer, sizeof(buffer) -1);
+
+      close (fd);
+      if (size > 0)
+        {
+          gdouble load;
+          buffer[size] = 0;
+          load = g_ascii_strtod(buffer, NULL);
+
+          return load;
+        }
+    }
+
+  return -1.0;
+}
+
 /* This function either:
  * - Relaunches an app if already running.
  * - Wakes up an app if it's hibernating.
@@ -826,16 +864,24 @@ hd_app_mgr_activate (HdRunningApp *app)
           {
             /* Start a loading timer. */
             time_t now;
+            gint timeout = (gint) (hd_app_mgr_timeout_backoff_factor () *
+                                   hd_app_mgr_system_load_average ());
+
+            if (timeout < LOADING_TIMEOUT)
+              {
+                timeout = LOADING_TIMEOUT;
+	      }
+
             time (&now);
             hd_running_app_set_last_launch (app, now);
-            g_timeout_add_seconds (LOADING_TIMEOUT,
+            g_timeout_add_seconds (timeout,
                                    (GSourceFunc)hd_app_mgr_loading_timeout,
                                    g_object_ref (app));
           }
       break;
     case LAUNCH_FAILED:
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LOADING_FAIL],
-                0, hd_running_app_get_launcher_app (app), NULL);
+          0, hd_running_app_get_launcher_app (app), NULL);
       break;
     case LAUNCH_NO_MEM:
       g_signal_emit (hd_app_mgr_get (), app_mgr_signals[NOT_ENOUGH_MEMORY], 0,
@@ -1399,28 +1445,17 @@ hd_app_mgr_read_lowmem (const gchar *filename)
   return NSIZE;
 }
 
+/*
+ * Returns whether the load average is too high
+ * to preload applications.
+ */
 static gboolean
 hd_app_mgr_check_loadavg (void)
 {
-  int fd = open ("/proc/loadavg", O_RDONLY);
+  gdouble load = hd_app_mgr_system_load_average ();
 
-  if (fd >= 0)
-    {
-      char buffer[32];
-      int size = read (fd, buffer, sizeof(buffer) -1);
-
-      close (fd);
-      if (size > 0)
-        {
-          gdouble load;
-          buffer[size] = 0;
-          load = g_ascii_strtod(buffer, NULL);
-
-          return (load <= LOADAVG_MAX);
-        }
-    }
-
-  return FALSE;
+  return (load >= 0.0 &&
+	  load <= LOADAVG_MAX);
 }
 
 static HdAppMgrPrestartMode
