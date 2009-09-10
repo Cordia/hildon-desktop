@@ -1,5 +1,12 @@
 2009-09-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/util/hd-util.c (hd_util_change_screen_orientation):
+	  Delete _MAEMO_SUPPRESS_ROOT_RECONFIGURATION right after xrr,
+	  defeating its purpose because it seemed to have cause lost
+	  damages.
+
+2009-09-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#134557 Rotation suffers from too early mapping
 
 	This is nivea2g.

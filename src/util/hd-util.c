@@ -433,7 +433,9 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
                           crtc_info->outputs, crtc_info->noutput);
 
   /* hd_util_root_window_configured will be called directly after this root
-   * window has been reconfigured */
+   * window has been reconfigured
+   * FIXME we'd be losing damages having done this */
+  hd_util_root_window_configured(wm);
 
   /* Allow clients to redraw. */
   XUngrabServer (wm->xdpy);
