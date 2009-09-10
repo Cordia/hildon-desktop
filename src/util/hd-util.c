@@ -302,20 +302,17 @@ get_primary_crtc (MBWindowManager *wm, XRRScreenResources *res)
   return ret;
 }
 
-/* This is called on the MBWindowManagerSignalRootConfigure signal,
- * and is used for XRR rotation. See hd_util_change_screen_orientation */
-Bool hd_util_root_window_configured(MBWMObject *obj,
-                                    int         mask,
-                                    void       *userdata)
+/* Set a property on the root window to tell others whether we are doing
+ * rotation or not, so they can do certain things like increasing our
+ * process priority. */
+void hd_util_set_rotating_property(MBWindowManager *wm, gboolean is_rotating)
 {
-  MBWindowManager *wm = MB_WINDOW_MANAGER(obj);
-  mb_wm_util_trap_x_errors ();
-  /* Allow windows to be reconfigured again */
-  XDeleteProperty(wm->xdpy, wm->root_win->xwindow,
-                  wm->atoms[MBWM_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION]);
-  XSync(wm->xdpy, False);
-  mb_wm_util_untrap_x_errors ();
-  return True;
+  HdCompMgr *hmgr = HD_COMP_MGR(wm->comp_mgr);
+  guint value = is_rotating ? 1 : 0;
+  XChangeProperty(wm->xdpy, wm->root_win->xwindow,
+      hd_comp_mgr_get_atom (hmgr, HD_ATOM_MAEMO_ROTATION_TRANSITION),
+                  XA_CARDINAL, 32, PropModeReplace,
+                  (unsigned char *)&value, 1);
 }
 
 /* Change the screen's orientation by rotating 90 degrees
@@ -458,6 +455,19 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
   return TRUE;
 }
 
+/* This is the finishing counterpart of hd_util_change_screen_orientation(),
+ * whicih must be called after the root window has been reconfigured. */
+void
+hd_util_root_window_configured(MBWindowManager *wm)
+{
+  /* Deleting this property allows other windows to be reconfigured again. */
+  mb_wm_util_trap_x_errors ();
+  XDeleteProperty(wm->xdpy, wm->root_win->xwindow,
+                  wm->atoms[MBWM_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION]);
+  XSync(wm->xdpy, False);
+  mb_wm_util_untrap_x_errors ();
+}
+
 /* Get the current cursor position, return true (and updates the parameters)
  * on success, otherwise leaves them as they were */
 gboolean hd_util_get_cursor_position(gint *x, gint *y)
@@ -539,16 +549,4 @@ hd_util_click (const MBWindowManagerClient *c)
   ev.same_screen  = True;
 
   XSendEvent(xdpy, xwin, False, ButtonPressMask, (XEvent *)&ev);
-}
-
-/* Set a property on the root window to tell others whether we are doing
- * rotation or not */
-void hd_util_set_rotating_property(MBWindowManager *wm, gboolean is_rotating)
-{
-  HdCompMgr *hmgr = HD_COMP_MGR(wm->comp_mgr);
-  guint value = is_rotating ? 1 : 0;
-  XChangeProperty(wm->xdpy, wm->root_win->xwindow,
-      hd_comp_mgr_get_atom (hmgr, HD_ATOM_MAEMO_ROTATION_TRANSITION),
-                  XA_CARDINAL, 32, PropModeReplace,
-                  (unsigned char *)&value, 1);
 }

@@ -475,6 +475,7 @@ hd_render_manager_init (HdRenderManager *self)
   g_signal_connect_swapped(stage, "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->blur_front);
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->blur_front), FALSE);
+  g_object_set(priv->blur_front, "show_on_set_parent", FALSE, NULL);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
                               CLUTTER_ACTOR(priv->blur_front));
 

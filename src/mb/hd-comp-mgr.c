@@ -473,6 +473,7 @@ static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c,
 static void hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor);
 static Bool hd_comp_mgr_client_property_changed (XPropertyEvent *event,
                                                  HdCompMgr *hmgr);
+static Bool hd_comp_mgr_portrait_forecast (MBWindowManager *wm);
 static HdCompMgrClient *hd_comp_mgr_get_current_client (HdCompMgr *hmgr);
 
 int
@@ -609,6 +610,13 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   priv->property_changed_cb_id = mb_wm_main_context_x_event_handler_add (
                    cmgr->wm->main_ctx, None, PropertyNotify,
                    (MBWMXEventFunc)hd_comp_mgr_client_property_changed, cmgr);
+
+  /* Rotate the desktop if matchobox thinks a new client
+   * will request it soon. */
+  mb_wm_object_signal_connect (MB_WM_OBJECT (cmgr->wm),
+                  MBWindowManagerSignalPortraitForecast,
+                  (MBWMObjectCallbackFunc)hd_comp_mgr_portrait_forecast,
+                  NULL);
 
   hd_render_manager_set_state(HDRM_STATE_HOME);
 
@@ -853,6 +861,37 @@ out1:
   if (value != idontcare)
     XFree (value);
 out0:
+  return False;
+}
+
+/* %MBWindowManagerSignalPortraitForecast callback */
+static Bool
+hd_comp_mgr_portrait_forecast (MBWindowManager *wm)
+{
+  MBWindowManagerClient *c;
+
+  /* libmatchbox believes we'd rotate soon, so let's do it beforehand. */
+  hd_transition_rotate_screen (wm, TRUE);
+
+  /* See who caused us the pain? */
+  for (c = wm->stack_top; c; c = c->stacked_below)
+    if (!mb_wm_client_is_map_confirmed (c) && c->window->portrait_on_map)
+      {
+        if (!hd_comp_mgr_is_portrait ())
+          /* Bastard hack part 1: hide it until the screen is reconfigured,
+           * then libmatchbox will activate it. */
+          mb_wm_client_hide (c);
+        else
+          {
+            /* Needn't distract from normal operation. */
+            mb_wm_activate_client (wm, c);
+
+            /* There might be similar clients further down the stack,
+             * but we can activate only one at a time. */
+            break;
+          }
+      }
+
   return False;
 }
 

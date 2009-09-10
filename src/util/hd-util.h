@@ -22,19 +22,16 @@ char * hd_util_get_x_window_string_property (MBWindowManager  *wm,
 unsigned long hd_util_modal_blocker_realize(MBWindowManagerClient *client,
                                             gboolean ping_only);
 Bool hd_util_client_has_modal_blocker (MBWindowManagerClient *c);
+
+void hd_util_set_rotating_property(MBWindowManager *wm, gboolean is_rotating);
 gboolean hd_util_change_screen_orientation (MBWindowManager *wm,
                                             gboolean goto_portrait);
-void hd_util_set_rotating_property(MBWindowManager *wm, gboolean is_rotating);
+void hd_util_root_window_configured(MBWindowManager *wm);
 
 gboolean hd_util_get_cursor_position(gint *x, gint *y);
 gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client);
 
 void hd_util_click (const MBWindowManagerClient *c);
 
-/* This is called on the MBWindowManagerSignalRootConfigure signal,
- * and is used for XRR rotation */
-Bool hd_util_root_window_configured(MBWMObject *obj,
-                                    int         mask,
-                                    void       *userdata);
 
 #endif

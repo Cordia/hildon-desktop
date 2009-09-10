@@ -72,6 +72,23 @@ typedef struct _HDEffectData
   float                     final_alpha;
 } HDEffectData;
 
+/* %HPTimer %GSource state. */
+typedef struct
+{
+  /*
+   * @id:         the %GSource id of the source
+   * @last:       the last time the source was evaluated
+   * @remaining:  at the last evaluation of the source how many
+   *              milisecons were until @expiry
+   * @expiry:     the expiration time in miliseconds this %HPTimer
+   *              was created with
+   */
+  GSource parent;
+  guint id;
+  GTimeVal last;
+  unsigned remaining, expiry;
+} HPTimer;
+
 /* Describes the state of hd_transition_rotating_fsm(). */
 static struct
 {
@@ -100,7 +117,8 @@ static struct
   {
     IDLE,
     FADE_OUT,
-    WAITING,
+    WAIT_FOR_ROOT_CONFIG,
+    WAIT_FOR_DAMAGES,
     FADE_IN,
   } phase;
 
@@ -111,10 +129,12 @@ static struct
    * change the state. */
   HDRMStateEnum goto_state;
 
+  gulong root_config_signal_id;
+
   /* In the WAITING state we have a timer that calls us back a few ms
    * after the last damage event. This is the id, as we need to restart
    * it whenever we get another damage event. */
-  guint timeout_id;
+  HPTimer *timeout_id;
 
   /* This timer counts from when we first entered the WAITING state,
    * so if we are continually getting damage we don't just hang there. */
@@ -129,6 +149,101 @@ static struct
 /* If %TRUE keep reloading transitions.ini until we can
  * and we can watch it. */
 static gboolean transitions_ini_is_dirty;
+
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+/* Seeing the time elapsed since @hptimer's @last evaluation update
+ * the @remaining number of miliseconds until expiry. */
+static void
+hptimer_calc_remaining(HPTimer *hptimer)
+{
+  guint diff;
+  GTimeVal now;
+
+  /* Don't use g_source_get_current_time()s cached clock,
+   * it may be inaccurate by now. */
+  g_get_current_time (&now);
+
+  /* Yes we don't handle time going back. */
+  diff = (now.tv_sec - hptimer->last.tv_sec) * 1000;
+  if (now.tv_usec < hptimer->last.tv_usec)
+    {
+      diff -= 1000;
+      diff += ((1000000 - hptimer->last.tv_usec) + now.tv_usec) / 1000;
+    } else
+      diff += (now.tv_usec - hptimer->last.tv_usec) / 1000;
+
+  if (hptimer->remaining > diff)
+    hptimer->remaining -= diff;
+  else
+    hptimer->remaining  = 0;
+
+  hptimer->last = now;
+}
+
+static gboolean
+hptimer_source_prepare(GSource *src, gint *timeout)
+{
+  HPTimer *hptimer = (HPTimer *)src;
+
+  hptimer_calc_remaining (hptimer);
+  return (*timeout = hptimer->remaining) == 0;
+}
+
+static gboolean
+hptimer_source_check(GSource *src)
+{
+  HPTimer *hptimer = (HPTimer *)src;
+
+  hptimer_calc_remaining (hptimer);
+  return hptimer->remaining == 0;
+}
+
+static gboolean
+hptimer_source_dispatch(GSource *src, GSourceFunc cb, gpointer cbarg)
+{
+  HPTimer *hptimer = (HPTimer *)src;
+
+  hptimer->remaining = hptimer->expiry;
+  return cb (cbarg);
+}
+
+/*
+ * Returns a "high performance" timer, which is similar to an ordinary
+ * %GTimeoutSource but may be better suited for short @expiry:s in
+ * the sub-100th-second range.  You're free to change the %HPTimer's
+ * @remaining and @expiry states.
+ */
+static HPTimer *
+hptimer_new(unsigned expiry,
+            GSourceFunc cb, gpointer cbarg, GDestroyNotify dtor)
+{
+  static GSourceFuncs hptimer_funcs =
+  {
+    hptimer_source_prepare,
+    hptimer_source_check,
+    hptimer_source_dispatch
+  };
+
+  HPTimer *hptimer;
+  GSource *src;
+  guint id;
+
+  src = g_source_new (&hptimer_funcs, sizeof (*hptimer));
+  g_source_set_callback (src, cb, cbarg, dtor);
+  g_source_set_priority (src, G_PRIORITY_HIGH);
+  id = g_source_attach (src, NULL);
+  g_source_unref (src);
+
+  hptimer = (HPTimer *)src;
+  hptimer->id = id;
+  g_get_current_time (&hptimer->last);
+  hptimer->remaining = hptimer->expiry = expiry;
+
+  return hptimer;
+}
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -968,7 +1083,8 @@ hd_transition_close_app_before_rotate (HdCompMgr                  *hmgr,
   clutter_actor_lower_bottom(actor);
   /* Also add a fake titlebar background, as the real one will disappear
    * immediately because the app has closed. */
-  data->particles[0] = hd_title_bar_create_fake(HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  data->particles[0] = g_object_ref(hd_title_bar_create_fake(
+                                         HD_COMP_MGR_LANDSCAPE_HEIGHT));
   clutter_container_add_actor(parent, data->particles[0]);
 
   Orientation_change.effects_waiting = g_list_append(
@@ -1239,6 +1355,12 @@ hd_transition_fade_and_rotate(gboolean first_part,
   clutter_timeline_start (data->timeline);
 }
 
+static void
+hd_transition_damage_timer_destroyed (gpointer unused)
+{
+  Orientation_change.timeout_id = NULL;
+}
+
 static gboolean
 hd_transition_rotating_fsm(void)
 {
@@ -1249,25 +1371,16 @@ hd_transition_rotating_fsm(void)
            Orientation_change.phase, Orientation_change.new_direction,
            Orientation_change.direction);
 
-  /* We will always return FALSE, which will cancel the timeout,
-   * so make sure it is set to 0. */
-  Orientation_change.timeout_id = 0;
-  /* if we enter here, we don't need the timer any more either */
-  if (Orientation_change.timer) {
-    g_timer_destroy(Orientation_change.timer);
-    Orientation_change.timer = 0;
-  }
-
   switch (Orientation_change.phase)
     {
       case IDLE:
         /* Fade to black ((c) Metallica) */
         Orientation_change.phase = FADE_OUT;
         Orientation_change.direction = Orientation_change.new_direction;
+        hd_util_set_rotating_property(Orientation_change.wm, TRUE);
         hd_transition_fade_and_rotate(
                 TRUE, Orientation_change.direction == GOTO_PORTRAIT,
                 G_CALLBACK(hd_transition_rotating_fsm), NULL);
-        hd_util_set_rotating_property(Orientation_change.wm, TRUE);
         break;
       case FADE_OUT:
         /*
@@ -1305,8 +1418,10 @@ hd_transition_rotating_fsm(void)
              * until damage_timeout ms has passed since the last damage event,
              * or until damage_timeout_max is reached. There is a lot of X
              * traffic during this time, so g_timeout is often delayed past
-             * damage_timeout_max. */
-            Orientation_change.phase = WAITING;
+             * damage_timeout_max.
+             */
+            Orientation_change.phase = WAIT_FOR_ROOT_CONFIG;
+
             /* Don't allow anything inside the render manager to tell clutter
              * to redraw. actor_hide should have done this, but it doesn't.
              * We now need to totally blank the screen before the rotation,
@@ -1315,25 +1430,55 @@ hd_transition_rotating_fsm(void)
                 CLUTTER_ACTOR(hd_render_manager_get()), FALSE);
             clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
             clutter_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
+
             hd_util_change_screen_orientation(Orientation_change.wm,
                          Orientation_change.direction == GOTO_PORTRAIT);
-            Orientation_change.timeout_id =
-              g_timeout_add(hd_transition_get_double("rotate", "damage_timeout", 50),
-                            (GSourceFunc) hd_transition_rotating_fsm, NULL);
-            Orientation_change.timer = g_timer_new();
+            Orientation_change.root_config_signal_id = g_signal_connect(
+                           clutter_stage_get_default(), "notify::allocation",
+                           G_CALLBACK(hd_transition_rotating_fsm), NULL);
             break;
           }
         else
           Orientation_change.direction = Orientation_change.new_direction;
         /* Fall through */
-      case WAITING:
-        /* Undo the redraw stopping that happened in FADE_OUT */
-        clutter_actor_set_allow_redraw(
-                        CLUTTER_ACTOR(hd_render_manager_get()), TRUE);
+      case WAIT_FOR_ROOT_CONFIG:
+      case WAIT_FOR_DAMAGES:
+        if (Orientation_change.direction != Orientation_change.new_direction)
+          {
+            if (Orientation_change.root_config_signal_id)
+              {
+                g_signal_handler_disconnect(clutter_stage_get_default(),
+                              Orientation_change.root_config_signal_id);
+                Orientation_change.root_config_signal_id = 0;
+              }
+            Orientation_change.direction = Orientation_change.new_direction;
+            Orientation_change.phase = FADE_OUT;
+            hd_transition_rotating_fsm();
+          }
+        else if (Orientation_change.phase == WAIT_FOR_ROOT_CONFIG)
+          {
+            g_assert(Orientation_change.root_config_signal_id);
+            g_signal_handler_disconnect(clutter_stage_get_default(),
+                                Orientation_change.root_config_signal_id);
+            Orientation_change.root_config_signal_id = 0;
 
-        if (Orientation_change.direction == Orientation_change.new_direction)
+            /* Call hd_util_change_screen_orientation()s finishing
+             * counterpart. */
+            hd_util_root_window_configured(Orientation_change.wm);
+
+            g_assert(!Orientation_change.timeout_id);
+            Orientation_change.timeout_id = hptimer_new(
+                  hd_transition_get_int("rotate", "damage_timeout", 50),
+                  (GSourceFunc)hd_transition_rotating_fsm, NULL,
+                  hd_transition_damage_timer_destroyed);
+            Orientation_change.phase = WAIT_FOR_DAMAGES;
+          }
+        else /* WAIT_FOR_DAMAGES || FADE_OUT error path */
           { /* Fade back in */
+            /* Undo the redraw stopping that happened in FADE_OUT */
             Orientation_change.phase = FADE_IN;
+            clutter_actor_set_allow_redraw(
+                            CLUTTER_ACTOR(hd_render_manager_get()), TRUE);
             clutter_actor_show(CLUTTER_ACTOR(hd_render_manager_get()));
             hd_transition_fade_and_rotate(
                     FALSE, Orientation_change.direction == GOTO_PORTRAIT,
@@ -1341,26 +1486,25 @@ hd_transition_rotating_fsm(void)
             /* Fix NB#117109 by re-evaluating what is blurred and what isn't */
             hd_render_manager_restack();
           }
-        else
-          {
-            Orientation_change.direction = Orientation_change.new_direction;
-            Orientation_change.phase = FADE_OUT;
-            hd_transition_rotating_fsm();
-          }
         break;
       case FADE_IN:
-        Orientation_change.phase = IDLE;
         {
-          ClutterActor *actor = CLUTTER_ACTOR(hd_render_manager_get());
+          ClutterActor *actor;
+
           /* Reset values in case for some reason the timeline failed to do it */
+          actor = CLUTTER_ACTOR(hd_render_manager_get());
           clutter_actor_set_rotation(actor, CLUTTER_X_AXIS, 0, 0, 0, 0);
           clutter_actor_set_rotation(actor, CLUTTER_Y_AXIS, 0, 0, 0, 0);
           clutter_actor_set_depthu(actor, 0);
+
+          Orientation_change.phase = IDLE;
+          if (Orientation_change.direction != Orientation_change.new_direction)
+            /* No sense resetting the rotating property. */
+            hd_transition_rotating_fsm();
+          else
+            hd_util_set_rotating_property(Orientation_change.wm, FALSE);
+          break;
         }
-        hd_util_set_rotating_property(Orientation_change.wm, FALSE);
-        if (Orientation_change.direction != Orientation_change.new_direction)
-          hd_transition_rotating_fsm();
-        break;
     }
 
   return FALSE;
@@ -1373,6 +1517,9 @@ gboolean
 hd_transition_rotate_screen (MBWindowManager *wm, gboolean goto_portrait)
 { g_debug("%s(goto_portrait=%d)", __FUNCTION__, goto_portrait);
   Orientation_change.wm = wm;
+  if (!Orientation_change.timer)
+    Orientation_change.timer = g_timer_new();
+
   Orientation_change.new_direction = goto_portrait
     ? GOTO_PORTRAIT : GOTO_LANDSCAPE;
 
@@ -1422,22 +1569,20 @@ hd_transition_rotation_will_change_state (void)
 gboolean
 hd_transition_rotate_ignore_damage()
 {
-  if (Orientation_change.phase == WAITING)
+  if (Orientation_change.phase == WAIT_FOR_ROOT_CONFIG)
+    return TRUE;
+  if (Orientation_change.phase == WAIT_FOR_DAMAGES)
     {
+      gint max;
+
       /* Only postpone the timeout if we haven't postponed
        * it too long already. This stops us getting stuck
        * in the WAITING state if an app keeps redrawing. */
-      if (g_timer_elapsed(Orientation_change.timer, NULL) <
-          (hd_transition_get_double("rotate", "damage_timeout_max", 1000) / 1000.0))
-        {
-          /* Reset the timeout to be a little longer */
-          if (Orientation_change.timeout_id)
-            g_source_remove(Orientation_change.timeout_id);
-          Orientation_change.timeout_id = g_timeout_add(
-                hd_transition_get_double("rotate", "damage_timeout", 50),
-                (GSourceFunc)hd_transition_rotating_fsm, NULL);
-        }
-
+      max = hd_transition_get_int("rotate", "damage_timeout_max", 1000);
+      Orientation_change.timeout_id->expiry =
+          g_timer_elapsed(Orientation_change.timer, NULL) < max / 1000.0
+            ? hd_transition_get_int("rotate", "damage_timeout_plus", 50)
+            : 0;
       return TRUE;
     }
   return FALSE;

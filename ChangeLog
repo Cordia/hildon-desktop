@@ -1,3 +1,28 @@
+2009-09-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#134557 Rotation suffers from too early mapping
+
+	This is nivea2g.
+
+	* src/home/hd-render-manager.c:
+	  Make blur_front not shown when reparented, because
+	  we may need to reparent it when it's hidden.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_portrait_forecast):
+	  Listen to MBWindowManagerSignalPortraitForecast and start rotating
+	  when we get one.
+	* src/util/hd-transition.c (hd_transition_rotating_fsm):
+	  - use hptimer instead of g_timeout_add()
+	  - understand damage_timeout_plus
+	  - WAIT_FOR_ROOT_CONFIG phase added
+	* src/util/hd-util.h
+	* src/util/hd-util.c (hd_util_root_window_configured):
+	  Reworked to be called by the rotating fsm instead of mb signal.
+	* src/mb/hd-wm.c:
+	  Removed handling of MBWindowManagerSignalRootConfigure.
+	* data/transitions.ini:
+	  - changed the animation time to 250/250
+	  - added damage_timeout_plus
+
 2009-09-10  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#137524 - Task Launcher animation stutters when launching app
