@@ -1,3 +1,12 @@
+2009-09-10  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#137524 - Task Launcher animation stutters when launching app
+	                   And task launcher animation from top-left corner
+
+	* src/launcher/hd-launcher.c: Now move the launcher window using its
+	  anchor point rather than its actual position. This means it doesn't
+	  conflict with other parts of hildon-desktop which set the position.
+
 2009-09-09  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#119749 - Redundant exposure causing glitches on rotation
