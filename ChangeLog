@@ -1,3 +1,14 @@
+2009-09-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-transition.c (hd_transition_rotating_fsm):
+	  Consider WAIT_FOR_ROOT_CONFIG done when notify::width
+	  as opposed to notify::allocation -- the former is called
+	  right when the stage is resized, the latter is later,
+	  when geometry is actually allocated, which is too late
+	  for our purposes.
+	* src/util/hd-util.c (hd_util_change_screen_orientation):
+	  Unbreak _MAEMO_SUPPRESS_ROOT_RECONFIGURATION.
+
 2009-09-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-util.c (hd_util_change_screen_orientation):

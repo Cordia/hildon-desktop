@@ -1434,7 +1434,7 @@ hd_transition_rotating_fsm(void)
             hd_util_change_screen_orientation(Orientation_change.wm,
                          Orientation_change.direction == GOTO_PORTRAIT);
             Orientation_change.root_config_signal_id = g_signal_connect(
-                           clutter_stage_get_default(), "notify::allocation",
+                           clutter_stage_get_default(), "notify::width",
                            G_CALLBACK(hd_transition_rotating_fsm), NULL);
             break;
           }
