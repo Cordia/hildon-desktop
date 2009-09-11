@@ -485,7 +485,8 @@ hd_wm_has_modal_blockers (const MBWindowManager *wm)
 {
   MBWindowManagerClient *client;
 
-  for (client = wm->stack_top; client; client=client->stacked_below)
+  for (client = wm->stack_top; client && client != wm->desktop;
+       client=client->stacked_below)
     if (hd_util_client_has_modal_blocker(client))
       return TRUE;
   return FALSE;

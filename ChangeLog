@@ -1,3 +1,10 @@
+2009-09-11  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Stack dialogs with no transient_for correctly. (Adam's patch)
+	Fixes: NB#131703
+
+	* src/mb/hd-wm.c:
+
 2009-09-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-transition.c (hd_transition_rotating_fsm):
