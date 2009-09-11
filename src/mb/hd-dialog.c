@@ -158,6 +158,7 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
 			    MBWMClientReqGeomType  flags)
 {
   int diff;
+  unsigned maxheight;
   int north = 0, south = 0, west = 0, east = 0;
   MBWindowManager *wm = client->wmref;
 
@@ -175,6 +176,11 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
       && !(client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen))
     mb_wm_theme_get_decor_dimensions (wm->theme, client,
                                       &north, &south, &west, &east);
+
+  if (flags & (MBWMClientReqGeomIsViaConfigureReq | MBWMClientReqGeomForced))
+    /* initial geometry request (the size with the client's window was
+     * mapped with) or subsequent configure request, remember it */
+    HD_DIALOG (client)->requested_height = new_geometry->height;
 
   if (flags & MBWMClientReqGeomIsViaConfigureReq)
     {
@@ -209,11 +215,21 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
     {
       /*
        * Internal request, e.g., from layout manager; work out client
-       * window size from the provided frame size.
+       * window size from the provided frame size.  If the client
+       * requested a height we couldn't accept earlier, try it again,
+       * because the display dimension may have changed.  This is okay
+       * because dialogs are freely positioned and the layout manager
+       * doesn't do anything special about geometry this case.  However,
+       * ignore the @requested_height if the client is fullscreen because
+       * then @new_geometry contains the right size as specified by base
+       * display sync, and the client may not have requested it explicitly.
        */
       client->frame_geometry.x      = 0;
       client->frame_geometry.width  = wm->xdpy_width;
-      client->frame_geometry.height = new_geometry->height;
+      client->frame_geometry.height = HD_DIALOG (client)->requested_height
+          && !(client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+        ? HD_DIALOG (client)->requested_height + (south + north)
+        : new_geometry->height;
       client->frame_geometry.y      = wm->xdpy_height-new_geometry->height;
 
       client->window->geometry.x
@@ -226,23 +242,24 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
         = client->frame_geometry.height - (south + north);
     }
 
-  /* make sure there is space to tap outside */
+  /* adjust the height to fit */
+  maxheight = wm->xdpy_height;
   if (!(client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen))
-    {
-      diff = 56 - client->frame_geometry.y;
-      if (diff > 0)
-        {
-          client->frame_geometry.y   += diff;
-          client->window->geometry.y += diff;
-        }
-    }
-
-  diff = (client->frame_geometry.y + client->frame_geometry.height)
-          - wm->xdpy_height;
+    maxheight -= 56; /* HD_COMP_MGR_TOP_MARGIN? */
+  diff = client->frame_geometry.height - maxheight;
   if (diff > 0)
     {
       client->frame_geometry.height   -= diff;
       client->window->geometry.height -= diff;
+    }
+
+  /* make sure it's bottom-aligned */
+  diff = (client->frame_geometry.y + client->frame_geometry.height)
+    - wm->xdpy_height;
+  if (diff > 0)
+    {
+      client->frame_geometry.y   -= diff;
+      client->window->geometry.y -= diff;
     }
 
   mb_wm_client_geometry_mark_dirty (client);

@@ -40,6 +40,10 @@ struct HdDialog
   MBWMClientDialog  parent;
 
   unsigned long     release_cb_id;
+
+  /* The height the client asked for last time.  Try to honor it
+   * when the layout manager requests a new geometry. */
+  unsigned          requested_height;
 };
 
 struct HdDialogClass

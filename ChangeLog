@@ -1,3 +1,18 @@
+2009-09-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#134488 Emergency call made from lock code entry dialog in fold
+		  closed mode does not show correctly on UI
+
+	911 fix.  Try to honor dialogs height request better.
+
+	* src/mb/hd-dialog.h:
+	  Added HdDialog::requested_height to track the last height
+	  requested by the client.
+	* src/mb/hd-dialog.c (hd_dialog_request_geometry):
+	  If the request was made by the layout manager see if we can
+	  satisfy the client's earlier request.  If the resulting
+	  y+h > xdpy_height try reducing y instead of h.
+
 2009-09-11  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Stack dialogs with no transient_for correctly. (Adam's patch)
