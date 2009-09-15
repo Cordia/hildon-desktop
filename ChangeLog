@@ -1,3 +1,13 @@
+2009-09-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#138831 Operator logo is laid out under Status Area after changing
+		  the device profile
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_status_area):
+	  Act when the SA's width is changed, not when its geometry is
+	  allocated.  Changing geometry during allocation does not seem
+	  to be effectualized until the next allocation cycle.
+
 2009-09-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#134488 Emergency call made from lock code entry dialog in fold

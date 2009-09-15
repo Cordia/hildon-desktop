@@ -1153,7 +1153,7 @@ void hd_render_manager_set_status_area (ClutterActor *item)
       clutter_actor_reparent(priv->status_area,
           CLUTTER_ACTOR(priv->title_bar));
       clutter_actor_set_reactive(priv->status_area, TRUE);
-      g_signal_connect(item, "notify::allocation",
+      g_signal_connect(item, "notify::width",
                        G_CALLBACK(hd_render_manager_place_titlebar_elements),
                        NULL);
       g_signal_connect(item, "button-release-event",
@@ -2569,8 +2569,7 @@ void hd_render_manager_place_titlebar_elements (void)
     }
 
   if (priv->operator && CLUTTER_ACTOR_IS_VISIBLE(priv->operator))
-    /* Don't update @x since operator and app title are not shown at once. */
-    clutter_actor_set_x(priv->operator, x + HD_COMP_MGR_OPERATOR_PADDING);
+    clutter_actor_set_x(priv->operator, HD_COMP_MGR_OPERATOR_PADDING + x);
 
   /* Force title bar to update the title/progress indicator position */
   hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
