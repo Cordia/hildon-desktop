@@ -125,6 +125,7 @@ struct _HdAppMgrPrivate
   gboolean display_on;
   gboolean slide_closed;
   gboolean disable_callui;
+  gboolean accel_enabled;
 };
 
 #define HD_APP_MGR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -264,6 +265,7 @@ static void hd_app_mgr_gconf_value_changed (GConfClient *client,
                                             guint cnxn_id,
                                             GConfEntry *entry,
                                             gpointer user_data);
+static void hd_app_mgr_mce_activate_accel  (void);
 static gboolean hd_app_mgr_show_callui_cb (gpointer data);
 static void hd_app_mgr_check_show_callui (void);
 
@@ -403,6 +405,9 @@ hd_app_mgr_init (HdAppMgr *self)
       priv->disable_callui = gconf_client_get_bool (priv->gconf_client,
                                                     GCONF_DISABLE_CALLUI_KEY,
                                                     NULL);
+      /* We don't call
+      hd_app_mgr_mce_activate_accel ();
+      here because hdrm is not ready yet. */
       gconf_client_add_dir (priv->gconf_client, GCONF_DISABLE_CALLUI_DIR,
                             GCONF_CLIENT_PRELOAD_NONE, NULL);
       gconf_client_notify_add (priv->gconf_client, GCONF_DISABLE_CALLUI_KEY,
@@ -1550,6 +1555,9 @@ hd_app_mgr_hdrm_state_change (gpointer hdrm,
       priv->prestarting_stopped = launcher;
       hd_app_mgr_state_check ();
     }
+
+  /* Also check if we should enable the accelerometer. */
+  hd_app_mgr_mce_activate_accel ();
 }
 
 static void
@@ -1960,6 +1968,60 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
+/* Activate the accelerometer when
+ * - The user has activated rotate-to-callui.
+ * - HDRM is in a state that shows callui.
+ */
+static void
+hd_app_mgr_mce_activate_accel  ()
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (the_app_mgr);
+  DBusConnection *conn = NULL;
+  DBusMessage *msg = NULL;
+
+  gboolean activate = !priv->disable_callui &&
+                      STATE_SHOW_CALLUI (hd_render_manager_get_state ());
+  if (priv->accel_enabled == activate)
+    return;
+
+  conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
+  if (!conn)
+    {
+      g_warning ("%s: Couldn't connect to session bus.", __FUNCTION__);
+      return;
+    }
+
+  msg = dbus_message_new_method_call (
+          MCE_SERVICE,
+          MCE_REQUEST_PATH,
+          MCE_REQUEST_IF,
+          activate?
+              MCE_ACCELEROMETER_ENABLE_REQ :
+              MCE_ACCELEROMETER_DISABLE_REQ);
+  if (!msg)
+    {
+      g_warning ("%s: Couldn't create message.", __FUNCTION__);
+      return;
+    }
+
+  dbus_message_set_auto_start (msg, TRUE);
+  dbus_message_set_no_reply (msg, TRUE);
+
+  if (!dbus_connection_send (conn, msg, NULL))
+    {
+      g_warning ("%s: Couldn't send message.", __FUNCTION__);
+    }
+  else
+    dbus_connection_flush(conn);
+
+  dbus_message_unref (msg);
+
+  g_debug ("%s: %s", __FUNCTION__,
+           activate? "enabled" : "disabled");
+  priv->accel_enabled = activate;
+  return;
+}
+
 static void
 hd_app_mgr_gconf_value_changed (GConfClient *client,
                                 guint cnxn_id,
@@ -1983,7 +2045,10 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
 
   if (!g_strcmp0 (gconf_entry_get_key (entry),
                   GCONF_DISABLE_CALLUI_KEY))
-    priv->disable_callui = value;
+    {
+      priv->disable_callui = value;
+      hd_app_mgr_mce_activate_accel ();
+    }
 
   return;
 }

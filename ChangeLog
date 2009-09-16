@@ -1,3 +1,11 @@
+2009-09-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Disable MCE's accelerometer signals when not needed.
+	Fixes: NB#138990
+
+	* debian/control:
+	* src/launcher/hd-app-mgr.c:
+
 2009-09-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#138831 Operator logo is laid out under Status Area after changing
