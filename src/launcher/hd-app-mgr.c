@@ -92,7 +92,6 @@ struct _HdAppMgrPrivate
   HdLauncherTree *tree;
 
   DBusGProxy *dbus_proxy;
-  DBusGProxy *dbus_sys_proxy;
 
   /* All the running apps we know about. */
   GList *running_apps;
@@ -349,15 +348,10 @@ hd_app_mgr_class_init (HdAppMgrClass *klass)
                                    &dbus_glib_hd_app_mgr_object_info);
 }
 
-/* TODO: Extend to use, in addition to an interface, a path and a signal
- * name.
- */
-static gboolean
-hd_app_mgr_add_signal_match (DBusGProxy *proxy,
-                             const gchar *interface,
-                             const gchar *member)
+static gchar *
+_hd_app_mgr_build_match (const gchar *interface,
+                         const gchar *member)
 {
-  gboolean result;
   gchar *arg;
   if (member)
     arg = g_strdup_printf("type='signal', interface='%s', member='%s'",
@@ -365,9 +359,30 @@ hd_app_mgr_add_signal_match (DBusGProxy *proxy,
   else
     arg = g_strdup_printf("type='signal', interface='%s'", interface);
 
-  result = org_freedesktop_DBus_add_match (proxy, arg, NULL);
+  return arg;
+}
+
+/* TODO: Extend to use, in addition to an interface, a path and a signal
+ * name.
+ */
+static void
+hd_app_mgr_dbus_add_signal_match (DBusConnection *conn,
+                                  const gchar *interface,
+                                  const gchar *member)
+{
+  gchar *arg = _hd_app_mgr_build_match (interface, member);
+  dbus_bus_add_match (conn, arg, NULL);
   g_free (arg);
-  return result;
+}
+
+static void
+hd_app_mgr_dbus_remove_signal_match (DBusConnection *conn,
+                                     const gchar *interface,
+                                     const gchar *member)
+{
+  gchar *arg = _hd_app_mgr_build_match (interface, member);
+  dbus_bus_remove_match (conn, arg, NULL);
+  g_free (arg);
 }
 
 static void
@@ -465,67 +480,47 @@ hd_app_mgr_init (HdAppMgr *self)
             }
         }
       else
-        g_warning ("%s: Failed to connect to session dbus.\n", __FUNCTION__);
+        g_warning ("%s: Failed to proxy session dbus.", __FUNCTION__);
 
       /* Connect to the maemo launcher dbus interface. */
-      hd_app_mgr_add_signal_match (priv->dbus_proxy,
-                                   MAEMO_LAUNCHER_IFACE,
-                                   MAEMO_LAUNCHER_APP_DIED_SIGNAL_NAME);
+      hd_app_mgr_dbus_add_signal_match (
+                                 dbus_g_connection_get_connection (connection),
+                                 MAEMO_LAUNCHER_IFACE,
+                                 MAEMO_LAUNCHER_APP_DIED_SIGNAL_NAME);
       dbus_connection_add_filter (dbus_g_connection_get_connection (connection),
                                   hd_app_mgr_dbus_app_died,
                                   self, NULL);
     }
   else
-    g_warning ("%s: Failed to proxy session dbus.\n", __FUNCTION__);
+    g_warning ("%s: Failed to connect to session dbus.", __FUNCTION__);
 
   connection = NULL;
 
   /* Connect to the memory management signals. */
-  /* Note: It'd be a lot better to use DBusGProxies here, but the design of
-   * the signals makes that very difficult.
-   */
-  connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
-  if (connection)
+  DBusConnection *sys_conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
+  if (sys_conn)
     {
-      priv->dbus_sys_proxy = dbus_g_proxy_new_for_name (connection,
-                                                        DBUS_SERVICE_DBUS,
-                                                        DBUS_PATH_DBUS,
-                                                        DBUS_INTERFACE_DBUS);
-      if (priv->dbus_sys_proxy)
-        {
-          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       LOWMEM_ON_SIGNAL_INTERFACE,
-                                       LOWMEM_ON_SIGNAL_NAME);
-          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       LOWMEM_OFF_SIGNAL_INTERFACE,
-                                       LOWMEM_OFF_SIGNAL_NAME);
-          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       BGKILL_ON_SIGNAL_INTERFACE,
-                                       BGKILL_ON_SIGNAL_NAME);
-          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       BGKILL_OFF_SIGNAL_INTERFACE,
-                                       BGKILL_OFF_SIGNAL_NAME);
-          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       INIT_DONE_SIGNAL_INTERFACE,
-                                       INIT_DONE_SIGNAL_NAME);
-          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       MCE_SIGNAL_IF,
-                                       MCE_TKLOCK_MODE_SIG);
-          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       MCE_SIGNAL_IF,
-                                       MCE_DISPLAY_SIG);
-          hd_app_mgr_add_signal_match (priv->dbus_sys_proxy,
-                                       MCE_SIGNAL_IF,
-                                       MCE_DEVICE_ORIENTATION_SIG);
-          dbus_connection_add_filter (dbus_g_connection_get_connection (connection),
-                                      hd_app_mgr_dbus_signal_handler,
-                                      self, NULL);
-        }
-      else
-        g_warning ("%s: Failed to connect to system dbus.\n", __FUNCTION__);
+      hd_app_mgr_dbus_add_signal_match (sys_conn,
+                                   LOWMEM_ON_SIGNAL_INTERFACE,
+                                   LOWMEM_ON_SIGNAL_NAME);
+      hd_app_mgr_dbus_add_signal_match (sys_conn,
+                                   LOWMEM_OFF_SIGNAL_INTERFACE,
+                                   LOWMEM_OFF_SIGNAL_NAME);
+      hd_app_mgr_dbus_add_signal_match (sys_conn,
+                                   BGKILL_ON_SIGNAL_INTERFACE,
+                                   BGKILL_ON_SIGNAL_NAME);
+      hd_app_mgr_dbus_add_signal_match (sys_conn,
+                                   BGKILL_OFF_SIGNAL_INTERFACE,
+                                   BGKILL_OFF_SIGNAL_NAME);
+      hd_app_mgr_dbus_add_signal_match (sys_conn,
+                                   INIT_DONE_SIGNAL_INTERFACE,
+                                   INIT_DONE_SIGNAL_NAME);
+      dbus_connection_add_filter (sys_conn,
+                                  hd_app_mgr_dbus_signal_handler,
+                                  self, NULL);
     }
   else
-    g_warning ("%s: Failed to proxy system dbus.\n", __FUNCTION__);
+    g_warning ("%s: Failed to connect to system dbus.\n", __FUNCTION__);
 
   /* Add a timeout in case init_done is never received. That can happen
    * when restarting, for example.
@@ -585,12 +580,6 @@ hd_app_mgr_dispose (GObject *gobject)
     {
       g_object_unref (priv->dbus_proxy);
       priv->dbus_proxy = NULL;
-    }
-
-  if (priv->dbus_sys_proxy)
-    {
-      g_object_unref (priv->dbus_sys_proxy);
-      priv->dbus_sys_proxy = NULL;
     }
 
   if (priv->tree)
@@ -1991,6 +1980,26 @@ hd_app_mgr_mce_activate_accel  ()
       return;
     }
 
+  /* We're only interested in these signals if we're going to rotate. */
+  if (activate)
+    {
+      hd_app_mgr_dbus_add_signal_match (conn, MCE_SIGNAL_IF,
+                                        MCE_TKLOCK_MODE_SIG);
+      hd_app_mgr_dbus_add_signal_match (conn, MCE_SIGNAL_IF,
+                                        MCE_DISPLAY_SIG);
+      hd_app_mgr_dbus_add_signal_match (conn, MCE_SIGNAL_IF,
+                                        MCE_DEVICE_ORIENTATION_SIG);
+    }
+  else
+    {
+      hd_app_mgr_dbus_remove_signal_match (conn, MCE_SIGNAL_IF,
+                                           MCE_TKLOCK_MODE_SIG);
+      hd_app_mgr_dbus_remove_signal_match (conn, MCE_SIGNAL_IF,
+                                           MCE_DISPLAY_SIG);
+      hd_app_mgr_dbus_remove_signal_match (conn, MCE_SIGNAL_IF,
+                                           MCE_DEVICE_ORIENTATION_SIG);
+    }
+
   msg = dbus_message_new_method_call (
           MCE_SERVICE,
           MCE_REQUEST_PATH,
@@ -2047,6 +2056,8 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
                   GCONF_DISABLE_CALLUI_KEY))
     {
       priv->disable_callui = value;
+
+      /* Check if h-d needs to track the orientation. */
       hd_app_mgr_mce_activate_accel ();
     }
 
