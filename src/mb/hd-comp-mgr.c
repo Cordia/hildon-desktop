@@ -711,9 +711,25 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
     hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_WM_WINDOW_MENU_INDICATOR))
     {
       /* Redraw the title to display/remove the progress indicator or app
-       * menu indicator. The call itself checks what the new state should be. */
-      hd_title_bar_update(HD_TITLE_BAR(hd_render_manager_get_title_bar()),
-                          MB_WM_COMP_MGR (hmgr));
+       * menu indicator. The title itself will check what the new state should
+       * be. NOTE: we have to redo dialog titles here too, so we can't just
+       * use hd_title_bar_update. */
+      MBWindowManagerClient *top;
+      /* previous mb_wm_client_decor_mark_dirty didn't actually cause a redraw,
+       * so mark the decor itself dirty */
+      top = mb_wm_managed_client_from_xwindow(MB_WM_COMP_MGR (hmgr)->wm,
+                                              event->window);
+      if (top)
+        {
+          MBWMList *l = top->decor;
+          while (l)
+            {
+              MBWMDecor *decor = l->data;
+              if (decor->type == MBWMDecorTypeNorth)
+                mb_wm_decor_mark_dirty (decor);
+              l = l->next;
+            }
+        }
     }
 
   non_comp_changed = event->atom ==

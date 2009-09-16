@@ -1,3 +1,11 @@
+2009-09-16  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#138895 - progress indicator not shown sometimes
+	
+	* src/mb/hd-comp-mgr.c: Regression for after app menu indicator 
+	changes. Thoughtless tidying on my part had removed code that
+	updated dialog titles when the progress indicator changed.
+
 2009-09-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Disable MCE's accelerometer signals when not needed.
