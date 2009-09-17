@@ -109,6 +109,8 @@ static struct
   /*
    * What is *_fsm() currently doing:
    * -- #IDLE:      nothing, we're sitting in landscape or portrait
+   * -- #TRANS_START: we're hoping to be called back on idle to start the
+   *                  animation
    * -- #FADE_OUT:  hd_transition_fade_and_rotate() is fading out
    * -- #WAITING:   for X to finish reconfiguring the screen
    * -- #FADE_IN:   second hd_transition_fade_and_rotate() is in progress
@@ -116,6 +118,7 @@ static struct
   enum
   {
     IDLE,
+    TRANS_START,
     FADE_OUT,
     WAIT_FOR_ROOT_CONFIG,
     WAIT_FOR_DAMAGES,
@@ -711,12 +714,13 @@ on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
   n_frames = clutter_timeline_get_n_frames(timeline);
   amt = frame_num / (float)n_frames;
   // we want to ease in, but speed up as we go - X^3 does this nicely
-  amt = amt*amt*amt;
+  amt = amt*amt;
   if (data->event == MBWMCompMgrClientEventUnmap)
     amt = 1-amt;
   /* dim=1 -> screen is black, dim=0 -> normal. Only
-   * dim out right at the end of the animation */
-  dim_amt = amt*4 - 3;
+   * dim out right at the end of the animation - and
+   * then only by half */
+  dim_amt = amt*2 - 1.5;
   if (dim_amt<0)
     dim_amt = 0;
   angle = data->angle * amt;
@@ -1374,13 +1378,35 @@ hd_transition_rotating_fsm(void)
   switch (Orientation_change.phase)
     {
       case IDLE:
+        Orientation_change.phase = TRANS_START;
+        Orientation_change.direction = Orientation_change.new_direction;
+        /* Take a screenshot of the screen as we currently are... */
+        tidy_cached_group_changed(CLUTTER_ACTOR(hd_render_manager_get()));
+        tidy_cached_group_set_render_cache(
+          CLUTTER_ACTOR(hd_render_manager_get()), 1);
+        /* Force redraw for screenshot *now*, before windows have a
+         * chance to change */
+        clutter_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
+        /* Start rotate transition */
+        hd_util_set_rotating_property(Orientation_change.wm, TRUE);
+        /* Layout windows at the rotated size */
+        hd_util_set_screen_size_properties(Orientation_change.wm,
+            Orientation_change.direction == GOTO_PORTRAIT ? 480 : 800,
+            Orientation_change.direction == GOTO_PORTRAIT ? 800 : 480);
+        Orientation_change.wm->flags |= MBWindowManagerFlagLayoutRotated;
+        mb_wm_layout_update(Orientation_change.wm->layout);
+        /* We now call ourselves back on idle. The idea is that the sudden
+         * influx of X events from resizing kills our animation as we don't
+         * get to idle for a while. So only start the transition once we
+         * got to idle at least once! */
+        g_idle_add((GSourceFunc)(hd_transition_rotating_fsm), NULL);
+        break;
+      case TRANS_START:
         /* Fade to black ((c) Metallica) */
         Orientation_change.phase = FADE_OUT;
-        Orientation_change.direction = Orientation_change.new_direction;
-        hd_util_set_rotating_property(Orientation_change.wm, TRUE);
         hd_transition_fade_and_rotate(
-                TRUE, Orientation_change.direction == GOTO_PORTRAIT,
-                G_CALLBACK(hd_transition_rotating_fsm), NULL);
+                        TRUE, Orientation_change.direction == GOTO_PORTRAIT,
+                        G_CALLBACK(hd_transition_rotating_fsm), NULL);
         break;
       case FADE_OUT:
         /*
@@ -1389,6 +1415,14 @@ hd_transition_rotating_fsm(void)
          * to states which don't support the orientation we're
          * going to.
          */
+        /* remove our flag to bodge layout - because we'll rotate properly
+         * soon anyway */
+        Orientation_change.wm->flags &= ~MBWindowManagerFlagLayoutRotated;
+        /* Don't show our screenshot background any more */
+        tidy_cached_group_changed(CLUTTER_ACTOR(hd_render_manager_get()));
+        tidy_cached_group_set_render_cache(
+                                  CLUTTER_ACTOR(hd_render_manager_get()), 0);
+
         state = Orientation_change.goto_state;
         change_state = Orientation_change.new_direction == GOTO_PORTRAIT
           ?  STATE_IS_PORTRAIT(state) || STATE_IS_PORTRAIT_CAPABLE(state)
@@ -1475,6 +1509,14 @@ hd_transition_rotating_fsm(void)
           }
         else /* WAIT_FOR_DAMAGES || FADE_OUT error path */
           { /* Fade back in */
+            /* We must update the layout again so the window sizes
+             * return to normal relative to the screen. flags is probably
+             * already correct. But just for safety. */
+            hd_util_set_screen_size_properties(Orientation_change.wm,
+                        Orientation_change.direction == GOTO_PORTRAIT ? 480 : 800,
+                        Orientation_change.direction == GOTO_PORTRAIT ? 800 : 480);
+            Orientation_change.wm->flags &= ~MBWindowManagerFlagLayoutRotated;
+            mb_wm_layout_update(Orientation_change.wm->layout);
             /* Undo the redraw stopping that happened in FADE_OUT */
             Orientation_change.phase = FADE_IN;
             clutter_actor_set_allow_redraw(
@@ -1558,7 +1600,7 @@ hd_transition_rotate_screen_and_change_state (HDRMStateEnum state)
 gboolean
 hd_transition_rotation_will_change_state (void)
 {
-  return Orientation_change.phase == FADE_OUT 
+  return Orientation_change.phase == FADE_OUT
     && Orientation_change.goto_state != HDRM_STATE_UNDEFINED;
 }
 

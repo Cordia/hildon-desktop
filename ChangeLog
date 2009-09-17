@@ -1,3 +1,28 @@
+2009-09-17  Gordon Williams <gordon.williams@collabora.co.uk>
+	
+	Code to improve screen rotation speed
+	Related to NB#139504
+	Also fixes NB#139522 - another tuneup
+	
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h: Make this descend from TidyCachedGroup,
+	  which allows us to take a screenshot of the whole screen before 
+	  rotate.
+	* src/util/hd-transition.c: Use hd_util_set_screen_size_properties
+	  before rotation (and restore after). Add TRANS_START state to help
+	  remove jittery transition. Use MBWindowManagerFlagLayoutRotated to
+	  lay windows out before rotate too. Also take screenshot of the
+	  screen using TidyCachedGroup for the first half of the anim.
+	* src/mb/hd-atoms.c
+	* src/mb/hd-atoms.h: HD_ATOM_MAEMO_SCREEN_WIDTH/HEIGHT for hd-util	  
+	* src/util/hd-util.c
+	* src/util/hd-util.h: Add hd_util_set_screen_size_properties, which
+	  tells GdkScreen to send a resize event before the screen has
+	  actually resized.
+	* data/transitions.ini: Make durations 250 each, fix angle - as now
+	  fade-out isn't complete, it was obviously broken.
+	* debian/control: Increase libmatchbox dependency
+
 2009-09-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Add a Gtk-free test/example program for various window properties.

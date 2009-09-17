@@ -315,6 +315,20 @@ void hd_util_set_rotating_property(MBWindowManager *wm, gboolean is_rotating)
                   (unsigned char *)&value, 1);
 }
 
+void hd_util_set_screen_size_properties(MBWindowManager *wm, guint width, guint height)
+{
+  HdCompMgr *hmgr = HD_COMP_MGR(wm->comp_mgr);
+
+  XChangeProperty(wm->xdpy, wm->root_win->xwindow,
+      hd_comp_mgr_get_atom (hmgr, HD_ATOM_MAEMO_SCREEN_WIDTH),
+                  XA_CARDINAL, 32, PropModeReplace,
+                  (unsigned char *)&width, 1);
+  XChangeProperty(wm->xdpy, wm->root_win->xwindow,
+        hd_comp_mgr_get_atom (hmgr, HD_ATOM_MAEMO_SCREEN_HEIGHT),
+                    XA_CARDINAL, 32, PropModeReplace,
+                    (unsigned char *)&height, 1);
+}
+
 /* Change the screen's orientation by rotating 90 degrees
  * (portrait mode) or going back to landscape.
  * Returns whether the orientation has actually changed. */

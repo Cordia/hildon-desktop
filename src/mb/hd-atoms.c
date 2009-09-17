@@ -88,6 +88,8 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     "_OMAP_VIDEO_OVERLAY",
     /* Signal that we are in a rotation transition */
     "_MAEMO_ROTATION_TRANSITION",
+    "_MAEMO_SCREEN_WIDTH",
+    "_MAEMO_SCREEN_HEIGHT",
   };
 
   XInternAtoms (xdpy,

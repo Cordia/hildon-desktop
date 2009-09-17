@@ -34,6 +34,7 @@
 #include "hd-task-navigator.h"
 #include "hd-home.h"
 #include "../launcher/hd-launcher.h"
+#include "../tidy/tidy-cached-group.h"
 
 G_BEGIN_DECLS
 
@@ -51,14 +52,14 @@ typedef struct _HdRenderManagerClass    HdRenderManagerClass;
 
 struct _HdRenderManager
 {
-  ClutterGroup parent_instance;
+  TidyCachedGroup parent_instance;
 
   HdRenderManagerPrivate *priv;
 };
 
 struct _HdRenderManagerClass
 {
-  ClutterGroupClass parent_class;
+  TidyCachedGroupClass parent_class;
 };
 
 /* button types that can be given to hd_render_manager_set_button */

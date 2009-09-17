@@ -57,7 +57,6 @@
 #else
 # define VISIBILITY(...)  /* NOP */
 #endif
-
 /* ------------------------------------------------------------------------- */
 #define I_(str) (g_intern_static_string ((str)))
 
@@ -94,7 +93,7 @@ hd_render_manager_state_get_type (void)
 
 /* ------------------------------------------------------------------------- */
 
-G_DEFINE_TYPE (HdRenderManager, hd_render_manager, CLUTTER_TYPE_GROUP);
+G_DEFINE_TYPE (HdRenderManager, hd_render_manager, TIDY_TYPE_CACHED_GROUP);
 #define HD_RENDER_MANAGER_GET_PRIVATE(obj) \
                 (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
                 HD_TYPE_RENDER_MANAGER, HdRenderManagerPrivate))
