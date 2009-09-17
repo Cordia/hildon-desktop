@@ -1,3 +1,9 @@
+2009-09-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Add a Gtk-free test/example program for various window properties.
+
+	* tests/Makefile.am, tests/test-no-gtk.c:
+
 2009-09-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Listen to MCE signals only when rotate-to-callui is enabled.
