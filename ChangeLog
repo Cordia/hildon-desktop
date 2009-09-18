@@ -1,3 +1,20 @@
+2009-09-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	139325 [S3 Proposal] Device turns to Portrait mode completely
+
+	We were too optimistinc and turned to portrait even if there was
+	a non-portrait capable system dialog.  This caused us to land in 
+	APP state but turned to portrait and when the app exited we went
+	back to HOME and didn't rotate back to landscape.  This is what
+	one gets when he add performance hacks to a stable logic.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_portrait_forecast):
+	  Be more careful about starting the rotation transition.
+	  Now only do that if we are idling in landscape and no
+	  sysmodal dialogs are in the way.
+	* src/util/hd-transition.c (hd_transition_is_rotating):
+	  Added.
+
 2009-09-18  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Regression fix for last change (getting stuck in landscape mode). 

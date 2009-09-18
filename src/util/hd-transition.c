@@ -1608,6 +1608,13 @@ hd_transition_rotation_will_change_state (void)
     && Orientation_change.goto_state != HDRM_STATE_UNDEFINED;
 }
 
+/* Are we in the middle of a change? */
+gboolean
+hd_transition_is_rotating (void)
+{
+  return Orientation_change.phase != IDLE;
+}
+
 /* Returns whether we are in a state where we should ignore any
  * damage requests. This also checks and possibly prolongs how long
  * we stay in the WAITING state, so we can be sure that all windows
