@@ -1517,6 +1517,10 @@ hd_transition_rotating_fsm(void)
                         Orientation_change.direction == GOTO_PORTRAIT ? 800 : 480);
             Orientation_change.wm->flags &= ~MBWindowManagerFlagLayoutRotated;
             mb_wm_layout_update(Orientation_change.wm->layout);
+            /* When we have to fade back in like this, the visibilities can
+             * be wrong because of some windows being portrait, some
+             * landscape. restack to ensure everything is correct. */
+            hd_render_manager_restack();
             /* Undo the redraw stopping that happened in FADE_OUT */
             Orientation_change.phase = FADE_IN;
             clutter_actor_set_allow_redraw(

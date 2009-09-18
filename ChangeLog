@@ -1,3 +1,10 @@
+2009-09-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Regression fix for last change (getting stuck in landscape mode). 
+	* src/util/hd-transition.c: Extra call to restack sets visibilities
+	  correctly in case of very quick l->p->l transition, and allows
+	  callui to request portrait mode again.
+
 2009-09-17  Gordon Williams <gordon.williams@collabora.co.uk>
 	
 	Code to improve screen rotation speed
