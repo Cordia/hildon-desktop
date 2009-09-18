@@ -256,11 +256,8 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
   /* make sure it's bottom-aligned */
   diff = (client->frame_geometry.y + client->frame_geometry.height)
     - wm->xdpy_height;
-  if (diff > 0)
-    {
-      client->frame_geometry.y   -= diff;
-      client->window->geometry.y -= diff;
-    }
+  client->frame_geometry.y   -= diff;
+  client->window->geometry.y -= diff;
 
   mb_wm_client_geometry_mark_dirty (client);
 

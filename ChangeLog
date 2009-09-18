@@ -1,3 +1,8 @@
+2009-09-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-dialog.c (hd_dialog_request_geometry):
+	  Now really do bottom-align dialogs.
+
 2009-09-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/util/hd-transition.c (hd_transition_close_app): Don't leak the
