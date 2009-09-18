@@ -1003,9 +1003,8 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
   data->cclient_actor = g_object_ref (actor);
   data->hmgr = HD_COMP_MGR (mgr);
-  data->timeline = g_object_ref(
-                clutter_timeline_new_for_duration (
-                    hd_transition_get_int("app_close", "duration", 500) ) );
+  data->timeline = clutter_timeline_new_for_duration (
+                    hd_transition_get_int("app_close", "duration", 500));
   g_signal_connect (data->timeline, "new-frame",
                     G_CALLBACK (on_close_timeline_new_frame), data);
   g_signal_connect (clutter_stage_get_default (), "notify::allocation",

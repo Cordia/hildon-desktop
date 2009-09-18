@@ -1,3 +1,9 @@
+2009-09-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/util/hd-transition.c (hd_transition_close_app): Don't leak the
+	timeline object, it's enough to have one reference count for it. 
+	Related to NB#134230 and NB#98132.
+
 2009-09-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	139325 [S3 Proposal] Device turns to Portrait mode completely
