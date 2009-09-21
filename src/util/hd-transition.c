@@ -1616,6 +1616,14 @@ hd_transition_is_rotating (void)
   return Orientation_change.phase != IDLE;
 }
 
+/* Are we about to change to portrait mode? */
+gboolean
+hd_transition_is_rotating_to_portrait (void)
+{
+  return Orientation_change.phase != IDLE &&
+  Orientation_change.direction == GOTO_PORTRAIT;
+}
+
 /* Returns whether we are in a state where we should ignore any
  * damage requests. This also checks and possibly prolongs how long
  * we stay in the WAITING state, so we can be sure that all windows

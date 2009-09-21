@@ -1,3 +1,13 @@
+2009-09-21  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Another fix for new portrait transition. Make sure no apps are
+	resized in the background.
+	* src/util/hd-transition.c
+	* src/util/hd-transition.h: add hd_transition_is_rotating_to_portrait
+	* src/mb/hd-app.c: Now check for hd_transition_is_rotating_to_portrait
+	  before resizing an app, as we may not be in portrait mode yet, but
+	  we're be resizing before we change state.
+
 2009-09-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Fix of the "[r]egression fix for last change".

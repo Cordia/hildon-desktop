@@ -24,6 +24,7 @@
 #include "hd-app.h"
 #include "hd-comp-mgr.h"
 #include "hd-wm.h"
+#include "hd-transition.h"
 
 static Bool
 hd_app_request_geometry (MBWindowManagerClient *client,
@@ -80,10 +81,10 @@ hd_app_init (MBWMObject *this, va_list vap)
     {
       MBWindowManagerClient *trans_parent;
 
-      trans_parent = mb_wm_managed_client_from_xwindow (wm, 
+      trans_parent = mb_wm_managed_client_from_xwindow (wm,
 		      win->xwin_transient_for);
 
-      if (trans_parent) 
+      if (trans_parent)
         {
           mb_wm_client_add_transient (trans_parent, client);
 	  /*
@@ -157,7 +158,8 @@ hd_app_request_geometry (MBWindowManagerClient *client,
    * in a sneaky way.
    */
   if ((flags & MBWMClientReqGeomIsViaLayoutManager)
-      &&  hd_comp_mgr_is_portrait ()
+      &&  (hd_comp_mgr_is_portrait () ||
+           hd_transition_is_rotating_to_portrait())
       &&  mb_wm_client_is_map_confirmed (client)
       && !hd_comp_mgr_client_supports_portrait (client))
     return False;
@@ -171,7 +173,7 @@ hd_app_detransitise (MBWindowManagerClient     *client)
   HdApp                      *app = HD_APP (client);
   MBWindowManagerClientClass *klass;
 
-  app->detransitised_from = client->window ? 
+  app->detransitised_from = client->window ?
 	  client->window->xwin_transient_for : None;
 
   klass = MB_WM_CLIENT_CLASS(
