@@ -452,13 +452,12 @@ hd_launcher_lazy_traverse_tree (gpointer data)
                         item);
     }
 
-  if (tdata->items->next)
-    {
-      tdata->items = tdata->items->next;
-      return TRUE;
-    }
+  g_object_unref (G_OBJECT (tdata->items->data));
+  tdata->items = g_list_delete_link (tdata->items, tdata->items);
+  if (!tdata->items)
+    return FALSE;
 
-  return FALSE;
+  return TRUE;
 }
 
 static void
@@ -475,7 +474,12 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
   HdLauncher *launcher = HD_LAUNCHER (data);
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
   HdLauncherTraverseData *tdata = g_new0 (HdLauncherTraverseData, 1);
-  tdata->items = hd_launcher_tree_get_items(tree);
+
+  /* As we'll be adding these in an idle loop, we need to ensure that they
+   * won't disappear while we do this, so we copy the list and ref all the
+   * items. */
+  tdata->items = g_list_copy(hd_launcher_tree_get_items(tree));
+  g_list_foreach (tdata->items, (GFunc)g_object_ref, NULL);
 
   if (priv->current_traversal)
     {

@@ -1112,7 +1112,7 @@ hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (HD_APP_MGR (data));
   /* We need to copy thess lists because we'll be modifying them. */
   GList *apps = g_list_copy (priv->running_apps);
-  GList *items = hd_launcher_tree_get_items (tree);
+  GList *items = g_list_copy (hd_launcher_tree_get_items (tree));
 
   /* First, traverse the already running apps to see if their HdLauncherApp
    * info has changed.
@@ -1179,7 +1179,8 @@ hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
       hd_app_mgr_prestartable (app, TRUE);
     }
 
-    hd_app_mgr_state_check ();
+  g_list_free (items);
+  hd_app_mgr_state_check ();
 }
 
 static void

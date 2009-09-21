@@ -1,5 +1,15 @@
 2009-09-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Applying Marc's patch:
+	Fixes: NB#138800 (S3,crash) Desktop crashed.
+	* src/launcher/hd-launcher.c
+	* src/launcher/hd-app-mgr.c: When traversing over tree items, make
+	  a copy of the list of items rather than using it directly. 
+	* src/hildon-desktop.h: Allow reading of HD_NOTHREADS, but only
+	  in debug of x86 mode
+
+2009-09-21  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Fixes: NB#139904 (S3) Non-comp exiting from full screen makes browser
 	                      title overlapping status bar
 	* src/home/hd-render-manager.c: Re-evaluate where title bar elements

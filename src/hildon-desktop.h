@@ -32,7 +32,7 @@
 
 /* Do not create threads in scratchbox if $HD_NOTHREADS is defined.
  * gdb doesn't like threads. */
-#ifdef __i386__
+#if defined (__i386__) || defined (DEBUG)
 # define hd_disable_threads()          getenv("HD_NOTHREADS")
 #else
 # define hd_disable_threads()          0
