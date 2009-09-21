@@ -1,11 +1,5 @@
 2009-09-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
-	Fixes: NB#138369 (S3) When zooming from app to task switcher, 
-	                      background does not scale
-	* src/home/hd-render-manager.c: Don't stop the transition when zooming
-	  out but instead just set the relevant items (brightness/saturation)
-	  to their final values, and allow zooming still.
-
 	Applying Marc's patch:
 	Fixes: NB#138800 (S3,crash) Desktop crashed.
 	* src/launcher/hd-launcher.c
