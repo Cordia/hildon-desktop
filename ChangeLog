@@ -1,3 +1,15 @@
+2009-09-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Fix of the "[r]egression fix for last change".
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_restack):
+	  Don't hdrm_restack() and check for portrsit if we're rotating.
+	  We may get it wrong and the rotating fsm will restack anyway.
+	* src/util/hd-transition.c (hd_transition_rotating_fsm):
+	  hdrm_restack() in FADE_IN not eariler.
+
+	Let's see if we'll have fix of the fix of the fix.
+
 2009-09-18  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-dialog.c (hd_dialog_request_geometry):
