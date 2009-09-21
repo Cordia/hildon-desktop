@@ -1607,13 +1607,21 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 	}
 
       /* When moving from an app to the task navigator, stop the transition
-       * (brightness, saturation, blurring) at the final values, so that
+       * of brightness, saturation + blurring at the final values, so that
        * while the app zooms out, the background is already dimmed with the
        * vignette effect (and you tend not to notice the blur iterating to
-       * the correct value). Solves 131502 */
+       * the correct value). Solves 131502
+       * Note: we can't do transition_stop here as Martin still wants the
+       * zooming. */
       if (oldstate==HDRM_STATE_APP &&
           state==HDRM_STATE_TASK_NAV)
-        hd_render_manager_stop_transition();
+        {
+          range_set(&priv->home_brightness, priv->home_brightness.b);
+          range_set(&priv->home_saturation, priv->home_saturation.b);
+          range_set(&priv->home_radius, priv->home_radius.b);
+          on_timeline_blur_new_frame(priv->timeline_blur,
+              clutter_timeline_get_current_frame(priv->timeline_blur), NULL);
+        }
 
       if (state == HDRM_STATE_NON_COMPOSITED ||
           state == HDRM_STATE_NON_COMP_PORT)
