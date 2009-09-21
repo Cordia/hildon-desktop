@@ -982,7 +982,11 @@ void hd_render_manager_sync_clutter_before ()
 
   hd_title_bar_set_state(priv->title_bar, btn_state);
   /* hd_render_manager_place_titlebar_elements calls hd_title_bar_update()
-   * as well */
+   * as well.
+   * TODO: (gw) Do we *really* need to call this so often? Most likely there
+   * is some corner case that we could fix some other way. Now we call this
+   * inside set_visibilities after we change status area visibility, it might
+   * not be needed. */
   hd_render_manager_place_titlebar_elements();
 
   /* Make sure we hide the edit button if it's not required */
@@ -2476,6 +2480,9 @@ void hd_render_manager_set_visibilities()
           c->frame_geometry.y   = -c->frame_geometry.height;
           c->window->geometry.y = -c->window->geometry.height;
           mb_wm_client_geometry_mark_dirty(c);
+          /* Unlike below, there should be no need to re-allocate the
+           * title bar here, as if we have a fullscreen app, the title
+           * will be invisible anyway. */
         }
     }
   else
@@ -2485,6 +2492,10 @@ void hd_render_manager_set_visibilities()
         { /* Restore the position of SA. */
           c->frame_geometry.y = c->window->geometry.y = 0;
           mb_wm_client_geometry_mark_dirty(c);
+          /* Now we have changed status area visibility, we must update
+           * the position of the title. Ideally we wouldn't call this so
+           * often, but for S3 this is least likely to cause regressions. */
+          hd_render_manager_place_titlebar_elements();
         }
     }
   hd_render_manager_set_input_viewport();

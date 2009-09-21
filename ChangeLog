@@ -1,5 +1,13 @@
 2009-09-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#139904 (S3) Non-comp exiting from full screen makes browser
+	                      title overlapping status bar
+	* src/home/hd-render-manager.c: Re-evaluate where title bar elements
+	  are placed immediately after we make status area visible (after it
+	  has been invisible). 
+
+2009-09-21  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Another fix for new portrait transition. Make sure no apps are
 	resized in the background.
 	* src/util/hd-transition.c
