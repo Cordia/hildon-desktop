@@ -1,3 +1,8 @@
+2009-09-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-transition.c (on_notification_timeline_new_frame):
+	  Align notifications to the narrower tasks button and use easing.
+
 2009-09-21  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#140044 - When trying to start panning the desktop over a
@@ -9,6 +14,7 @@
 	  hd_home_applet_motion): Use the release event coordinates for a
 	  simulated motion event before handle the release.
 
+>>>>>>> .r42290
 2009-09-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-home.c: Remove hd_home_applet_press and

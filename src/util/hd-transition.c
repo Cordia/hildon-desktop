@@ -556,19 +556,20 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
         float x, y;
       } const cpin[] =
       { /* Bezier curve control points for the opening part. */
-        { 217.000000, -144.000015 },
-        { 217.000000, -88.000000  },
-        { 144.892090,   0         },
-        {   0,          0         },
+        {  185, -88 },
+        {  185, -32 },
+        {  112,   0 },
+        {  -32,   0 },
       }, cpout[] =
       { /* and for MBWMCompMgrClientEventUnmap. */
-        {    0,           0        },
-        { -144.892090,    0        },
-        { -366.000000,  -88.000000 },
-        { -366.000000, -143.999985 },
+        {  -32,   0 },
+        { -176,   0 },
+        { -478, -32 },
+        { -478, -88 },
       }, *curve;
 
       /* Set the position to @curve(@now). */
+      now = hd_transition_smooth_ramp(now);
       curve = data->event == MBWMCompMgrClientEventUnmap ? cpout : cpin;
       clutter_actor_set_anchor_pointu(actor,
                CLUTTER_FLOAT_TO_FIXED(-bezier(now,
