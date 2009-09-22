@@ -306,11 +306,27 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
   if (info == NULL)
     {
       g_warning ("%s: couldn't find icon %s\n", __FUNCTION__, priv->icon_name);
+      g_free (priv->icon_name);
+      priv->icon_name = NULL;
       return;
     }
 
   const gchar *fname = gtk_icon_info_get_filename(info);
+  if (fname == NULL)
+    {
+      g_warning ("%s: couldn't get icon %s\n", __FUNCTION__, priv->icon_name);
+      g_free (priv->icon_name);
+      priv->icon_name = NULL;
+      return;
+    }
   priv->icon = clutter_texture_new_from_file(fname, NULL);
+  if (!priv->icon)
+  {
+    g_warning ("%s: couldn't create texture for %s\n", __FUNCTION__, fname);
+    g_free (priv->icon_name);
+    priv->icon_name = NULL;
+    return;
+  }
 
   clutter_actor_set_size (priv->icon,
       HD_LAUNCHER_TILE_ICON_SIZE,

@@ -1,3 +1,10 @@
+2009-09-22  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Ensure correct creation of texture in hd_launcher_tile_set_icon_name.
+	This was alluded to in NB#139357.
+
+	* src/launcher/hd-launcher-tile.c:
+
 2009-09-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-transition.c (on_notification_timeline_new_frame):
