@@ -201,6 +201,10 @@ static void hd_home_show_edit_button (HdHome *home);
 static void do_applet_release (HdHome             *home,
                                ClutterActor       *applet,
                                ClutterButtonEvent *event);
+static gboolean do_home_applet_motion (HdHome       *home,
+                                       ClutterActor *applet,
+                                       int           x,
+                                       int           y);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -350,6 +354,8 @@ hd_home_desktop_motion (XButtonEvent *xev, void *userdata)
 {
   HdHome *home = userdata;
 
+  g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, xev->x, xev->y);
+
   hd_home_desktop_do_motion (home, xev->x, xev->y);
 }
 
@@ -484,7 +490,12 @@ hd_home_desktop_do_press (HdHome *home,
 static Bool
 hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 {
-  hd_home_desktop_do_release (userdata);
+  HdHome *home = userdata;
+
+  g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, xev->x, xev->y);
+
+  hd_home_desktop_do_motion (home, xev->x, xev->y);
+  hd_home_desktop_do_release (home);
 
   return True;
 }
@@ -493,6 +504,8 @@ static Bool
 hd_home_desktop_press (XButtonEvent *xev, void *userdata)
 {
   HdHome *home = userdata;
+
+  g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, xev->x, xev->y);
 
   return hd_home_desktop_do_press (home, xev->x, xev->y);
 }
@@ -1374,6 +1387,8 @@ hd_home_applet_press (ClutterActor       *applet,
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
 
+  g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, event->x, event->y);
+
   /*
    * We always emit a button press event to animate it on the screen. Later we
    * can abort the click with a LeaveNotify event.
@@ -1442,18 +1457,22 @@ hd_home_applet_release (ClutterActor       *applet,
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
 
+  g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, event->x, event->y);
+
+  do_home_applet_motion (home, applet, event->x, event->y);
   do_applet_release (home, applet, event);
 
   return TRUE;
 }
 
 static gboolean
-hd_home_applet_motion (ClutterActor       *applet,
-		       ClutterMotionEvent *event,
-		       HdHome             *home)
+do_home_applet_motion (HdHome       *home,
+                       ClutterActor *applet,
+                       int           x,
+                       int           y)
 {
   HdHomePrivate *priv = home->priv;
-  gboolean       moved_over_threshold;
+  gboolean moved_over_threshold;
 
   /*
    * If we are in edit mode the HdHomeView will have to deal with this event.
@@ -1461,11 +1480,7 @@ hd_home_applet_motion (ClutterActor       *applet,
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
 
-  if (!(event->modifier_state &
-	(CLUTTER_BUTTON1_MASK | CLUTTER_BUTTON2_MASK | CLUTTER_BUTTON2_MASK)))
-    return FALSE;
-
-  hd_home_desktop_do_motion (home, event->x, event->y);
+  hd_home_desktop_do_motion (home, x, y);
 
   /*
    * If the pointer was moved over the threshold the initial_x and initial_y is
@@ -1476,8 +1491,8 @@ hd_home_applet_motion (ClutterActor       *applet,
     return TRUE;
 
   moved_over_threshold =
-	  ABS (priv->initial_x - event->x) > HDH_PAN_THRESHOLD ||
-	  ABS (priv->initial_y - event->y) > HDH_PAN_THRESHOLD;
+	  ABS (priv->initial_x - x) > HDH_PAN_THRESHOLD ||
+	  ABS (priv->initial_y - y) > HDH_PAN_THRESHOLD;
 
   if (moved_over_threshold) {
       if (priv->press_timeout)
@@ -1492,6 +1507,20 @@ hd_home_applet_motion (ClutterActor       *applet,
 
 
   return TRUE;
+}
+
+static gboolean
+hd_home_applet_motion (ClutterActor       *applet,
+		       ClutterMotionEvent *event,
+		       HdHome             *home)
+{
+  g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, event->x, event->y);
+
+  if (!(event->modifier_state &
+	(CLUTTER_BUTTON1_MASK | CLUTTER_BUTTON2_MASK | CLUTTER_BUTTON2_MASK)))
+    return FALSE;
+
+  return do_home_applet_motion (home, applet, event->x, event->y);
 }
 
 
