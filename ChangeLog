@@ -1,3 +1,8 @@
+2009-09-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-home.c: Remove hd_home_applet_press and
+	hd_home_applet_release g_warning spam.
+
 2009-09-21  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Applying Marc's patch:

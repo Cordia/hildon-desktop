@@ -1374,8 +1374,6 @@ hd_home_applet_press (ClutterActor       *applet,
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
 
-  g_warning ("%s", __FUNCTION__);
-
   /*
    * We always emit a button press event to animate it on the screen. Later we
    * can abort the click with a LeaveNotify event.
@@ -1443,8 +1441,6 @@ hd_home_applet_release (ClutterActor       *applet,
    */
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
-
-  g_warning ("%s", __FUNCTION__);
 
   do_applet_release (home, applet, event);
 
