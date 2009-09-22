@@ -23,7 +23,9 @@
 
 #include "hd-dialog.h"
 #include "hd-util.h"
+#include "hd-comp-mgr.h"
 #include "hd-wm.h"
+#include "hd-transition.h"
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
 static Bool
@@ -163,6 +165,24 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
   MBWindowManager *wm = client->wmref;
 
   /*
+   * Ignore the layout manager's request if we're in portrait but we don't
+   * support it.  The window manager ensures that we are not visible in
+   * this case.  If we were it couldn't be in portrait mode because we don't
+   * support it.  When the wm exits portrait mode we'll be reconfigured,
+   * then we can do a proper geometry change.  Unfortunately we cannot skip
+   * reconfiguration if the client is just being mapped (!map_confirmed())
+   * because if it's not even realized %MBWMClientBase::realize needs some
+   * geometry, otherwise it will try to create a 0x0 frame window and fail
+   * in a sneaky way.
+   */
+   /*if ((flags & MBWMClientReqGeomIsViaLayoutManager)
+      &&  (hd_comp_mgr_is_portrait () ||
+           hd_transition_is_rotating_to_portrait())
+      &&  mb_wm_client_is_map_confirmed (client)
+      && !hd_comp_mgr_client_supports_portrait (client))
+    return False;*/
+
+  /*
    * When we get an internal geometry request, like from the layout manager,
    * the new geometry applies to the frame; however, if the request is
    * external from ConfigureRequest, it is new geometry of the client window,
@@ -277,4 +297,5 @@ hd_dialog_new (MBWindowManager *wm, MBWMClientWindow *win)
 
   return client;
 }
+
 
