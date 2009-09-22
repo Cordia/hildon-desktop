@@ -14,7 +14,6 @@
 	  hd_home_applet_motion): Use the release event coordinates for a
 	  simulated motion event before handle the release.
 
->>>>>>> .r42290
 2009-09-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-home.c: Remove hd_home_applet_press and
