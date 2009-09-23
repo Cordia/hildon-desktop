@@ -1,3 +1,17 @@
+2009-09-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#139357 hildon-desktop-A730-11-1167 crash after random using
+		  and then rebooting the device.
+
+	We got a shutdown request from DSME and exit()ed.  This triggered
+	clutter's atexit() callback which started to clean up, which
+	HdTaskNavigator didn't like because it was in the middle of
+	some operations.
+
+	* src/util/hd-util.c (hd_dbus_system_bus_signal_handler):
+	  Exit but don't run clutter's clean up code.  This may also
+	  help with shutdown performace.
+
 2009-09-22  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#139906 - All (non-portrait) dialogs are resized on rotation

@@ -1,3 +1,4 @@
+#include <unistd.h>
 
 #include "hd-dbus.h"
 #include "hd-switcher.h"
@@ -60,10 +61,10 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
 			     DSME_SHUTDOWN_SIGNAL_NAME))
     {
       g_warning ("%s: " DSME_SHUTDOWN_SIGNAL_NAME " from DSME", __func__);
-      /* send TERM to applications and exit */
+      /* send TERM to applications and exit without cleanup */
       hd_volume_profile_set_silent (TRUE);
       hd_comp_mgr_kill_all_apps (hmgr);
-      exit (0);
+      _exit (0);
     }
   else if (dbus_message_is_signal (msg, MCE_SIGNAL_IF, "tklock_mode_ind"))
     {
