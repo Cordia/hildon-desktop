@@ -432,6 +432,7 @@ on_fade_timeline_new_frame(ClutterTimeline *timeline,
                             gint frame_num, HDEffectData *data)
 {
   float amt, ramt;
+  gint alpha;
   ClutterActor *actor;
 
   actor = data->cclient_actor;
@@ -445,7 +446,9 @@ on_fade_timeline_new_frame(ClutterTimeline *timeline,
   ramt = hd_transition_smooth_ramp(1-amt);
   amt = hd_transition_smooth_ramp(amt);
 
-  clutter_actor_set_opacity(actor, (int)(255*amt*data->final_alpha));
+  alpha = (gint)(255*amt*data->final_alpha);
+  if (alpha>255) alpha=255;
+  clutter_actor_set_opacity(actor, alpha);
 
   /* Slide information notes and banners from top to their final position. */
   if (data->geo.width)
@@ -797,13 +800,14 @@ hd_transition_completed (ClutterTimeline* timeline, HDEffectData *data)
                                         MBWMCompMgrClutterClientDontUpdate |
                                         MBWMCompMgrClutterClientEffectRunning);
       mb_wm_object_unref (MB_WM_OBJECT (data->cclient));
-      if (data->event == MBWMCompMgrClientEventUnmap && data->cclient_actor)
-        {
-          ClutterActor *parent = clutter_actor_get_parent(data->cclient_actor);
-          if (CLUTTER_IS_CONTAINER(parent))
-            clutter_container_remove_actor(
-                CLUTTER_CONTAINER(parent), data->cclient_actor );
-        }
+    }
+
+  if (data->event == MBWMCompMgrClientEventUnmap && data->cclient_actor)
+    {
+      ClutterActor *parent = clutter_actor_get_parent(data->cclient_actor);
+      if (CLUTTER_IS_CONTAINER(parent))
+        clutter_container_remove_actor(
+            CLUTTER_CONTAINER(parent), data->cclient_actor );
     }
 
   if (data->cclient_actor)
@@ -948,6 +952,50 @@ hd_transition_fade(HdCompMgr                  *mgr,
   /* first call to stop flicker */
   on_fade_timeline_new_frame(data->timeline, 0, data);
   clutter_timeline_start (data->timeline);
+}
+void
+hd_transition_fade_out_loading_screen(ClutterActor *loading_image)
+{
+    gint duration, fade_delay;
+    HDEffectData             * data;
+
+    duration = hd_transition_get_int("launcher_launch", "duration_out", 250);
+    /* If duration is <=0 we just return as the loading screen is already
+     * removed */
+    if (duration<=0)
+      return;
+
+    data = g_new0 (HDEffectData, 1);
+    data->event = MBWMCompMgrClientEventUnmap;
+    data->cclient_actor = g_object_ref ( loading_image );
+    data->hmgr = 0;
+    data->timeline = g_object_ref(
+        clutter_timeline_new_for_duration ( duration ) );
+    data->final_alpha = 1;
+    /* the delay before we start to fade out. We implement this by setting
+     * the final_alpha value to something *past* opaque */
+    fade_delay = hd_transition_get_int("launcher_launch", "delay", 150);
+    if (fade_delay>0)
+      {
+        gint duration = clutter_timeline_get_duration(data->timeline);
+        if (fade_delay < duration) {
+          data->final_alpha = 1 + fade_delay/(float)(duration-fade_delay);
+          // safety in case strange values get put in
+          if (data->final_alpha>10)
+            data->final_alpha = 10;
+        }
+      }
+
+    g_signal_connect (data->timeline, "new-frame",
+                          G_CALLBACK (on_fade_timeline_new_frame), data);
+    g_signal_connect (data->timeline, "completed",
+                          G_CALLBACK (hd_transition_completed), data);
+    clutter_container_add_actor (
+                 hd_render_manager_get_front_group(),
+                 loading_image);
+    /* first call to stop flicker */
+    on_fade_timeline_new_frame(data->timeline, 0, data);
+    clutter_timeline_start (data->timeline);
 }
 
 void

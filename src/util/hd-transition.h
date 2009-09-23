@@ -63,6 +63,8 @@ hd_transition_fade(HdCompMgr                  *mgr,
                    MBWindowManagerClient      *c,
                    MBWMCompMgrClientEvent     event);
 void
+hd_transition_fade_out_loading_screen(ClutterActor *loading_image);
+void
 hd_transition_close_app (HdCompMgr                  *mgr,
                          MBWindowManagerClient      *c);
 void

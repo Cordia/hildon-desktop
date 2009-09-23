@@ -1,3 +1,16 @@
+2009-09-23  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#140332 - smooth fade out to the loading screen screenshot
+
+	* src/util/hd-transition.c
+	* src/util/hd-transition.h: added hd_transition_fade_out_loading_screen
+	  to fade out the loading screen, also extra checks to  
+	* data/transitions.ini: added duration_out to launcher_launch for
+	  setting duration of the fade out.	
+	* src/home/hd-render-manager.c: Now ensure that we call 
+	  hd_transtion_fade_out on the loading screen, to make it fade out
+	  slowly.	  
+
 2009-09-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Speed up building and package creation, for bifh user's pleasure.

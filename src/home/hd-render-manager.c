@@ -1223,6 +1223,10 @@ void hd_render_manager_set_loading  (ClutterActor *item)
           clutter_container_remove_actor (
               CLUTTER_CONTAINER(clutter_actor_get_parent(priv->loading_image)),
               priv->loading_image);
+          /* fade it out nicely, if it is a real image rather than a solid
+           * colour */
+          if (item==NULL && !CLUTTER_IS_RECTANGLE(priv->loading_image))
+            hd_transition_fade_out_loading_screen(priv->loading_image);
         }
       /* Remove our reference */
       g_object_unref (G_OBJECT (priv->loading_image));
