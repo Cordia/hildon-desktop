@@ -26,7 +26,7 @@ home_c = 	hd-home.c		\
 		hd-home-view.c		\
 		hd-home-view-container.c\
 		hd-home-view-layout.c   \
-		hd-render-manager.c	\		
+		hd-render-manager.c	\
 		hd-scrollable-group.c	\
 		hd-switcher.c		\
 		hd-task-navigator.c	\
