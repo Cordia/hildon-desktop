@@ -1987,16 +1987,12 @@ hd_app_mgr_mce_activate_accel  ()
       hd_app_mgr_dbus_add_signal_match (conn, MCE_SIGNAL_IF,
                                         MCE_TKLOCK_MODE_SIG);
       hd_app_mgr_dbus_add_signal_match (conn, MCE_SIGNAL_IF,
-                                        MCE_DISPLAY_SIG);
-      hd_app_mgr_dbus_add_signal_match (conn, MCE_SIGNAL_IF,
                                         MCE_DEVICE_ORIENTATION_SIG);
     }
   else
     {
       hd_app_mgr_dbus_remove_signal_match (conn, MCE_SIGNAL_IF,
                                            MCE_TKLOCK_MODE_SIG);
-      hd_app_mgr_dbus_remove_signal_match (conn, MCE_SIGNAL_IF,
-                                           MCE_DISPLAY_SIG);
       hd_app_mgr_dbus_remove_signal_match (conn, MCE_SIGNAL_IF,
                                            MCE_DEVICE_ORIENTATION_SIG);
     }

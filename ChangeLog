@@ -1,3 +1,13 @@
+2009-09-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#139902 - Desktop updates screen although screen has blanked
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_texture_update_area): Return
+	without doing anything if the display is off.
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_mce_activate_accel): Do not
+	touch the MCE_DISPLAY_SIG signal D-Bus matches, that's always needed.
+	* src/util/hd-dbus.c (hd_dbus_init): Add match for MCE_DISPLAY_SIG.
+
 2009-09-23  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#140332 - smooth fade out to the loading screen screenshot

@@ -190,6 +190,10 @@ hd_dbus_init (HdCompMgr * hmgr)
                           "interface='"MCE_SIGNAL_IF"',"
                           "member='tklock_mode_ind'",
                           NULL);
+      dbus_bus_add_match (sysbus_conn,
+                          "type='signal',path='" MCE_SIGNAL_PATH "',"
+                          "interface='" MCE_SIGNAL_IF "',"
+                          "member='" MCE_DISPLAY_SIG "'", NULL);
 
       dbus_connection_add_filter (sysbus_conn,
                                   hd_dbus_system_bus_signal_handler,
