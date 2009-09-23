@@ -1,4 +1,13 @@
-2009-09-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-09-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Plug in memory leaks.
+
+	* src/home/hd-render-manager.c (hd_render_manager_append_geo_cb):
+	  First decide we need @geo then allocate memory for it.
+	* src/util/hd-volume-profile.c (hd_volume_profile_is_silent):
+	  free() strings returned by libprofile.
+
+2009-09-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#139357 hildon-desktop-A730-11-1167 crash after random using
 		  and then rebooting the device.

@@ -43,11 +43,15 @@ gboolean hd_volume_profile_is_silent(void)
                         silent_profile = 1;
                 else
                         silent_profile = 0;
+                if (prof)
+                        free(prof);
         }
         if (system_sounds < 0) {
                 char *val = profile_get_value(NULL, SYSTEM_SOUNDS_KEY);
-                if (val)
+                if (val) {
                         system_sounds = atoi(val);
+                        free(val);
+                }
         }
 
         if (silenced || silent_profile || system_sounds == 0)

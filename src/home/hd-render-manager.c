@@ -2343,13 +2343,13 @@ void hd_render_manager_append_geo_cb(ClutterActor *actor, gpointer data)
   GList **list = (GList**)data;
   if (hd_render_manager_actor_opaque(actor))
     {
-      ClutterGeometry *geo = g_malloc(sizeof(ClutterGeometry));
-      clutter_actor_get_geometry(actor, geo);
+      ClutterGeometry geo;
 
-      if (!hd_render_manager_clip_geo (geo))
+      clutter_actor_get_geometry(actor, &geo);
+      if (!hd_render_manager_clip_geo (&geo))
         return;
-      *list = g_list_prepend(*list, geo);
-      VISIBILITY ("BLOCKER %dx%d%+d%+d", MBWM_GEOMETRY(geo));
+      *list = g_list_prepend(*list, g_memdup(&geo, sizeof(geo)));
+      VISIBILITY ("BLOCKER %dx%d%+d%+d", MBWM_GEOMETRY(&geo));
     }
 }
 
