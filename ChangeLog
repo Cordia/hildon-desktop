@@ -1,3 +1,11 @@
+2009-09-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Fix of fix of NB#134488 which broke some dialogs causing
+	button overlaps.
+
+	* src/mb/hd-dialog.c (hd_dialog_request_geometry):
+	  HdDialog::requested_height is frame height.
+
 2009-09-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#134893 - 'scanning' control panel plugins have negative

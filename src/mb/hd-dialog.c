@@ -197,10 +197,11 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
     mb_wm_theme_get_decor_dimensions (wm->theme, client,
                                       &north, &south, &west, &east);
 
-  if (flags & (MBWMClientReqGeomIsViaConfigureReq | MBWMClientReqGeomForced))
-    /* initial geometry request (the size with the client's window was
-     * mapped with) or subsequent configure request, remember it */
+  /* remember the requested frame height */
+  if (flags & (MBWMClientReqGeomForced))
     HD_DIALOG (client)->requested_height = new_geometry->height;
+  else if (flags & (MBWMClientReqGeomIsViaConfigureReq))
+    HD_DIALOG (client)->requested_height = new_geometry->height + north+south;
 
   if (flags & MBWMClientReqGeomIsViaConfigureReq)
     {
@@ -248,7 +249,7 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
       client->frame_geometry.width  = wm->xdpy_width;
       client->frame_geometry.height = HD_DIALOG (client)->requested_height
           && !(client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
-        ? HD_DIALOG (client)->requested_height + (south + north)
+        ? HD_DIALOG (client)->requested_height
         : new_geometry->height;
       client->frame_geometry.y      = wm->xdpy_height-new_geometry->height;
 
