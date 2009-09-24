@@ -311,13 +311,15 @@ hd_transition_timeline_new(const gchar *transition,
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 
+extern gboolean hd_dbus_display_is_off;
+
 /* For the animated progress indicator in the title bar */
 void
 on_decor_progress_timeline_new_frame(ClutterTimeline *timeline,
                                      gint frame_num,
                                      ClutterActor *progress_texture)
 {
-  if (TIDY_IS_SUB_TEXTURE(progress_texture) &&
+  if (!hd_dbus_display_is_off && TIDY_IS_SUB_TEXTURE(progress_texture) &&
       CLUTTER_ACTOR_IS_VISIBLE(progress_texture))
     {
       /* The progress animation is a series of frames packed

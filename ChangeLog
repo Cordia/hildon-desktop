@@ -1,5 +1,13 @@
 2009-09-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#134893 - 'scanning' control panel plugins have negative
+	use-time behaviour
+
+	* src/util/hd-transition.c (on_decor_progress_timeline_new_frame):
+	Don't animate when the display is off.
+
+2009-09-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
 	Fixes: NB#139902 - Desktop updates screen although screen has blanked
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_texture_update_area): Return
