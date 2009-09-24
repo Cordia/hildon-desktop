@@ -1,4 +1,4 @@
-2009-09-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+2009-09-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#134893 - 'scanning' control panel plugins have negative
 	use-time behaviour
