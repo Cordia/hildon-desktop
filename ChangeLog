@@ -1,5 +1,10 @@
 2009-09-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* data/transitions.ini (rotate, popup, subview):
+	  Tuning times and angles per UK request.
+
+2009-09-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Fix of fix of NB#134488 which broke some dialogs causing
 	button overlaps.
 
