@@ -5,6 +5,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <glib.h>
+#include <clutter/clutter.h>
 #include <matchbox/core/mb-wm.h>
 
 #include "hd-atoms.h"
@@ -28,6 +29,7 @@ void hd_util_set_screen_size_properties(MBWindowManager *wm, guint width, guint 
 gboolean hd_util_change_screen_orientation (MBWindowManager *wm,
                                             gboolean goto_portrait);
 void hd_util_root_window_configured(MBWindowManager *wm);
+gboolean hd_util_rotate_geometry (ClutterGeometry *geo, guint scrh, guint scrw);
 
 gboolean hd_util_get_cursor_position(gint *x, gint *y);
 gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client);

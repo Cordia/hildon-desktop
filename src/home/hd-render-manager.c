@@ -1823,6 +1823,46 @@ hd_render_manager_clip_geo(ClutterGeometry *geo)
   return TRUE;
 }
 
+/* Tries to guess whether @geo was meant for a @scrw x @scrh screen. */
+static gboolean
+hd_render_manager_geo_is_suitable_for_screen(const ClutterGeometry *geo,
+                                             guint scrw, guint scrh)
+{
+  if (geo->x + (gint)geo->width  > (gint)scrw)
+    return FALSE;
+  if (geo->y + (gint)geo->height > (gint)scrh)
+    return FALSE;
+  return TRUE;
+}
+
+/*
+ * Returns @actor's %ClutterGeometry.  If it finds that it is rotated
+ * it maps @geo to the screens current orientation.  This allows to
+ * compare geometries of all clients whether they're layed out for
+ * portrait or landscape.  Of course all heuristics can break.
+ */
+static void
+hd_render_manager_get_geo_for_current_screen(ClutterActor *actor,
+                                             ClutterGeometry *geo)
+{
+  guint scrw, scrh;
+  ClutterGeometry rgeo;
+
+  scrw = hd_comp_mgr_get_current_screen_width();
+  scrh = hd_comp_mgr_get_current_screen_height();
+  clutter_actor_get_geometry(actor, geo);
+
+  /* Is @geo ok for current orientation? */
+  if (hd_render_manager_geo_is_suitable_for_screen(geo, scrw, scrh))
+    return;
+
+  /* If the rotated geometry is ok, return that, otherwise give it up. */
+  rgeo = *geo;
+  hd_util_rotate_geometry(&rgeo, scrw, scrh);
+  if (hd_render_manager_geo_is_suitable_for_screen(&rgeo, scrw, scrh))
+    *geo = rgeo;
+}
+
 /* Called to restack the windows in the way we use for rendering... */
 void hd_render_manager_restack()
 {
@@ -1926,7 +1966,7 @@ void hd_render_manager_restack()
             ClutterGeometry geo = {0};
             gboolean maximized;
 
-            clutter_actor_get_geometry(child, &geo);
+            hd_render_manager_get_geo_for_current_screen(child, &geo);
             if (!hd_render_manager_clip_geo(&geo))
               /* It's neiteher maximized nor @app_top, it doesn't exist. */
               continue;
@@ -2349,7 +2389,7 @@ void hd_render_manager_append_geo_cb(ClutterActor *actor, gpointer data)
     {
       ClutterGeometry geo;
 
-      clutter_actor_get_geometry(actor, &geo);
+      hd_render_manager_get_geo_for_current_screen(actor, &geo);
       if (!hd_render_manager_clip_geo (&geo))
         return;
       *list = g_list_prepend(*list, g_memdup(&geo, sizeof(geo)));
@@ -2411,7 +2451,7 @@ void hd_render_manager_set_visibilities()
 	  if (hd_render_manager_should_ignore_actor(child))
 	      continue;
 
-          clutter_actor_get_geometry(child, &geo);
+          hd_render_manager_get_geo_for_current_screen(child, &geo);
           /*TEST clutter_actor_set_opacity(child, 63);*/
           VISIBILITY ("IS %p (%dx%d%+d%+d) VISIBLE?", child, MBWM_GEOMETRY(&geo));
           if (hd_render_manager_is_visible(blockers, geo))

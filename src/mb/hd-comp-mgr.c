@@ -2829,16 +2829,10 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
         hd_render_manager_set_state(HDRM_STATE_APP);
     }
 
+  /* Decide about portraitification in case a blocking window was unmapped. */
   hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
-
-  /* Restacking and especially checking for portrait interfere with rotation
-   * because we may get visibilities wrong (as the top level window is already
-   * in portrait but not the ones below). */
-  if (!hd_transition_is_rotating ())
-    { /* If the machine is rotating it will restack at the end anyway. */
-      hd_render_manager_restack();
-      hd_comp_mgr_portrait_or_not_portrait (mgr);
-    }
+  hd_render_manager_restack ();
+  hd_comp_mgr_portrait_or_not_portrait (mgr);
 
   return FALSE;
 }

@@ -1,5 +1,22 @@
 2009-09-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Merge of the newrot branch.
+
+	* src/home/hd-render-manager.c:
+	  When looking at a client's geometry try to guess its orientation
+	  and map to the screen's current one if they disagree, making all
+	  clients appears as if they were in the same orientation so we can
+	  reason about visibility better.
+	* src/mb/hd-comp-mgr.c:
+	  Revert ``Fix of the "[r]egression fix for last change"''.
+	* src/util/hd-transition.c:
+	  Revert ``[r]egression fix for last change''.
+	* src/util/hd-util.h
+	* src/util/hd-util.c:
+	  Some refactoring, hd_util_rotate_geometry() added.
+
+2009-09-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* data/transitions.ini (rotate, popup, subview):
 	  Tuning times and angles per UK request.
 

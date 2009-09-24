@@ -753,7 +753,6 @@ static void
 on_screen_size_changed (ClutterActor *stage, GParamSpec *unused,
                         HDEffectData *data)
 {
-  gint tmp;
   guint scrw, scrh;
   ClutterActor *actor;
 
@@ -762,27 +761,10 @@ on_screen_size_changed (ClutterActor *stage, GParamSpec *unused,
   clutter_actor_get_size (stage, &scrw, &scrh);
   actor = mb_wm_comp_mgr_clutter_client_get_actor (data->cclient);
 
-  /* It is very interesting to observe the dualism here. */
-  if (scrw > scrh)
-    { /* Coming from portrait to landscape. */
-      clutter_actor_set_rotation (actor, CLUTTER_Z_AXIS, -90, 0, 0, 0);
-
-      tmp = data->geo.x;
-      data->geo.x = data->geo.y;
-      data->geo.y = scrh - (tmp + data->geo.width);
-    }
+  if (hd_util_rotate_geometry(&data->geo, scrw, scrh))
+    clutter_actor_set_rotation (actor, CLUTTER_Z_AXIS, -90, 0, 0, 0);
   else
-    { /* Coming from landscape to portrait. */
-      clutter_actor_set_rotation (actor, CLUTTER_Z_AXIS, +90, 0, 0, 0);
-
-      tmp = data->geo.y;
-      data->geo.y = data->geo.x;
-      data->geo.x = scrw - (tmp + data->geo.height);
-    }
-
-  tmp = data->geo.width;
-  data->geo.width = data->geo.height;
-  data->geo.height = tmp;
+    clutter_actor_set_rotation (actor, CLUTTER_Z_AXIS, +90, 0, 0, 0);
 
   clutter_actor_set_position (actor,
                               data->geo.x + data->geo.width/2,
@@ -1594,13 +1576,7 @@ hd_transition_rotating_fsm(void)
             /* No sense resetting the rotating property. */
             hd_transition_rotating_fsm();
           else
-            {
-              /* When we have to fade back in like this, the visibilities can
-               * be wrong because of some windows being portrait, some
-               * landscape. restack to ensure everything is correct. */
-              hd_render_manager_restack();
-              hd_util_set_rotating_property(Orientation_change.wm, FALSE);
-            }
+            hd_util_set_rotating_property(Orientation_change.wm, FALSE);
           break;
         }
     }
@@ -1671,8 +1647,8 @@ hd_transition_is_rotating (void)
 gboolean
 hd_transition_is_rotating_to_portrait (void)
 {
-  return Orientation_change.phase != IDLE &&
-  Orientation_change.direction == GOTO_PORTRAIT;
+  return Orientation_change.phase != IDLE
+    && Orientation_change.direction == GOTO_PORTRAIT;
 }
 
 /* Returns whether we are in a state where we should ignore any

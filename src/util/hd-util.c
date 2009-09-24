@@ -482,6 +482,34 @@ hd_util_root_window_configured(MBWindowManager *wm)
   mb_wm_util_untrap_x_errors ();
 }
 
+/* Map a portrait @geo to landscape screen or vica versa.
+ * Returns if it mapped to ladnscape. */
+gboolean
+hd_util_rotate_geometry (ClutterGeometry *geo, guint scrw, guint scrh)
+{
+  gint tmp;
+
+  tmp = geo->width;
+  geo->width = geo->height;
+  geo->height = tmp;
+
+  /* It is very interesting to observe the dualism here. */
+  if (scrw > scrh)
+    { /* Map from from portrait to landscape. */
+      tmp = geo->x;
+      geo->x = geo->y;
+      geo->y = scrh - (tmp + geo->height);
+      return TRUE;
+    }
+  else
+    { /* Map from landscape to portrait. */
+      tmp = geo->y;
+      geo->y = geo->x;
+      geo->x = scrw - (tmp + geo->width);
+      return FALSE;
+    }
+}
+
 /* Get the current cursor position, return true (and updates the parameters)
  * on success, otherwise leaves them as they were */
 gboolean hd_util_get_cursor_position(gint *x, gint *y)
