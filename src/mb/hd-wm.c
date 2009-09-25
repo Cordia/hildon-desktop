@@ -245,6 +245,7 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
     }
 }
 
+#if 0
 static gboolean
 show_info_note (gpointer data)
 {
@@ -253,6 +254,7 @@ show_info_note (gpointer data)
   g_free (s);
   return FALSE;
 }
+#endif
 
 static void
 hd_wm_client_responding (MBWindowManager *wm,
@@ -268,6 +270,7 @@ hd_wm_client_responding (MBWindowManager *wm,
   /* FIXME: show the banner only if the dialog is really visible */
   if (hdwm->priv->hung_client_dialog)
     {
+#if 0  /* removed as of NB#140674 */
       char buf[200];
       const char *name;
 
@@ -279,6 +282,7 @@ hd_wm_client_responding (MBWindowManager *wm,
       /* have to show the banner in idle, otherwise this can cause a lock-up
        * in libxcb (see NB#106919) */
       g_idle_add (show_info_note, g_strdup (buf));
+#endif
 
       gtk_dialog_response (GTK_DIALOG (hdwm->priv->hung_client_dialog),
 			   GTK_RESPONSE_REJECT);

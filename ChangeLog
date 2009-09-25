@@ -1,5 +1,13 @@
 2009-09-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#140674 - bad banner removal
+
+	* src/home/hd-switcher.c (hd_switcher_loading_fail): Do not show the
+	banner.
+	* src/mb/hd-wm.c (hd_wm_client_responding): Do not show the banner.
+
+2009-09-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
 	Further fixes to avoid unseen animations.
 	Fixes: NB#134893 - 'scanning' control panel plugins have negative
 	use-time behaviour

@@ -591,9 +591,11 @@ hd_switcher_loading_fail (HdSwitcher *switcher,
         hd_render_manager_set_state (HDRM_STATE_HOME);
     }
 
+#if 0 /* removed as of NB#140674 */
   GtkWidget* banner = hildon_banner_show_information (NULL, NULL,
                         _("ckct_ib_application_loading_failed"));
   hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
+#endif
 }
 
 /*
