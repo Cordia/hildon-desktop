@@ -282,6 +282,8 @@ void hd_render_manager_remove_input_blocker(void);
  * recent then most likely it was mapped before the dbus signal arrived. */
 gboolean hd_render_manager_allow_dbus_launch_transition(void);
 
+gboolean hd_render_manager_actor_is_visible(ClutterActor *actor);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */

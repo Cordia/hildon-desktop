@@ -312,6 +312,8 @@ tidy_blur_group_do_chequer(TidyBlurGroup *group)
                           CFX_ONE*height/CHEQUER_SIZE);
 }
 
+extern gboolean hd_dbus_display_is_off;
+
 /* An implementation for the ClutterGroup::paint() vfunc,
    painting all the child actors: */
 static void
@@ -323,7 +325,7 @@ tidy_blur_group_paint (ClutterActor *actor)
   gint            x_1, y_1, x_2, y_2;
   gint            steps_this_frame = 0;
 
-  if (!TIDY_IS_SANE_BLUR_GROUP(actor))
+  if (!TIDY_IS_SANE_BLUR_GROUP(actor) || hd_dbus_display_is_off)
     return;
 
   ClutterGroup *group = CLUTTER_GROUP(actor);

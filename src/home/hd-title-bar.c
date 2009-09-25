@@ -380,6 +380,8 @@ hd_title_bar_init (HdTitleBar *bar)
                                                     &progress_geo);
     clutter_container_add_actor(CLUTTER_CONTAINER(bar),
                                 priv->progress_texture);
+    clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->progress_texture),
+                                        TRUE);
     clutter_actor_set_size(priv->progress_texture,
                 HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE);
     clutter_actor_hide(priv->progress_texture);
@@ -1168,6 +1170,8 @@ static void hd_title_bar_set_button_positions(HdTitleBar *bar)
 
 /* ------------------------------------------------------------------------- */
 
+extern gboolean hd_dbus_display_is_off;
+
 static void
 on_switcher_timeline_new_frame(ClutterTimeline *timeline,
                                gint frame_num, HdTitleBar *bar)
@@ -1181,6 +1185,13 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
   if (!HD_IS_TITLE_BAR(bar))
     return;
   priv = bar->priv;
+
+  if (hd_dbus_display_is_off)
+    {
+      /* skip the animation */
+      clutter_actor_set_opacity(priv->buttons[BTN_SWITCHER_HIGHLIGHT], 255);
+      return;
+    }
 
   /* Only get this to fire a redraw if it is visible... fixes bug 113278.
    * Clutter should do this, but it only checks the actor for visibility,

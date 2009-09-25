@@ -86,7 +86,13 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
           if (str)
             {
               if (strcmp (str, "on") == 0)
-                hd_dbus_display_is_off = FALSE;
+                {
+                  /* redraw stage because we probably skipped redraws when
+                   * the screen was off */
+                  ClutterActor *stage = clutter_stage_get_default ();
+                  clutter_actor_queue_redraw (stage);
+                  hd_dbus_display_is_off = FALSE;
+                }
               else if (strcmp (str, "off") == 0)
                 hd_dbus_display_is_off = TRUE;
             }

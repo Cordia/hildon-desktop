@@ -737,7 +737,8 @@ hd_render_manager_unzoom_background()
 }
 
 /* Checks the whole tree for visibility */
-static gboolean actor_is_visible(ClutterActor *actor) {
+gboolean hd_render_manager_actor_is_visible(ClutterActor *actor)
+{
   ClutterActor *stage = clutter_actor_get_stage(actor);
   for (;actor;actor=clutter_actor_get_parent(actor))
     if (actor!=stage && !CLUTTER_ACTOR_IS_VISIBLE(actor))
@@ -767,7 +768,7 @@ hd_render_manager_set_input_viewport()
           ClutterActor *button;
           button = hd_render_manager_get_button((HDRMButtonEnum)i);
           if (button &&
-              actor_is_visible(button) &&
+              hd_render_manager_actor_is_visible(button) &&
               (CLUTTER_ACTOR_IS_REACTIVE(button)) &&
               (i!=HDRM_BUTTON_BACK || !app_mode))
             {
@@ -784,7 +785,7 @@ hd_render_manager_set_input_viewport()
          /* also in the case of "dialog blur": */
          || (priv->state == HDRM_STATE_APP
               && priv->status_area
-              && actor_is_visible(priv->status_area)
+              && hd_render_manager_actor_is_visible(priv->status_area)
               /* FIXME: the following check does not work when there are
                * two levels of dialogs */
               && (priv->current_blur == HDRM_BLUR_BACKGROUND ||

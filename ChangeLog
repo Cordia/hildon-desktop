@@ -1,3 +1,25 @@
+2009-09-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Further fixes to avoid unseen animations.
+	Fixes: NB#134893 - 'scanning' control panel plugins have negative
+	use-time behaviour
+
+	* src/home/hd-title-bar.c (hd_title_bar_init): Toggle on
+	visibility_detect for the progress indicator.
+	(on_switcher_timeline_new_frame): Skip the animation if the display is
+	off.
+	* src/home/hd-render-manager.c (hd_render_manager_actor_is_visible):
+	Make public. Renamed to this from actor_is_visible.
+	* src/tidy/tidy-blur-group.c (tidy_blur_group_paint): Don't paint if
+	the display is off.
+	* src/util/hd-transition.c (on_decor_progress_timeline_new_frame):
+	Don't animate progress indicator if it's not visible.
+	(on_fade_timeline_new_frame): Don't animate if the display is off.
+	(on_notification_timeline_new_frame): Don't animate if the display is
+	off.
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler): Redraw the
+	Clutter stage when the display is back on.
+
 2009-09-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Merge of the newrot branch.

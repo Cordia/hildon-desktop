@@ -320,7 +320,7 @@ on_decor_progress_timeline_new_frame(ClutterTimeline *timeline,
                                      ClutterActor *progress_texture)
 {
   if (!hd_dbus_display_is_off && TIDY_IS_SUB_TEXTURE(progress_texture) &&
-      CLUTTER_ACTOR_IS_VISIBLE(progress_texture))
+      hd_render_manager_actor_is_visible(progress_texture))
     {
       /* The progress animation is a series of frames packed
        * into a texture - like a film strip
@@ -441,6 +441,16 @@ on_fade_timeline_new_frame(ClutterTimeline *timeline,
   if (!CLUTTER_IS_ACTOR(actor))
     return;
 
+  if (hd_dbus_display_is_off)
+    {
+      /* skip the animation */
+      if (data->event == MBWMCompMgrClientEventUnmap)
+        clutter_actor_set_opacity(actor, 0);
+      else
+        clutter_actor_set_opacity(actor, 255);
+      return;
+    }
+
   amt =  (float)clutter_timeline_get_progress(timeline);
   /* reverse if we're removing this */
   if (data->event == MBWMCompMgrClientEventUnmap)
@@ -542,7 +552,7 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
   guint width, height;
 
   actor = data->cclient_actor;
-  if (!CLUTTER_IS_ACTOR(actor))
+  if (!CLUTTER_IS_ACTOR(actor) || hd_dbus_display_is_off)
     return;
 
   clutter_actor_get_size(actor, &width, &height);
