@@ -1416,6 +1416,10 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                 mb_wm_comp_mgr_clutter_client_track_damage (
                         MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client), True);
             }
+
+          /* this is needed, otherwise task switcher background can remain
+           * black (NB#140378) */
+          hd_render_manager_restack();
 	}
 
       /* Return the actor if we used it for loading. */

@@ -1,5 +1,12 @@
 2009-09-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#140378 - ctrl + backspace leaves the switcher black
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state): Call
+	hd_render_manager_restack when we go back to composited mode.
+
+2009-09-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
 	Fixes: NB#140674 - bad banner removal
 
 	* src/home/hd-switcher.c (hd_switcher_loading_fail): Do not show the
