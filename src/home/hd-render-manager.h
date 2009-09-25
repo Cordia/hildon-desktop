@@ -175,15 +175,6 @@ typedef enum
 #define STATE_IN_EDIT_MODE(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
 
-/* Whether to update part of the screen or not.
- * HDRM_STATE_TASK_NAV : Apps are scaled, and scroller is a nightmare
- *                       to deal with.
- * HDRM_STATE_LAUNCHER : Background is zoomed out, so our coordinates
- *                       will be wrong. Also might be showing task switcher
- *                       too! */
-#define STATE_DO_PARTIAL_REDRAW(s) \
-  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
-
 #define STATE_DISCARD_PREVIEW_NOTE(s) \
   (STATE_ONE_OF((s), HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER \
                  | HDRM_STATE_NON_COMPOSITED))

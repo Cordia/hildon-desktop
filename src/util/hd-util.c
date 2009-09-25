@@ -592,3 +592,108 @@ hd_util_click (const MBWindowManagerClient *c)
 
   XSendEvent(xdpy, xwin, False, ButtonPressMask, (XEvent *)&ev);
 }
+
+/* Try and get the translated bounds for an actor (the actual pixel position
+ * of it on the screen). If geo is 0 or width/height are 0, this func will
+ * use the full bounds of the actor. Otherwise we translate the bounds given
+ * in geo (eg. for updating an area of an actor). Returns false if it failed
+ * (because the actor or its parents were rotated) */
+static gboolean
+hd_util_get_actor_bounds(ClutterActor *actor, ClutterGeometry *geo, gboolean *is_visible)
+{
+  gdouble x, y;
+  gdouble width, height;
+  ClutterActor *it = actor;
+  ClutterActor *stage = clutter_actor_get_stage(actor);
+  gboolean visible = TRUE;
+  gboolean valid = TRUE;
+
+  if (geo && geo->width && geo->height)
+    {
+      x = geo->x;
+      y = geo->y;
+      width = geo->width;
+      height = geo->height;
+    }
+  else
+    {
+      guint w,h;
+      clutter_actor_get_size(actor, &w, &h);
+      x = 0;
+      y = 0;
+      width = w;
+      height = h;
+    }
+
+  while (it && it != stage)
+    {
+      ClutterFixed px,py;
+      gdouble scalex, scaley;
+      ClutterUnit anchorx, anchory;
+
+      /* Big safety check here - don't attempt to work out bounds if anything
+       * is rotated, as we'll probably get it wrong. */
+      clutter_actor_get_scale(it, &scalex, &scaley);
+      clutter_actor_get_anchor_pointu(it, &anchorx, &anchory);
+      if (clutter_actor_get_rotationu(it, CLUTTER_X_AXIS, 0, 0, 0)!=0 ||
+          clutter_actor_get_rotationu(it, CLUTTER_Y_AXIS, 0, 0, 0)!=0 ||
+          clutter_actor_get_rotationu(it, CLUTTER_Z_AXIS, 0, 0, 0)!=0)
+        valid = FALSE;
+
+      clutter_actor_get_positionu(it, &px, &py);
+      x = ((x - CLUTTER_FIXED_TO_DOUBLE(anchorx))*scalex)
+          + CLUTTER_FIXED_TO_DOUBLE(px);
+      y = ((y - CLUTTER_FIXED_TO_DOUBLE(anchory))*scaley)
+          + CLUTTER_FIXED_TO_DOUBLE(py);
+      width *= scalex;
+      height *= scaley;
+
+      it = clutter_actor_get_parent(it);
+    }
+
+  if (geo)
+    {
+      /* Do some simple rounding */
+      geo->x = (int)(x + 0.5);
+      geo->y = (int)(y + 0.5);
+      geo->width = (int)(width + 0.5);
+      geo->height = (int)(height + 0.5);
+    }
+  if (is_visible)
+    {
+      *is_visible = visible;
+    }
+  return valid;
+}
+
+/* Call this after an actor is updated, and it will ask the stage to redraw
+ * in whatever way is best (a small area if it can manage, or the whole
+ * screen if not). NOTE: This takes account of *current* visibility (so
+ * it won't update if an actor goes from visible->invisible). It also won't
+ * Update correctly if an actor is moved/scaled. For that, you'll have to call
+ * it once before and once after.
+ * clutter_actor_set_allow_redraw(actor, false) should be called before using
+ * this, or the actor will cause a full screen redraw regardless.*/
+void
+hd_util_partial_redraw_if_possible(ClutterActor *actor, ClutterGeometry *bounds)
+{
+  ClutterGeometry area = {0,0,0,0};
+  ClutterActor *stage = clutter_stage_get_default();
+  gboolean visible, valid;
+
+  if (bounds)
+    area = *bounds;
+
+  valid = hd_util_get_actor_bounds(actor, &area, &visible);
+  if (!visible) return;
+  if (valid)
+    {
+      /* Queue a redraw, but without updating the whole area */
+      clutter_stage_set_damaged_area(stage, area);
+      clutter_actor_queue_redraw_damage(stage);
+    }
+  else
+    {
+      clutter_actor_queue_redraw(stage);
+    }
+}

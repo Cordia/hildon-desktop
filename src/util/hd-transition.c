@@ -333,10 +333,10 @@ on_decor_progress_timeline_new_frame(ClutterTimeline *timeline,
           TIDY_SUB_TEXTURE(progress_texture),
           &progress_region);
 
-      /* FIXME: We really want to set this to queue damage with an area -
-       * like we do for windows. Otherwise we end up updating the whole
-       * screen for this. */
-      clutter_actor_queue_redraw(progress_texture);
+      /* We just queue damage with an area like we do for windows.
+       * Otherwise we end up updating the whole screen for this.
+       * This also takes account of visibility. */
+      hd_util_partial_redraw_if_possible(progress_texture, 0);
     }
 }
 

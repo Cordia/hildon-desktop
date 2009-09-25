@@ -37,6 +37,7 @@
 #include "hd-gtk-utils.h"
 #include "hd-gtk-style.h"
 #include "hd-transition.h"
+#include "hd-util.h"
 #include "hd-task-navigator.h"
 
 #include <matchbox/theme-engines/mb-wm-theme-png.h>
@@ -1179,8 +1180,6 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
   HdTitleBarPrivate *priv;
   float amt;
   gint opacity;
-  ClutterActor *actor, *stage;
-  gboolean is_visible = TRUE;
 
   if (!HD_IS_TITLE_BAR(bar))
     return;
@@ -1194,16 +1193,9 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
     }
 
   /* Only get this to fire a redraw if it is visible... fixes bug 113278.
-   * Clutter should do this, but it only checks the actor for visibility,
-   * not its parents. Changing clutter at this stage might risk regressing
-   * things too much... */
-  stage = clutter_actor_get_stage(CLUTTER_ACTOR(bar));
-  for (actor=CLUTTER_ACTOR(bar);actor;actor=clutter_actor_get_parent(actor))
-    if (actor!=stage && !CLUTTER_ACTOR_IS_VISIBLE(actor))
-      is_visible = FALSE;
-
-  if (!is_visible)
-    clutter_actor_set_allow_redraw(CLUTTER_ACTOR(bar), FALSE);
+     (and now only update the actual area using
+      hd_util_partial_redraw_if_possible...) */
+  clutter_actor_set_allow_redraw(CLUTTER_ACTOR(bar), FALSE);
 
   amt =  (float)clutter_timeline_get_progress(timeline)
               * HD_TITLE_BAR_SWITCHER_PULSE_NPULSES / 2;
@@ -1213,8 +1205,8 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
       clutter_actor_set_opacity(priv->buttons[BTN_SWITCHER_HIGHLIGHT], opacity);
     }
 
-  if (!is_visible)
-      clutter_actor_set_allow_redraw(CLUTTER_ACTOR(bar), TRUE);
+  hd_util_partial_redraw_if_possible(priv->buttons[BTN_SWITCHER_HIGHLIGHT], 0);
+  clutter_actor_set_allow_redraw(CLUTTER_ACTOR(bar), TRUE);
 }
 
 /* Realign all right-aligned buttons when the screen size changes. */

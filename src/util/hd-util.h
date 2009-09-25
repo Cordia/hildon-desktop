@@ -7,6 +7,7 @@
 #include <glib.h>
 #include <clutter/clutter.h>
 #include <matchbox/core/mb-wm.h>
+#include <clutter/clutter.h>
 
 #include "hd-atoms.h"
 
@@ -35,6 +36,9 @@ gboolean hd_util_get_cursor_position(gint *x, gint *y);
 gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client);
 
 void hd_util_click (const MBWindowManagerClient *c);
+
+void
+hd_util_partial_redraw_if_possible(ClutterActor *actor, ClutterGeometry *bounds);
 
 
 #endif

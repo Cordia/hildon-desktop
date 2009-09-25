@@ -1383,8 +1383,7 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
                                 int x, int y, int width, int height,
                                 ClutterActor* actor)
 {
-  ClutterFixed offsetx = 0, offsety = 0;
-  ClutterActor *parent, *it;
+  ClutterActor *parent;
   HdCompMgrPrivate * priv;
   gboolean blur_update = FALSE;
   ClutterActor *actors_stage;
@@ -1445,37 +1444,11 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
   if (blur_update)
     return;
 
-  /* Check we're not in a mode where it's a bad idea. */
-  if (!STATE_DO_PARTIAL_REDRAW(hd_render_manager_get_state()))
+  /* Update the screen. This function checks for scaling/visibility and
+   * chooses the area to update accordingly */
   {
-    ClutterActor *stage = clutter_stage_get_default();
-    clutter_actor_queue_redraw(stage);
-    return;
-  }
-
-  /* Assume no zoom/rotate is happening here as we have simple windows */
-  it = actor;
-  while (it && it != actors_stage)
-    {
-      ClutterFixed px,py;
-      clutter_actor_get_positionu(it, &px, &py);
-      offsetx += px;
-      offsety += py;
-      it = clutter_actor_get_parent(it);
-    }
-
-  {
-    /* CLUTTER_FIXED_TO_INT does no rounding, so add 0.5 here to help this */
-    ClutterGeometry area = {x + CLUTTER_FIXED_TO_INT(offsetx+CFX_HALF),
-                            y + CLUTTER_FIXED_TO_INT(offsety+CFX_HALF),
-                            width, height};
-
-    /*g_debug("%s: UPDATE %d, %d, %d, %d", __FUNCTION__,
-            area.x, area.y, area.width, area.height);*/
-
-    /* Queue a redraw, but without updating the whole area */
-    clutter_stage_set_damaged_area(actors_stage, area);
-    clutter_actor_queue_redraw_damage(clutter_stage_get_default());
+    ClutterGeometry area = {x,y,width, height};
+    hd_util_partial_redraw_if_possible(actor, &area);
   }
 }
 
