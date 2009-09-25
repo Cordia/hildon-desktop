@@ -1,3 +1,26 @@
+2009-09-25  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#140788 - Compositor updating the entire screen 
+	                   when not required
+	This lets progress indicators and the switcher button update only the
+	area of the screen that has changed - not everything.
+
+	* src/util/hd-util.c
+	* src/util/hd-util.h: Added function hd_util_partial_redraw_if_possible
+	  to work out if a partial redraw is possible for an actor, and if so,
+	  to queue it.
+	* src/util/hd-transition.c: use hd_util_partial_redraw_if_possible
+	  when updating the progress indicator on decor.	  
+	* src/home/hd-title-bar.c: use hd_util_partial_redraw_if_possible
+	  when updating the pulsing task switcher button.
+	* src/home/hd-render-manager.h
+	* src/mb/hd-comp-mgr.c: Now use hd_util_partial_redraw_if_possible
+	  instead of the old in-lined approach. The new function allows us
+	  to cope with scaled actors, so there is no longer any reason not
+	  to enable partial redraws for the task navigator and launcher
+	  (hence removed STATE_DO_PARTIAL_REDRAW define).
+	* tests/pvr-viewer.c (Added): Simple viewer app for .pvr texture files
+
 2009-09-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#140378 - ctrl + backspace leaves the switcher black
