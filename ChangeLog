@@ -1,5 +1,10 @@
 2009-09-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fix a memory leak spotted by Mathias Hasselmann.
+
+	* src/home/hd-home.c (root_window_client_message): Don't return
+	without freeing 'filename'.
+
 	Memory leak fixes from Laszlo.
 
 	* src/home/hd-home-view.c (hd_home_view_applet_press): Free

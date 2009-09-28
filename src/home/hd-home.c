@@ -719,7 +719,7 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 
 	      gdk_pixbuf_unref (pixbuf);
 	    }
-	    return;
+	    break;
 	  case 1:
 	    unlink (filename);
 	    break;
