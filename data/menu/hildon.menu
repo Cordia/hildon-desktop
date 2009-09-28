@@ -22,7 +22,7 @@
     <Filename>rtcom-messaging-ui.desktop</Filename>
     <Filename>worldclock.desktop</Filename>
     <Filename>osso_calculator.desktop</Filename>
-    <Filename>hildon-application-manager.desktop</Filename>
+    <Filename>ovi.desktop</Filename>
     <Filename>hildon-control-panel.desktop</Filename>
   </Include>
 

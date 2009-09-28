@@ -368,7 +368,7 @@ _hd_launcher_app_main_position (const gchar *id)
       g_datalist_set_data (&main_apps, "rtcom-messaging-ui", (gpointer)10);
       g_datalist_set_data (&main_apps, "worldclock", (gpointer)11);
       g_datalist_set_data (&main_apps, "osso_calculator", (gpointer)12);
-      g_datalist_set_data (&main_apps, "hildon-application-manager", (gpointer)13);
+      g_datalist_set_data (&main_apps, "ovi", (gpointer)13);
       g_datalist_set_data (&main_apps, "hildon-control-panel", (gpointer)14);
 
       /* Applications subgroup. */
@@ -377,13 +377,14 @@ _hd_launcher_app_main_position (const gchar *id)
       g_datalist_set_data (&main_apps, "filemanager", (gpointer)3);
       g_datalist_set_data (&main_apps, "osso_rss_feed_reader", (gpointer)4);
       g_datalist_set_data (&main_apps, "osso_sketch", (gpointer)5);
-      g_datalist_set_data (&main_apps, "osso-backup", (gpointer)6);
+      g_datalist_set_data (&main_apps, "hildon-application-manager", (gpointer)6);
       g_datalist_set_data (&main_apps, "maemoblocks", (gpointer)7);
       g_datalist_set_data (&main_apps, "chess_startup", (gpointer)8);
       g_datalist_set_data (&main_apps, "mahjong_startup", (gpointer)9);
       g_datalist_set_data (&main_apps, "osso_lmarbles", (gpointer)10);
-      g_datalist_set_data (&main_apps, "tutorial-launcher", (gpointer)11);
-      g_datalist_set_data (&main_apps, "osso-xterm", (gpointer)12);
+      g_datalist_set_data (&main_apps, "osso-backup", (gpointer)11);
+      g_datalist_set_data (&main_apps, "tutorial-launcher", (gpointer)12);
+      g_datalist_set_data (&main_apps, "osso-xterm", (gpointer)13);
     }
 
   return (guint)g_datalist_get_data (&main_apps, id);

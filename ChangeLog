@@ -1,3 +1,11 @@
+2009-09-28  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Add Ovi Store entry to hard-coded apps list and ordering.
+	Fixes: NB#139681
+
+	* data/menu/hildon.menu:
+	* src/launcher/hd-launcher-item.c:
+
 2009-09-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fix a memory leak spotted by Mathias Hasselmann.
