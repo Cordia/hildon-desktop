@@ -1,3 +1,13 @@
+2009-09-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Memory leak fixes from Laszlo.
+
+	* src/home/hd-home-view.c (hd_home_view_applet_press): Free
+	modified_key.
+	* src/home/hd-home.c (hd_home_desktop_do_motion): Free list->data.
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_populate_tree_finished): Free
+	the right list pointers.
+
 2009-09-25  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#140788 - Compositor updating the entire screen 
