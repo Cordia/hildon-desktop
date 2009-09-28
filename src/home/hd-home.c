@@ -306,8 +306,10 @@ hd_home_desktop_do_motion (HdHome *home,
       GList *next = list->next;
       /* '&& next' ensures that we always average at least one previous
        * movement event to get our velocity, even if it is too old. */
-      if (time > HDH_PAN_VELOCITY_HISTORY && next)
-        priv->drag_list = g_list_remove_link(priv->drag_list, list);
+      if (time > HDH_PAN_VELOCITY_HISTORY && next) {
+        g_free (list->data);
+        priv->drag_list = g_list_delete_link(priv->drag_list, list);
+      }
       else
         {
           HdHomeDrag *drag = (HdHomeDrag*)list->data;
