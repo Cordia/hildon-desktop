@@ -1113,6 +1113,8 @@ hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
   /* We need to copy thess lists because we'll be modifying them. */
   GList *apps = g_list_copy (priv->running_apps);
   GList *items = g_list_copy (hd_launcher_tree_get_items (tree));
+  GList *apps_to_free = apps;
+  GList *items_to_free = items;
 
   /* First, traverse the already running apps to see if their HdLauncherApp
    * info has changed.
@@ -1149,7 +1151,7 @@ hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
         }
     }
 
-  g_list_free (apps);
+  g_list_free (apps_to_free);
 
   /* Now we need to look if we have new prestarted apps. */
   for (; items; items = items->next)
@@ -1179,7 +1181,7 @@ hd_app_mgr_populate_tree_finished (HdLauncherTree *tree, gpointer data)
       hd_app_mgr_prestartable (app, TRUE);
     }
 
-  g_list_free (items);
+  g_list_free (items_to_free);
   hd_app_mgr_state_check ();
 }
 
