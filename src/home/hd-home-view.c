@@ -755,6 +755,7 @@ hd_home_view_applet_press (ClutterActor       *applet,
       g_clear_error (&error);
     }
   g_free (modified);
+  g_free (modified_key);
 
   gconf_client_suggest_sync (priv->gconf_client,
                              &error);
