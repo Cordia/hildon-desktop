@@ -3264,6 +3264,7 @@ void hd_comp_mgr_tklocked (HdCompMgr *hmgr, gboolean isit)
 }
 
 extern gboolean hd_dbus_display_is_off;
+extern MBWindowManager *hd_mb_wm;
 
 void
 hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
@@ -3322,5 +3323,8 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
       g_slist_free (applets);
     }
   g_slist_free (views);
+
+  if (hd_mb_wm)
+    XSync (hd_mb_wm->xdpy, False);
   mb_wm_util_untrap_x_errors ();
 }
