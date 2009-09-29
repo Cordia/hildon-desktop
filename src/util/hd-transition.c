@@ -482,6 +482,15 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
   if (!CLUTTER_IS_ACTOR(actor))
     return;
 
+  if (hd_dbus_display_is_off && data)
+    {
+      for (i = 0; i < HDCM_UNMAP_PARTICLES; ++i) 
+        if (data->particles[i])
+	  clutter_actor_hide (data->particles[i]);
+      clutter_actor_hide (actor);
+      return;
+    }
+
   amt = (float)clutter_timeline_get_progress(timeline);
 
   amtx = 1.6 - amt*2.5; // shrink in x

@@ -1,3 +1,14 @@
+2009-09-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#134893 - 'scanning' control panel plugins have negative
+	use-time behaviour
+
+	* src/util/hd-transition.c (on_close_timeline_new_frame): Don't do the
+	particle animation if the screen is off.
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler): Set Clutter
+	to shaped mode when the screen is off. This avoids drawing to screen
+	in maemo50 and newer Clutter versions.
+
 2009-09-29  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#140969 - Widgets using CPU after screen blanking

@@ -90,11 +90,24 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                   /* redraw stage because we probably skipped redraws when
                    * the screen was off */
                   ClutterActor *stage = clutter_stage_get_default ();
+
+                  if (hd_render_manager_get_state ()
+                      != HDRM_STATE_NON_COMPOSITED && 
+                      hd_render_manager_get_state ()
+                      != HDRM_STATE_NON_COMP_PORT)
+                    /* restore Clutter drawing unless we're non-composited */
+                    clutter_stage_set_shaped_mode (stage, 0);
+
                   clutter_actor_queue_redraw (stage);
                   hd_dbus_display_is_off = FALSE;
                 }
               else if (strcmp (str, "off") == 0)
-                hd_dbus_display_is_off = TRUE;
+                {
+                  ClutterActor *stage = clutter_stage_get_default ();
+                  /* avoid drawing the Clutter stage when the display is off */
+                  clutter_stage_set_shaped_mode (stage, 1);
+                  hd_dbus_display_is_off = TRUE;
+                }
 
               hd_comp_mgr_update_applets_on_current_desktop_property (hmgr);
             }
