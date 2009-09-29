@@ -2744,5 +2744,6 @@ void hd_render_manager_remove_input_blocker() {
     * that the dbus signal arrived after the window was mapped. This has
     * had to be extended because under system load from things like flash,
     * dbus is so slow the message will often take >250ms. bug 128009 */
-   return hd_comp_mgr_time_since_last_map(priv->comp_mgr) > 1000;
+   return !hd_comp_mgr_is_portrait()
+     && hd_comp_mgr_time_since_last_map(priv->comp_mgr) > 1000;
  }

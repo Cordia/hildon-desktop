@@ -1,5 +1,15 @@
 2009-09-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#141029 A small square like UI glitch is oberved while opening the
+		  conversation by tapping the preview in portrait mode.
+
+	* src/home/hd-render-manager.c (hd_render_manager_allow_dbus_launch_transition):
+	  Disallow the appstart transition in portrait mode.  The launched
+	  application will likely want landscape and we won't be able to
+	  finish this transition while rotating.
+
+2009-09-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#140965 The UI blurs and distorts for fraction of time before
 		  switching to portrait or landscape mode in Phone app.
 
