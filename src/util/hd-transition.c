@@ -871,8 +871,7 @@ hd_transition_popup(HdCompMgr                  *mgr,
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
   data->cclient_actor = g_object_ref (actor);
   data->hmgr = HD_COMP_MGR (mgr);
-  data->timeline =
-        g_object_ref( hd_transition_timeline_new("popup", event, 250) );
+  data->timeline = hd_transition_timeline_new("popup", event, 250);
   g_signal_connect (data->timeline, "new-frame",
                         G_CALLBACK (on_popup_timeline_new_frame), data);
   g_signal_connect (data->timeline, "completed",
@@ -914,8 +913,7 @@ hd_transition_fade(HdCompMgr                  *mgr,
   data->cclient_actor = g_object_ref (
       mb_wm_comp_mgr_clutter_client_get_actor( data->cclient ) );
   data->hmgr = HD_COMP_MGR (mgr);
-  data->timeline =
-        g_object_ref( hd_transition_timeline_new("fade", event, 250) );
+  data->timeline = hd_transition_timeline_new("fade", event, 250);
 
   if (HD_IS_BANNER_NOTE(c))
     {
@@ -1160,8 +1158,7 @@ hd_transition_notification(HdCompMgr                  *mgr,
   data->cclient_actor = g_object_ref (
       mb_wm_comp_mgr_clutter_client_get_actor( data->cclient ) );
   data->hmgr = HD_COMP_MGR (mgr);
-  data->timeline =
-        g_object_ref( hd_transition_timeline_new("notification", event, 500) );
+  data->timeline = hd_transition_timeline_new("notification", event, 500);
 
   g_signal_connect (data->timeline, "new-frame",
                         G_CALLBACK (on_notification_timeline_new_frame), data);
@@ -1293,8 +1290,7 @@ hd_transition_subview(HdCompMgr                  *mgr,
   data->cclient2_actor = g_object_ref (
       mb_wm_comp_mgr_clutter_client_get_actor( data->cclient2 ) );
   data->hmgr = HD_COMP_MGR (mgr);
-  data->timeline =
-        g_object_ref( hd_transition_timeline_new("subview", event, 250) );
+  data->timeline = hd_transition_timeline_new("subview", event, 250);
 
   g_signal_connect (data->timeline, "new-frame",
                         G_CALLBACK (on_subview_timeline_new_frame), data);
@@ -1354,8 +1350,7 @@ hd_transition_fade_and_rotate(gboolean first_part,
   HDEffectData *data = g_new0 (HDEffectData, 1);
   data->event = first_part ? MBWMCompMgrClientEventMap :
                              MBWMCompMgrClientEventUnmap;
-  data->timeline =
-        g_object_ref( hd_transition_timeline_new("rotate", data->event, 300) );
+  data->timeline = hd_transition_timeline_new("rotate", data->event, 300);
 
   g_signal_connect (data->timeline, "new-frame",
                         G_CALLBACK (on_rotate_screen_timeline_new_frame), data);

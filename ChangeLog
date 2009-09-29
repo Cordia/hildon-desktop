@@ -1,3 +1,9 @@
+2009-09-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/util/hd-transition.c:
+	  Don't leave dangling ClutterTimeline:s behind.
+	  Saves 72 bytes per transition.
+
 2009-09-28  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Add Ovi Store entry to hard-coded apps list and ordering.
