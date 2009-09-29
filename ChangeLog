@@ -1,3 +1,16 @@
+2009-09-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#140965 The UI blurs and distorts for fraction of time before
+		  switching to portrait or landscape mode in Phone app.
+
+	* src/tidy/tidy-cached-group.h (tidy_cached_group_set_downsampling_factor):
+	  Make it configurable how large the offscreen buffer should be.
+	* src/tidy/tidy-cached-group.c (tidy_cached_group_paint):
+	  Take it into account.
+	* src/util/hd-transition.c (hd_transition_rotating_fsm):
+	  Tell HdRenderManager to render to an fbo with the same size
+	  rather than scaling down to 1/4th.
+
 2009-09-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#134893 - 'scanning' control panel plugins have negative

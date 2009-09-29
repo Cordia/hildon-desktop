@@ -35,6 +35,8 @@ GType tidy_cached_group_get_type (void) G_GNUC_CONST;
 ClutterActor *tidy_cached_group_new (void);
 
 void tidy_cached_group_set_render_cache(ClutterActor *cached_group, float amount);
+void tidy_cached_group_set_downsampling_factor(ClutterActor *cached_group,
+                                               float downsample);
 void tidy_cached_group_changed(ClutterActor *cached_group);
 
 

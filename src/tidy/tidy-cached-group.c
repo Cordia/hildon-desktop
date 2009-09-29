@@ -17,6 +17,7 @@
 #include <string.h>
 #include <locale.h>
 
+#define TIDY_CACHED_GROUP_DEFAULT_DOWNSAMPLING  2.0
 
 struct _TidyCachedGroupPrivate
 {
@@ -30,6 +31,8 @@ struct _TidyCachedGroupPrivate
   float cache_amount;
   /* if anything changed we need to recalculate preblur */
   gboolean source_changed;
+  /* how much quality loss you can afford when rendering cached texture */
+  float downsample;
 };
 
 G_DEFINE_TYPE (TidyCachedGroup,
@@ -74,8 +77,8 @@ tidy_cached_group_paint (ClutterActor *actor)
 
   int width = x_2 - x_1;
   int height = y_2 - y_1;
-  int exp_width = width/2;
-  int exp_height = height/2;
+  int exp_width = width/priv->downsample;
+  int exp_height = height/priv->downsample;
   int tex_width = 0;
   int tex_height = 0;
 
@@ -195,6 +198,7 @@ tidy_cached_group_init (TidyCachedGroup *self)
                                                    TIDY_TYPE_CACHED_GROUP,
                                                    TidyCachedGroupPrivate);
   priv->cache_amount = 0;
+  priv->downsample = TIDY_CACHED_GROUP_DEFAULT_DOWNSAMPLING;
   priv->use_alpha = FALSE;
   priv->source_changed = TRUE;
 
@@ -245,6 +249,15 @@ void tidy_cached_group_set_render_cache(ClutterActor *cached_group, float amount
     }
 }
 
+/* How much to downsample when caching.  Trades rendering speed for quality.
+ * If $downsample is 0 resets the default. */
+void tidy_cached_group_set_downsampling_factor(ClutterActor *cached_group,
+                                               float downsample)
+{
+  g_return_if_fail(downsample >= 0);
+  TIDY_CACHED_GROUP(cached_group)->priv->downsample =
+    downsample ? : TIDY_CACHED_GROUP_DEFAULT_DOWNSAMPLING;
+}
 
 /**
  * Notifies the group that it needs to update what it has cached

@@ -1430,6 +1430,8 @@ hd_transition_rotating_fsm(void)
         tidy_cached_group_changed(CLUTTER_ACTOR(hd_render_manager_get()));
         tidy_cached_group_set_render_cache(
           CLUTTER_ACTOR(hd_render_manager_get()), 1);
+        tidy_cached_group_set_downsampling_factor(
+          CLUTTER_ACTOR(hd_render_manager_get()), 1);
         /* Force redraw for screenshot *now*, before windows have a
          * chance to change */
         clutter_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
@@ -1467,6 +1469,8 @@ hd_transition_rotating_fsm(void)
         /* Don't show our screenshot background any more */
         tidy_cached_group_changed(CLUTTER_ACTOR(hd_render_manager_get()));
         tidy_cached_group_set_render_cache(
+                                  CLUTTER_ACTOR(hd_render_manager_get()), 0);
+        tidy_cached_group_set_downsampling_factor(
                                   CLUTTER_ACTOR(hd_render_manager_get()), 0);
 
         state = Orientation_change.goto_state;
