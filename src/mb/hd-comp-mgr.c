@@ -3272,12 +3272,15 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
   GSList *applets = NULL, *a;
   GSList *views, *v;
 
-  applets = hd_home_view_get_all_applets (HD_HOME_VIEW (hd_home_get_current_view (home)));
+  applets = hd_home_view_get_all_applets (HD_HOME_VIEW (
+                                          hd_home_get_current_view (home)));
 
+  mb_wm_util_trap_x_errors ();
   /* Handle applets on current view */
   for (a = applets; a; a = a->next)
     {
-      MBWindowManagerClient *wm_client = MB_WM_COMP_MGR_CLIENT (a->data)->wm_client;
+      MBWindowManagerClient *wm_client
+              = MB_WM_COMP_MGR_CLIENT (a->data)->wm_client;
       guint32 on_desktop = 1;
       if (STATE_NEED_DESKTOP (hd_render_manager_get_state ()) &&
           STATE_SHOW_APPLETS (hd_render_manager_get_state ()) &&
@@ -3285,7 +3288,8 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
         {
           XChangeProperty (wm_client->wmref->xdpy,
                            wm_client->window->xwindow,
-                           hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP),
+                           hd_comp_mgr_get_atom (hmgr,
+                                HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP),
                            XA_CARDINAL,
                            32,
                            PropModeReplace,
@@ -3296,7 +3300,8 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
         {
           XDeleteProperty (wm_client->wmref->xdpy,
                            wm_client->window->xwindow,
-                           hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP));
+                           hd_comp_mgr_get_atom (hmgr,
+                                HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP));
         }
     }
   g_slist_free (applets);
@@ -3307,12 +3312,15 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
       applets = hd_home_view_get_all_applets (HD_HOME_VIEW (v->data));
       for (a = applets; a; a = a->next)
         {
-          MBWindowManagerClient *wm_client = MB_WM_COMP_MGR_CLIENT (a->data)->wm_client;
+          MBWindowManagerClient *wm_client
+                  = MB_WM_COMP_MGR_CLIENT (a->data)->wm_client;
           XDeleteProperty (wm_client->wmref->xdpy,
                            wm_client->window->xwindow,
-                           hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP));
+                           hd_comp_mgr_get_atom (hmgr,
+                                HD_ATOM_HILDON_APPLET_ON_CURRENT_DESKTOP));
         }
       g_slist_free (applets);
     }
   g_slist_free (views);
+  mb_wm_util_untrap_x_errors ();
 }
