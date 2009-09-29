@@ -1,3 +1,15 @@
+2009-09-29  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#140969 - Widgets using CPU after screen blanking
+	(is-on-current-desktop property)
+
+	* src/mb/hd-comp-mgr.c
+	(hd_comp_mgr_update_applets_on_current_desktop_property): Only set on
+	current desktop property for widgets when display is switched on.
+
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler): Update
+	widgets on current desktop property if display switches on/off.
+
 2009-09-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/util/hd-transition.c:

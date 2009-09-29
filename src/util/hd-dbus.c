@@ -95,6 +95,8 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                 }
               else if (strcmp (str, "off") == 0)
                 hd_dbus_display_is_off = TRUE;
+
+              hd_comp_mgr_update_applets_on_current_desktop_property (hmgr);
             }
         }
     }
