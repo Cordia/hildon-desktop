@@ -142,11 +142,6 @@ static struct
   /* This timer counts from when we first entered the WAITING state,
    * so if we are continually getting damage we don't just hang there. */
   GTimer *timer;
-
-  /* If a client (like CallUI) was forcing portrait mode and it quits,
-   * we leave it visible and put an HDEffectData this list. During blanking we
-   * remove the actor by calling hd_transition_completed. */
-  GList *effects_waiting;
 } Orientation_change;
 
 /* If %TRUE keep reloading transitions.ini until we can
@@ -478,7 +473,7 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
 
   if (hd_dbus_display_is_off && data)
     {
-      for (i = 0; i < HDCM_UNMAP_PARTICLES; ++i) 
+      for (i = 0; i < HDCM_UNMAP_PARTICLES; ++i)
         if (data->particles[i])
 	  clutter_actor_hide (data->particles[i]);
       clutter_actor_hide (actor);
@@ -1088,60 +1083,6 @@ hd_transition_close_app (HdCompMgr                  *mgr,
 }
 
 void
-hd_transition_close_app_before_rotate (HdCompMgr                  *hmgr,
-                                       MBWindowManagerClient      *c)
-{
-  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
-  MBWMCompMgrClutterClient * cclient;
-  HDEffectData             * data;
-  ClutterActor             * actor;
-  ClutterContainer         * parent;
-
-  /* proper app close animation */
-  if (c_type != MBWMClientTypeApp)
-    return;
-
-  /* The switcher will do the effect if it's active,
-   * don't interfere. */
-  if (hd_render_manager_get_state()==HDRM_STATE_TASK_NAV)
-    return;
-
-  cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
-  actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-  if (!actor || !CLUTTER_ACTOR_IS_VISIBLE(actor))
-    return;
-
-  data = g_new0 (HDEffectData, 1);
-  data->event = MBWMCompMgrClientEventUnmap;
-  data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
-  data->cclient_actor = g_object_ref (actor);
-  data->hmgr = hmgr;
-
-
-  mb_wm_comp_mgr_clutter_client_set_flags (cclient,
-                                    MBWMCompMgrClutterClientDontUpdate |
-                                    MBWMCompMgrClutterClientDontShow |
-                                    MBWMCompMgrClutterClientEffectRunning);
-
-  /* reparent our actor so it will be visible when we switch views */
-  parent = hd_render_manager_get_front_group();
-  clutter_actor_reparent(actor,
-      CLUTTER_ACTOR(parent));
-  clutter_actor_lower_bottom(actor);
-  /* Also add a fake titlebar background, as the real one will disappear
-   * immediately because the app has closed. */
-  data->particles[0] = g_object_ref(hd_title_bar_create_fake(
-                                         HD_COMP_MGR_LANDSCAPE_HEIGHT));
-  clutter_container_add_actor(parent, data->particles[0]);
-
-  Orientation_change.effects_waiting = g_list_append(
-      Orientation_change.effects_waiting, data);
-  hd_comp_mgr_set_effect_running(hmgr, TRUE);
-
-  hd_transition_play_sound (HDCM_WINDOW_CLOSED_SOUND);
-}
-
-void
 hd_transition_notification(HdCompMgr                  *mgr,
                            MBWindowManagerClient      *c,
                            MBWMCompMgrClientEvent     event)
@@ -1408,7 +1349,6 @@ hd_transition_damage_timer_destroyed (gpointer unused)
 static gboolean
 hd_transition_rotating_fsm(void)
 {
-  GList *li;
   HDRMStateEnum state;
   gboolean change_state;
 
@@ -1427,6 +1367,10 @@ hd_transition_rotating_fsm(void)
           CLUTTER_ACTOR(hd_render_manager_get()), 1);
         tidy_cached_group_set_downsampling_factor(
           CLUTTER_ACTOR(hd_render_manager_get()), 1);
+        /* FIXME: Super massive extra large hack to remove status area when
+         * launching phone app from the launcher */
+        if (hd_render_manager_get_previous_state()==HDRM_STATE_LAUNCHER)
+          clutter_actor_hide(hd_render_manager_get_status_area());
         /* Force redraw for screenshot *now*, before windows have a
          * chance to change */
         clutter_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
@@ -1477,12 +1421,6 @@ hd_transition_rotating_fsm(void)
             Orientation_change.goto_state = HDRM_STATE_UNDEFINED;
             hd_render_manager_set_state(state);
           }
-
-        /* Now go through our list of waiting effects and complete them */
-        for (li = Orientation_change.effects_waiting; li; li = li->next)
-            hd_transition_completed(0, li->data);
-        g_list_free(Orientation_change.effects_waiting);
-        Orientation_change.effects_waiting = NULL;
 
         if (Orientation_change.direction == Orientation_change.new_direction)
           {

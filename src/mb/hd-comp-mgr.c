@@ -2657,17 +2657,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                    * don't show the closing animation - but still play the
                    * sound */
                   if (!window_on_top)
-                    {
-                      /* Are we going to change from portrait to landscape? */
-                      gboolean portrait_change =
-                        STATE_IS_PORTRAIT(hd_render_manager_get_state()) &&
-                        !hd_comp_mgr_should_be_portrait_ignoring(hmgr, c);
-
-                      if (portrait_change)
-                        hd_transition_close_app_before_rotate (hmgr, c);
-                      else
-                        hd_transition_close_app (hmgr, c);
-                    }
+                    hd_transition_close_app (hmgr, c);
                   else
                     hd_transition_play_sound (HDCM_WINDOW_CLOSED_SOUND);
                 }

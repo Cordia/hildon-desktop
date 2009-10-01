@@ -1685,6 +1685,13 @@ inline HDRMStateEnum hd_render_manager_get_state()
   return the_render_manager->priv->state;
 }
 
+inline HDRMStateEnum hd_render_manager_get_previous_state()
+{
+  if (!the_render_manager)
+    return HDRM_STATE_UNDEFINED;
+  return the_render_manager->priv->previous_state;
+}
+
 static const char *hd_render_manager_state_str(HDRMStateEnum state)
 {
   GTypeClass *state_class = g_type_class_ref (HD_TYPE_RENDER_MANAGER_STATE);
@@ -2601,8 +2608,9 @@ void hd_render_manager_place_titlebar_elements (void)
 
   x = 0;
 
-  if (CLUTTER_ACTOR_IS_VISIBLE(priv->button_task_nav)
-      || CLUTTER_ACTOR_IS_VISIBLE(priv->button_launcher))
+  /* Check whether buttons are visible based on state rather than anything
+   * else. As actual actor visibilities may only be set on idle. */
+  if (hd_title_bar_get_state(priv->title_bar) & HDTB_VIS_BTN_LEFT_MASK)
     x += hd_title_bar_get_button_width(priv->title_bar);
 
   if (priv->status_area && CLUTTER_ACTOR_IS_VISIBLE(priv->status_area))

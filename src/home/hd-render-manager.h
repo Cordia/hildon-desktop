@@ -224,6 +224,7 @@ void hd_render_manager_add_to_front_group(ClutterActor *a);
 
 void hd_render_manager_set_state (HDRMStateEnum state);
 HDRMStateEnum hd_render_manager_get_state(void);
+HDRMStateEnum hd_render_manager_get_previous_state(void);
 void hd_render_manager_set_state_portrait (void);
 void hd_render_manager_set_state_unportrait (void);
 gboolean hd_render_manager_is_changing_state(void);

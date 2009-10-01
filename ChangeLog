@@ -1,3 +1,24 @@
+2009-10-01  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#140681 - Title bar of the call UI disappears while closing 
+	       from portrait mode.
+
+	* src/home/hd-title-bar.c
+	* src/home/hd-title-bar.h: Now do updates with an idle callback. Added
+	  more pleasant way of setting the title for the loading screen.	
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h: hd_render_manager_get_previous_state
+	  added, and made place_titlebar_elements work off of titlebar state
+	  rather than actor visibility.	  
+	* src/home/hd-switcher.c
+	* src/launcher/hd-launcher.c: Now use hd_title_bar_set_loading_title,
+	  rather than attempting to set the title text directly.
+	* src/mb/hd-comp-mgr.c
+	* src/util/hd-transition.c
+	* src/util/hd-transition.h: hd_transition_close_app_before_rotate and
+	  related code removed as no longer needed. Quick mod to remove status 
+	  area when launching portrait app from launcher.
+
 2009-09-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Actor and timeline leak fixes.

@@ -86,10 +86,8 @@ HdTitleBarVisEnum hd_title_bar_get_state(HdTitleBar *bar);
 void
 hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm);
 
-void hd_title_bar_set_title   (HdTitleBar *bar,
-                               const char *title,
-                               gboolean has_markup,
-                               gboolean waiting);
+void hd_title_bar_set_loading_title   (HdTitleBar *bar,
+                                       const char *title);
 
 gboolean
 hd_title_bar_is_title_bar_decor(HdTitleBar *bar, MBWMDecor *decor);

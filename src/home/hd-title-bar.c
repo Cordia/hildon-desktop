@@ -173,16 +173,24 @@ struct _HdTitleBarPrivate
   /* Stretched image for the title background */
   ClutterActor          *title_bg;
   ClutterLabel          *title;
+  /* The title to be used when in HDRM_STATE_LOADING */
+  gchar                 *loading_title;
   /* Pulsing animation for switcher */
   ClutterTimeline       *switcher_timeline;
   /* progress indicator */
   ClutterTimeline       *progress_timeline;
   ClutterActor          *progress_texture;
 
+  /* The current state set by set_state = next state we will go to once the
+   * idle callback is called */
   HdTitleBarVisEnum      state;
+  /* The actual state we are in right at this second */
+  HdTitleBarVisEnum      current_state;
   /* Do we show the menu indicator? This isn't included in state because
    * it could be unwillingly cleared by calls to set_state */
   gboolean               has_menu_indicator;
+  /* The current client we are displaying a title bar for */
+  MBWindowManagerClient *current_client;
 };
 
 /* HdHomeThemeButtonBack, MBWMDecorButtonClose */
@@ -207,7 +215,10 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
 static void
 hd_title_bar_set_full_width(HdTitleBar *bar, gboolean full_size);
 static void hd_title_bar_set_button_positions(HdTitleBar *bar);
-
+static void hd_title_bar_set_title (HdTitleBar *bar,
+                                    const char *title,
+                                    gboolean has_markup,
+                                    gboolean waiting);
 /* ------------------------------------------------------------------------- */
 
 /* One pulse is breathe in or breathe out.  The animation takes two
@@ -428,7 +439,7 @@ status_area_is_visible (void)
 gint
 hd_title_bar_get_button_width(HdTitleBar *bar) {
   HdTitleBarPrivate *priv = bar->priv;
-  if (priv->state & HDTB_VIS_SMALL_BUTTONS)
+  if (priv->current_state & HDTB_VIS_SMALL_BUTTONS)
     return 80;
   else
     /* TODO someday, in some cases this should return the TOP_RIGHT_BIN_WIDTH */
@@ -441,6 +452,11 @@ hd_title_bar_dispose (GObject *obj)
   HdTitleBarPrivate *priv = HD_TITLE_BAR(obj)->priv;
   gint i;
 
+  if (priv->loading_title)
+    {
+      g_free(priv->loading_title);
+      priv->loading_title = 0;
+    }
   if (priv->progress_timeline)
     clutter_timeline_stop(priv->progress_timeline);
   for (i=0;i<BTN_COUNT;i++)
@@ -497,8 +513,8 @@ hd_title_bar_class_init (HdTitleBarClass *klass)
                       G_TYPE_NONE, 0);
 }
 
-void hd_title_bar_set_state(HdTitleBar *bar,
-                            HdTitleBarVisEnum button)
+static void hd_title_bar_set_state_real(HdTitleBar *bar,
+                                        HdTitleBarVisEnum button)
 {
   HdTitleBarPrivate *priv;
   if (!HD_IS_TITLE_BAR(bar))
@@ -603,6 +619,16 @@ void hd_title_bar_set_state(HdTitleBar *bar,
             clutter_actor_raise_top(hd_render_manager_get_status_area());
         }
     }
+}
+
+void hd_title_bar_set_state(HdTitleBar *bar,
+                            HdTitleBarVisEnum button)
+{
+  if (!HD_IS_TITLE_BAR(bar))
+    return;
+
+  bar->priv->state = button;
+  hd_title_bar_update(bar, NULL);
 }
 
 HdTitleBarVisEnum hd_title_bar_get_state(HdTitleBar *bar)
@@ -816,7 +842,7 @@ hd_title_bar_set_for_edit_mode(HdTitleBar *bar)
   state |= HDTB_VIS_BTN_DONE;
   state |= HDTB_VIS_FULL_WIDTH;
 
-  hd_title_bar_set_state(bar, state);
+  hd_title_bar_set_state_real(bar, state);
 
   title = dgettext ("maemo-af-desktop", "home_ti_desktop_menu");
   hd_title_bar_set_title (bar, title, FALSE, FALSE);
@@ -835,7 +861,8 @@ hd_title_bar_set_for_loading(HdTitleBar *bar)
   state |= HDTB_VIS_FULL_WIDTH;
   state &= ~HDTB_VIS_FOREGROUND;
 
-  hd_title_bar_set_state(bar, state);
+  hd_title_bar_set_state_real(bar, state);
+  hd_title_bar_set_title (bar, priv->loading_title, FALSE, TRUE);
 }
 
 static void
@@ -887,7 +914,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
       HdTitleBarVisEnum state;
       /* No north decor found, or no client */
       /* we have nothing, make sure we're back to normal */
-      clutter_actor_hide(CLUTTER_ACTOR(priv->title));
+      hd_title_bar_set_title (bar, NULL, FALSE, FALSE);
       if (hd_render_manager_get_state() &
 	  (HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
         /* in Home edit mode we can have back button */
@@ -895,7 +922,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
       else
 	state = hd_title_bar_get_state(bar) & ~(HDTB_VIS_FULL_WIDTH |
 			         HDTB_VIS_BTN_CLOSE | HDTB_VIS_BTN_BACK);
-      hd_title_bar_set_state(bar, state);
+      hd_title_bar_set_state_real(bar, state);
       return;
     }
 
@@ -928,7 +955,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
   /* Also set us to be full width */
   state |= HDTB_VIS_FULL_WIDTH;
 
-  hd_title_bar_set_state(bar, state);
+  hd_title_bar_set_state_real(bar, state);
   hd_title_bar_right_pressed(bar, pressed);
 }
 
@@ -961,10 +988,10 @@ static gint hd_title_bar_get_end_of_title(HdTitleBar *bar,
   return x;
 }
 
-void hd_title_bar_set_title (HdTitleBar *bar,
-                             const char *title,
-                             gboolean has_markup,
-                             gboolean waiting)
+static void hd_title_bar_set_title (HdTitleBar *bar,
+                                    const char *title,
+                                    gboolean has_markup,
+                                    gboolean waiting)
 {
   HdTitleBarPrivate *priv;
   if (!HD_IS_TITLE_BAR(bar))
@@ -1028,8 +1055,9 @@ void hd_title_bar_set_title (HdTitleBar *bar,
     }
 
   /* Only show the indicator if we are asked to, and we're not
-   * showing the waiting indicator. */
-  if (priv->has_menu_indicator && !waiting)
+   * showing the waiting indicator. Also don't show it if we have
+   * no title, as we're probably just waiting in a loading screen. */
+  if (priv->has_menu_indicator && title && !waiting)
      {
        gint x = hd_title_bar_get_end_of_title(bar,
                                               HD_THEME_IMG_MENU_INDICATOR_SIZE,
@@ -1050,28 +1078,33 @@ void hd_title_bar_set_title (HdTitleBar *bar,
      clutter_actor_hide(priv->buttons[BTN_MENU_INDICATOR]);
 }
 
-void
-hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm)
+void hd_title_bar_set_loading_title   (HdTitleBar *bar,
+                                       const char *title)
 {
-  MBWindowManagerClient *client = 0;
-  if (STATE_IS_APP(hd_render_manager_get_state()))
-    {
-      /* find the topmost application above the desktop, and use this
-       * for setting our title - or have NULL */
-      client = wmcm->wm->stack_top;
-      while (client)
-        {
-          MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE(client);
-          if (c_type == MBWMClientTypeApp)
-            break;
-          if (c_type == MBWMClientTypeDesktop)
-            {
-              client = 0;
-              break;
-            }
-          client = client->stacked_below;
-        }
-    }
+  HdTitleBarPrivate *priv;
+  if (!HD_IS_TITLE_BAR(bar))
+    return;
+  priv = bar->priv;
+
+  if (priv->loading_title)
+    g_free(priv->loading_title);
+  priv->loading_title = g_strdup(title);
+
+  hd_title_bar_update(bar, 0);
+}
+
+static gboolean
+hd_title_bar_update_idle(HdTitleBar *bar)
+{
+  HdTitleBarPrivate *priv;
+  HdTitleBarVisEnum old_state;
+
+  if (!HD_IS_TITLE_BAR(bar))
+    return FALSE;
+  priv = bar->priv;
+
+  old_state = priv->current_state;
+  priv->current_state = priv->state;
 
   if (STATE_IS_EDIT_MODE(hd_render_manager_get_state()))
     {
@@ -1085,9 +1118,65 @@ hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm)
     }
   else
     {
-      hd_title_bar_set_window(bar, client);
+      hd_title_bar_set_window(bar, bar->priv->current_client);
       clutter_actor_set_reactive (bar->priv->title_bg, FALSE);
     }
+
+  /* If anything that might change the position of the status area to change
+   * has been modified, re-place titlebar elements now */
+  if ((priv->current_state & (HDTB_VIS_SMALL_BUTTONS|HDTB_VIS_BTN_LEFT_MASK)) !=
+      (old_state           & (HDTB_VIS_SMALL_BUTTONS|HDTB_VIS_BTN_LEFT_MASK)))
+    hd_render_manager_place_titlebar_elements();
+
+  /* If something did ask us to be called back, remove the loop... */
+  g_idle_remove_by_data(bar);
+  /* This is only for this idle callback, so don't leave it dangling */
+  return FALSE;
+}
+
+void
+hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm)
+{
+  HdTitleBarPrivate *priv;
+
+  if (!HD_IS_TITLE_BAR(bar))
+    return;
+  priv = bar->priv;
+
+  if (wmcm)
+    {
+      if (STATE_IS_APP(hd_render_manager_get_state()))
+        {
+          MBWindowManagerClient *client;
+          /* find the topmost application above the desktop, and use this
+           * for setting our title - or have NULL */
+          client = wmcm->wm->stack_top;
+          while (client)
+            {
+              MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE(client);
+              if (c_type == MBWMClientTypeApp)
+                break;
+              if (c_type == MBWMClientTypeDesktop)
+                {
+                  client = 0;
+                  break;
+                }
+              client = client->stacked_below;
+            }
+          priv->current_client = client;
+        }
+      else
+        priv->current_client = 0;
+    }
+
+  /* Remove any existing callback */
+  g_idle_remove_by_data(bar);
+  /* Add idle callback. This MUST be higher priority than Clutter timelines
+   * (D+30) or we won't set our title bar up correctly until after any running
+   * transitions have stopped. */
+  g_idle_add_full(G_PRIORITY_DEFAULT+20,
+                  (GSourceFunc)hd_title_bar_update_idle,
+                  bar, NULL);
 }
 
 /* Is the given decor one we should consider for a title bar? */

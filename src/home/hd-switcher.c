@@ -750,7 +750,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
       hd_render_manager_set_loading (actor);
       hd_render_manager_set_state (HDRM_STATE_LOADING);
       hd_render_manager_stop_transition ();
-      hd_title_bar_set_title (tbar, text, FALSE, TRUE);
+      hd_title_bar_set_loading_title (tbar, text);
 
       /*
        * Implementing a timeout to see if the wakeup fails.
