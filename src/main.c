@@ -579,6 +579,10 @@ main (int argc, char **argv)
 
   hd_volume_profile_init ();
 
+  /* Move to landscape for safety. */
+  if (hd_util_change_screen_orientation (wm, FALSE));
+    hd_util_root_window_configured (wm);
+
   /* NB: we call gtk_main as opposed to clutter_main or mb_wm_main_loop
    * because it does the most extra magic, such as supporting quit functions
    * that the others don't. Except for adding the clutter_x11_add_filter

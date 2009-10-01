@@ -1,3 +1,11 @@
+2009-10-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	  Don't freak out Superman with rotated desktop.
+
+	* src/main.c (main):
+	  Switch to landscape initially and unconditionally.
+	  If we need to rotate we will rotate with the transition.
+
 2009-10-01  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Watch exec'd (not dbus activated) children and deal with their deaths.
