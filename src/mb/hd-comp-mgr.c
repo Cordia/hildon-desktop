@@ -2219,6 +2219,14 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         }
       return;
     }
+  else if (ctype == MBWMClientTypeOverride &&
+           (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
+            hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT))
+    {
+      /* we need to unredirect this to screen */
+      hd_comp_mgr_unredirect_client (c);
+      return;
+    }
   else if (ctype != MBWMClientTypeApp)
     return;
 
@@ -2489,6 +2497,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       if (!HD_IS_BANNER_NOTE(c) &&
           !HD_IS_INCOMING_EVENT_NOTE(c) &&
+          MB_WM_CLIENT_CLIENT_TYPE (c) != MBWMClientTypeOverride &&
           !HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
         {
           MBWindowManagerClient *below;

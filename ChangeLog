@@ -1,3 +1,13 @@
+2009-10-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#140567 - [ncfs] Find dropdown list cannot be expanded in
+	full screen mode
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Unredirect
+	override-redirect windows in non-composited mode.
+	(hd_comp_mgr_unmap_notify): Do not go back to composited mode if
+	override-redirect window is unmapped in non-composited mode.
+
 2009-10-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	  Don't freak out Superman with rotated desktop.
