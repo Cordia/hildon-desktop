@@ -1,6 +1,6 @@
 2009-09-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-	NB#141029 A small square like UI glitch is oberved while opening the
+	NB#141029 A small square-like UI glitch is oberved while opening the
 		  conversation by tapping the preview in portrait mode.
 
 	* src/home/hd-render-manager.c (hd_render_manager_allow_dbus_launch_transition):
