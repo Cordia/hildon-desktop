@@ -4,7 +4,7 @@
 		  conversation by tapping the preview in portrait mode.
 
 	* src/home/hd-render-manager.c (hd_render_manager_allow_dbus_launch_transition):
-	  Disallow the appstart transition in portrait mode.  The launched
+	  Disallow the appstart transition in portrait mode. The launched
 	  application will likely want landscape and we won't be able to
 	  finish this transition while rotating.
 
