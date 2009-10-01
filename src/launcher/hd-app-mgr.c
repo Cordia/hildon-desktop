@@ -844,7 +844,9 @@ hd_app_mgr_activate (HdRunningApp *app)
       break;
     case HD_APP_STATE_LOADING:
     case HD_APP_STATE_WAKING:
-      /* Do nothing, keep on waiting. */
+      /* Send the launched signal so the loading screen will be shown again. */
+      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LAUNCHED],
+                0, hd_running_app_get_launcher_app (app), NULL);
       result = LAUNCH_OK;
       break;
     default:
@@ -886,6 +888,14 @@ hd_app_mgr_activate (HdRunningApp *app)
   return (result == LAUNCH_OK)? TRUE : FALSE;
 }
 
+static void
+_hd_app_mgr_child_exit (GPid pid, gint status, HdRunningApp *app)
+{
+  g_spawn_close_pid (pid);
+  hd_app_mgr_app_closed (app);
+  g_object_unref (app);
+}
+
 HdAppMgrLaunchResult
 hd_app_mgr_start (HdRunningApp *app)
 {
@@ -919,7 +929,13 @@ hd_app_mgr_start (HdRunningApp *app)
           GPid pid = 0;
           result = hd_app_mgr_execute (exec, &pid);
           if (result)
-            hd_running_app_set_pid (app, pid);
+            {
+              hd_running_app_set_pid (app, pid);
+              /* Watch the child. */
+              g_child_watch_add (pid,
+                                 (GChildWatchFunc)_hd_app_mgr_child_exit,
+                                 g_object_ref (app));
+            }
         }
     }
 
@@ -968,9 +984,14 @@ hd_app_mgr_loading_timeout (HdRunningApp *app)
       else
         hd_running_app_set_state (app, HD_APP_STATE_HIBERNATED);
 
-      /* Tell the world, so something can be shown to the user. */
-      g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LOADING_FAIL],
-          0, launcher, NULL);
+      /* Tell the world, so something can be shown to the user.
+       * Do this only if the app has a known service, because
+       * it could be a command line. */
+      if (hd_running_app_get_service(app) != NULL)
+        {
+          g_signal_emit (hd_app_mgr_get (), app_mgr_signals[APP_LOADING_FAIL],
+              0, launcher, NULL);
+        }
     }
 
   g_object_unref (app);
@@ -1360,7 +1381,7 @@ hd_app_mgr_execute (const gchar *exec, GPid *pid)
 
   res = g_spawn_async (NULL,
                        argv, NULL,
-                       0,
+                       G_SPAWN_DO_NOT_REAP_CHILD,
                        _hd_app_mgr_child_setup, NULL,
                        pid,
                        NULL);
