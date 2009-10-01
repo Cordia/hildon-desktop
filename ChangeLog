@@ -1,5 +1,8 @@
 2009-10-01  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#141441 - Screenshot texture is reallocated every time we 
+	                   rotate
+	                   
 	* src/tidy/tidy-cached-group.c: Use rotating code from tidy-blur-group
 	  to avoid re-allocating the screenshot buffer before every rotation.
 	* data/transitions.ini: Modified screenshot timeouts to remove flicker
