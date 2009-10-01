@@ -1,5 +1,15 @@
 2009-10-01  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Regression fix: Map -> Switcher -> Map = Switcher button stops working
+	                (input grab/button visibility mismatch)
+
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h: hd_render_manager_set_input_viewport
+	  now exported for use by hd-title-bar. Added a few FIXME for possible
+	  optimisations.
+	* src/home/hd-title-bar.c: Call hd_render_manager_set_input_viewport
+	  when title bar is updated.	
+
 	Fixes: NB#141441 - Screenshot texture is reallocated every time we 
 	                   rotate
 	                   

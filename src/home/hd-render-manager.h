@@ -270,6 +270,10 @@ void hd_render_manager_add_input_blocker(void);
  * we don't need the input blocked any more. */
 void hd_render_manager_remove_input_blocker(void);
 
+/* Set the input viewport depending on what is currently visible.
+ * Should be used sparingly - Only exported for HdTitleBar currently. */
+void hd_render_manager_set_input_viewport(void);
+
 /* Check how long ago the last window was mapped. If it was very
  * recent then most likely it was mapped before the dbus signal arrived. */
 gboolean hd_render_manager_allow_dbus_launch_transition(void);

@@ -747,7 +747,7 @@ gboolean hd_render_manager_actor_is_visible(ClutterActor *actor)
   return TRUE;
 }
 
-static void
+void
 hd_render_manager_set_input_viewport()
 {
   ClutterGeometry geom[HDRM_BUTTON_COUNT + 1];
@@ -1004,7 +1004,7 @@ void hd_render_manager_sync_clutter_before ()
     hd_render_manager_set_visibilities();
 
   /* Now look at what buttons we have showing, and add each visible button X
-   * to the X input viewport */
+   * to the X input viewport. FIXME: Do we need this now HdTitleBar does it? */
   hd_render_manager_set_input_viewport();
 
   /* as soon as we start a transition, set out left-hand button to be
@@ -1306,6 +1306,7 @@ MBWindowManagerClient *hd_render_manager_get_status_area_client(void)
 void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible)
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
+  /* FIXME: Should this be handled by HdTitleBar? */
 
   switch (button)
   {

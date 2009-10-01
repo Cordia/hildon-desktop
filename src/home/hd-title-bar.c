@@ -1128,6 +1128,10 @@ hd_title_bar_update_idle(HdTitleBar *bar)
       (old_state           & (HDTB_VIS_SMALL_BUTTONS|HDTB_VIS_BTN_LEFT_MASK)))
     hd_render_manager_place_titlebar_elements();
 
+  /* Unfortunately, as we have updated title visibility of buttons and so forth,
+   * we must now update the input viewport */
+  hd_render_manager_set_input_viewport();
+
   /* If something did ask us to be called back, remove the loop... */
   g_idle_remove_by_data(bar);
   /* This is only for this idle callback, so don't leave it dangling */
