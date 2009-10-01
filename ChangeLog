@@ -1,3 +1,15 @@
+2009-09-30  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Actor and timeline leak fixes.
+
+	* src/util/hd-transition.c:
+	  hd_transition_popup: keep the filler in the actor container always
+	  on_popup_timeline_new_frame: don't remove and readd the filler
+	    and don't leak it
+	  hd_transition_fade_out_loading_screen: don't leak the timeline
+	  hd_transition_rotating_fsm: do free the effects_waiting list
+	    from the head
+
 2009-09-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#141029 A small square-like UI glitch is oberved while opening the

@@ -351,6 +351,7 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
   gboolean pop_top, pop_bottom; /* pop in from the top, or the bottom */
 
   float overshoot;
+  ClutterGeometry geo;
 
   actor = data->cclient_actor;
   if (!CLUTTER_IS_ACTOR(actor))
@@ -358,12 +359,7 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
   filler = data->particles[0];
 
   /* We need to get geometry each frame as often windows have
-   * a habit of changing size while they move. If we have filler
-   * we remove it first, so it doesn't affect the geometry. */
-  if (filler && clutter_actor_get_parent(filler))
-    clutter_container_remove_actor(
-        CLUTTER_CONTAINER(clutter_actor_get_parent(filler)), filler);
-  ClutterGeometry geo;
+   * a habit of changing size while they move. */
   clutter_actor_get_geometry(actor, &geo);
 
   pop_top = geo.y==0;
@@ -400,13 +396,9 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
 
   /* use a slither of filler to fill in the gap where the menu
    * has jumped a bit too far up */
-  if (filler &&
-      ((status_pos>status_high && pop_top) ||
-       (status_pos<status_high && pop_bottom)))
+  if ((status_pos>status_high && pop_top) ||
+       (status_pos<status_high && pop_bottom))
     {
-      // re-add the filler (see above)
-      if (CLUTTER_IS_CONTAINER(actor))
-        clutter_container_add_actor(CLUTTER_CONTAINER(actor), filler);
       clutter_actor_show(filler);
       if (pop_top)
         {
@@ -427,6 +419,8 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
                     CLUTTER_FLOAT_TO_FIXED(status_high-status_pos));
         }
     }
+  else
+    clutter_actor_hide(filler);
 }
 
 static void
@@ -895,6 +889,7 @@ hd_transition_popup(HdCompMgr                  *mgr,
 
   /* Add actor for the background when we pop a bit too far */
   data->particles[0] = g_object_ref(clutter_rectangle_new());
+  clutter_container_add_actor(CLUTTER_CONTAINER(actor), data->particles[0]);
   hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL,
                               &col);
   clutter_rectangle_set_color(CLUTTER_RECTANGLE(data->particles[0]),
@@ -970,8 +965,7 @@ hd_transition_fade_out_loading_screen(ClutterActor *loading_image)
     data->event = MBWMCompMgrClientEventUnmap;
     data->cclient_actor = g_object_ref ( loading_image );
     data->hmgr = 0;
-    data->timeline = g_object_ref(
-        clutter_timeline_new_for_duration ( duration ) );
+    data->timeline = clutter_timeline_new_for_duration ( duration );
     data->final_alpha = 1;
     /* the delay before we start to fade out. We implement this by setting
      * the final_alpha value to something *past* opaque */
@@ -1414,6 +1408,7 @@ hd_transition_damage_timer_destroyed (gpointer unused)
 static gboolean
 hd_transition_rotating_fsm(void)
 {
+  GList *li;
   HDRMStateEnum state;
   gboolean change_state;
 
@@ -1484,15 +1479,10 @@ hd_transition_rotating_fsm(void)
           }
 
         /* Now go through our list of waiting effects and complete them */
-        while (Orientation_change.effects_waiting)
-          {
-            hd_transition_completed(0,
-                (HDEffectData*)Orientation_change.effects_waiting->data);
-            Orientation_change.effects_waiting =
-              Orientation_change.effects_waiting->next;
-          }
+        for (li = Orientation_change.effects_waiting; li; li = li->next)
+            hd_transition_completed(0, li->data);
         g_list_free(Orientation_change.effects_waiting);
-        Orientation_change.effects_waiting = 0;
+        Orientation_change.effects_waiting = NULL;
 
         if (Orientation_change.direction == Orientation_change.new_direction)
           {
