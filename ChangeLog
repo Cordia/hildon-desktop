@@ -10,11 +10,6 @@
 	* src/home/hd-title-bar.c: Call hd_render_manager_set_input_viewport
 	  when title bar is updated.	
 
-	Fixes: NB#141441 - Screenshot texture is reallocated every time we 
-	                   rotate
-	                   
-	* src/tidy/tidy-cached-group.c: Use rotating code from tidy-blur-group
-	  to avoid re-allocating the screenshot buffer before every rotation.
 	* data/transitions.ini: Modified screenshot timeouts to remove flicker
 	  with games.
 
