@@ -1822,6 +1822,33 @@ hd_home_set_reactive (HdHome   *home,
 }
 
 static gboolean
+is_status_menu_dialog (MBWindowManagerClient *c)
+{
+  XClassHint xwinhint;
+
+  if (XGetClassHint (c->window->wm->xdpy,
+                     c->window->xwindow,
+                     &xwinhint))
+    {
+      gboolean status_menu_dialog = FALSE;
+      
+      if (xwinhint.res_name)
+        {
+          status_menu_dialog = strstr (xwinhint.res_name, "hildon-status-menu") != NULL;
+          XFree (xwinhint.res_name);
+        }
+
+      if (xwinhint.res_class)
+        XFree (xwinhint.res_class);
+
+      if (status_menu_dialog)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+static gboolean
 hd_is_hildon_home_dialog (MBWindowManagerClient  *c)
 {
   if (MB_WM_CLIENT_CLIENT_TYPE(c) != MBWMClientTypeDialog)
@@ -1835,6 +1862,15 @@ hd_is_hildon_home_dialog (MBWindowManagerClient  *c)
   if (c->stacking_layer > 0)
     return FALSE;
 
+  /* 
+   * Do not close if it is a hildon-status-menu dialog like the flash sms window 
+   */
+  if (is_status_menu_dialog (c))
+    return FALSE;
+
+  /* We can not close confirmation notes/dialogs like this */
+  if (HD_IS_NOTE (c) && HD_NOTE (c)->note_type == HdNoteTypeConfirmation)
+    return FALSE;
 
   if (!c->transient_for)
     return TRUE;

@@ -1,3 +1,12 @@
+2009-10-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#141417 - Hildon Status Menu completely unusable after a
+	scenario
+
+	* src/home/hd-home.c (is_status_menu_dialog,
+	hd_is_hildon_home_dialog): Do not close hildon-status-menu dialogs or
+	confirmation notes when leaving edit mode.
+
 2009-10-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#141380 - [ncfs] downloads dialog is not displayed in full
