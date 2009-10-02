@@ -1,3 +1,27 @@
+2009-10-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#141380 - [ncfs] downloads dialog is not displayed in full
+	screen - browser stops responding instead of showing it
+
+	* src/mb/hd-wm.c (hd_wm_activate_zoomed_client): Check if there is a
+	window above that needs compositing.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_needs_compositing): New
+	function to identify a client that requires compositing.
+	(hd_comp_mgr_client_property_changed): Check if there is a window
+	above that needs compositing before going to non-composited mode.
+	(hd_comp_mgr_is_non_composited): Return FALSE if someone calls this
+	with non-application window.
+	(hd_comp_mgr_map_notify): Use hd_comp_mgr_client_needs_compositing
+	in the first check for returning to composited mode and handle
+	non-composited portrait mode correctly as well.  Unredirect info
+	banners and notes in non-composited mode.  Before going to
+	non-composited mode because of application window, check that there is
+	not a window that requires compositing above it (this is needed
+	especially when HD starts with existing application windows).
+	(hd_comp_mgr_unmap_notify): Check if there is a window above that
+	needs compositing before going to non-composited mode.  Improve the
+	logic when going back to composited mode.
+
 2009-10-01  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Regression fix: Map -> Switcher -> Map = Switcher button stops working

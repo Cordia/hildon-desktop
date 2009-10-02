@@ -352,10 +352,19 @@ hd_wm_activate_zoomed_client (MBWindowManager *wm,
 {
   MBWindowManagerClass *wm_class = 
     MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
-
+  MBWindowManagerClient *tmp;
+  gboolean found = FALSE;
   gboolean ret = wm_class->client_activate (wm, c);
 
-  if (hd_comp_mgr_is_non_composited (c, FALSE))
+  /* check if there is a window above that needs compositing */
+  for (tmp = c->stacked_above; tmp; tmp = tmp->stacked_above)
+    if (hd_comp_mgr_client_needs_compositing (tmp))
+      {
+        found = TRUE;
+        break;
+      }
+
+  if (!found && hd_comp_mgr_is_non_composited (c, FALSE))
     hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
   else
     hd_render_manager_set_state (HDRM_STATE_APP);

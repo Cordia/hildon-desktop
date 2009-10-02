@@ -205,6 +205,7 @@ gint hd_comp_mgr_time_since_last_map(HdCompMgr *hmgr);
 
 void hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr);
 void hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm);
+gboolean hd_comp_mgr_client_needs_compositing (MBWindowManagerClient *c);
 
 G_END_DECLS
 
