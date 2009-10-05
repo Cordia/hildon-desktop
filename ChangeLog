@@ -1,3 +1,7 @@
+2009-10-05  Aapo Kojo  <aapo.kojo@nokia.com>
+
+	Tweaked rotation values in transitions.ini.
+
 2009-10-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#141614 Unnecessary rotations on image viewer if phone application
