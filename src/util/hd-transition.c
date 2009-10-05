@@ -876,6 +876,18 @@ hd_transition_popup(HdCompMgr                  *mgr,
                         G_CALLBACK (hd_transition_completed), data);
   data->geo = geo;
 
+  /*
+   * If @actor is a fullscreen dialog it's not in apptop but in home_blur.
+   * This case when its client is unmapped the next client is stacked on
+   * the top of it, hiding this @actor, which we want to keep shown until
+   * the end of transition.
+   */
+  if (event == MBWMCompMgrClientEventUnmap)
+    {
+      hd_render_manager_return_dialog(actor);
+      clutter_actor_show(actor);
+    }
+
   mb_wm_comp_mgr_clutter_client_set_flags (cclient,
                               MBWMCompMgrClutterClientDontUpdate |
                               MBWMCompMgrClutterClientEffectRunning);

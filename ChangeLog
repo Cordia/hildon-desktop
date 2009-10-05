@@ -1,3 +1,19 @@
+2009-10-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#141642 [REGU]Applications are shown in portrait mode during call
+		  rejections or missed calls
+
+	Not specific to rotation, the unmap transition was skipped for all
+	fullscreen dialogs if there was an application behind.  This is
+	because fullscreen dialogs are in the home_blur group and when
+	the dialog is unmapped and hdrm is restacked the dialog is hidden
+	by the next client.
+
+	* src/util/hd-transition.c (hd_transition_popup):
+	  When playing the unmap transition for fullscreen dialogs move them
+	  to the app_top container in order to prevent stacking and visibility
+	  detecting interfering with us.
+
 2009-10-05  Aapo Kojo  <aapo.kojo@nokia.com>
 
 	Tweaked rotation values in transitions.ini.
