@@ -1,3 +1,12 @@
+2009-10-06  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#139928 - Accessing the screen unlocking view reveals the
+	underlying applications
+
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler): Make a
+	blocking redraw of the stage when the screen is lit again. This
+	ensures we draw any new visible windows first.
+
 2009-10-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#141642 [REGU]Applications are shown in portrait mode during call

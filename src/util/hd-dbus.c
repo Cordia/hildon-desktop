@@ -98,7 +98,11 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                     /* restore Clutter drawing unless we're non-composited */
                     clutter_stage_set_shaped_mode (stage, 0);
 
+                  /* make a blocking redraw to draw any new window (such as
+                   * the "swipe to unlock") first, otherwise the old scene
+                   * will be visible */
                   clutter_actor_queue_redraw (stage);
+                  clutter_redraw (CLUTTER_STAGE (stage));
                   hd_dbus_display_is_off = FALSE;
                 }
               else if (strcmp (str, "off") == 0)
