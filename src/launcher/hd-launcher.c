@@ -389,6 +389,11 @@ hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
       priv->pages = NULL;
     }
   g_datalist_init(&priv->pages);
+
+  if (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER)
+    {
+      hd_render_manager_set_state (HDRM_STATE_HOME);
+    }
 }
 
 /*

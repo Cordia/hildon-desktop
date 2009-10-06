@@ -91,7 +91,11 @@ void hd_app_mgr_app_closed (HdRunningApp *app);
 /* Application list. */
 HdLauncherTree *hd_app_mgr_get_tree (void);
 
+/* Debug functions. */
+#ifndef G_DEBUG_DISABLE
 void hd_app_mgr_dump_app_list (gboolean only_running);
+void hd_app_mgr_dump_tree     (void);
+#endif /* G_DEBUG_DISABLE */
 
 void hd_app_mgr_set_render_manager (GObject *rendermgr);
 

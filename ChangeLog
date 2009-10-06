@@ -1,3 +1,16 @@
+2009-10-06  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Deal with repeated, fast changes to menu files.
+	Fixes: NB#141702
+
+	* src/launcher/hd-app-mgr.c: Added debug function to dump list of known
+	launcher items.
+	* src/launcher/hd-app-mgr.h:
+	* src/launcher/hd-launcher-tree.c: Repeat the walking every time libmenu
+	notifies a change, and discard all walkings except the last one.
+	* src/launcher/hd-launcher.c: If showing launcher when reloading the menus,
+	go to home.
+
 2009-10-06  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#139928 - Accessing the screen unlocking view reveals the

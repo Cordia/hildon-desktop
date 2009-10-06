@@ -2225,6 +2225,7 @@ hd_app_mgr_get_tree ()
   return priv->tree;
 }
 
+#ifndef G_DEBUG_DISABLE
 void
 hd_app_mgr_dump_app_list (gboolean only_running)
 {
@@ -2246,3 +2247,23 @@ hd_app_mgr_dump_app_list (gboolean only_running)
         }
     }
 }
+
+void
+hd_app_mgr_dump_tree ()
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+  GList *items = hd_launcher_tree_get_items (priv->tree);
+
+  g_debug ("%s:\n", __FUNCTION__);
+  for (; items; items = items->next)
+    {
+      HdLauncherItem *item = HD_LAUNCHER_ITEM (items->data);
+
+      g_debug("\titem=%p, id=%s, category=%s\n",
+              item,
+              hd_launcher_item_get_id (item),
+              hd_launcher_item_get_category (item));
+    }
+}
+
+#endif /* G_DEBUG_DISABLE */

@@ -170,8 +170,9 @@ walk_thread_done_idle (gpointer user_data)
   WalkThreadData *data = user_data;
   HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (data->tree);
 
-  if (priv->active_walk && !data->cancelled)
+  if ((priv->active_walk == data) && !data->cancelled)
     {
+      /* This is the correct walking. */
       g_list_foreach (priv->items_list, (GFunc) g_object_unref, NULL);
       g_list_free (priv->items_list);
       priv->items_list = data->items;
@@ -180,8 +181,17 @@ walk_thread_done_idle (gpointer user_data)
       g_signal_emit (data->tree, tree_signals[FINISHED], 0);
 
       walk_thread_data_free (data);
+
+      hd_mutex_enable (FALSE);
     }
-  hd_mutex_enable (FALSE);
+  if (data->cancelled)
+    {
+      /* This is the result of an obsolete walking, get rid of it. */
+      g_list_foreach (data->items, (GFunc) g_object_unref, NULL);\
+      gmenu_tree_item_unref (data->root);
+      walk_thread_data_free (data);
+    }
+
   return FALSE;
 }
 
@@ -453,13 +463,20 @@ hd_launcher_tree_handle_tree_changed (GMenuTree *menu_tree,
    * stop working.
    */
   root = gmenu_tree_get_root_directory (priv->tree);
-  if (priv->active_walk || !root)
-    {
-      gmenu_tree_item_unref (root);
-      return;
-    }
+  if (!root)
+    return;
 
-  g_signal_emit (self, tree_signals[STARTING], 0);
+  if (priv->active_walk)
+    {
+      /* We already have an active walk, cancel it. */
+      priv->active_walk->cancelled = TRUE;
+      priv->active_walk = NULL;
+    }
+  else
+    {
+      /* Only signal starting for the first walking. */
+      g_signal_emit (self, tree_signals[STARTING], 0);
+    }
 
   data = walk_thread_data_new (self);
   data->root = root;
