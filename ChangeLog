@@ -9,8 +9,11 @@
 	  it is not needed and means we can't use the file outside of h-d.
 	* src/util/hd-dbus.c: Don't use clutter_stage_set_shaped_mode to stop
 	  redraw, as this unfortunately stops the window's actor being updated
-	  and causes the above bug. Instead use actor_hide and allow_redraw.
+	  and causes the above bug. Instead use actor_hide and allow_redraw on
+	  ths stage.
 	  Tested and does not regress 139928.
+	* src/util/hd-transition.c: Added comment about allow_redraw in order
+	  to give hints to future developers.
 
 2009-10-06  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 

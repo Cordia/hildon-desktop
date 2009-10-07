@@ -91,8 +91,7 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                   /* Allow redraws again... */
                   clutter_actor_show(
                       CLUTTER_ACTOR(hd_render_manager_get()));
-                  clutter_actor_set_allow_redraw(
-                      CLUTTER_ACTOR(hd_render_manager_get()), TRUE);
+                  clutter_actor_set_allow_redraw(stage, TRUE);
                   /* make a blocking redraw to draw any new window (such as
                    * the "swipe to unlock") first, otherwise just a black
                    * screen will be visible (see below) */
@@ -102,12 +101,12 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
               else if (strcmp (str, "off") == 0)
                 {
                   ClutterActor *stage = clutter_stage_get_default ();
-                  /* Stop redraws originating from anything in
-                   * hd-render-manager. */
+                  /* Stop redraws from anything. We do this on the stage
+                   * because Rotation does it on HDRM, and we don't want to
+                   * conflict. */
                   clutter_actor_hide(
                       CLUTTER_ACTOR(hd_render_manager_get()));
-                  clutter_actor_set_allow_redraw(
-                      CLUTTER_ACTOR(hd_render_manager_get()), FALSE);
+                  clutter_actor_set_allow_redraw(stage, FALSE);
                   hd_dbus_display_is_off = TRUE;
                   /* Hiding before set_allow_redraw will queue a redraw,
                    * which will draw a black screen (because hdrm is hidden).

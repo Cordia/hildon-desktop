@@ -1449,7 +1449,9 @@ hd_transition_rotating_fsm(void)
             /* Don't allow anything inside the render manager to tell clutter
              * to redraw. actor_hide should have done this, but it doesn't.
              * We now need to totally blank the screen before the rotation,
-             * so we explicitly call clutter to redraw *right now*. */
+             * so we explicitly call clutter to redraw *right now*. Note that
+             * we don't do this on the stage, because it might conflict with
+             * hd_dbus_system_bus_signal_handler */
             clutter_actor_set_allow_redraw(
                 CLUTTER_ACTOR(hd_render_manager_get()), FALSE);
             clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
