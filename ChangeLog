@@ -1,3 +1,17 @@
+2009-10-07  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes NB#142006: CallUI doesn't update orientation when screen is off
+
+	* src/mb/hd-comp-mgr.c: Make sure we set allow_redraw(FALSE) on the
+	  arena (so new windows don't trigger a redraw). Also added missing
+	  unref.
+	* src/tidy/tidy-blur-group.c: Remove hd_dbus_display_is_off check, as
+	  it is not needed and means we can't use the file outside of h-d.
+	* src/util/hd-dbus.c: Don't use clutter_stage_set_shaped_mode to stop
+	  redraw, as this unfortunately stops the window's actor being updated
+	  and causes the above bug. Instead use actor_hide and allow_redraw.
+	  Tested and does not regress 139928.
+
 2009-10-06  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Deal with repeated, fast changes to menu files.

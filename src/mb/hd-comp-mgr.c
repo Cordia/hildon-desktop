@@ -583,13 +583,16 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 				       "task-nav", task_nav,
 				       NULL);
 
-  /* Take our comp-mgr-clutter's 'arena' and hide it for now. We
-   * don't want anything in it visible, as we'll take out what we want to
-   * render. */
+  /* When a MBWMCompMgrClutterClient is first created, it is added to the arena.
+   * This will cause a redraw unless we stop the arena from causing a screen
+   * redraw. When we want a window rendered, it is pulled out into
+   * hd-render-manager.*/
   arena = mb_wm_comp_mgr_clutter_get_arena(MB_WM_COMP_MGR_CLUTTER(cmgr));
   if (arena)
     {
+      clutter_actor_set_allow_redraw(arena, FALSE);
       clutter_actor_hide(arena);
+      g_object_unref(arena); /* mb_wm_comp_mgr_clutter_get_arena refs us */
     }
 
   /*

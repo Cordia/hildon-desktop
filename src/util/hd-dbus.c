@@ -87,30 +87,34 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
             {
               if (strcmp (str, "on") == 0)
                 {
-                  /* redraw stage because we probably skipped redraws when
-                   * the screen was off */
                   ClutterActor *stage = clutter_stage_get_default ();
-
-                  if (hd_render_manager_get_state ()
-                      != HDRM_STATE_NON_COMPOSITED && 
-                      hd_render_manager_get_state ()
-                      != HDRM_STATE_NON_COMP_PORT)
-                    /* restore Clutter drawing unless we're non-composited */
-                    clutter_stage_set_shaped_mode (stage, 0);
-
+                  /* Allow redraws again... */
+                  clutter_actor_show(
+                      CLUTTER_ACTOR(hd_render_manager_get()));
+                  clutter_actor_set_allow_redraw(
+                      CLUTTER_ACTOR(hd_render_manager_get()), TRUE);
                   /* make a blocking redraw to draw any new window (such as
-                   * the "swipe to unlock") first, otherwise the old scene
-                   * will be visible */
-                  clutter_actor_queue_redraw (stage);
-                  clutter_redraw (CLUTTER_STAGE (stage));
+                   * the "swipe to unlock") first, otherwise just a black
+                   * screen will be visible (see below) */
                   hd_dbus_display_is_off = FALSE;
+                  clutter_redraw (CLUTTER_STAGE (stage));
                 }
               else if (strcmp (str, "off") == 0)
                 {
                   ClutterActor *stage = clutter_stage_get_default ();
-                  /* avoid drawing the Clutter stage when the display is off */
-                  clutter_stage_set_shaped_mode (stage, 1);
+                  /* Stop redraws originating from anything in
+                   * hd-render-manager. */
+                  clutter_actor_hide(
+                      CLUTTER_ACTOR(hd_render_manager_get()));
+                  clutter_actor_set_allow_redraw(
+                      CLUTTER_ACTOR(hd_render_manager_get()), FALSE);
                   hd_dbus_display_is_off = TRUE;
+                  /* Hiding before set_allow_redraw will queue a redraw,
+                   * which will draw a black screen (because hdrm is hidden).
+                   * This is needed for bug 139928 so that there is
+                   * absolutely no flicker of the previous screen
+                   * contents before the lock window appears. */
+                  clutter_redraw (CLUTTER_STAGE (stage));
                 }
 
               hd_comp_mgr_update_applets_on_current_desktop_property (hmgr);
