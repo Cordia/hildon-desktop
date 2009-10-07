@@ -14,6 +14,8 @@
 	  Tested and does not regress 139928.
 	* src/util/hd-transition.c: Added comment about allow_redraw in order
 	  to give hints to future developers.
+	* debian/control: now depend on clutter 0.8.2-0maemo52, as this has
+	  the fix for allow_redraw on the stage.	  
 
 2009-10-06  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
