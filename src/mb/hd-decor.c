@@ -243,6 +243,10 @@ hd_decor_create_actors(HdDecor *decor)
         ClutterColor default_color = { 0xFF, 0xFF, 0xFF, 0xFF };
         char font_name[512];
         guint w = 0, h = 0;
+        int screen_width_avail = hd_comp_mgr_get_current_screen_width ();
+        if (is_waiting)
+          screen_width_avail -= HD_THEME_IMG_PROGRESS_SIZE+
+                                HD_TITLE_BAR_PROGRESS_MARGIN;
 
         hd_gtk_style_get_fg_color(HD_GTK_BUTTON_SINGLETON,
                                   GTK_STATE_NORMAL, &default_color);
@@ -270,16 +274,19 @@ hd_decor_create_actors(HdDecor *decor)
 
         clutter_actor_get_size(CLUTTER_ACTOR(bar_title), &w, &h);
         /* if it's too big, make sure we crop it */
-        if (w > hd_comp_mgr_get_current_screen_width ())
+        if (w > screen_width_avail)
           {
             clutter_label_set_ellipsize(bar_title, PANGO_ELLIPSIZE_NONE);
             clutter_actor_set_width(CLUTTER_ACTOR(bar_title),
-                                    hd_comp_mgr_get_current_screen_width ());
-            w = hd_comp_mgr_get_current_screen_width ();
+                                    screen_width_avail);
+            clutter_actor_set_clip(CLUTTER_ACTOR(bar_title),
+                                   0, 0,
+                                   screen_width_avail, h);
+            w = screen_width_avail;
           }
 
         clutter_actor_set_position(CLUTTER_ACTOR(bar_title),
-            (hd_comp_mgr_get_current_screen_width () - w) / 2,
+            (screen_width_avail - w) / 2,
             (mb_decor->geom.height - h) / 2);
       }
     }

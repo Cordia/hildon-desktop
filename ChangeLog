@@ -1,5 +1,12 @@
 2009-10-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#138341 - Progress indicator is not visible if too long title 
+	                   set to window
+
+	* src/mb/hd-decor.c: If a dialog has a progress indicator, and the
+	  title is too long, clip the title to fit and still leave the
+	  progress indicator showing.
+
 	Fixes: NB#138369 - When zooming from app to task switcher, background
 	                   does not scale
 	
