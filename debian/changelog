@@ -10,9 +10,6 @@ hildon-desktop (1:2.2.101-1) unstable; urgency=low
   * Fixes: NB#132220 - Empty title bar in a particular scenario
   * Fixes: NB#136911 - Windows is-topmost property is TRUE for a second after
     call ui closes
-  * Fixes: NB#137478 - Switcher becomes non responding on opening power menu
-    while on switcher view
-  * Fixes: NB#135948 - 'Zombie window' seen in email
   * Fixes: NB#134488 - Emergency call made from lock code entry dialog in fold
     closed mode does not show correctly on UI
   * Fixes: NB#139357 - hildon-desktop-A730-11-1167 crash after random using
@@ -20,7 +17,6 @@ hildon-desktop (1:2.2.101-1) unstable; urgency=low
   * Bunch of changes that had S3 keywords
  
   Gordon:
-  * Fixes: NB#137793 - Indicator for view menu in app title area
   * Bunch of changes that had S3 keywords
  
   Marc:
