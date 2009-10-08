@@ -994,6 +994,12 @@ void hd_render_manager_sync_clutter_before ()
   /* Do set_blur here, as this sets the initial amounts of blurring, and we
    * want to have visibilities the way we want them when we do it */
   hd_render_manager_set_blur(blur);
+  /* Fixes NB#128161 - Background is visible after receiving first message
+   *                   when device is locked in layout mode.
+   * If we get called via hd_render_manager_update() we may set our state to
+   * not blurring inadvertently. We need to go over our windows and figure out
+   * what we need to blur again. */
+  hd_render_manager_update_blur_state();
 
   /* We have to call blurred_changed *after* set_blur, so we know
    * whether we are blurring in or out. (If blurring out, we don't

@@ -1,5 +1,11 @@
 2009-10-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#128161 - Background is visible after receiving first message
+	                   when device is locked - in layout mode
+	
+	* src/home/hd-render-manager.c: Ensure that we don't accidentally 
+	  cancel the blurring by changing state.
+
 	Fixes: NB#138341 - Progress indicator is not visible if too long title 
 	                   set to window
 
