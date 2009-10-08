@@ -864,6 +864,10 @@ void hd_render_manager_sync_clutter_before ()
         else
           btn_state |= HDTB_VIS_BTN_SWITCHER;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
+        /* Fixed NB#140723 - Task Launcher background should not un-blur
+         *                   and un-dim when launching new app */
+        if (priv->previous_state==HDRM_STATE_LAUNCHER)
+          blur |= HDRM_BLUR_HOME;
         break;
       case HDRM_STATE_APP:
       case HDRM_STATE_APP_PORTRAIT:
@@ -2559,6 +2563,7 @@ void hd_render_manager_blurred_changed()
 {
   HdRenderManagerPrivate *priv;
   gboolean force = FALSE;
+  gboolean force_not = FALSE;
 
   if (!the_render_manager) return;
 
@@ -2570,10 +2575,17 @@ void hd_render_manager_blurred_changed()
       priv->state          == HDRM_STATE_HOME)
     force = TRUE;
 
+  /* If we're in the loading screen, we don't want to update blur
+   * right away as the zooming loading image will fill the screen
+   * soon anyway.
+   */
+  if (STATE_IS_LOADING(priv->state))
+    force_not = TRUE;
+
   /* If we're in the middle of a transition to somewhere where we won't
    * blur, just 'hint' that we have damage (we'll recalculate next time
    * we blur). */
-  if (force || priv->home_radius.b != 0)
+  if ((force || priv->home_radius.b != 0) && !force_not)
     tidy_blur_group_set_source_changed(
           CLUTTER_ACTOR(the_render_manager->priv->home_blur));
   else

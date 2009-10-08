@@ -1,5 +1,14 @@
 2009-10-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#140723 - Task Launcher background should not un-blur and 
+	                   un-dim when launching new app
+	                   
+	* src/home/hd-render-manager.h: As we're blurring the background now,
+	  don't include buttons in the blurring for the loading screen.
+	* src/home/hd-render-manager.c: Make sure that for the loading screen
+	  we don't force the blur group to be updated, as we know that it 
+	  will soon be covered with the loading animation.	                   
+
 	Fixes: NB#131081 - Class 0 SMS not shown full screen when switched 
 	                   from portrait to landscape mode
 

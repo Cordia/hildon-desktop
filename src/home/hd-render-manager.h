@@ -144,7 +144,8 @@ typedef enum
  * We want to blur stuff, but not our buttons/applets... */
 #define STATE_BLUR_BUTTONS(s) \
   (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
-                      HDRM_STATE_HOME_EDIT))
+                      HDRM_STATE_HOME_EDIT | HDRM_STATE_LOADING | \
+                      HDRM_STATE_LOADING_SUBWIN ))
 
 /* are we in a state where we want the toolbar buttons to be out the front?
  * We need this in task_nav (and launcher if the buttons ever come back)
