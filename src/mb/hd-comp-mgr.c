@@ -176,8 +176,26 @@ hd_comp_mgr_client_new (MBWindowManagerClient * client)
 }
 
 static void
+hd_comp_mgr_client_configure_real (MBWMCompMgrClient * client)
+{
+  /* Call original code */
+  MB_WM_COMP_MGR_CLIENT_CLASS (
+      MB_WM_OBJECT_GET_PARENT_CLASS(
+          MB_WM_OBJECT(client)))->configure(client);
+
+  /* Queue HDRM to work out visibilities again, as if a window
+   * has changed size, it may have uncovered windows which were
+   * previously invisible. */
+  hd_render_manager_queue_sync();
+}
+
+static void
 hd_comp_mgr_client_class_init (MBWMObjectClass *klass)
 {
+  MBWMCompMgrClientClass *c_klass = MB_WM_COMP_MGR_CLIENT_CLASS (klass);
+
+  c_klass->configure  = hd_comp_mgr_client_configure_real;
+
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdCompMgrClient";
 #endif
@@ -2056,7 +2074,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   /* Now the actor has been created and added to the desktop, make sure we
    * call hdrm_restack to put it in the correct group in hd-render-manager */
-  hd_render_manager_restack();
+  hd_render_manager_queue_sync();
   hd_comp_mgr_portrait_or_not_portrait(mgr);
 
   /* Hide the Edit button if it is currently shown */
@@ -2867,7 +2885,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
 
   /* Decide about portraitification in case a blocking window was unmapped. */
   hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
-  hd_render_manager_restack ();
+  hd_render_manager_queue_sync ();
   hd_comp_mgr_portrait_or_not_portrait (mgr);
 
   return FALSE;

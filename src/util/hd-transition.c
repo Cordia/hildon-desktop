@@ -1518,7 +1518,7 @@ hd_transition_rotating_fsm(void)
                     FALSE, Orientation_change.direction == GOTO_PORTRAIT,
                     G_CALLBACK(hd_transition_rotating_fsm), NULL);
             /* Fix NB#117109 by re-evaluating what is blurred and what isn't */
-            hd_render_manager_restack();
+            hd_render_manager_queue_sync();
           }
         break;
       case FADE_IN:

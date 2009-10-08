@@ -1,3 +1,33 @@
+2009-10-08  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#131081 - Class 0 SMS not shown full screen when switched 
+	                   from portrait to landscape mode
+
+	* src/home/hd-render-manager.h	
+	* src/home/hd-render-manager.c: Removed Button handling code (it is all
+	  handled in HdTitleBar now). Now do hdrm_restack/set_visibilities on
+	  an idle callback. Replaced actor visible checks with
+	  hd_render_manager_actor_is_visible, which is safer. Now check for
+	  fullscreen-ness via size instead of by Window Flag (tallies with
+	  how HDRM does visibility, and works for fullscreen notes, which
+	  don't have the flag).
+	* src/home/hd-home.h	  
+	* src/home/hd-home.c: Fixed hd_home_edit_button_move_completed callback
+	  and moved show/hide code back in, allowing HDRM button code to be
+	  removed. Also removed hd_home_back_button_clicked, as this was 
+	  already handled in HdTitleBar.
+	* src/home/hd-title-bar.c: Removed HDRM button code, and moved call
+	  of hd_launcher_back_button_clicked, in case it ever gets re-added.
+	* src/mb/hd-comp-mgr.c: Make sure we re-sync visibilities if windows
+	  have resized.
+	* src/launcher/hd-launcher.h
+	* src/launcher/hd-launcher.c: Removed parameters to
+	  hd_launcher_back_button_clicked, as they are all ignored anyway.
+	* src/mb/hd-status-area.c: Update to use the same visibility checks
+	  as hdrm_place_titlebar_elements (more portrait-mode compatible).
+	* src/util/hd-transition.c: Now call hdrm_queue_sync instead of
+	  restacking directly.	
+
 2009-10-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.101-1

@@ -62,17 +62,6 @@ struct _HdRenderManagerClass
   TidyCachedGroupClass parent_class;
 };
 
-/* button types that can be given to hd_render_manager_set_button */
-typedef enum
-{
-  HDRM_BUTTON_NONE = 0,
-  HDRM_BUTTON_TASK_NAV,
-  HDRM_BUTTON_LAUNCHER,
-  HDRM_BUTTON_BACK, /* top-right back button */
-  HDRM_BUTTON_EDIT, /* pop-down edit */
-  HDRM_BUTTON_COUNT = HDRM_BUTTON_EDIT,
-} HDRMButtonEnum;
-
 /* Various view states */
 typedef enum
 {
@@ -208,15 +197,10 @@ void hd_render_manager_set_status_area (ClutterActor *item);
 void hd_render_manager_set_status_menu (ClutterActor *item);
 void hd_render_manager_set_operator (ClutterActor *item);
 void hd_render_manager_set_loading  (ClutterActor *item);
-void hd_render_manager_set_button (HDRMButtonEnum button,
-                                   ClutterActor *item);
 /* ----------------------------------------------------------------- */
-ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button);
 ClutterActor *hd_render_manager_get_title_bar(void);
 ClutterActor *hd_render_manager_get_status_area(void);
 MBWindowManagerClient *hd_render_manager_get_status_area_client(void);
-void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible);
-gboolean hd_render_manager_get_visible(HDRMButtonEnum button);
 
 ClutterContainer *hd_render_manager_get_front_group(void);
 
@@ -237,11 +221,7 @@ void hd_render_manager_return_windows(void);
 void hd_render_manager_return_app (ClutterActor *actor);
 void hd_render_manager_return_dialog (ClutterActor *actor);
 
-void hd_render_manager_restack(void);
 void hd_render_manager_place_titlebar_elements(void);
-
-/* Sets whether any of the buttons will actually be set to do anything */
-void hd_render_manager_set_reactive(gboolean reactive);
 
 /* This stops any current transition that render manager is doing */
 void hd_render_manager_stop_transition(void);
@@ -279,6 +259,9 @@ void hd_render_manager_set_input_viewport(void);
 gboolean hd_render_manager_allow_dbus_launch_transition(void);
 
 gboolean hd_render_manager_actor_is_visible(ClutterActor *actor);
+
+void hd_render_manager_queue_sync(void);
+void hd_render_manager_do_sync_if_queued(void);
 
 G_END_DECLS
 
