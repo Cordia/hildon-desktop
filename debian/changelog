@@ -1,8 +1,35 @@
-hildon-desktop (1:2.2.101-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.101-1) unstable; urgency=low
 
-  * foo
+  Adam:
+  * Fixes: NB#132220 - Empty title bar in a particular scenario
+  * Fixes: NB#136911 - Windows is-topmost property is TRUE for a second after
+    call ui closes
+  * Fixes: NB#137478 - Switcher becomes non responding on opening power menu
+    while on switcher view
+  * Fixes: NB#135948 - 'Zombie window' seen in email
+  * Fixes: NB#134488 - Emergency call made from lock code entry dialog in fold
+    closed mode does not show correctly on UI
+  * Fixes: NB#139357 - hildon-desktop-A730-11-1167 crash after random using
+    and then rebooting the device.
+  * Bunch of changes that had S3 keywords
+ 
+  Gordon:
+  * Fixes: NB#137793 - Indicator for view menu in app title area
+  * Bunch of changes that had S3 keywords
+ 
+  Marc:
+  * Bunch of changes that had S3 keywords
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  4 Sep 2009 17:39:44 +0300
+  Kimmo:
+  * Fixes: NB#140378 - ctrl + backspace leaves the switcher black
+  * Fixes: NB#140567 - Find dropdown list cannot be expanded in full screen mode
+  * Fixes: NB#141380 - downloads dialog is not displayed in full screen -
+    browser stops responding instead of showing it
+
+  Jan Arne:
+  * Fixes: NB#141417 - Hildon Status Menu completely unusable after a scenario
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 08 Oct 2009 15:45:07 +0300
 
 hildon-desktop (1:2.2.100-1) unstable; urgency=low
 
