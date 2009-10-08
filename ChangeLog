@@ -1,5 +1,11 @@
 2009-10-08  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
+	Changed clutter_actor_destroy to g_object_unref.
+
+	* src/launcher/hd-launcher.c:
+
+2009-10-08  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
 	Fix leak when recreating the launcher pages.
 
 	* src/launcher/hd-launcher.c:

@@ -369,7 +369,7 @@ _hd_launcher_clear_page (GQuark key_id, gpointer data, gpointer user_data)
 {
   HdLauncherPage *page = HD_LAUNCHER_PAGE (data);
   hd_launcher_grid_clear (HD_LAUNCHER_GRID (hd_launcher_page_get_grid (page)));
-  clutter_actor_destroy (CLUTTER_ACTOR (page));
+  g_object_unref (G_OBJECT (page));
 }
 
 static void
