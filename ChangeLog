@@ -1,3 +1,16 @@
+2009-10-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Crash fix when you move .desktop files around, overlapping with
+	each other.
+
+	* src/launcher/hd-launcher.c (hd_launcher_populate_tree_starting,
+	    hd_launcher_populate_tree_finished,
+	    hd_launcher_populate_tree_finished):
+	  Stop hd_launcher_lazy_traverse_tree() by source id rather than
+	  by user data.  When you add the idle callback with
+	  clutter_threads_add_idle_full() you can't really know
+	  the user data.
+
 2009-10-07  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes NB#142006: CallUI doesn't update orientation when screen is off

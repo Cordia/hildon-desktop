@@ -57,6 +57,7 @@
 
 typedef struct
 {
+  guint gsource_id;
   GList *items;
 } HdLauncherTraverseData;
 
@@ -378,7 +379,7 @@ hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
 
   if (priv->current_traversal)
     {
-      g_idle_remove_by_data (priv->current_traversal);
+      g_source_remove(priv->current_traversal->gsource_id);
       hd_launcher_lazy_traverse_cleanup (priv->current_traversal);
     }
 
@@ -488,7 +489,7 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
 
   if (priv->current_traversal)
     {
-      g_idle_remove_by_data (priv->current_traversal);
+      g_source_remove(priv->current_traversal->gsource_id);
       hd_launcher_lazy_traverse_cleanup (priv->current_traversal);
     }
   priv->current_traversal = tdata;
@@ -506,10 +507,11 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
   g_list_foreach (tdata->items, (GFunc) hd_launcher_create_page, NULL);
 
   /* Then we add the tiles to them in a idle callback. */
-  clutter_threads_add_idle_full (CLUTTER_PRIORITY_REDRAW + 20,
-                                 hd_launcher_lazy_traverse_tree,
-                                 tdata,
-                                 hd_launcher_lazy_traverse_cleanup);
+  tdata->gsource_id = clutter_threads_add_idle_full (
+                                     CLUTTER_PRIORITY_REDRAW + 20,
+                                     hd_launcher_lazy_traverse_tree,
+                                     tdata,
+                                     hd_launcher_lazy_traverse_cleanup);
 }
 
 /* handle clicks to the fake launch image. If we've been up this long the
