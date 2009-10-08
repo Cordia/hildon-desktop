@@ -90,8 +90,8 @@ hd_desktop_init (MBWMObject *this, va_list vap)
    */
   geom.x      = 0;
   geom.y      = 0;
-  geom.width  = wm->xdpy_width;
-  geom.height = wm->xdpy_height;
+  geom.width  = HD_COMP_MGR_LANDSCAPE_WIDTH;
+  geom.height = HD_COMP_MGR_LANDSCAPE_WIDTH;
 
   hd_desktop_request_geometry (client, &geom,
 					 MBWMClientReqGeomForced);

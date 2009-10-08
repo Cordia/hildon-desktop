@@ -1,5 +1,15 @@
 2009-10-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Don't create a desktop window 480x800 if we're started with
+	rotated screen after a crash in portrait mode because we don't
+	reconfigure it ever.
+
+	* src/home/hd-home.c (hd_home_constructed)
+	* src/mb/hd-desktop.c (hd_desktop_init):
+	  Create and keep the desktop window 800x800.
+
+2009-10-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/launcher/hd-launcher.c (_hd_launcher_clear_page):
 	  Reverted g_objecect_unref(page), it still crashes.
 
