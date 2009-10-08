@@ -1,3 +1,8 @@
+2009-10-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/launcher/hd-launcher.c (_hd_launcher_clear_page):
+	  Reverted g_objecect_unref(page), it still crashes.
+
 2009-10-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#128161 - Background is visible after receiving first message
