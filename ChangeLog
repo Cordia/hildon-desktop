@@ -1,3 +1,14 @@
+2009-10-08  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#141881 - HIldon desktop crashed one time while closing and
+	opening RSS applet in layout mode.
+
+	* src/home/hd-home.c (hd_home_unregister_applet): Reset pressed widget
+	when it is removed.
+	* src/home/hd-home.h (hd_home_unregister_applet): Add new function.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client): Call
+	hd_home_unregister_applet when a widget is removed.
+
 2009-10-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Don't create a desktop window 480x800 if we're started with

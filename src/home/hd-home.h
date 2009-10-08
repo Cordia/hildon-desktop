@@ -99,6 +99,8 @@ void hd_home_remove_dialogs(HdHome *home);
 /* Called on theme change */
 void hd_home_theme_changed (HdHome *home);
 
+void hd_home_unregister_applet (HdHome       *home,
+                                ClutterActor *applet);
 G_END_DECLS
 
 #endif

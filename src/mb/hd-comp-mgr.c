@@ -1389,14 +1389,10 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       ClutterActor *applet = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
 
-      /* Unregister applet from HomeView */
+      /* Unregister applet from Home */
       if (applet)
-        {
-          HdHomeView *view = g_object_get_data (G_OBJECT (applet),
-                                                "HD-HomeView");
-          if (HD_IS_HOME_VIEW (view))
-            hd_home_view_unregister_applet (view, applet);
-        }
+        hd_home_unregister_applet (HD_HOME (priv->home),
+                                   applet);
     }
 
   if (priv->current_hclient == hclient)

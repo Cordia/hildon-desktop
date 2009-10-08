@@ -1930,3 +1930,19 @@ hd_home_theme_changed (HdHome *home)
   clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_right),
                                &col);
 }
+
+void
+hd_home_unregister_applet (HdHome       *home,
+                           ClutterActor *applet)
+{
+  HdHomePrivate *priv = home->priv;
+  HdHomeView *view;
+
+  if (priv->pressed_applet == applet)
+    priv->pressed_applet = NULL;
+
+  view = g_object_get_data (G_OBJECT (applet),
+                            "HD-HomeView");
+  if (HD_IS_HOME_VIEW (view))
+    hd_home_view_unregister_applet (view, applet);
+}
