@@ -1,5 +1,11 @@
 2009-10-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#138369 - When zooming from app to task switcher, background
+	                   does not scale
+	
+	* src/home/hd-render-manager.c: When moving from app to ask nav, ensure
+	  that while blurring stops, the zooming still continues.
+
 	Fixes: NB#140723 - Task Launcher background should not un-blur and 
 	                   un-dim when launching new app
 	                   
