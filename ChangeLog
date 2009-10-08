@@ -1,3 +1,8 @@
+2009-10-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_remove): Refresh
+	the adjustments also here.
+
 2009-10-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Crash fix when you move .desktop files around, overlapping with

@@ -335,6 +335,12 @@ hd_launcher_grid_remove (ClutterContainer *container,
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
 
+  if (priv->h_adjustment)
+    hd_launcher_grid_refresh_h_adjustment (HD_LAUNCHER_GRID (container));
+
+  if (priv->v_adjustment)
+    hd_launcher_grid_refresh_v_adjustment (HD_LAUNCHER_GRID (container));
+
   g_signal_emit_by_name (container, "actor-removed", actor);
 
   g_object_unref (actor);
