@@ -1,3 +1,9 @@
+2009-10-08  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Fix leak when recreating the launcher pages.
+
+	* src/launcher/hd-launcher.c:
+
 2009-10-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_remove): Refresh
