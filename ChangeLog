@@ -1,3 +1,15 @@
+2009-10-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#134488 Emergency call made from lock code entry dialog in fold
+		  closed mode does not show correctly on UI
+
+	"Still window not drawn properly. End call button is half visible."
+	Was known (also in SR) but thought to be wontfixable.
+
+	* src/mb/hd-dialog.c (hd_dialog_request_geometry):
+	  Reverted the last fix or workaround or whatever to this function
+	  as it doesn't seem to be necessary anymore and just causes trouble.
+
 2009-10-09  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Reverted: NB#131081 - Class 0 SMS not shown full screen when switched 
