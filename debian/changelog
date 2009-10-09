@@ -1,6 +1,26 @@
-hildon-desktop (1:2.2.102-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.102-1) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#141881 - Hildon desktop crashed one time while closing and
+    opening RSS applet in layout mode.
+
+  Adam:
+  * Fixes: NB#141838 - Able to access application menu from home and also
+    panning from right to left not possible
+  * Don't create a desktop window 480x800 if we're started with rotated screen
+    after a crash in portrait mode because we don't reconfigure it ever.
+
+  Gordon:
+  * Fixes: NB#128161 - Background is visible after receiving first message
+    when device is locked - in layout mode
+  * Fixes: NB#138341 - Progress indicator is not visible if too long title 
+    set to window
+  * Fixes: NB#138369 - When zooming from app to task switcher, background
+    does not scale
+  * Fixes: NB#140723 - Task Launcher background should not un-blur and 
+    un-dim when launching new app
+  * Fixes: NB#131081 - Class 0 SMS not shown full screen when switched 
+    from portrait to landscape mode
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  8 Oct 2009 15:47:40 +0300
 

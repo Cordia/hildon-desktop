@@ -1602,10 +1602,6 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
   XFixesSetWindowShapeRegion (wm->xdpy, clutter_window, ShapeBounding,
                               0, 0, region);
 
-  XFixesSetWindowShapeRegion (wm->xdpy, wm->desktop->window->xwindow,
-		              ShapeBounding,
-                              0, 0, region);
-
   XFixesDestroyRegion (wm->xdpy, region);
 
   fs_comp = want_fs_comp;
