@@ -1,3 +1,15 @@
+2009-10-09  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#141246 - Task launcher glow does not work well for some icons
+
+	* src/launcher/hd-launcher-tile.h: Increased HD_LAUNCHER_TILE_ICON_SIZE
+	  to allow for a transparent border, added REAL_SIZE to determine the
+	  size of icon we load from disk.
+	* src/launcher/hd-launcher-tile.c: Now load the task launcher icons
+	  with a 1px transparent border, which stops the strange effects.
+	  (Previously all icons had this border, but recent ones have started
+	  using the entire 64x64px area)
+
 2009-10-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.102-1

@@ -272,6 +272,7 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   GtkIconTheme *icon_theme;
   GtkIconInfo *info;
+  GdkPixbuf *pixbuf;
 
   if (priv->icon_name)
     {
@@ -292,7 +293,7 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
 
   icon_theme = gtk_icon_theme_get_default();
   info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name,
-                                    HD_LAUNCHER_TILE_ICON_SIZE,
+                                    HD_LAUNCHER_TILE_ICON_REAL_SIZE,
                                     GTK_ICON_LOOKUP_NO_SVG);
   if (info == NULL)
     {
@@ -300,7 +301,7 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
       g_free (priv->icon_name);
       priv->icon_name = g_strdup (HD_LAUNCHER_DEFAULT_ICON);
       info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name,
-                                        HD_LAUNCHER_TILE_ICON_SIZE,
+                                        HD_LAUNCHER_TILE_ICON_REAL_SIZE,
                                         GTK_ICON_LOOKUP_NO_SVG);
     }
   if (info == NULL)
@@ -319,7 +320,38 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
       priv->icon_name = NULL;
       return;
     }
-  priv->icon = clutter_texture_new_from_file(fname, NULL);
+
+  /* We must expand these images so there is a 1 pixel transparent
+   * border around them, or the glow effect won't work properly. We use
+   * gdk_pixbuf_new_from_file_at_size as the pixbuf pointed to by fname
+   * isn't actually guaranteed to be the correct size.  */
+  pixbuf = gdk_pixbuf_new_from_file_at_size(fname,
+      HD_LAUNCHER_TILE_ICON_REAL_SIZE, HD_LAUNCHER_TILE_ICON_REAL_SIZE, 0);
+  if (pixbuf)
+    {
+      gint w = gdk_pixbuf_get_width(pixbuf);
+      gint h = gdk_pixbuf_get_height(pixbuf);
+      GdkPixbuf *pixbufb = gdk_pixbuf_new(
+          GDK_COLORSPACE_RGB, TRUE, 8, w+2, h+2);
+
+      gdk_pixbuf_fill(pixbufb, 0);
+      gdk_pixbuf_copy_area(pixbuf, 0, 0, w, h,
+                           pixbufb, 1, 1);
+
+      priv->icon = clutter_texture_new();
+      clutter_texture_set_from_rgb_data(
+          CLUTTER_TEXTURE(priv->icon),
+          gdk_pixbuf_get_pixels(pixbufb),
+          gdk_pixbuf_get_has_alpha(pixbufb),
+          gdk_pixbuf_get_width(pixbufb),
+          gdk_pixbuf_get_height(pixbufb),
+          gdk_pixbuf_get_rowstride(pixbufb),
+          gdk_pixbuf_get_n_channels(pixbufb), 0, 0);
+      g_object_unref(pixbufb);
+    }
+  if (pixbuf)
+    g_object_unref(pixbuf);
+
   if (!priv->icon)
   {
     g_warning ("%s: couldn't create texture for %s\n", __FUNCTION__, fname);
