@@ -81,9 +81,11 @@ void          hd_launcher_window_created (void);
 
 HdLauncherTree *hd_launcher_get_tree (void);
 
-/* Called from HdTitleBar */
+/* Added as signal in hd-render-manager */
 gboolean
-hd_launcher_back_button_clicked(void);
+hd_launcher_back_button_clicked (ClutterActor *actor,
+                                 ClutterEvent *event,
+                                 gpointer data);
 
 /* Exported so it can be called when something is launched from outside,
  * like with a dbus call. */

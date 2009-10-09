@@ -1,3 +1,18 @@
+2009-10-09  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Reverted: NB#131081 - Class 0 SMS not shown full screen when switched 
+	                      from portrait to landscape mode
+	* src/home/hd-render-manager.h	
+	* src/home/hd-render-manager.c
+	* src/home/hd-home.h	  
+	* src/home/hd-home.c
+	* src/home/hd-title-bar.c
+	* src/mb/hd-comp-mgr.c
+	* src/launcher/hd-launcher.h
+	* src/launcher/hd-launcher.c
+	* src/mb/hd-status-area.c
+	* src/util/hd-transition.c
+
 2009-10-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#136911 [PR1.1 proposal] Windows is-topmost property is TRUE

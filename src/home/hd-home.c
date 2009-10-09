@@ -121,7 +121,6 @@ struct _HdHomePrivate
   ClutterEffectTemplate *hide_edit_button_template;
 
   ClutterActor          *edit_group; /* An overlay group for edit mode */
-  /* TODO: Edit button should probably be handled by HdTitleBar */
   ClutterActor          *edit_button;
 
   ClutterActor          *operator;
@@ -257,6 +256,17 @@ hd_home_edit_button_clicked (ClutterActor *button,
   hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
 
   return TRUE;
+}
+
+gboolean
+hd_home_back_button_clicked (ClutterActor *button,
+			     ClutterEvent *event,
+			     HdHome       *home)
+{
+  if (hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT)
+    hd_render_manager_set_state(HDRM_STATE_HOME);
+
+  return FALSE;
 }
 
 static void
@@ -1622,18 +1632,19 @@ hd_home_show_edit_button (HdHome *home)
   ClutterTimeline *timeline;
   gint             x;
 
-  if (hd_render_manager_actor_is_visible(priv->edit_button))
+  if (hd_render_manager_get_visible(HDRM_BUTTON_EDIT))
     return;
 
   clutter_actor_get_size (priv->edit_button, &button_width, &button_height);
 
   x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
 
-  clutter_actor_set_position (priv->edit_button, x, 0);
+  clutter_actor_set_position (priv->edit_button,
+                              x,
+                              0);
   /* we must set the final position first so that the X input
-   * area can be set properly by HDRM */
-  clutter_actor_show(priv->edit_button);
-  hd_render_manager_set_input_viewport();
+   * area can be set properly */
+  hd_render_manager_set_visible(HDRM_BUTTON_EDIT, TRUE);
 
   clutter_actor_set_position (priv->edit_button,
                               x,
@@ -1654,15 +1665,9 @@ hd_home_show_edit_button (HdHome *home)
 }
 
 static void
-hd_home_edit_button_move_completed (ClutterActor *actor, gpointer data)
+hd_home_edit_button_move_completed (HdHome *home)
 {
-  HdHome *home = HD_HOME(data);
-  HdHomePrivate   *priv = home->priv;
-
-  /* Hide the edit button, and alert hdrm it doesn't need to grab this
-   * area any more */
-  clutter_actor_hide(priv->edit_button);
-  hd_render_manager_set_input_viewport();
+  hd_render_manager_set_visible(HDRM_BUTTON_EDIT, FALSE);
 }
 
 void
@@ -1673,8 +1678,8 @@ hd_home_hide_edit_button (HdHome *home)
   ClutterTimeline *timeline;
   gint             x;
 
-  if (!hd_render_manager_actor_is_visible(priv->edit_button))
-      return;
+  if (!hd_render_manager_get_visible(HDRM_BUTTON_EDIT))
+    return;
 
   if (priv->edit_button_cb)
     {
@@ -1826,7 +1831,7 @@ is_status_menu_dialog (MBWindowManagerClient *c)
                      &xwinhint))
     {
       gboolean status_menu_dialog = FALSE;
-
+      
       if (xwinhint.res_name)
         {
           status_menu_dialog = strstr (xwinhint.res_name, "hildon-status-menu") != NULL;
@@ -1857,8 +1862,8 @@ hd_is_hildon_home_dialog (MBWindowManagerClient  *c)
   if (c->stacking_layer > 0)
     return FALSE;
 
-  /*
-   * Do not close if it is a hildon-status-menu dialog like the flash sms window
+  /* 
+   * Do not close if it is a hildon-status-menu dialog like the flash sms window 
    */
   if (is_status_menu_dialog (c))
     return FALSE;

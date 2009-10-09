@@ -185,6 +185,10 @@ struct _HdRenderManagerPrivate {
   MBWindowManagerClient *status_area_client;
   ClutterActor         *status_menu;
   ClutterActor         *operator;
+  ClutterActor         *button_task_nav;
+  ClutterActor         *button_launcher;
+  ClutterActor         *button_back;
+  ClutterActor         *button_edit;
   ClutterActor         *loading_image;
   ClutterActor         *loading_image_parent;
 
@@ -207,12 +211,6 @@ struct _HdRenderManagerPrivate {
   gboolean            timeline_playing;
 
   gboolean            in_set_state;
-
-  /* When a sync is queued, this contains the id of the source
-   * (added with g_idle_add) */
-  gint                idle_sync_source;
-  /* If we are currently executing a sync, set this to avoid loops */
-  gboolean            in_idle_sync;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -327,8 +325,9 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
                               CLUTTER_ACTOR(priv->home));
 
   /* Edit button */
+  priv->button_edit = g_object_ref(hd_home_get_edit_button(priv->home));
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
-                              hd_home_get_edit_button(priv->home));
+                              priv->button_edit);
 
   /* Operator */
   hd_render_manager_set_operator(hd_home_get_operator(priv->home));
@@ -340,6 +339,15 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
                            G_CALLBACK(stage_allocation_changed), priv->title_bar);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               CLUTTER_ACTOR(priv->title_bar));
+
+  g_signal_connect (priv->button_back,
+                    "button-release-event",
+                    G_CALLBACK (hd_launcher_back_button_clicked),
+                    launcher);
+  g_signal_connect (priv->button_back,
+                    "button-release-event",
+                    G_CALLBACK (hd_home_back_button_clicked),
+                    home);
 
   return the_render_manager;
 }
@@ -731,12 +739,7 @@ hd_render_manager_unzoom_background()
 /* Checks the whole tree for visibility */
 gboolean hd_render_manager_actor_is_visible(ClutterActor *actor)
 {
-  ClutterActor *stage;
-
-  if (!actor)
-    return FALSE;
-
-  stage = clutter_actor_get_stage(actor);
+  ClutterActor *stage = clutter_actor_get_stage(actor);
   for (;actor;actor=clutter_actor_get_parent(actor))
     if (actor!=stage && !CLUTTER_ACTOR_IS_VISIBLE(actor))
       return FALSE;
@@ -747,56 +750,46 @@ gboolean hd_render_manager_actor_is_visible(ClutterActor *actor)
 void
 hd_render_manager_set_input_viewport()
 {
-  ClutterGeometry geom[4];
+  ClutterGeometry geom[HDRM_BUTTON_COUNT + 1];
   int geom_count = 0;
   HdRenderManagerPrivate *priv = the_render_manager->priv;
+  gboolean app_mode = STATE_IS_APP(priv->state);
 
   if (!STATE_NEED_WHOLE_SCREEN_INPUT(priv->state) &&
       !priv->has_input_blocker)
     {
+      gint i;
       /* Now look at what buttons we have showing, and add each visible button X
-       * to the X input viewport. */
-      /* LEFT button */
-      if (hd_title_bar_get_state(priv->title_bar) & HDTB_VIS_BTN_LEFT_MASK)
+       * to the X input viewport. We unfortunately have to ignore
+       * HDRM_BUTTON_BACK in app mode, because matchbox wants to pick them up
+       * from X */
+      for (i = 1; i <= HDRM_BUTTON_COUNT; i++)
         {
-          ClutterGeometry *g = &geom[geom_count++];
-          g->width = hd_title_bar_get_button_width(priv->title_bar);
-          g->height = HD_COMP_MGR_TOP_MARGIN;
-          g->x = 0;
-          g->y = 0;
-        }
-
-      /* RIGHT button: We have to ignore this in app mode, because matchbox
-       * wants to pick it up from X */
-      if ((hd_title_bar_get_state(priv->title_bar) & HDTB_VIS_BTN_RIGHT_MASK) &&
-          !STATE_IS_APP(priv->state))
-        {
-          ClutterGeometry *g = &geom[geom_count++];
-          g->width = hd_title_bar_get_button_width(priv->title_bar);
-          g->height = HD_COMP_MGR_TOP_MARGIN;
-          g->x = hd_comp_mgr_get_current_screen_width() - g->width;
-          g->y = 0;
-        }
-
-      /* Edit button... */
-      if (hd_render_manager_actor_is_visible(hd_home_get_edit_button(priv->home)))
-        {
-          clutter_actor_get_geometry(hd_home_get_edit_button(priv->home),
-                                     &geom[geom_count++]);
+          ClutterActor *button;
+          button = hd_render_manager_get_button((HDRMButtonEnum)i);
+          if (button &&
+              hd_render_manager_actor_is_visible(button) &&
+              (CLUTTER_ACTOR_IS_REACTIVE(button)) &&
+              (i!=HDRM_BUTTON_BACK || !app_mode))
+            {
+              clutter_actor_get_geometry (button, &geom[geom_count]);
+              geom_count++;
+            }
         }
 
       /* Block status area?  If so refer to the client geometry,
        * because we might be right after a place_titlebar_elements()
        * which could just have moved it. */
-      if (hd_render_manager_actor_is_visible(priv->status_area) &&
-          (STATE_IS_PORTRAIT (priv->state)
-           /* also in the case of "dialog blur": */
-           || (priv->state == HDRM_STATE_APP
-                /* FIXME: the following check does not work when there are
-                 * two levels of dialogs */
-                && (priv->current_blur & (HDRM_BLUR_BACKGROUND|HDRM_BLUR_HOME))
-              )
-           ))
+      if ((STATE_IS_PORTRAIT (priv->state) && priv->status_area
+           && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area))
+         /* also in the case of "dialog blur": */
+         || (priv->state == HDRM_STATE_APP
+              && priv->status_area
+              && hd_render_manager_actor_is_visible(priv->status_area)
+              /* FIXME: the following check does not work when there are
+               * two levels of dialogs */
+              && (priv->current_blur == HDRM_BLUR_BACKGROUND ||
+                  priv->current_blur == HDRM_BLUR_HOME)))
         {
           g_assert(priv->status_area_client);
           const MBGeometry *src = &priv->status_area_client->frame_geometry;
@@ -826,6 +819,8 @@ void hd_render_manager_sync_clutter_before ()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
+  HDRMButtonEnum visible_top_left = HDRM_BUTTON_NONE;
+  HDRMButtonEnum visible_top_right = HDRM_BUTTON_NONE;
   HdTitleBarVisEnum btn_state = hd_title_bar_get_state(priv->title_bar) &
     ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH |
       HDTB_VIS_BTN_RIGHT_MASK | HDTB_VIS_FOREGROUND |
@@ -845,24 +840,28 @@ void hd_render_manager_sync_clutter_before ()
         blur |=  HDRM_ZOOM_FOR_HOME;
       case HDRM_STATE_HOME_PORTRAIT: /* Fallen truth */
         if (hd_task_navigator_is_empty())
-          btn_state |= HDTB_VIS_BTN_LAUNCHER;
+          visible_top_left = HDRM_BUTTON_LAUNCHER;
         else
-          btn_state |= HDTB_VIS_BTN_SWITCHER;
+          visible_top_left = HDRM_BUTTON_TASK_NAV;
+        visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_HOME_EDIT:
         blur |= HDRM_BLUR_HOME; /* fall through intentionally */
       case HDRM_STATE_HOME_EDIT_DLG:
+        visible_top_left = HDRM_BUTTON_NONE;
+        visible_top_right = HDRM_BUTTON_NONE;      
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_LOADING: /* fall through intentionally */
       case HDRM_STATE_LOADING_SUBWIN:
         if (hd_task_navigator_is_empty())
-          btn_state |= HDTB_VIS_BTN_LAUNCHER;
+          visible_top_left = HDRM_BUTTON_LAUNCHER;
         else
-          btn_state |= HDTB_VIS_BTN_SWITCHER;
+          visible_top_left = HDRM_BUTTON_TASK_NAV;
+        visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         /* Fixed NB#140723 - Task Launcher background should not un-blur
          *                   and un-dim when launching new app */
@@ -871,17 +870,21 @@ void hd_render_manager_sync_clutter_before ()
         break;
       case HDRM_STATE_APP:
       case HDRM_STATE_APP_PORTRAIT:
-        btn_state |= HDTB_VIS_BTN_SWITCHER;
+        visible_top_left = HDRM_BUTTON_TASK_NAV;
+        visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
         break;
       case HDRM_STATE_TASK_NAV:
-        btn_state |= HDTB_VIS_BTN_LAUNCHER;
+        visible_top_left = HDRM_BUTTON_LAUNCHER;
+        visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         blur |=  HDRM_BLUR_HOME |
                  HDRM_ZOOM_FOR_TASK_NAV |
                  HDRM_SHOW_TASK_NAV;
         break;
       case HDRM_STATE_LAUNCHER:
+        visible_top_left = HDRM_BUTTON_NONE;
+        visible_top_right = HDRM_BUTTON_BACK;      
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         blur |=
             HDRM_BLUR_HOME |
@@ -891,6 +894,8 @@ void hd_render_manager_sync_clutter_before ()
         break;
       case HDRM_STATE_NON_COMPOSITED:
       case HDRM_STATE_NON_COMP_PORT:
+        visible_top_left = HDRM_BUTTON_NONE;
+        visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
         break;
     }
@@ -919,6 +924,25 @@ void hd_render_manager_sync_clutter_before ()
       else
         clutter_actor_hide(priv->status_area);
     }
+
+  /* Set button state */
+  switch (visible_top_left)
+  {
+    case HDRM_BUTTON_NONE:
+      break;
+    case HDRM_BUTTON_LAUNCHER:
+      btn_state |= HDTB_VIS_BTN_LAUNCHER;
+      break;
+    case HDRM_BUTTON_TASK_NAV:
+      btn_state |= HDTB_VIS_BTN_SWITCHER;
+      break;
+    default:
+      g_warning("%s: Invalid button %d in top-left",
+          __FUNCTION__, visible_top_left);
+  }
+
+  if (visible_top_right == HDRM_BUTTON_BACK)
+    btn_state |= HDTB_VIS_BTN_BACK;
 
   if (STATE_TOOLBAR_FOREGROUND(priv->state))
     btn_state |= HDTB_VIS_FOREGROUND;
@@ -981,7 +1005,7 @@ void hd_render_manager_sync_clutter_before ()
   if (STATE_IS_APP(priv->state) != STATE_IS_APP(priv->previous_state) ||
       priv->previous_state == HDRM_STATE_NON_COMPOSITED ||
       priv->previous_state == HDRM_STATE_NON_COMP_PORT)
-    hd_render_manager_queue_sync();
+    hd_render_manager_set_visibilities();
 
   /* Now look at what buttons we have showing, and add each visible button X
    * to the X input viewport. FIXME: Do we need this now HdTitleBar does it? */
@@ -1224,6 +1248,56 @@ void hd_render_manager_set_loading  (ClutterActor *item)
     priv->loading_image = CLUTTER_ACTOR(g_object_ref(item));
 }
 
+void hd_render_manager_set_button (HDRMButtonEnum btn,
+                                   ClutterActor *item)
+{
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  switch (btn)
+    {
+      case HDRM_BUTTON_TASK_NAV:
+        g_assert(!priv->button_task_nav);
+        priv->button_task_nav = CLUTTER_ACTOR(g_object_ref(item));
+        return; /* Don't reparent, it's fine where it is. */
+      case HDRM_BUTTON_LAUNCHER:
+        g_assert(!priv->button_launcher);
+        priv->button_launcher = CLUTTER_ACTOR(g_object_ref(item));
+        return; /* Likewise */
+      case HDRM_BUTTON_BACK:
+        g_assert(!priv->button_back);
+        priv->button_back = CLUTTER_ACTOR(g_object_ref(item));
+        break;
+      case HDRM_BUTTON_EDIT:
+        g_warning("%s: edit button must be set at creation time!", __FUNCTION__);
+	g_assert(FALSE);
+        break;
+      default:
+        g_warning("%s: Invalid Enum %d", __FUNCTION__, btn);
+	g_assert(FALSE);
+    }
+}
+
+ClutterActor *hd_render_manager_get_button(HDRMButtonEnum button)
+{
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  switch (button)
+    {
+      case HDRM_BUTTON_TASK_NAV:
+        return priv->button_task_nav;
+      case HDRM_BUTTON_LAUNCHER:
+        return priv->button_launcher;
+      case HDRM_BUTTON_BACK:
+        return priv->button_back;
+      case HDRM_BUTTON_EDIT:
+        return priv->button_edit;
+      default:
+        g_warning("%s: Invalid Enum %d", __FUNCTION__, button);
+	g_assert(FALSE);
+    }
+  return 0;
+}
+
 ClutterActor *hd_render_manager_get_title_bar(void)
 {
   return CLUTTER_ACTOR(the_render_manager->priv->title_bar);
@@ -1237,6 +1311,48 @@ ClutterActor *hd_render_manager_get_status_area(void)
 MBWindowManagerClient *hd_render_manager_get_status_area_client(void)
 {
   return the_render_manager->priv->status_area_client;
+}
+
+void hd_render_manager_set_visible(HDRMButtonEnum button, gboolean visible)
+{
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  /* FIXME: Should this be handled by HdTitleBar? */
+
+  switch (button)
+  {
+    case HDRM_BUTTON_EDIT:
+      if (visible == CLUTTER_ACTOR_IS_VISIBLE(priv->button_edit))
+        return;
+      if (visible)
+        clutter_actor_show(priv->button_edit);
+      else
+        clutter_actor_hide(priv->button_edit);
+      /* we need this so we can set up the X input area */
+      hd_render_manager_set_input_viewport();
+      break;
+    default:
+      g_warning("%s: Not supposed to set visibility for %d",
+                __FUNCTION__, button);
+  }
+}
+
+gboolean hd_render_manager_get_visible(HDRMButtonEnum button)
+{
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  switch (button)
+  {
+    case HDRM_BUTTON_EDIT:
+      return CLUTTER_ACTOR_IS_VISIBLE(priv->button_edit);
+    case HDRM_BUTTON_TASK_NAV:
+      return CLUTTER_ACTOR_IS_VISIBLE(priv->button_task_nav);
+    case HDRM_BUTTON_LAUNCHER:
+      return CLUTTER_ACTOR_IS_VISIBLE(priv->button_launcher);
+    default:
+      g_warning("%s: Not supposed to be asking for visibility of %d",
+                __FUNCTION__, button);
+  }
+  return FALSE;
 }
 
 /* FIXME: this should not be exposed */
@@ -1314,7 +1430,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
           /* this is needed, otherwise task switcher background can remain
            * black (NB#140378) */
-          hd_render_manager_queue_sync();
+          hd_render_manager_restack();
 	}
 
       /* Return the actor if we used it for loading. */
@@ -1779,7 +1895,7 @@ hd_render_manager_get_geo_for_current_screen(ClutterActor *actor,
 }
 
 /* Called to restack the windows in the way we use for rendering... */
-static void hd_render_manager_restack()
+void hd_render_manager_restack()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   MBWindowManager *wm;
@@ -1995,50 +2111,6 @@ static void hd_render_manager_restack()
   hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
 }
 
-static gboolean hd_render_manager_do_sync() {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
-
-  if (priv->in_idle_sync)
-    {
-      g_warning("%s: should not be called from itself", __FUNCTION__);
-      return FALSE;
-    }
-  priv->in_idle_sync = TRUE;
-
-  hd_render_manager_restack();
-
-  priv->in_idle_sync = FALSE;
-
-  /* Remove the callback... */
-  if (priv->idle_sync_source)
-    {
-      g_source_remove(priv->idle_sync_source);
-      priv->idle_sync_source = 0;
-    }
-  return FALSE;
-}
-
-void hd_render_manager_do_sync_if_queued() {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
-
-  if (!priv->in_idle_sync && priv->idle_sync_source)
-    hd_render_manager_do_sync();
-}
-
-void hd_render_manager_queue_sync() {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
-
-  if (!priv->idle_sync_source)
-    {
-      /* Make this higher priority than HdTitleBar and
-       * clutter_redraw */
-      priv->idle_sync_source = g_idle_add_full(
-          G_PRIORITY_DEFAULT+10,
-          hd_render_manager_do_sync,
-          NULL, NULL);
-    }
-}
-
 static void hd_render_manager_update_blur_state()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
@@ -2152,6 +2224,20 @@ void hd_render_manager_set_launcher_subview(gboolean subview)
   else
     hd_render_manager_set_blur(priv->current_blur &
         ~HDRM_ZOOM_FOR_LAUNCHER_SUBMENU);
+}
+
+/* Sets whether any of the buttons will actually be set to do anything */
+void hd_render_manager_set_reactive(gboolean reactive)
+{
+  gint i;
+
+  for (i = 1; i <= HDRM_BUTTON_COUNT; ++i)
+    {
+      ClutterActor *button = hd_render_manager_get_button((HDRMButtonEnum)i);
+      clutter_actor_set_reactive(button, reactive);
+    }
+
+  hd_home_set_reactive (the_render_manager->priv->home, reactive);
 }
 
 /* Work out if rect is visible after being clipped to avoid every
@@ -2439,32 +2525,23 @@ void hd_render_manager_set_visibilities()
   blockers = 0;
 
   /* Do we have a fullscreen client totally filling the screen? */
-  /* Start from the top, looking down for visible, fullscreen windows
-   * until we find one that fills the screen. */
+  /* This is voodo.  Please insert a comment here that explains
+   * why to consider the state. */
   has_fullscreen = FALSE;
-
-  if (!STATE_NEED_TASK_NAV(priv->state))
-    {
-      /* When going to the task-nav state using ctrl-backspace we appear to
-       * get here before the desktop has been raised above windows - hence
-       * has_fullscreen gets set to TRUE and title bar is not displayed in
-       * home state. */
-      wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
-      for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
-        {
-          if (!c->cm_client || c->desktop < 0 || !c->window)
-            /* It's probably an unnecessary check. */
-            continue;
-          if (!hd_render_manager_is_client_visible(c))
-            continue;
-          /* We must check for fullscreen-ness via the geometry, as notes
-           * sometimes *are* fullscreen (so are positioned as such by hdrm_restack)
-           * but do not have the flag (meaning they are overlapped by the title
-           * bar). See bug 131081. */
-          has_fullscreen |=
-            hd_comp_mgr_client_is_maximized(c->window->geometry);
-        }
-    }
+  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  if (STATE_IS_APP(priv->state)
+      || priv->state == HDRM_STATE_HOME
+      || priv->state == HDRM_STATE_HOME_PORTRAIT)
+    for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
+      {
+        if (!c->cm_client || c->desktop < 0 || !c->window)
+          /* It's probably an unnecessary check. */
+          continue;
+        if (!hd_render_manager_is_client_visible(c))
+          continue;
+        has_fullscreen |= c->window->ewmh_state
+          & MBWMClientWindowEWMHStateFullscreen;
+      }
 
   /* If we have a fullscreen something hide the blur_front
    * and move SA out of the way.  BTW blur_front is implcitly
@@ -2523,10 +2600,6 @@ gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c)
   if (!(a  = mb_wm_comp_mgr_clutter_client_get_actor(cc)))
     return FALSE;
 
-  /* If we were supposed to sync up visibilities, do it now
-   * as we need to know we've got them. */
-  hd_render_manager_do_sync_if_queued();
-
   /*
    * It is necessary to check the parents because sometimes
    * hd_render_manager_set_visibilities() hides the container
@@ -2535,7 +2608,14 @@ gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c)
    * never really mapped but deleted right away that time,
    * like in the case of unwanted notifications.
    */
-  return hd_render_manager_actor_is_visible(a);
+  while (a && a != CLUTTER_ACTOR (the_render_manager))
+    {
+      if (!CLUTTER_ACTOR_IS_VISIBLE(a))
+        return FALSE;
+      a = clutter_actor_get_parent(a);
+    }
+
+  return TRUE;
 }
 
 /* Place the status area, the operator logo and the title bar,

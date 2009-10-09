@@ -96,6 +96,12 @@ void hd_home_set_reactive (HdHome   *home,
 /* Remove any hildon-home dialogs that are showing */
 void hd_home_remove_dialogs(HdHome *home);
 
+/* Added as signal in hd-render-manager */
+gboolean
+hd_home_back_button_clicked (ClutterActor *button,
+                             ClutterEvent *event,
+                             HdHome       *home);
+
 /* Called on theme change */
 void hd_home_theme_changed (HdHome *home);
 

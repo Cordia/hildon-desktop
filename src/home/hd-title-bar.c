@@ -349,8 +349,14 @@ hd_title_bar_init (HdTitleBar *bar)
   /* TODO: setup BTN_SWITCHER_HIGHLIGHT for adding here... */
 
   hd_title_bar_add_left_signals(bar, priv->buttons[BTN_SWITCHER]);
+  hd_render_manager_set_button (HDRM_BUTTON_TASK_NAV,
+                                priv->buttons[BTN_SWITCHER]);
   hd_title_bar_add_left_signals(bar, priv->buttons[BTN_LAUNCHER]);
+  hd_render_manager_set_button (HDRM_BUTTON_LAUNCHER,
+                                priv->buttons[BTN_LAUNCHER]);
   hd_title_bar_add_right_signals(bar, priv->buttons[BTN_BACK]);
+  hd_render_manager_set_button (HDRM_BUTTON_BACK,
+                                priv->buttons[BTN_BACK]);
 
   hd_title_bar_add_left_signals(bar, priv->buttons[BTN_MENU]);
   hd_title_bar_add_right_signals(bar, priv->buttons[BTN_DONE]);
@@ -1334,9 +1340,6 @@ hd_title_bar_top_right_press (HdTitleBar *bar)
 
   if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
     hd_render_manager_set_state(HDRM_STATE_HOME);
-  /* For if we ever add the back button back into launcher */
-  if (hd_render_manager_get_state() == HDRM_STATE_LAUNCHER)
-    hd_launcher_back_button_clicked();
 
   g_signal_emit (bar, signals[PRESS_TOP_LEFT], 0);
 }
