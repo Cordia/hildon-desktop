@@ -2442,20 +2442,28 @@ void hd_render_manager_set_visibilities()
   /* Start from the top, looking down for visible, fullscreen windows
    * until we find one that fills the screen. */
   has_fullscreen = FALSE;
-  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
-  for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
+
+  if (!STATE_NEED_TASK_NAV(priv->state))
     {
-      if (!c->cm_client || c->desktop < 0 || !c->window)
-        /* It's probably an unnecessary check. */
-        continue;
-      if (!hd_render_manager_is_client_visible(c))
-        continue;
-      /* We must check for fullscreen-ness via the geometry, as notes
-       * sometimes *are* fullscreen (so are positioned as such by hdrm_restack)
-       * but do not have the flag (meaning they are overlapped by the title
-       * bar). See bug 131081. */
-      has_fullscreen |=
-        hd_comp_mgr_client_is_maximized(c->window->geometry);
+      /* When going to the task-nav state using ctrl-backspace we appear to
+       * get here before the desktop has been raised above windows - hence
+       * has_fullscreen gets set to TRUE and title bar is not displayed in
+       * home state. */
+      wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+      for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
+        {
+          if (!c->cm_client || c->desktop < 0 || !c->window)
+            /* It's probably an unnecessary check. */
+            continue;
+          if (!hd_render_manager_is_client_visible(c))
+            continue;
+          /* We must check for fullscreen-ness via the geometry, as notes
+           * sometimes *are* fullscreen (so are positioned as such by hdrm_restack)
+           * but do not have the flag (meaning they are overlapped by the title
+           * bar). See bug 131081. */
+          has_fullscreen |=
+            hd_comp_mgr_client_is_maximized(c->window->geometry);
+        }
     }
 
   /* If we have a fullscreen something hide the blur_front

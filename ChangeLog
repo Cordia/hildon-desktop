@@ -1,5 +1,10 @@
 2009-10-09  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Regression fix (on 102): Fullscreen app -> Ctrl-BS -> TaskNav -> Home
+	                         Leaves title bar invisible.
+	* src/home/hd-render-manager.c: Add check for task_nav in 
+	  set_visibilities. It turns out the voodoo did something after all...
+
 	Fixes: NB#141246 - Task launcher glow does not work well for some icons
 
 	* src/launcher/hd-launcher-tile.h: Increased HD_LAUNCHER_TILE_ICON_SIZE
