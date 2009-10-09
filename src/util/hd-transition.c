@@ -1592,7 +1592,8 @@ hd_transition_rotate_screen_and_change_state (HDRMStateEnum state)
 gboolean
 hd_transition_rotation_will_change_state (void)
 {
-  return Orientation_change.phase == FADE_OUT
+  return (Orientation_change.phase == TRANS_START
+          || Orientation_change.phase == FADE_OUT)
     && Orientation_change.goto_state != HDRM_STATE_UNDEFINED;
 }
 

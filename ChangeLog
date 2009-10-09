@@ -1,3 +1,11 @@
+2009-10-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#136911 [PR1.1 proposal] Windows is-topmost property is TRUE
+		  for a second after call ui closes
+
+	* src/util/hd-transition.c (hd_transition_rotation_will_change_state):
+	  Account for the new fsm states.
+
 2009-10-09  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Regression fix (on 102): Fullscreen app -> Ctrl-BS -> TaskNav -> Home
