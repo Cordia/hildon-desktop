@@ -1,5 +1,9 @@
 2009-10-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Revert the revert of NB#134488, this isn't going anywhere.
+
+2009-10-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#140066 [PR1.1 proposal] In portrait mode, preview notification
 		  should minimize into task button
 

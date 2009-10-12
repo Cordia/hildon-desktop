@@ -198,7 +198,9 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
                                       &north, &south, &west, &east);
 
   /* remember the requested frame height */
-  if (flags & (MBWMClientReqGeomForced|MBWMClientReqGeomIsViaConfigureReq))
+  if (flags & (MBWMClientReqGeomForced))
+    HD_DIALOG (client)->requested_height = new_geometry->height;
+  else if (flags & (MBWMClientReqGeomIsViaConfigureReq))
     HD_DIALOG (client)->requested_height = new_geometry->height + north+south;
 
   if (flags & MBWMClientReqGeomIsViaConfigureReq)
