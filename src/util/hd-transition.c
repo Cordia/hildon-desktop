@@ -554,13 +554,13 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
     return;
 
   clutter_actor_get_size(actor, &width, &height);
-
   now = frame_num / (float)clutter_timeline_get_n_frames(timeline);
 
-  if (hd_comp_mgr_is_portrait())
+  if (hd_comp_mgr_is_portrait()
+      && hd_transition_get_int("notification", "is_cool", 0))
     {
-      /* In portrait swipe from right to left, stay in the corner
-       * then swipe out, following a bezier curve.  At the start
+      /* In portrait fly from right to left, stay in the corner
+       * then fly away, following a bezier curve.  At the start
        * the notification's bottom-center is at the screen's
        * top-right.  By the end the notification's bottom-right
        * is at the screen's top-left. */
@@ -608,25 +608,34 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
 
       if (now < thr)
         { /* fade, move, resize */
+          float sc;
           gint cx, cy;
-          float sx, sy;
+          gint dx, dy, dw, dh;
 
           /*
-           * visual geometry: 366x88+112+0 -> 96x23+8+17
+           * visual geometry: 366x88+112+0 -> 96x23+8+17 | 64x15+8+20
            *                  scale it down proportionally
            *                  and place it in the middle of the tasks button
-           *                  leaving 8 pixels left and right
+           *                  leaving 8 pixels left and right, keeping the
+           *                  aspect ratio
            * opacity:         1 -> 0.75
            * use smooth ramping
            */
-          t = hd_transition_smooth_ramp(now / thr);
-          cx = ( 8 - clutter_actor_get_x(actor))*t;
-          cy = (17 - clutter_actor_get_y(actor))*t;
-          sx = ((96.0/width  - 1)*t + 1);
-          sy = ((23.0/height - 1)*t + 1);
 
-          clutter_actor_set_scale (actor, sx, sy);
-          clutter_actor_set_anchor_point (actor, -cx/sx, -cy/sy);
+          dx = 8;
+          dw = hd_title_bar_get_button_width( /* ^$^#@^@$^gh35g3#$#$^ */
+                        HD_TITLE_BAR(hd_render_manager_get_title_bar()))
+            - 2*dx;
+          dh = (float)dw/width * height;
+          dy = (HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT - dh) / 2;
+
+          t = hd_transition_smooth_ramp(now / thr);
+          cx = (dx - clutter_actor_get_x(actor))*t;
+          cy = (dy - clutter_actor_get_y(actor))*t;
+          sc = (((float)dw/width  - 1)*t + 1);
+
+          clutter_actor_set_scale (actor, sc, sc);
+          clutter_actor_set_anchor_point (actor, -cx/sc, -cy/sc);
           clutter_actor_set_opacity(actor, 255 * ((0.75 - 1)*t + 1));
         }
       else

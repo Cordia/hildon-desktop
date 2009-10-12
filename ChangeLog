@@ -1,3 +1,13 @@
+2009-10-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#140066 [PR1.1 proposal] In portrait mode, preview notification
+		  should minimize into task button
+
+	* src/util/hd-transition.c (on_notification_timeline_new_frame):
+	  Enhanced the landscape code to be usable in p-mode.
+	* data/transitions.ini:
+	  Added parameter to chose between the two transitions.
+
 2009-10-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#134488 Emergency call made from lock code entry dialog in fold
