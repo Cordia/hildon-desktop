@@ -1,8 +1,11 @@
-hildon-desktop (1:2.2.103-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.103-1) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#140558 - Menu indicator not shown in home view edit mode
+  * Fixes: NB#129810 - Home shortcuts backedup in one home view are restored
+    in another view in a scenario
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  9 Oct 2009 07:18:36 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 12 Oct 2009 14:37:58 +0300
 
 hildon-desktop (1:2.2.102-1) unstable; urgency=low
 
