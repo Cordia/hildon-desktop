@@ -1,5 +1,12 @@
 2009-10-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#140558 - Menu indicator not shown in home view edit mode
+
+	* src/home/hd-title-bar.c (hd_title_bar_set_for_edit_mode): Show menu
+	indicator in edit mode.
+
+2009-10-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#129810 - Home shortcuts backedup in one home view are
 	restored in another view in a scenario
 

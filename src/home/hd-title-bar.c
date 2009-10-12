@@ -836,7 +836,10 @@ hd_title_bar_set_for_edit_mode(HdTitleBar *bar)
 
   if (!HD_IS_TITLE_BAR(bar))
     return;
+
   priv = bar->priv;
+
+  priv->has_menu_indicator = TRUE;
 
   state |= HDTB_VIS_BTN_MENU;
   state |= HDTB_VIS_BTN_DONE;
