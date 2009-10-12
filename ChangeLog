@@ -1,3 +1,11 @@
+2009-10-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#129810 - Home shortcuts backedup in one home view are
+	restored in another view in a scenario
+
+	* src/home/hd-home.c (hd_home_add_applet): Do not store view id to
+	GConf when the view is currently not active.
+
 2009-10-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Revert the revert of NB#134488, this isn't going anywhere.

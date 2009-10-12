@@ -1560,9 +1560,7 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   g_signal_connect (applet, "motion-event",
                   G_CALLBACK (hd_home_applet_motion), home);
 
-  if (view_id < 0 || view_id >= MAX_VIEWS ||
-      !hd_home_view_container_get_active (HD_HOME_VIEW_CONTAINER (priv->view_container),
-                                          view_id))
+  if (view_id < 0 || view_id >= MAX_VIEWS)
     {
       GError *error = NULL;
 
@@ -1588,6 +1586,11 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
                      error->message);
           g_clear_error (&error);
         }
+    }
+  else if (!hd_home_view_container_get_active (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                               view_id))
+    {
+      view_id = hd_home_get_current_view_id (home);
     }
 
   wm_applet->view_id = view_id;
