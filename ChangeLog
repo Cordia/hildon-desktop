@@ -1,3 +1,20 @@
+2009-10-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Make sure home.plugins is restored after GConf values are restored.
+
+	Fixes: NB#129810 - Home shortcuts backedup in one home view are
+	restored in another view in a scenario
+
+	* src/hildon-desktop-restore.sh: Restore home.plugins-backup to
+	home.plugins
+
+	* src/hildon-desktop.conf: Backup home.plugins-backup
+
+	* src/hildon-desktop.prebackup.sh: Copy home.plugins to
+	home.plugins-backup.
+
+	* src/Makefile.am: Add new restore script.
+
 2009-10-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes NB#141441 - Screenshot texture re-allocated on rotation
