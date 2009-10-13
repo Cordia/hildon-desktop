@@ -24,6 +24,8 @@ struct _TidyCachedGroupPrivate
   /* Internal TidyCachedGroup stuff */
   CoglHandle tex;
   CoglHandle fbo;
+  /* When we rendered to this texture, did we render rotated? */
+  gboolean rotated;
 
   gboolean use_alpha; /* whether to use an alpha channel in our textures */
 
@@ -48,6 +50,7 @@ tidy_cached_group_paint (ClutterActor *actor)
   ClutterColor    bgcol = { 0x00, 0x00, 0x00, 0xff };
   ClutterColor    col = { 0xff, 0xff, 0xff, 0xff };
   gint            x_1, y_1, x_2, y_2;
+  gboolean        rotate_90;
 
   if (!TIDY_IS_CACHED_GROUP(actor))
     return;
@@ -88,6 +91,7 @@ tidy_cached_group_paint (ClutterActor *actor)
       tex_width = cogl_texture_get_width(priv->tex);
       tex_height = cogl_texture_get_height(priv->tex);
     }
+#if RESIZE_TEXTURE
   /* free texture if the size is wrong */
   if (tex_width!=exp_width || tex_height!=exp_height) {
     if (priv->fbo)
@@ -99,6 +103,7 @@ tidy_cached_group_paint (ClutterActor *actor)
       }
     priv->source_changed = TRUE;
   }
+#endif
   /* create the texture + offscreen buffer if they didn't exist. */
   if (!priv->tex)
     {
@@ -112,6 +117,16 @@ tidy_cached_group_paint (ClutterActor *actor)
       cogl_texture_set_filters(priv->tex, CGL_NEAREST, CGL_NEAREST);
       priv->fbo = cogl_offscreen_new_to_texture (priv->tex);
     }
+  /* It may be that we have resized, but the texture has not.
+   * If so, try and keep screen looking 'nice' by rotating so that
+   * we don't have a texture that is totally the wrong aspect ratio */
+  rotate_90 = (tex_width > tex_height) != (width > height);
+  /* If rotation has changed, trigger a redraw */
+  if (priv->rotated != rotate_90)
+    {
+      priv->rotated = rotate_90;
+      priv->source_changed = TRUE;
+    }
 
   /* Draw children into an offscreen buffer */
   if (priv->source_changed)
@@ -120,7 +135,14 @@ tidy_cached_group_paint (ClutterActor *actor)
       cogl_push_matrix();
       /* translate a bit to let bilinear filter smooth out intermediate pixels */
       cogl_translatex(CFX_ONE/2,CFX_ONE/2,0);
-      cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height);
+      if (rotate_90) {
+        cogl_scale(CFX_ONE*tex_width/height, CFX_ONE*tex_height/width);
+        cogl_translatex(CFX_ONE*height/2, CFX_ONE*width/2, 0);
+        cogl_rotate(90, 0, 0, 1);
+        cogl_translatex(-CFX_ONE*width/2, -CFX_ONE*height/2, 0);
+      } else {
+        cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height);
+      }
 
       cogl_paint_init(&bgcol);
       cogl_color (&white);
@@ -151,11 +173,23 @@ tidy_cached_group_paint (ClutterActor *actor)
   /* Now we render the image we have... */
   cogl_color (&col);
 
+  if (rotate_90)
+    {
+      cogl_push_matrix();
+      cogl_translatex(CFX_ONE*width/2, CFX_ONE*height/2, 0);
+      cogl_rotate(90, 0, 0, 1);
+      cogl_scale(-CFX_ONE*height/width, -CFX_ONE*width/height);
+      cogl_translatex(-CFX_ONE*width/2, -CFX_ONE*height/2, 0);
+    }
   cogl_texture_rectangle (priv->tex,
                           0, 0,
                           CLUTTER_INT_TO_FIXED (width),
                           CLUTTER_INT_TO_FIXED (height),
                           0, 0, CFX_ONE, CFX_ONE);
+  if (rotate_90)
+    {
+      cogl_pop_matrix();
+    }
 }
 
 static void
