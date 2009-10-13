@@ -1,3 +1,16 @@
+2009-10-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Stuck in p-mode when a portrait_on_map client disappears before
+	hd would have started to really manage it.  An example could be
+	an incoming call that terminates very early while we're in the
+	progress of rotation.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client):
+	  Rotate back to landscape if the client we started rotation for
+	  disappears without being ever mapped.
+	* src/home/hd-task-navigator.c (create_appthumb):
+	  Added X error traps that were previously though to be unnecessary.
+
 2009-10-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Match windows on PID even if they don't have a correct WM_CLASS.

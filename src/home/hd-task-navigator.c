@@ -2702,6 +2702,7 @@ create_appthumb (ClutterActor * apwin)
   /* .nodest: try the property first then fall back to the WM_CLASS hint.
    * TODO This is temporary, just not to break the little functionality
    *      we already have. */
+  mb_wm_util_trap_x_errors ();
   apthumb->nodest = hd_util_get_x_window_string_property (
                                 apthumb->win->wm, apthumb->win->xwindow,
                                 HD_ATOM_NOTIFICATION_THREAD);
@@ -2718,6 +2719,7 @@ create_appthumb (ClutterActor * apwin)
       else
         g_warning ("XGetClassHint(%lx): failed", apthumb->win->xwindow);
     }
+  mb_wm_util_untrap_x_errors ();
 
   /* .video_fname */
   if ((app = hd_comp_mgr_client_get_launcher (HD_COMP_MGR_CLIENT (hmgrc))) != NULL)

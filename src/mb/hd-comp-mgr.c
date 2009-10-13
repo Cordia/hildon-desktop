@@ -1380,6 +1380,19 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (priv->current_hclient == hclient)
     priv->current_hclient = NULL;
 
+  /*
+   * We have the following situation to prevent: a client is forecast
+   * as portrait-wanting, and we started to rotate but we're not in a
+   * STATE_IS_PORTRAIT yet, but the client disappears in the meantime
+   * without even being mapped.  If we don't do anything about it we
+   * will remain rotated but not in STATE_IS_PORTRAIT().
+   */
+  if (!STATE_IS_PORTRAIT (hd_render_manager_get_state ())
+      && hd_transition_is_rotating_to_portrait ()
+      && !mb_wm_client_is_map_confirmed (c)
+      && c->window->portrait_on_map)
+    hd_transition_rotate_screen (mgr->wm, FALSE);
+
   /* Dialogs and Notes (including notifications) have already been dealt
    * with in hd_comp_mgr_effect().  This is because by this time we don't
    * have information about transiency. */
