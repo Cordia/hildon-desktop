@@ -1,10 +1,12 @@
 2009-10-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes NB#141441 - Screenshot texture re-allocated on rotation
+	Note: requires clutter 0.8.2-0maemo54
 	
 	* src/tidy/tidy-cached-group.c: Use similar idea to tidy-blur-group,
 	  where we keep the texture allocated at 800x480, but just rotate
 	  it by 90 degrees if we have to.
+	* debian/control: Depend on clutter 0.8.2-0maemo54
 
 2009-10-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
