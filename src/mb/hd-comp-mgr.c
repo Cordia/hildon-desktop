@@ -250,7 +250,7 @@ hd_comp_mgr_client_get_app_key (HdCompMgrClient *client, HdCompMgr *hmgr)
 
   status = XGetClassHint(wm->xdpy, wm_client->window->xwindow, &class_hint);
 
-  if (mb_wm_util_untrap_x_errors () || !status || !class_hint.res_name)
+  if (mb_wm_util_untrap_x_errors () || !status)
     goto out;
 
   app = hd_app_mgr_match_window (class_hint.res_name,

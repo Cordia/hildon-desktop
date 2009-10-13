@@ -1,5 +1,12 @@
 2009-10-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
+	Match windows on PID even if they don't have a correct WM_CLASS.
+	Fixes: NB#135143
+
+	* src/mb/hd-comp-mgr.c:
+
+2009-10-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
 	Send all keypresses in the same time interval to the same application.
 	Fixes: NB#133392
 
