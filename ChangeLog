@@ -1,3 +1,10 @@
+2009-10-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Allow notifications in task launcher.
+	Fixes: NB#132630
+
+	* src/home/hd-render-manager.h:
+
 2009-10-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#140066 corrected.
