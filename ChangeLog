@@ -1,3 +1,10 @@
+2009-10-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Don't process key presses when showing loading screen.
+	Fixes: NB#141019
+
+	* src/home/hd-render-manager.h:
+
 2009-10-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Stuck in p-mode when a portrait_on_map client disappears before

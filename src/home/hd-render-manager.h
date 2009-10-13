@@ -188,7 +188,8 @@ typedef enum
 
 #define STATE_NO_CALL_FROM_HOME(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | \
-                     HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER))
+                     HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER | \
+                     HDRM_STATE_LOADING | HDRM_STATE_LOADING_SUBWIN))
 
 /* The states from which we show CallUI if rotated to portrait. */
 #define STATE_SHOW_CALLUI(s) \
