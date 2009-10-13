@@ -1570,6 +1570,7 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   gchar *view_key;
   MBWMCompMgrClient *cclient;
   HdHomeApplet *wm_applet;
+  GError *error = NULL;
 
   cclient = g_object_get_data (G_OBJECT (applet),
                                "HD-MBWMCompMgrClutterClient");
@@ -1578,11 +1579,23 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   view_key = g_strdup_printf ("/apps/osso/hildon-desktop/applets/%s/view",
                               wm_applet->applet_id);
 
+  gconf_client_clear_cache (client);
+
   /* Get view id and adjust to 0..3 */
   view_id = gconf_client_get_int (client,
                                   view_key,
-                                  NULL);
+                                  &error);
   view_id--;
+
+  if (error)
+    {
+      g_warning ("%s. Could not get view for applet %s. %d. %s.",
+                 __FUNCTION__,
+                 wm_applet->applet_id,
+                 error->code,
+                 error->message);
+      g_clear_error (&error);
+    }
 
   /*
    * Here we connect to the pointer events of the applet actor. It is needed for
@@ -1598,6 +1611,11 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
   if (view_id < 0 || view_id >= MAX_VIEWS)
     {
       GError *error = NULL;
+
+      g_debug ("%s. Fix View %d for widget %s.",
+               __FUNCTION__,
+               view_id,
+               wm_applet->applet_id);
 
       view_id = hd_home_get_current_view_id (home);
 

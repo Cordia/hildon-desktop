@@ -1,5 +1,13 @@
 2009-10-13  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hildon-desktop-restore.sh: Fix restore script. Restart
+	hildon-home.
+
+	* src/home/hd-home.c (hd_home_add_applet): Empty GConfClient cache to
+	make sure no old values are read.
+
+2009-10-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Make sure home.plugins is restored after GConf values are restored.
 
 	Fixes: NB#129810 - Home shortcuts backedup in one home view are
