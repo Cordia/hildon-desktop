@@ -548,12 +548,16 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
   float now;
   ClutterActor *actor;
   guint width, height;
+  gint tbw, px, py;
 
   actor = data->cclient_actor;
   if (!CLUTTER_IS_ACTOR(actor) || hd_dbus_display_is_off)
     return;
 
+  tbw = hd_title_bar_get_button_width( /* Task Button's current width. */
+                        HD_TITLE_BAR(hd_render_manager_get_title_bar()));
   clutter_actor_get_size(actor, &width, &height);
+  clutter_actor_get_position(actor, &px, &py);
   now = frame_num / (float)clutter_timeline_get_n_frames(timeline);
 
   if (hd_comp_mgr_is_portrait()
@@ -613,7 +617,8 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
           gint dx, dy, dw, dh;
 
           /*
-           * visual geometry: 366x88+112+0 -> 96x23+8+17 | 64x15+8+20
+           * visual geometry: 366x88+112+0 -> 96x23+8+17 or
+           *                  366x88+80+0  -> 64x15+8+20
            *                  scale it down proportionally
            *                  and place it in the middle of the tasks button
            *                  leaving 8 pixels left and right, keeping the
@@ -622,16 +627,16 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
            * use smooth ramping
            */
 
+          /* It's probably best to count it with your fingers to follow
+           * this mumble-jumbo. */
           dx = 8;
-          dw = hd_title_bar_get_button_width( /* ^$^#@^@$^gh35g3#$#$^ */
-                        HD_TITLE_BAR(hd_render_manager_get_title_bar()))
-            - 2*dx;
+          dw = tbw - 2*dx;
           dh = (float)dw/width * height;
           dy = (HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT - dh) / 2;
 
           t = hd_transition_smooth_ramp(now / thr);
-          cx = (dx - clutter_actor_get_x(actor))*t;
-          cy = (dy - clutter_actor_get_y(actor))*t;
+          cx = (dx - tbw)*t + tbw - px;
+          cy = (dy -  py)*t;
           sc = (((float)dw/width  - 1)*t + 1);
 
           clutter_actor_set_scale (actor, sc, sc);
@@ -652,7 +657,8 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
       float scale =  1 + (1-amt)*0.5f;
       float ang = amt * 3.141592f * 0.5f;
       float corner_x = (hd_comp_mgr_get_current_screen_width()*0.5f
-                        - HD_COMP_MGR_TOP_LEFT_BTN_WIDTH) * cos(ang);
+                        - HD_COMP_MGR_TOP_LEFT_BTN_WIDTH) * cos(ang)
+                       - px + tbw;
       float corner_y = (sin(ang)-1) * height;
       /* We set anchor point so if the notification resizes/positions
        * in flight, we're ok.  NOTE that the position of the actor

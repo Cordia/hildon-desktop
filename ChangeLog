@@ -1,3 +1,10 @@
+2009-10-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#140066 corrected.
+
+	* src/util/hd-transition.c (on_notification_timeline_new_frame):
+	  Align the notification to the tasks button.
+
 2009-10-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.103-1
