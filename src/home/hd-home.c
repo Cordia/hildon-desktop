@@ -92,6 +92,7 @@
 
 #define FN_KEY GDK_ISO_Level3_Shift
 #define FN_MODIFIER Mod5Mask
+#define HD_HOME_KEY_PRESS_TIMEOUT (3)
 
 #define LONG_PRESS_DUR 1
 
@@ -168,10 +169,18 @@ struct _HdHomePrivate
     FN_STATE_LOCKED,    // until turned off all key press are Fn-modified
   } fn_state;
 
-  /* Fro hd_home_desktop_key_release():
+  enum
+  {
+    KEY_SENT_NONE,        // No key has been sent yet.
+    KEY_SENT_CALLUI,      // A key has been sent to CallUI.
+    KEY_SENT_ADDRESSBOOK  // A key has been sent to the addressbook.
+  } key_sent;
+  time_t last_key_time;
+
+  /* For hd_home_desktop_key_release():
    * Don't change @fn_state if it was wasn't pressed alone. */
   gboolean ignore_next_fn_release;
-  /* Both are reset when the HDRM state is changed. */
+  /* These are all reset when the HDRM state is changed. */
 };
 
 typedef struct {
@@ -522,14 +531,32 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
   guint keyval;
   guint32 unicode;
   unsigned pretend_fn;
+  time_t now;
 
   if (STATE_NO_CALL_FROM_HOME (hd_render_manager_get_state ()))
     return;
 
 /*  g_debug ("%s, display: %p, keymap: %p", __FUNCTION__, display, keymap); */
 
-  pretend_fn = priv->fn_state != FN_STATE_NONE ? FN_MODIFIER : 0;
-  g_debug ("%s. pretend_fn: %d", __FUNCTION__, pretend_fn);
+  /* First check how long has it been since last key press. If more than n sec,
+   * reset.
+   */
+  time (&now);
+  if (difftime (now, priv->last_key_time) >= HD_HOME_KEY_PRESS_TIMEOUT)
+    {
+      priv->key_sent = KEY_SENT_NONE;
+    }
+  priv->last_key_time = now;
+
+  if (priv->key_sent == KEY_SENT_CALLUI)
+    {
+      pretend_fn = FN_MODIFIER;
+    }
+  else
+    {
+      pretend_fn = priv->fn_state != FN_STATE_NONE ? FN_MODIFIER : 0;
+    }
+  g_debug ("%s: pretend_fn: %d", __FUNCTION__, pretend_fn);
   gdk_keymap_translate_keyboard_state (keymap,
                                        xev->keycode,
                                        xev->state | pretend_fn,
@@ -541,14 +568,22 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
            xev->keycode, xev->state, keyval);
 
   unicode = gdk_keyval_to_unicode (keyval);
-  if (g_unichar_isdigit (unicode) ||
-      unicode == '#' || unicode == '*' || unicode == '+')
+  if (priv->key_sent == KEY_SENT_NONE)
+    {
+      if (g_unichar_isdigit (unicode) ||
+          unicode == '#' || unicode == '*' || unicode == '+')
+        priv->key_sent = KEY_SENT_CALLUI;
+      else if (g_unichar_isalpha (unicode))
+        priv->key_sent = KEY_SENT_ADDRESSBOOK;
+    }
+
+  if (priv->key_sent == KEY_SENT_CALLUI)
     {
       char buffer[10] = {0,};
 
       g_unichar_to_utf8 (unicode, buffer);
 
-/*      g_debug ("%s, digit: keyval: %u, unicode: %u, buffer: %s", __FUNCTION__, keyval, unicode, buffer); */
+      g_debug ("%s, digit: keyval: %u, unicode: %u, buffer: %s", __FUNCTION__, keyval, unicode, buffer);
 
       if (priv->call_ui_proxy)
         {
@@ -557,7 +592,7 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
                 G_TYPE_STRING, buffer, G_TYPE_INVALID);
         }
     }
-  else if (g_unichar_isalpha (unicode))
+  else if (priv->key_sent == KEY_SENT_ADDRESSBOOK)
     {
       char buffer[10] = {0,};
 

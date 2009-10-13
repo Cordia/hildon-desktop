@@ -1,5 +1,12 @@
 2009-10-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
+	Send all keypresses in the same time interval to the same application.
+	Fixes: NB#133392
+
+	* src/home/hd-home.c:
+
+2009-10-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
 	Allow notifications in task launcher.
 	Fixes: NB#132630
 
