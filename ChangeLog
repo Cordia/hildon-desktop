@@ -1,5 +1,18 @@
 2009-10-13  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#129810 - Home shortcuts backedup in one home view are
+	restored in another view in a scenario
+
+	* src/hildon-desktop-post-backup.sh:
+	* src/Makefile.am: Add post backup script to remove temporary files.
+
+	* src/hildon-desktop-restore.sh:
+	* src/hildon-desktop.conf:
+	* src/hildon-desktop.prebackup.sh: Fix case if default shortcuts are
+	backed up.
+
+2009-10-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hildon-desktop-restore.sh: Fix restore script. Restart
 	hildon-home.
 

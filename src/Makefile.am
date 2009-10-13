@@ -39,6 +39,10 @@ backupprebackupdir = ${sysconfdir}/osso-backup/pre-backup.d/
 backupprebackup_SCRIPTS = \
 	hildon-desktop.prebackup.sh
 
+backuppostbackupdir = ${sysconfdir}/osso-backup/post-backup.d/
+backuppostbackup_SCRIPTS = \
+	hildon-desktop-post-backup.sh
+
 backuprestoredir = ${sysconfdir}/osso-backup/restore.d/always/
 backuprestore_SCRIPTS = \
 	hildon-desktop-restore.sh
