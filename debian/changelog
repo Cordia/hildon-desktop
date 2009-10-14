@@ -1,8 +1,25 @@
-hildon-desktop (1:2.2.104-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.104-1) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#129810 - Home shortcuts backedup in one home view are
+    restored in another view in a scenario
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 12 Oct 2009 14:39:36 +0300
+  Gordon:
+  * Fixes: NB#141441 - Screenshot texture re-allocated on rotation
+
+  Marc:
+  * Fixes: NB#141019 - Don't process key presses when showing loading screen.
+  * Fixes: NB#135143 - Match windows on PID even if they don't have a correct
+    WM_CLASS.
+  * Fixes: NB#133392 - Send all keypresses in the same time interval to the
+    same application.
+  * Fixes: NB#132630 - Allow notifications in task launcher.
+
+  Adam:
+  * Fixes: NB#140066 - In portrait mode, preview notification should minimize
+    into task button
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 14 Oct 2009 10:10:27 +0300
 
 hildon-desktop (1:2.2.103-1) unstable; urgency=low
 
