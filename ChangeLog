@@ -1,3 +1,14 @@
+2009-10-14  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#130803 - Possible to Pann in the layout mode and also able
+	to come out of the layout mode without actually tapping on the Done
+	button
+
+	* src/home/hd-home-view.c:
+	* src/home/hd-home.c (root_window_client_message):
+	* src/home/hd-switcher.c (hd_switcher_constructed):
+	* src/mb/hd-comp-mgr.c: Remove unneeded button pressed signal.
+
 2009-10-14  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-note.c (hd_note_init): Add portrait non-comp. mode to the

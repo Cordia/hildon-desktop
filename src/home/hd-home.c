@@ -106,14 +106,6 @@ enum
   PROP_HDRM,
 };
 
-enum
-{
-  SIGNAL_BACKGROUND_CLICKED,
-  N_SIGNALS
-};
-
-static guint signals[N_SIGNALS];
-
 struct _HdHomePrivate
 {
   MBWMCompMgrClutter    *comp_mgr;
@@ -242,19 +234,6 @@ hd_home_class_init (HdHomeClass *klass)
 				"--""--",
 				G_PARAM_WRITABLE);
   g_object_class_install_property (object_class, PROP_HDRM, pspec);
-
-  signals[SIGNAL_BACKGROUND_CLICKED] =
-      g_signal_new ("background-clicked",
-                    G_OBJECT_CLASS_TYPE (object_class),
-                    G_SIGNAL_RUN_FIRST,
-                    G_STRUCT_OFFSET (HdHomeClass, background_clicked),
-                    NULL,
-                    NULL,
-                    g_cclosure_marshal_VOID__BOXED,
-                    G_TYPE_NONE,
-                    1,
-		    CLUTTER_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
 }
 
 static gboolean
@@ -752,7 +731,7 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 
 	      hd_pvr_texture_save(filename, pixbuf, NULL);
 
-	      gdk_pixbuf_unref (pixbuf);
+	      g_object_unref (pixbuf);
 	    }
 	    break;
 	  case 1:

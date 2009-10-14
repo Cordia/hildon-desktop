@@ -112,8 +112,6 @@ static void hd_switcher_item_closed (HdSwitcher *switcher,
 
 static void hd_switcher_group_background_clicked (HdSwitcher   *switcher,
 						  ClutterActor *actor);
-static void hd_switcher_home_background_clicked (HdSwitcher   *switcher,
-						 ClutterActor *actor);
 
 static gboolean hd_switcher_notification_clicked (HdSwitcher *switcher,
                                                   HdNote *note);
@@ -188,9 +186,6 @@ hd_switcher_constructed (GObject *object)
 {
   GError            *error = NULL;
   HdSwitcherPrivate *priv = HD_SWITCHER (object)->priv;
-  HdHome	    *home =
-    HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
-
 
   g_signal_connect_swapped (hd_render_manager_get_title_bar(),
                             "clicked-top-left",
@@ -204,9 +199,6 @@ hd_switcher_constructed (GObject *object)
                               "leave-top-left",
                               G_CALLBACK (hd_switcher_leave),
                               object);
-  g_signal_connect_swapped (home, "background-clicked",
-                            G_CALLBACK (hd_switcher_home_background_clicked),
-                            object);
   /* Task Launcher events */
   priv->launcher = hd_launcher_get ();
   g_signal_connect (priv->launcher, "launcher-hidden",
@@ -930,14 +922,6 @@ hd_switcher_get_task_navigator (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
   return CLUTTER_ACTOR(priv->task_nav);
-}
-
-static void
-hd_switcher_home_background_clicked (HdSwitcher   *switcher,
-	   			         ClutterActor *actor)
-{
-  g_debug("hd_switcher_home_background_clicked: switcher=%p\n", switcher);
-  hd_switcher_group_background_clicked (switcher, actor);
 }
 
 static void

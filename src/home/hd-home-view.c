@@ -228,39 +228,6 @@ hd_home_view_class_init (HdHomeViewClass *klass)
                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
 
-static gboolean
-hd_home_view_background_release (ClutterActor *self,
-				 ClutterEvent *event,
-				 HdHomeView   *view)
-{
-  HdHomeViewPrivate *priv = view->priv;
-  GHashTableIter iter;
-  gpointer value;
-
-  g_debug ("Background release");
-
-  /*
-   * If the click started on an applet, we might have a motion callback
-   * installed -- remove it.
-   */
-  g_hash_table_iter_init (&iter, priv->applets);
-  while (g_hash_table_iter_next (&iter, NULL, &value))
-    {
-      HdHomeViewAppletData *data = value;
-
-      if (data->motion_cb)
-        {
-          g_signal_handler_disconnect (data->actor, data->motion_cb);
-          data->motion_cb = 0;
-        }
-    }
-
-  if (hd_render_manager_get_state() != HDRM_STATE_HOME_EDIT)
-    g_signal_emit_by_name (priv->home, "background-clicked", 0, event);
-
-  return TRUE;
-}
-
 /* applets_container is not a member of HdHomeView (it is in HdHome's 'front'
  * container. Hence we want to show/hide the applets container whenever the
  * home view itself is hidden */
@@ -321,10 +288,6 @@ hd_home_view_constructed (GObject *object)
                                priv->background);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (object), TRUE);
-
-  g_signal_connect (object, "button-release-event",
-		    G_CALLBACK (hd_home_view_background_release),
-		    object);
 
   g_signal_connect (object, "notify::allocation",
                     G_CALLBACK (hd_home_view_allocation_changed),

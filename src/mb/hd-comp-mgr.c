@@ -470,7 +470,6 @@ static void hd_comp_mgr_unmap_notify
 static void hd_comp_mgr_turn_on (MBWMCompMgr *mgr);
 static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c,
                                 MBWMCompMgrClientEvent event);
-static void hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor);
 static Bool hd_comp_mgr_client_property_changed (XPropertyEvent *event,
                                                  HdCompMgr *hmgr);
 static Bool hd_comp_mgr_portrait_forecast (MBWindowManager *wm);
@@ -553,10 +552,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   priv->home = g_object_new (HD_TYPE_HOME, "comp-mgr", cmgr, NULL);
 
   clutter_actor_set_reactive (priv->home, TRUE);
-
-  g_signal_connect_swapped (priv->home, "background-clicked",
-                            G_CALLBACK (hd_comp_mgr_home_clicked),
-                            cmgr);
 
   clutter_actor_show (priv->home);
 
@@ -2890,12 +2885,6 @@ hd_comp_mgr_sync_stacking (HdCompMgr * hmgr)
      * the effect has higher priority too and it could starve us. */
     priv->stack_sync = g_idle_add_full (0, (GSourceFunc)hd_comp_mgr_restack,
                                         hmgr, NULL);
-}
-
-static void
-hd_comp_mgr_home_clicked (HdCompMgr *hmgr, ClutterActor *actor)
-{
-  hd_render_manager_set_state(HDRM_STATE_HOME);
 }
 
 /*
