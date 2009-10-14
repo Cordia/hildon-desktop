@@ -272,7 +272,8 @@ hd_note_init (MBWMObject *this, va_list vap)
       geom.width  = w + client->window->geometry.width  + e;
       geom.height = n + client->window->geometry.height + s;
 
-      if (hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED)
+      if (hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED ||
+          hd_render_manager_get_state() == HDRM_STATE_NON_COMP_PORT)
         {
           /* This is to fix bug 134348 - preview notes momentarily
            * visible over non-composited mode.
@@ -371,7 +372,8 @@ hd_note_request_geometry (MBWindowManagerClient *client,
    * some flickering. See the comments in hd_note_init. */
   if ((HD_NOTE (client)->note_type == HdNoteTypeIncomingEventPreview ||
        HD_NOTE (client)->note_type == HdNoteTypeIncomingEvent) &&
-      hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED)
+      (hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED ||
+       hd_render_manager_get_state() == HDRM_STATE_NON_COMP_PORT))
     new_geometry.y = -(1 + new_geometry.height);
 
   /*

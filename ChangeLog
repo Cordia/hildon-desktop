@@ -1,5 +1,10 @@
 2009-10-14  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/mb/hd-note.c (hd_note_init): Add portrait non-comp. mode to the
+	check.
+	* src/mb/hd-note.c (hd_note_request_geometry): Add portrait non-comp.
+	mode to the check.
+
 	Release 2.2.104-1
 
 2009-10-13  Jan Arne Petersen  <jpetersen@openismus.com>
