@@ -1,5 +1,12 @@
 2009-10-14  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#142949 - Active status area also in portrait
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_input_viewport):
+	Support active status area also in portrait mode.
+
+2009-10-14  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#130803 - Possible to Pann in the layout mode and also able
 	to come out of the layout mode without actually tapping on the Done
 	button
