@@ -1,3 +1,14 @@
+2009-10-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#142941 - Snap to grid for Home applets/shortcuts
+
+	* data/transitions.ini: Add snap to grid key/values.
+
+	* src/home/hd-home-view.c (snap_coordinate_to_grid,
+	snap_widget_to_grid): Add snap to grid support.
+
+	* debian/changelog: update
+
 2009-10-15  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#137452 - Remove nice task launcher animation

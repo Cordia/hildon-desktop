@@ -130,6 +130,8 @@ hd_home_view_allocation_changed (HdHomeView    *home_view,
                                  GParamSpec *pspec,
                                  gpointer    user_data);
 
+static void snap_widget_to_grid (ClutterActor *widget);
+
 typedef struct _HdHomeViewAppletData HdHomeViewAppletData;
 
 struct _HdHomeViewAppletData
@@ -650,6 +652,10 @@ hd_home_view_applet_motion (ClutterActor       *applet,
 
   /* Update applet actor position */
   clutter_actor_set_position (applet, x, y);
+  if (hd_transition_get_int ("edit_mode",
+                             "snap_to_grid_while_move",
+                             1))
+    snap_widget_to_grid (applet);
 
   /* Check if this is the only active Home view */
   if (!hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)) ||
@@ -748,6 +754,38 @@ hd_home_view_applet_press (ClutterActor       *applet,
   return FALSE;
 }
 
+#define SNAP_GRID_SIZE_DEFAULT 4
+
+static gint
+snap_coordinate_to_grid (gint coordinate)
+{
+  gint snap_grid_size, offset;
+ 
+  snap_grid_size  = hd_transition_get_int ("edit_mode",
+                                           "snap_grid_size",
+                                           SNAP_GRID_SIZE_DEFAULT);
+  offset = coordinate % snap_grid_size;
+
+  if (offset > snap_grid_size / 2)
+    return coordinate - offset + snap_grid_size;
+  else
+    return coordinate - offset;
+}
+
+static void
+snap_widget_to_grid (ClutterActor *widget)
+{
+  ClutterGeometry c_geom;
+
+  /* Get applet size and position */
+  clutter_actor_get_geometry (widget, &c_geom);
+
+  c_geom.x = snap_coordinate_to_grid (c_geom.x);
+  c_geom.y = snap_coordinate_to_grid (c_geom.y);
+
+  clutter_actor_set_position (widget, c_geom.x, c_geom.y);
+}
+
 static void
 hd_home_view_store_applet_position (HdHomeView   *view,
                                     ClutterActor *applet,
@@ -760,6 +798,8 @@ hd_home_view_store_applet_position (HdHomeView   *view,
   MBGeometry mb_geom;
 
   data = g_hash_table_lookup (priv->applets, applet);
+
+  snap_widget_to_grid (applet);
 
   /* Get applet size and position */
   clutter_actor_get_geometry (applet, &c_geom);

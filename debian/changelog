@@ -3,6 +3,12 @@ hildon-desktop (1:2.2.105-1~unreleased) unstable; urgency=low
   Kimmo:
   * Fixes: NB#140246 - Input method support to desktop
 
+  Jan Arne:
+  * Fixes: NB#142941 - Snap to grid for Home applets/shortcuts
+  * Fixes: NB#142949 - Active status area also in portrait
+  * Fixes: NB#130803 - Possible to Pann in the layout mode and also able to
+    come out of the layout mode without actually tapping on the Done button
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 14 Oct 2009 10:12:00 +0300
 
 hildon-desktop (1:2.2.104-1) unstable; urgency=low
