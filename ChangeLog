@@ -1,3 +1,18 @@
+2009-10-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#140246 - Input method support to desktop
+
+	* tests/test-applet.c: Updated to have a GtkEntry that can be used for
+	Home applet focus testing.
+	* src/home/hd-home.c (hd_home_desktop_do_motion): Unfocus any applet
+	if we start panning.
+	(hd_home_desktop_do_press): Don't send the press event to applet that
+	will be transferred the input focus.
+	(do_applet_release): Focus the applet if it does not have focus and
+	wants it, otherwise just send the release event.
+	(hd_home_client_owns_or_child_xwindow): New function to check if a
+	client owns a certain X window or has that as its child.
+
 2009-10-15  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Allow keypresses to CallUI and Contacts only in HDRM_STATE_HOME.

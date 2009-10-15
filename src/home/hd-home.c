@@ -333,8 +333,13 @@ hd_home_desktop_do_motion (HdHome *home,
     }
 
   if (priv->moved_over_threshold)
-    hd_home_view_container_set_offset (HD_HOME_VIEW_CONTAINER (priv->view_container),
-                                       CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_x));
+    {
+      /* unfocus any applet in case we start panning */
+      mb_wm_client_focus (MB_WM_COMP_MGR (priv->comp_mgr)->wm->desktop);
+      hd_home_view_container_set_offset (
+                      HD_HOME_VIEW_CONTAINER (priv->view_container),
+                      CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_x));
+    }
 
   priv->last_x = x;
 }
@@ -439,6 +444,8 @@ hd_home_desktop_do_press (HdHome *home,
 {
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  GSList *applets, *a;
+  gboolean applet_hit = FALSE;
 
   DRAG_DEBUG("drag press %dx%d", x, y);
 
@@ -449,6 +456,32 @@ hd_home_desktop_do_press (HdHome *home,
 						 priv->desktop_motion_cb);
 
       priv->desktop_motion_cb = 0;
+    }
+
+  /* if the press landed outside all focus-wanting applets, set focus to the
+   * desktop window, unfocusing any applet */
+  applets = hd_home_view_get_all_applets (
+                  HD_HOME_VIEW (hd_home_get_current_view (home)));
+  for (a = applets; a; a = a->next)
+    {
+      MBWMCompMgrClient *cc = a->data;
+      MBWindowManagerClient *c;
+      if (cc && (c = cc->wm_client) &&
+          mb_wm_client_want_focus (c) &&
+          c->frame_geometry.x <= x &&
+          c->frame_geometry.y <= y &&
+          c->frame_geometry.x + c->frame_geometry.width >= x &&
+          c->frame_geometry.y + c->frame_geometry.height >= y)
+        {
+          applet_hit = TRUE;
+          break;
+        }
+    }
+  g_slist_free (applets);
+  if (!applet_hit)
+    {
+      /* g_printerr ("%s: focus the desktop\n", __func__); */
+      mb_wm_client_focus (wm->desktop);
     }
 
   priv->long_press = FALSE;
@@ -1391,11 +1424,48 @@ hd_home_applet_emit_enter_event (
 }
 
 static gboolean
+hd_home_client_owns_or_child_xwindow (MBWindowManagerClient *client,
+                                      Window xwindow)
+{
+  Window *children = NULL, parent, root;
+  unsigned int nchildren = 0;
+  Status s;
+  int i;
+  gboolean found = FALSE;
+
+  if (mb_wm_client_owns_xwindow (client, xwindow))
+    return TRUE;
+
+  mb_wm_util_trap_x_errors ();
+  s = XQueryTree (client->wmref->xdpy, client->window->xwindow,
+                  &root, &parent, &children, &nchildren);
+  mb_wm_util_untrap_x_errors ();
+
+  if (!s) return FALSE;
+
+  /* TODO: should probably check grandchildren as well... */
+  for (i = 0; i < nchildren; ++i)
+    if (children[i] == xwindow)
+      {
+        found = TRUE;
+        break;
+      }
+
+  if (children)
+    XFree (children);
+
+  return found;
+}
+
+static gboolean
 hd_home_applet_press (ClutterActor       *applet,
 		      ClutterButtonEvent *event,
 		      HdHome             *home)
 {
   HdHomePrivate   *priv = home->priv;
+  MBWMCompMgrClient *cclient;
+  MBWindowManagerClient *client;
+  gboolean focus_will_be_assigned_to_this_applet_on_release = FALSE;
 
   /*
    * If we are in edit mode the HdHomeView will have to deal with this event.
@@ -1410,7 +1480,27 @@ hd_home_applet_press (ClutterActor       *applet,
    * can abort the click with a LeaveNotify event.
    */
   hd_home_applet_emit_enter_event (home, applet, event->x, event->y);
-  hd_home_applet_emit_button_press_event (home, applet, event->x, event->y);
+
+  /* send the press event to the applet unless it's wanting the focus
+   * and focus is not yet assigned to it */
+  cclient = g_object_get_data (G_OBJECT (applet),
+                               "HD-MBWMCompMgrClutterClient");
+  if (cclient && (client = cclient->wm_client) &&
+      mb_wm_client_want_focus (client))
+    {
+      Window focused = None;
+      int revert_to;
+      MBWindowManager *wm;
+      wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+      XGetInputFocus (wm->xdpy, &focused, &revert_to);
+      if (focused == None ||
+          !hd_home_client_owns_or_child_xwindow (client, focused))
+        focus_will_be_assigned_to_this_applet_on_release = TRUE;
+    }
+
+  if (!focus_will_be_assigned_to_this_applet_on_release)
+    hd_home_applet_emit_button_press_event (home, applet, event->x, event->y);
+
   /*
    * We store the coordinates where the screen was touched. These values are
    * set only when applet was clicked, so we will know at release time if the
@@ -1449,9 +1539,43 @@ do_applet_release (HdHome             *home,
        * the pointer grab) we send a click to the applet window.
        */
       if (event && event->source == applet)
-        hd_home_applet_emit_button_release_event (home, applet,
-                                                  priv->initial_x,
-                                                  priv->initial_y);
+        {
+          MBWMCompMgrClient *cclient;
+          MBWindowManagerClient *client = NULL;
+          gboolean applet_has_focus = FALSE;
+
+          cclient = g_object_get_data (G_OBJECT (applet),
+                                       "HD-MBWMCompMgrClutterClient");
+
+          if (cclient && (client = cclient->wm_client) &&
+              mb_wm_client_want_focus (client))
+            {
+              MBWindowManager *wm;
+              Window focused = None;
+              int revert_to;
+              wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+              XGetInputFocus (wm->xdpy, &focused, &revert_to); 
+              if (focused != None &&
+                  hd_home_client_owns_or_child_xwindow (client, focused))
+                applet_has_focus = TRUE;
+            }
+
+          if (client && !applet_has_focus && mb_wm_client_want_focus (client))
+            {
+              /* g_printerr ("%s: set input focus for applet %p, client %p\n",
+                          __func__, applet, client);*/
+              mb_wm_client_focus (client);
+            }
+          else
+            {
+              /*g_printerr ("%s: tapped applet %p does not want focus or"
+                          " already has it\n",
+                          __func__, applet); */
+              hd_home_applet_emit_button_release_event (home, applet,
+                                                        priv->initial_x,
+                                                        priv->initial_y);
+            }
+        }
       else
         hd_home_applet_emit_leave_event (home, applet,
                                          priv->initial_x,

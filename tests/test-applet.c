@@ -35,12 +35,15 @@
 
 #define PAN_THRESHOLD 20
 
+/*
 static guint      motion_handler_id = 0;
-static GtkWidget *window = NULL;
 static gint       start_x;
+*/
+static GtkWidget *window = NULL;
 static Atom       pan_atom = None;
 static gint       view_id = 0;
 
+#if 0
 static void
 do_home_pan (gboolean left)
 {
@@ -80,14 +83,16 @@ on_motion_event (GtkWidget *widget, GdkEventMotion *event)
 
   return FALSE;
 }
+#endif
 
 static gint
 on_button_event (GtkWidget *widget, GdkEventButton *event)
 {
-  g_message ("Got applet button %s event [%f,%f] on view %d.",
+  g_printerr ("Got applet button %s event [%f,%f] on view %d.\n",
 	     event->type == GDK_BUTTON_RELEASE ? "RELEASE" : "PRESS",
 	     event->x, event->y, view_id);
 
+#if 0
   if (event->type == GDK_BUTTON_RELEASE)
     {
       if (motion_handler_id)
@@ -103,6 +108,7 @@ on_button_event (GtkWidget *widget, GdkEventButton *event)
 					    G_CALLBACK (on_motion_event), NULL);
       start_x = (gint)event->x;
     }
+#endif
 
   return FALSE;
 }
@@ -129,7 +135,7 @@ x_event_filter_func (GdkXEvent *xevent, GdkEvent *event, gpointer data)
 
 int main (int argc, char *argv[])
 {
-  Atom wm_type, applet_type, view_id_atom;
+  Atom applet_id, wm_type, applet_type, view_id_atom;
   GtkWidget *w, *b;
   int i;
 
@@ -146,6 +152,8 @@ int main (int argc, char *argv[])
   gtk_init (&argc, &argv);
 
   wm_type = XInternAtom (GDK_DISPLAY (), "_NET_WM_WINDOW_TYPE", False);
+
+  applet_id = XInternAtom (GDK_DISPLAY (), "_HILDON_APPLET_ID", False);
 
   applet_type = XInternAtom (GDK_DISPLAY (),
 			    "_HILDON_WM_WINDOW_TYPE_HOME_APPLET", False);
@@ -168,11 +176,14 @@ int main (int argc, char *argv[])
   gtk_widget_show (b);
   gtk_container_add (GTK_CONTAINER (window), b);
 
+  /*
   w = gtk_hscale_new_with_range (0.0, 100.0, 1.0);
   gtk_widget_show (w);
   gtk_box_pack_start (GTK_BOX (b), w, TRUE, TRUE, 0);
 
   w = gtk_vscale_new_with_range (0.0, 100.0, 1.0);
+  */
+  w = gtk_entry_new ();
   gtk_widget_show (w);
   gtk_box_pack_start (GTK_BOX (b), w, TRUE, TRUE, 0);
 
@@ -187,6 +198,10 @@ int main (int argc, char *argv[])
   XChangeProperty (GDK_DISPLAY (), GDK_WINDOW_XID (window->window),
 		   wm_type, XA_ATOM, 32, PropModeReplace,
 		   (unsigned char *)&applet_type, 1);
+
+  XChangeProperty (GDK_DISPLAY (), GDK_WINDOW_XID (window->window),
+		   applet_id, XA_STRING, 8, PropModeReplace,
+		   (unsigned char *) "test-applet-id", 14);
 
   XChangeProperty (GDK_DISPLAY (), GDK_WINDOW_XID (window->window),
 		   view_id_atom, XA_CARDINAL, 32, PropModeReplace,
