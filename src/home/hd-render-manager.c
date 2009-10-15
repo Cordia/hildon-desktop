@@ -781,7 +781,7 @@ hd_render_manager_set_input_viewport()
        * because we might be right after a place_titlebar_elements()
        * which could just have moved it. */
       /* in the case of "dialog blur": */
-      if ((priv->state == HDRM_STATE_APP
+      if ((STATE_ONE_OF(priv->state, HDRM_STATE_APP|HDRM_STATE_APP_PORTRAIT)
               && priv->status_area
               && hd_render_manager_actor_is_visible(priv->status_area)
               /* FIXME: the following check does not work when there are
@@ -849,7 +849,7 @@ void hd_render_manager_sync_clutter_before ()
         blur |= HDRM_BLUR_HOME; /* fall through intentionally */
       case HDRM_STATE_HOME_EDIT_DLG:
         visible_top_left = HDRM_BUTTON_NONE;
-        visible_top_right = HDRM_BUTTON_NONE;      
+        visible_top_right = HDRM_BUTTON_NONE;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         hd_home_update_layout (priv->home);
         break;
@@ -882,7 +882,7 @@ void hd_render_manager_sync_clutter_before ()
         break;
       case HDRM_STATE_LAUNCHER:
         visible_top_left = HDRM_BUTTON_NONE;
-        visible_top_right = HDRM_BUTTON_BACK;      
+        visible_top_right = HDRM_BUTTON_BACK;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         blur |=
             HDRM_BLUR_HOME |

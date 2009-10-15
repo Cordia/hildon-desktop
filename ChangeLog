@@ -1,3 +1,9 @@
+2009-10-15  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/home/hd-render-manager.c: Small tweak for last fix. Make sure
+	  the status area can't be clicked if a dialog is up and it is blurred
+	  (in portrait mode).
+
 2009-10-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-home-applet.c (hd_home_applet_init): If an applet does not
