@@ -1,3 +1,11 @@
+2009-10-15  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Allow keypresses to CallUI and Contacts only in HDRM_STATE_HOME.
+	For: NB#141019
+
+	* src/home/hd-home.c:
+	* src/home/hd-render-manager.h:
+
 2009-10-15  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/home/hd-render-manager.c: Small tweak for last fix. Make sure

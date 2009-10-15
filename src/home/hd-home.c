@@ -512,7 +512,7 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
   unsigned pretend_fn;
   time_t now;
 
-  if (STATE_NO_CALL_FROM_HOME (hd_render_manager_get_state ()))
+  if (!STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ()))
     return;
 
 /*  g_debug ("%s, display: %p, keymap: %p", __FUNCTION__, display, keymap); */
@@ -606,7 +606,7 @@ hd_home_desktop_key_release (XKeyEvent *xev, void *userdata)
   HdHome *home = userdata;
   HdHomePrivate *priv = home->priv;
 
-  if (STATE_NO_CALL_FROM_HOME (hd_render_manager_get_state ())
+  if (!STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ())
       || XkbKeycodeToKeysym(clutter_x11_get_default_display(),
                             xev->keycode, 0, 0) != FN_KEY)
     return;
@@ -1866,7 +1866,7 @@ is_status_menu_dialog (MBWindowManagerClient *c)
                      &xwinhint))
     {
       gboolean status_menu_dialog = FALSE;
-      
+
       if (xwinhint.res_name)
         {
           status_menu_dialog = strstr (xwinhint.res_name, "hildon-status-menu") != NULL;
@@ -1897,8 +1897,8 @@ hd_is_hildon_home_dialog (MBWindowManagerClient  *c)
   if (c->stacking_layer > 0)
     return FALSE;
 
-  /* 
-   * Do not close if it is a hildon-status-menu dialog like the flash sms window 
+  /*
+   * Do not close if it is a hildon-status-menu dialog like the flash sms window
    */
   if (is_status_menu_dialog (c))
     return FALSE;
