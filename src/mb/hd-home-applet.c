@@ -113,7 +113,9 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
     }
   else
     {
-      g_warning ("%s. No applet id!", __FUNCTION__);
+      applet->applet_id = g_strdup ("hd-applet-no-id");
+      g_warning ("%s. No applet id! Using '%s' as fallback", __FUNCTION__,
+                 applet->applet_id);
     }
 
   if (strcmp (OPERATOR_APPLET_ID, applet->applet_id) == 0)
