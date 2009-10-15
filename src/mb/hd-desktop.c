@@ -96,6 +96,8 @@ hd_desktop_init (MBWMObject *this, va_list vap)
   hd_desktop_request_geometry (client, &geom,
 					 MBWMClientReqGeomForced);
 
+  mb_wm_client_focus (client);
+
   return 1;
 }
 

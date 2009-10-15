@@ -1,3 +1,8 @@
+2009-10-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-desktop.c (hd_desktop_init): Give input focus to the newly
+	mapped desktop window because in the startup case we don't do it.
+
 2009-10-15  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#142941 - Snap to grid for Home applets/shortcuts
