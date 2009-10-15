@@ -78,6 +78,8 @@ hd_home_applet_destroy (MBWMObject *this)
   free (applet->applet_id);
 }
 
+#include <ctype.h>
+
 static int
 hd_home_applet_init (MBWMObject *this, va_list vap)
 {
@@ -105,7 +107,7 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
                                                       0,
                                                       &n_items);
 
-  if (applet_id)
+  if (applet_id && isalnum (*applet_id))
     {
       g_debug ("%s. Applet id: %s", __FUNCTION__, applet_id);
       applet->applet_id = g_strdup (applet_id);
