@@ -43,6 +43,8 @@
 #include "hd-launcher.h"
 #include "hd-launcher-item.h"
 #include "hd-comp-mgr.h"
+#include "hd-util.h"
+#include "hd-transition.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 
@@ -74,6 +76,11 @@ struct _HdLauncherGridPrivate
 
   TidyAdjustment *h_adjustment;
   TidyAdjustment *v_adjustment;
+
+  /* How far the transition will move the icons */
+  gint transition_depth;
+  /* Do we move the icons all together or in sequence? for launcher_in transitions */
+  gboolean transition_sequenced;
 };
 
 enum
@@ -790,11 +797,41 @@ hd_launcher_grid_reset(HdLauncherGrid *grid)
     }
 }
 
+
+void
+hd_launcher_grid_transition_begin(HdLauncherGrid *grid,
+                                  HdLauncherPageTransition trans_type)
+{
+  HdLauncherGridPrivate *priv = grid->priv;
+
+  priv->transition_depth =
+      hd_transition_get_int(
+                hd_launcher_page_get_transition_string(trans_type),
+                "depth",
+                100 /* default value */);
+  priv->transition_sequenced = 0;
+  if (trans_type == HD_LAUNCHER_PAGE_TRANSITION_IN ||
+      trans_type == HD_LAUNCHER_PAGE_TRANSITION_IN_SUB)
+    {
+      priv->transition_sequenced =
+            hd_transition_get_int(
+                      hd_launcher_page_get_transition_string(trans_type),
+                      "sequenced",
+                      0);
+    }
+}
+
+void
+hd_launcher_grid_transition_end(HdLauncherGrid *grid)
+{
+  /* Free anything we may have allocated for the transition here */
+}
+
+
 void
 hd_launcher_grid_transition(HdLauncherGrid *grid,
                             HdLauncherPage *page,
                             HdLauncherPageTransition trans_type,
-                            int transition_depth,
                             float amount)
 {
   HdLauncherGridPrivate *priv;
@@ -859,15 +896,29 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
             case HD_LAUNCHER_PAGE_TRANSITION_IN:
             case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
               {
-                float label_amt = (((order_amt*26) - 16) / 10);
-                float tile_amt = ((order_amt*26) / 16);
+                float label_amt, tile_amt;
 
-                if (tile_amt<0) tile_amt = 0;
-                if (tile_amt>1) tile_amt = 1;
-                if (label_amt<0) label_amt=0;
-                if (label_amt>1) label_amt=1;
-                depth = CLUTTER_UNITS_FROM_FLOAT(
-                    transition_depth * (1 - sexy_overshoot(tile_amt)));
+                if (priv->transition_sequenced)
+                  {
+                    /* Do tile movement and icon fading diagonally */
+                    label_amt = (((order_amt*26) - 16) / 10);
+                    tile_amt = ((order_amt*26) / 16);
+
+                    if (tile_amt<0) tile_amt = 0;
+                    if (tile_amt>1) tile_amt = 1;
+                    if (label_amt<0) label_amt=0;
+                    if (label_amt>1) label_amt=1;
+                    depth = CLUTTER_UNITS_FROM_FLOAT(
+                      priv->transition_depth * (1 - sexy_overshoot(tile_amt)));
+                  }
+                else
+                  {
+                    depth = CLUTTER_UNITS_FROM_FLOAT(
+                                        priv->transition_depth * (1 - amount));
+                    label_amt = amount;
+                    tile_amt = amount;
+                  }
+
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
                 clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255);
                 if (tile_icon)
@@ -879,7 +930,7 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
             case HD_LAUNCHER_PAGE_TRANSITION_OUT:
             case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
               {
-                depth = CLUTTER_UNITS_FROM_FLOAT(transition_depth*amount);
+                depth = CLUTTER_UNITS_FROM_FLOAT(priv->transition_depth*amount);
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
                 clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255 - (int)(amount*255));
                 break;
@@ -889,7 +940,7 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
                 float tile_amt = amount*2 - d;
                 if (tile_amt<0) tile_amt = 0;
                 if (tile_amt>1) tile_amt = 1;
-                depth = CLUTTER_UNITS_FROM_FLOAT(-transition_depth*tile_amt);
+                depth = CLUTTER_UNITS_FROM_FLOAT(-priv->transition_depth*tile_amt);
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
                 clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255 - (int)(amount*255));
                 break;
@@ -897,12 +948,12 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
             /* We do't do anything for these now because we just use blur on
              * the whole group */
             case HD_LAUNCHER_PAGE_TRANSITION_BACK:
-                depth = CLUTTER_UNITS_FROM_FLOAT(-transition_depth*amount);
+                depth = CLUTTER_UNITS_FROM_FLOAT(-priv->transition_depth*amount);
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
                 clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255 - (int)(amount*255));
                 break;
             case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
-                depth = CLUTTER_UNITS_FROM_FLOAT(-transition_depth*(1-amount));
+                depth = CLUTTER_UNITS_FROM_FLOAT(-priv->transition_depth*(1-amount));
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
                 clutter_actor_set_opacity(CLUTTER_ACTOR(tile), (int)(amount*255));
                 break;

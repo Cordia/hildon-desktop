@@ -1,3 +1,17 @@
+2009-10-15  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#137452 - Remove nice task launcher animation
+	
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-page.h
+	* src/launcher/hd-launcher-grid.c
+	* src/launcher/hd-launcher-grid.h: Move transition_depth from function
+	  call into the grid's private data. Also load the 'sequenced' flag,
+	  and disable the nice sequencing of the task launcher animation if it
+	  is not set.
+	* data/transitions.ini: Set sequenced to 0 for the two launcher 
+	  transitions, and speed them up to the same amount as everything else.
+
 2009-10-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#140246 - Input method support to desktop

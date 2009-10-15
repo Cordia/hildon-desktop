@@ -67,10 +67,12 @@ ClutterActor *hd_launcher_grid_new      (void);
 void          hd_launcher_grid_clear    (HdLauncherGrid *grid);
 void          hd_launcher_grid_reset_v_adjustment (HdLauncherGrid *grid);
 
+void          hd_launcher_grid_transition_begin(HdLauncherGrid *grid,
+                                  HdLauncherPageTransition trans_type);
+void          hd_launcher_grid_transition_end(HdLauncherGrid *grid);
 void          hd_launcher_grid_transition(HdLauncherGrid *grid,
                                           HdLauncherPage *page,
                                           HdLauncherPageTransition trans_type,
-                                          int transition_depth,
                                           float amount);
 void          hd_launcher_grid_reset(HdLauncherGrid *grid);
 
