@@ -780,8 +780,10 @@ hd_render_manager_set_input_viewport()
       /* Block status area?  If so refer to the client geometry,
        * because we might be right after a place_titlebar_elements()
        * which could just have moved it. */
-      /* in the case of "dialog blur": */
-      if ((STATE_ONE_OF(priv->state, HDRM_STATE_APP|HDRM_STATE_APP_PORTRAIT)
+      if ((STATE_IS_PORTRAIT (priv->state) && priv->status_area
+-           && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area))
+-         /* also in the case of "dialog blur": */
+-         || (STATE_ONE_OF(priv->state, HDRM_STATE_APP|HDRM_STATE_APP_PORTRAIT)
               && priv->status_area
               && hd_render_manager_actor_is_visible(priv->status_area)
               /* FIXME: the following check does not work when there are

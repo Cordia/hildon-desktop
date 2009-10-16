@@ -1,3 +1,8 @@
+2009-10-16  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_input_viewport):
+	Disable status menu portrait mode.
+
 2009-10-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-wm.c (hd_wm_current_app_is): Update _MB_CURRENT_APP_WINDOW
