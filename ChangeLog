@@ -1,7 +1,15 @@
+2009-10-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#140086 - Backup needs to clear the .cache/launch directory
+	before it reboots after restore
+
+	* src/hildon-desktop-restore.sh: Remove old loading screens from
+	.cache/launch/.
+
 2009-10-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
-	Use a weak pointer to the clicked tile when launching an app, avoid crashes
-	if the tile is destroyed.
+	Use a weak pointer to the clicked tile when launching an app, avoid
+	crashes if the tile is destroyed.
 	Fixes: NB#141757
 
 	* src/launcher/hd-launcher.c:

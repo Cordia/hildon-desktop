@@ -41,4 +41,9 @@ if [ "$1" ]; then
 	fi
 fi
 
+# remove application loading screenshots
+if [ -d $HOME/.cache/launch ]; then
+        rm -rf $HOME/.cache/launch/*
+fi
+
 kill `pidof hildon-home`
