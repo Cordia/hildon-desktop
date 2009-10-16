@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.105-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.105-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#140246 - Input method support to desktop
@@ -9,7 +9,14 @@ hildon-desktop (1:2.2.105-1~unreleased) unstable; urgency=low
   * Fixes: NB#130803 - Possible to Pann in the layout mode and also able to
     come out of the layout mode without actually tapping on the Done button
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 14 Oct 2009 10:12:00 +0300
+  Gordon:
+  * Fixes: NB#137452 - Remove nice task launcher animation
+
+  Marc:
+  * Fixes: NB#141019 - Allow keypresses to CallUI and Contacts only in
+    HDRM_STATE_HOME.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 16 Oct 2009 08:49:45 +0300
 
 hildon-desktop (1:2.2.104-1) unstable; urgency=low
 
