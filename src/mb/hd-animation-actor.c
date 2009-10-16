@@ -54,10 +54,6 @@ hd_animation_actor_request_geometry (MBWindowManagerClient *client,
 				     MBWMClientReqGeomType  flags);
 
 static void
-hd_animation_actor_destroy_cb (ClutterActor *actor,
-                               gpointer user_data);
-
-static void
 hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
 {
   HdAnimationActor         *self = HD_ANIMATION_ACTOR (userdata);
@@ -182,15 +178,6 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
       CM_DEBUG ("AnimationActor %p: parent(win=%lu)\n",
                self, win);
 
-       /* Disconnect actor's "destroy" handler */
-
-       if (self->actor_destroy_handler_id)
-       {
-         g_signal_handler_disconnect (actor,
-                                      self->actor_destroy_handler_id);
-         self->actor_destroy_handler_id = 0;
-       }
-
        /* Unparent the actor */
       ClutterActor *parent = clutter_actor_get_parent (actor);
       if (parent)
@@ -226,12 +213,6 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
           {
             clutter_container_add_actor (CLUTTER_CONTAINER (parent),
                                          actor);
-
-            self->actor_destroy_handler_id =
-                 g_signal_connect (actor,
-                                   "destroy",
-                                   G_CALLBACK (hd_animation_actor_destroy_cb),
-                                   client);
          }
       }
 
@@ -373,21 +354,6 @@ hd_animation_actor_destroy (MBWMObject *this)
                                                    ClientMessage,
                                                    self->client_message_handler_id);
     }
-
-    if (self->actor_destroy_handler_id)
-    {
-      MBWMCompMgrClutterClient *cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
-
-      if (cclient)
-      {
-          ClutterActor             *actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-	  if (actor) {
-             g_signal_handler_disconnect (actor,
-                                          self->actor_destroy_handler_id);
-	     self->actor_destroy_handler_id = 0;
-	  }
-      }
-    }
 }
 
 static int
@@ -422,26 +388,6 @@ hd_animation_actor_init (MBWMObject *this, va_list vap)
 				       MBWMClientReqGeomForced);
 
   return 1;
-}
-
-static void
-hd_animation_actor_destroy_cb (ClutterActor *actor,
-			       gpointer user_data)
-{
-    MBWindowManagerClient *client = MB_WM_CLIENT (user_data);
-
-    MBWMCompMgrClutterClient *cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
-
-    g_warning ("Animation actor destroyed while in use: client=%p cclient=%p actor=%p",
-	       client, cclient, actor);
-
-    /* Everything is most likely broken at this point already, but
-     * let's prevent further accessed to now destroyed actor by
-     * g_signal_handler_disconnect() calls.
-     */
-
-    HdAnimationActor *self = HD_ANIMATION_ACTOR (user_data);
-    self->actor_destroy_handler_id = 0;
 }
 
 static Bool

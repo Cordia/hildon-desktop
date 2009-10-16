@@ -1,5 +1,11 @@
 2009-10-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#131169 - Erronous "animation actor destoyed while in use"
+	message
+
+	* src/mb/hd-animation-actor.c: Remove the callback with g_warning()
+	from clutter actor "destroy" callback.  Patch from Artem Egorkine. 
+
 	Fixes: NB#140086 - Backup needs to clear the .cache/launch directory
 	before it reboots after restore
 

@@ -4,6 +4,9 @@ hildon-desktop (1:2.2.107-1~unreleased) unstable; urgency=low
   * Fixes: NB#140086 - Backup needs to clear the .cache/launch directory
     before it reboots after restore
 
+  Artem:
+  * Fixes: NB#131169 - Erronous "animation actor destoyed while in use" message
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 16 Oct 2009 12:56:22 +0300
 
 hildon-desktop (1:2.2.106-1) unstable; urgency=low
