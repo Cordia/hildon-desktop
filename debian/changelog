@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.106-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Apply patch from Alban Crequy related to NB#140339 - Unnecessary wake-ups
+    in application due to XAtoms
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 16 Oct 2009 09:08:30 +0300
 

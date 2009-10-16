@@ -1,5 +1,9 @@
 2009-10-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/mb/hd-wm.c (hd_wm_current_app_is): Update _MB_CURRENT_APP_WINDOW
+	on the application window as well. Related to NB#140339 - Unnecessary
+	wake-ups in application due to XAtoms. Original patch from Alban Crequy.
+
 	Release 2.2.105-1
 
 2009-10-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>

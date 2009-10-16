@@ -485,11 +485,34 @@ hd_wm_current_app_is (MBWindowManager *wm, Window xid)
   if (!wm || xid == last)
     return last;
 
-  last = xid;
   XChangeProperty(wm->xdpy, wm->root_win->xwindow,
                   wm->atoms[MBWM_ATOM_MB_CURRENT_APP_WINDOW],
                   XA_WINDOW, 32, PropModeReplace,
                   (unsigned char *)&xid, 1);
+
+  mb_wm_util_trap_x_errors ();
+  /* Remove the mirrored property from the previous window */
+  if (last != 0 && last != ~0)
+    {
+      Window none = None;
+      XChangeProperty(wm->xdpy, last,
+                      wm->atoms[MBWM_ATOM_MB_CURRENT_APP_WINDOW],
+                      XA_WINDOW, 32, PropModeReplace,
+                      (unsigned char *)&none, 1);
+    }
+
+  /* Add the mirrored property on the new window */
+  if (xid != 0 && xid != ~0)
+    {
+      XChangeProperty(wm->xdpy, xid,
+                      wm->atoms[MBWM_ATOM_MB_CURRENT_APP_WINDOW],
+                      XA_WINDOW, 32, PropModeReplace,
+                      (unsigned char *)&xid, 1);
+    }
+  mb_wm_util_untrap_x_errors ();
+
+  last = xid;
+
   g_debug ("CURRENT_APP_WINDOW => 0x%lx", xid);
   return last;
 }
