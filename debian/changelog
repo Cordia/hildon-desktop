@@ -1,4 +1,7 @@
-hildon-desktop (1:2.2.106-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.106-1) unstable; urgency=low
+
+  Jan Arne:
+  * Disable status menu portrait mode due to bug NB#130532.
 
   Kimmo:
   * Apply patch from Alban Crequy related to NB#140339 - Unnecessary wake-ups

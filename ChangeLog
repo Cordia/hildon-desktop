@@ -1,3 +1,7 @@
+2009-10-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.106-1
+
 2009-10-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/home/hd-render-manager.c (hd_render_manager_set_input_viewport):
