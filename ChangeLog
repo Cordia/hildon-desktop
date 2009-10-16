@@ -1,3 +1,11 @@
+2009-10-16  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Use a weak pointer to the clicked tile when launching an app, avoid crashes
+	if the tile is destroyed.
+	Fixes: NB#141757
+
+	* src/launcher/hd-launcher.c:
+
 2009-10-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.106-1

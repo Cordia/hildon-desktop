@@ -68,7 +68,7 @@ struct _HdLauncherPrivate
 
   /* Actor and timeline required for zoom in on application screenshot
    * for app start. */
-  HdLauncherTile *launch_tile;
+  gpointer launch_tile;
   ClutterActor *launch_image;
   ClutterTimeline *launch_transition;
   ClutterVertex launch_position; /* where were we clicked? */
@@ -342,7 +342,10 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
 
   /* We must do this before hd_app_mgr_launch, as it uses the tile
    * clicked in order to zoom the launch image from the correct place */
-  priv->launch_tile = tile;
+  if (tile)
+    g_object_add_weak_pointer (G_OBJECT (tile), &priv->launch_tile);
+  else
+    priv->launch_tile = NULL;
 
   if (!hd_app_mgr_launch (app))
     return;
@@ -427,7 +430,7 @@ hd_launcher_lazy_traverse_tree (gpointer data)
   HdLauncherTile *tile;
   HdLauncherPage *page;
 
-  if (!tdata->items)
+  if (!tdata->items || !tdata->items->data)
     return FALSE;
   item = tdata->items->data;
 
@@ -554,7 +557,6 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   const gchar *loading_image = NULL;
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
-  HdLauncherTile *tile = priv->launch_tile;
   gboolean launch_anim = FALSE;
   const gchar *service_name = 0;
   gchar *cached_image = NULL;
@@ -662,11 +664,12 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
     }
 
   /* If a launcher tile was clicked, expand the image from the centre of the
-   * the tile instead */
-  if (tile)
+   * the tile instead.
+   * Only do this if the user did really click on a tile. */
+  if (priv->launch_tile && item)
     {
       ClutterActor *parent;
-      priv->launch_tile = NULL;
+      HdLauncherTile *tile = HD_LAUNCHER_TILE (priv->launch_tile);
       ClutterActor *icon;
       clutter_actor_get_positionu(CLUTTER_ACTOR(tile),
                 &priv->launch_position.x,
@@ -691,6 +694,13 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
         priv->launch_position.y += y;
         parent = clutter_actor_get_parent(parent);
       }
+    }
+  /* Clean up. */
+  if (priv->launch_tile)
+    {
+      g_object_remove_weak_pointer (G_OBJECT (priv->launch_tile),
+                                    &priv->launch_tile);
+      priv->launch_tile = NULL;
     }
   /* append scroller movement */
   if (priv->active_page)
