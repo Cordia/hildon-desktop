@@ -81,6 +81,10 @@ struct _HdLauncherGridPrivate
   gint transition_depth;
   /* Do we move the icons all together or in sequence? for launcher_in transitions */
   gboolean transition_sequenced;
+  /* List of keyframes used on transitions like _IN and _IN_SUB */
+  HdKeyFrameList *transition_keyframes; // ramp for tile movement
+  HdKeyFrameList *transition_keyframes_label; // ramp for label alpha values
+  HdKeyFrameList *transition_keyframes_icon; // ramp for icon alpha values
 };
 
 enum
@@ -768,14 +772,6 @@ hd_launcher_grid_clear (HdLauncherGrid *grid)
     }
 }
 
-static float sexy_overshoot(float x)
-{
-  float smooth_ramp, converge;
-  smooth_ramp = 1.0f - cos(x*3.141592);
-  converge = sin(0.5*3.141592*(1-x));
-  return (smooth_ramp*1.1)*converge + (1-converge);
-}
-
 /* Reset the grid before it is shown */
 void
 hd_launcher_grid_reset(HdLauncherGrid *grid)
@@ -818,6 +814,21 @@ hd_launcher_grid_transition_begin(HdLauncherGrid *grid,
                       hd_launcher_page_get_transition_string(trans_type),
                       "sequenced",
                       0);
+      if (priv->transition_sequenced)
+        {
+          grid->priv->transition_keyframes =
+            hd_transition_get_keyframes(
+                      hd_launcher_page_get_transition_string(trans_type),
+                      "keyframes", "0,1");
+          grid->priv->transition_keyframes_label =
+            hd_transition_get_keyframes(
+                      hd_launcher_page_get_transition_string(trans_type),
+                      "keyframes_label", "0,1");
+          grid->priv->transition_keyframes_icon =
+                 hd_transition_get_keyframes(
+                      hd_launcher_page_get_transition_string(trans_type),
+                      "keyframes_icon", "0,1");
+        }
     }
 }
 
@@ -825,6 +836,21 @@ void
 hd_launcher_grid_transition_end(HdLauncherGrid *grid)
 {
   /* Free anything we may have allocated for the transition here */
+  if (grid->priv->transition_keyframes)
+    {
+      hd_key_frame_list_free(grid->priv->transition_keyframes);
+      grid->priv->transition_keyframes = 0;
+    }
+  if (grid->priv->transition_keyframes_label)
+    {
+      hd_key_frame_list_free(grid->priv->transition_keyframes_label);
+      grid->priv->transition_keyframes_label = 0;
+    }
+  if (grid->priv->transition_keyframes_icon)
+    {
+      hd_key_frame_list_free(grid->priv->transition_keyframes_icon);
+      grid->priv->transition_keyframes_icon = 0;
+    }
 }
 
 
@@ -896,33 +922,36 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
             case HD_LAUNCHER_PAGE_TRANSITION_IN:
             case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
               {
-                float label_amt, tile_amt;
+                float label_amt, icon_amt;
 
                 if (priv->transition_sequenced)
                   {
-                    /* Do tile movement and icon fading diagonally */
-                    label_amt = (((order_amt*26) - 16) / 10);
-                    tile_amt = ((order_amt*26) / 16);
+                    label_amt = hd_key_frame_interpolate(
+                          priv->transition_keyframes_label, order_amt);
+                    icon_amt = hd_key_frame_interpolate(
+                          priv->transition_keyframes_icon, order_amt);
 
-                    if (tile_amt<0) tile_amt = 0;
-                    if (tile_amt>1) tile_amt = 1;
                     if (label_amt<0) label_amt=0;
                     if (label_amt>1) label_amt=1;
+                    if (icon_amt<0) icon_amt = 0;
+                    if (icon_amt>1) icon_amt = 1;
                     depth = CLUTTER_UNITS_FROM_FLOAT(
-                      priv->transition_depth * (1 - sexy_overshoot(tile_amt)));
+                       priv->transition_depth *
+                       (1 - hd_key_frame_interpolate(priv->transition_keyframes,
+                                                     order_amt)));
                   }
                 else
                   {
                     depth = CLUTTER_UNITS_FROM_FLOAT(
                                         priv->transition_depth * (1 - amount));
                     label_amt = amount;
-                    tile_amt = amount;
+                    icon_amt = amount;
                   }
 
                 clutter_actor_set_depthu(CLUTTER_ACTOR(tile), depth);
                 clutter_actor_set_opacity(CLUTTER_ACTOR(tile), 255);
                 if (tile_icon)
-                  clutter_actor_set_opacity(tile_icon, (int)(tile_amt*255));
+                  clutter_actor_set_opacity(tile_icon, (int)(icon_amt*255));
                 if (tile_label)
                   clutter_actor_set_opacity(tile_label, (int)(label_amt*255));
                 break;

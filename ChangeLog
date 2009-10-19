@@ -1,3 +1,23 @@
+2009-10-19  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#136255 - Task Launcher summon animation overshoot a bit rough
+	                   (Also added per-theme transitions.ini)
+
+	* src/mb/hd-theme.c: Make sure we reload transitions.ini on theme 
+	  change
+	* src/launcher/hd-launcher-grid.c: Now load and work from lists of
+	  keyframes if we're doing a 'sequenced' launcher transition.
+	* src/util/hd-transition.h
+	* src/util/hd-transition.c: Utility functions for loading strings and
+	  keyframes from transitions.ini. Load from /etc/hildon/theme if a 
+	  transitions.ini exists there, removed inotify as I can't get this
+	  working correctly with multiple transitions.ini, and the same effect
+	  can be had by just changing theme now.	
+	* src/util/hd-util.h
+	* src/util/hd-util.c: Keyframe parsing+interpolation code	
+	* data/transitions.ini: Added lists of keyframes for launcher in/out
+	  transitions.
+
 2009-10-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#131169 - Erronous "animation actor destoyed while in use"

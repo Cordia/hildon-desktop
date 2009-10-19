@@ -41,4 +41,10 @@ void
 hd_util_partial_redraw_if_possible(ClutterActor *actor, ClutterGeometry *bounds);
 
 
+/* Functions for loading and interpolating from a list of keyframes */
+typedef struct _HdKeyFrameList HdKeyFrameList;
+HdKeyFrameList *hd_key_frame_list_create(const char *keys);
+void hd_key_frame_list_free(HdKeyFrameList *k);
+float hd_key_frame_interpolate(HdKeyFrameList *k, float x);
+
 #endif

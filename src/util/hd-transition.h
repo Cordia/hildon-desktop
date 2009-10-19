@@ -26,6 +26,7 @@
 
 #include "hd-comp-mgr.h"
 #include "hd-render-manager.h"
+#include "hd-util.h"
 
 /* The file name of the particle image used in close-app transitions
  * and the number of them to show in the transition. */
@@ -109,5 +110,15 @@ gdouble
 hd_transition_get_double(const gchar *transition,
                       const char *key,
                       gdouble default_val);
+gchar *
+hd_transition_get_string(const gchar *transition, const char *key,
+                      gchar *default_val);
+
+HdKeyFrameList *
+hd_transition_get_keyframes(const gchar *transition, const char *key,
+                            gchar *default_val);
+
+void
+hd_transition_set_file_changed(void);
 
 #endif /* __HD_TRANSITION_H__ */

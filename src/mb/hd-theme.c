@@ -31,6 +31,7 @@
 #include "hd-gtk-style.h"
 #include "tidy/tidy-style.h"
 #include "hd-home.h"
+#include "hd-transition.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -88,6 +89,9 @@ hd_theme_init (MBWMObject *obj, va_list vap)
   extern MBWindowManager *hd_mb_wm;
 
   hd_clutter_cache_theme_changed();
+  /* transitions.ini could be loaded from the theme, so we must
+   * reload it just in case. */
+  hd_transition_set_file_changed();
 
   /* Update tidy-style (for scrollbars) */
   style = tidy_style_get_default();

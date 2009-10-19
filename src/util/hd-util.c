@@ -697,3 +697,100 @@ hd_util_partial_redraw_if_possible(ClutterActor *actor, ClutterGeometry *bounds)
       clutter_actor_queue_redraw(stage);
     }
 }
+
+
+/* Structure holding a list of keyframes that will be linearly interpolated
+ * between to produce animation*/
+struct _HdKeyFrameList {
+  float *keyframes;
+  int count;
+};
+
+/* Create a keyframe list from a comma-separated list of floating point values */
+HdKeyFrameList *hd_key_frame_list_create(const char *keys)
+{
+  char *key_copy = 0;
+  char *p;
+  int i=0;
+  HdKeyFrameList *k = (HdKeyFrameList*)g_malloc0(sizeof(HdKeyFrameList));
+  /* Fail nicely by returning a straight ramp */
+  if (!keys || strlen(keys)<=1)
+    goto fail;
+  key_copy = g_strdup(keys);
+  /* Scan for how many elements we need */
+  k->count = 0;
+  for (p=key_copy;*p;p++)
+    if (*p==',') k->count++;
+  if (key_copy[strlen(key_copy)-1]!=',')
+    k->count++;
+  if (k->count<2)
+    goto fail;
+  k->keyframes = (float*)g_malloc0(sizeof(float) * k->count);
+  /* read in individual keys */
+  for (p=key_copy;*p;)
+    {
+      char *comma = p;
+      char old_comma;
+      /* Find comma and replace with string end character */
+      while (*comma && *comma!=',')
+        comma++;
+      old_comma = *comma;
+      *comma = 0;
+      /* Read the data value */
+      k->keyframes[i++] = atof(p);
+      /* Set up for next iteration. If we hit the end, don't skip over it! */
+      if (old_comma)
+        p = comma+1;
+      else
+        p = comma;
+    }
+  k->count = i;
+  g_free(key_copy);
+  return k;
+fail:
+  /* On failure, free memory, and return a simple
+   * linear ramp */
+  if (key_copy) g_free(key_copy);
+  /* k is already allocated */
+  k->count = 2;
+  if (k->keyframes) g_free(k->keyframes);
+  k->keyframes = (float*)g_malloc(sizeof(float) * k->count);
+  k->keyframes[0] = 0.0f;
+  k->keyframes[1] = 1.0f;
+  return k;
+}
+
+void hd_key_frame_list_free(HdKeyFrameList *k)
+{
+  if (k)
+    {
+      g_free(k->keyframes);
+      g_free(k);
+    }
+}
+
+/* As X goes between 0 and 1, interpolate into the HdKeyFrameList */
+float hd_key_frame_interpolate(HdKeyFrameList *k, float x)
+{
+  float v,n;
+  int idx;
+
+  if (!k || k->count < 2)
+    return x;
+
+  v = x * (k->count-1);
+  idx = (int)v;
+  n = v - idx;
+
+  if (idx >= k->count-1)
+    {
+      idx = k->count-2;
+      n = 1;
+    }
+  if (idx<0)
+    {
+      idx = 0;
+      n = 0;
+    }
+  return k->keyframes[idx]*(1-n) + k->keyframes[idx+1]*n;
+}
