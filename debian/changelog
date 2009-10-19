@@ -7,6 +7,9 @@ hildon-desktop (1:2.2.107-1~unreleased) unstable; urgency=low
   Artem:
   * Fixes: NB#131169 - Erronous "animation actor destoyed while in use" message
 
+  Marc:
+  * Fixes: NB#141757 - hildon-desktop crashes reported in corematic
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 16 Oct 2009 12:56:22 +0300
 
 hildon-desktop (1:2.2.106-1) unstable; urgency=low
