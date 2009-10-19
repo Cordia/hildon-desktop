@@ -106,6 +106,13 @@ enum
   PROP_HDRM,
 };
 
+enum EdgeIndicationOpacity
+{
+  EDGE_INDICATION_OPACITY_DEFAULT = 0x3f,
+  EDGE_INDICATION_OPACITY_WIDGET_MOVING = 0x7f,
+  EDGE_INDICATION_OPACITY_WIDGET_OVER = 0xff,
+};
+
 struct _HdHomePrivate
 {
   MBWMCompMgrClutter    *comp_mgr;
@@ -206,6 +213,9 @@ static gboolean do_home_applet_motion (HdHome       *home,
                                        ClutterActor *applet,
                                        int           x,
                                        int           y);
+static void update_edge_indication_visibility (HdHome *home,
+                                               guint8  left_opacity,
+                                               guint8  right_opacity);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -814,6 +824,51 @@ hd_home_create_edit_button (void)
   return edit_button;
 }
 
+static gboolean
+edge_indication_pressed (ClutterActor *actor,
+                         ClutterEvent *event,
+                         HdHome       *home)
+{
+  HdHomePrivate *priv = home->priv;
+
+  if (priv->edge_indication_left == actor)
+    {
+      hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container), 0);
+    }
+  else
+    {
+      hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container), 0);
+    }
+
+  return TRUE;
+}
+
+static ClutterActor *
+create_edge_indicator (HdHome           *home,
+                       ClutterContainer *edit_group,
+                       const gchar      *name,
+                       gint              x)
+{
+  ClutterActor *edge_indicator;
+
+  edge_indicator = clutter_rectangle_new ();
+  clutter_actor_set_name (edge_indicator, name);
+
+  clutter_actor_set_size (edge_indicator,
+                          HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  clutter_actor_set_position (edge_indicator, x, 0);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
+                               edge_indicator);
+  clutter_actor_show (edge_indicator);
+
+  clutter_actor_set_reactive (edge_indicator, TRUE);
+  g_signal_connect (edge_indicator, "button-press-event",
+                    G_CALLBACK (edge_indication_pressed), home);
+
+  return edge_indicator;
+}
+
 static void
 hd_home_constructed (GObject *object)
 {
@@ -861,26 +916,15 @@ hd_home_constructed (GObject *object)
   clutter_actor_reparent (priv->operator, CLUTTER_ACTOR (object));
   clutter_actor_raise (priv->operator, priv->view_container);
 
-  priv->edge_indication_left = clutter_rectangle_new ();
-  clutter_actor_set_name (priv->edge_indication_left, "HdHome:left_switch");
+  priv->edge_indication_left = create_edge_indicator (HD_HOME (object),
+                                                      CLUTTER_CONTAINER (edit_group),
+                                                      "HdHome:left_switch",
+                                                      0);
 
-  clutter_actor_set_size (priv->edge_indication_left,
-                HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
-  clutter_actor_set_position (priv->edge_indication_left, 0, 0);
-  clutter_actor_hide (priv->edge_indication_left);
-  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
-                               priv->edge_indication_left);
-
-  priv->edge_indication_right = clutter_rectangle_new ();
-  clutter_actor_set_name (priv->edge_indication_right, "HdHome:right_switch");
-
-  clutter_actor_set_size (priv->edge_indication_right,
-                HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
-  clutter_actor_set_position (priv->edge_indication_right,
-		HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH, 0);
-  clutter_actor_hide (priv->edge_indication_right);
-  clutter_container_add_actor (CLUTTER_CONTAINER (edit_group),
-                               priv->edge_indication_right);
+  priv->edge_indication_right = create_edge_indicator (HD_HOME (object),
+                                                       CLUTTER_CONTAINER (edit_group),
+                                                       "HdHome:right_switch",
+                                                       HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH);
 
   /* Set color of edge indicators */
   hd_home_theme_changed (HD_HOME (object));
@@ -1134,8 +1178,6 @@ _hd_home_do_normal_layout (HdHome *home)
   HdHomePrivate *priv = home->priv;
 
   clutter_actor_hide (priv->edit_group);
-
-  hd_home_hide_edge_indication (home);
 }
 
 /* FOR HDRM_STATE_HOME_EDIT */
@@ -1148,6 +1190,10 @@ _hd_home_do_edit_layout (HdHome *home)
 
   clutter_actor_set_position (priv->edit_group, 0, 0);
   clutter_actor_show (priv->edit_group);
+
+  update_edge_indication_visibility (home,
+                                     EDGE_INDICATION_OPACITY_DEFAULT,
+                                     EDGE_INDICATION_OPACITY_DEFAULT);
 }
 
 void
@@ -1938,36 +1984,56 @@ hd_home_set_operator_applet (HdHome *home, ClutterActor *applet)
     }
 }
 
-void
-hd_home_show_edge_indication (HdHome *home)
+static void
+update_edge_indication_visibility (HdHome *home,
+                                   guint8  left_opacity,
+                                   guint8  right_opacity)
 {
   HdHomePrivate *priv = home->priv;
 
-  clutter_actor_set_opacity (priv->edge_indication_left, 0x7f);
-  clutter_actor_set_opacity (priv->edge_indication_right, 0x7f);
-
   if (hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
-    clutter_actor_show (priv->edge_indication_left);
+    {
+      clutter_actor_show (priv->edge_indication_left);
+      clutter_actor_set_opacity (priv->edge_indication_left, left_opacity);
+    }
+  else
+    {
+      clutter_actor_hide (priv->edge_indication_left);
+    }
+
   if (hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
-    clutter_actor_show (priv->edge_indication_right);
+    {
+      clutter_actor_show (priv->edge_indication_right);
+      clutter_actor_set_opacity (priv->edge_indication_right, right_opacity);
+    }
+  else
+    {
+      clutter_actor_hide (priv->edge_indication_right);
+    }
+}
+
+void
+hd_home_show_edge_indication (HdHome *home)
+{
+  update_edge_indication_visibility (home,
+                                     EDGE_INDICATION_OPACITY_WIDGET_MOVING,
+                                     EDGE_INDICATION_OPACITY_WIDGET_MOVING);
 }
 
 void
 hd_home_hide_edge_indication (HdHome *home)
 {
-  HdHomePrivate *priv = home->priv;
-
-  clutter_actor_hide (priv->edge_indication_left);
-  clutter_actor_hide (priv->edge_indication_right);
+  update_edge_indication_visibility (home,
+                                     EDGE_INDICATION_OPACITY_DEFAULT,
+                                     EDGE_INDICATION_OPACITY_DEFAULT);
 }
 
 void
 hd_home_highlight_edge_indication (HdHome *home, gboolean left, gboolean right)
 {
-  HdHomePrivate *priv = home->priv;
-
-  clutter_actor_set_opacity (priv->edge_indication_left, left ? 0xff : 0x7f);
-  clutter_actor_set_opacity (priv->edge_indication_right, right ? 0xff : 0x7f);
+  update_edge_indication_visibility (home,
+                                     left ? EDGE_INDICATION_OPACITY_WIDGET_OVER : EDGE_INDICATION_OPACITY_WIDGET_MOVING,
+                                     right ? EDGE_INDICATION_OPACITY_WIDGET_OVER : EDGE_INDICATION_OPACITY_WIDGET_MOVING);
 }
 
 void

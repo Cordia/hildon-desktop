@@ -1,3 +1,20 @@
+2009-10-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#142940 - Changing desktop view while in the layout mode
+
+	* src/home/hd-home.c (EdgeIndicationOpacity,
+	  EDGE_INDICATION_OPACITY_DEFAULT,
+	  EDGE_INDICATION_OPACITY_WIDGET_MOVING,
+	  EDGE_INDICATION_OPACITY_WIDGET_OVER, HdHomeDrag,
+	  hd_home_create_edit_button, edge_indication_pressed,
+	  create_edge_indicator, hd_home_constructed, _hd_home_do_edit_layout,
+	  hd_home_set_operator_applet, update_edge_indication_visibility,
+	  hd_home_show_edge_indication, hd_home_hide_edge_indication,
+	  hd_home_highlight_edge_indication): Add another mode of edge
+	  indication which less opacity which is shown in edit mode by
+	  default. Add pressing edge indication pans to other view in edit
+	  mode. Simplify edge indication code.
+
 2009-10-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.107-1
