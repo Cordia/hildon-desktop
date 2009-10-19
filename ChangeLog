@@ -1,4 +1,17 @@
+2009-10-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.107-1
+
 2009-10-19  Gordon Williams <gordon.williams@collabora.co.uk>
+
+
+	Fixes: NB#131081 - Class 0 SMS not shown full screen when switched from
+	portrait to landscape mode (Applies to fullscreen notes too)
+
+	* src/home/hd-render-manager.c: When we set visibility for the title 
+	  bar, do it based on window size rather than fullscreen flag, which
+	  matches the way we do stacking.
+	* src/mb/hd-comp-mgr.c: Make sure we sync stacking on window resize
 
 	Fixes: NB#136255 - Task Launcher summon animation overshoot a bit rough
 	                   (Also added per-theme transitions.ini)
