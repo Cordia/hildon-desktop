@@ -176,8 +176,26 @@ hd_comp_mgr_client_new (MBWindowManagerClient * client)
 }
 
 static void
+hd_comp_mgr_client_configure_real (MBWMCompMgrClient * client)
+{
+  /* Call original code */
+  MB_WM_COMP_MGR_CLIENT_CLASS (
+      MB_WM_OBJECT_GET_PARENT_CLASS(
+          MB_WM_OBJECT(client)))->configure(client);
+
+  /* Work out visibilities again, as if a window has changed size, it may have
+   * uncovered windows which were previously invisible. Unfortunately we can't
+   * just do this if the window has changed from fullscreen to non-fullscreen
+   * as some apps (like camera) won't work correctly. */
+  hd_comp_mgr_sync_stacking(HD_COMP_MGR(client->wm->comp_mgr));
+
+}
+static void
 hd_comp_mgr_client_class_init (MBWMObjectClass *klass)
 {
+  MBWMCompMgrClientClass *c_klass = MB_WM_COMP_MGR_CLIENT_CLASS (klass);
+
+  c_klass->configure  = hd_comp_mgr_client_configure_real;
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdCompMgrClient";
 #endif

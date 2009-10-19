@@ -2539,8 +2539,7 @@ void hd_render_manager_set_visibilities()
           continue;
         if (!hd_render_manager_is_client_visible(c))
           continue;
-        has_fullscreen |= c->window->ewmh_state
-          & MBWMClientWindowEWMHStateFullscreen;
+        has_fullscreen |= hd_comp_mgr_client_is_maximized(c->window->geometry);
       }
 
   /* If we have a fullscreen something hide the blur_front
