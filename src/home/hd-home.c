@@ -108,7 +108,7 @@ enum
 
 enum EdgeIndicationOpacity
 {
-  EDGE_INDICATION_OPACITY_DEFAULT = 0x3f,
+  EDGE_INDICATION_OPACITY_INVISIBLE = 0x00,
   EDGE_INDICATION_OPACITY_WIDGET_MOVING = 0x7f,
   EDGE_INDICATION_OPACITY_WIDGET_OVER = 0xff,
 };
@@ -824,25 +824,6 @@ hd_home_create_edit_button (void)
   return edit_button;
 }
 
-static gboolean
-edge_indication_pressed (ClutterActor *actor,
-                         ClutterEvent *event,
-                         HdHome       *home)
-{
-  HdHomePrivate *priv = home->priv;
-
-  if (priv->edge_indication_left == actor)
-    {
-      hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container), 0);
-    }
-  else
-    {
-      hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container), 0);
-    }
-
-  return TRUE;
-}
-
 static ClutterActor *
 create_edge_indicator (HdHome           *home,
                        ClutterContainer *edit_group,
@@ -862,9 +843,7 @@ create_edge_indicator (HdHome           *home,
                                edge_indicator);
   clutter_actor_show (edge_indicator);
 
-  clutter_actor_set_reactive (edge_indicator, TRUE);
-  g_signal_connect (edge_indicator, "button-press-event",
-                    G_CALLBACK (edge_indication_pressed), home);
+  clutter_actor_set_reactive (edge_indicator, FALSE);
 
   return edge_indicator;
 }
@@ -1192,8 +1171,8 @@ _hd_home_do_edit_layout (HdHome *home)
   clutter_actor_show (priv->edit_group);
 
   update_edge_indication_visibility (home,
-                                     EDGE_INDICATION_OPACITY_DEFAULT,
-                                     EDGE_INDICATION_OPACITY_DEFAULT);
+                                     EDGE_INDICATION_OPACITY_INVISIBLE,
+                                     EDGE_INDICATION_OPACITY_INVISIBLE);
 }
 
 void
@@ -1991,7 +1970,8 @@ update_edge_indication_visibility (HdHome *home,
 {
   HdHomePrivate *priv = home->priv;
 
-  if (hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
+  if (left_opacity &&
+      hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
     {
       clutter_actor_show (priv->edge_indication_left);
       clutter_actor_set_opacity (priv->edge_indication_left, left_opacity);
@@ -2001,7 +1981,8 @@ update_edge_indication_visibility (HdHome *home,
       clutter_actor_hide (priv->edge_indication_left);
     }
 
-  if (hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
+  if (right_opacity &&
+      hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
     {
       clutter_actor_show (priv->edge_indication_right);
       clutter_actor_set_opacity (priv->edge_indication_right, right_opacity);
@@ -2024,8 +2005,8 @@ void
 hd_home_hide_edge_indication (HdHome *home)
 {
   update_edge_indication_visibility (home,
-                                     EDGE_INDICATION_OPACITY_DEFAULT,
-                                     EDGE_INDICATION_OPACITY_DEFAULT);
+                                     EDGE_INDICATION_OPACITY_INVISIBLE,
+                                     EDGE_INDICATION_OPACITY_INVISIBLE);
 }
 
 void

@@ -1,3 +1,19 @@
+2009-10-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Implement swipe gesture in home edit mode to pan between views.
+
+	Fixes: NB#142940 - Changing desktop view while in the layout mode
+
+	* src/home/hd-home-view.c (_HdHomeViewPrivate::pan_gesture_start_x,
+	  _HdHomeViewPrivate::pan_gesture_start_y, hd_home_view_shown,
+	  hd_home_view_hidden, is_button_press_in_gesture_start_area,
+	  pan_gesture_motion, stop_pan_gesture, pressed_on_view,
+	  hd_home_view_constructed): Add support for swipe gesture.
+	* src/home/hd-home.c (EDGE_INDICATION_OPACITY_INVISIBLE,
+	  create_edge_indicator, _hd_home_do_edit_layout,
+	  update_edge_indication_visibility, hd_home_hide_edge_indication):
+	  Only show edge indication when widget is dragged.
+
 2009-10-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#142940 - Changing desktop view while in the layout mode

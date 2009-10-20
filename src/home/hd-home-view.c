@@ -95,6 +95,9 @@ struct _HdHomeViewPrivate
   gboolean                  move_applet_left : 1;
   gboolean                  move_applet_right : 1;
 
+  gint                      pan_gesture_start_x;
+  gint                      pan_gesture_start_y;
+
   guint                     id;
 
   guint load_background_source;
@@ -233,7 +236,7 @@ hd_home_view_class_init (HdHomeViewClass *klass)
 /* applets_container is not a member of HdHomeView (it is in HdHome's 'front'
  * container. Hence we want to show/hide the applets container whenever the
  * home view itself is hidden */
-static gboolean hd_home_view_shown(HdHomeView   *view) {
+static gboolean hd_home_view_shown(HdHomeView *view) {
   HdHomeViewPrivate        *priv = view->priv;
   clutter_actor_show(priv->applets_container);
   return FALSE;
@@ -241,9 +244,95 @@ static gboolean hd_home_view_shown(HdHomeView   *view) {
 /* applets_container is not a member of HdHomeView (it is in HdHome's 'front'
  * container. Hence we want to show/hide the applets container whenever the
  * home view itself is hidden */
-static gboolean hd_home_view_hidden(HdHomeView   *view) {
+static gboolean hd_home_view_hidden(HdHomeView *view) {
   HdHomeViewPrivate        *priv = view->priv;
   clutter_actor_hide(priv->applets_container);
+  return FALSE;
+}
+
+static gboolean
+is_button_press_in_gesture_start_area (ClutterEvent *event)
+{
+  g_debug ("%s. (%d, %d)",
+           __FUNCTION__,
+           event->button.x, event->button.y);
+
+  return event->button.x <= 15 || event->button.x >= HD_COMP_MGR_LANDSCAPE_WIDTH - 15;
+}
+
+static gboolean stop_pan_gesture (HdHomeView *view);
+
+static gboolean
+pan_gesture_motion (ClutterActor *actor,
+                    ClutterEvent *event,
+                    HdHomeView   *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  g_debug ("%s. (%d, %d)",
+           __FUNCTION__,
+           event->motion.x, event->motion.y);
+
+  if (ABS (priv->pan_gesture_start_y - event->motion.y) > 25)
+    {
+      stop_pan_gesture (view);
+    }
+  else
+    {
+      if (ABS (priv->pan_gesture_start_x - event->motion.x) > 50)
+        {
+          stop_pan_gesture (view);
+
+          if (priv->pan_gesture_start_x <= 15)
+            hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container), 0);
+          else
+            hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container), 0);
+        }
+    }
+
+  return FALSE;
+}
+
+static gboolean
+stop_pan_gesture (HdHomeView *view)
+{
+  g_debug ("%s", __FUNCTION__);
+
+  clutter_ungrab_pointer ();
+
+  g_signal_handlers_disconnect_by_func (view,
+                                        pan_gesture_motion,
+                                        view);
+  g_signal_handlers_disconnect_by_func (view,
+                                        stop_pan_gesture,
+                                        view);
+
+  return FALSE;
+}
+
+static gboolean
+pressed_on_view (ClutterActor *actor,
+                 ClutterEvent *event,
+                 HdHomeView   *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  g_debug ("%s. (%d, %d)",
+           __FUNCTION__,
+           event->button.x, event->button.y);
+
+  if (is_button_press_in_gesture_start_area (event))
+    {
+      priv->pan_gesture_start_x = event->button.x;
+      priv->pan_gesture_start_y = event->button.y;
+
+      clutter_grab_pointer (CLUTTER_ACTOR (view));
+      g_signal_connect (view, "motion-event",
+                        G_CALLBACK (pan_gesture_motion), view);
+      g_signal_connect_swapped (view, "button-release-event",
+                                G_CALLBACK (stop_pan_gesture), view);
+    }
+
   return FALSE;
 }
 
@@ -290,6 +379,9 @@ hd_home_view_constructed (GObject *object)
                                priv->background);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (object), TRUE);
+
+  g_signal_connect (object, "button-press-event",
+                    G_CALLBACK (pressed_on_view), object);
 
   g_signal_connect (object, "notify::allocation",
                     G_CALLBACK (hd_home_view_allocation_changed),
@@ -1319,20 +1411,6 @@ hd_home_view_close_all_applets (HdHomeView *view)
     }
  }
 
-/*
-static void
-scroll_next_completed_cb (ClutterTimeline *timeline,
-                          HdHomeView      *view)
-{
-  HdHomeViewPrivate *priv = view->priv;
-
-  clutter_actor_hide (CLUTTER_ACTOR (view));
-
-  clutter_container_foreach (CLUTTER_CONTAINER (priv->applets_container),
-                             CLUTTER_CALLBACK (remove_applet_from_view),
-                             view);
- }
- */
 void
 hd_home_view_update_state (HdHomeView *view)
 {
