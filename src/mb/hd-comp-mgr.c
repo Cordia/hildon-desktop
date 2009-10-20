@@ -1122,10 +1122,10 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
         XFixesUnionRegion (wm->xdpy, region, region, r);
         XFixesDestroyRegion (wm->xdpy, r);
       }
-
   hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
-    XCompositeGetOverlayWindow (wm->xdpy, wm->root_win->xwindow),
-    region);
+      mb_wm_comp_mgr_clutter_get_overlay_window(
+          MB_WM_COMP_MGR_CLUTTER(hmgr)),
+      region);
   hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
     clutter_x11_get_stage_window (
       CLUTTER_STAGE (clutter_stage_get_default ())),
@@ -1567,7 +1567,8 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
   wm = mgr->wm;
   stage = clutter_stage_get_default ();
   clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
-  overlay = XCompositeGetOverlayWindow (wm->xdpy, wm->root_win->xwindow);
+  overlay = mb_wm_comp_mgr_clutter_get_overlay_window(
+                  MB_WM_COMP_MGR_CLUTTER(hmgr));
 
   r.x = r.y = 0;
   if (want_fs_comp)

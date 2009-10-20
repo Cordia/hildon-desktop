@@ -251,8 +251,9 @@ hd_util_flip_input_viewport (MBWindowManager *wm)
   XFree(inputshape);
 
   hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
-    XCompositeGetOverlayWindow (wm->xdpy, wm->root_win->xwindow),
-    region);
+      mb_wm_comp_mgr_clutter_get_overlay_window(
+          MB_WM_COMP_MGR_CLUTTER(wm->comp_mgr)),
+      region);
   hd_comp_mgr_set_input_viewport_for_window (wm->xdpy, clwin, region);
   XFixesDestroyRegion (wm->xdpy, region);
 }
