@@ -17,8 +17,6 @@ hildon-desktop (1:2.2.107-1) unstable; urgency=low
   * Fixes: NB#141757 - hildon-desktop crashes reported in corematic
 
   Gordon:
-  * Fixes: NB#131081 - Class 0 SMS not shown full screen when switched from
-    portrait to landscape mode (Applies to fullscreen notes too)
   * Fixes: NB#136255 - Task Launcher summon animation overshoot a bit rough
     (Also added per-theme transitions.ini)
 
