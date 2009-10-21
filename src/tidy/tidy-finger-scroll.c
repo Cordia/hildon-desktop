@@ -138,15 +138,15 @@ tidy_finger_scroll_dispose (GObject *object)
 
   if (priv->hscroll_timeline)
     {
-      clutter_timeline_stop (priv->hscroll_timeline);
-      g_object_unref (priv->hscroll_timeline);
+      /* FIXME clutter_effect_ requires to get the ClutterTimeline::completed signal to not leak */
+      g_signal_emit_by_name (priv->hscroll_timeline, "completed");
       priv->hscroll_timeline = NULL;
     }
 
   if (priv->vscroll_timeline)
     {
-      clutter_timeline_stop (priv->vscroll_timeline);
-      g_object_unref (priv->vscroll_timeline);
+      /* FIXME clutter_effect_ requires to get the ClutterTimeline::completed signal to not leak */
+      g_signal_emit_by_name (priv->vscroll_timeline, "completed");
       priv->vscroll_timeline = NULL;
     }
 
@@ -279,15 +279,15 @@ show_scrollbars (TidyFingerScroll *scroll, gboolean show)
     }
   if (priv->hscroll_timeline)
     {
-      clutter_timeline_stop (priv->hscroll_timeline);
-      g_object_unref (priv->hscroll_timeline);
+      /* FIXME clutter_effect_ requires to get the ClutterTimeline::completed signal to not leak */
+      g_signal_emit_by_name (priv->hscroll_timeline, "completed");
       priv->hscroll_timeline = NULL;
     }
 
   if (priv->vscroll_timeline)
     {
-      clutter_timeline_stop (priv->vscroll_timeline);
-      g_object_unref (priv->vscroll_timeline);
+      /* FIXME clutter_effect_ requires to get the ClutterTimeline::completed signal to not leak */
+      g_signal_emit_by_name (priv->vscroll_timeline, "completed");
       priv->vscroll_timeline = NULL;
     }
 
