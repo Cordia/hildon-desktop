@@ -253,7 +253,7 @@ set_parent_texture (TidySubTexture *ctexture,
 
   if (texture)
     {
-      priv->parent_texture = g_object_ref (texture);
+      priv->parent_texture = g_object_ref_sink (texture);
 
       /* queue a redraw if the subd texture is already visible */
       if (CLUTTER_ACTOR_IS_VISIBLE (priv->parent_texture) &&
