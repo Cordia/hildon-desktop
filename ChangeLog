@@ -1,3 +1,7 @@
+2009-10-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.108-1
+
 2009-10-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/launcher/hd-launcher.c (hd_launcher_transition_app_start):

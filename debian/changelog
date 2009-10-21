@@ -1,8 +1,18 @@
-hildon-desktop (1:2.2.108-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.108-1) unstable; urgency=low
 
-  * foo
+  Adam:
+  * src/launcher/hd-launcher.c (hd_launcher_transition_app_start):
+    Don't leak $app_image.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 19 Oct 2009 14:21:17 +0300
+  Gordon:
+  * Fixes: NB#142511 - Increse in memory usage of hildon-desktop while 
+    playing games.
+
+  Jan Arne:
+  * Fixes: NB#142940 - Changing desktop view while in the layout mode
+  * Fix a memory leak when opening and closing task launcher.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 21 Oct 2009 17:47:41 +0300
 
 hildon-desktop (1:2.2.107-1) unstable; urgency=low
 
