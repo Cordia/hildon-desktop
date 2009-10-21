@@ -1,3 +1,8 @@
+2009-10-21 Gordon Williams <gordon.williams@collabora.co.uk>
+
+	* src/tidy/tidy-sub-texture.c: use ref_sink, not ref, to fix unreffing
+	  issues when we do tidy_sub_texture_new(clutter_texture_new(...))
+
 2009-10-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/launcher/hd-launcher.c (hd_launcher_transition_app_start):
