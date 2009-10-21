@@ -647,7 +647,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
                          hd_comp_mgr_get_current_screen_width (),
                          hd_comp_mgr_get_current_screen_height ()
                          - HD_COMP_MGR_TOP_MARGIN);
-  priv->launch_image = g_object_ref(app_image);
+  priv->launch_image = g_object_ref_sink(app_image);
 
   /* Try and get the current mouse cursor location - this should be the place
    * the user last pressed */

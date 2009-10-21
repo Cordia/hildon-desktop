@@ -1,3 +1,8 @@
+2009-10-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/launcher/hd-launcher.c (hd_launcher_transition_app_start):
+	  Don't leak $app_image.
+
 2009-10-21  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes memory leak when opening and closing task launcher.
