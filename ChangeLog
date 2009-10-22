@@ -1,3 +1,11 @@
+2009-10-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Plug.
+
+	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_allocate,
+	  hd_launcher_grid_dispose): Do not only dispose $blockers
+	  but also unparent them, which drops the refcount to 0.
+
 2009-10-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.108-1

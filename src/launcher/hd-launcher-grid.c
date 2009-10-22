@@ -481,7 +481,7 @@ hd_launcher_grid_allocate (ClutterActor          *actor,
 
   /* Free our list of 'blocker' actors that we use to block mouse clicks */
   g_list_foreach(priv->blockers,
-                 (GFunc) clutter_actor_destroy,
+                 (GFunc) clutter_actor_unparent,
                  NULL);
   g_list_free(priv->blockers);
   priv->blockers = NULL;
@@ -632,7 +632,7 @@ hd_launcher_grid_dispose (GObject *gobject)
   priv->tiles = NULL;
 
   g_list_foreach(priv->blockers,
-                 (GFunc) clutter_actor_destroy,
+                 (GFunc) clutter_actor_unparent,
                  NULL);
   g_list_free(priv->blockers);
   priv->blockers = NULL;
