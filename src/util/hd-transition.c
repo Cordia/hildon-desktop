@@ -49,8 +49,8 @@
 #include "hd-util.h"
 
 /* The master of puppets */
-#define TRANSITIONS_INI_FIRST "/etc/hildon/theme/transitions.ini"
-#define TRANSITIONS_INI_SECOND "/usr/share/hildon-desktop/transitions.ini"
+#define TRANSITIONS_INI             "/usr/share/hildon-desktop/transitions.ini"
+#define TRANSITIONS_INI_FROM_THEME  "/etc/hildon/theme/transitions.ini"
 
 typedef struct _HDEffectData
 {
@@ -1728,35 +1728,59 @@ hd_transition_play_sound (const gchar * fname)
 void
 hd_transition_set_file_changed(void) {
   g_debug("%s: setting transitions.ini modified", __FUNCTION__);
-  transitions_ini_is_dirty = TRUE;
+  transitions_ini_is_dirty = 2*TRUE;
+}
+
+static gboolean
+transitions_ini_changed(GIOChannel *chnl, GIOCondition cond, gpointer unused)
+{
+  struct inotify_event ibuf;
+
+  if (g_io_channel_read_chars(chnl, (void *)&ibuf, sizeof(ibuf), NULL, NULL)
+      != G_IO_STATUS_NORMAL)
+    {
+      g_warning("%s: g_io_channel_read_chars failed", __func__);
+    }
+  else if (ibuf.mask & (IN_MODIFY | IN_DELETE_SELF | IN_MOVE_SELF | IN_IGNORED))
+    {
+      g_debug("disposing transitions.ini");
+      transitions_ini_is_dirty++;
+
+      /* Track no more if the dirent changed or disappeared. */
+      if (ibuf.mask & (IN_MOVE_SELF | IN_DELETE_SELF | IN_IGNORED))
+        {
+          g_debug("watching no more");
+          transitions_ini_is_dirty++;
+        }
+    }
+  return TRUE;
 }
 
 static GKeyFile *
 hd_transition_get_keyfile(void)
 {
-  static GKeyFile *transitions_ini = 0;
+  static GKeyFile *transitions_ini;
+  static GIOChannel *transitions_ini_watcher;
   GError *error;
   GKeyFile *ini;
-  const char *transitions_file_name = TRANSITIONS_INI_FIRST;
+  const char *fname;
 
   if (transitions_ini && !transitions_ini_is_dirty)
     return transitions_ini;
 
   /* Check for a file in the theme directory first, otherwise
    * use the one in the hildon-desktop dir */
-  if (!g_file_test(transitions_file_name, G_FILE_TEST_EXISTS))
-    transitions_file_name = TRANSITIONS_INI_SECOND;
-
+  fname = g_file_test(TRANSITIONS_INI_FROM_THEME, G_FILE_TEST_EXISTS)
+    ? TRANSITIONS_INI_FROM_THEME : TRANSITIONS_INI;
   g_debug("%s: %s %s", __FUNCTION__,
-          transitions_ini_is_dirty ? "reloading" : "loading",
-          transitions_file_name);
+          transitions_ini_is_dirty ? "reloading" : "loading", fname);
 
   error = NULL;
   ini = g_key_file_new();
-  if (!g_key_file_load_from_file (ini, transitions_file_name, 0, &error))
+  if (!g_key_file_load_from_file (ini, fname, 0, &error))
     { /* Use the previous @transitions_ini. */
       g_warning("%s: couldn't load %s: %s", __FUNCTION__,
-          transitions_file_name, error->message);
+                fname, error->message);
       if (!transitions_ini)
         g_warning("%s: using default settings", __FUNCTION__);
       g_error_free(error);
@@ -1764,14 +1788,50 @@ hd_transition_get_keyfile(void)
       return transitions_ini;
     }
 
-  /* Use the new @transitions_ini, free the old one */
+  /* Use the new @transitions_ini. */
   if (transitions_ini)
     g_key_file_free(transitions_ini);
   transitions_ini = ini;
 
+  if (!transitions_ini_watcher || transitions_ini_is_dirty > TRUE)
+    {
+      static int inofd = -1, watch = -1;
+
+      /* Create an inotify if we haven't. */
+      if (inofd < 0)
+        {
+          if ((inofd = inotify_init()) < 0)
+            {
+              g_warning("inotify_init: %s", strerror(errno));
+              goto out;
+            }
+
+          g_assert(!transitions_ini_watcher);
+          transitions_ini_watcher = g_io_channel_unix_new(inofd);
+          g_io_channel_set_encoding(transitions_ini_watcher, NULL, NULL);
+          g_io_add_watch(transitions_ini_watcher, G_IO_IN,
+                         transitions_ini_changed, NULL);
+        }
+      else if (watch >= 0)
+        /* Remove the previous watch. */
+        inotify_rm_watch(inofd, watch);
+
+      g_assert(transitions_ini_watcher != NULL);
+      watch = inotify_add_watch(inofd, fname,
+                                IN_MODIFY|IN_MOVE_SELF|IN_DELETE_SELF);
+      if (watch < 0)
+        {
+          g_warning("inotify_add_watch: %s", strerror(errno));
+          goto out;
+        }
+
+      g_debug("watching %s", fname);
+    }
+
   /* Stop reloading @transitions_ini if we can watch it. */
   transitions_ini_is_dirty = FALSE;
 
+out:
   return transitions_ini;
 }
 

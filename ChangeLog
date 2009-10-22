@@ -1,5 +1,12 @@
 2009-10-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Regression fix.
+
+	* src/util/hd-transition.c:
+	  Automatically reload transitions.ini whenever it changes again.
+
+2009-10-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Plug.
 
 	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_allocate,
