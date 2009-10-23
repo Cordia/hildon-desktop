@@ -184,7 +184,7 @@ walk_thread_done_idle (gpointer user_data)
 
       hd_mutex_enable (FALSE);
     }
-  if (data->cancelled)
+  else
     {
       /* This is the result of an obsolete walking, get rid of it. */
       g_list_foreach (data->items, (GFunc) g_object_unref, NULL);\

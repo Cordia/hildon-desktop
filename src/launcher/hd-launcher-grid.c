@@ -277,6 +277,7 @@ hd_launcher_grid_get_adjustments (TidyScrollable  *scrollable,
           hd_launcher_grid_set_adjustments (scrollable,
                                             adjustment,
                                             priv->v_adjustment);
+          g_object_unref (adjustment);
           hd_launcher_grid_refresh_h_adjustment (HD_LAUNCHER_GRID (scrollable));
 
           *h_adj = adjustment;
@@ -295,6 +296,7 @@ hd_launcher_grid_get_adjustments (TidyScrollable  *scrollable,
           hd_launcher_grid_set_adjustments (scrollable,
                                             priv->h_adjustment,
                                             adjustment);
+          g_object_unref (adjustment);
           hd_launcher_grid_refresh_v_adjustment (HD_LAUNCHER_GRID (scrollable));
 
           *v_adj = adjustment;

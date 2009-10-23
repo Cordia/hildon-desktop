@@ -69,15 +69,8 @@ typedef enum
 } HdLauncherPageTransition;
 
 GType            hd_launcher_page_get_type (void) G_GNUC_CONST;
-ClutterActor    *hd_launcher_page_new     (const gchar *icon_name,
-                                           const gchar *text);
+ClutterActor    *hd_launcher_page_new      (void);
 ClutterActor    *hd_launcher_page_get_grid      (HdLauncherPage *page);
-const gchar     *hd_launcher_page_get_icon_name (HdLauncherPage *page);
-const gchar     *hd_launcher_page_get_text      (HdLauncherPage *page);
-void hd_launcher_page_set_icon_name (HdLauncherPage *page,
-                                      const gchar *icon_name);
-void hd_launcher_page_set_text      (HdLauncherPage *page,
-                                      const gchar *text);
 
 void hd_launcher_page_add_tile (HdLauncherPage *page, HdLauncherTile* tile);
 void hd_launcher_page_transition(HdLauncherPage *page,

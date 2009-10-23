@@ -249,6 +249,9 @@ hd_launcher_show (void)
 
   ClutterActor *top_page = g_datalist_get_data (&priv->pages,
                                                 HD_LAUNCHER_ITEM_TOP_CATEGORY);
+  if (!top_page)
+    return;
+
   priv->active_page = top_page;
   clutter_actor_show (self);
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
@@ -274,6 +277,10 @@ hd_launcher_hide (void)
       hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
           HD_LAUNCHER_PAGE_TRANSITION_OUT);
       priv->active_page = NULL;
+    }
+  else
+    {
+      hd_launcher_hide_final ();
     }
 }
 
@@ -389,10 +396,11 @@ hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
   if (priv->pages)
     {
       g_datalist_foreach (&priv->pages, _hd_launcher_clear_page, NULL);
-      g_dataset_destroy (&priv->pages);
+      g_datalist_clear (&priv->pages);
       priv->pages = NULL;
     }
   g_datalist_init(&priv->pages);
+  priv->active_page = NULL;
 
   if (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER)
     {
@@ -414,11 +422,11 @@ hd_launcher_create_page (HdLauncherItem *item, gpointer data)
   if (hd_launcher_item_get_item_type (item) != HD_CATEGORY_LAUNCHER)
     return;
 
-  newpage = hd_launcher_page_new(NULL, NULL);
+  newpage = hd_launcher_page_new ();
 
   clutter_actor_hide (newpage);
   clutter_container_add_actor (CLUTTER_CONTAINER (self), newpage);
-  g_datalist_set_data (&priv->pages, hd_launcher_item_get_id (item), newpage);
+  g_datalist_set_data_full (&priv->pages, hd_launcher_item_get_id (item), newpage, (GDestroyNotify) clutter_actor_destroy);
 }
 
 static gboolean
@@ -500,12 +508,12 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
   /* First we traverse the list and create all the categories,
    * so that apps can be correctly put into them.
    */
-  ClutterActor *top_page = hd_launcher_page_new (NULL, NULL);
+  ClutterActor *top_page = hd_launcher_page_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (launcher),
                                top_page);
   clutter_actor_hide (top_page);
   priv->active_page = NULL;
-  g_datalist_set_data (&priv->pages, HD_LAUNCHER_ITEM_TOP_CATEGORY, top_page);
+  g_datalist_set_data_full (&priv->pages, HD_LAUNCHER_ITEM_TOP_CATEGORY, top_page, (GDestroyNotify) clutter_actor_destroy);
 
   g_list_foreach (tdata->items, (GFunc) hd_launcher_create_page, NULL);
 

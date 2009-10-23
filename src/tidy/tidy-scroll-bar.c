@@ -33,6 +33,8 @@
 #include "tidy-private.h"
 
 static void tidy_stylable_iface_init (TidyStylableIface *iface);
+static void on_style_change (TidyStyle     *style,
+                             TidyScrollBar *bar);
 
 G_DEFINE_TYPE_WITH_CODE (TidyScrollBar, tidy_scroll_bar, TIDY_TYPE_ACTOR,
                          G_IMPLEMENT_INTERFACE (TIDY_TYPE_STYLABLE,
@@ -124,6 +126,9 @@ tidy_scroll_bar_dispose (GObject *gobject)
 {
   TidyScrollBar *bar = TIDY_SCROLL_BAR (gobject);
   TidyScrollBarPrivate *priv = bar->priv;
+
+  g_signal_handlers_disconnect_by_func (tidy_stylable_get_style (TIDY_STYLABLE (bar)),
+                                        G_CALLBACK (on_style_change), bar);
 
   if (priv->refresh_source)
     {
@@ -313,8 +318,7 @@ tidy_scroll_bar_constructor (GType                  type,
   g_signal_connect (bar, "notify::reactive",
                     G_CALLBACK (bar_reactive_notify_cb), NULL);
   g_signal_connect (tidy_stylable_get_style (TIDY_STYLABLE (bar)),
-                    "changed", G_CALLBACK (on_style_change),
-                    bar);
+                    "changed", G_CALLBACK (on_style_change), bar);
 
   /* Manually call on_style_change */
   on_style_change (NULL, bar);
