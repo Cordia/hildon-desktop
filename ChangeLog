@@ -1,3 +1,9 @@
+2009-10-23 Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#144076 - Home View Panning unresponsive
+	* src/home/hd-home-view-container.c: Allow the home view to be dragged
+	  while an animation for view panning is in progress.
+
 2009-10-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Plug.
