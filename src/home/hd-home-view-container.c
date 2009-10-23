@@ -57,7 +57,8 @@ struct _HdHomeViewContainerPrivate
   guint previous_view;
   guint next_view;
 
-  int offset;
+  int offset;       // offset caused by used drag
+  int offset_anim;  // offset caused by animation
 
   HdHome *home;
   HdCompMgr *comp_mgr;
@@ -480,7 +481,8 @@ hd_home_view_container_allocate (ClutterActor          *self,
   height = box->y2 - box->y1;
 
   if (priv->previous_view != priv->current_view && priv->next_view != priv->current_view)
-    offset = CLUTTER_UNITS_FROM_INT(priv->offset);
+    offset = CLUTTER_UNITS_FROM_INT(priv->offset) +
+             CLUTTER_UNITS_FROM_INT(priv->offset_anim);
 
   for (i = 0; i < MAX_HOME_VIEWS; i++)
     {
@@ -699,9 +701,6 @@ hd_home_view_container_set_offset (HdHomeViewContainer *container,
 
   priv = container->priv;
 
-  if (priv->timeline)
-    return;
-
   priv->offset = CLUTTER_UNITS_TO_INT(offset);
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
@@ -720,7 +719,7 @@ scroll_back_new_frame_cb (ClutterTimeline     *timeline,
   if (priv->animation_overshoot)
     amt = amt * -cos(amt*3.141592);
 
-  priv->offset = (int)((1-amt) * priv->timeline_offset);
+  priv->offset_anim = (int)((1-amt) * priv->timeline_offset);
   /* prod the blur control so it notices that the background has changed */
   hd_render_manager_blurred_changed();
 
@@ -755,13 +754,20 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocit
 {
   HdHomeViewContainerPrivate *priv;
   guint width;
+  gint offset;
 
   g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
   priv = container->priv;
 
-  if (priv->timeline)
-    return;
+  if (priv->timeline) {
+    clutter_timeline_stop(priv->timeline);
+    /* This will unref the timeline and switch desktops to what everything
+     * else is expecting */
+    scroll_back_completed_cb(priv->timeline, container);
+  }
+
+  offset = priv->offset + priv->offset_anim;
 
   clutter_actor_get_size (CLUTTER_ACTOR (container), &width, NULL);
 
@@ -775,7 +781,7 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocit
     {
       /* Overshoot if we were going in one direction, but expect to
        * go in the other */
-      priv->animation_overshoot = (velocity>0) == (priv->offset>0);
+      priv->animation_overshoot = (velocity>0) == (offset>0);
       /* make sure velocity is within a sensible range, we don't want this
        * taking more than a second, or totally flicking past... */
       velocity = ABS(velocity);
@@ -787,18 +793,23 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocit
    * the same as the drag velocity given in the argument (because the ease_out
    * function in scroll_back_new_frame_cb uses sin, and sin(x)==x near 0) */
   priv->timeline = clutter_timeline_new_for_duration
-                        (ABS (priv->offset) * 1570 / velocity);
+                        (ABS (offset) * 1570 / velocity);
 
   priv->frames = clutter_timeline_get_n_frames (priv->timeline);
-  priv->timeline_offset = priv->offset;
+  priv->timeline_offset = offset;
+  /* We reset this and use a separate offset (offset_anim) for animation so
+   * the user can still pan while we're animating */
+  priv->offset = 0;
 
   g_debug ("frames: %u, offset: %d",
-           priv->frames, priv->offset);
+           priv->frames, priv->timeline_offset);
 
   g_signal_connect (priv->timeline, "new-frame",
                     G_CALLBACK (scroll_back_new_frame_cb), container);
   g_signal_connect (priv->timeline, "completed",
                     G_CALLBACK (scroll_back_completed_cb), container);
+  /* Update first frame to stop flicker */
+  scroll_back_new_frame_cb(priv->timeline, 0, container);
 
   clutter_timeline_start (priv->timeline);
 }
@@ -812,9 +823,6 @@ hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container, gint 
   g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
   priv = container->priv;
-
-  if (priv->timeline)
-    return;
 
   clutter_actor_get_size (CLUTTER_ACTOR (container), &width, NULL);
 
@@ -834,9 +842,6 @@ hd_home_view_container_scroll_to_next (HdHomeViewContainer *container, gint velo
   g_return_val_if_fail (HD_IS_HOME_VIEW_CONTAINER (container), NULL);
 
   priv = container->priv;
-
-  if (priv->timeline)
-    return NULL;
 
   clutter_actor_get_size (CLUTTER_ACTOR (container), &width, NULL);
 
