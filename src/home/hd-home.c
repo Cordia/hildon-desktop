@@ -704,12 +704,13 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 	if (!client || !client->window)
 	  return;
 
-	launcher_app = hd_comp_mgr_client_get_launcher (HD_COMP_MGR_CLIENT (client->cm_client));
+	launcher_app = hd_comp_mgr_client_get_launcher (
+                                HD_COMP_MGR_CLIENT (client->cm_client));
 
 	if (!launcher_app)
 	  {
-	    g_warning ("Window %06x did not have an application associated with it\n",
-		       (int) client->window->xwindow);
+	    g_warning ("Window %06x did not have an application associated"
+                       " with it\n", (int) client->window->xwindow);
 	    return;
 	  }
 
@@ -742,6 +743,13 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
 	      GdkPixbuf                      *pixbuf;
 	      guint                           depth;
 	      guint                           width, height;
+
+              if (g_file_test (filename, G_FILE_TEST_EXISTS))
+                {
+                  g_debug ("%s: not creating '%s', already exists\n",
+                           __func__, filename);
+                  break;
+                }
 
 	      ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor
 		(MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client));

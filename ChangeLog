@@ -1,3 +1,10 @@
+2009-10-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-home.c (root_window_client_message): Don't create the
+	screenshot if it's already there. This is the intended semantics as
+	applications can use the libhildon API to remove the screenshot when
+	they need to refresh it.
+
 2009-10-23 Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#144076 - Home View Panning unresponsive
