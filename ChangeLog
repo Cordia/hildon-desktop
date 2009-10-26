@@ -1,5 +1,7 @@
 2009-10-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.109-1
+
 	* src/util/hd-transition.c (on_close_timeline_new_frame): Fix a
 	Coverity warning.
 

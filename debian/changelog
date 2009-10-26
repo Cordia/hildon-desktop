@@ -1,8 +1,9 @@
-hildon-desktop (1:2.2.109-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.109-1) unstable; urgency=low
 
-  * foo
+  Gordon:
+  * Fixes: NB#144076 - Home View Panning unresponsive
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 21 Oct 2009 18:03:26 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 26 Oct 2009 12:31:31 +0200
 
 hildon-desktop (1:2.2.108-1) unstable; urgency=low
 
