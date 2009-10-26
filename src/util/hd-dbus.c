@@ -22,6 +22,7 @@
 #define DSME_SHUTDOWN_SIGNAL_NAME "shutdown_ind"
 
 gboolean hd_dbus_display_is_off = FALSE;
+gboolean hd_dbus_tklock_on = FALSE;
 
 static DBusConnection *connection, *sysbus_conn;
 
@@ -73,6 +74,23 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                                  DBUS_TYPE_INVALID));
         {
           hd_comp_mgr_tklocked (hmgr, !strcmp(mode, MCE_TK_LOCKED));
+
+          if (strcmp(mode, MCE_TK_LOCKED))
+            {
+              if (hd_dbus_tklock_on)
+                {
+                  extern MBWindowManager *hd_mb_wm;
+                  hd_dbus_tklock_on = FALSE;
+                  /* if we avoided focusing a window during tklock, do it now
+                   * (this only has an effect if no window is currently
+                   * focused) */
+                  mb_wm_unfocus_client (hd_mb_wm, NULL);
+                }
+            }
+          else
+            {
+              hd_dbus_tklock_on = TRUE;
+            }
         }
     }
   else if (dbus_message_is_signal (msg, MCE_SIGNAL_IF, "display_status_ind"))

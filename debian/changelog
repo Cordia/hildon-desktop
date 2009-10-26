@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.110-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#137523 - Browser causes X damage events when not visible - tk
+    unlock case
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 26 Oct 2009 12:35:18 +0200
 
