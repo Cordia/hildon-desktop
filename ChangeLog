@@ -1,3 +1,10 @@
+2009-10-26  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Build fix for shared libmatchbox on x86.
+
+	* src/export.map:
+	  Export hd_dbus_tklock_on, which is referenced by libmatchbox now.
+
 2009-10-26  Laszlo Pere  <lpere@blumsoft.eu>
 
 	Fixes: NB#131835 - Not able to open the notifications when the app 

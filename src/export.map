@@ -23,6 +23,7 @@
 	  hd_launcher_tile_get_text;
 	  hd_launcher_tile_get_type;
 	  tidy_sub_texture_get_type;
+	  hd_dbus_tklock_on;
   local:
     _Z*;
 	  *;
