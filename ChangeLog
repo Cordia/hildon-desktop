@@ -1,3 +1,9 @@
+2009-10-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify): Fix 'break' in
+	wrong line in the possibly-move-back-to-non-composited-mode branch,
+	spotted by Coverity.
+
 2009-10-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-home.c (root_window_client_message): Don't create the

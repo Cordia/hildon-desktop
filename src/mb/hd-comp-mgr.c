@@ -2549,8 +2549,8 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                     hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
                   else
                     hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
+                  break;
                 }
-              break;
             }
         }
     }
