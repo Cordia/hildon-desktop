@@ -66,6 +66,7 @@ Window                  hd_wm_current_app_is (MBWindowManager *wm,
 Bool                    hd_wm_activate_zoomed_client (MBWindowManager *wm,
                                                       MBWindowManagerClient *c);
 gboolean                hd_wm_has_modal_blockers (const MBWindowManager *wm);
+MBWindowManagerClient * hd_wm_get_modal_blocker (const MBWindowManager *wm);
 void                    hd_wm_delete_temporaries (MBWindowManager *wm);
 
 G_END_DECLS

@@ -1,3 +1,10 @@
+2009-10-26  Laszlo Pere  <lpere@blumsoft.eu>
+
+	Fixes: NB#131835 - Not able to open the notifications when the app 
+	menu is up.
+	* src/mb/hd-note.c, src/mb/hd-wm.[ch]: Closing the menu when clicked on
+	  a HdNote.
+
 2009-10-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Patch from Laszlo to plug a leak when discarding infobanners in DND.

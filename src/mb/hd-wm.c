@@ -516,6 +516,19 @@ hd_wm_current_app_is (MBWindowManager *wm, Window xid)
   g_debug ("CURRENT_APP_WINDOW => 0x%lx", xid);
   return last;
 }
+	
+MBWindowManagerClient *
+hd_wm_get_modal_blocker (const MBWindowManager *wm)
+{
+  MBWindowManagerClient *client;
+
+  for (client = wm->stack_top; client && client != wm->desktop;
+       client=client->stacked_below)
+    if (hd_util_client_has_modal_blocker(client))
+      return client;
+  return NULL;
+}
+
 
 gboolean
 hd_wm_has_modal_blockers (const MBWindowManager *wm)
