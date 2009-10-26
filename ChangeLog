@@ -7,6 +7,11 @@
 
 2009-10-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler): Add a global
+	variable hd_dbus_tklock_on for libmatchbox2 (you need also recent MB2
+	for the whole bug fix). Related to NB#137523 - Browser causes X damage
+	events when not visible - tk unlock case
+
 	Patch from Laszlo to plug a leak when discarding infobanners in DND.
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): XFree the DND
