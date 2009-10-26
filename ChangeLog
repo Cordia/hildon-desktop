@@ -1,5 +1,8 @@
 2009-10-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/util/hd-transition.c (on_close_timeline_new_frame): Fix a
+	Coverity warning.
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify): Fix 'break' in
 	wrong line in the possibly-move-back-to-non-composited-mode branch,
 	spotted by Coverity.

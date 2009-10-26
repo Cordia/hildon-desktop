@@ -472,7 +472,7 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
   if (!CLUTTER_IS_ACTOR(actor))
     return;
 
-  if (hd_dbus_display_is_off && data)
+  if (hd_dbus_display_is_off)
     {
       for (i = 0; i < HDCM_UNMAP_PARTICLES; ++i)
         if (data->particles[i])
