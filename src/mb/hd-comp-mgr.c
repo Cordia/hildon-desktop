@@ -2022,6 +2022,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                    __FUNCTION__);
           mb_wm_client_hide (c);
           mb_wm_client_deliver_delete (c);
+          
+         if (value)
+            XFree (value);
           return;
         }
 

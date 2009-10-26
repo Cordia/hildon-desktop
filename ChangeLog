@@ -1,5 +1,10 @@
 2009-10-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Patch from Laszlo to plug a leak when discarding infobanners in DND.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): XFree the DND
+	property when discarding an infobanner.
+
 	Release 2.2.109-1
 
 	* src/util/hd-transition.c (on_close_timeline_new_frame): Fix a
