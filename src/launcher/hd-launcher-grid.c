@@ -177,7 +177,8 @@ hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
                            NULL, &clip_height);
 
   if (clip_height == 0)
-    page_height = CLUTTER_UNITS_TO_FIXED (height);
+    page_height = MIN (CLUTTER_UNITS_TO_FIXED (height),
+                       CLUTTER_UNITS_TO_FIXED (CLUTTER_UNITS_FROM_DEVICE (HD_COMP_MGR_LANDSCAPE_HEIGHT)));
   else
     page_height = MIN (CLUTTER_UNITS_TO_FIXED (height),
                        CLUTTER_UNITS_TO_FIXED (clip_height - clip_y));
