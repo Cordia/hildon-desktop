@@ -4,6 +4,10 @@ hildon-desktop (1:2.2.110-1~unreleased) unstable; urgency=low
   * Fixes: NB#137523 - Browser causes X damage events when not visible - tk
     unlock case
 
+  Laszlo:
+  * Fixes: NB#131835 - Not able to open the notifications when the app menu
+    is up.
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 26 Oct 2009 12:35:18 +0200
 
 hildon-desktop (1:2.2.109-1) unstable; urgency=low
