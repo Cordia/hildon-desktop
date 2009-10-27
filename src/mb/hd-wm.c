@@ -516,17 +516,54 @@ hd_wm_current_app_is (MBWindowManager *wm, Window xid)
   g_debug ("CURRENT_APP_WINDOW => 0x%lx", xid);
   return last;
 }
-	
-MBWindowManagerClient *
-hd_wm_get_modal_blocker (const MBWindowManager *wm)
+
+/*
+ * Closes all the modal blockers that can be safely closed (currently all the
+ * menus). Returns TRUE if there are no modal blockers left. If there is at
+ * least one modal blocker that can not be closed this function will not close
+ * any of the menus either.
+ */
+gboolean
+hd_wm_close_modal_blockers (const MBWindowManager *wm)
 {
   MBWindowManagerClient *client;
+  gboolean has_blocker = TRUE;
 
   for (client = wm->stack_top; client && client != wm->desktop;
        client=client->stacked_below)
-    if (hd_util_client_has_modal_blocker(client))
-      return client;
-  return NULL;
+    {
+      if (hd_util_client_has_modal_blocker(client))
+        {
+	  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE(client);
+          if (c_type == MBWMClientTypeMenu ||
+		    c_type == HdWmClientTypeAppMenu ||
+		    c_type == HdWmClientTypeStatusMenu) 
+	    {
+		has_blocker = TRUE;
+	    } else {
+	        return FALSE;
+	    }
+	}
+    }
+
+  /*
+   * If there were no modal blockers we can return, if there was we close them
+   * all.
+   */
+  if (!has_blocker) 
+    {
+      return TRUE;
+    } else {
+      for (client = wm->stack_top; client && client != wm->desktop;
+	   client=client->stacked_below) 
+        {
+          if (hd_util_client_has_modal_blocker(client)) 
+	    mb_wm_client_deliver_delete (client);
+	}
+
+    }
+
+  return TRUE;
 }
 
 

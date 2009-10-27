@@ -505,23 +505,14 @@ hd_note_clicked (HdNote *self, void *unused, void *actor)
 {
   const MBWindowManagerClient *c = MB_WM_CLIENT (self);
   const MBWMCompMgrClient *cmgrc;
-  MBWindowManagerClient   *blocker;
 
   /* verify that the client hasn't gone yet */
   cmgrc = g_object_get_data(actor, "HD-MBWMCompMgrClutterClient");
   if (!cmgrc || cmgrc->wm_client != c || !c->wmref)
     return;
 
-  blocker = hd_wm_get_modal_blocker (c->wmref);
-  if (blocker) {
-    MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE(blocker);
-    if (c_type == MBWMClientTypeMenu ||
-		    c_type == HdWmClientTypeAppMenu ||
-		    c_type == HdWmClientTypeStatusMenu)
-      mb_wm_client_deliver_delete (blocker);
-  }
-    
-  hd_util_click (MB_WM_CLIENT (self));
+  if (hd_wm_close_modal_blockers (c->wmref))
+    hd_util_click (MB_WM_CLIENT (self));
 }
 
 static void

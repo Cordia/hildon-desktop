@@ -1,3 +1,8 @@
+2009-10-27  Laszlo Pere  <lpere@blumsoft.eu>
+	
+	* src/mb/hd-note.c, src/mb/hd-wm.[ch]: Closing only the modal blocker
+	  menus when clicked on a note. A better solution for the NB#131835.
+
 2009-10-26  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Build fix for shared libmatchbox on x86.
