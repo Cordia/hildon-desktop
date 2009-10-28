@@ -34,14 +34,14 @@ static void set_fullscreen (Display *dpy, Window w)
 
 static void set_no_transitions (Display *dpy, Window w)
 {
-  Atom actions, no_trans;
+  Atom no_trans;
+  int one = 1;
 
-  actions = XInternAtom (dpy, "_NET_WM_ALLOWED_ACTIONS", False);
   no_trans = XInternAtom (dpy, "_HILDON_WM_ACTION_NO_TRANSITIONS", False);
 
-  XChangeProperty (dpy, w, actions,
-                   XA_ATOM, 32, PropModeReplace,
-                   (unsigned char *)&no_trans, 1);
+  XChangeProperty (dpy, w, no_trans,
+                   XA_CARDINAL, 32, PropModeReplace,
+                   (unsigned char *)&one, 1);
 }
 
 static void set_window_type (Display *dpy, Window w)
