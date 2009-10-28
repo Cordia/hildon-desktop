@@ -1,3 +1,7 @@
+2009-10-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.110-1
+
 2009-10-27  Laszlo Pere  <lpere@blumsoft.eu>
 	
 	* src/mb/hd-note.c, src/mb/hd-wm.[ch]: Closing only the modal blocker

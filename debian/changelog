@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.110-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.110-1) unstable; urgency=low
 
   Jan Arne:
   * Fix launcher not panning bug NB#143269
@@ -11,7 +11,7 @@ hildon-desktop (1:2.2.110-1~unreleased) unstable; urgency=low
   * Fixes: NB#131835 - Not able to open the notifications when the app menu
     is up.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 26 Oct 2009 12:35:18 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 28 Oct 2009 09:01:02 +0200
 
 hildon-desktop (1:2.2.109-1) unstable; urgency=low
 
