@@ -1,5 +1,8 @@
 hildon-desktop (1:2.2.110-1~unreleased) unstable; urgency=low
 
+  Jan Arne:
+  * Fix launcher not panning bug NB#143269
+
   Kimmo:
   * Fixes: NB#137523 - Browser causes X damage events when not visible - tk
     unlock case
