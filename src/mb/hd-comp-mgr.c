@@ -2664,6 +2664,9 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
   /*g_debug ("%s, c=%p ctype=%d event=%d",
             __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c), event);*/
 
+  if (c->window->allowed_actions & MBWMClientWindowActionNoTransitions)
+    return;
+
   /*HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;*/
   if (event == MBWMCompMgrClientEventUnmap)
     {
@@ -2671,8 +2674,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
         hd_transition_notification(hmgr, c, MBWMCompMgrClientEventUnmap);
-      else if ((c_type == MBWMClientTypeDialog) ||
-               (c_type == HdWmClientTypeAppMenu))
+      else if (c_type == MBWMClientTypeDialog ||
+               c_type == HdWmClientTypeAppMenu)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (c_type == MBWMClientTypeNote && !HD_IS_INCOMING_EVENT_NOTE(c))
         hd_transition_fade(hmgr, c, MBWMCompMgrClientEventUnmap);

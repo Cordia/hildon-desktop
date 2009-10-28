@@ -1,5 +1,13 @@
 2009-10-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#143757 - Support disabling of transition effects for
+	application windows
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_effect): Bail out in the beginning
+	if the window does not want transitions.
+	* tests/test-no-gtk.c: Add example code for disabling compositor's
+	transitions.
+
 	Release 2.2.110-1
 
 2009-10-27  Laszlo Pere  <lpere@blumsoft.eu>

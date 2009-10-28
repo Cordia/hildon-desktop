@@ -32,6 +32,18 @@ static void set_fullscreen (Display *dpy, Window w)
                    (unsigned char *) &state_fs, 1);
 }
 
+static void set_no_transitions (Display *dpy, Window w)
+{
+  Atom actions, no_trans;
+
+  actions = XInternAtom (dpy, "_NET_WM_ALLOWED_ACTIONS", False);
+  no_trans = XInternAtom (dpy, "_HILDON_WM_ACTION_NO_TRANSITIONS", False);
+
+  XChangeProperty (dpy, w, actions,
+                   XA_ATOM, 32, PropModeReplace,
+                   (unsigned char *)&no_trans, 1);
+}
+
 static void set_window_type (Display *dpy, Window w)
 {
   Atom w_type, normal;
@@ -95,6 +107,9 @@ int main(int argc, char **argv)
 
         /* optional: disable compositing for this window to speed up */
         set_non_compositing(dpy, w);
+
+        /* optional: disable compositor's transitions for this window */
+        set_no_transitions(dpy, w);
 
         XMapWindow(dpy, w);  /* map the window */
 
