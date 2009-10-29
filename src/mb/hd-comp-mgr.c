@@ -1049,6 +1049,7 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
   MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
   MBWindowManager   *wm = mgr->wm;
   MBWindowManagerClient *c;
+  Window             win;
 
   /* check for windows that may have a modal blocker. If anything has one
    * we should NOT grab any part of the screen, except what we really must. */
@@ -1122,14 +1123,17 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
         XFixesUnionRegion (wm->xdpy, region, region, r);
         XFixesDestroyRegion (wm->xdpy, r);
       }
-  hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
-      mb_wm_comp_mgr_clutter_get_overlay_window(
-          MB_WM_COMP_MGR_CLUTTER(hmgr)),
-      region);
+
+  win = mb_wm_comp_mgr_clutter_get_overlay_window(MB_WM_COMP_MGR_CLUTTER(hmgr));
+  if (win != None)
+    hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
+        win, region);
+
   hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
     clutter_x11_get_stage_window (
       CLUTTER_STAGE (clutter_stage_get_default ())),
     region);
+
 
   XFixesDestroyRegion (wm->xdpy, region);
   if (mb_wm_util_untrap_x_errors ())
@@ -1549,10 +1553,7 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
   gboolean           want_fs_comp;
   MBWMCompMgr       *mgr = MB_WM_COMP_MGR (hmgr);
   MBWindowManager   *wm;
-  XserverRegion      region;
-  Window             overlay;
   Window             clutter_window;
-  XRectangle         r;
   ClutterActor      *stage;
 
   if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
@@ -1567,33 +1568,36 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
   wm = mgr->wm;
   stage = clutter_stage_get_default ();
   clutter_window = clutter_x11_get_stage_window (CLUTTER_STAGE (stage));
-  overlay = mb_wm_comp_mgr_clutter_get_overlay_window(
-                  MB_WM_COMP_MGR_CLUTTER(hmgr));
 
-  r.x = r.y = 0;
-  if (want_fs_comp)
-    {
-       /* g_printerr ("%s: COMPOSITING: FULL SCREEN\n", __FUNCTION__); */
-      clutter_stage_set_shaped_mode (stage, 0);
-      r.width = wm->xdpy_width;
-      r.height = wm->xdpy_height;
-    }
-  else
-    {
-      /* g_printerr ("%s: COMPOSITING: ZERO REGION\n", __FUNCTION__); */
-      /* tell Clutter not to draw on the window */
-      clutter_stage_set_shaped_mode (stage, 1);
-      r.width = r.height = 0;
-    }
+  if (want_fs_comp) {
+    /* Recreate the overlay window and move stuff back */
+    mgr->disabled = True;
+    XSetWindowBackgroundPixmap(wm->xdpy, clutter_window, None);
+    hd_comp_mgr_turn_on(mgr);
+    XMoveWindow(wm->xdpy, clutter_window, 0, 0);
+    XSetWindowBackground(wm->xdpy, clutter_window,
+                         BlackPixel(wm->xdpy, DefaultScreen(wm->xdpy)));
 
-  region = XFixesCreateRegion (wm->xdpy, &r, 1);
-  XFixesSetWindowShapeRegion (wm->xdpy, overlay, ShapeBounding,
-                             0, 0, region);
-
-  XFixesSetWindowShapeRegion (wm->xdpy, clutter_window, ShapeBounding,
-                              0, 0, region);
-
-  XFixesDestroyRegion (wm->xdpy, region);
+    /* g_printerr ("%s: COMPOSITING: FULL SCREEN\n", __FUNCTION__); */
+    clutter_stage_set_shaped_mode (stage, 0);
+  } else {
+    /* g_printerr ("%s: COMPOSITING: ZERO REGION\n", __FUNCTION__); */
+    /* Change the stage background to None before we do anything, to avoid
+     * ugly black flashes. */
+    XSetWindowBackgroundPixmap(wm->xdpy, clutter_window, None);
+    /* tell Clutter not to draw on the window */
+    clutter_stage_set_shaped_mode (stage, 1);
+    /* Reparent X back to the root window - and move it offscreen, then
+     * reset its background to black. */
+    XReparentWindow (wm->xdpy, clutter_window, wm->root_win->xwindow, 0, 0);
+    XMoveWindow(wm->xdpy, clutter_window, 0, -800);
+    XSetWindowBackground(wm->xdpy, clutter_window,
+                         BlackPixel(wm->xdpy, DefaultScreen(wm->xdpy)));
+    /* Kill the overlay window */
+    XCompositeReleaseOverlayWindow (wm->xdpy, wm->root_win->xwindow);
+    mb_wm_comp_mgr_clutter_set_overlay_window(
+        MB_WM_COMP_MGR_CLUTTER(hmgr), None);
+  }
 
   fs_comp = want_fs_comp;
 }

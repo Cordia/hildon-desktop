@@ -1646,17 +1646,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if (state == HDRM_STATE_NON_COMPOSITED ||
           state == HDRM_STATE_NON_COMP_PORT)
         {
-          MBWindowManagerClient *c;
-
-          /* move SA offscreen */
-          c = priv->status_area_client;
-          if (c)
-            {
-              c->frame_geometry.x = c->window->geometry.x = -1000;
-              mb_wm_client_geometry_mark_dirty(c);
-              mb_wm_comp_mgr_client_configure (c->cm_client);
-            }
-
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
 
           hd_comp_mgr_unredirect_topmost_client (wm);

@@ -1,3 +1,16 @@
+2009-10-29  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#144294 - h-d moves/resizes windows when fullscreening and 
+	                   going to uncomposited mode.
+	                   
+	* src/home/hd-render-manager.c: stop moving SA offscreen horizontally
+	  as Adam has already done it vertically.
+	* src/mb/hd-comp-mgr.c: Instead of setting window shape to do
+	  non-compositing, remove the overlay window completely. Add checks for
+	  non-existing overlay window.
+	* src/util/hd-util.c: Add checks for non-existing overlay window.
+	* debian/control: Add depends on new libmatchbox and clutter
+
 2009-10-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/util/hd-util.c, src/mb/hd-atoms.[ch]: Add _MAEMO_SCREEN_SIZE for

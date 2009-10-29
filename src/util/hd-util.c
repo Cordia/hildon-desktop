@@ -227,7 +227,7 @@ hd_util_client_has_modal_blocker (MBWindowManagerClient *c)
 static void
 hd_util_flip_input_viewport (MBWindowManager *wm)
 {
-  Window clwin;
+  Window win, clwin;
   XserverRegion region;
   XRectangle *inputshape;
   int i, ninputshapes, unused;
@@ -250,10 +250,10 @@ hd_util_flip_input_viewport (MBWindowManager *wm)
   region = XFixesCreateRegion (wm->xdpy, inputshape, ninputshapes);
   XFree(inputshape);
 
-  hd_comp_mgr_set_input_viewport_for_window (wm->xdpy,
-      mb_wm_comp_mgr_clutter_get_overlay_window(
-          MB_WM_COMP_MGR_CLUTTER(wm->comp_mgr)),
-      region);
+  win = mb_wm_comp_mgr_clutter_get_overlay_window(
+              MB_WM_COMP_MGR_CLUTTER(wm->comp_mgr));
+  if (win != None)
+    hd_comp_mgr_set_input_viewport_for_window (wm->xdpy, win, region);
   hd_comp_mgr_set_input_viewport_for_window (wm->xdpy, clwin, region);
   XFixesDestroyRegion (wm->xdpy, region);
 }
