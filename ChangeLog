@@ -1,5 +1,13 @@
 2009-10-29  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Tweaks to help with NB#126626,NB#144294
+
+	* src/home/hd-render-manager.c: Don't reset full-width flag on the
+	  title bar. There is no need as it is set by 
+	  hd_title_bar_set_window_visibilities. This helps get rid of a
+	  redraw that happens sometimes when going from fullscreen to
+	  windowed.
+
 	Fixes: NB#144294 - h-d moves/resizes windows when fullscreening and 
 	                   going to uncomposited mode.
 	                   

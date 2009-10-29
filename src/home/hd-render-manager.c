@@ -822,7 +822,7 @@ void hd_render_manager_sync_clutter_before ()
   HDRMButtonEnum visible_top_left = HDRM_BUTTON_NONE;
   HDRMButtonEnum visible_top_right = HDRM_BUTTON_NONE;
   HdTitleBarVisEnum btn_state = hd_title_bar_get_state(priv->title_bar) &
-    ~(HDTB_VIS_BTN_LEFT_MASK | HDTB_VIS_FULL_WIDTH |
+    ~(HDTB_VIS_BTN_LEFT_MASK |
       HDTB_VIS_BTN_RIGHT_MASK | HDTB_VIS_FOREGROUND |
       HDTB_VIS_SMALL_BUTTONS);
   HDRMBlurEnum blur = 0;
