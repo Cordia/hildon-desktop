@@ -396,7 +396,7 @@ hd_app_mgr_init (HdAppMgr *self)
   for (int i = 0; i < NUM_QUEUES; i++)
     priv->queues[i] = g_queue_new ();
 
-  priv->tree = hd_launcher_tree_new (NULL);
+  priv->tree = hd_launcher_tree_new ();
   g_signal_connect (priv->tree, "finished",
                     G_CALLBACK (hd_app_mgr_populate_tree_finished),
                     self);

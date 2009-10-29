@@ -71,8 +71,6 @@ struct _HdLauncherItemPrivate
   gboolean nodisplay;
 
   gchar *category;
-  guint position;
-  guint ctime;
 };
 
 enum
@@ -94,7 +92,6 @@ G_DEFINE_ABSTRACT_TYPE (HdLauncherItem, hd_launcher_item, G_TYPE_OBJECT);
 #define HD_DESKTOP_ENTRY_COMMENT       "Comment"
 #define HD_DESKTOP_ENTRY_TEXT_DOMAIN   "X-Text-Domain"
 #define HD_DESKTOP_ENTRY_NO_DISPLAY    "NoDisplay"
-#define HD_DESKTOP_ENTRY_USER_POSITION "X-Osso-User-Position"
 
 /* Forward declarations */
 gboolean hd_launcher_item_parse_keyfile (HdLauncherItem *item,
@@ -295,22 +292,6 @@ hd_launcher_item_get_category (HdLauncherItem *item)
   return item->priv->category;
 }
 
-guint
-hd_launcher_item_get_position (HdLauncherItem *item)
-{
-  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), 0);
-
-  return item->priv->position;
-}
-
-guint
-hd_launcher_item_get_ctime (HdLauncherItem *item)
-{
-  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), 0);
-
-  return item->priv->ctime;
-}
-
 gboolean
 hd_launcher_item_parse_keyfile (HdLauncherItem *item,
                                 GKeyFile *key_file,
@@ -340,60 +321,12 @@ hd_launcher_item_parse_keyfile (HdLauncherItem *item,
                                              HD_DESKTOP_ENTRY_GROUP,
                                              HD_DESKTOP_ENTRY_TEXT_DOMAIN,
                                              NULL);
-  priv->position = g_key_file_get_integer (key_file,
-                                           HD_DESKTOP_ENTRY_GROUP,
-                                           HD_DESKTOP_ENTRY_USER_POSITION,
-                                           NULL);
   return TRUE;
-}
-
-static guint
-_hd_launcher_app_main_position (const gchar *id)
-{
-  static GData *main_apps = NULL;
-  if (!main_apps)
-    {
-      g_datalist_init (&main_apps);
-
-      /* Main application group. */
-      g_datalist_set_data (&main_apps, "browser", (gpointer)1);
-      g_datalist_set_data (&main_apps, "mediaplayer", (gpointer)2);
-      g_datalist_set_data (&main_apps, "calendar", (gpointer)3);
-      g_datalist_set_data (&main_apps, "image-viewer", (gpointer)4);
-      g_datalist_set_data (&main_apps, "osso-addressbook", (gpointer)5);
-      g_datalist_set_data (&main_apps, "rtcom-call-ui", (gpointer)6);
-      g_datalist_set_data (&main_apps, "nokia-maps", (gpointer)7);
-      g_datalist_set_data (&main_apps, "camera-ui", (gpointer)8);
-      g_datalist_set_data (&main_apps, "modest", (gpointer)9);
-      g_datalist_set_data (&main_apps, "rtcom-messaging-ui", (gpointer)10);
-      g_datalist_set_data (&main_apps, "worldclock", (gpointer)11);
-      g_datalist_set_data (&main_apps, "osso_calculator", (gpointer)12);
-      g_datalist_set_data (&main_apps, "ovi", (gpointer)13);
-      g_datalist_set_data (&main_apps, "hildon-control-panel", (gpointer)14);
-
-      /* Applications subgroup. */
-      g_datalist_set_data (&main_apps, "osso_notes", (gpointer)1);
-      g_datalist_set_data (&main_apps, "osso_pdfviewer", (gpointer)2);
-      g_datalist_set_data (&main_apps, "filemanager", (gpointer)3);
-      g_datalist_set_data (&main_apps, "osso_rss_feed_reader", (gpointer)4);
-      g_datalist_set_data (&main_apps, "osso_sketch", (gpointer)5);
-      g_datalist_set_data (&main_apps, "hildon-application-manager", (gpointer)6);
-      g_datalist_set_data (&main_apps, "maemoblocks", (gpointer)7);
-      g_datalist_set_data (&main_apps, "chess_startup", (gpointer)8);
-      g_datalist_set_data (&main_apps, "mahjong_startup", (gpointer)9);
-      g_datalist_set_data (&main_apps, "osso_lmarbles", (gpointer)10);
-      g_datalist_set_data (&main_apps, "osso-backup", (gpointer)11);
-      g_datalist_set_data (&main_apps, "tutorial-launcher", (gpointer)12);
-      g_datalist_set_data (&main_apps, "osso-xterm", (gpointer)13);
-    }
-
-  return (guint)g_datalist_get_data (&main_apps, id);
 }
 
 HdLauncherItem *
 hd_launcher_item_new_from_keyfile (const gchar *id,
                                    const gchar *category,
-                                   guint ctime,
                                    GKeyFile *key_file,
                                    GError **error)
 {
@@ -478,19 +411,6 @@ hd_launcher_item_new_from_keyfile (const gchar *id,
     result->priv->category = g_strdup (category);
   else
     result->priv->category = g_strdup (HD_LAUNCHER_ITEM_TOP_CATEGORY);
-
-  result->priv->ctime = ctime;
-
-  /* As many apps don't have a correct position yet, we hard code some
-   * default values.
-   */
-  if (!hd_launcher_item_get_position (result)) {
-    guint main_pos = _hd_launcher_app_main_position (id);
-    if (main_pos)
-      result->priv->position = main_pos;
-    else
-      result->priv->position = 0;
-  }
 
   return result;
 }

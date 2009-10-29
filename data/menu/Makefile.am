@@ -1,3 +1,5 @@
+SUBDIRS = hildon
+
 menudir = $(sysconfdir)/xdg/menus
 menu_DATA = \
 	hildon.menu

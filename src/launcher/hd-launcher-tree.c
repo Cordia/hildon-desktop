@@ -16,11 +16,7 @@
 #include <gmenu-tree.h>
 
 /* where the menu XML resides */
-#define HILDON_DESKTOP_MENU_DIR                 "xdg" G_DIR_SEPARATOR_S "menus"
 #define HILDON_DESKTOP_APPLICATIONS_MENU        "hildon.menu"
-
-/* where to find the desktop files */
-#define HILDON_DESKTOP_APPLICATIONS_DIR         "applications" G_DIR_SEPARATOR_S "hildon"
 
 #define HD_LAUNCHER_TREE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TREE, HdLauncherTreePrivate))
 
@@ -39,12 +35,6 @@ typedef struct
 
 struct _HdLauncherTreePrivate
 {
-  /* the base path of the desktop files */
-  gchar *path;
-
-  /* the path of the menu file */
-  gchar *menu_path;
-
   /* we keep the items inside a list because
    * it's easier to iterate than a tree
    */
@@ -59,13 +49,6 @@ struct _HdLauncherTreePrivate
   WalkThreadData *active_walk;
 
   guint has_finished : 1;
-};
-
-enum
-{
-  PROP_0,
-
-  PROP_MENU_PATH
 };
 
 enum
@@ -112,48 +95,6 @@ walk_thread_data_free (WalkThreadData *data)
   g_object_unref (data->tree);
 
   g_free (data);
-}
-
-static gint
-walk_thread_compare_items (HdLauncherItem *a, HdLauncherItem *b)
-{
-  guint apos = hd_launcher_item_get_position (a);
-  guint bpos = hd_launcher_item_get_position (b);
-
-  /* If neither of them specifies an ordering, order by ctime. */
-  if ((apos == 0) && (bpos == 0))
-    {
-      guint actime, bctime;
-      actime = hd_launcher_item_get_ctime (a);
-      bctime = hd_launcher_item_get_ctime (b);
-
-      if (actime != bctime)
-        {
-          return actime - bctime;
-        }
-      else
-        {
-          /* If equal ctime, order alphabetically. */
-          gint result;
-          gchar *a_casefolded =
-                        g_utf8_casefold (hd_launcher_item_get_local_name(a), -1);
-          gchar *b_casefolded =
-                        g_utf8_casefold (hd_launcher_item_get_local_name(b), -1);
-          result = g_utf8_collate (a_casefolded, b_casefolded);
-          g_free (a_casefolded);
-          g_free (b_casefolded);
-          return result;
-        }
-    }
-
-  /* If one of them is 0, the other wins. */
-  if (apos == 0)
-    return 1;
-  if (bpos == 0)
-    return -1;
-
-  /* If both have values, it depends on that. */
-  return apos - bpos;
 }
 
 /**
@@ -273,10 +214,10 @@ walk_thread_func (gpointer user_data)
               key_file = NULL;
             }
         }
+
       if (key_file) {
         item = hd_launcher_item_new_from_keyfile (id,
                   gmenu_tree_directory_get_menu_id (data->root),
-                  (guint) key_file_stat.st_ctime,
                   key_file, NULL);
 	g_key_file_free (key_file);
       }
@@ -292,8 +233,7 @@ walk_thread_func (gpointer user_data)
 
   if (data->level == 0)
     {
-      data->items = g_list_sort (data->items,
-          (GCompareFunc) walk_thread_compare_items);
+      data->items = g_list_reverse (data->items);
 
       clutter_threads_add_idle (walk_thread_done_idle, data);
     }
@@ -305,9 +245,6 @@ static void
 hd_launcher_tree_finalize (GObject *gobject)
 {
   HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (gobject);
-
-  g_free (priv->menu_path);
-  g_free (priv->path);
 
   if (priv->active_walk)
     {
@@ -339,65 +276,13 @@ hd_launcher_tree_finalize (GObject *gobject)
 }
 
 static void
-hd_launcher_tree_set_property (GObject      *gobject,
-                               guint         prop_id,
-                               const GValue *value,
-                               GParamSpec   *pspec)
-{
-  HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (gobject);
-
-  switch (prop_id)
-    {
-    case PROP_MENU_PATH:
-      g_free (priv->menu_path);
-      priv->menu_path = g_value_dup_string (value);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop_id, pspec);
-      break;
-    }
-}
-
-static void
-hd_launcher_tree_get_property (GObject    *gobject,
-                               guint       prop_id,
-                               GValue     *value,
-                               GParamSpec *pspec)
-{
-  HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (gobject);
-
-  switch (prop_id)
-    {
-    case PROP_MENU_PATH:
-      g_value_set_string (value, priv->menu_path);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop_id, pspec);
-      break;
-    }
-}
-
-static void
 hd_launcher_tree_class_init (HdLauncherTreeClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (HdLauncherTreePrivate));
 
-  gobject_class->set_property = hd_launcher_tree_set_property;
-  gobject_class->get_property = hd_launcher_tree_get_property;
   gobject_class->finalize = hd_launcher_tree_finalize;
-
-  g_object_class_install_property (gobject_class,
-                                   PROP_MENU_PATH,
-                                   g_param_spec_string ("menu-path",
-                                                        "Menu Path",
-                                                        "Path of the applications menu file",
-                                                        NULL,
-                                                        G_PARAM_READWRITE |
-                                                        G_PARAM_CONSTRUCT_ONLY));
 
   tree_signals[STARTING] =
     g_signal_new ("starting",
@@ -421,31 +306,14 @@ hd_launcher_tree_init (HdLauncherTree *tree)
   tree->priv = HD_LAUNCHER_TREE_GET_PRIVATE (tree);
 
   tree->priv->active_walk = NULL;
-
-  tree->priv->path = g_build_filename (DATADIR,
-                                       HILDON_DESKTOP_APPLICATIONS_DIR,
-                                       NULL);
 }
 
 HdLauncherTree *
-hd_launcher_tree_new (const gchar *path)
+hd_launcher_tree_new ()
 {
   HdLauncherTree  *tree;
-  gboolean         free_path = FALSE;
 
-  if (!path) {
-    path = g_build_filename (SYSCONFDIR,
-                             HILDON_DESKTOP_MENU_DIR,
-                             HILDON_DESKTOP_APPLICATIONS_MENU,
-                             NULL);
-    free_path = TRUE;
-  }
-
-  tree = g_object_new (HD_TYPE_LAUNCHER_TREE,
-                       "menu-path", path,
-                       NULL);
-  if (free_path)
-    g_free ((void *)path);
+  tree = g_object_new (HD_TYPE_LAUNCHER_TREE, NULL);
 
   return tree;
 }
@@ -508,13 +376,11 @@ hd_launcher_tree_populate (HdLauncherTree *tree)
   g_return_if_fail (HD_IS_LAUNCHER_TREE (tree));
   HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (tree);
 
-  if (!priv->menu_path)
-    return;
-
-  priv->tree = gmenu_tree_lookup (priv->menu_path, GMENU_TREE_FLAGS_SHOW_EMPTY);
+  priv->tree = gmenu_tree_lookup (HILDON_DESKTOP_APPLICATIONS_MENU,
+                                  GMENU_TREE_FLAGS_SHOW_EMPTY);
   if (!priv->tree)
     {
-      g_warning ("%s: Couldn't load menu at %s", __FUNCTION__, priv->menu_path);
+      g_warning ("%s: Couldn't load menu.", __FUNCTION__);
       return;
     }
 
@@ -522,7 +388,7 @@ hd_launcher_tree_populate (HdLauncherTree *tree)
   priv->root = gmenu_tree_get_root_directory (priv->tree);
   if (!priv->root)
     {
-      g_warning ("%s: Menu at %s is empty", __FUNCTION__, priv->menu_path);
+      g_warning ("%s: Menu is empty", __FUNCTION__);
       return;
     }
 

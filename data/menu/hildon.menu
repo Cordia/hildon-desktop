@@ -5,7 +5,7 @@
 
   <Name>Main</Name>
 
-  <!-- Search the default locations -->
+  <!-- Search only in the hildon directory. -->
   <AppDir>/usr/share/applications/hildon</AppDir>
   <DirectoryDir>/usr/share/applications/hildon</DirectoryDir>
 
@@ -26,12 +26,26 @@
     <Filename>hildon-control-panel.desktop</Filename>
   </Include>
 
-  <Menu>
-    <Name>Applications</Name>
-    <Directory>applications.directory</Directory>
-    <OnlyUnallocated/>
-    <Include>
-      <All/>
-    </Include>
-  </Menu>
+  <Layout>
+    <Filename>browser.desktop</Filename>
+    <Filename>mediaplayer.desktop</Filename>
+    <Filename>calendar.desktop</Filename>
+    <Filename>image-viewer.desktop</Filename>
+    <Filename>osso-addressbook.desktop</Filename>
+    <Filename>rtcom-call-ui.desktop</Filename>
+    <Filename>nokia-maps.desktop</Filename>
+    <Filename>camera-ui.desktop</Filename>
+    <Filename>modest.desktop</Filename>
+    <Filename>rtcom-messaging-ui.desktop</Filename>
+    <Filename>worldclock.desktop</Filename>
+    <Filename>osso_calculator.desktop</Filename>
+    <Filename>ovi.desktop</Filename>
+    <Filename>hildon-control-panel.desktop</Filename>
+    <Menuname>Applications</Menuname>
+    <Merge type="all"/>
+  </Layout>
+
+  <MergeDir>hildon/</MergeDir>
+
 </Menu>
+

@@ -59,7 +59,7 @@ struct _HdLauncherTreeClass
 
 GType           hd_launcher_tree_get_type (void) G_GNUC_CONST;
 
-HdLauncherTree *hd_launcher_tree_new         (const gchar    *path);
+HdLauncherTree *hd_launcher_tree_new         (void);
 
 void            hd_launcher_tree_populate    (HdLauncherTree *tree);
 
