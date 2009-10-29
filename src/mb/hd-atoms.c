@@ -90,6 +90,7 @@ hd_atoms_init (Display * xdpy, Atom * atoms)
     "_MAEMO_ROTATION_TRANSITION",
     "_MAEMO_SCREEN_WIDTH",
     "_MAEMO_SCREEN_HEIGHT",
+    "_MAEMO_SCREEN_SIZE",
   };
 
   XInternAtoms (xdpy,

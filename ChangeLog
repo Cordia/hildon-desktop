@@ -1,3 +1,8 @@
+2009-10-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/util/hd-util.c, src/mb/hd-atoms.[ch]: Add _MAEMO_SCREEN_SIZE for
+	future use.
+
 2009-10-29  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	For: NB#143390, Fremantle PR1.1 app menu customization
