@@ -2578,7 +2578,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                below = below->stacked_below)
             if (hd_comp_mgr_client_needs_compositing (below))
               {
-                      g_printerr("%s: compositing needed\n", __func__);
+                /* g_printerr("%s: compositing needed\n", __func__); */
                 if (hdrm_state == HDRM_STATE_NON_COMPOSITED)
                   hd_render_manager_set_state (HDRM_STATE_APP);
                 else
