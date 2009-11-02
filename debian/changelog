@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.111-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.111-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#143757 - Support disabling of transition effects for application
@@ -8,7 +8,11 @@ hildon-desktop (1:2.2.111-1~unreleased) unstable; urgency=low
   Marc:
   * Non-UI support for customising launcher menus.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 28 Oct 2009 09:03:59 +0200
+  Gordon:
+  * Fixes: NB#144294 - h-d moves/resizes windows when fullscreening and 
+    going to uncomposited mode.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 02 Nov 2009 12:50:01 +0200
 
 hildon-desktop (1:2.2.110-1) unstable; urgency=low
 
