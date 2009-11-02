@@ -165,67 +165,6 @@ hd_scrollable_group_set_property (GObject * obj, guint prop_id,
 }
 /* #GObject overrides }}} */
 
-/* #ClutterActor overrides {{{ */
-static void
-hd_scrollable_group_paint (ClutterActor * actor)
-{
-  HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (actor);
-  ClutterFixed x, y;
-
-  /*
-   * Translate the position of our children behind clutter's back.
-   * (#TidyFingerScroll somehow disables clutter_actor_set_position())
-   * If the user didn't scroll in one of the direction, its value
-   * will be zero, and the translation will be a NOP.
-   */
-  x = tidy_adjustment_get_valuex (priv->horizontal.adjustment);
-  y = tidy_adjustment_get_valuex (priv->vertical.adjustment);
-
-  cogl_push_matrix ();
-  cogl_translatex (-x, -y, 0);
-  CLUTTER_ACTOR_CLASS (hd_scrollable_group_parent_class)->paint (actor);
-  cogl_pop_matrix ();
-}
-
-static void
-hd_scrollable_group_pick (ClutterActor * actor, const ClutterColor * color)
-{
-  HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (actor);
-  ClutterFixed x, y, w, h;
-
-  tidy_adjustment_get_valuesx (priv->horizontal.adjustment,
-                               &x, NULL, &w, NULL, NULL, NULL);
-  tidy_adjustment_get_valuesx (priv->vertical.adjustment,
-                               &y, NULL, &h, NULL, NULL, NULL);
-
-  /* Just like with paint(). */
-  cogl_push_matrix ();
-  cogl_translatex (-x, -y, 0);
-
-  /*
-   * This is almost like #ClutterActor's pick implementation
-   * (which #ClutterGroup calls to pick itself), but draws a
-   * rectangle as large as our #TidyAdjustment:s require.
-   * This is necessary to get events when we're scrolled,
-   * because someone (possible #TidyScrolledView) forces
-   * its own size upon us.
-   */
-  if (clutter_actor_should_pick_paint (actor))
-    {
-      cogl_color (color);
-      cogl_rectanglex (0, 0, w, h);
-    }
-
-  /* The children's paint() method will know they should pick
-   * the child instead of a regular paint.  This is reasonable
-   * because we don't know the right @color anyway. */
-  if (CLUTTER_ACTOR_IS_VISIBLE (actor))
-    CLUTTER_ACTOR_CLASS (hd_scrollable_group_parent_class)->paint (actor);
-
-  cogl_pop_matrix ();
-}
-/* #ClutterActor overrides }}} */
-
 /* #TidyScrollable implementation {{{ */
 static void
 hd_scrollable_group_get_adjustments (TidyScrollable * scrable,
@@ -250,14 +189,11 @@ hd_scrollable_group_adjval_changed (HdScrollableGroup * self,
                                     GParamSpec * pspec,
                                     TidyAdjustment * adj)
 {
-  /*
-   * We're not supposed to call clutter_actor_paint() directly,
-   * but we can request a repaint this way.  Since inactive
-   * %TidyAdjustment:s (whose "upper" value is less than their
-   * "page-size") don't change their "value" they won't cause
-   * redrawal.
-   */
-  clutter_actor_queue_redraw (CLUTTER_ACTOR (self));
+  HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
+
+  clutter_actor_set_anchor_point(CLUTTER_ACTOR (self),
+       tidy_adjustment_get_value(priv->horizontal.adjustment),
+       tidy_adjustment_get_value(priv->vertical.adjustment));
 }
 
 /* We're adopted by a #TidyScrollView. */
@@ -609,8 +545,6 @@ hd_scrollable_group_class_init (HdScrollableGroupClass * klass)
 
   gobject_class->get_property       = hd_scrollable_group_get_property;
   gobject_class->set_property       = hd_scrollable_group_set_property;
-  actor_class->paint                = hd_scrollable_group_paint;
-  actor_class->pick                 = hd_scrollable_group_pick;
   actor_class->parent_set           = hd_scrollable_group_parent_changed;
   actor_class->captured_event       = hd_scrollable_group_touched;
 
@@ -656,6 +590,8 @@ hd_scrollable_group_init (HdScrollableGroup * self)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
 
+  /* We need to be reactive so the user can drag us */
+  clutter_actor_set_reactive(CLUTTER_ACTOR(self), TRUE);
   /* Our directions are set up equivalently. */
   setup_direction (self, &priv->horizontal);
   setup_direction (self, &priv->vertical);

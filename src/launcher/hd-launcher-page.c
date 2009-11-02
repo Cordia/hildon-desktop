@@ -88,29 +88,13 @@ enum
 
 static guint launcher_page_signals[LAST_SIGNAL] = { 0, };
 
-G_DEFINE_TYPE (HdLauncherPage, hd_launcher_page, CLUTTER_TYPE_ACTOR);
+G_DEFINE_TYPE (HdLauncherPage, hd_launcher_page, CLUTTER_TYPE_GROUP);
+
 
 /* Forward declarations. */
-/* GObject methods */
 static void hd_launcher_page_constructed (GObject *object);
 static void hd_launcher_page_dispose (GObject *gobject);
-/* ClutterActor methods */
-static void hd_launcher_page_get_preferred_width (ClutterActor *actor,
-                                                   ClutterUnit   for_height,
-                                                   ClutterUnit  *min_width_p,
-                                                   ClutterUnit *natural_width_p);
-static void hd_launcher_page_get_preferred_height (ClutterActor *actor,
-                                                    ClutterUnit   for_width,
-                                                    ClutterUnit  *min_height_p,
-                                                    ClutterUnit  *natural_height_p);
-static void hd_launcher_page_allocate (ClutterActor          *actor,
-                                        const ClutterActorBox *box,
-                                        gboolean               origin_changed);
-static void hd_launcher_page_paint (ClutterActor *actor);
-static void hd_launcher_page_pick (ClutterActor       *actor,
-                                    const ClutterColor *pick_color);
 static void hd_launcher_page_show (ClutterActor *actor);
-static void hd_launcher_page_hide (ClutterActor *actor);
 
 static void hd_launcher_page_tile_clicked (HdLauncherTile *tile,
                                            gpointer data);
@@ -123,20 +107,11 @@ static void
 hd_launcher_page_class_init (HdLauncherPageClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-  ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (HdLauncherPagePrivate));
 
   gobject_class->constructed  = hd_launcher_page_constructed;
   gobject_class->dispose     = hd_launcher_page_dispose;
-
-  actor_class->get_preferred_width  = hd_launcher_page_get_preferred_width;
-  actor_class->get_preferred_height = hd_launcher_page_get_preferred_height;
-  actor_class->allocate             = hd_launcher_page_allocate;
-  actor_class->paint                = hd_launcher_page_paint;
-  actor_class->pick                 = hd_launcher_page_pick;
-  actor_class->show                 = hd_launcher_page_show;
-  actor_class->hide                 = hd_launcher_page_hide;
 
   launcher_page_signals[BACK_BUTTON_PRESSED] =
     g_signal_new (I_("back-button-pressed"),
@@ -162,7 +137,10 @@ hd_launcher_page_init (HdLauncherPage *page)
 {
   page->priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
 
-  clutter_actor_set_reactive (CLUTTER_ACTOR (page), FALSE);
+  clutter_actor_set_size(CLUTTER_ACTOR(page),
+        HD_LAUNCHER_PAGE_WIDTH, HD_LAUNCHER_PAGE_HEIGHT);
+  clutter_actor_set_reactive (CLUTTER_ACTOR(page), FALSE);
+  g_signal_connect(page, "show", G_CALLBACK(hd_launcher_page_show), 0);
 }
 
 static gboolean
@@ -220,8 +198,12 @@ hd_launcher_page_constructed (GObject *object)
 {
   ClutterColor text_color;
   gchar *font_string;
+  HdLauncherPage *page = HD_LAUNCHER_PAGE(object);
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (object);
+  guint x1, y1;
+  guint label_width, label_height;
 
+  /* Create the label that says this page is empty */
   hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
                                GTK_STATE_NORMAL,
                                &text_color);
@@ -236,10 +218,21 @@ hd_launcher_page_constructed (GObject *object)
                                PANGO_ALIGN_CENTER);
   clutter_label_set_line_wrap_mode (CLUTTER_LABEL (priv->empty_label),
                                     PANGO_WRAP_WORD);
+
+  clutter_actor_get_size(priv->empty_label, &label_width, &label_height);
+  /* Position the 'empty label' item in the centre */
+  x1 = (HD_LAUNCHER_PAGE_WIDTH - label_width) / 2;
+  y1 = ((HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN - label_height)/2) +
+        HD_LAUNCHER_PAGE_YMARGIN;
+  clutter_actor_set_position (priv->empty_label, x1, y1);
   clutter_actor_set_parent (priv->empty_label, CLUTTER_ACTOR (object));
   g_free (font_string);
 
   priv->scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
+  clutter_container_add_actor (CLUTTER_CONTAINER (page),
+                               priv->scroller);
+  clutter_actor_set_size(priv->scroller, HD_LAUNCHER_PAGE_WIDTH,
+                                         HD_LAUNCHER_PAGE_HEIGHT);
   clutter_actor_set_parent (priv->scroller, CLUTTER_ACTOR (object));
 
   priv->grid = hd_launcher_grid_new ();
@@ -276,6 +269,12 @@ hd_launcher_page_dispose (GObject *gobject)
 {
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (gobject);
 
+  if (priv->empty_label)
+    {
+      clutter_actor_destroy (priv->empty_label);
+      priv->empty_label = NULL;
+    }
+
   if (priv->transition)
     priv->transition = (g_object_unref(priv->transition), NULL);
 
@@ -289,136 +288,12 @@ hd_launcher_page_dispose (GObject *gobject)
 }
 
 static void
-hd_launcher_page_get_preferred_width (ClutterActor *actor,
-                                       ClutterUnit   for_height,
-                                       ClutterUnit  *min_width_p,
-                                       ClutterUnit  *natural_width_p)
-{
-  if (min_width_p)
-    *min_width_p = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_WIDTH);
-
-  if (natural_width_p)
-    *natural_width_p = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_WIDTH);
-}
-
-static void
-hd_launcher_page_get_preferred_height (ClutterActor *actor,
-                                        ClutterUnit   for_width,
-                                        ClutterUnit  *min_height_p,
-                                        ClutterUnit  *natural_height_p)
-{
-  if (min_height_p)
-    *min_height_p = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_HEIGHT);
-
-  if (natural_height_p)
-    *natural_height_p = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_HEIGHT);
-}
-
-static void
-hd_launcher_page_allocate (ClutterActor          *actor,
-                            const ClutterActorBox *box,
-                            gboolean               origin_changed)
-{
-  HdLauncherPagePrivate *priv;
-  ClutterActorBox nbox;
-  ClutterActorClass *parent_class;
-
-  /* chain up to get the allocation stored */
-  parent_class = CLUTTER_ACTOR_CLASS (hd_launcher_page_parent_class);
-  parent_class->allocate (actor, box, origin_changed);
-
-  priv = HD_LAUNCHER_PAGE_GET_PRIVATE (actor);
-
-  if (priv->empty_label)
-    {
-      guint x1, y1;
-      ClutterUnit label_width, label_height;
-      clutter_actor_get_preferred_size(priv->empty_label,
-          NULL, NULL,
-          &label_width, &label_height);
-
-      /* If we have a label or icon, we want to leave room for them.
-       * If not, fill the screen. */
-      x1 = (HD_LAUNCHER_PAGE_WIDTH - CLUTTER_UNITS_TO_DEVICE (label_width)) / 2;
-      y1 = ((HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN -
-              CLUTTER_UNITS_TO_DEVICE (label_height))/2) +
-            HD_LAUNCHER_PAGE_YMARGIN;
-      nbox.x1 = CLUTTER_UNITS_FROM_DEVICE (x1);
-      nbox.y1 = CLUTTER_UNITS_FROM_DEVICE (y1);
-      nbox.x2 = CLUTTER_UNITS_FROM_DEVICE (x1) + label_width;
-      nbox.y2 = CLUTTER_UNITS_FROM_DEVICE (y1) + label_height;
-      clutter_actor_allocate (priv->empty_label, &nbox, origin_changed);
-    }
-  else
-    {
-      /* The scroller */
-      nbox.x1 = CLUTTER_UNITS_FROM_DEVICE (0);
-      nbox.y1 = CLUTTER_UNITS_FROM_DEVICE (0);
-      nbox.x2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_WIDTH);
-      nbox.y2 = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_PAGE_HEIGHT);
-      clutter_actor_allocate (priv->scroller, &nbox, origin_changed);
-    }
-}
-
-static void
-hd_launcher_page_paint (ClutterActor *actor)
-{
-  HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (actor);
-
-  if (!CLUTTER_ACTOR_IS_VISIBLE (actor))
-    return;
-
-  if (priv->empty_label && CLUTTER_ACTOR_IS_VISIBLE (priv->empty_label))
-    clutter_actor_paint (priv->empty_label);
-  else if (priv->scroller && CLUTTER_ACTOR_IS_VISIBLE (priv->scroller))
-    clutter_actor_paint (priv->scroller);
-}
-
-static void
-hd_launcher_page_pick (ClutterActor       *actor,
-                       const ClutterColor *pick_color)
-{
-  HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (actor);
-
-  CLUTTER_ACTOR_CLASS (hd_launcher_page_parent_class)->pick (actor, pick_color);
-
-  if (priv->empty_label && CLUTTER_ACTOR_IS_VISIBLE (priv->empty_label))
-      clutter_actor_paint (priv->empty_label);
-  else if (priv->scroller && CLUTTER_ACTOR_IS_VISIBLE (priv->scroller))
-    clutter_actor_paint (priv->scroller);
-}
-
-static void
 hd_launcher_page_show (ClutterActor *actor)
 {
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (actor);
-
-  if (priv->grid)
-    hd_launcher_grid_reset_v_adjustment (HD_LAUNCHER_GRID (priv->grid));
-
-  if (priv->empty_label)
-    clutter_actor_show (priv->empty_label);
-  else if (priv->scroller)
-    clutter_actor_show (priv->scroller);
-
   /* make the scrollbars appear and then fade out (they won't be shown
    * if the scrollable area is less than the screen size) */
   tidy_finger_scroll_show_scrollbars(priv->scroller);
-
-  CLUTTER_ACTOR_SET_FLAGS (actor, CLUTTER_ACTOR_MAPPED);
-}
-
-static void
-hd_launcher_page_hide (ClutterActor *actor)
-{
-  HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (actor);
-
-  CLUTTER_ACTOR_UNSET_FLAGS (actor, CLUTTER_ACTOR_MAPPED);
-
-  if (priv->empty_label)
-      clutter_actor_hide (priv->empty_label);
-  else if (priv->scroller)
-    clutter_actor_hide (priv->scroller);
 }
 
 ClutterActor *
@@ -441,7 +316,6 @@ hd_launcher_page_add_tile (HdLauncherPage *page, HdLauncherTile* tile)
 
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->grid),
                                CLUTTER_ACTOR (tile));
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (page));
 
   g_signal_connect (tile, "clicked",
                     G_CALLBACK (hd_launcher_page_tile_clicked),

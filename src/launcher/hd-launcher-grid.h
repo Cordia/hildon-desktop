@@ -51,14 +51,14 @@ typedef struct _HdLauncherGridClass     HdLauncherGridClass;
 
 struct _HdLauncherGrid
 {
-  ClutterActor parent_instance;
+  ClutterGroup parent_instance;
 
   HdLauncherGridPrivate *priv;
 };
 
 struct _HdLauncherGridClass
 {
-  ClutterActorClass parent_class;
+  ClutterGroupClass parent_class;
 };
 
 GType         hd_launcher_grid_get_type (void) G_GNUC_CONST;
@@ -75,6 +75,7 @@ void          hd_launcher_grid_transition(HdLauncherGrid *grid,
                                           HdLauncherPageTransition trans_type,
                                           float amount);
 void          hd_launcher_grid_reset(HdLauncherGrid *grid);
+void          hd_launcher_grid_layout(HdLauncherGrid *grid);
 
 /* Fixed sizes */
 #define HD_LAUNCHER_GRID_MIN_HEIGHT \

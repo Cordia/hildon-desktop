@@ -139,7 +139,7 @@ take_screenshot (void)
   g_mkdir_with_parents (path, 0770);
 
   secs = time(NULL);
-  tm = localtime(&secs);  
+  tm = localtime(&secs);
   strftime (datestamp, 255, "%Y%m%d-%H%M%S", tm);
 
   filename = g_strdup_printf ("%s/Screenshot-%s.png",
@@ -232,7 +232,7 @@ key_binding_func (MBWindowManager   *wm,
 
 	pid_t havechild=fork();
 	if (!havechild)
-	  execl("/usr/bin/osso-xterm", 
+	  execl("/usr/bin/osso-xterm",
 		"/usr/bin/osso-xterm", NULL);
 	/* This is a hack - don't care about the kid */
       }
@@ -524,6 +524,9 @@ main (int argc, char **argv)
   /* Disable mipmapping of text, as it is seldom scaled down and this
    * saves us memory/bandwidth/update speed */
   clutter_set_use_mipmapped_text(FALSE);
+  /* Use software-based selection, which is much faster on SGX than rendering
+   * with 'GL and reading back */
+  clutter_set_software_selection(TRUE);
 
 #ifndef DISABLE_A11Y
   hildon_desktop_a11y_init ();
