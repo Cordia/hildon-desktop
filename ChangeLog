@@ -1,5 +1,8 @@
 2009-11-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/mb/hd-home-applet.c (hd_home_applet_init): XFree the applet_id
+	property also if the string is not proper.
+
 	Release 2.2.111-1
 
 	* src/util/hd-util.c (hd_util_set_screen_size_properties): Use

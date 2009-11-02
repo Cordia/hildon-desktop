@@ -111,7 +111,6 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
     {
       g_debug ("%s. Applet id: %s", __FUNCTION__, applet_id);
       applet->applet_id = g_strdup (applet_id);
-      XFree (applet_id);
     }
   else
     {
@@ -119,6 +118,9 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
       g_warning ("%s. No applet id! Using '%s' as fallback", __FUNCTION__,
                  applet->applet_id);
     }
+
+  if (applet_id)
+    XFree (applet_id);
 
   if (strcmp (OPERATOR_APPLET_ID, applet->applet_id) == 0)
     {
