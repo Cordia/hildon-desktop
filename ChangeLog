@@ -1,3 +1,30 @@
+2009-11-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#143482 - Software selection implementation for Clutter
+	
+	* debian/control: depend on new Clutter
+	* src/main.c: enable software selection on startup	
+	* src/home/hd-scrollable-group.c: Use set_anchor point instead of
+	  cogl_translate (so actor positions actually correspond to their
+	  screen positions).
+	* src/launcher/hd-launcher-grid.c
+	* src/launcher/hd-launcher-grid.h: Turn into a ClutterGroup, don't
+	  allocate but instead just set actor positions using
+	  hd_launcher_grid_layout (also use set_anchor instead of 
+	  cogl_translate).
+	* src/launcher/hd-launcher-page.c
+	* src/launcher/hd-launcher-page.h: Turn into ClutterGroup
+	* src/tidy/tidy-scroll-view.c: Remove set_clip, as this isn't needed,
+	  slows down drawing and also doesn't work with the new scrolling 
+	  implelemtation.
+
+2009-11-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Part of fix for NB#131297 and NB#142916.
+
+	* src/hildon-desktop.conf: Backup thumbnails for home bookmark
+	shortcuts.
+
 2009-11-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-home-applet.c (hd_home_applet_init): XFree the applet_id

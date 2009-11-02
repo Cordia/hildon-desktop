@@ -104,7 +104,6 @@ enum
 static guint task_signals[LAST_SIGNAL] = {};
 */
 
-static void clutter_container_iface_init (ClutterContainerIface   *iface);
 static void tidy_scrollable_iface_init   (TidyScrollableInterface *iface);
 
 static gboolean _hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
@@ -115,9 +114,7 @@ static gboolean _hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
 
 G_DEFINE_TYPE_WITH_CODE (HdLauncherGrid,
                          hd_launcher_grid,
-                         CLUTTER_TYPE_ACTOR,
-                         G_IMPLEMENT_INTERFACE (CLUTTER_TYPE_CONTAINER,
-                                                clutter_container_iface_init)
+                         CLUTTER_TYPE_GROUP,
                          G_IMPLEMENT_INTERFACE (TIDY_TYPE_SCROLLABLE,
                                                 tidy_scrollable_iface_init));
 
@@ -206,9 +203,11 @@ adjustment_value_notify (GObject    *gobject,
                          gpointer    user_data)
 {
   ClutterActor *grid = user_data;
+  HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (grid)->priv;
 
-  if (CLUTTER_ACTOR_IS_VISIBLE (grid))
-    clutter_actor_queue_redraw (grid);
+  clutter_actor_set_anchor_point(grid,
+                             0,
+                             tidy_adjustment_get_value(priv->v_adjustment));
 }
 
 static void
@@ -313,75 +312,52 @@ tidy_scrollable_iface_init (TidyScrollableInterface *iface)
 }
 
 static void
-hd_launcher_grid_add (ClutterContainer *container,
-                      ClutterActor     *actor)
+hd_launcher_grid_actor_added (ClutterContainer *container,
+                              ClutterActor     *actor)
 {
   HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (container)->priv;
 
   g_object_ref (actor);
 
-  priv->tiles = g_list_append (priv->tiles, actor);
-  clutter_actor_set_parent (actor, CLUTTER_ACTOR (container));
-
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
-
-  if (priv->h_adjustment)
-    hd_launcher_grid_refresh_h_adjustment (HD_LAUNCHER_GRID (container));
-
-  if (priv->v_adjustment)
-    hd_launcher_grid_refresh_v_adjustment (HD_LAUNCHER_GRID (container));
-
-  g_signal_emit_by_name (container, "actor-added", actor);
-
-  g_object_unref (actor);
-}
-
-static void
-hd_launcher_grid_remove (ClutterContainer *container,
-                         ClutterActor     *actor)
-{
-  HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (container)->priv;
-
-  g_object_ref (actor);
-
-  priv->tiles = g_list_remove (priv->tiles, actor);
-  clutter_actor_unparent (actor);
-
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
-
-  if (priv->h_adjustment)
-    hd_launcher_grid_refresh_h_adjustment (HD_LAUNCHER_GRID (container));
-
-  if (priv->v_adjustment)
-    hd_launcher_grid_refresh_v_adjustment (HD_LAUNCHER_GRID (container));
-
-  g_signal_emit_by_name (container, "actor-removed", actor);
-
-  g_object_unref (actor);
-}
-
-static void
-hd_launcher_grid_foreach (ClutterContainer *container,
-                          ClutterCallback   callback,
-                          gpointer          callback_data)
-{
-  HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (container)->priv;
-  GList *l;
-
-  for (l = priv->tiles; l != NULL; l = l->next)
+  if (HD_IS_LAUNCHER_TILE(actor))
     {
-      ClutterActor *child = l->data;
+      priv->tiles = g_list_append (priv->tiles, g_object_ref(actor));
 
-      callback (child, callback_data);
+      hd_launcher_grid_layout(HD_LAUNCHER_GRID(container));
+
+      if (priv->h_adjustment)
+        hd_launcher_grid_refresh_h_adjustment (HD_LAUNCHER_GRID (container));
+
+      if (priv->v_adjustment)
+        hd_launcher_grid_refresh_v_adjustment (HD_LAUNCHER_GRID (container));
     }
+
+  g_object_unref (actor);
 }
 
 static void
-clutter_container_iface_init (ClutterContainerIface *iface)
+hd_launcher_grid_actor_removed (ClutterContainer *container,
+                                ClutterActor     *actor)
 {
-  iface->add = hd_launcher_grid_add;
-  iface->remove = hd_launcher_grid_remove;
-  iface->foreach = hd_launcher_grid_foreach;
+  HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (container)->priv;
+
+  g_object_ref (actor);
+
+  if (HD_IS_LAUNCHER_TILE(actor))
+    {
+      priv->tiles = g_list_remove (priv->tiles, actor);
+      g_object_unref(actor);
+
+      hd_launcher_grid_layout(HD_LAUNCHER_GRID(container));
+
+      if (priv->h_adjustment)
+        hd_launcher_grid_refresh_h_adjustment (HD_LAUNCHER_GRID (container));
+
+      if (priv->v_adjustment)
+        hd_launcher_grid_refresh_v_adjustment (HD_LAUNCHER_GRID (container));
+    }
+
+  g_object_unref (actor);
 }
 
 static void
@@ -410,44 +386,18 @@ _hd_launcher_grid_count_children_and_rows (HdLauncherGrid *grid,
     *rows = 0;
 }
 
-static void
-hd_launcher_grid_get_preferred_height (ClutterActor *actor,
-                                       ClutterUnit   for_width,
-                                       ClutterUnit  *min_height_p,
-                                       ClutterUnit  *natural_height_p)
-{
-  HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID_GET_PRIVATE (actor);
-  guint n_visible_launchers, n_rows, natural_height;
-
-  if (min_height_p)
-    *min_height_p = CLUTTER_UNITS_FROM_DEVICE (HD_LAUNCHER_GRID_MIN_HEIGHT);
-
-  if (natural_height_p)
-    {
-      _hd_launcher_grid_count_children_and_rows (HD_LAUNCHER_GRID (actor),
-          &n_visible_launchers, &n_rows);
-
-        natural_height = HD_LAUNCHER_PAGE_YMARGIN +
-                         HD_LAUNCHER_TILE_HEIGHT * n_rows +
-                         (n_rows > 0 ? priv->v_spacing * (n_rows - 1) : 0);
-        *natural_height_p = CLUTTER_UNITS_FROM_DEVICE (MAX (natural_height,
-                                HD_LAUNCHER_GRID_MIN_HEIGHT));
-    }
-}
 
 /**
  * Allocates a number of tiles in a row, starting at cur_y.
  * Returns the number of children allocated.
  */
 static GList *
-_hd_launcher_grid_allocate_row (GList *l,
+_hd_launcher_grid_layout_row   (GList *l,
                                 guint *remaining,
                                 guint cur_y,
-                                guint h_spacing,
-                                gboolean origin_changed)
+                                guint h_spacing)
 {
   ClutterActor *child;
-  ClutterActorBox box;
   guint allocated = MIN (HD_LAUNCHER_GRID_MAX_COLUMNS, *remaining);
   /* Figure out the starting X position needed to centre the icons */
   guint icons_width = HD_LAUNCHER_TILE_WIDTH * HD_LAUNCHER_GRID_MAX_COLUMNS +
@@ -458,169 +408,72 @@ _hd_launcher_grid_allocate_row (GList *l,
     {
       child = l->data;
 
-      box.x1 = CLUTTER_UNITS_FROM_DEVICE (cur_x);
-      box.y1 = CLUTTER_UNITS_FROM_DEVICE (cur_y);
-      cur_x += HD_LAUNCHER_TILE_WIDTH;
-      box.x2 = CLUTTER_UNITS_FROM_DEVICE (cur_x);
-      box.y2 = CLUTTER_UNITS_FROM_DEVICE (cur_y + HD_LAUNCHER_TILE_HEIGHT);
-      clutter_actor_allocate (child, &box, origin_changed);
+      clutter_actor_set_position(child, cur_x, cur_y);
+      cur_x += HD_LAUNCHER_TILE_WIDTH + h_spacing;
 
-      cur_x += h_spacing;
       l = l->next;
     }
   *remaining -= allocated;
   return l;
 }
 
-static void
-hd_launcher_grid_allocate (ClutterActor          *actor,
-                           const ClutterActorBox *box,
-                           gboolean               origin_changed)
+void hd_launcher_grid_layout (HdLauncherGrid *grid)
 {
-  HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (actor)->priv;
-  ClutterActorClass *parent_class;
+  HdLauncherGridPrivate *priv = grid->priv;
   GList *l;
   guint cur_height, n_visible_launchers, n_rows;
 
-  /* Free our list of 'blocker' actors that we use to block mouse clicks */
+  /* Free our list of 'blocker' actors that we use to block mouse clicks.
+   * TODO: just check we have 'nrows' worth */
   g_list_foreach(priv->blockers,
-                 (GFunc) clutter_actor_unparent,
+                 (GFunc)clutter_actor_destroy,
                  NULL);
   g_list_free(priv->blockers);
   priv->blockers = NULL;
 
-  /* chain up to save the allocation */
-  parent_class = CLUTTER_ACTOR_CLASS (hd_launcher_grid_parent_class);
-  parent_class->allocate (actor, box, origin_changed);
-
-  _hd_launcher_grid_count_children_and_rows (HD_LAUNCHER_GRID (actor),
+  _hd_launcher_grid_count_children_and_rows (grid,
       &n_visible_launchers, &n_rows);
 
   cur_height = HD_LAUNCHER_PAGE_YMARGIN;
+
+  /* This actually does the scrolling, instead of us using
+   * cogl_translate like we did previously, which kills software
+   * selection mode */
+  cur_height -= tidy_adjustment_get_value(priv->v_adjustment);
+
   l = priv->tiles;
   while (l) {
     /* Allocate all icons on this row */
-    l = _hd_launcher_grid_allocate_row(l, &n_visible_launchers,
-                                       cur_height, priv->h_spacing,
-                                       origin_changed);
+    l = _hd_launcher_grid_layout_row(l, &n_visible_launchers,
+                                       cur_height, priv->h_spacing);
     if (l)
       {
         /* If there is another row, we must create an actor that
          * goes between the two rows that will grab the clicks that
          * would have gone between them and dismissed the launcher  */
-        ClutterActorBox box;
         ClutterActor *blocker = clutter_group_new();
         clutter_actor_set_name(blocker, "HdLauncherGrid::blocker");
         clutter_actor_show(blocker);
-        clutter_actor_set_parent (blocker, actor);
+        clutter_container_add_actor(CLUTTER_CONTAINER(grid), blocker);
         clutter_actor_set_reactive(blocker, TRUE);
         g_signal_connect (blocker, "button-release-event",
                           G_CALLBACK (_hd_launcher_grid_blocker_release_cb),
                           NULL);
-        box.x1 = CLUTTER_UNITS_FROM_INT(HD_LAUNCHER_LEFT_MARGIN);
-        box.y1 = CLUTTER_UNITS_FROM_INT(cur_height + HD_LAUNCHER_TILE_HEIGHT);
-        box.x2 = CLUTTER_UNITS_FROM_INT(
-            HD_LAUNCHER_GRID_WIDTH - HD_LAUNCHER_RIGHT_MARGIN);
-        box.y2 = CLUTTER_UNITS_FROM_INT(cur_height +
-            HD_LAUNCHER_TILE_HEIGHT + priv->v_spacing);
-        clutter_actor_allocate(blocker, &box, origin_changed);
+        clutter_actor_set_position(blocker,
+                                   HD_LAUNCHER_LEFT_MARGIN,
+                                   cur_height + HD_LAUNCHER_TILE_HEIGHT);
+        clutter_actor_set_size(blocker,
+            HD_LAUNCHER_GRID_WIDTH - (HD_LAUNCHER_LEFT_MARGIN+HD_LAUNCHER_RIGHT_MARGIN),
+            priv->v_spacing);
 
         priv->blockers = g_list_prepend(priv->blockers, blocker);
       }
     cur_height += HD_LAUNCHER_TILE_HEIGHT + priv->v_spacing;
   }
-}
 
-static void
-hd_launcher_grid_paint (ClutterActor *actor)
-{
-  HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (actor)->priv;
-  GList *l;
-
-  if (!CLUTTER_ACTOR_IS_VISIBLE (actor))
-    return;
-
-  cogl_push_matrix ();
-
-  /* offset by the adjustment value */
-  if (priv->v_adjustment)
-    {
-      ClutterFixed v_offset = tidy_adjustment_get_valuex (priv->v_adjustment);
-
-      cogl_translatex (0, v_offset * -1, 0);
-    }
-
-  for (l = priv->tiles; l != NULL; l = l->next)
-    {
-      ClutterActor *child = l->data;
-
-      if (CLUTTER_ACTOR_IS_VISIBLE (child))
-        clutter_actor_paint (child);
-    }
-
-  cogl_pop_matrix ();
-}
-
-static void
-hd_launcher_grid_pick (ClutterActor       *actor,
-                       const ClutterColor *pick_color)
-{
-  HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (actor)->priv;
-  GList *l;
-
-  CLUTTER_ACTOR_CLASS (hd_launcher_grid_parent_class)->pick (actor, pick_color);
-
-  cogl_push_matrix ();
-
-  /* offset by the adjustment value */
-  if (priv->v_adjustment)
-    {
-      ClutterFixed v_offset = tidy_adjustment_get_valuex (priv->v_adjustment);
-
-      cogl_translatex (0, v_offset * -1, 0);
-    }
-
-  for (l = priv->tiles; l != NULL; l = l->next)
-    {
-      ClutterActor *child = l->data;
-
-      if (CLUTTER_ACTOR_IS_VISIBLE (child))
-        clutter_actor_paint (child);
-    }
-  /* render blocking areas to stop clicks through to the background */
-  for (l = priv->blockers; l != NULL; l = l->next)
-    {
-      ClutterActor *child = l->data;
-
-      if (CLUTTER_ACTOR_IS_VISIBLE (child))
-        clutter_actor_paint (child);
-    }
-
-  cogl_pop_matrix ();
-}
-
-static void
-hd_launcher_grid_realize (ClutterActor *actor)
-{
-  HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (actor)->priv;
-
-  g_list_foreach (priv->tiles,
-                  (GFunc) clutter_actor_realize,
-                  NULL);
-
-  CLUTTER_ACTOR_SET_FLAGS (actor, CLUTTER_ACTOR_REALIZED);
-}
-
-static void
-hd_launcher_grid_unrealize (ClutterActor *actor)
-{
-  HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (actor)->priv;
-
-  CLUTTER_ACTOR_UNSET_FLAGS (actor, CLUTTER_ACTOR_REALIZED);
-
-  g_list_foreach (priv->tiles,
-                  (GFunc) clutter_actor_unrealize,
-                  NULL);
+  clutter_actor_set_size(CLUTTER_ACTOR(grid),
+                         HD_LAUNCHER_PAGE_WIDTH,
+                         cur_height);
 }
 
 static void
@@ -711,20 +564,12 @@ static void
 hd_launcher_grid_class_init (HdLauncherGridClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-  ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (HdLauncherGridPrivate));
 
   gobject_class->set_property = hd_launcher_grid_set_property;
   gobject_class->get_property = hd_launcher_grid_get_property;
   gobject_class->dispose = hd_launcher_grid_dispose;
-
-  actor_class->get_preferred_height = hd_launcher_grid_get_preferred_height;
-  actor_class->allocate = hd_launcher_grid_allocate;
-  actor_class->realize = hd_launcher_grid_realize;
-  actor_class->unrealize = hd_launcher_grid_unrealize;
-  actor_class->paint = hd_launcher_grid_paint;
-  actor_class->pick = hd_launcher_grid_pick;
 
   g_object_class_override_property (gobject_class,
                                     PROP_H_ADJUSTMENT,
@@ -746,6 +591,11 @@ hd_launcher_grid_init (HdLauncherGrid *launcher)
   priv->v_spacing = HD_LAUNCHER_GRID_ROW_SPACING;
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (launcher), FALSE);
+
+  g_signal_connect(
+      launcher, "actor-added", G_CALLBACK(hd_launcher_grid_actor_added), 0);
+  g_signal_connect(
+      launcher, "actor-removed", G_CALLBACK(hd_launcher_grid_actor_removed), 0);
 }
 
 ClutterActor *

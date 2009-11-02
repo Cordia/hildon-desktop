@@ -46,14 +46,14 @@ typedef struct _HdLauncherPageClass    HdLauncherPageClass;
 
 struct _HdLauncherPage
 {
-  ClutterActor parent_instance;
+  ClutterGroup parent_instance;
 
   HdLauncherPagePrivate *priv;
 };
 
 struct _HdLauncherPageClass
 {
-  ClutterActorClass parent_class;
+  ClutterGroupClass parent_class;
 };
 
 typedef enum
