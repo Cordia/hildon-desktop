@@ -1,3 +1,10 @@
+2009-11-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Part of fix for NB#131297 and NB#142916.
+
+	* src/hildon-desktop.conf: Backup thumbnails for home bookmark
+	shortcuts.
+
 2009-11-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.111-1
