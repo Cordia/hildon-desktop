@@ -2,6 +2,9 @@
 
 	Release 2.2.111-1
 
+	* src/util/hd-util.c (hd_util_set_screen_size_properties): Use
+	hidden_window for the _MAEMO_SCREEN_SIZE property.
+
 2009-10-29  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Tweaks to help with NB#126626,NB#144294
