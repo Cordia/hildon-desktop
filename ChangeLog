@@ -1,3 +1,8 @@
+2009-11-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.[ch], src/util/hd-dbus.c: Remove
+	hd_comp_mgr_tklocked function and use the global variable instead.
+
 2009-11-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#143482 - Software selection implementation for Clutter

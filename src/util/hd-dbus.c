@@ -73,8 +73,6 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
       if (dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &mode,
                                  DBUS_TYPE_INVALID));
         {
-          hd_comp_mgr_tklocked (hmgr, !strcmp(mode, MCE_TK_LOCKED));
-
           if (strcmp(mode, MCE_TK_LOCKED))
             {
               if (hd_dbus_tklock_on)

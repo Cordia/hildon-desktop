@@ -124,8 +124,6 @@ void hd_comp_mgr_kill_all_apps       (HdCompMgr *hmgr);
 void hd_comp_mgr_wakeup_client       (HdCompMgr       *hmgr,
 				      HdCompMgrClient *hclient);
 
-void hd_comp_mgr_tklocked            (HdCompMgr *hmgr, gboolean isit);
-
 gboolean hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr);
 gboolean hd_comp_mgr_client_supports_portrait (MBWindowManagerClient *mbwmc);
 

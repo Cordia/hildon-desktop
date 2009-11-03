@@ -96,9 +96,6 @@ struct HdCompMgrPrivate
   /* Do Not Disturb flag */
   gboolean               do_not_disturb_flag : 1;
 
-  /* Are we swipe-locked?  Only used to discard notif previews. */
-  gboolean               tklocked : 1;
-
   MBWindowManagerClient *status_area_client;
   MBWindowManagerClient *status_menu_client;
 
@@ -1940,6 +1937,8 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
   g_assert (!app->leader || (app->leader && app->stack_index >= 0));
 }
 
+extern gboolean hd_dbus_tklock_on;
+
 static void
 hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
@@ -1994,7 +1993,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       if (priv->do_not_disturb_flag
           || STATE_DISCARD_PREVIEW_NOTE (hd_render_manager_get_state())
-          || priv->tklocked)
+          || hd_dbus_tklock_on)
         {
           g_debug ("%s. Discard notification", __FUNCTION__);
           mb_wm_client_hide (c);
@@ -3323,12 +3322,6 @@ gint hd_comp_mgr_time_since_last_map(HdCompMgr *hmgr)
 
   return ((current.tv_sec - hmgr->priv->last_map_time.tv_sec) * 1000) +
          ((current.tv_usec - hmgr->priv->last_map_time.tv_usec) / 1000);
-}
-
-void hd_comp_mgr_tklocked (HdCompMgr *hmgr, gboolean isit)
-{
-  hmgr->priv->tklocked = isit;
-  g_debug ("tklocked: %d", isit);
 }
 
 extern gboolean hd_dbus_display_is_off;
