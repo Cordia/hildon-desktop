@@ -29,9 +29,7 @@ Notifications:
 - Use ATOM:ic property values in hd-note.c.
 
 Switcher:
-- When zooming back is complete fade in the real titlebar.
 - Update label colors with theme change.
 - Zoom+fly: don't slow down at the end of zoom and don't start slowly
-- Shadowed text in switcher (wishlist).
 
 - mapping a subview in the background brings the app into the foreground
