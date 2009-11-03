@@ -1,5 +1,15 @@
 2009-11-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#138100 Adding fade effect for notifications in task switcher
+
+	* src/home/hd-task-navigator:
+	  Made adopt_notification(), orphane_notification(), free_thumb()
+	  and layout() animate notifications if necessary.
+	* data/transitions.ini (notifade_in, notifade_out):
+	  New properties for the effect.
+
+2009-11-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Make the panning indicator disappear immedeately when leaving the
 	launcher subview.  Keep it shown for a while when you're finished
 	scrolling.

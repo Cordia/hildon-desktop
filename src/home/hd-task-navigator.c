@@ -36,7 +36,7 @@
  * }}}
  */
 
-/* Include files */
+/* Include files {{{ */
 #include <math.h>
 #include <errno.h>
 #include <string.h>
@@ -65,6 +65,7 @@
 #include "hd-theme.h"
 #include "hd-util.h"
 #include "hd-gtk-style.h"
+/* }}} */
 
 /* Standard definitions {{{ */
 #undef  G_LOG_DOMAIN
@@ -149,6 +150,11 @@
  *                                effects or decrase for faster feedback.
  * %FLY_EFFECT_DURATION:          Same for the flying animation, ie. when
  *                                the windows are repositioned.
+ * %NOTIFADE_IN_DURATION,
+ * %NOTIFADE_OUT_DURATION:        Milisecs to fade in and out notifications.
+ *                                These effects are executed in an independent
+ *                                timeline, except when zooming in/out, when
+ *                                they are coupled with @Zoom_effect_timeline.
  */
 #if 1
 # define ZOOM_EFFECT_DURATION     \
@@ -159,6 +165,11 @@
 # define ZOOM_EFFECT_DURATION     1000
 # define FLY_EFFECT_DURATION      1000
 #endif
+
+#define NOTIFADE_IN_DURATION      \
+  hd_transition_get_int("task_nav", "notifade_in", 250)
+#define NOTIFADE_OUT_DURATION     \
+  hd_transition_get_int("task_nav", "notifade_out", 250)
 
 /*
  *  These are based on the UX Guidance.
@@ -281,6 +292,7 @@ typedef struct
 
   /*
    * -- @thwin:       The @Grid's thumbnail window and event responder.
+   *                  Can be faded in/out if the thumbnail is a notification.
    * -- @plate:       Groups the @title and the @frame graphics; used to fade
    *                  them all at once.  It sits on the top and can be thought
    *                  of as a boilerplate.
@@ -291,8 +303,16 @@ typedef struct
    *                  bounds.  Also contains the icons.
    * -- @close_app_icon, @close_notif_icon: these.  They're included in
    *                  the generic structure in order to keep their position
-   *                  together.  At most one of them is shown at a time
-   *                  according to one of the threee states of the thumbail.
+   *                  together.  When there are neither adopt_notification()
+   *                  nor orphane_notification() transitions going on at most
+   *                  one of them is shown at a time according to one of the
+   *                  three states of the thumbail.  Otherwise they are faded
+   *                  in and out.
+   *
+   *                  When the thumbnail is a %NOTIFICATION both icons are
+   *                  normally opaque.  Otherwise if thumb_has_notification()
+   *                  @close_app_icon is normally transparent and hidden,
+   *                  and the other is opaque.  Otherwise the opposit holds.
    */
   ClutterActor        *thwin, *plate;
   ClutterActor        *title, *close;
@@ -344,6 +364,9 @@ typedef struct
        * xor vertically. */
       struct
       {
+        /* The container of all @pieces.  If the thumbnail is an APPLICATION
+         * but it has a notification it's normally transparent and hidden,
+         * otherwise it's normally opaque. */
         ClutterActor *all;
 
         union
@@ -437,7 +460,7 @@ typedef struct
   void (*scale) (ClutterActor *actor, gdouble sx, gdouble sy);
 } Flyops;
 
-/* For resize_effect() and turnoff_effect(). */
+/* For linear_effect(), resize_effect() and turnoff_effect(). */
 typedef struct
 {
   /*
@@ -461,21 +484,44 @@ typedef struct
   /* Effect-specific context */
   union
   {
-    /*
-     * For linear_effect()s. In each frame a number of properties of @actor
-     * is changed lineraly, such as width and height.  Each property has its
-     * own structure.  The number of properties that can be controlled by
-     * such an effect is limited by the the number of elements in the array.
-     */
+    /* For linear_effect()s. */
     struct
     {
       /*
-       * @init:             The property's value at the start of the effect.
-       * @diff:             By the end of effect how much the property should
-       *                    be different with regards to @init.
+       * In each frame a number of properties of @actor is changed lineraly,
+       * such as width and height.  Each property has its own structure.
+       * The number of properties that can be controlled by such an effect
+       * is limited by the the number of elements in the array.
        */
-      gfloat init, diff;
-    } linear[2];
+      struct
+      {
+        /*
+         * @init:             The property's value at the start of the effect.
+         * @diff:             By the end of effect how much the property should
+         *                    be different with regards to @init.
+         */
+        gfloat init, diff;
+      } linear[2];
+
+      /* Auxiliary instruction for linear_effect()s. */
+      union
+      {
+        /* For fade(). */
+        struct
+        {
+          /* What to do when the effect completes. */
+          enum final_fade_action_t
+          {
+            FINALLY_REST,   /* Nothing is necessary. */
+            FINALLY_HIDE,   /* Hide @another_actor. */
+            FINALLY_REMOVE, /* Remove EffectClosure::actor
+                             * from @another_actor. */
+          } finally;
+
+          ClutterActor *another_actor;
+        };
+      };
+    };
 
     /* This is used by resize_effect() on __armel__. */
     struct
@@ -926,7 +972,7 @@ new_effect (ClutterTimeline * timeline, ClutterActor * actor,
 {
   EffectClosure *closure;
 
-  closure = g_slice_new (EffectClosure);
+  closure = g_slice_new0 (EffectClosure);
   closure->actor = g_object_ref (actor);
 
   if (frame_fun)
@@ -1013,8 +1059,10 @@ linear_effect (ClutterTimeline * timeline, ClutterActor * actor,
        * Calculate @init2 and @diff2 from equations:
        * init1 + diff1*now  == init2 + diff2*now,
        * final2             == init2 + diff2.
+       *
+       * As @timeline may not be the already running one ignore it.
        */
-      gfloat now = clutter_timeline_get_progress (timeline);
+      gfloat now = clutter_timeline_get_progress (closure->timeline);
       for (i = 0; !isnanf (init = va_arg (list, gdouble)); i++)
         { g_assert (i < G_N_ELEMENTS (closure->linear));
           final = va_arg (list, gdouble);
@@ -1252,6 +1300,90 @@ check_and_scale (ClutterActor * actor, gdouble sx_new, gdouble sy_new)
 }
 /* RMS effects }}} */
 
+/* Fading effect {{{ */
+/* frame_fun of fade() */
+static void
+fade_frame (ClutterTimeline * timeline, gint frame, EffectClosure * closure)
+{
+  clutter_actor_set_opacity (closure->actor, linear_effect_value (closure, 0,
+    clutter_timeline_get_progress (timeline)));
+}
+
+/* complete_fun of fade() */
+static void
+fade_complete (ClutterTimeline * timeline, EffectClosure * closure)
+{
+  if (closure->finally == FINALLY_HIDE)
+    clutter_actor_hide (closure->another_actor);
+  else if (closure->finally == FINALLY_REMOVE)
+    clutter_container_remove_actor (CLUTTER_CONTAINER (closure->another_actor),
+                                    closure->actor);
+  if (closure->another_actor)
+    g_object_unref (closure->another_actor);
+  free_effect (timeline, closure);
+}
+
+/*
+ * Starts fading @actor to @opacity, and do @finally something to
+ * @another_actor when it's complete.  If there's already such an
+ * effect in progress it's overridden together with its @finally
+ * action.
+ */
+static EffectClosure *
+fade (ClutterTimeline * timeline, ClutterActor * actor, guint opacity,
+      enum final_fade_action_t finally, ClutterActor * another_actor)
+{
+  EffectClosure *closure;
+
+  g_assert ((finally == FINALLY_REST) == (another_actor == NULL));
+  closure = linear_effect (timeline, actor, fade_frame, fade_complete,
+                           (gdouble)clutter_actor_get_opacity(actor),
+                           (gdouble)opacity, NAN);
+
+  closure->finally = finally;
+  if (another_actor)
+    g_object_ref (another_actor);
+  if (closure->another_actor)
+    g_object_unref (closure->another_actor);
+  closure->another_actor = another_actor;
+
+  clutter_timeline_start (timeline);
+  return closure;
+}
+
+/* The same as fade() except that it creates an independent disposable
+ * %ClutterTimeline for $msecs for the effect. */
+static EffectClosure *
+fade_for_duration (guint msecs, ClutterActor * actor, guint opacity,
+                   enum final_fade_action_t finally,
+                   ClutterActor * another_actor)
+{
+  EffectClosure *closure;
+  ClutterTimeline *timeline;
+
+  timeline = clutter_timeline_new_for_duration (msecs);
+  closure = fade (timeline, actor, opacity, finally, another_actor);
+  g_object_unref (timeline);
+  return closure;
+}
+
+/* Cancels the ongoing fade() effect on @actor if there one.
+ * Then resets its @opacity and visibility to its normal state. */
+static void
+reset_opacity (ClutterActor * actor, guint opacity, gboolean be_shown)
+{
+  EffectClosure *closure;
+
+  if ((closure = has_effect (actor, fade_frame)) != NULL)
+    free_effect (closure->timeline, closure);
+  clutter_actor_set_opacity (actor, opacity);
+  if (be_shown)
+    clutter_actor_show (actor);
+  else
+    clutter_actor_hide (actor);
+}
+/* Fading }}} */
+
 /* Boom effect {{{ */
 /* If @x0 <= @t <= @x1 returns the value of f(@t), where f()
  * goes from (@x0, @y0) to (@x1, @y1) following a cosine curve.
@@ -1461,6 +1593,18 @@ show_when_complete (ClutterActor * actor)
   add_effect_closure (Fly_effect_timeline,
                       (ClutterEffectCompleteFunc)clutter_actor_show,
                       actor, NULL);
+}
+
+/* Can be called after show_when_complete() is done to fade in $actor,
+ * probably a thwin of a nothumb. */
+static void
+fade_in_when_complete (ClutterActor * actor, gpointer msecs)
+{
+  if (has_effect (actor, fade_frame))
+    /* A fade-out by free_thumb() must be in progress, don't override it. */
+    return;
+  clutter_actor_set_opacity (actor, 0);
+  fade_for_duration (GPOINTER_TO_INT (msecs), actor, 255, FINALLY_REST, NULL);
 }
 /* Misc }}} */
 /* Clutter utilities }}} */
@@ -1947,7 +2091,7 @@ skip_the_circus:
 
 /* Lays out the @Thumbnails in the @Grid. */
 static void
-layout (ClutterActor * newborn)
+layout (ClutterActor * newborn, gboolean newborn_is_notification)
 {
   /* This layout machinery is based on invariants, which basically
    * means we don't pay much attention to what caused the layout
@@ -1955,7 +2099,12 @@ layout (ClutterActor * newborn)
   set_navigator_height (layout_thumbs (newborn));
 
   if (newborn && animation_in_progress (Fly_effect_timeline))
-    show_when_complete (newborn);
+    {
+      show_when_complete (newborn);
+      if (newborn_is_notification)
+        add_effect_closure (Fly_effect_timeline, fade_in_when_complete,
+                            newborn, GINT_TO_POINTER (NOTIFADE_IN_DURATION));
+    }
 }
 /* Layout engine }}} */
 
@@ -2059,12 +2208,18 @@ create_thwin (Thumbnail * thumb, ClutterActor * prison)
   clutter_container_add_actor (CLUTTER_CONTAINER (Grid), thumb->thwin);
 }
 
-/* Release everything related to @thumb. */
+/* Release everything related to @thumb.  If you want it can @animate the
+ * death of @thumb by a simple fading out. */
 static void
-free_thumb (Thumbnail * thumb)
+free_thumb (Thumbnail * thumb, gboolean animate)
 {
   /* This will kill the entire actor hierarchy. */
-  clutter_container_remove_actor (CLUTTER_CONTAINER (Grid), thumb->thwin);
+  if (animate && CLUTTER_ACTOR_IS_VISIBLE (thumb->thwin))
+    /* We may be adding it, no point of animation then. */
+    fade_for_duration (NOTIFADE_OUT_DURATION, thumb->thwin, 0,
+                       FINALLY_REMOVE, CLUTTER_ACTOR (Grid));
+  else
+    clutter_container_remove_actor (CLUTTER_CONTAINER (Grid), thumb->thwin);
 
   /* The caller must have taken care of .tnote already. */
   g_assert (!thumb_has_notification (thumb));
@@ -2259,34 +2414,87 @@ adopt_notification (Thumbnail * apthumb, TNote * tnote)
                                tnote->notwin);
   clutter_container_raise_child (CLUTTER_CONTAINER (apthumb->thwin),
                                  tnote->notwin, apthumb->prison);
-  clutter_actor_hide (apthumb->prison);
-  clutter_actor_hide (apthumb->frame.all);
+
+  g_assert (CLUTTER_ACTOR_IS_VISIBLE (apthumb->prison));
+  g_assert (CLUTTER_ACTOR_IS_VISIBLE (tnote->notwin));
+  if (hd_task_navigator_is_active ())
+    {
+      ClutterTimeline *timeline;
+
+      /* Fade in @notwin and the decoration. */
+      timeline = clutter_timeline_new_for_duration (NOTIFADE_IN_DURATION);
+      clutter_actor_set_opacity (tnote->notwin, 0);
+      fade (timeline, tnote->notwin, 255, FINALLY_HIDE, apthumb->prison);
+      fade (timeline, apthumb->frame.all, 0, FINALLY_HIDE, apthumb->frame.all);
+      clutter_actor_show (apthumb->close_notif_icon);
+      fade (timeline, apthumb->close_notif_icon, 255, FINALLY_REST, NULL);
+      if (CLUTTER_ACTOR_IS_VISIBLE (apthumb->close_app_icon))
+        fade (timeline, apthumb->close_app_icon, 0,
+              FINALLY_HIDE, apthumb->close_app_icon);
+      else /* Reset its opacity to normal. */
+        clutter_actor_set_opacity (apthumb->close_app_icon, 0);
+      g_object_unref (timeline);
+    }
+  else
+    { /* Make sure all opacities are reset to the normal values. */
+      g_assert (!has_effect (tnote->notwin, fade_frame));
+      clutter_actor_hide (apthumb->prison);
+      reset_opacity (apthumb->frame.all, 0, FALSE);
+      reset_opacity (apthumb->close_notif_icon, 255, TRUE);
+      reset_opacity (apthumb->close_app_icon, 0, FALSE);
+    }
+
   reset_thumb_title (apthumb);
-  clutter_actor_hide (apthumb->close_app_icon);
-  clutter_actor_show (apthumb->close_notif_icon);
 }
 
 /* Restore .prison. */
 static TNote *
-orphan_notification (Thumbnail * apthumb)
+orphan_notification (Thumbnail * apthumb, gboolean animate)
 {
   TNote *tnote;
 
   tnote = apthumb->tnote;
   g_assert (tnote != NULL);
 
-  /* Take care not to blow .notwin. */
+ /* Take care not to blow @notwin. */
   g_object_ref (tnote->notwin);
-  clutter_container_remove_actor (CLUTTER_CONTAINER (apthumb->thwin),
-                                  tnote->notwin);
+  if (!animate || !hd_task_navigator_is_active ())
+    clutter_container_remove_actor (CLUTTER_CONTAINER (apthumb->thwin),
+                                    tnote->notwin);
+
   clutter_actor_show (apthumb->prison);
   clutter_actor_show (apthumb->frame.all);
+  g_assert (CLUTTER_ACTOR_IS_VISIBLE (apthumb->close_notif_icon));
+  if (hd_task_navigator_is_active ())
+    {
+      ClutterTimeline *timeline;
+
+      /* If @animate fade out @notwin, otherwise just the decoration.
+       * Couple with the fly effect so they will be synchronized. */
+      timeline = clutter_timeline_new_for_duration (NOTIFADE_OUT_DURATION);
+      if (animate)
+        fade (timeline, tnote->notwin, 0, FINALLY_REMOVE, apthumb->thwin);
+      fade (timeline, apthumb->frame.all, 255, FINALLY_REST, NULL);
+      fade (timeline, apthumb->close_notif_icon, 0,
+            FINALLY_HIDE, apthumb->close_notif_icon);
+      if (!apthumb_has_dialogs (apthumb))
+        {
+          clutter_actor_show (apthumb->close_app_icon);
+          fade (timeline, apthumb->close_app_icon, 255, FINALLY_REST, NULL);
+        }
+      g_object_unref(timeline);
+    }
+  else
+    { /* Reset opacities to normal values. */
+      reset_opacity (tnote->notwin, 255, TRUE);
+      reset_opacity (apthumb->frame.all, 255, TRUE);
+      reset_opacity (apthumb->close_notif_icon, 0, FALSE);
+      reset_opacity (apthumb->close_app_icon, 255,
+                     !apthumb_has_dialogs(apthumb));
+    }
+
   apthumb->tnote = NULL;
   reset_thumb_title (apthumb);
-  clutter_actor_hide (apthumb->close_notif_icon);
-  if (!apthumb_has_dialogs (apthumb))
-    clutter_actor_show (apthumb->close_app_icon);
-
   return tnote;
 }
 /* Child adoption }}} */
@@ -2446,9 +2654,11 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
 
   /* Fade out our notification smoothly if we have one. */
   if (thumb_has_notification (apthumb))
-    {
+    { /* fade() robustly to be friendly with ongoing adopt/
+       * orphan_notification() */
       clutter_actor_show (apthumb->prison);
-      clutter_effect_fade (Zoom_effect, apthumb->tnote->notwin, 0, NULL, NULL);
+      fade (Zoom_effect_timeline, apthumb->tnote->notwin, 0,
+            FINALLY_REST, NULL);
     }
 
   /*
@@ -2526,22 +2736,24 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   clutter_effect_scale (Zoom_effect, Scroller, 1, 1, NULL, NULL);
   clutter_effect_move  (Zoom_effect, Scroller, 0, 0, NULL, NULL);
 
-  /* Crossfade .plate with .titlebar.  It's okay to leave .titlebar shown
-   * but transparent. */
+  /* Crossfade .plate with .titlebar.  (Earlier i said "It's okay to leave
+   * .titlebar shown but transparent." but i can't recall why.  Anyway,
+   * let's hide it afterwards.) */
   clutter_actor_show (apthumb->titlebar);
   clutter_actor_set_opacity (apthumb->titlebar, 255);
-  clutter_effect_fade (Zoom_effect, apthumb->titlebar,   0, NULL, NULL);
+  clutter_effect_fade (Zoom_effect, apthumb->titlebar,   0,
+                       (ClutterEffectCompleteFunc)hide_when_complete,
+                       apthumb->titlebar);
   clutter_actor_set_opacity (apthumb->plate,      0);
   clutter_effect_fade (Zoom_effect, apthumb->plate,    255, NULL, NULL);
 
   /* Fade in .notwin smoothly. */
   if (thumb_has_notification (apthumb))
-    {
+    { /* Use robust fade()ing for the same reason as in *_zoom_in(). */
       clutter_actor_show (apthumb->prison);
       clutter_actor_set_opacity (apthumb->tnote->notwin, 0);
-      clutter_effect_fade (Zoom_effect, apthumb->tnote->notwin, 255,
-                           (ClutterEffectCompleteFunc)hide_when_complete,
-                           apthumb->prison);
+      fade (Zoom_effect_timeline, apthumb->tnote->notwin, 255,
+            FINALLY_HIDE, apthumb->prison);
     }
 
   add_effect_closure (Zoom_effect_timeline, fun, win, funparam);
@@ -2783,7 +2995,7 @@ static void
 appthumb_turned_off_1 (ClutterActor * unused, Thumbnail * apthumb)
 { /* Byebye @apthumb! */
   release_win (apthumb);
-  free_thumb (apthumb);
+  free_thumb (apthumb, FALSE);
 }
 
 /* Likewise.  This is a separate function because it needs a different
@@ -2861,7 +3073,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
    * Maybe %ClutterTexture could be used to work it around.
    */
   newborn = thumb_has_notification (apthumb)
-    ? add_nothumb (orphan_notification (apthumb))->thwin
+    ? add_nothumb (orphan_notification (apthumb, FALSE))->thwin
     : NULL;
 
   /* If we're active let's do the TV-turned-off effect on @apthumb.
@@ -2897,13 +3109,13 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
     {
 damage_control:
       release_win (apthumb);
-      free_thumb (apthumb);
+      free_thumb (apthumb, FALSE);
     }
 
   /* Do all (TV, windows flying, add notification thumbnail) effects at once. */
   Thumbnails = g_list_delete_link (Thumbnails, li);
   NThumbnails--;
-  layout (newborn);
+  layout (newborn, TRUE);
 
   /* Arrange for calling @fun(@funparam) if/when appropriate. */
   if (animation_in_progress (Fly_effect_timeline))
@@ -2939,7 +3151,7 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
     : g_list_append (Thumbnails, apthumb);
   NThumbnails++;
 
-  layout (apthumb->thwin);
+  layout (apthumb->thwin, FALSE);
 
   /* Do NOT sync the Tasks button because we may get it wrong and it's
    * done somewhere in the mist anyway. */
@@ -3140,7 +3352,7 @@ hd_task_navigator_notification_thread_changed (HdTaskNavigator * self,
   newborn = NULL;
   relayout = FALSE;
   if (thumb_has_notification (apthumb))
-    newborn = add_nothumb (orphan_notification (apthumb))->thwin;
+    newborn = add_nothumb (orphan_notification (apthumb, FALSE))->thwin;
   if (apthumb->nodest)
     {
       XFree (apthumb->nodest);
@@ -3161,7 +3373,7 @@ hd_task_navigator_notification_thread_changed (HdTaskNavigator * self,
       {
         if (thumb_is_application (thumb))
           { /* It's another application's, take it away. */
-            adopt_notification (apthumb, orphan_notification (thumb));
+            adopt_notification (apthumb, orphan_notification (thumb, FALSE));
             if (thumb->nodest)
               { /* Make sure @thumb won't receive our notifications. */
                 XFree (thumb->nodest);
@@ -3178,7 +3390,7 @@ hd_task_navigator_notification_thread_changed (HdTaskNavigator * self,
 
 finito:
   if (newborn || relayout)
-    layout (newborn);
+    layout (newborn, TRUE);
 }
 /* Misc window commands }}} */
 /* }}} */
@@ -3442,7 +3654,7 @@ remove_nothumb (GList * li, gboolean destroy_tnote)
     }
   nothumb->tnote = NULL;
 
-  free_thumb (nothumb);
+  free_thumb (nothumb, destroy_tnote);
   if (li == Notifications)
     Notifications = li->next;
   Thumbnails = g_list_delete_link (Thumbnails, li);
@@ -3491,7 +3703,7 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
         }
     }
 
-  layout (add_nothumb (tnote)->thwin);
+  layout (add_nothumb (tnote)->thwin, TRUE);
 
   /* Make sure the Tasks button points to the switcher now. */
   hd_render_manager_update();
@@ -3519,13 +3731,13 @@ hd_task_navigator_remove_notification (HdTaskNavigator * self,
   if (thumb_is_notification (thumb))
     { /* @hdinfo is displayed in a thumbnail on its own. */
       remove_nothumb (li, TRUE);
-      layout (NULL);
+      layout (NULL, FALSE);
 
       /* Sync the Tasks button, we might have just become empty. */
       hd_render_manager_update ();
     }
   else /* @hdnote is in an application's title area. */
-    free_tnote (orphan_notification (thumb));
+    free_tnote (orphan_notification (thumb, TRUE));
 
   /* Reset the highlighting if no more notifications left. */
   if (!hd_task_navigator_has_notifications ())
