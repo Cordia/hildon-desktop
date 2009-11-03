@@ -1,3 +1,10 @@
+2009-11-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_refresh_v_adjustment):
+	  Add HD_LAUNCHER_PAGE_YMARGIN pixels worth of margin at the bottom
+	  of the subview.  Martin asked for it in NB#142968 but couldn't
+	  wait for it.
+
 2009-11-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.[ch], src/util/hd-dbus.c: Remove

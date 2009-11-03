@@ -172,6 +172,10 @@ hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
   clutter_actor_get_clipu (CLUTTER_ACTOR (grid),
                            NULL, &clip_y,
                            NULL, &clip_height);
+  if (height >= CLUTTER_UNITS_FROM_INT (HD_COMP_MGR_LANDSCAPE_HEIGHT))
+    /* Have the same amount of padding at the bottom as on the top. */
+    height += CLUTTER_UNITS_FROM_INT (HD_LAUNCHER_PAGE_YMARGIN
+                                      - HD_LAUNCHER_GRID_ROW_SPACING);
 
   if (clip_height == 0)
     page_height = MIN (CLUTTER_UNITS_TO_FIXED (height),
