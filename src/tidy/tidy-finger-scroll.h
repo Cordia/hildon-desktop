@@ -71,6 +71,7 @@ ClutterActor *tidy_finger_scroll_new  (TidyFingerScrollMode mode);
 void          tidy_finger_scroll_stop (TidyFingerScroll *scroll);
 
 void          tidy_finger_scroll_show_scrollbars (ClutterActor *actor);
+void          tidy_finger_scroll_hide_scrollbars_now (ClutterActor *actor);
 
 G_END_DECLS
 

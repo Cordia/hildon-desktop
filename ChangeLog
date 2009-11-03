@@ -1,5 +1,19 @@
 2009-11-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Make the panning indicator disappear immedeately when leaving the
+	launcher subview.  Keep it shown for a while when you're finished
+	scrolling.
+
+	* src/tidy/tidy-finger-scroll.c (button_release_event_cb):
+	  Wait a second before hiding the indicators.
+	* src/tidy/tidy-finger-scroll.h:
+	  New function tidy_finger_scroll_hide_scrollbars_now().
+	* src/launcher/hd-launcher-page.c (hd_launcher_page_transition):
+	  Use it when the transition is either HD_LAUNCHER_PAGE_TRANSITION_OUT
+	  or HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB.
+
+2009-11-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_refresh_v_adjustment):
 	  Add HD_LAUNCHER_PAGE_YMARGIN pixels worth of margin at the bottom
 	  of the subview.  Martin asked for it in NB#142968 but couldn't

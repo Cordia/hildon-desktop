@@ -392,6 +392,7 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
+         tidy_finger_scroll_hide_scrollbars_now (priv->scroller);
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
     case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
     case HD_LAUNCHER_PAGE_TRANSITION_BACK:

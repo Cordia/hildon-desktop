@@ -77,6 +77,7 @@ enum {
 };
 
 static gboolean captured_event_cb (ClutterActor *actor, ClutterEvent *event);
+static void _tidy_finger_scroll_hide_scrollbars_later (TidyFingerScroll *scroll);
 
 static void
 tidy_finger_scroll_get_property (GObject *object, guint property_id,
@@ -266,9 +267,8 @@ vfade_complete_cb (ClutterActor *scrollbar, TidyFingerScroll *scroll)
 }
 
 static void
-show_scrollbars (TidyFingerScroll *scroll, gboolean show)
+stop_scrollbars (TidyFingerScroll *scroll)
 {
-  ClutterActor *hscroll, *vscroll;
   TidyFingerScrollPrivate *priv = scroll->priv;
 
   /* Stop current timelines */
@@ -290,7 +290,15 @@ show_scrollbars (TidyFingerScroll *scroll, gboolean show)
       g_signal_emit_by_name (priv->vscroll_timeline, "completed");
       priv->vscroll_timeline = NULL;
     }
+}
 
+static void
+show_scrollbars (TidyFingerScroll *scroll, gboolean show)
+{
+  ClutterActor *hscroll, *vscroll;
+  TidyFingerScrollPrivate *priv = scroll->priv;
+
+  stop_scrollbars (scroll);
   hscroll = tidy_scroll_view_get_hscroll_bar (TIDY_SCROLL_VIEW (scroll));
   vscroll = tidy_scroll_view_get_vscroll_bar (TIDY_SCROLL_VIEW (scroll));
 
@@ -316,7 +324,7 @@ static void
 deceleration_completed_cb (ClutterTimeline *timeline,
                            TidyFingerScroll *scroll)
 {
-  show_scrollbars (scroll, FALSE);
+  _tidy_finger_scroll_hide_scrollbars_later (scroll);
   g_object_unref (timeline);
   scroll->priv->deceleration_timeline = NULL;
 }
@@ -562,7 +570,7 @@ button_release_event_cb (ClutterActor *actor,
   priv->last_motion = 0;
 
   if (!decelerating)
-    show_scrollbars (scroll, FALSE);
+    _tidy_finger_scroll_hide_scrollbars_later (scroll);
 
   /* Pass through events to children.
    * FIXME: this probably breaks click-count.
@@ -778,6 +786,18 @@ _tidy_finger_scroll_show_scrollbars_cb (ClutterActor *scroll)
   return FALSE;
 }
 
+static void
+_tidy_finger_scroll_hide_scrollbars_later (TidyFingerScroll *scroll)
+{
+  TidyFingerScrollPrivate *priv = scroll->priv;
+
+  if (priv->scrollbar_timeout)
+    g_source_remove (priv->scrollbar_timeout);
+  priv->scrollbar_timeout = g_timeout_add(
+          TIDY_FINGER_SCROLL_INITIAL_SCROLLBAR_DELAY,
+          (GSourceFunc)_tidy_finger_scroll_show_scrollbars_cb, scroll);
+}
+
 /* Show the scrollbars and then fade them out */
 void
 tidy_finger_scroll_show_scrollbars (ClutterActor *scroll)
@@ -795,4 +815,15 @@ tidy_finger_scroll_show_scrollbars (ClutterActor *scroll)
   priv->scrollbar_timeout = g_timeout_add(
           TIDY_FINGER_SCROLL_INITIAL_SCROLLBAR_DELAY,
           (GSourceFunc)_tidy_finger_scroll_show_scrollbars_cb, scroll);
+}
+
+/* Hide the scrollbars right now, without fading. */
+void
+tidy_finger_scroll_hide_scrollbars_now (ClutterActor *actor)
+{
+  stop_scrollbars (TIDY_FINGER_SCROLL (actor));
+  clutter_actor_set_opacity (tidy_scroll_view_get_hscroll_bar (
+                                         TIDY_SCROLL_VIEW (actor)), 0);
+  clutter_actor_set_opacity (tidy_scroll_view_get_vscroll_bar (
+                                         TIDY_SCROLL_VIEW (actor)), 0);
 }
