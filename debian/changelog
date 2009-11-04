@@ -1,4 +1,7 @@
-hildon-desktop (1:2.2.113-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.113-1) unstable; urgency=low
+
+  Gordon:
+  * Fixes: NB#144265 - Dialog titles disappear when closing
 
   Kimmo:
   * Fixes: NB#142332 - [ncfs] No notification previews available in full
