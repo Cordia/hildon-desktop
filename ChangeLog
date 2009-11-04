@@ -1,5 +1,10 @@
 2009-11-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#144265 - Dialog titles disappear when closing
+	* src/mb/hd-decor.c: Just unref actors when the decor is destroyed
+	  rather than destroying them. They will be destroyed when the
+	  CompMgrClutterClient's actor is finally unreffed.
+
 	Minor regression fix for NB#143482 - Software selection
 	(Clutter Warning and lack of 'No Items' label in launcher)
 	* src/launcher/hd-launcher-page.c: Replace set_parent with

@@ -54,7 +54,31 @@ hd_decor_class_init (MBWMObjectClass *klass)
 static void
 hd_decor_destroy (MBWMObject *obj)
 {
-  hd_decor_remove_actors(HD_DECOR(obj));
+  HdDecor *decor = HD_DECOR (obj);
+
+  if (decor->progress_timeline)
+    {
+      clutter_timeline_stop(decor->progress_timeline);
+      g_object_unref(decor->progress_timeline);
+      decor->progress_timeline = 0;
+    }
+  /* Unref actors rather than destroying - as we still
+   * want them inside the window we put them in... */
+  if (decor->progress_texture)
+    {
+      g_object_unref(decor->progress_texture);
+      decor->progress_texture = 0;
+    }
+  if (decor->title_bar_actor)
+    {
+      g_object_unref(decor->title_bar_actor);
+      decor->title_bar_actor = 0;
+    }
+  if (decor->title_actor)
+    {
+      g_object_unref(decor->title_actor);
+      decor->title_actor = 0;
+    }
 }
 
 static int
@@ -230,8 +254,8 @@ hd_decor_create_actors(HdDecor *decor)
   area.width = mb_decor->geom.width;
   area.height = mb_decor->geom.height;
 
-  decor->title_bar_actor =
-    hd_clutter_cache_get_texture_for_area(HD_THEME_IMG_DIALOG_BAR, TRUE, &area);
+  decor->title_bar_actor = g_object_ref_sink(
+    hd_clutter_cache_get_texture_for_area(HD_THEME_IMG_DIALOG_BAR, TRUE, &area));
   clutter_container_add_actor(CLUTTER_CONTAINER(actor), decor->title_bar_actor);
 
   /* add the title */
@@ -261,7 +285,7 @@ hd_decor_create_actors(HdDecor *decor)
         if (client->window->name_has_markup)
           clutter_label_set_use_markup(bar_title, TRUE);
 
-        decor->title_actor = CLUTTER_ACTOR(bar_title);
+        decor->title_actor = CLUTTER_ACTOR(g_object_ref_sink(bar_title));
         clutter_container_add_actor(CLUTTER_CONTAINER(actor),
                                     decor->title_actor);
 
@@ -299,10 +323,11 @@ hd_decor_create_actors(HdDecor *decor)
       ClutterGeometry progress_geo =
         {0, 0, HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE};
       gint x = 0;
-      decor->progress_texture = hd_clutter_cache_get_sub_texture(
+      decor->progress_texture = g_object_ref_sink(
+                                   hd_clutter_cache_get_sub_texture(
                                                       HD_THEME_IMG_PROGRESS,
                                                       TRUE,
-                                                      &progress_geo);
+                                                      &progress_geo));
       if (decor->title_actor)
         {
           x = clutter_actor_get_x(CLUTTER_ACTOR(decor->title_actor)) +
