@@ -1,3 +1,9 @@
+2009-11-04  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#144761 - Transition tweaks
+	
+	* data/transitions.ini: Added MartinG's tweaked transition values
+
 2009-11-04  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.113-1
