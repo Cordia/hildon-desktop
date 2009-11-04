@@ -687,7 +687,21 @@ hd_comp_mgr_client_needs_compositing (MBWindowManagerClient *c)
       || HD_IS_INFO_NOTE (c)
       || HD_IS_BANNER_NOTE (c)
       || HD_IS_INCOMING_EVENT_NOTE (c)
-      || HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c)
+      /* ...or application that wants non-composited mode */
+      || (HD_IS_APP (c) && hd_comp_mgr_is_non_composited (c, FALSE)))
+    {
+      return FALSE;
+    }
+  return TRUE;
+}
+
+static gboolean
+hd_comp_mgr_client_looks_better_composited (MBWindowManagerClient *c)
+{
+  if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea
+      || MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeOverride
+      || MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeHomeApplet
+      || HD_IS_INCOMING_EVENT_NOTE (c)
       /* ...or application that wants non-composited mode */
       || (HD_IS_APP (c) && hd_comp_mgr_is_non_composited (c, FALSE)))
     {
@@ -2046,7 +2060,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    */
   if (!HD_IS_INCOMING_EVENT_NOTE(c))
     {
-      if (hd_comp_mgr_client_needs_compositing (c))
+      if (hd_comp_mgr_client_needs_compositing (c) ||
+          hd_comp_mgr_client_looks_better_composited (c))
         {
           /* TODO: should check that this client really is above the
            * non-composited client */
@@ -2163,14 +2178,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       if (STATE_ONE_OF(hd_render_manager_get_state(),
                        HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
         hd_render_manager_set_state(HDRM_STATE_HOME);
-      else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
-               hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
-        {
-          hd_comp_mgr_unredirect_client (c);
-                /*
-          hd_render_manager_set_state (HDRM_STATE_APP);
-          */
-        }
       hd_home_add_status_menu (HD_HOME (priv->home), actor);
       priv->status_menu_client = c;
       return;
@@ -2186,24 +2193,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * added to the switcher.  This can be considered a shortcoming. */
       if (STATE_NEED_WHOLE_SCREEN_INPUT(hd_render_manager_get_state()))
         hd_render_manager_set_state(HDRM_STATE_HOME);
-
-      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
-          hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
-        {
-          hd_comp_mgr_unredirect_client (c);
-        }
       return;
     }
   else if (ctype == MBWMClientTypeNote)
     {
-      if ((HD_IS_BANNER_NOTE (c) || HD_IS_INFO_NOTE (c)) &&
-          (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
-           hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT))
-        {
-          /* make it visible in non-composited mode */
-          hd_comp_mgr_unredirect_client (c);
-        }
-
       if (HD_IS_BANNER_NOTE (c) || HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c))
         hd_render_manager_add_to_front_group(actor);
 
@@ -2236,28 +2229,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         {
           hd_switcher_add_dialog (priv->switcher_group, c, actor);
         }
-      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
-        {
-          /* go back to composited mode to show the dialog properly
-           * (the title is drawn in Clutter) */
-          hd_render_manager_set_state (HDRM_STATE_APP);
-        }
-      else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
-        {
-          hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
-        }
       return;
     }
   else if (c->window->net_type ==
 	   c->wmref->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU])
     {
       MBWindowManagerClient *transfor;
-
-      if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
-          hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
-        {
-          hd_comp_mgr_unredirect_client (c);
-        }
 
       if ((transfor = hd_comp_mgr_get_client_transient_for (c)) != NULL)
         {
@@ -2494,6 +2471,74 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
 }
 
+void
+hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
+{
+  HDRMStateEnum hdrm_state = hd_render_manager_get_state ();
+  MBWindowManagerClient *c = hd_wm_determine_current_app (mgr->wm);
+
+  if (c && c != mgr->wm->desktop &&
+      (hdrm_state == HDRM_STATE_APP || hdrm_state == HDRM_STATE_APP_PORTRAIT)
+      && hd_comp_mgr_is_non_composited (c, FALSE))
+    {
+      MBWindowManagerClient *tmp;
+      gboolean found = FALSE;
+
+      /* check if there is a window that wishes composited mode above */
+      for (tmp = c->stacked_above; tmp; tmp = tmp->stacked_above)
+        if (mb_wm_client_is_map_confirmed (tmp) &&
+            (hd_comp_mgr_client_needs_compositing (tmp) ||
+             hd_comp_mgr_client_looks_better_composited (tmp)))
+          {
+            found = TRUE;
+            break;
+          }
+
+      if (!found)
+        {
+          if (hdrm_state == HDRM_STATE_APP)
+            hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+          else
+            hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
+        }
+    }
+  else if (hdrm_state == HDRM_STATE_NON_COMPOSITED ||
+           hdrm_state == HDRM_STATE_NON_COMP_PORT)
+    {
+      if (c && c != mgr->wm->desktop)
+        {
+          MBWindowManagerClient *tmp;
+          gboolean found = FALSE;
+
+          /* check if there is a window that needs composited mode above */
+          for (tmp = c->stacked_above; tmp; tmp = tmp->stacked_above)
+            if (mb_wm_client_is_map_confirmed (tmp) &&
+                (hd_comp_mgr_client_needs_compositing (tmp) ||
+                 hd_comp_mgr_client_looks_better_composited (tmp)))
+              {
+                found = TRUE;
+                break;
+              }
+
+          if (found || !hd_comp_mgr_is_non_composited (c, FALSE))
+            {
+              if (hdrm_state == HDRM_STATE_NON_COMPOSITED)
+                hd_render_manager_set_state (HDRM_STATE_APP);
+              else
+                hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+            }
+        }
+      else /* no application -> we should be composited */
+        {
+          g_warning ("non-composited but no application, should not happen");
+          if (hdrm_state == HDRM_STATE_NON_COMPOSITED)
+            hd_render_manager_set_state (HDRM_STATE_APP);
+          else
+            hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+        }
+    }
+}
+
 static void
 hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
@@ -2523,72 +2568,6 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         }
       if (!grab_spoil)
         hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
-    }
-  else if (hdrm_state == HDRM_STATE_APP ||
-           hdrm_state == HDRM_STATE_APP_PORTRAIT)
-    {
-      if (!HD_IS_BANNER_NOTE(c) &&
-          !HD_IS_INCOMING_EVENT_NOTE(c) &&
-          !HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
-        {
-          MBWindowManagerClient *below, *tmp;
-          gboolean found = FALSE;
-
-          /* check if there is a window that needs composited mode above */
-          for (tmp = c->stacked_above; tmp; tmp = tmp->stacked_above)
-            if (hd_comp_mgr_client_needs_compositing (tmp))
-              {
-                found = TRUE;
-                break;
-              }
-
-          /* check if there is a window that wants non-composited mode below */
-          for (below = c->stacked_below; !found && below;
-               below = below->stacked_below)
-            {
-              if (hd_comp_mgr_client_needs_compositing (below))
-                break;
-              else if (HD_IS_APP (below) &&
-                       hd_comp_mgr_is_non_composited (below, FALSE))
-                {
-                  if (hdrm_state == HDRM_STATE_APP)
-                    hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
-                  else
-                    hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
-                  break;
-                }
-            }
-        }
-    }
-  else if (hdrm_state == HDRM_STATE_NON_COMPOSITED ||
-           hdrm_state == HDRM_STATE_NON_COMP_PORT)
-    {
-      if (!HD_IS_BANNER_NOTE(c) &&
-          !HD_IS_INCOMING_EVENT_NOTE(c) &&
-          MB_WM_CLIENT_CLIENT_TYPE (c) != MBWMClientTypeOverride &&
-          !HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
-        {
-          MBWindowManagerClient *below;
-          /* check if we should go back to composited mode */
-          /* TODO: This could produce undesired behaviour if the unmapped
-           * window is not topmost */
-          for (below = c->stacked_below;
-               below && below != mgr->wm->desktop;
-               below = below->stacked_below)
-            if (hd_comp_mgr_client_needs_compositing (below))
-              {
-                /* g_printerr("%s: compositing needed\n", __func__); */
-                if (hdrm_state == HDRM_STATE_NON_COMPOSITED)
-                  hd_render_manager_set_state (HDRM_STATE_APP);
-                else
-                  hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
-                break;
-              }
-            else if (HD_IS_APP (below))
-              /* it's enough to check until we have encountered an
-               * application, since it obstructs the windows beneath */
-              break;
-        }
     }
 
   if (HD_IS_APP (c) && HD_APP (c)->stack_index > 0 &&
@@ -2668,7 +2647,10 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
             __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c), event);*/
 
   if (c->window->allowed_actions & MBWMClientWindowActionNoTransitions)
-    return;
+    {
+      hd_comp_mgr_reconsider_compositing (mgr);
+      return;
+    }
 
   /*HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;*/
   if (event == MBWMCompMgrClientEventUnmap)
@@ -2747,6 +2729,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
             }
           app->map_effect_before = FALSE;
         }
+      else
+        hd_comp_mgr_reconsider_compositing (mgr);
     }
   else if (event == MBWMCompMgrClientEventMap)
     {

@@ -1,6 +1,11 @@
 hildon-desktop (1:2.2.113-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#142332 - [ncfs] No notification previews available in full
+    screen mode
+  * Fixes: NB#142140 - [non composite mode] Ugly flickering when opening
+    dialogs in full screen
+  * Fixes: NB#142322 - [ncfs] No transitions in full screen mode
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  4 Nov 2009 15:26:05 +0200
 

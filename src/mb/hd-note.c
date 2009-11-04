@@ -272,25 +272,6 @@ hd_note_init (MBWMObject *this, va_list vap)
       geom.width  = w + client->window->geometry.width  + e;
       geom.height = n + client->window->geometry.height + s;
 
-      if (hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED ||
-          hd_render_manager_get_state() == HDRM_STATE_NON_COMP_PORT)
-        {
-          /* This is to fix bug 134348 - preview notes momentarily
-           * visible over non-composited mode.
-           *
-           * Stacking these notes lower has no effect on the flicker.
-           * We assume this is because the stacking occurs after the window
-           * is mapped. In composited mode this is no problem, but in
-           * non-composited mode it means flicker.
-           *
-           * Since the stacking has no effect, I have left it as before,
-           * and instead moved the preview notes off of the screen. It
-           * may be that stacking can be fixed so there is no flicker,
-           * however while in code freeze we want the solution that is
-           * least likely to cause regression. */
-          geom.y = -(geom.height+1);
-        }
-
       hd_note_request_geometry (client, &geom, MBWMClientReqGeomForced);
     }
   else /* Banner, Info, Confirmation */
@@ -366,15 +347,6 @@ hd_note_request_geometry (MBWindowManagerClient *client,
    */
   geom = (flags & MBWMClientReqGeomIsViaConfigureReq) ?
     &client->window->geometry : &client->frame_geometry;
-
-  /* Make absolutely sure that the note is placed offscreen when in
-   * non-composited mode, as stacking it low still appears to cause
-   * some flickering. See the comments in hd_note_init. */
-  if ((HD_NOTE (client)->note_type == HdNoteTypeIncomingEventPreview ||
-       HD_NOTE (client)->note_type == HdNoteTypeIncomingEvent) &&
-      (hd_render_manager_get_state() == HDRM_STATE_NON_COMPOSITED ||
-       hd_render_manager_get_state() == HDRM_STATE_NON_COMP_PORT))
-    new_geometry.y = -(1 + new_geometry.height);
 
   /*
    * We only allow resizing and moving in the y axis, since notes are
