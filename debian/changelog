@@ -1,8 +1,15 @@
-hildon-desktop (1:2.2.112-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.112-1) unstable; urgency=low
 
-  * foo
+  Adam:
+  * Fixes: NB#138100 - Adding fade effect for notifications in task switcher
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  2 Nov 2009 13:12:34 +0200
+  Gordon:
+  * Fixes: NB#143482 - Software selection implementation for Clutter
+
+  Jan Arne:
+  * Part of fix for NB#131297 and NB#142916.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 04 Nov 2009 15:22:41 +0200
 
 hildon-desktop (1:2.2.111-1) unstable; urgency=low
 
