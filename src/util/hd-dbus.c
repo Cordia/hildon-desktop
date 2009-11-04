@@ -58,13 +58,26 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                                    DBusMessage *msg, void *data)
 {
   HdCompMgr  * hmgr = data;
+  extern MBWindowManager *hd_mb_wm;
+
   if (dbus_message_is_signal(msg, DSME_SIGNAL_INTERFACE,
 			     DSME_SHUTDOWN_SIGNAL_NAME))
     {
+      Window overlay;
       g_warning ("%s: " DSME_SHUTDOWN_SIGNAL_NAME " from DSME", __func__);
       /* send TERM to applications and exit without cleanup */
       hd_volume_profile_set_silent (TRUE);
       hd_comp_mgr_kill_all_apps (hmgr);
+      overlay = mb_wm_comp_mgr_clutter_get_overlay_window (
+                        MB_WM_COMP_MGR_CLUTTER (hmgr));
+      if (overlay != None)
+        {
+          /* needed because of the non-composite optimisations in X,
+           * otherwise we could show garbage if the shutdown screen is
+           * a bit slow or missing */
+          XClearWindow (hd_mb_wm->xdpy, overlay);
+          XFlush (hd_mb_wm->xdpy);
+        }
       _exit (0);
     }
   else if (dbus_message_is_signal (msg, MCE_SIGNAL_IF, "tklock_mode_ind"))
@@ -77,7 +90,6 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
             {
               if (hd_dbus_tklock_on)
                 {
-                  extern MBWindowManager *hd_mb_wm;
                   hd_dbus_tklock_on = FALSE;
                   /* if we avoided focusing a window during tklock, do it now
                    * (this only has an effect if no window is currently

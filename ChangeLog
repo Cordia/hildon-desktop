@@ -12,6 +12,31 @@
 
 2009-11-04  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#142332 - [ncfs] No notification previews available in full
+	screen mode
+	Fixes: NB#142140 - [non composite mode] Ugly flickering when opening
+	dialogs in full screen
+	Fixes: NB#142322 - [ncfs] No transitions in full screen mode
+
+	* src/home/hd-render-manager.h: Don't discard preview notes in
+	non-composited mode.
+	* hd-comp-mgr.[ch] (hd_comp_mgr_reconsider_compositing): New function
+	for compositing mode policy.
+	(hd_comp_mgr_unmap_notify): Move compositing mode policy code away
+	from here to hd_comp_mgr_reconsider_compositing.
+	(hd_comp_mgr_map_notify): Remove some unredirecting code.
+	(hd_comp_mgr_client_looks_better_composited): New function to detect
+	clients that look prettier in composited mode.
+	(hd_comp_mgr_client_needs_compositing): Preview notes are now
+	requiring compositing.
+	* src/mb/hd-note.c (hd_note_init, hd_note_request_geometry): No
+	special treatment for non-composited modes anymore.
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler): Clear the
+	overlay window before exiting to prevent its contents staying on the
+	root window.
+	* src/util/hd-transition.c (hd_transition_completed): Call
+	hd_comp_mgr_reconsider_compositing when transition has completed.
+
 	Release 2.2.112-1
 
 2009-11-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>

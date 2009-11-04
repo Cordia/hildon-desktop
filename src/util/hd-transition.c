@@ -857,6 +857,9 @@ hd_transition_completed (ClutterTimeline* timeline, HDEffectData *data)
                                         data);
 
   g_free (data);
+
+  if (hmgr)
+    hd_comp_mgr_reconsider_compositing (MB_WM_COMP_MGR (hmgr));
 }
 
 void
