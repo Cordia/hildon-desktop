@@ -54,6 +54,7 @@ struct _TidyFingerScrollPrivate
 
   /* Variables for storing acceleration information for kinetic mode */
   ClutterTimeline       *deceleration_timeline;
+  int                    deceleration_timeline_lastframe;
   ClutterUnit            dx;
   ClutterUnit            dy;
   ClutterFixed           decel_rate;
@@ -336,6 +337,11 @@ deceleration_new_frame_cb (ClutterTimeline *timeline,
 {
   TidyFingerScrollPrivate *priv = scroll->priv;
   ClutterActor *child = tidy_scroll_view_get_child (TIDY_SCROLL_VIEW(scroll));
+  gint i;
+  /* We need to keep track of how many frames were skipped so we can
+   * make up for it... */
+  gint frames = frame_num - priv->deceleration_timeline_lastframe;
+  priv->deceleration_timeline_lastframe = frame_num;
 
   if (child)
     {
@@ -348,10 +354,10 @@ deceleration_new_frame_cb (ClutterTimeline *timeline,
                                        &vadjust);
 
       tidy_adjustment_set_valuex (hadjust,
-                                  priv->dx +
+                                  priv->dx*frames +
                                     tidy_adjustment_get_valuex (hadjust));
       tidy_adjustment_set_valuex (vadjust,
-                                  priv->dy +
+                                  priv->dy*frames +
                                     tidy_adjustment_get_valuex (vadjust));
 
       /* Check if we've hit the upper or lower bounds and stop the timeline */
@@ -377,8 +383,12 @@ deceleration_new_frame_cb (ClutterTimeline *timeline,
         }
     }
 
-  priv->dx = clutter_qdivx (priv->dx, priv->decel_rate);
-  priv->dy = clutter_qdivx (priv->dy, priv->decel_rate);
+  /* Just easier that trying to do powers... */
+  for (i=0;i<frames;i++)
+    {
+      priv->dx = clutter_qdivx (priv->dx, priv->decel_rate);
+      priv->dy = clutter_qdivx (priv->dy, priv->decel_rate);
+    }
 }
 
 static gboolean
@@ -562,6 +572,9 @@ button_release_event_cb (ClutterActor *actor,
           g_signal_connect (priv->deceleration_timeline, "completed",
                             G_CALLBACK (deceleration_completed_cb), scroll);
           clutter_timeline_start (priv->deceleration_timeline);
+          /* force redraw of first frame */
+          priv->deceleration_timeline_lastframe = -1;
+          deceleration_new_frame_cb(priv->deceleration_timeline, 0, scroll);
           decelerating = TRUE;
         }
     }
