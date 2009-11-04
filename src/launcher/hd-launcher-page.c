@@ -225,7 +225,7 @@ hd_launcher_page_constructed (GObject *object)
   y1 = ((HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN - label_height)/2) +
         HD_LAUNCHER_PAGE_YMARGIN;
   clutter_actor_set_position (priv->empty_label, x1, y1);
-  clutter_actor_set_parent (priv->empty_label, CLUTTER_ACTOR (object));
+  clutter_container_add_actor (CLUTTER_CONTAINER (page), priv->empty_label);
   g_free (font_string);
 
   priv->scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
@@ -233,7 +233,6 @@ hd_launcher_page_constructed (GObject *object)
                                priv->scroller);
   clutter_actor_set_size(priv->scroller, HD_LAUNCHER_PAGE_WIDTH,
                                          HD_LAUNCHER_PAGE_HEIGHT);
-  clutter_actor_set_parent (priv->scroller, CLUTTER_ACTOR (object));
 
   priv->grid = hd_launcher_grid_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->scroller),
