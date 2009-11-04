@@ -1,5 +1,15 @@
 2009-11-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#141640 - Multiple taps not handled during application launch
+
+	* src/home/hd-render-manager.c: Make sure we don't fade out the launch
+	  screenshot unless we're going to the APP state (otherwise remove it
+	  instantly)
+	* src/launcher/hd-launcher.c: Add a 10 second timeout to the loading
+	  window - If that app still hasn't started after that return to home
+	  or switcher. Now ignore taps on the loading screen, rather than 
+	  using them to remove it.
+
 	Fixes: NB#144761 - Transition tweaks
 	
 	* data/transitions.ini: Added MartinG's tweaked transition values

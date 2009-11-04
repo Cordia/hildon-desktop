@@ -1234,9 +1234,12 @@ void hd_render_manager_set_loading  (ClutterActor *item)
           clutter_container_remove_actor (
               CLUTTER_CONTAINER(clutter_actor_get_parent(priv->loading_image)),
               priv->loading_image);
-          /* fade it out nicely, if it is a real image rather than a solid
-           * colour */
-          if (item==NULL && !CLUTTER_IS_RECTANGLE(priv->loading_image))
+          /* If we are moving to an app from a loading image, fade the
+           * image out nicely. However the user could tap on launcher/tasknav,
+           * in which case we want this gone quickly. */
+          if (item==NULL &&
+              STATE_IS_APP(priv->state) &&
+              !CLUTTER_IS_RECTANGLE(priv->loading_image))
             hd_transition_fade_out_loading_screen(priv->loading_image);
         }
       /* Remove our reference */

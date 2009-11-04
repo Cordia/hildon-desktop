@@ -70,6 +70,7 @@ struct _HdLauncherPrivate
    * for app start. */
   gpointer launch_tile;
   ClutterActor *launch_image;
+  guint launch_image_timeout; /* Timeout for removing launch image */
   ClutterTimeline *launch_transition;
   ClutterVertex launch_position; /* where were we clicked? */
 
@@ -229,6 +230,8 @@ hd_launcher_dispose (GObject *gobject)
 {
   HdLauncher *self = HD_LAUNCHER (gobject);
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (self);
+
+  hd_launcher_stop_loading_transition();
 
   if (priv->tree)
     {
@@ -532,18 +535,23 @@ _hd_launcher_transition_clicked(ClutterActor *actor,
                                 ClutterEvent *event,
                                 gpointer user_data)
 {
-  hd_launcher_window_created();
-  /* check to see if we had any apps, because we may want to change state... */
+  /* Just totally ignore clicks */
+  return TRUE;
+}
+
+/* handle clicks to the fake launch image. If we've been up this long the
+   app may have died and we just want to remove ourselves. */
+static gboolean
+hd_launcher_transition_loading_timeout()
+{
+  hd_launcher_stop_loading_transition();
+  /* Change state back to switcher (if other apps exist) or home if the app
+   * starting failed */
   if (hd_task_navigator_has_apps())
     hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
   else
     hd_render_manager_set_state(HDRM_STATE_HOME);
-  /* we don't want any animation this time as we want it to
-   * be instant. */
-  hd_render_manager_stop_transition();
-  /* redraw the stage so it is immediately removed */
-  clutter_actor_queue_redraw( clutter_stage_get_default() );
-  return TRUE;
+  return FALSE; // don't call again
 }
 
 /* TODO: Move the loading screen into its own class. */
@@ -552,9 +560,17 @@ hd_launcher_stop_loading_transition ()
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
 
+  if (priv->launch_image_timeout)
+      {
+        g_source_remove(priv->launch_image_timeout);
+        priv->launch_image_timeout = 0;
+      }
   if (priv->launch_image)
     {
-      _hd_launcher_transition_clicked (NULL, NULL, NULL);
+      clutter_timeline_stop(priv->launch_transition);
+
+      g_object_unref(priv->launch_image);
+      priv->launch_image = 0;
     }
 }
 
@@ -598,11 +614,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
       return FALSE;
     }
 
-  if (priv->launch_image)
-    {
-      g_object_unref(priv->launch_image);
-      priv->launch_image = 0;
-    }
+  hd_launcher_stop_loading_transition();
 
   /* App image - if we had one */
   if (loading_image)
@@ -753,6 +765,13 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   hd_transition_play_sound (HDCM_WINDOW_OPENED_SOUND);
   g_free (cached_image);
 
+  /* Add callback for if application loading fails. We don't use the app
+   * launcher signal here as if the icon starts an app that returns
+   * immediately (eg. ls) we don't get a loading failed signal, as
+   * nothing failed (but we don't get a window shown regardless). */
+  priv->launch_image_timeout =
+    g_timeout_add_seconds(10, hd_launcher_transition_loading_timeout, 0);
+
   return launch_anim;
 }
 
@@ -760,15 +779,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
  * screenshot. Either that or we smoothly fade it out... maybe? :) */
 void hd_launcher_window_created(void)
 {
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-
-  if (priv->launch_image)
-  {
-    clutter_timeline_stop(priv->launch_transition);
-
-    g_object_unref(priv->launch_image);
-    priv->launch_image = 0;
-  }
+  hd_launcher_stop_loading_transition();
 }
 
 static void
