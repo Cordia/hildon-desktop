@@ -447,11 +447,30 @@ MBWMStackLayerType
 hd_note_stacking_layer(MBWindowManagerClient *client)
 {
   MBWindowManagerClientClass *parent;
+  Window dialog;
+  MBWindowManager *wm;
 
   if (HD_NOTE (client)->note_type == HdNoteTypeIncomingEvent)
     return MBWMStackLayerUnknown;
 
-  parent = MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
+  /* if there is an application menu and 'application not responding' note,
+   * stack the note above the menu */
+  wm = client->wmref;
+  dialog = hd_wm_get_hung_client_dialog_xid (wm);
+  if (dialog && dialog == client->window->xwindow)
+    {
+      MBWindowManagerClient *c;
+
+      for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
+        {
+          if (mb_wm_client_is_map_confirmed (c) &&
+              MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeAppMenu)
+            return c->stacking_layer;
+        }
+    }
+
+  parent = MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS (
+                                   MB_WM_OBJECT (client)));
   return parent->stacking_layer (client);
 }
 

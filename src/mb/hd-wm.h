@@ -68,6 +68,7 @@ Bool                    hd_wm_activate_zoomed_client (MBWindowManager *wm,
 gboolean                hd_wm_has_modal_blockers (const MBWindowManager *wm);
 gboolean                hd_wm_close_modal_blockers (const MBWindowManager *wm);
 void                    hd_wm_delete_temporaries (MBWindowManager *wm);
+Window                  hd_wm_get_hung_client_dialog_xid (MBWindowManager *wm);
 
 G_END_DECLS
 

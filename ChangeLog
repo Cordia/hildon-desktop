@@ -6,6 +6,18 @@
 	* src/launcher/hd-launcher-grid.c: Set H and V adjustments to 0 at the
 	  start of a transition that first shows a launcher page.
 
+2009-11-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#142324 - UI freezes with HildonAppMenu opened and Close
+	non-responsive dialog appearing
+
+	* src/mb/hd-wm.c (hd_wm_client_hang): Store XID of the hung dialog.
+	* src/mb/hd-note.c (hd_note_stacking_layer): If the hung dialog is
+	being stacked and there is an application menu, stack it above the
+	menu.
+	* src/mb/hd-wm.[ch] (hd_wm_get_hung_client_dialog_xid): New accessor
+	for XID of the hung dialog.
+
 2009-11-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Make the launcher tree population visually quicker.

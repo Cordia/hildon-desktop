@@ -42,6 +42,7 @@
 #include <clutter/x11/clutter-x11.h>
 
 #include <gtk/gtk.h>
+#include <gdk/gdkx.h>
 
 #include <glib/gi18n.h>
 
@@ -76,6 +77,7 @@ static Bool hd_wm_client_activate (
 struct HdWmPrivate
 {
   GtkWidget *hung_client_dialog;
+  Window hung_client_dialog_xid;
 };
 
 int
@@ -289,6 +291,13 @@ hd_wm_client_responding (MBWindowManager *wm,
     }
 }
 
+Window
+hd_wm_get_hung_client_dialog_xid (MBWindowManager *wm)
+{
+  HdWm *hdwm = HD_WM (wm);
+  return hdwm->priv->hung_client_dialog_xid;
+}
+
 static GtkWidget*
 hd_wm_make_dialog (MBWindowManagerClient *client)
 {
@@ -323,6 +332,7 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
 {
   HdWm	    *hdwm = HD_WM (wm);
   GtkWidget *dialog;
+  GdkWindow *gdk_win;
   gint	     response;
 
   g_debug ("%s: entered", __FUNCTION__);
@@ -333,6 +343,12 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
    * so it may be canceled if the client starts responding again.
    */
   hdwm->priv->hung_client_dialog = dialog;
+
+  gtk_widget_realize (dialog);
+  gdk_win = gtk_widget_get_window (dialog);
+  if (gdk_win)
+    hdwm->priv->hung_client_dialog_xid = gdk_x11_drawable_get_xid (gdk_win);
+
   response = gtk_dialog_run (GTK_DIALOG (dialog));
   gtk_widget_destroy (dialog);
   hdwm->priv->hung_client_dialog = NULL;
