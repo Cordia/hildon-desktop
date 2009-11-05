@@ -2803,7 +2803,10 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
     }
 
   if (STATE_NEED_TASK_NAV (hd_render_manager_get_state()))
-    return FALSE;
+    {
+      hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
+      return FALSE;
+    }
 
   /* Hide the Edit button if it is currently shown */
   if (priv->home)
@@ -3112,20 +3115,26 @@ hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr)
   HdCompMgrPrivate *priv = hmgr->priv;
   MBWindowManager *wm;
   Window xwindow;
-  Atom dnd;
-  guint32 *value;
-  gboolean do_not_disturb_flag;
+  gboolean do_not_disturb_flag = FALSE;
 
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   xwindow = hd_wm_current_app_is (NULL, 0);
 
-  dnd = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_DO_NOT_DISTURB);
+  if (xwindow && wm->desktop && xwindow != wm->desktop->window->xwindow)
+    {
+      guint32 *value;
+      Atom dnd;
 
-  value = hd_util_get_win_prop_data_and_validate (wm->xdpy, xwindow,
-                                                  dnd, XA_INTEGER,
-                                                  32, 1, NULL);
+      dnd = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_DO_NOT_DISTURB);
 
-  do_not_disturb_flag = (value && *value == 1);
+      value = hd_util_get_win_prop_data_and_validate (wm->xdpy, xwindow,
+                                                      dnd, XA_INTEGER,
+                                                      32, 1, NULL);
+      do_not_disturb_flag = (value && *value == 1);
+
+      if (value)
+        XFree (value);
+    }
 
   /* Check change */
   if (priv->do_not_disturb_flag != do_not_disturb_flag)
@@ -3135,9 +3144,6 @@ hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr)
 
       hd_dbus_disable_display_blanking (do_not_disturb_flag);
     }
-
-  if (value)
-    XFree (value);
 }
 
 Atom

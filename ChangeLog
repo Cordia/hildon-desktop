@@ -1,5 +1,12 @@
 2009-11-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#145418 - Backlight stays on indefinitely after using Screen
+	calibration
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_restack): Check the DND flag also
+	when bailing out in the beginning of the function.
+	(hd_comp_mgr_check_do_not_disturb_flag): Optimise a bit.
+
 	Release 2.2.114-1
 
 2009-11-04  Gordon Williams <gordon.williams@collabora.co.uk>
