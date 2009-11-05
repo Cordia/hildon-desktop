@@ -1,3 +1,7 @@
+2009-11-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.114-1
+
 2009-11-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Regression fix: Task launcher subview should return to the top every

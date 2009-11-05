@@ -1,11 +1,18 @@
-hildon-desktop (1:2.2.114-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.114-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#142324 - UI freezes with HildonAppMenu opened and Close
     non-responsive dialog appearing
   * Fixes: MB#6039 - Hanging application menu requires system reboot
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  4 Nov 2009 17:04:42 +0200
+  Gordon:
+  * Fixes: NB#143521 - Task launcher (and switcher) panning is broken
+  * Fixes: NB#141640 - Multiple taps not handled during application launch
+  * Fixes: NB#144761 - Transition tweaks
+  * Regression fix: Task launcher subview should return to the top every
+                    time it is viewed.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 05 Nov 2009 15:24:54 +0200
 
 hildon-desktop (1:2.2.113-1) unstable; urgency=low
 
