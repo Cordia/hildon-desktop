@@ -440,42 +440,48 @@ hd_launcher_lazy_traverse_tree (gpointer data)
   HdLauncherItem *item;
   HdLauncherTile *tile;
   HdLauncherPage *page;
+  guint i;
 
-  if (!tdata->items || !tdata->items->data)
-    return FALSE;
-  item = tdata->items->data;
-
-  tile = hd_launcher_tile_new (
-      hd_launcher_item_get_icon_name (item),
-      hd_launcher_item_get_local_name (item));
-
-  /* Find in which page it goes */
-  page = g_datalist_get_data (&priv->pages,
-                              hd_launcher_item_get_category (item));
-  if (!page)
-    /* Put it in the default level. */
-    page = g_datalist_get_data (&priv->pages, HD_LAUNCHER_ITEM_DEFAULT_CATEGORY);
-
-  hd_launcher_page_add_tile (page, tile);
-
-  if (hd_launcher_item_get_item_type(item) == HD_CATEGORY_LAUNCHER)
+  /* We're called back with huge latency so let's batch the work
+   * to cut the overall population time. */
+  for (i = 0; i < 5; i++)
     {
-      g_signal_connect (tile, "clicked",
-                        G_CALLBACK (hd_launcher_category_tile_clicked),
-                        g_datalist_get_data (&priv->pages,
-                          hd_launcher_item_get_id (item)));
-    }
-  else if (hd_launcher_item_get_item_type(item) == HD_APPLICATION_LAUNCHER)
-    {
-      g_signal_connect (tile, "clicked",
-                        G_CALLBACK (hd_launcher_application_tile_clicked),
-                        item);
-    }
+      if (!tdata->items || !tdata->items->data)
+        return FALSE;
+      item = tdata->items->data;
 
-  g_object_unref (G_OBJECT (tdata->items->data));
-  tdata->items = g_list_delete_link (tdata->items, tdata->items);
-  if (!tdata->items)
-    return FALSE;
+      tile = hd_launcher_tile_new (
+          hd_launcher_item_get_icon_name (item),
+          hd_launcher_item_get_local_name (item));
+
+      /* Find in which page it goes */
+      page = g_datalist_get_data (&priv->pages,
+                                  hd_launcher_item_get_category (item));
+      if (!page)
+        /* Put it in the default level. */
+        page = g_datalist_get_data (&priv->pages, HD_LAUNCHER_ITEM_DEFAULT_CATEGORY);
+
+      hd_launcher_page_add_tile (page, tile);
+
+      if (hd_launcher_item_get_item_type(item) == HD_CATEGORY_LAUNCHER)
+        {
+          g_signal_connect (tile, "clicked",
+                            G_CALLBACK (hd_launcher_category_tile_clicked),
+                            g_datalist_get_data (&priv->pages,
+                              hd_launcher_item_get_id (item)));
+        }
+      else if (hd_launcher_item_get_item_type(item) == HD_APPLICATION_LAUNCHER)
+        {
+          g_signal_connect (tile, "clicked",
+                            G_CALLBACK (hd_launcher_application_tile_clicked),
+                            item);
+        }
+
+      g_object_unref (G_OBJECT (tdata->items->data));
+      tdata->items = g_list_delete_link (tdata->items, tdata->items);
+      if (!tdata->items)
+        return FALSE;
+    }
 
   return TRUE;
 }

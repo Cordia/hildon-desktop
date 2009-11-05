@@ -1,3 +1,13 @@
+2009-11-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Make the launcher tree population visually quicker.
+
+	* src/launcher/hd-launcher.c (hd_launcher_lazy_traverse_tree):
+	  Add the tiles in 15-item batches.  When booting this cuts the
+	  tree traversal from >20s to 10-17s (97 .desktop files).
+	  When the device is unloaded the time drop from 10s to 2.6s,
+	  which is useful when hacking the launcher.
+
 2009-11-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#143521 - Task launcher (and switcher) panning is broken
