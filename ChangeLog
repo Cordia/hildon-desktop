@@ -1,3 +1,8 @@
+2009-11-05  Laszlo Pere  <lpere@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c: Handling a special case for the stackable
+	  window. Part of the fix for NB#134010.
+
 2009-11-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#145418 - Backlight stays on indefinitely after using Screen

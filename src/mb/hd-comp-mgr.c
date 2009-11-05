@@ -2449,6 +2449,27 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * stack index. */
       mb_wm_client_theme_change (c);
     }
+  else if (app->leader && app->leader != app && 
+		    app->leader->followers && !topmost) 
+    {
+      ClutterActor *old_actor;
+      HdApp *last_follower;
+     
+      /*
+       * If this window belongs to a window stack, but it is not visible we
+       * still have to do something with it, otherwise it will appear in the 
+       * background.
+       */
+      last_follower = g_list_last (app->leader->followers)->data;
+      old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
+		      MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			      MB_WM_CLIENT (last_follower)->cm_client));
+      g_debug ("%s: REPLACE %p WITH %p and ADD %p BACK", __func__,
+		      old_actor, actor, old_actor);
+      hd_switcher_replace_window_actor (priv->switcher_group, old_actor, actor);
+      hd_switcher_replace_window_actor (priv->switcher_group, actor, old_actor);
+    }
+
 
   if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar)
       && !to_replace && !add_to_tn && topmost)
