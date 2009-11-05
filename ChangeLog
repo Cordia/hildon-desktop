@@ -1,3 +1,11 @@
+2009-11-04  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Regression fix: Task launcher subview should return to the top every
+	                time it is viewed.
+
+	* src/launcher/hd-launcher-grid.c: Set H and V adjustments to 0 at the
+	  start of a transition that first shows a launcher page.
+
 2009-11-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Make the launcher tree population visually quicker.

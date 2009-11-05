@@ -686,6 +686,13 @@ hd_launcher_grid_transition_begin(HdLauncherGrid *grid,
                       hd_launcher_page_get_transition_string(trans_type),
                       "keyframes_icon", "0,1");
         }
+
+      /* Reset adjustments so the view is always back to 0,0 */
+      if (priv->h_adjustment)
+        tidy_adjustment_set_valuex (priv->h_adjustment, 0);
+
+      if (priv->v_adjustment)
+        tidy_adjustment_set_valuex (priv->v_adjustment, 0);
     }
 }
 
