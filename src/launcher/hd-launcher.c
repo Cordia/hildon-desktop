@@ -442,9 +442,9 @@ hd_launcher_lazy_traverse_tree (gpointer data)
   HdLauncherPage *page;
   guint i;
 
-  /* Batch the work in 15 items, which should take ~0.2s
-   * when the device is unloaded. */
-  for (i = 0; i < 15; i++)
+  /* We're called back with huge latency so let's batch the work
+   * to cut the overall population time. */
+  for (i = 0; i < 5; i++)
     {
       if (!tdata->items || !tdata->items->data)
         return FALSE;
