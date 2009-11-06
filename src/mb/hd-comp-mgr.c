@@ -160,6 +160,13 @@ hd_comp_mgr_should_be_portrait_ignoring (HdCompMgr *hmgr,
 
 static void hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr);
 
+static gboolean
+hd_comp_mgr_client_prefers_compositing (MBWindowManagerClient *c);
+
+static gboolean
+hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
+                               gboolean force_re_read);
+
 static MBWMCompMgrClient *
 hd_comp_mgr_client_new (MBWindowManagerClient * client)
 {
@@ -693,7 +700,7 @@ hd_comp_mgr_client_looks_better_composited (MBWindowManagerClient *c)
   return TRUE;
 }
 
-gboolean
+static gboolean
 hd_comp_mgr_client_prefers_compositing (MBWindowManagerClient *c)
 {
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea
@@ -791,9 +798,11 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
                    && !client_non_comp)
             hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
           else if (hd_render_manager_get_state () == HDRM_STATE_APP &&
+                   !hd_transition_is_rotating () &&
 	           client_non_comp && !found)
             hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
           else if (hd_render_manager_get_state () == HDRM_STATE_APP_PORTRAIT &&
+                   !hd_transition_is_rotating () &&
 	           client_non_comp && !found)
             hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
         }
@@ -1663,7 +1672,7 @@ hd_comp_mgr_unredirect_client (MBWindowManagerClient *c)
 }
 
 /* returns TRUE if the client wants non-composited mode */
-gboolean
+static gboolean
 hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
                                gboolean force_re_read)
 {

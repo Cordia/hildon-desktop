@@ -175,11 +175,6 @@ gboolean hd_comp_mgr_is_portrait(void)
   return hd_mb_wm->xdpy_width < hd_mb_wm->xdpy_height;
 }
 
-gboolean 
-hd_comp_mgr_is_non_composited (
-		MBWindowManagerClient *client,
-		gboolean               force_re_read);
-
 static inline gboolean
 hd_comp_mgr_client_is_maximized (MBGeometry geom);
 static inline gboolean
@@ -203,7 +198,6 @@ gint hd_comp_mgr_time_since_last_map(HdCompMgr *hmgr);
 
 void hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr);
 void hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm);
-gboolean hd_comp_mgr_client_prefers_compositing (MBWindowManagerClient *c);
 void hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr);
 
 G_END_DECLS

@@ -1,7 +1,19 @@
+2009-11-06  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Even more fixes to the compositing logic.	
+
+	* src/mb/hd-comp-mgr.[ch]: hd_comp_mgr_client_prefers_compositing and
+	hd_comp_mgr_is_non_composited are now static.
+	(hd_comp_mgr_client_property_changed): Don't go
+	to non-composited mode during rotation.
+	* src/mb/hd-wm.c (hd_wm_activate_zoomed_client): Don't consider
+	transition to non-composited mode here, it's done later.
+
 2009-10-29  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
-	Add X-Maemo-Prestarted-Ignore-Load flag to desktop files. If true, prestart
-	the app as soon as possible without regards to load or memory limits.
+	Add X-Maemo-Prestarted-Ignore-Load flag to desktop files. If true,
+	prestart the app as soon as possible without regards to load or memory
+	limits.
 	Fixes: NB#145331
 
 	* src/launcher/hd-app-mgr.c
