@@ -1679,8 +1679,10 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
 
   if (HD_APP (client)->non_composited_read && !force_re_read)
     {
-      if (HD_APP (client)->non_composited &&
-          client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+      if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen &&
+          (HD_APP (client)->non_composited ||
+           /* non-stackable or the leader */
+           HD_APP (client)->stack_index <= 0))
         return TRUE;
       else
         return FALSE;
@@ -1718,7 +1720,11 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
   else
    {
      HD_APP (client)->non_composited = False;
-     return FALSE;
+     if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen &&
+         HD_APP (client)->stack_index <= 0)
+       return TRUE;
+     else
+       return FALSE;
    }
 }
 
@@ -2744,8 +2750,13 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                   if (!window_on_top)
                     hd_transition_close_app (hmgr, c);
                   else
-                    hd_transition_play_sound (HDCM_WINDOW_CLOSED_SOUND);
+                    {
+                      hd_comp_mgr_reconsider_compositing (mgr);
+                      hd_transition_play_sound (HDCM_WINDOW_CLOSED_SOUND);
+                    }
                 }
+              else
+                hd_comp_mgr_reconsider_compositing (mgr);
             }
           app->map_effect_before = FALSE;
         }

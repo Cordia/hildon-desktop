@@ -1,5 +1,15 @@
 2009-11-06  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#145639 - Non-composite mode should be used for all
+	fullscreen applications
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_is_non_composited): Consider
+	fullscreen applications that are not secondary stackable windows as OK
+	to non-composite, too.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_effect): Call
+	hd_comp_mgr_reconsider_compositing for some missing cases where we
+	don't have a transition that would call it later.
+
 	Add a global variable for some important debug printing. This is
 	mostly needed for verifying compositing mode transitions.
 
