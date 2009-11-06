@@ -1,3 +1,13 @@
+2009-10-29  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Add X-Maemo-Prestarted-Ignore-Load flag to desktop files. If true, prestart
+	the app as soon as possible without regards to load or memory limits.
+	Fixes: NB#145331
+
+	* src/launcher/hd-app-mgr.c
+	* src/launcher/hd-launcher-app.c
+	* src/launcher/hd-launcher-app.h
+
 2009-11-06  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#145154 - Too many XSyncs in window manager causes slowdowns
