@@ -67,7 +67,7 @@
 #define STAMP_DIR          "/tmp/hildon-desktop/"
 #define STAMP_FILE         STAMP_DIR "desktop-started.stamp"
 
-#if 1
+#if 0
 # define PORTRAIT       g_debug
 #else
 # define PORTRAIT(...)  /* NOP */
