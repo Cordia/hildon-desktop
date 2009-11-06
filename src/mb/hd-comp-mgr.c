@@ -675,8 +675,23 @@ hd_comp_mgr_get_current_client (HdCompMgr *hmgr)
   return priv->current_hclient;
 }
 
+static inline gboolean
+hd_comp_mgr_client_looks_better_composited (MBWindowManagerClient *c)
+{
+  if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea
+      || MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeOverride
+      || MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeHomeApplet
+      || HD_IS_INCOMING_EVENT_NOTE (c)
+      /* ...or application that wants non-composited mode */
+      || (HD_IS_APP (c) && hd_comp_mgr_is_non_composited (c, FALSE)))
+    {
+      return FALSE;
+    }
+  return TRUE;
+}
+
 gboolean
-hd_comp_mgr_client_needs_compositing (MBWindowManagerClient *c)
+hd_comp_mgr_client_prefers_compositing (MBWindowManagerClient *c)
 {
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea
       || MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeMenu
@@ -690,22 +705,7 @@ hd_comp_mgr_client_needs_compositing (MBWindowManagerClient *c)
       /* ...or application that wants non-composited mode */
       || (HD_IS_APP (c) && hd_comp_mgr_is_non_composited (c, FALSE)))
     {
-      return FALSE;
-    }
-  return TRUE;
-}
-
-static gboolean
-hd_comp_mgr_client_looks_better_composited (MBWindowManagerClient *c)
-{
-  if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeStatusArea
-      || MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeOverride
-      || MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeHomeApplet
-      || HD_IS_INCOMING_EVENT_NOTE (c)
-      /* ...or application that wants non-composited mode */
-      || (HD_IS_APP (c) && hd_comp_mgr_is_non_composited (c, FALSE)))
-    {
-      return FALSE;
+      return hd_comp_mgr_client_looks_better_composited (c);
     }
   return TRUE;
 }
@@ -774,7 +774,8 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
           gboolean found = FALSE;
           /* check if there is a window above that needs compositing */
           for (tmp = c->stacked_above; tmp; tmp = tmp->stacked_above)
-            if (hd_comp_mgr_client_needs_compositing (tmp))
+            if (mb_wm_client_is_map_confirmed (tmp) &&
+                hd_comp_mgr_client_prefers_compositing (tmp))
               {
                 found = TRUE;
                 break;
@@ -2060,8 +2061,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    */
   if (!HD_IS_INCOMING_EVENT_NOTE(c))
     {
-      if (hd_comp_mgr_client_needs_compositing (c) ||
-          hd_comp_mgr_client_looks_better_composited (c))
+      if (hd_comp_mgr_client_prefers_compositing (c))
         {
           /* TODO: should check that this client really is above the
            * non-composited client */
@@ -2277,7 +2277,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       /* first check that this client is not below some client that needs
        * compositing */
       for (tmp = c->stacked_above; tmp; tmp = tmp->stacked_above)
-        if (hd_comp_mgr_client_needs_compositing (tmp))
+        if (mb_wm_client_is_map_confirmed (tmp) &&
+            hd_comp_mgr_client_prefers_compositing (tmp))
           {
             found = TRUE;
             break;
@@ -2508,8 +2509,7 @@ hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
       /* check if there is a window that wishes composited mode above */
       for (tmp = c->stacked_above; tmp; tmp = tmp->stacked_above)
         if (mb_wm_client_is_map_confirmed (tmp) &&
-            (hd_comp_mgr_client_needs_compositing (tmp) ||
-             hd_comp_mgr_client_looks_better_composited (tmp)))
+            hd_comp_mgr_client_prefers_compositing (tmp))
           {
             found = TRUE;
             break;
@@ -2534,8 +2534,7 @@ hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
           /* check if there is a window that needs composited mode above */
           for (tmp = c->stacked_above; tmp; tmp = tmp->stacked_above)
             if (mb_wm_client_is_map_confirmed (tmp) &&
-                (hd_comp_mgr_client_needs_compositing (tmp) ||
-                 hd_comp_mgr_client_looks_better_composited (tmp)))
+                hd_comp_mgr_client_prefers_compositing (tmp))
               {
                 found = TRUE;
                 break;

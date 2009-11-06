@@ -372,9 +372,10 @@ hd_wm_activate_zoomed_client (MBWindowManager *wm,
   gboolean found = FALSE;
   gboolean ret = wm_class->client_activate (wm, c);
 
-  /* check if there is a window above that needs compositing */
+  /* check if there is a window above that prefers compositing */
   for (tmp = c->stacked_above; tmp; tmp = tmp->stacked_above)
-    if (hd_comp_mgr_client_needs_compositing (tmp))
+    if (mb_wm_client_is_map_confirmed (tmp) &&
+        hd_comp_mgr_client_prefers_compositing (tmp))
       {
         found = TRUE;
         break;

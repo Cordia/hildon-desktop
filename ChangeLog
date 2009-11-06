@@ -1,3 +1,15 @@
+2009-11-06  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	More fixes to the compositing logic.
+
+	* src/mb/hd-comp-mgr.c: Add mb_wm_client_is_map_confirmed call to all
+	compositing inspection code.
+	(hd_comp_mgr_client_needs_compositing): Renamed
+	to hd_comp_mgr_client_prefers_compositing and now includes call to
+	hd_comp_mgr_client_looks_better_composited.
+	* src/mb/hd-wm.c (hd_wm_activate_zoomed_client): Add call to
+	mb_wm_client_is_map_confirmed, since unmapped clients don't count.
+
 2009-11-05  Laszlo Pere  <lpere@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c: Handling a special case for the stackable
