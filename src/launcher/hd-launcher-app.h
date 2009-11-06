@@ -78,6 +78,7 @@ HdLauncherAppPrestartMode  hd_launcher_app_get_prestart_mode (HdLauncherApp *ite
 
 gint hd_launcher_app_get_priority (HdLauncherApp *app);
 gboolean hd_launcher_app_get_ignore_lowmem (HdLauncherApp *app);
+gboolean hd_launcher_app_get_ignore_load   (HdLauncherApp *app);
 
 gboolean hd_launcher_app_match_window (HdLauncherApp *app,
                                        const gchar *res_name,

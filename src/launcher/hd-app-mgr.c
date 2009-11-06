@@ -242,7 +242,7 @@ hd_app_mgr_setup_launch (size_t high_pages,
                          size_t nr_decay_pages,
                          size_t *launch_required_pages);
 static gboolean hd_app_mgr_can_launch   (HdLauncherApp *launcher);
-static gboolean hd_app_mgr_can_prestart (void);
+static gboolean hd_app_mgr_can_prestart (HdLauncherApp *launcher);
 static void     hd_app_mgr_hdrm_state_change (gpointer hdrm,
                                               GParamSpec *pspec,
                                               HdAppMgrPrivate *priv);
@@ -1539,13 +1539,16 @@ hd_app_mgr_can_launch (HdLauncherApp *launcher)
   return !priv->lowmem;
 }
 
-static gboolean hd_app_mgr_can_prestart (void)
+static gboolean hd_app_mgr_can_prestart (HdLauncherApp *launcher)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   if (priv->prestart_mode == PRESTART_ALWAYS)
     return TRUE;
   else if (priv->prestart_mode == PRESTART_NEVER)
     return FALSE;
+
+  if (hd_launcher_app_get_ignore_load (launcher))
+    return TRUE;
 
   if (!hd_app_mgr_check_loadavg ())
     return FALSE;
@@ -1652,10 +1655,12 @@ hd_app_mgr_state_check_loop (gpointer data)
       )
     {
       /* We make this tests here to loop even if we can't prestart right now.*/
-      if (!priv->prestarting && hd_app_mgr_can_prestart ())
+      if (!priv->prestarting)
         {
           HdRunningApp *app = g_queue_peek_head (priv->queues[QUEUE_PRESTARTABLE]);
-          hd_app_mgr_prestart (app);
+          HdLauncherApp *launcher = hd_running_app_get_launcher_app (app);
+          if (launcher && hd_app_mgr_can_prestart (launcher))
+            hd_app_mgr_prestart (app);
         }
       if (!g_queue_is_empty (priv->queues[QUEUE_PRESTARTABLE]))
         loop = TRUE;
