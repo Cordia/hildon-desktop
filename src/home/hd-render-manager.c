@@ -1375,6 +1375,7 @@ static void zoom_out_completed(ClutterActor *actor,
 
 void hd_render_manager_set_state(HDRMStateEnum state)
 {
+  extern gboolean hd_debug_mode_set;
   HdRenderManagerPrivate *priv;
   MBWMCompMgr          *cmgr;
   MBWindowManager      *wm;
@@ -1384,9 +1385,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
   priv = the_render_manager->priv;
   cmgr = MB_WM_COMP_MGR (priv->comp_mgr);
 
-  g_debug("%s: STATE %s -> STATE %s", __FUNCTION__,
-      hd_render_manager_state_str(priv->state),
-      hd_render_manager_state_str(state));
+  if (hd_debug_mode_set)
+    g_warning("%s -> %s", hd_render_manager_state_str(priv->state),
+              hd_render_manager_state_str(state));
+  else
+    g_debug("%s: STATE %s -> STATE %s", __FUNCTION__,
+            hd_render_manager_state_str(priv->state),
+            hd_render_manager_state_str(state));
 
   if (!priv->comp_mgr)
   {

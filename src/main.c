@@ -69,6 +69,7 @@ asm(".string \"built with libmatchbox2 "MBWM_DEB_VERSION"\"");
 asm(".previous");
 #endif
 
+gboolean hd_debug_mode_set = FALSE;
 MBWindowManager *hd_mb_wm = NULL;
 static int hd_clutter_mutex_enabled = FALSE;
 static int hd_clutter_mutex_do_unlock_after_disabling = FALSE;
@@ -265,6 +266,11 @@ dump_debug_info_when_idle (gpointer unused)
 static void
 dump_debug_info_sighand (int unused)
 {
+  if (hd_debug_mode_set)
+    hd_debug_mode_set = FALSE;
+  else
+    hd_debug_mode_set = TRUE;
+
   g_idle_add (dump_debug_info_when_idle, GINT_TO_POINTER (0));
   signal(SIGUSR1, dump_debug_info_sighand);
 }

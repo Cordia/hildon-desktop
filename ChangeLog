@@ -1,5 +1,14 @@
 2009-11-06  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Add a global variable for some important debug printing. This is
+	mostly needed for verifying compositing mode transitions.
+
+	* src/main.c (dump_debug_info_sighand): Toggle new global variable
+	hd_debug_mode_set.
+	* src/home/hd-render-manager.c (hd_render_manager_set_state): If
+	hd_debug_mode_set is TRUE, use g_warning to print out the state
+	transition, otherwise the old g_debug.
+
 	Fix the rotation transition in non-composited mode.
 
 	* src/home/hd-render-manager.c (hd_render_manager_set_state_portrait,
