@@ -34,7 +34,9 @@ hd_util_get_win_prop_data_and_validate (Display   *xdpy,
 
   prop_data = NULL;
 
-  mb_wm_util_trap_x_errors ();
+  /* We don't care about X errors here, because they will be reported
+   * in the return value. */
+  mb_wm_util_async_trap_x_errors (xdpy);
 
   status = XGetWindowProperty (xdpy,
 			       xwin,
@@ -48,8 +50,9 @@ hd_util_get_win_prop_data_and_validate (Display   *xdpy,
 			       &after_ret,
 			       &prop_data);
 
+  mb_wm_util_async_untrap_x_errors ();
 
-  if (mb_wm_util_untrap_x_errors () || status != Success || prop_data == NULL)
+  if (status != Success || prop_data == NULL)
     goto fail;
 
   if (expected_format && format_ret != expected_format)
@@ -472,9 +475,9 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
     }
 
   /* Maybe we needn't bother with errors. */
-  mb_wm_util_trap_x_errors ();
+  mb_wm_util_async_trap_x_errors (wm->xdpy);
   hd_util_flip_input_viewport (wm);
-  mb_wm_util_untrap_x_errors ();
+  mb_wm_util_async_untrap_x_errors ();
 
   return TRUE;
 }
@@ -485,11 +488,11 @@ void
 hd_util_root_window_configured(MBWindowManager *wm)
 {
   /* Deleting this property allows other windows to be reconfigured again. */
-  mb_wm_util_trap_x_errors ();
+  mb_wm_util_async_trap_x_errors (wm->xdpy);
   XDeleteProperty(wm->xdpy, wm->root_win->xwindow,
                   wm->atoms[MBWM_ATOM_MAEMO_SUPPRESS_ROOT_RECONFIGURATION]);
   XSync(wm->xdpy, False);
-  mb_wm_util_untrap_x_errors ();
+  mb_wm_util_async_untrap_x_errors ();
 }
 
 /* Map a portrait @geo to landscape screen or vica versa.
@@ -558,7 +561,7 @@ gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client)
   hmgr = HD_COMP_MGR (wm->comp_mgr);
   atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_OMAP_VIDEO_OVERLAY);
 
-  mb_wm_util_trap_x_errors ();
+  mb_wm_util_async_trap_x_errors (wm->xdpy);
   XGetWindowProperty (wm->xdpy, client->window->xwindow,
                       atom,
                       0, G_MAXLONG,
@@ -574,7 +577,7 @@ gboolean hd_util_client_has_video_overlay(MBWindowManagerClient *client)
       result = prop_return[0];
       XFree (prop_return);
     }
-  mb_wm_util_untrap_x_errors();
+  mb_wm_util_async_untrap_x_errors();
 
   return result;
 }

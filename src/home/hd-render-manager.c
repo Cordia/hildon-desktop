@@ -1126,10 +1126,10 @@ static gboolean hd_render_manager_status_area_clicked(ClutterActor *actor,
         ev.same_screen = True;
         /* send event - trap errors just in case the window has been
          * removed already (very unlikely) */
-        mb_wm_util_trap_x_errors();
+        mb_wm_util_async_trap_x_errors(wm->xdpy);
         XSendEvent(wm->xdpy, c->xwin_modal_blocker, False,
                    ButtonReleaseMask, (XEvent *)&ev);
-        mb_wm_util_untrap_x_errors();
+        mb_wm_util_async_untrap_x_errors();
         /* Now ignore the click on any client below */
         break;
       }

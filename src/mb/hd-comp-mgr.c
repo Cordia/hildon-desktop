@@ -67,7 +67,7 @@
 #define STAMP_DIR          "/tmp/hildon-desktop/"
 #define STAMP_FILE         STAMP_DIR "desktop-started.stamp"
 
-#if 0
+#if 1
 # define PORTRAIT       g_debug
 #else
 # define PORTRAIT(...)  /* NOP */
@@ -243,11 +243,14 @@ hd_comp_mgr_client_get_app_key (HdCompMgrClient *client, HdCompMgr *hmgr)
 
   memset(&class_hint, 0, sizeof(XClassHint));
 
-  mb_wm_util_trap_x_errors ();
+  /* We don't care about X errors here, because they will be reported
+   * in the return value of XGetWindowAttributes */
+  mb_wm_util_async_trap_x_errors (wm->xdpy);
 
   status = XGetClassHint(wm->xdpy, wm_client->window->xwindow, &class_hint);
 
-  if (mb_wm_util_untrap_x_errors () || !status)
+  mb_wm_util_async_untrap_x_errors();
+  if (!status)
     goto out;
 
   app = hd_app_mgr_match_window (class_hint.res_name,
@@ -1066,7 +1069,7 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
   /* check for windows that may have a modal blocker. If anything has one
    * we should NOT grab any part of the screen, except what we really must. */
 
-  mb_wm_util_trap_x_errors ();
+  mb_wm_util_async_trap_x_errors_warn (wm->xdpy, "");
 
   /*g_debug("%s: setting viewport", __FUNCTION__);*/
   if (count > 0 && !hd_wm_has_modal_blockers (wm))
@@ -1148,8 +1151,7 @@ hd_comp_mgr_setup_input_viewport (HdCompMgr *hmgr, ClutterGeometry *geom,
 
 
   XFixesDestroyRegion (wm->xdpy, region);
-  if (mb_wm_util_untrap_x_errors ())
-    g_debug ("%s: X errors", __FUNCTION__);
+  mb_wm_util_async_untrap_x_errors ();
 }
 
 static void
@@ -1695,12 +1697,12 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
 
   atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_NON_COMPOSITED_WINDOW);
 
-  mb_wm_util_trap_x_errors ();
+  mb_wm_util_async_trap_x_errors (wm->xdpy);
   ret = XGetWindowProperty (wm->xdpy, win->xwindow,
                             atom, 0, 1, False,
                             XA_INTEGER, &actual_type, &format,
                             &items, &left, &prop);
-  mb_wm_util_untrap_x_errors ();
+  mb_wm_util_async_untrap_x_errors ();
   if (ret != Success)
     return FALSE;
 
@@ -1750,7 +1752,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
   fix_transiency (client);
   stack_atom = hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_STACKABLE_WINDOW);
 
-  mb_wm_util_trap_x_errors ();
+  mb_wm_util_async_trap_x_errors (wm->xdpy);
   /*
    * XGetWindowProperty() is a synchronization point so any errors reported
    * through the X error handler is most probably due to a bug earlier.
@@ -1764,7 +1766,7 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
                             stack_atom, 0, 1, False,
                             XA_INTEGER, &actual_type, &format,
                             &items, &left, &prop);
-  mb_wm_util_untrap_x_errors ();
+  mb_wm_util_async_untrap_x_errors ();
   if (ret != Success)
     /* Now, the call really failed. */
     return;
@@ -2046,7 +2048,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                    __FUNCTION__);
           mb_wm_client_hide (c);
           mb_wm_client_deliver_delete (c);
-          
+
          if (value)
             XFree (value);
           return;
@@ -2456,15 +2458,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * stack index. */
       mb_wm_client_theme_change (c);
     }
-  else if (app->leader && app->leader != app && 
-		    app->leader->followers && !topmost) 
+  else if (app->leader && app->leader != app &&
+		    app->leader->followers && !topmost)
     {
       ClutterActor *old_actor;
       HdApp *last_follower;
-     
+
       /*
        * If this window belongs to a window stack, but it is not visible we
-       * still have to do something with it, otherwise it will appear in the 
+       * still have to do something with it, otherwise it will appear in the
        * background.
        */
       last_follower = g_list_last (app->leader->followers)->data;
@@ -3358,7 +3360,8 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
   applets = hd_home_view_get_all_applets (HD_HOME_VIEW (
                                           hd_home_get_current_view (home)));
 
-  mb_wm_util_trap_x_errors ();
+
+  mb_wm_util_async_trap_x_errors (MB_WM_COMP_MGR(hmgr)->wm->xdpy);
   /* Handle applets on current view */
   for (a = applets; a; a = a->next)
     {
@@ -3406,7 +3409,5 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
     }
   g_slist_free (views);
 
-  if (hd_mb_wm)
-    XSync (hd_mb_wm->xdpy, False);
-  mb_wm_util_untrap_x_errors ();
+  mb_wm_util_async_untrap_x_errors ();
 }

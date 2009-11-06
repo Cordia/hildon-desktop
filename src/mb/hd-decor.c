@@ -142,7 +142,7 @@ hd_decor_window_check_prop (MBWindowManager *wm, Window w, HdAtoms atom)
   unsigned char* prop_return = NULL;
   int result = 0;
 
-  mb_wm_util_trap_x_errors();
+  mb_wm_util_async_trap_x_errors(wm->xdpy);
   XGetWindowProperty (wm->xdpy, w,
                       progress_indicator,
                       0, G_MAXLONG,
@@ -158,7 +158,7 @@ hd_decor_window_check_prop (MBWindowManager *wm, Window w, HdAtoms atom)
       result = prop_return[0];
       XFree (prop_return);
     }
-  mb_wm_util_untrap_x_errors();
+  mb_wm_util_async_untrap_x_errors();
 
   return result;
 }

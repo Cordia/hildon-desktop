@@ -1,3 +1,21 @@
+2009-11-06  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#145154 - Too many XSyncs in window manager causes slowdowns
+	                   (Along with libmatchbox changes)
+	                   
+	* debian/control: depend on new libmatchbox (> .98)
+	* src/main.c: Initialise the new libmatchbox error handler	                   
+	* src/home/hd-home.c
+	* src/home/hd-render-manager.c
+	* src/home/hd-task-navigator.c
+	* src/mb/hd-comp-mgr.c
+	* src/mb/hd-decor.c
+	* src/mb/hd-note.c
+	* src/mb/hd-wm.c
+	* src/util/hd-util.c: Modify calls to XSync and
+	  mb_wm_util_[un]trap to use mb_wm_util_async_[un]trap instead where
+	  it is possible. 
+
 2009-11-06  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#145639 - Non-composite mode should be used for all

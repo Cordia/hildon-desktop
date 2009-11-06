@@ -507,7 +507,7 @@ hd_wm_current_app_is (MBWindowManager *wm, Window xid)
                   XA_WINDOW, 32, PropModeReplace,
                   (unsigned char *)&xid, 1);
 
-  mb_wm_util_trap_x_errors ();
+  mb_wm_util_async_trap_x_errors (wm->xdpy);
   /* Remove the mirrored property from the previous window */
   if (last != 0 && last != ~0)
     {
@@ -526,7 +526,7 @@ hd_wm_current_app_is (MBWindowManager *wm, Window xid)
                       XA_WINDOW, 32, PropModeReplace,
                       (unsigned char *)&xid, 1);
     }
-  mb_wm_util_untrap_x_errors ();
+  mb_wm_util_async_untrap_x_errors ();
 
   last = xid;
 

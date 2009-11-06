@@ -514,6 +514,9 @@ main (int argc, char **argv)
   mb_wm_theme_set_custom_button_type_func (theme_button_type_func, NULL);
 
   gtk_init (&argc, &argv);
+  /* Initialise the async error handler. Do it after gtk is inited, or gtk
+   * will grab the handler for itself */
+  mb_wm_util_async_x_error_init();
 
   hd_mutex_init ();
 

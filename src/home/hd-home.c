@@ -1469,10 +1469,10 @@ hd_home_client_owns_or_child_xwindow (MBWindowManagerClient *client,
   if (mb_wm_client_owns_xwindow (client, xwindow))
     return TRUE;
 
-  mb_wm_util_trap_x_errors ();
+  mb_wm_util_async_trap_x_errors (client->wmref->xdpy);
   s = XQueryTree (client->wmref->xdpy, client->window->xwindow,
                   &root, &parent, &children, &nchildren);
-  mb_wm_util_untrap_x_errors ();
+  mb_wm_util_async_untrap_x_errors ();
 
   if (!s) return FALSE;
 
