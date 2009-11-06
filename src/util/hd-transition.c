@@ -1555,7 +1555,11 @@ hd_transition_rotating_fsm(void)
             /* No sense resetting the rotating property. */
             hd_transition_rotating_fsm();
           else
-            hd_util_set_rotating_property(Orientation_change.wm, FALSE);
+            {
+              hd_comp_mgr_reconsider_compositing (
+                            Orientation_change.wm->comp_mgr);
+              hd_util_set_rotating_property (Orientation_change.wm, FALSE);
+            }
           break;
         }
     }

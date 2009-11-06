@@ -1666,7 +1666,11 @@ void hd_render_manager_set_state_portrait (void)
   if (the_render_manager->priv->state == HDRM_STATE_APP)
     hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
   else if (the_render_manager->priv->state == HDRM_STATE_NON_COMPOSITED)
-    hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
+    {
+      /* rotate in composited mode */
+      hd_render_manager_set_state (HDRM_STATE_APP);
+      hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+    }
   else
     hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
 }
@@ -1678,7 +1682,11 @@ void hd_render_manager_set_state_unportrait (void)
   if (the_render_manager->priv->state == HDRM_STATE_APP_PORTRAIT)
     hd_render_manager_set_state (HDRM_STATE_APP);
   else if (the_render_manager->priv->state == HDRM_STATE_NON_COMP_PORT)
-    hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+    {
+      /* rotate in composited mode */
+      hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+      hd_render_manager_set_state (HDRM_STATE_APP);
+    }
   else
     hd_render_manager_set_state (HDRM_STATE_HOME);
 }

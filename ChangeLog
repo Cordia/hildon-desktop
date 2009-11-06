@@ -1,5 +1,13 @@
 2009-11-06  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fix the rotation transition in non-composited mode.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state_portrait,
+	hd_render_manager_set_state_unportrait): Make rotation transition in
+	composited mode to keep it nice.
+	* src/util/hd-transition.c (hd_transition_rotating_fsm): Call
+	hd_comp_mgr_reconsider_compositing when the animation is done.
+
 	More fixes to the compositing logic.
 
 	* src/mb/hd-comp-mgr.c: Add mb_wm_client_is_map_confirmed call to all
