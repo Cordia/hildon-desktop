@@ -1692,8 +1692,8 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
     {
       if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen &&
           (HD_APP (client)->non_composited ||
-           /* non-stackable or the leader */
-           HD_APP (client)->stack_index <= 0))
+           /* non-stackable */
+           HD_APP (client)->stack_index < 0))
         return TRUE;
       else
         return FALSE;
@@ -1732,7 +1732,7 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
    {
      HD_APP (client)->non_composited = False;
      if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen &&
-         HD_APP (client)->stack_index <= 0)
+         HD_APP (client)->stack_index < 0)
        return TRUE;
      else
        return FALSE;
