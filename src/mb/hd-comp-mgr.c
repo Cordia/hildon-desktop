@@ -1688,6 +1688,39 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
   if (!HD_IS_APP (client))
     return FALSE;
 
+  wm = client->wmref;
+
+  if (!HD_APP (client)->non_composited_read)
+    {
+      /* check if the window is blacklisted */
+      XClassHint class_hint;
+      memset (&class_hint, 0, sizeof (XClassHint));
+      mb_wm_util_async_trap_x_errors (wm->xdpy);
+      ret = XGetClassHint (wm->xdpy, client->window->xwindow, &class_hint);
+      mb_wm_util_async_untrap_x_errors ();
+
+      if (ret && class_hint.res_class)
+        {
+          if (!strcmp (class_hint.res_class, "Chessui") ||
+              !strcmp (class_hint.res_class, "Mahjong"))
+            {
+              /* g_printerr ("%s: mahjong or chess\n", __func__); */
+              HD_APP (client)->non_composited_read = True;
+              HD_APP (client)->non_composited = False;
+              HD_APP (client)->force_composited = True;
+            }
+        }
+
+      if (class_hint.res_class)
+        XFree (class_hint.res_class);
+
+      if (class_hint.res_name)
+        XFree (class_hint.res_name);
+    }
+
+  if (HD_APP (client)->force_composited)
+    return FALSE;
+
   if (HD_APP (client)->non_composited_read && !force_re_read)
     {
       if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen &&
@@ -1699,7 +1732,6 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
         return FALSE;
     }
 
-  wm = client->wmref;
   hmgr = HD_COMP_MGR (wm->comp_mgr);
   win = client->window;
   prop = NULL;

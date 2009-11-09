@@ -1,5 +1,12 @@
 2009-11-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.116-1
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_is_non_composited): Blacklist
+	Chess and Mahjong based on their WM_CLASS.
+	* src/mb/hd-app.h: Add force_composited member to avoid reading
+	WM_CLASS all the time.
+
 	Release 2.2.115-1
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_is_non_composited): Don't take

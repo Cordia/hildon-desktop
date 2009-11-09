@@ -50,6 +50,7 @@ struct HdApp
   /* cache for the window property */
   Bool         non_composited_read;
   Bool         non_composited;
+  Bool         force_composited;
 
   Window       detransitised_from;  
 };

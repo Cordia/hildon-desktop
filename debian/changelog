@@ -1,6 +1,8 @@
-hildon-desktop (1:2.2.116-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.116-1) unstable; urgency=low
 
-  * foo
+  * Blacklist Chess and Mahjong from non-compositing.
+  * Fixes: NB#145639 - Non-composite mode should be used for all
+    fullscreen applications
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  9 Nov 2009 09:51:36 +0200
 
