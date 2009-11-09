@@ -1,12 +1,24 @@
-hildon-desktop (1:2.2.115-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.115-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#145418 - Backlight stays on indefinitely after using Screen
     calibration
   * Further non-compositing fixes.
   * Add hd_debug_mode_set global variable, toggleable with SIGUSR1.
+  * Fixes: NB#145639 - Non-composite mode should be used for all
+    fullscreen applications
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  5 Nov 2009 15:25:57 +0200
+  Marc:
+  * Fixes: NB#145331 - X-Maemo-Prestarted-Ignore-Load request for prestarted
+    applications
+
+  Gordon:
+  * Fixes: NB#145154 - Too many XSyncs in window manager causes slowdowns
+
+  Laszlo:
+  * Part of the fix for NB#134010.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 09 Nov 2009 09:45:18 +0200
 
 hildon-desktop (1:2.2.114-1) unstable; urgency=low
 

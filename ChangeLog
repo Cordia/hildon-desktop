@@ -1,5 +1,7 @@
 2009-11-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.115-1
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_is_non_composited): Don't take
 	stackable leaders as non-composited either, since later there could be
 	sliding transition from the leader to a secondary.
