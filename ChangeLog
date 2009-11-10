@@ -1,3 +1,12 @@
+2009-11-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	A fix related to NB#143426, this makes HD-emitted button events
+	identical to those sent when HD is not running.
+
+	* src/home/hd-home.c (hd_home_applet_emit_button_release_event,
+	hd_home_applet_emit_button_press_event): Translate coordinates as long
+	as subwindows are found.
+
 2009-11-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.116-1

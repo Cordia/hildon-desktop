@@ -1291,7 +1291,7 @@ hd_home_applet_emit_button_release_event (
 		  xev.x_root, xev.y_root,
 		  &xev.x, &xev.y,
 		  &mywindow);
-  if (mywindow) {
+  while (mywindow) {
     xev.window = mywindow;
     XTranslateCoordinates (wm->xdpy,
 		  xev.root, xev.window,
@@ -1344,7 +1344,7 @@ hd_home_applet_emit_button_press_event (
 		  xev.x_root, xev.y_root,
 		  &xev.x, &xev.y,
 		  &mywindow);
-  if (mywindow) {
+  while (mywindow) {
     xev.window = mywindow;
     XTranslateCoordinates (wm->xdpy,
 		  xev.root, xev.window,
