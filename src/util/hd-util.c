@@ -325,15 +325,6 @@ void hd_util_set_screen_size_properties(MBWindowManager *wm,
   long value[2];
   HdCompMgr *hmgr = HD_COMP_MGR(wm->comp_mgr);
 
-  XChangeProperty(wm->xdpy, wm->root_win->xwindow,
-      hd_comp_mgr_get_atom (hmgr, HD_ATOM_MAEMO_SCREEN_WIDTH),
-                  XA_CARDINAL, 32, PropModeReplace,
-                  (unsigned char *)&width, 1);
-  XChangeProperty(wm->xdpy, wm->root_win->xwindow,
-        hd_comp_mgr_get_atom (hmgr, HD_ATOM_MAEMO_SCREEN_HEIGHT),
-                    XA_CARDINAL, 32, PropModeReplace,
-                    (unsigned char *)&height, 1);
-
   value[0] = width;
   value[1] = height;
   XChangeProperty(wm->xdpy, wm->root_win->hidden_window,

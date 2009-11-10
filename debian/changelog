@@ -5,6 +5,7 @@ hildon-desktop (1:2.2.117-1~unreleased) unstable; urgency=low
     not defocusing in all required use cases
   * A fix related to NB#143426, this makes HD-emitted button events
     identical to those sent when HD is not running.
+  * Remove deprecated MAEMO_SCREEN_WIDTH/HEIGHT properties.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  9 Nov 2009 17:58:48 +0200
 
