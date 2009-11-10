@@ -1,3 +1,13 @@
+2009-11-10  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#144333 - Upper side of "Enter lock code" panel filled with 
+	                   blur application background 
+	                   (and other blurring-related issues)
+	                   
+	* src/home/hd-render-manager.c:	Instead of checking the list of actors
+	  in home blur to see if it has changed, check the list of *visible*
+	  actors.
+
 2009-11-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#143815 - Input field (text entry) widget for desktop widgets

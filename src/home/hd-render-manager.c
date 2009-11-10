@@ -1919,15 +1919,19 @@ void hd_render_manager_restack()
   MBWindowManagerClient *c;
   gboolean past_desktop = FALSE;
   gboolean blur_changed = FALSE;
-  gint i;
+  gint i, n_elements;
   GList *previous_home_blur = 0;
 
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   /* Add all actors currently in the home_blur group */
 
   for (i=0;i<clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));i++)
-    previous_home_blur = g_list_prepend(previous_home_blur,
-        clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i));
+    {
+      ClutterActor *child =
+        clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
+      if (CLUTTER_ACTOR_IS_VISIBLE(child))
+        previous_home_blur = g_list_prepend(previous_home_blur, child);
+    }
 
   /* Order and choose which window actors will be visible */
   for (c = wm->stack_bottom; c; c = c->stacked_above)
@@ -2058,30 +2062,37 @@ void hd_render_manager_restack()
   hd_render_manager_set_visibilities();
 
   /* now compare the contents of home_blur to see if the blur group has
-   * actually changed... */
-  if (g_list_length(previous_home_blur) ==
-      clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur)))
+   * actually changed... We only look at *visible* children, which is
+   * why it is a little complicated. */
+  GList *it;
+  n_elements = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
+  for (i = 0, it = g_list_last(previous_home_blur);
+       (i<n_elements) && it;
+       i++, it=it->prev)
     {
-      GList *it;
-      for (i = 0, it = g_list_last(previous_home_blur);
-           (i<clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur))) && it;
-           i++, it=it->prev)
+      ClutterActor *child =
+          clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
+      /* search for next visible child */
+      while (child && !CLUTTER_ACTOR_IS_VISIBLE(child))
         {
-          ClutterActor *child =
-              clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
-          if (CLUTTER_ACTOR(it->data) != child)
-            {
-              //g_debug("*** RE-BLURRING *** because contents changed at pos %d", i);
-              blur_changed = TRUE;
-              break;
-            }
+          i++;
+          if (i<n_elements)
+            child = clutter_group_get_nth_child(
+                CLUTTER_GROUP(priv->home_blur),i);
+          else
+            child = NULL;
+        }
+      /* now compare children */
+      if (CLUTTER_ACTOR(it->data) != child)
+        {
+          //g_debug("*** RE-BLURRING *** because contents changed at pos %d", i);
+          blur_changed = TRUE;
+          break;
         }
     }
-  else
+  if (it || i<n_elements)
     {
-      /*g_debug("*** RE-BLURRING *** because contents changed size %d -> %d",
-          g_list_length(previous_home_blur),
-          clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur)));*/
+      //g_debug("*** RE-BLURRING *** because contents changed size");
       blur_changed = TRUE;
     }
   g_list_free(previous_home_blur);
