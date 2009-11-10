@@ -1,6 +1,10 @@
 hildon-desktop (1:2.2.117-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#143815 - Input field (text entry) widget for desktop widgets
+    not defocusing in all required use cases
+  * A fix related to NB#143426, this makes HD-emitted button events
+    identical to those sent when HD is not running.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  9 Nov 2009 17:58:48 +0200
 

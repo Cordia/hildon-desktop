@@ -1393,7 +1393,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             hd_render_manager_state_str(priv->state),
             hd_render_manager_state_str(state));
 
-  if (!priv->comp_mgr)
+  if (!cmgr)
   {
     g_warning("%s: HdCompMgr not defined", __FUNCTION__);
     return;
@@ -1419,7 +1419,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           (oldstate == HDRM_STATE_NON_COMP_PORT &&
            state != HDRM_STATE_NON_COMPOSITED))
         {
-	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
+	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (cmgr));
 
           /* redirect and track damage again */
           for (c = wm->stack_top; c; c = c->stacked_below)
@@ -1480,6 +1480,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
               if (state == oldstate)
                 goto out;
             }
+          else
+            /* unfocus any applet */
+            mb_wm_client_focus (cmgr->wm->desktop);
         }
       else
         /* There may not be any rotation in progress in which case this
@@ -1540,9 +1543,17 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
       /* Enter/leave the launcher. */
       if (state == HDRM_STATE_LAUNCHER)
-        hd_launcher_show();
+        {
+          /* unfocus any applet */
+          mb_wm_client_focus (cmgr->wm->desktop);
+          hd_launcher_show();
+        }
       if (oldstate == HDRM_STATE_LAUNCHER)
         hd_launcher_hide();
+
+      if (state == HDRM_STATE_HOME_EDIT)
+        /* unfocus any applet */
+        mb_wm_client_focus (cmgr->wm->desktop);
 
       /* Show/hide the loading image. */
       if (STATE_IS_LOADING(state) &&
@@ -1567,7 +1578,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         mb_wm_handle_show_desktop(wm, STATE_NEED_DESKTOP(state));
 
       if (STATE_SHOW_APPLETS(state) != STATE_SHOW_APPLETS(oldstate))
-        hd_comp_mgr_update_applets_on_current_desktop_property (HD_COMP_MGR (priv->comp_mgr));
+        hd_comp_mgr_update_applets_on_current_desktop_property (
+                                                       HD_COMP_MGR (cmgr));
 
       /* if we have moved away from the home edit dialog mode, then
        * we must make sure there are no home edit dialogs left around */

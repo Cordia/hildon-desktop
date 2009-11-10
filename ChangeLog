@@ -1,5 +1,12 @@
 2009-11-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#143815 - Input field (text entry) widget for desktop widgets
+	not defocusing in all required use cases
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state): Focus
+	the desktop window in case we move to TASK_NAV, HOME_EDIT, or LAUNCHER
+	modes to unfocus any applet.
+
 	A fix related to NB#143426, this makes HD-emitted button events
 	identical to those sent when HD is not running.
 
