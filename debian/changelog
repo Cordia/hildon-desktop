@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.117-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.117-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#143815 - Input field (text entry) widget for desktop widgets
@@ -7,7 +7,14 @@ hildon-desktop (1:2.2.117-1~unreleased) unstable; urgency=low
     identical to those sent when HD is not running.
   * Remove deprecated MAEMO_SCREEN_WIDTH/HEIGHT properties.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  9 Nov 2009 17:58:48 +0200
+  Adam:
+  * Fix a memory leak in hd_launcher_application_tile_clicked.
+
+  Gordon:
+  * Fixes: NB#144333 - Upper side of "Enter lock code" panel filled with
+    blur application background
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Nov 2009 12:57:23 +0200
 
 hildon-desktop (1:2.2.116-1) unstable; urgency=low
 
