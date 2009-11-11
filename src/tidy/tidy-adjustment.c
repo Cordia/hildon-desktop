@@ -44,6 +44,7 @@ struct _TidyAdjustmentPrivate
   ClutterFixed step_increment;
   ClutterFixed page_increment;
   ClutterFixed page_size;
+  ClutterFixed skirt_p, skirt;
 
   /* For interpolation */
   ClutterTimeline *interpolation;
@@ -347,8 +348,9 @@ tidy_adjustment_set_valuex (TidyAdjustment *adjustment,
 
   stop_interpolation (adjustment);
 
-  value = CLAMP (value, priv->lower, MAX (priv->lower,
-                                          priv->upper - priv->page_size));
+  value = CLAMP (value, priv->lower-priv->skirt,
+                        MAX (priv->lower, priv->upper - priv->page_size)
+                          + priv->skirt);
 
   if (priv->value != value)
     {
@@ -378,8 +380,10 @@ tidy_adjustment_clamp_pagex (TidyAdjustment *adjustment,
   
   stop_interpolation (adjustment);
 
-  lower = CLAMP (lower, priv->lower, priv->upper - priv->page_size);
-  upper = CLAMP (upper, priv->lower + priv->page_size, priv->upper);
+  lower = CLAMP (lower, priv->lower-priv->skirt,
+                        priv->upper - priv->page_size);
+  upper = CLAMP (upper, priv->lower + priv->page_size,
+                        priv->upper + priv->skirt);
   
   changed = FALSE;
   
@@ -654,6 +658,33 @@ tidy_adjustment_get_values (TidyAdjustment *adjustment,
 
   if (page_size)
     *page_size = CLUTTER_FIXED_TO_DOUBLE (priv->page_size);
+}
+
+/* Returns the hard bounds of the value of @adjustment. */
+void
+tidy_adjustment_get_skirtx (TidyAdjustment *adjustment,
+                            ClutterFixed   *lowest,
+                            ClutterFixed   *highest)
+{
+  TidyAdjustmentPrivate *priv = adjustment->priv;
+
+  if (lowest)
+    *lowest  = priv->lower - priv->skirt;
+  if (highest)
+    *highest = MAX (priv->lower, priv->upper - priv->page_size) + priv->skirt;
+}
+
+/* The skirt defines the hard bounds of the value of the @adjustment.
+ * Upper and lower are soft bounds, which should be respected, but
+ * not enforced to allow for temporary overshooting. */
+void
+tidy_adjustment_set_skirtx (TidyAdjustment *adjustment,
+                            ClutterFixed    skirt_p)
+{
+  TidyAdjustmentPrivate *priv = adjustment->priv;
+
+  priv->skirt_p = skirt_p;
+  priv->skirt = clutter_qmulx (priv->page_size, skirt_p);
 }
 
 static void

@@ -4,6 +4,21 @@
 
 2009-11-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#142968 Task Launcher list missing rubberband effect
+
+	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_refresh_v_adjustment):
+	  Correct padding at the bottom of the sublauncher and enable
+	  the rubber effect.
+	* src/tidy/tidy-adjustment.c:
+	  Introduced the skirt parameter to allow for temporary overshooting.
+	* src/tidy/tidy-finger-scroll.c:
+	  * motion_event_cb(): removed unnecessary interpolation
+	  * deceleration_new_frame_cb(): redid for rubbing
+	  * decel_rate: changed the meaning to be its inverse
+	    and changed the value from 0.91 to 0.9
+
+2009-11-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Thinko/regression fix/memory leak plug.
 
 	* src/launcher/hd-launcher.c (hd_launcher_application_tile_clicked):

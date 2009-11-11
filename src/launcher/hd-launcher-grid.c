@@ -173,9 +173,15 @@ hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
                            NULL, &clip_y,
                            NULL, &clip_height);
   if (height >= CLUTTER_UNITS_FROM_INT (HD_COMP_MGR_LANDSCAPE_HEIGHT))
-    /* Have the same amount of padding at the bottom as on the top. */
-    height += CLUTTER_UNITS_FROM_INT (HD_LAUNCHER_PAGE_YMARGIN
+    {
+      /* Padding at the bottom. */
+      height += CLUTTER_UNITS_FROM_INT (HD_LAUNCHER_BOTTOM_MARGIN
                                       - HD_LAUNCHER_GRID_ROW_SPACING);
+      tidy_adjustment_set_skirtx (priv->v_adjustment,
+                     clutter_qdivx (CFX_ONE, CLUTTER_INT_TO_FIXED (4)));
+    }
+  else
+    tidy_adjustment_set_skirtx (priv->v_adjustment, 0);
 
   if (clip_height == 0)
     page_height = MIN (CLUTTER_UNITS_TO_FIXED (height),
