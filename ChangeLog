@@ -1,3 +1,13 @@
+2009-11-11  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#144050, NB#146154 : Popup/dialog closing transitions are
+	       occurring even when the window is not visible.
+	       
+	* src/util/hd-util.c/h: Add hd_util_client_obscured, which checks the
+	  windows above the parameter to see if they obscure it or not.
+	* src/mb/hd-comp-mgr.c: Check with hd_util_client_obscured before
+	  starting the unmap transition for dialogs/popups.
+
 2009-11-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.117-1

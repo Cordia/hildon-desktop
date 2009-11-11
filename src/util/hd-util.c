@@ -16,6 +16,8 @@
 #include "hd-transition.h"
 #include "hd-render-manager.h"
 
+#include <gdk/gdk.h>
+
 void *
 hd_util_get_win_prop_data_and_validate (Display   *xdpy,
 					Window     xwin,
@@ -700,6 +702,34 @@ hd_util_partial_redraw_if_possible(ClutterActor *actor, ClutterGeometry *bounds)
     {
       clutter_actor_queue_redraw(stage);
     }
+}
+
+/* Check to see whether clients above this one totally obscure it */
+gboolean hd_util_client_obscured(MBWindowManagerClient *client)
+{
+  GdkRegion *region;
+  MBWindowManagerClient *obscurer;
+  gboolean empty;
+
+  /* Get region representing the current client */
+  region = gdk_region_rectangle((GdkRectangle*)&client->window->geometry);
+
+  /* Subtract the region of all clients above */
+  for (obscurer = client->stacked_above;
+       obscurer && !gdk_region_empty(region);
+       obscurer = obscurer->stacked_above)
+    {
+      GdkRegion *obscure_region =
+          gdk_region_rectangle((GdkRectangle*)&obscurer->window->geometry);
+      gdk_region_subtract(region, obscure_region);
+      gdk_region_destroy(obscure_region);
+    }
+
+  /* If there is nothing left, then this can't
+   * be visible */
+  empty = gdk_region_empty(region);
+  gdk_region_destroy(region);
+  return empty;
 }
 
 

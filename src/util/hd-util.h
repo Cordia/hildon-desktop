@@ -40,6 +40,7 @@ void hd_util_click (const MBWindowManagerClient *c);
 void
 hd_util_partial_redraw_if_possible(ClutterActor *actor, ClutterGeometry *bounds);
 
+gboolean hd_util_client_obscured(MBWindowManagerClient *client);
 
 /* Functions for loading and interpolating from a list of keyframes */
 typedef struct _HdKeyFrameList HdKeyFrameList;
