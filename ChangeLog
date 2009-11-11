@@ -6,7 +6,8 @@
 
 	NB#142968 Task Launcher list missing rubberband effect
 
-	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_refresh_v_adjustment):
+	* src/launcher/hd-launcher-grid.c 
+	(hd_launcher_grid_refresh_v_adjustment):
 	  Correct padding at the bottom of the sublauncher and enable
 	  the rubber effect.
 	* src/tidy/tidy-adjustment.c:

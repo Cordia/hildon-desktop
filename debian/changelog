@@ -9,6 +9,7 @@ hildon-desktop (1:2.2.117-1) unstable; urgency=low
 
   Adam:
   * Fix a memory leak in hd_launcher_application_tile_clicked.
+  * Fixes: NB#142968 - Task Launcher list missing rubberband effect
 
   Gordon:
   * Fixes: NB#144333 - Upper side of "Enter lock code" panel filled with
