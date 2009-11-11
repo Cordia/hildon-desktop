@@ -123,6 +123,13 @@ void            tidy_adjustment_get_valuesx  (TidyAdjustment *adjustment,
                                               ClutterFixed   *step_increment,
                                               ClutterFixed   *page_increment,
                                               ClutterFixed   *page_size);
+void
+tidy_adjustment_get_skirtx                   (TidyAdjustment *adjustment,
+                                              ClutterFixed   *lowest,
+                                              ClutterFixed   *highest);
+void
+tidy_adjustment_set_skirtx                   (TidyAdjustment *adjustment,
+                                              ClutterFixed    skirt_p);
 
 void            tidy_adjustment_interpolate  (TidyAdjustment *adjustment,
                                               gdouble         value,

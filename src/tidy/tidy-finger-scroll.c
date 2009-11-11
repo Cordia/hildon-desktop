@@ -58,6 +58,8 @@ struct _TidyFingerScrollPrivate
   ClutterUnit            dx;
   ClutterUnit            dy;
   ClutterFixed           decel_rate;
+  ClutterFixed           bouncing_decel_rate;
+  ClutterFixed           bounce_back_speed_rate;
 
   /* Variables to fade in/out scroll-bars */
   ClutterEffectTemplate *template;
@@ -215,10 +217,6 @@ motion_event_cb (ClutterActor *actor,
           ClutterFixed dx, dy;
           TidyAdjustment *hadjust, *vadjust;
 
-          guint mfreq = clutter_get_motion_events_frequency ();
-          guint fps = clutter_get_default_frame_rate ();
-          guint n_frames = fps / mfreq;
-
           tidy_scrollable_get_adjustments (TIDY_SCROLLABLE (child),
                                            &hadjust,
                                            &vadjust);
@@ -230,8 +228,6 @@ motion_event_cb (ClutterActor *actor,
           dy = CLUTTER_UNITS_TO_FIXED(motion->y - y) +
                tidy_adjustment_get_valuex (vadjust);
 
-          tidy_adjustment_interpolatex (hadjust, dx, n_frames, fps);
-          tidy_adjustment_interpolatex (vadjust, dy, n_frames, fps);
           tidy_adjustment_set_valuex (hadjust, dx);
           tidy_adjustment_set_valuex (vadjust, dy);
           clutter_actor_queue_redraw( actor );
@@ -330,65 +326,140 @@ deceleration_completed_cb (ClutterTimeline *timeline,
   scroll->priv->deceleration_timeline = NULL;
 }
 
+/*
+ * Returns the next priv->dx or dy.  If we're scrolling normally
+ * (lower <= value <= upper) it's decelerated by decel_rate.
+ * If we're in the danger zone (below lower or above upper)
+ * it's decelerated by bouncing_decel_rate.  If we're boucing back
+ * (we hit lowest or highest or we stopped in the danger zone)
+ * We return the initial bouncing speed, which is based on how
+ * far we are in the danger zone (the distance from lower/upper).
+ */
+static ClutterFixed
+get_next_delta (TidyFingerScroll *scroll,
+                ClutterFixed lowest, ClutterFixed lower,
+                ClutterFixed value, ClutterFixed prevdiff,
+                ClutterFixed upper, ClutterFixed highest)
+{
+  TidyFingerScrollPrivate *priv = scroll->priv;
+  ClutterFixed decel_rate, nextdiff;
+  gboolean in_upper_danger_zone, in_lower_danger_zone;
+
+  in_lower_danger_zone = value < lower;
+  in_upper_danger_zone = value > upper;
+  decel_rate = in_lower_danger_zone || in_upper_danger_zone
+    ? priv->bouncing_decel_rate : priv->decel_rate;
+  nextdiff = clutter_qmulx (prevdiff, decel_rate);
+  if (prevdiff && decel_rate && prevdiff == nextdiff)
+    /* Arithmetic underflow. */
+    nextdiff = prevdiff < 0 ? -CFX_ONE : CFX_ONE;
+
+  if (in_lower_danger_zone)
+    {
+      if (value+nextdiff <= lowest || (-CFX_ONE < nextdiff && nextdiff <= 0))
+        {
+          nextdiff = clutter_qmulx(lower-value, priv->bounce_back_speed_rate);
+          if (!nextdiff)
+            nextdiff = CFX_ONE;
+        }
+    }
+  else if (in_upper_danger_zone)
+    {
+      if (value+nextdiff >= highest || (0 <= nextdiff && nextdiff < CFX_ONE))
+        {
+          nextdiff = clutter_qmulx(upper-value, priv->bounce_back_speed_rate);
+          if (!nextdiff)
+            nextdiff = -CFX_ONE;
+        }
+    }
+
+  return nextdiff;
+}
+
+/* Advances *@valuep by @diff and returns how much it actually advanced. */
+static ClutterFixed
+advance_value (ClutterFixed lowest, ClutterFixed *valuep, ClutterFixed diff,
+               ClutterFixed highest)
+{
+  static const gboolean likeable = FALSE;
+
+  *valuep += diff;
+  if (!likeable)
+    {
+      if (*valuep < lowest)
+        {
+          diff -= *valuep - lowest;
+          *valuep = lowest;
+        }
+      else if (*valuep > highest)
+        {
+          diff -= *valuep - highest;
+          *valuep = highest;
+        }
+    }
+  return diff;
+}
+
+/*
+ * Callback of an indefinite timeline which scrolls @child.
+ * When we began scrolling in button_release_event_cb() its
+ * length is calculated so that it finishes when our speed
+ * drops under 1px/frame under normal scrolling conditions.
+ * However, this doesn't account for bouncing, so we decide
+ * when to stop eventually, and extend our lifetime if necessary.
+ */
 static void
 deceleration_new_frame_cb (ClutterTimeline *timeline,
                            gint frame_num,
                            TidyFingerScroll *scroll)
 {
   TidyFingerScrollPrivate *priv = scroll->priv;
-  ClutterActor *child = tidy_scroll_view_get_child (TIDY_SCROLL_VIEW(scroll));
-  gint i;
+  ClutterActor *child;
+  TidyAdjustment *hadjust, *vadjust;
+  ClutterFixed hvalue, hlowest, hlower, hpage, hupper, hhighest;
+  ClutterFixed vvalue, vlowest, vlower, vpage, vupper, vhighest;
+
+  if (!(child = tidy_scroll_view_get_child (TIDY_SCROLL_VIEW(scroll))))
+    return;
+  tidy_scrollable_get_adjustments (TIDY_SCROLLABLE (child),
+                                   &hadjust, &vadjust);
+
+  tidy_adjustment_get_skirtx (hadjust, &hlowest, &hhighest);
+  tidy_adjustment_get_valuesx (hadjust, &hvalue, &hlower, &hupper,
+                               NULL, NULL, &hpage);
+  hupper -= hpage;
+
+  tidy_adjustment_get_skirtx (vadjust, &vlowest, &vhighest);
+  tidy_adjustment_get_valuesx (vadjust, &vvalue, &vlower, &vupper,
+                               NULL, NULL, &vpage);
+  vupper -= vpage;
+
   /* We need to keep track of how many frames were skipped so we can
    * make up for it... */
-  gint frames = frame_num - priv->deceleration_timeline_lastframe;
-  priv->deceleration_timeline_lastframe = frame_num;
-
-  if (child)
+  for (; priv->deceleration_timeline_lastframe < frame_num;
+       priv->deceleration_timeline_lastframe++)
     {
-      ClutterFixed value, lower, upper, page_size;
-      TidyAdjustment *hadjust, *vadjust;
-      gboolean stop = TRUE;
-
-      tidy_scrollable_get_adjustments (TIDY_SCROLLABLE (child),
-                                       &hadjust,
-                                       &vadjust);
-
-      tidy_adjustment_set_valuex (hadjust,
-                                  priv->dx*frames +
-                                    tidy_adjustment_get_valuex (hadjust));
-      tidy_adjustment_set_valuex (vadjust,
-                                  priv->dy*frames +
-                                    tidy_adjustment_get_valuex (vadjust));
-
-      /* Check if we've hit the upper or lower bounds and stop the timeline */
-      tidy_adjustment_get_valuesx (hadjust, &value, &lower, &upper,
-                                   NULL, NULL, &page_size);
-      if (((priv->dx > 0) && (value < upper - page_size)) ||
-          ((priv->dx < 0) && (value > lower)))
-        stop = FALSE;
-
-      if (stop)
-        {
-          tidy_adjustment_get_valuesx (vadjust, &value, &lower, &upper,
-                                       NULL, NULL, &page_size);
-          if (((priv->dy > 0) && (value < upper - page_size)) ||
-              ((priv->dy < 0) && (value > lower)))
-            stop = FALSE;
-        }
-
-      if (stop)
-        {
-          clutter_timeline_stop (timeline);
-          deceleration_completed_cb (timeline, scroll);
-        }
+      priv->dx = advance_value (hlowest, &hvalue, priv->dx, hhighest);
+      priv->dx = get_next_delta (scroll,
+                   hlowest, hlower, hvalue, priv->dx, hupper, hhighest);
+      priv->dy = advance_value (vlowest, &vvalue, priv->dy, vhighest);
+      priv->dy = get_next_delta (scroll,
+                   vlowest, vlower, vvalue, priv->dy, vupper, vhighest);
     }
+  tidy_adjustment_set_valuex (hadjust, hvalue);
+  tidy_adjustment_set_valuex (vadjust, vvalue);
 
-  /* Just easier that trying to do powers... */
-  for (i=0;i<frames;i++)
-    {
-      priv->dx = clutter_qdivx (priv->dx, priv->decel_rate);
-      priv->dy = clutter_qdivx (priv->dy, priv->decel_rate);
-    }
+  /* Stop the timeline if we don't move anymore,
+   * or extend it if we're running out of frames. */
+  if (   vlower <= vvalue && vvalue <= vupper
+      && -CFX_ONE < priv->dy && priv->dy < CFX_ONE
+      && hlower <= hvalue && hvalue <= hupper
+      && -CFX_ONE < priv->dx && priv->dx < CFX_ONE)
+    /* Not in danger zone and nor moving. */
+    deceleration_completed_cb (timeline, scroll);
+  else if (clutter_timeline_get_n_frames (timeline) < frame_num+60)
+    /* Extend our lifetime. */
+    clutter_timeline_set_n_frames (timeline, frame_num+60);
 }
 
 static gboolean
@@ -499,7 +570,7 @@ button_release_event_cb (ClutterActor *actor,
                */
               x = CLUTTER_FIXED_TO_FLOAT (MAX(ABS(priv->dx), ABS(priv->dy)));
               y = CLUTTER_FIXED_TO_FLOAT (priv->decel_rate);
-              n = logf (x) / logf (y) + 15.0;
+              n = logf (x) * logf (y) + 15.0;
 
               /* Now we have n, adjust dx/dy so that we finish on a step
                * boundary.
@@ -522,7 +593,7 @@ button_release_event_cb (ClutterActor *actor,
                */
 
               /* Get adjustments, work out y^n */
-              a = (1.0 - 1.0 / pow (y, n + 1)) / (1.0 - 1.0 / y);
+              a = (1.0 - pow (y, n + 1)) / (1.0 - y);
 
               /* Solving for dx */
               d = a * CLUTTER_UNITS_TO_FLOAT (priv->dx);
@@ -550,7 +621,7 @@ button_release_event_cb (ClutterActor *actor,
                * boundary (see equations above)
                */
               y = CLUTTER_FIXED_TO_FLOAT (priv->decel_rate);
-              a = (1.0 - 1.0 / pow (y, 4 + 1)) / (1.0 - 1.0 / y);
+              a = (1.0 - pow (y, 4 + 1)) / (1.0 - y);
 
               tidy_adjustment_get_values (hadjust, &value, &lower, NULL,
                                           &step_increment, NULL, NULL);
@@ -725,11 +796,35 @@ tidy_finger_scroll_init (TidyFingerScroll *self)
   ClutterActor *scrollbar;
   ClutterTimeline *effect_timeline;
   TidyFingerScrollPrivate *priv = self->priv = FINGER_SCROLL_PRIVATE (self);
+  ClutterFixed qn;
+  guint i;
 
   priv->motion_buffer = g_array_sized_new (FALSE, TRUE,
                                            sizeof (TidyFingerScrollMotion), 3);
   g_array_set_size (priv->motion_buffer, 3);
-  priv->decel_rate = CLUTTER_FLOAT_TO_FIXED(1.1f);
+  priv->decel_rate = CLUTTER_FLOAT_TO_FIXED(0.99f);
+  priv->bouncing_decel_rate = CLUTTER_FLOAT_TO_FIXED (0.7f);
+
+  /*
+   * @bounce_back_speed_rate :=
+   *   (1-@boucing_decel_rate) / (1-@bouncing_decel_rate^nframes)
+   *   == (1 + 1/@bouncing_decel_rate + 1/@bouncing_decel_rate^2
+   *         + ... + 1/@bouncing_decel_rate^(@nframes-1))^-1
+   *
+   * Where @nframes == frames per half a second.
+   *
+   * When @bounce_back_speed_rate is multiplied with the distance
+   * to be scrolled in @nframes it yields the initial speed.
+   * (@distance == @initial_speed
+   *    * (1-@bouncing_decel_rate^@nframes)/(1-@bouncing_decel_rate)
+   *  solved for @initial_speed.)
+   */
+  qn = CFX_ONE;
+  for (i = (clutter_get_default_frame_rate ()) / 2; i > 0; i--)
+    qn = clutter_qmulx(qn, priv->bouncing_decel_rate);
+  priv->bounce_back_speed_rate = clutter_qdivx (
+                                    CFX_ONE - priv->bouncing_decel_rate,
+                                    CFX_ONE - qn);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
 
