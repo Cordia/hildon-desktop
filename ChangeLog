@@ -1,5 +1,9 @@
 2009-11-11  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/util/hd-util.c: Small safety tweaks for last commit. Just in 
+	  case something is in a strange state, and also changes to avoid
+	  warnings when compiled with -fstrict-aliasing -Wall.
+
 	Fixes: NB#144050, NB#146154 : Popup/dialog closing transitions are
 	       occurring even when the window is not visible.
 	       

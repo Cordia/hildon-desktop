@@ -711,16 +711,22 @@ gboolean hd_util_client_obscured(MBWindowManagerClient *client)
   MBWindowManagerClient *obscurer;
   gboolean empty;
 
+  if (!client->window)
+    return FALSE; /* be safe */
+
   /* Get region representing the current client */
-  region = gdk_region_rectangle((GdkRectangle*)&client->window->geometry);
+  region = gdk_region_rectangle((GdkRectangle*)(void*)&client->window->geometry);
 
   /* Subtract the region of all clients above */
   for (obscurer = client->stacked_above;
        obscurer && !gdk_region_empty(region);
        obscurer = obscurer->stacked_above)
     {
-      GdkRegion *obscure_region =
-          gdk_region_rectangle((GdkRectangle*)&obscurer->window->geometry);
+      GdkRegion *obscure_region;
+      if (!obscurer->window)
+        continue; /* be safe */
+      obscure_region =
+          gdk_region_rectangle((GdkRectangle*)(void*)&obscurer->window->geometry);
       gdk_region_subtract(region, obscure_region);
       gdk_region_destroy(obscure_region);
     }
