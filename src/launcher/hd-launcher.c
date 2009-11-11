@@ -353,7 +353,10 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
   /* We must do this before hd_app_mgr_launch, as it uses the tile
    * clicked in order to zoom the launch image from the correct place */
   if (tile)
-    g_object_add_weak_pointer (G_OBJECT (tile), &priv->launch_tile);
+    {
+      priv->launch_tile = tile;
+      g_object_add_weak_pointer (G_OBJECT (tile), &priv->launch_tile);
+    }
   else
     priv->launch_tile = NULL;
 

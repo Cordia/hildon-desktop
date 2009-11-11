@@ -1,3 +1,12 @@
+2009-11-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Thinko/regression fix/memory leak plug.
+
+	* src/launcher/hd-launcher.c (hd_launcher_application_tile_clicked):
+	  We never remembered the $tile being clicked so we just added the
+	  weak ref but didn't clean it up later and didn't center the explosion
+	  in the icon either.
+
 2009-11-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Remove MAEMO_SCREEN_WIDTH/HEIGHT properties, those were replaced with
