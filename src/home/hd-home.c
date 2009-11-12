@@ -555,7 +555,8 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
   unsigned pretend_fn;
   time_t now;
 
-  if (!STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ()))
+  if (xev->state & ControlMask ||
+      !STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ()))
     return;
 
 /*  g_debug ("%s, display: %p, keymap: %p", __FUNCTION__, display, keymap); */
@@ -605,7 +606,8 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 
       g_unichar_to_utf8 (unicode, buffer);
 
-      g_debug ("%s, digit: keyval: %u, unicode: %u, buffer: %s", __FUNCTION__, keyval, unicode, buffer);
+      g_debug ("%s, digit: keyval: %u, unicode: %u, buffer: %s",
+               __FUNCTION__, keyval, unicode, buffer);
 
       if (priv->call_ui_proxy)
         {
@@ -649,7 +651,8 @@ hd_home_desktop_key_release (XKeyEvent *xev, void *userdata)
   HdHome *home = userdata;
   HdHomePrivate *priv = home->priv;
 
-  if (!STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ())
+  if (xev->state & ControlMask
+      || !STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ())
       || XkbKeycodeToKeysym(clutter_x11_get_default_display(),
                             xev->keycode, 0, 0) != FN_KEY)
     return;

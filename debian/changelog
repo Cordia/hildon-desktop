@@ -1,6 +1,14 @@
 hildon-desktop (1:2.2.118-1~unreleased) unstable; urgency=low
 
-  * foo
+  Gordon:
+  * Fixes: NB#144050 - Closing transition of app menu is on top of the power
+    menu
+  * Fixes: NB#146154 - Dialog present in the background comes up for a
+    fraction of second before moving to the next dialog
+
+  Kimmo:
+  * Fixes: NB#142333 - Ctrl + <char> or Ctrl + <shift> + <char>- Launches
+    the contacts application
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Nov 2009 13:35:52 +0200
 
