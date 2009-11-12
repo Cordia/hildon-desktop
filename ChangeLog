@@ -1,3 +1,11 @@
+2009-11-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Improve TidyFingerScroll overshooting.
+
+	* src/tidy/tidy-finger-scroll.c (button_release_event_cb):
+	  Discard the user's momentum if it's too small under the
+	  circumstances described at initial_speed().
+
 2009-11-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#142333 - Ctrl + <char> or Ctrl + <shift> + <char>- Launches

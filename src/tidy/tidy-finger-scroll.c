@@ -462,6 +462,46 @@ deceleration_new_frame_cb (ClutterTimeline *timeline,
     clutter_timeline_set_n_frames (timeline, frame_num+60);
 }
 
+/*
+ * Figure out the initial speed when we start decelerating.  @diff is
+ * the initial estimate which this function may override if the dhild
+ * widget's position is overshot.  Specifically:
+ *
+ * ========================== top of view ==========================
+ *
+ *
+ *                                 ^
+ *   user dragged the widget below | and pushed with some initial
+ *                        the view | momentum upwards
+ * ------------------------- top of widget -------------------------
+ *
+ * This case if the initial momentum was not enough to bring the widget
+ * to the top of the view, not in any number of frames we discard user's
+ * momentum and return something with which the widget will reach the top
+ * in half a second.  Similarly for the bottom of the widget.  Otherwise
+ * the @diff is returned as is.
+ */
+static ClutterFixed
+initial_speed (TidyFingerScroll *scroll, TidyAdjustment *adjust,
+               ClutterFixed diff)
+{
+  TidyFingerScrollPrivate *priv = scroll->priv;
+  ClutterFixed lower, value, upper, page;
+
+  tidy_adjustment_get_valuesx (adjust, &value, &lower, &upper,
+                               NULL, NULL, &page);
+  upper -= page;
+
+  if (diff > 0 && value < lower
+      && value + clutter_qmulx (diff, 1-priv->bouncing_decel_rate) < lower)
+    return clutter_qmulx(lower-value, priv->bounce_back_speed_rate);
+  else if (diff < 0 && value > upper
+      && value + clutter_qmulx (diff, 1-priv->bouncing_decel_rate) > upper)
+    return clutter_qmulx(upper-value, priv->bounce_back_speed_rate);
+  else
+    return diff;
+}
+
 static gboolean
 button_release_event_cb (ClutterActor *actor,
                          ClutterButtonEvent *event,
@@ -549,6 +589,10 @@ button_release_event_cb (ClutterActor *actor,
           tidy_scrollable_get_adjustments (TIDY_SCROLLABLE (child),
                                            &hadjust,
                                            &vadjust);
+
+          /* Possibly adjust the initial speed if we're overdragged. */
+          priv->dx = initial_speed (scroll, hadjust, priv->dx);
+          priv->dy = initial_speed (scroll, vadjust, priv->dy);
 
           if (ABS(CLUTTER_UNITS_TO_INT(priv->dx)) > 1 ||
               ABS(CLUTTER_UNITS_TO_INT(priv->dy)) > 1)
