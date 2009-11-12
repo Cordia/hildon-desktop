@@ -1,3 +1,11 @@
+2009-11-12  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Workaround for SystemUI's new broken window type
+	
+	* src/mb/hd-atoms.c/h: Add HD_ATOM_NET_WM_WINDOW_TYPE_DND
+	* src/mb/hd-wm.c: Make windows of type _NET_WM_WINDOW_TYPE_DND
+	  into dialogs - because that's what worked for us previously.
+
 2009-11-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Improve TidyFingerScroll overshooting.
