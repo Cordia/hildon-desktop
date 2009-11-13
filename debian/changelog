@@ -1,7 +1,10 @@
-hildon-desktop (1:2.2.119-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.119-1) unstable; urgency=low
 
   Kimmo:
   * Fix a regression with rotation code.
+
+  Marc:
+  * Fixes: NB#146265 - 15 wakeups seen for desktop for 60secs.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 13 Nov 2009 11:06:30 +0200
 
