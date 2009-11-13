@@ -7,7 +7,6 @@
 
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
-#include <X11/extensions/shape.h>
 #include <X11/extensions/Xcomposite.h>
 
 #include "hd-comp-mgr.h"
@@ -227,42 +226,6 @@ hd_util_client_has_modal_blocker (MBWindowManagerClient *c)
       mb_wm_get_modality_type (c->wmref) == MBWMModalitySystem;
 }
 
-/* Queries the current input viewport and flips the coordinates
- * of the rectangles. */
-static void
-hd_util_flip_input_viewport (MBWindowManager *wm)
-{
-  Window win, clwin;
-  XserverRegion region;
-  XRectangle *inputshape;
-  int i, ninputshapes, unused;
-
-  clwin = clutter_x11_get_stage_window (
-                          CLUTTER_STAGE (clutter_stage_get_default ()));
-  inputshape = XShapeGetRectangles(wm->xdpy, clwin,
-                                   ShapeInput, &ninputshapes, &unused);
-  for (i = 0; i < ninputshapes; i++)
-    {
-      XRectangle tmp;
-
-      tmp = inputshape[i];
-      inputshape[i].x = tmp.y;
-      inputshape[i].y = tmp.x;
-      inputshape[i].width = tmp.height;
-      inputshape[i].height = tmp.width;
-    }
-
-  region = XFixesCreateRegion (wm->xdpy, inputshape, ninputshapes);
-  XFree(inputshape);
-
-  win = mb_wm_comp_mgr_clutter_get_overlay_window(
-              MB_WM_COMP_MGR_CLUTTER(wm->comp_mgr));
-  if (win != None)
-    hd_comp_mgr_set_input_viewport_for_window (wm->xdpy, win, region);
-  hd_comp_mgr_set_input_viewport_for_window (wm->xdpy, clwin, region);
-  XFixesDestroyRegion (wm->xdpy, region);
-}
-
 static RRCrtc
 get_primary_crtc (MBWindowManager *wm, XRRScreenResources *res)
 {
@@ -467,10 +430,7 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
       return FALSE;
     }
 
-  /* Maybe we needn't bother with errors. */
-  mb_wm_util_async_trap_x_errors (wm->xdpy);
-  hd_util_flip_input_viewport (wm);
-  mb_wm_util_async_untrap_x_errors ();
+  hd_render_manager_flip_input_viewport();
 
   return TRUE;
 }

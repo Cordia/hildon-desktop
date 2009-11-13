@@ -1,3 +1,19 @@
+2009-11-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Input Viewport tidyup - and now only set it on idle, and only when it
+	has changed.
+	
+	* src/mb/hd-comp-mgr.c
+	* src/mb/hd-comp-mgr.h: refactor hd_comp_mgr_set_input_viewport and
+	  related functions into hd-render-manager.
+	* src/util/hd-util.c: refactor hd_util_flip_input_viewport into 
+	  hd-render-manager.
+	* src/home/hd-render-manager.c
+	* src/home/hd-render-manager.h: Merge hd_comp_mgr_set_input_viewport
+	  into hd_render_manager_set_input_viewport. Use GdkRegion so we can
+	  easily check for equality, and only update the input viewport on
+	  idle, using hd_render_manager_set_compositor_input_viewport_idle.
+
 2009-11-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#142634 Transition of call ui is not proper when changing mode
