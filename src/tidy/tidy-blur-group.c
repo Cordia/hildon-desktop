@@ -7,6 +7,7 @@
  * making this pretty quick. */
 
 #include "tidy-blur-group.h"
+#include "tidy-util.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -438,7 +439,7 @@ tidy_blur_group_paint (ClutterActor *actor)
   /* Draw children into an offscreen buffer */
   if (priv->source_changed && priv->current_blur_step==0)
     {
-      cogl_draw_buffer(COGL_OFFSCREEN_BUFFER, priv->fbo_a);
+      tidy_util_cogl_push_offscreen_buffer(priv->fbo_a);
       cogl_push_matrix();
       /* translate a bit to let bilinear filter smooth out intermediate pixels */
       cogl_translatex(CFX_ONE/2,CFX_ONE/2,0);
@@ -458,7 +459,7 @@ tidy_blur_group_paint (ClutterActor *actor)
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
 
       cogl_pop_matrix();
-      cogl_draw_buffer(COGL_WINDOW_BUFFER, 0);
+      tidy_util_cogl_pop_offscreen_buffer();
 
       priv->source_changed = FALSE;
       priv->current_blur_step = 0;
@@ -472,7 +473,7 @@ tidy_blur_group_paint (ClutterActor *actor)
          steps_this_frame<MAX_STEPS_PER_FRAME)
     {
       /* blur one texture into the other */
-      cogl_draw_buffer(COGL_OFFSCREEN_BUFFER,
+      tidy_util_cogl_push_offscreen_buffer(
                        priv->current_is_a ? priv->fbo_b : priv->fbo_a);
 
       if (priv->use_shader && priv->shader_blur)
@@ -502,7 +503,7 @@ tidy_blur_group_paint (ClutterActor *actor)
 
       if (priv->use_shader && priv->shader_blur)
         clutter_shader_set_is_enabled (priv->shader_blur, FALSE);
-      cogl_draw_buffer(COGL_WINDOW_BUFFER, 0);
+      tidy_util_cogl_pop_offscreen_buffer();
 
       //g_debug("Blurred to %d", priv->current_blur_step);
       priv->current_blur_step++;

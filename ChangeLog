@@ -1,5 +1,17 @@
 2009-11-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Partial fix for NB#143587 - screen goes blank for a while while 
+	                            switching to portrait mode.
+	* src/tidy/tidy-util.c/h: Implement a stack system for GLES FBOs, so
+	  we can switch from rendering from one to another (eg, rendering to
+	  TidyBlurGroup while also rendering to TidyCachedGroup).
+	* src/tidy/tidy-blur-group.c
+	* src/tidy/tidy-cached-group.c: Use the new function
+	  tidy_util_cogl_push/pop_offscreen_buffer instead of specifically
+	  rendering to the window after an offscreen buffer.
+	
+2009-11-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Input Viewport tidyup - and now only set it on idle, and only when it
 	has changed.
 	
