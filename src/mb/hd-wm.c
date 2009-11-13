@@ -71,7 +71,7 @@ static Bool hd_wm_client_hang (MBWindowManager *wm,
 			       MBWindowManagerClient *c);
 
 static Bool hd_wm_client_activate (
-		MBWindowManager * wm,
+		MBWindowManager * wm, 
 		MBWindowManagerClient *c);
 
 struct HdWmPrivate
@@ -207,13 +207,8 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
       g_debug ("### is application ###");
       return hd_app_new (wm, win);
     }
-  else if ((win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DIALOG]) ||
-           (win->net_type ==
-              hd_comp_mgr_get_atom (hmgr, HD_ATOM_NET_WM_WINDOW_TYPE_DND)))
+  else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DIALOG])
     {
-      /* We have to check for _NET_WM_WINDOW_TYPE_DND, because systemUI decided
-       * to give themselves this type for the slider (which makes them an app),
-       * which means everything gets *really* broken. */
       g_debug ("### is dialog ###");
       return hd_dialog_new (wm, win);
     }
@@ -371,7 +366,7 @@ Bool
 hd_wm_activate_zoomed_client (MBWindowManager *wm,
                                      MBWindowManagerClient *c)
 {
-  MBWindowManagerClass *wm_class =
+  MBWindowManagerClass *wm_class = 
     MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
   gboolean ret = wm_class->client_activate (wm, c);
 
@@ -381,11 +376,11 @@ hd_wm_activate_zoomed_client (MBWindowManager *wm,
   return ret;
 }
 
-static Bool
-hd_wm_client_activate (MBWindowManager * wm,
+static Bool 
+hd_wm_client_activate (MBWindowManager * wm, 
                        MBWindowManagerClient *c)
 {
-  MBWindowManagerClass *wm_class =
+  MBWindowManagerClass *wm_class = 
     MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
   gboolean ret;
 
@@ -545,7 +540,7 @@ hd_wm_close_modal_blockers (const MBWindowManager *wm)
 	  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE(client);
           if (c_type == MBWMClientTypeMenu ||
 		    c_type == HdWmClientTypeAppMenu ||
-		    c_type == HdWmClientTypeStatusMenu)
+		    c_type == HdWmClientTypeStatusMenu) 
 	    {
 		has_blocker = TRUE;
 	    } else {
@@ -558,14 +553,14 @@ hd_wm_close_modal_blockers (const MBWindowManager *wm)
    * If there were no modal blockers we can return, if there was we close them
    * all.
    */
-  if (!has_blocker)
+  if (!has_blocker) 
     {
       return TRUE;
     } else {
       for (client = wm->stack_top; client && client != wm->desktop;
-	   client=client->stacked_below)
+	   client=client->stacked_below) 
         {
-          if (hd_util_client_has_modal_blocker(client))
+          if (hd_util_client_has_modal_blocker(client)) 
 	    mb_wm_client_deliver_delete (client);
 	}
 
