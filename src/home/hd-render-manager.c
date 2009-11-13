@@ -2136,7 +2136,7 @@ void hd_render_manager_restack()
     hd_render_manager_blurred_changed();
 
   /* update our fixed title bar at the top of the screen */
-  hd_title_bar_update_now(priv->title_bar);
+  hd_title_bar_update(priv->title_bar);
 }
 
 static void hd_render_manager_update_blur_state()

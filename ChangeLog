@@ -21,9 +21,8 @@
 	* src/home/hd-title_bar.c (hd_title_bar_update_now):
 	  New function to call force an update, cancelling any queued
 	  requests.
-	* src/home/hd-render-manager.c (hd_render_manager_restack):
-	  Force the title bar to be updated right at the point of
-	  restacking before hdrm is frozen by hd_transition_rotating_fsm().
+	* src/util/hd-transition.c (hd_transition_rotating_fsm):
+	  Force the title bar to be updated hdrm is frozen.
 
 2009-11-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 

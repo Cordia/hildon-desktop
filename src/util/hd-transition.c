@@ -1402,6 +1402,8 @@ hd_transition_rotating_fsm(void)
          * launching phone app from the launcher */
         if (hd_render_manager_get_previous_state()==HDRM_STATE_LAUNCHER)
           clutter_actor_hide(hd_render_manager_get_status_area());
+        else /* Less super hack to not show wrong title while rotating. */
+          hd_title_bar_update_now(HD_TITLE_BAR(hd_render_manager_get_title_bar()));
         /* Force redraw for screenshot *now*, before windows have a
          * chance to change */
         clutter_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
