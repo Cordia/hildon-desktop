@@ -459,8 +459,10 @@ hd_wm_determine_current_app (MBWindowManager *wm)
         return c;
       if (!HD_IS_APP (c))
         continue;
-      if (mb_wm_client_is_map_confirmed (c)
-          && !hd_comp_mgr_client_is_maximized (c->frame_geometry))
+      if (!mb_wm_client_is_map_confirmed (c))
+        /* unmapped client cannot be current */
+        continue;
+      if (!hd_comp_mgr_client_is_maximized (c->frame_geometry))
         /* Not covering the whole application area. */
         continue;
       if (!c->window)

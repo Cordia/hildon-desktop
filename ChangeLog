@@ -1,3 +1,12 @@
+2009-11-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_reconsider_compositing): Make sure
+	we go composited if the desktop window is the current client.
+	Unredirect lower of two non-composited windows if it's not yet
+	unredirected when the upper one unmaps.
+	* src/mb/hd-wm.c (hd_wm_determine_current_app): Do not choose unmapped
+	client as current application.
+
 2009-11-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Improve TidyFingerScroll overshooting.

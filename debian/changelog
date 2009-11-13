@@ -9,6 +9,7 @@ hildon-desktop (1:2.2.118-1~unreleased) unstable; urgency=low
   Kimmo:
   * Fixes: NB#142333 - Ctrl + <char> or Ctrl + <shift> + <char>- Launches
     the contacts application
+  * Fix problems with the latest 'Swipe to Unlock' window.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Nov 2009 13:35:52 +0200
 

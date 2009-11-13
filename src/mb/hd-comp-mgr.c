@@ -2575,7 +2575,9 @@ hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
   else if (hdrm_state == HDRM_STATE_NON_COMPOSITED ||
            hdrm_state == HDRM_STATE_NON_COMP_PORT)
     {
-      if (c && c != mgr->wm->desktop)
+      if (c && c == mgr->wm->desktop)
+        hd_render_manager_set_state (HDRM_STATE_HOME);
+      else if (c)
         {
           MBWindowManagerClient *tmp;
           gboolean found = FALSE;
@@ -2596,6 +2598,12 @@ hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
               else
                 hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
             }
+          /* this is for the case of two clients on top of each other,
+           * where the top client is unredirected and unmapped but the
+           * lower client is not unredirected yet */
+          else if (hd_comp_mgr_is_non_composited (c, FALSE) && c->cm_client &&
+                 !mb_wm_comp_mgr_clutter_client_is_unredirected (c->cm_client))
+            hd_comp_mgr_unredirect_client (c);
         }
       else /* no application -> we should be composited */
         {
