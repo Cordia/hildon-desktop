@@ -2136,7 +2136,7 @@ void hd_render_manager_restack()
     hd_render_manager_blurred_changed();
 
   /* update our fixed title bar at the top of the screen */
-  hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
+  hd_title_bar_update_now(priv->title_bar);
 }
 
 static void hd_render_manager_update_blur_state()
@@ -2686,7 +2686,7 @@ void hd_render_manager_place_titlebar_elements (void)
     clutter_actor_set_x(priv->operator, HD_COMP_MGR_OPERATOR_PADDING + x);
 
   /* Force title bar to update the title/progress indicator position */
-  hd_title_bar_update(priv->title_bar, MB_WM_COMP_MGR(priv->comp_mgr));
+  hd_title_bar_update(priv->title_bar);
 }
 
 void hd_render_manager_blurred_changed()

@@ -480,7 +480,6 @@ static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c,
 static Bool hd_comp_mgr_client_property_changed (XPropertyEvent *event,
                                                  HdCompMgr *hmgr);
 static Bool hd_comp_mgr_portrait_forecast (MBWindowManager *wm);
-static HdCompMgrClient *hd_comp_mgr_get_current_client (HdCompMgr *hmgr);
 
 int
 hd_comp_mgr_class_type ()
@@ -677,7 +676,7 @@ hd_comp_mgr_destroy (MBWMObject *obj)
     g_source_remove (priv->stack_sync);
 }
 
-static HdCompMgrClient *
+HdCompMgrClient *
 hd_comp_mgr_get_current_client (HdCompMgr *hmgr)
 {
   HdCompMgrPrivate * priv = hmgr->priv;
@@ -3171,7 +3170,7 @@ hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr)
     return;
 
   /*
-   * Change state if necessate:
+   * Change state if necessary:
    * APP <=> APP_PORTRAIT and HOME <=> HOME_PORTRAIT
    */
   if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state ()))

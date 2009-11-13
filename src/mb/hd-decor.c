@@ -366,7 +366,7 @@ void hd_decor_sync(HdDecor *decor)
 
   bar = HD_TITLE_BAR(hd_render_manager_get_title_bar());
   if (bar && hd_title_bar_is_title_bar_decor(bar, mbdecor))
-    hd_title_bar_update(bar, client->wmref->comp_mgr);
+    hd_title_bar_update(bar);
 
   theme = client->wmref->theme;
 

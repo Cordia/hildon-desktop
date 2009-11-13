@@ -1,3 +1,30 @@
+2009-11-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#142634 Transition of call ui is not proper when changing mode
+		  from landscape to portrait
+
+	Partial fix, covring the 1st issue.
+
+	We queued hd_title_bar_update()s and by the time it ran hdrm was
+	frozen by the rotation transition, and it used an outdated client
+	anyway.
+
+	Now use an always up-to-date client and force an update before
+	the rotation transition begins.
+
+	* src/home/hd-title-bar.c (hd_title_bar_update):
+	  Do no longer bother to figure out the current client on its own,
+	  but leave it up to hd_title_bar_update_idle().
+	* src/home/hd-title_bar.c (hd_title_bar_update_idle):
+	  Use hd_comp_mgr_get_current_client() rather than figuring it out
+	  by hand.
+	* src/home/hd-title_bar.c (hd_title_bar_update_now):
+	  New function to call force an update, cancelling any queued
+	  requests.
+	* src/home/hd-render-manager.c (hd_render_manager_restack):
+	  Force the title bar to be updated right at the point of
+	  restacking before hdrm is frozen by hd_transition_rotating_fsm().
+
 2009-11-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.118-1
