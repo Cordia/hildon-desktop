@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.119-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fix a regression with rotation code.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 13 Nov 2009 11:06:30 +0200
 

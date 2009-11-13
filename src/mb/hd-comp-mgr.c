@@ -167,6 +167,8 @@ static gboolean
 hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
                                gboolean force_re_read);
 
+static MBWindowManagerClient *hd_comp_mgr_determine_current_app (void);
+
 static MBWMCompMgrClient *
 hd_comp_mgr_client_new (MBWindowManagerClient * client)
 {
@@ -1369,7 +1371,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                 { g_warning("%s:%u: what am i doing here?",
                             __FUNCTION__, __LINE__);
                   MBWindowManagerClient *current_client =
-                          hd_wm_determine_current_app (mgr->wm);
+                          hd_comp_mgr_determine_current_app ();
 
                   if (STATE_IS_APP (hd_render_manager_get_state ()) &&
                       MB_WM_CLIENT_CLIENT_TYPE (current_client) &
@@ -2542,11 +2544,41 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
 }
 
+static MBWindowManagerClient *
+hd_comp_mgr_determine_current_app ()
+{
+  extern MBWindowManager *hd_mb_wm;
+  MBWindowManagerClient *c;
+
+  /* Select the topmost client that is either the desktop
+   * or a %HdApp with full screen coverage. */
+  for (c = hd_mb_wm->stack_top; c; c = c->stacked_below)
+    {
+      if (MB_WM_CLIENT_CLIENT_TYPE (c) & MBWMClientTypeDesktop)
+        return c;
+      if (!HD_IS_APP (c))
+        continue;
+      if (mb_wm_client_is_unmap_confirmed (c))
+        continue; 
+      if (!mb_wm_client_is_map_confirmed (c) &&
+          !hd_comp_mgr_client_is_maximized (c->frame_geometry))
+        /* Not covering the whole application area. */
+        continue;
+      if (!c->window)
+        continue;
+      if (c->window->name && !g_strncasecmp (c->window->name, "systemui", 8))
+        /* systemui is not an application. */
+        continue;
+      return c;
+    }
+  return hd_mb_wm->desktop;
+}
+
 void
 hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
 {
   HDRMStateEnum hdrm_state = hd_render_manager_get_state ();
-  MBWindowManagerClient *c = hd_wm_determine_current_app (mgr->wm);
+  MBWindowManagerClient *c = hd_comp_mgr_determine_current_app ();
 
   if (c && c != mgr->wm->desktop &&
       (hdrm_state == HDRM_STATE_APP || hdrm_state == HDRM_STATE_APP_PORTRAIT)
@@ -2907,7 +2939,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
       && !hd_transition_rotation_will_change_state ())
     {
       MBWindowManagerClient *current_client =
-                              hd_wm_determine_current_app (mgr->wm);
+                              hd_comp_mgr_determine_current_app ();
 
       HdCompMgrClient *new_current_hclient =
         HD_COMP_MGR_CLIENT (current_client->cm_client);

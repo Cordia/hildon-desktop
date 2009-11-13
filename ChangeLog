@@ -1,5 +1,13 @@
 2009-11-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fix a regression with rotation code.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_determine_current_app): New
+	function to replace hd_wm_determine_current_app. Uses the new
+	unmap_confirmed API in libmatchbox2.
+	* src/mb/hd-wm.[ch] (hd_wm_determine_current_app): Moved to
+	hd-comp-mgr.c.
+
 	Release 2.2.118-1
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_reconsider_compositing): Make sure
