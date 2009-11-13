@@ -1,5 +1,12 @@
 2009-11-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#145616 - Non composite window becomes topmost and appears in
+	p-mode for a while if call ui in p-mode is closed in a mentioned
+	scenario.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_reconsider_compositing): Don't go
+	to non-composited mode if we are in middle of rotation transition.
+
 	Release 2.2.119-1
 
 2009-11-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>

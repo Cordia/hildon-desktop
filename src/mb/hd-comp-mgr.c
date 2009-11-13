@@ -2580,7 +2580,7 @@ hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
   HDRMStateEnum hdrm_state = hd_render_manager_get_state ();
   MBWindowManagerClient *c = hd_comp_mgr_determine_current_app ();
 
-  if (c && c != mgr->wm->desktop &&
+  if (c && c != mgr->wm->desktop && !hd_transition_is_rotating () &&
       (hdrm_state == HDRM_STATE_APP || hdrm_state == HDRM_STATE_APP_PORTRAIT)
       && hd_comp_mgr_is_non_composited (c, FALSE))
     {

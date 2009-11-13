@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.120-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#145616 - Non composite window becomes topmost and appears in
+    p-mode for a while if call ui in p-mode is closed in a mentioned scenario.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 13 Nov 2009 15:47:25 +0200
 
