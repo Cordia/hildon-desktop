@@ -273,6 +273,10 @@ void hd_render_manager_remove_input_blocker(void);
  * Should be used sparingly - Only exported for HdTitleBar currently. */
 void hd_render_manager_set_input_viewport(void);
 
+/* Rotates the current inout viewport - called on rotate, so we can route
+  * events to the right place, even before everything has properly resized. */
+void hd_render_manager_flip_input_viewport(void);
+
 /* Check how long ago the last window was mapped. If it was very
  * recent then most likely it was mapped before the dbus signal arrived. */
 gboolean hd_render_manager_allow_dbus_launch_transition(void);
