@@ -434,3 +434,43 @@ hd_launcher_tree_find_item (HdLauncherTree *tree, const gchar *id)
     return res->data;
   return NULL;
 }
+
+#define MENU_CONTENTS "<!DOCTYPE Menu PUBLIC \"-//freedesktop//DTD Menu 1.0//EN\"\n" \
+                      " \"http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd\">\n\n" \
+                      "<Menu>\n" \
+                      "\t<Name>Main</Name>\n" \
+                      "\t<MergeFile type=\"parent\">/etc/xdg/menus/hildon.menu</MergeFile>\n" \
+                      "\t<AppDir>%s/applications/hildon</AppDir>\n" \
+                      "\t<DirectoryDir>%s/applications/hildon</DirectoryDir>\n\n" \
+                      "\t<MergeDir>hildon/</MergeDir>\n" \
+                      "</Menu>\n"
+#define CREATE_MODE (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
+
+void
+hd_launcher_tree_ensure_user_menu (void)
+{
+  gchar *menu_filename, *menu_dirname;
+
+  menu_dirname = g_build_filename (g_get_user_config_dir (),
+                                   "menus","hildon", NULL);
+  if (!g_file_test (menu_dirname, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
+    {
+      if (g_mkdir_with_parents (menu_dirname, CREATE_MODE))
+        {
+          g_warning ("%s: Couldn't create dir %s", __FUNCTION__, menu_dirname);
+          return;
+        }
+    }
+
+  menu_filename = g_build_filename (g_get_user_config_dir (),
+                                    "menus", HILDON_DESKTOP_APPLICATIONS_MENU,
+                                    NULL);
+  if (!g_file_test (menu_filename, G_FILE_TEST_EXISTS))
+    {
+      GString *menu = g_string_new (NULL);
+      g_string_printf (menu, MENU_CONTENTS,
+                       g_get_user_data_dir (),
+                       g_get_user_data_dir ());
+      g_file_set_contents (menu_filename, menu->str, -1, NULL);
+    }
+}

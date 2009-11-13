@@ -1,3 +1,13 @@
+2009-11-13  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Ensure that the user's hildon.menu file is present and has the correct
+	contents.
+	Fixes: NB#146265
+
+	* src/launcher/hd-app-mgr.c
+	* src/launcher/hd-launcher-tree.c
+	* src/launcher/hd-launcher-tree.h
+
 2009-11-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fix a regression with rotation code.
