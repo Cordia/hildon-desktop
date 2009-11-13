@@ -83,8 +83,8 @@ GType hd_title_bar_get_type (void) G_GNUC_CONST;
 void hd_title_bar_set_state(HdTitleBar *bar,
                             HdTitleBarVisEnum button);
 HdTitleBarVisEnum hd_title_bar_get_state(HdTitleBar *bar);
-void
-hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm);
+void hd_title_bar_update(HdTitleBar *bar);
+void hd_title_bar_update_now(HdTitleBar *bar);
 
 void hd_title_bar_set_loading_title   (HdTitleBar *bar,
                                        const char *title);

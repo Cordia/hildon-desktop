@@ -189,8 +189,8 @@ struct _HdTitleBarPrivate
   /* Do we show the menu indicator? This isn't included in state because
    * it could be unwillingly cleared by calls to set_state */
   gboolean               has_menu_indicator;
-  /* The current client we are displaying a title bar for */
-  MBWindowManagerClient *current_client;
+  /* GSource id of the delayed hd_title_bar_update_idle() callback. */
+  guint                  update_title_bar;
 };
 
 /* HdHomeThemeButtonBack, MBWMDecorButtonClose */
@@ -628,7 +628,7 @@ void hd_title_bar_set_state(HdTitleBar *bar,
     return;
 
   bar->priv->state = button;
-  hd_title_bar_update(bar, NULL);
+  hd_title_bar_update(bar);
 }
 
 HdTitleBarVisEnum hd_title_bar_get_state(HdTitleBar *bar)
@@ -1093,18 +1093,14 @@ void hd_title_bar_set_loading_title   (HdTitleBar *bar,
     g_free(priv->loading_title);
   priv->loading_title = g_strdup(title);
 
-  hd_title_bar_update(bar, 0);
+  hd_title_bar_update(bar);
 }
 
 static gboolean
 hd_title_bar_update_idle(HdTitleBar *bar)
 {
-  HdTitleBarPrivate *priv;
+  HdTitleBarPrivate *priv = bar->priv;
   HdTitleBarVisEnum old_state;
-
-  if (!HD_IS_TITLE_BAR(bar))
-    return FALSE;
-  priv = bar->priv;
 
   old_state = priv->current_state;
   priv->current_state = priv->state;
@@ -1121,8 +1117,20 @@ hd_title_bar_update_idle(HdTitleBar *bar)
     }
   else
     {
-      hd_title_bar_set_window(bar, bar->priv->current_client);
-      clutter_actor_set_reactive (bar->priv->title_bg, FALSE);
+      MBWindowManagerClient *c;
+
+      if (STATE_IS_APP (hd_render_manager_get_state ()))
+        {
+          extern MBWindowManager *hd_mb_wm;
+          HdCompMgr *cmgr = HD_COMP_MGR(hd_mb_wm->comp_mgr);
+          HdCompMgrClient *cclient = hd_comp_mgr_get_current_client(cmgr);
+          c = cclient ? MB_WM_COMP_MGR_CLIENT(cclient)->wm_client : NULL;
+        }
+      else
+        c = NULL;
+
+      hd_title_bar_set_window(bar, c);
+      clutter_actor_set_reactive(bar->priv->title_bg, FALSE);
     }
 
   /* If anything that might change the position of the status area to change
@@ -1135,55 +1143,33 @@ hd_title_bar_update_idle(HdTitleBar *bar)
    * we must now update the input viewport */
   hd_render_manager_set_input_viewport();
 
-  /* If something did ask us to be called back, remove the loop... */
-  g_idle_remove_by_data(bar);
   /* This is only for this idle callback, so don't leave it dangling */
+  priv->update_title_bar = 0;
   return FALSE;
 }
 
 void
-hd_title_bar_update(HdTitleBar *bar, MBWMCompMgr *wmcm)
+hd_title_bar_update(HdTitleBar *bar)
 {
-  HdTitleBarPrivate *priv;
+  HdTitleBarPrivate *priv = bar->priv;
 
-  if (!HD_IS_TITLE_BAR(bar))
-    return;
-  priv = bar->priv;
+  if (!priv->update_title_bar)
+    /* Add idle callback. This MUST be higher priority than Clutter timelines
+     * (D+30) or we won't set our title bar up correctly until after any running
+     * transitions have stopped. */
+    priv->update_title_bar = g_idle_add_full(G_PRIORITY_DEFAULT+20,
+                                  (GSourceFunc)hd_title_bar_update_idle,
+                                  bar, NULL);
+}
 
-  if (wmcm)
-    {
-      if (STATE_IS_APP(hd_render_manager_get_state()))
-        {
-          MBWindowManagerClient *client;
-          /* find the topmost application above the desktop, and use this
-           * for setting our title - or have NULL */
-          client = wmcm->wm->stack_top;
-          while (client)
-            {
-              MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE(client);
-              if (c_type == MBWMClientTypeApp)
-                break;
-              if (c_type == MBWMClientTypeDesktop)
-                {
-                  client = 0;
-                  break;
-                }
-              client = client->stacked_below;
-            }
-          priv->current_client = client;
-        }
-      else
-        priv->current_client = 0;
-    }
+void
+hd_title_bar_update_now(HdTitleBar *bar)
+{
+  HdTitleBarPrivate *priv = bar->priv;
 
-  /* Remove any existing callback */
-  g_idle_remove_by_data(bar);
-  /* Add idle callback. This MUST be higher priority than Clutter timelines
-   * (D+30) or we won't set our title bar up correctly until after any running
-   * transitions have stopped. */
-  g_idle_add_full(G_PRIORITY_DEFAULT+20,
-                  (GSourceFunc)hd_title_bar_update_idle,
-                  bar, NULL);
+  if (priv->update_title_bar)
+    g_source_remove(priv->update_title_bar);
+  hd_title_bar_update_idle(bar);
 }
 
 /* Is the given decor one we should consider for a title bar? */
