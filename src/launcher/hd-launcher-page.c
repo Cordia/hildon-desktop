@@ -66,10 +66,6 @@ struct _HdLauncherPagePrivate
 
   HdLauncherPageTransition transition_type;
   ClutterTimeline *transition;
-  /* Timeline works by signals, so we get horrible flicker if we ask it if it
-   * is playing right after saying _start() - so we have a boolean to figure
-   * out for ourselves */
-  gboolean         transition_playing;
 
   /* When the user clicks and drags more than a certain amount, we want
    * to deselect what they had clicked on - so we must keep track of
@@ -237,12 +233,7 @@ hd_launcher_page_constructed (GObject *object)
   priv->grid = hd_launcher_grid_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->scroller),
                                priv->grid);
-  priv->transition = clutter_timeline_new_for_duration (1000);
-  g_signal_connect (priv->transition, "new-frame",
-                    G_CALLBACK (hd_launcher_page_new_frame), object);
-  g_signal_connect (priv->transition, "completed",
-                    G_CALLBACK (hd_launcher_page_transition_end), object);
-  priv->transition_playing = FALSE;
+  priv->transition = 0;
 
   /* Add callbacks for de-selecting an icon after the user has moved
    * their finger more than a certain amount */
@@ -370,12 +361,12 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
     return;
   /* check for the case where we're launching and then hiding, and just use
    * the launching animation */
-  if (clutter_timeline_is_playing(priv->transition) &&
+  if (priv->transition &&
       priv->transition_type == HD_LAUNCHER_PAGE_TRANSITION_LAUNCH &&
       trans_type == HD_LAUNCHER_PAGE_TRANSITION_OUT)
     return;
   /* if we were already playing, stop the animation */
-  if (priv->transition_playing)
+  if (priv->transition)
     hd_launcher_page_transition_stop(page);
   /* Reset all the tiles in the grid, so they don't have any blurring */
   hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid));
@@ -399,17 +390,17 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
          break;
   }
 
-  clutter_timeline_pause(priv->transition);
-  clutter_timeline_rewind(priv->transition);
-
-  clutter_timeline_set_duration(priv->transition,
+  priv->transition = g_object_ref(clutter_timeline_new_for_duration(
       hd_transition_get_int(
-          hd_launcher_page_get_transition_string(priv->transition_type),
-          "duration",
-          500 /* default value */));
-
+                hd_launcher_page_get_transition_string(priv->transition_type),
+                "duration",
+                500 /* default value */)));
+  g_signal_connect (priv->transition, "new-frame",
+                    G_CALLBACK (hd_launcher_page_new_frame), page);
+  g_signal_connect (priv->transition, "completed",
+                    G_CALLBACK (hd_launcher_page_transition_end), page);
+                    
   clutter_timeline_start(priv->transition);
-  priv->transition_playing = TRUE;
 
   /* force a call to lay stuff out before it gets drawn properly */
   hd_launcher_page_new_frame(priv->transition, 0, page);
@@ -424,14 +415,10 @@ void hd_launcher_page_transition_stop(HdLauncherPage *page)
 
   priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
 
-  if (priv->transition_playing)
-    {
-      gint frames;
-      /* force a call to lay stuff out as if the transition has ended */
-      frames = clutter_timeline_get_n_frames(priv->transition);
-      hd_launcher_page_new_frame(priv->transition, frames, page);
-      hd_launcher_page_transition_end(priv->transition, page);
-    }
+  if (priv->transition) {
+    clutter_timeline_stop(priv->transition);
+    hd_launcher_page_transition_end(priv->transition, page);
+  }
 }
 
 static void
@@ -483,6 +470,11 @@ hd_launcher_page_transition_end(ClutterTimeline *timeline,
   if (!HD_IS_LAUNCHER_PAGE(data))
     return;
 
+  if (priv->transition) {
+    g_object_unref(priv->transition);
+    priv->transition = 0;
+  }
+
   hd_launcher_grid_transition(HD_LAUNCHER_GRID(priv->grid),
                               page,
                               priv->transition_type,
@@ -506,8 +498,6 @@ hd_launcher_page_transition_end(ClutterTimeline *timeline,
          clutter_actor_hide(CLUTTER_ACTOR(page));
          break;
   }
-
-  priv->transition_playing = FALSE;
 }
 
 ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page)

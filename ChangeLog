@@ -1,3 +1,14 @@
+2009-11-13  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#138307 - Task launcher appears empty
+
+	* src/home/hd-render-manager.c: Removed un-needed commented out code
+	* src/launcher/hd-launcher-page.c: Bring timeline code more in line
+	  with the rest of HD - remove the transition_playing bool
+	* src/launcher/hd-launcher.c: Real fix - Show *after* we start the
+	  transition, as ending an ongoing transition causes the whole 
+	  launcher to be hidden.
+
 2009-11-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#142634 Transition of call ui is not proper when changing mode

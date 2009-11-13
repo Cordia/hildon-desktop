@@ -1048,11 +1048,6 @@ void hd_render_manager_sync_clutter_after ()
                              CLUTTER_ACTOR(priv->home_blur));
       hd_render_manager_blurred_changed();
     }
-
-  /* The launcher transition should hide the launcher, so we shouldn't
-   * need this.
-  if (priv->state != HDRM_STATE_LAUNCHER)
-    clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));*/
 }
 
 /* ------------------------------------------------------------------------- */
