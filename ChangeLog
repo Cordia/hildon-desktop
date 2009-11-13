@@ -1,5 +1,7 @@
 2009-11-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.118-1
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_reconsider_compositing): Make sure
 	we go composited if the desktop window is the current client.
 	Unredirect lower of two non-composited windows if it's not yet
