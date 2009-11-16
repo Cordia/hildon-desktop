@@ -1,5 +1,13 @@
 2009-11-16  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Another regression fix.
+	
+	* src/util/hd-transition.c: Restrict update_now even further, as going
+	  from phone->task_nav causes the previous condition to be true, which
+	  updates the title bar with the wrong size buttons.
+
+2009-11-16  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Minor regression fix and transition tweak.
 
 	* src/util/hd-transition.c: Make sure we only update the title when
