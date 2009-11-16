@@ -103,12 +103,6 @@
 
 2009-11-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-	* src/mb/hd-comp-mgr.c (hd_comp_mgr_is_non_composited):
-	  Don't blacklist the games anymore from being non-composited.
-	  Depends on libsdl1.2 1.2.13-2maemo7.
-
-2009-11-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
-
 	NB#142634 Transition of call ui is not proper when changing mode
 		  from landscape to portrait
 
