@@ -1398,11 +1398,19 @@ hd_transition_rotating_fsm(void)
           CLUTTER_ACTOR(hd_render_manager_get()), 1);
         tidy_cached_group_set_downsampling_factor(
           CLUTTER_ACTOR(hd_render_manager_get()), 1);
+        /* Stop displaying the loading screenshot, which was displayed
+         * as a small square just over the icon when launching phone
+         *  */
+        hd_render_manager_set_loading(NULL);
         /* FIXME: Super massive extra large hack to remove status area when
          * launching phone app from the launcher */
         if (hd_render_manager_get_previous_state()==HDRM_STATE_LAUNCHER)
           clutter_actor_hide(hd_render_manager_get_status_area());
-        else /* Less super hack to not show wrong title while rotating. */
+        else if (STATE_IS_APP(hd_render_manager_get_previous_state()) &&
+                 STATE_IS_APP(hd_render_manager_get_state()))
+          /* Less super hack to not show wrong title while rotating - eg from
+           * calculator to phone. We must only do it in this case, as if going
+           * phone->desktop we will kill the title bar too soon. */
           hd_title_bar_update_now(HD_TITLE_BAR(hd_render_manager_get_title_bar()));
         /* Force redraw for screenshot *now*, before windows have a
          * chance to change */

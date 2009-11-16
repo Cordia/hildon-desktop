@@ -1,3 +1,13 @@
+2009-11-16  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Minor regression fix and transition tweak.
+
+	* src/util/hd-transition.c: Make sure we only update the title when
+	  going from app->app (stops title disappearing when phone app is
+	  closed). Also remove loading screen image on rotation, which
+	  stops the small black square appearing when launching the phone
+	  app from the launcher.
+
 2009-11-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/launcher/hd-launcher-page.c (hd_launcher_page_transition):
