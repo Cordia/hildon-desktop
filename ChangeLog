@@ -1,3 +1,9 @@
+2009-11-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/launcher/hd-launcher-page.c (hd_launcher_page_transition):
+	"g_object_ref(clutter_timeline_new_for_duration" means refcount of 2,
+	don't do it.
+
 2009-11-13  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Partial fix for NB#143587 - screen goes blank for a while while 

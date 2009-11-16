@@ -390,11 +390,11 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
          break;
   }
 
-  priv->transition = g_object_ref(clutter_timeline_new_for_duration(
+  priv->transition = clutter_timeline_new_for_duration(
       hd_transition_get_int(
                 hd_launcher_page_get_transition_string(priv->transition_type),
                 "duration",
-                500 /* default value */)));
+                500 /* default value */));
   g_signal_connect (priv->transition, "new-frame",
                     G_CALLBACK (hd_launcher_page_new_frame), page);
   g_signal_connect (priv->transition, "completed",
