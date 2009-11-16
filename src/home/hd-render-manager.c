@@ -768,7 +768,8 @@ void hd_render_manager_sync_clutter_before ()
     ~(HDTB_VIS_BTN_LEFT_MASK |
       HDTB_VIS_BTN_RIGHT_MASK | HDTB_VIS_FOREGROUND |
       HDTB_VIS_SMALL_BUTTONS);
-  HDRMBlurEnum blur = 0;
+  /* We only care about keeping the BLUR_BACKGROUND flag correct */
+  HDRMBlurEnum blur = priv->current_blur & HDRM_BLUR_BACKGROUND;
   gboolean blurred_changed = FALSE;
 
   if (STATE_SHOW_APPLETS(priv->state))
