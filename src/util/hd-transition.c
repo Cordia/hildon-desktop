@@ -109,12 +109,30 @@ static struct
 
   /*
    * What is *_fsm() currently doing:
-   * -- #IDLE:      nothing, we're sitting in landscape or portrait
-   * -- #TRANS_START: we're hoping to be called back on idle to start the
-   *                  animation
-   * -- #FADE_OUT:  hd_transition_fade_and_rotate() is fading out
-   * -- #WAITING:   for X to finish reconfiguring the screen
-   * -- #FADE_IN:   second hd_transition_fade_and_rotate() is in progress
+   * -- #IDLE:
+   *    Nothing, we're sitting in landscape or portrait.
+   *    Freeze the display and start reconfiguring the windows.
+   * -- #TRANS_START:
+   *    Windows reconfigured, start fading.
+   * -- #FADE_OUT:
+   *    Faded out to blankness, reconfigure the screen and wait until
+   *    X is done.
+   * -- #WAIT_FOR_ROOT_CONFIG:
+   *    The root window is reconfigured, the screen is now officially
+   *    in portrait.  Wait for a while for the initial application
+   *    updates until thawing the display.
+   * -- #WAIT_FOR_DAMAGES:
+   *    Damage done, start fading in.
+   * -- #FADE_IN:
+   *    Mission complete.
+   * -- #RECOVER:
+   *    This is a special phase, not reached normally.  We only get here
+   *    if the direction changed during the transition to IDLE->TRANS_START.
+   *    Then we proceed to #FADE_IN.
+   *
+   * The FSM tries to do the right thing when it's instructed to change
+   * direction in the middle of the transition, so the phases may jump
+   * from here to there.
    */
   enum
   {
@@ -123,14 +141,16 @@ static struct
     FADE_OUT,
     WAIT_FOR_ROOT_CONFIG,
     WAIT_FOR_DAMAGES,
+    RECOVER,
     FADE_IN,
   } phase;
 
   /*
    * @goto_state when we've %FADE_OUT:d.  Set by
    * hd_transition_rotate_screen_and_change_state()
-   * Its initial value is %HDRM_STATE_UNDEFINED, which means don't
-   * change the state. */
+   * Its initial value is %HDRM_STATE_UNDEFINED,
+   * which means don't change the state.
+   */
   HDRMStateEnum goto_state;
 
   gulong root_config_signal_id;
@@ -1399,8 +1419,7 @@ hd_transition_rotating_fsm(void)
         tidy_cached_group_set_downsampling_factor(
           CLUTTER_ACTOR(hd_render_manager_get()), 1);
         /* Stop displaying the loading screenshot, which was displayed
-         * as a small square just over the icon when launching phone
-         *  */
+         * as a small square just over the icon when launching phone */
         hd_render_manager_set_loading(NULL);
         /* FIXME: Super massive extra large hack to remove status area when
          * launching phone app from the launcher */
@@ -1430,12 +1449,20 @@ hd_transition_rotating_fsm(void)
         g_idle_add((GSourceFunc)(hd_transition_rotating_fsm), NULL);
         break;
       case TRANS_START:
-        /* Fade to black ((c) Metallica) */
-        Orientation_change.phase = FADE_OUT;
-        hd_transition_fade_and_rotate(
-                        TRUE, Orientation_change.direction == GOTO_PORTRAIT,
-                        G_CALLBACK(hd_transition_rotating_fsm), NULL);
-        break;
+        if (Orientation_change.direction == Orientation_change.new_direction)
+          {
+            /* Fade to black ((c) Metallica) */
+            Orientation_change.phase = FADE_OUT;
+            hd_transition_fade_and_rotate(
+                            TRUE, Orientation_change.direction == GOTO_PORTRAIT,
+                            G_CALLBACK(hd_transition_rotating_fsm), NULL);
+            break;
+          }
+        else
+          {
+            Orientation_change.direction = Orientation_change.new_direction;
+            goto trans_start_error;
+          }
       case FADE_OUT:
         /*
          * We're faded out, now it is time to change HDRM state
@@ -1498,6 +1525,7 @@ hd_transition_rotating_fsm(void)
         /* Fall through */
       case WAIT_FOR_ROOT_CONFIG:
       case WAIT_FOR_DAMAGES:
+trans_start_error:
         if (Orientation_change.direction != Orientation_change.new_direction)
           {
             if (Orientation_change.root_config_signal_id)
@@ -1528,8 +1556,8 @@ hd_transition_rotating_fsm(void)
                   hd_transition_damage_timer_destroyed);
             Orientation_change.phase = WAIT_FOR_DAMAGES;
           }
-        else /* WAIT_FOR_DAMAGES || FADE_OUT error path */
-          { /* Fade back in */
+        else /* WAIT_FOR_DAMAGES || FADE_OUT error path || TRANS_START error */
+          {
             /* We must update the layout again so the window sizes
              * return to normal relative to the screen. flags is probably
              * already correct. But just for safety. */
@@ -1538,18 +1566,41 @@ hd_transition_rotating_fsm(void)
                         Orientation_change.direction == GOTO_PORTRAIT ? 800 : 480);
             Orientation_change.wm->flags &= ~MBWindowManagerFlagLayoutRotated;
             mb_wm_layout_update(Orientation_change.wm->layout);
-            /* Undo the redraw stopping that happened in FADE_OUT */
-            Orientation_change.phase = FADE_IN;
-            clutter_actor_set_allow_redraw(
-                            CLUTTER_ACTOR(hd_render_manager_get()), TRUE);
-            clutter_actor_show(CLUTTER_ACTOR(hd_render_manager_get()));
-            hd_transition_fade_and_rotate(
-                    FALSE, Orientation_change.direction == GOTO_PORTRAIT,
-                    G_CALLBACK(hd_transition_rotating_fsm), NULL);
-            /* Fix NB#117109 by re-evaluating what is blurred and what isn't */
-            hd_render_manager_restack();
+            if (Orientation_change.phase > TRANS_START)
+              { /* Fade back in */
+                /* Undo the redraw stopping that happened in FADE_OUT */
+                Orientation_change.phase = FADE_IN;
+                clutter_actor_set_allow_redraw(
+                                CLUTTER_ACTOR(hd_render_manager_get()), TRUE);
+                clutter_actor_show(CLUTTER_ACTOR(hd_render_manager_get()));
+                hd_transition_fade_and_rotate(
+                        FALSE, Orientation_change.direction == GOTO_PORTRAIT,
+                        G_CALLBACK(hd_transition_rotating_fsm), NULL);
+                /* Fix NB#117109 by re-evaluating what is blurred and what isn't */
+                hd_render_manager_restack();
+              }
+            else
+              {
+                /*
+                 * Direction changed in TRANS_START.  Half of what IDLE did
+                 * is already undone, but the blur group is still frozen.
+                 * Let's wait a bit until the windows are reconfigured again,
+                 * then toast it.
+                 */
+                Orientation_change.phase = RECOVER;
+                g_idle_add((GSourceFunc)(hd_transition_rotating_fsm), NULL);
+              }
           }
         break;
+      case RECOVER:
+        /* Thaw the blur group.  Only from the TRANS_START error path can we
+         * get here. */
+        tidy_cached_group_changed(CLUTTER_ACTOR(hd_render_manager_get()));
+        tidy_cached_group_set_render_cache(
+                                  CLUTTER_ACTOR(hd_render_manager_get()), 0);
+        tidy_cached_group_set_downsampling_factor(
+                                  CLUTTER_ACTOR(hd_render_manager_get()), 0);
+        /* Fall through */
       case FADE_IN:
         {
           ClutterActor *actor;

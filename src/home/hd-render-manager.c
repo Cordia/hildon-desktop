@@ -1406,12 +1406,19 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
           if (!goto_tasw_now)
             {
-              /* It may not be very intuitive what we're doing if in APP state
+              /*
+               * It may not be very intuitive what we're doing if in APP state
                * you have a sysmodal and hit CTRL-Backspace (we go to HOME),
-               * but whatever. */
+               * but whatever.  Try to stick with portrait if we were there
+               * and hope that we will recover if we eventually shouldn't.
+               * This is to avoid a visible rountrip to p->l->p if we should.
+               */
               state = priv->state =
                 goto_tasw_later && oldstate == HDRM_STATE_APP_PORTRAIT
-                  ? HDRM_STATE_APP : HDRM_STATE_HOME;
+                  ? HDRM_STATE_APP
+                  : STATE_IS_PORTRAIT (oldstate)
+                    ? HDRM_STATE_HOME_PORTRAIT
+                    : HDRM_STATE_HOME;
               g_debug("you must have meant STATE %s -> STATE %s",
                       hd_render_manager_state_str(oldstate),
                       hd_render_manager_state_str(state));

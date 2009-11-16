@@ -1,3 +1,27 @@
+2009-11-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#145921 [PR1.1 proposal] UI shows turning effect while receive call
+		  in between blocks game
+
+	The topmost window is unmapped while the incoming call dialog is shown.
+	This caused us to leave for HOME, landscape.  Later on we recovered
+	and went back to portrait but too late (for the tester).  Now try to
+	avoid that and go to HOME_PORTRAIT instead.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  Consider going to HOME_PORTRAIT instead of HOME if someone
+	  asked me to go to TASK_NAV but we figured we couldn't.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client):
+	  Ask hdrm to go to TASK_NAV unconfitionally and let it decide
+	  where to go in the end.
+	* src/util/hd-transition.c (Orientation_change):
+	  Documentation update.  New phase RECOVER.
+	* src/util/hd-transition.c (hd_transition_rotating_fsm):
+	  Go to RECOVER if we're interrupted while waiting for TRANS_START.
+	  Then reconfigure the windows back to the previous orientation.
+	  Keep the blur group frozen until it's done.  This is to reduce
+	  the possibility of visible glitches due to such interruption.
+
 2009-11-16  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Minor regression fix and transition tweak.
