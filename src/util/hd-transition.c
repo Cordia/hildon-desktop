@@ -1425,11 +1425,13 @@ hd_transition_rotating_fsm(void)
          * launching phone app from the launcher */
         if (hd_render_manager_get_previous_state()==HDRM_STATE_LAUNCHER)
           clutter_actor_hide(hd_render_manager_get_status_area());
-        else if (STATE_IS_APP(hd_render_manager_get_previous_state()) &&
-                 STATE_IS_APP(hd_render_manager_get_state()))
+        else if (hd_render_manager_get_previous_state()==HDRM_STATE_APP &&
+                 hd_render_manager_get_state()==HDRM_STATE_APP_PORTRAIT)
           /* Less super hack to not show wrong title while rotating - eg from
            * calculator to phone. We must only do it in this case, as if going
-           * phone->desktop we will kill the title bar too soon. */
+           * phone->desktop we will kill the title bar too soon. Or if going
+           * phone->task_nav (which sets state to APP first) the buttons are
+           * the wrong size. */
           hd_title_bar_update_now(HD_TITLE_BAR(hd_render_manager_get_title_bar()));
         /* Force redraw for screenshot *now*, before windows have a
          * chance to change */
