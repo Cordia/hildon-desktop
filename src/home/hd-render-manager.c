@@ -27,7 +27,10 @@
 
 #include "hd-render-manager.h"
 
+#include <gdk/gdk.h>
 #include <clutter/clutter.h>
+#include <clutter/x11/clutter-x11.h>
+#include <X11/extensions/shape.h>
 
 #include "tidy/tidy-blur-group.h"
 
@@ -211,6 +214,12 @@ struct _HdRenderManagerPrivate {
   gboolean            timeline_playing;
 
   gboolean            in_set_state;
+
+  /* We only update the input viewport on idle to attempt to reduce the
+   * amount of calls to the X server. */
+  GdkRegion           *current_input_viewport;
+  GdkRegion           *new_input_viewport;
+  guint                input_viewport_callback;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -747,72 +756,6 @@ gboolean hd_render_manager_actor_is_visible(ClutterActor *actor)
   return TRUE;
 }
 
-void
-hd_render_manager_set_input_viewport()
-{
-  ClutterGeometry geom[HDRM_BUTTON_COUNT + 1];
-  int geom_count = 0;
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
-  gboolean app_mode = STATE_IS_APP(priv->state);
-
-  if (!STATE_NEED_WHOLE_SCREEN_INPUT(priv->state) &&
-      !priv->has_input_blocker)
-    {
-      gint i;
-      /* Now look at what buttons we have showing, and add each visible button X
-       * to the X input viewport. We unfortunately have to ignore
-       * HDRM_BUTTON_BACK in app mode, because matchbox wants to pick them up
-       * from X */
-      for (i = 1; i <= HDRM_BUTTON_COUNT; i++)
-        {
-          ClutterActor *button;
-          button = hd_render_manager_get_button((HDRMButtonEnum)i);
-          if (button &&
-              hd_render_manager_actor_is_visible(button) &&
-              (CLUTTER_ACTOR_IS_REACTIVE(button)) &&
-              (i!=HDRM_BUTTON_BACK || !app_mode))
-            {
-              clutter_actor_get_geometry (button, &geom[geom_count]);
-              geom_count++;
-            }
-        }
-
-      /* Block status area?  If so refer to the client geometry,
-       * because we might be right after a place_titlebar_elements()
-       * which could just have moved it. */
-      if ((STATE_IS_PORTRAIT (priv->state) && priv->status_area
-           && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area))
-          /* also in the case of "dialog blur": */
-          || (STATE_ONE_OF(priv->state, HDRM_STATE_APP|HDRM_STATE_APP_PORTRAIT)
-              && priv->status_area
-              && hd_render_manager_actor_is_visible(priv->status_area)
-              /* FIXME: the following check does not work when there are
-               * two levels of dialogs */
-              && (priv->current_blur == HDRM_BLUR_BACKGROUND ||
-                  priv->current_blur == HDRM_BLUR_HOME)))
-        {
-          g_assert(priv->status_area_client);
-          const MBGeometry *src = &priv->status_area_client->frame_geometry;
-          ClutterGeometry *dst = &geom[geom_count++];
-          dst->x = src->x;
-          dst->y = src->y;
-          dst->width  = src->width;
-          dst->height = src->height;
-        }
-    }
-  else
-    {
-      /* g_warning ("%s: get the whole screen!", __func__); */
-      geom[0].x = 0;
-      geom[0].y = 0;
-      geom[0].width = hd_comp_mgr_get_current_screen_width ();
-      geom[0].height = hd_comp_mgr_get_current_screen_height ();
-      geom_count = 1;
-    }
-
-  hd_comp_mgr_setup_input_viewport(priv->comp_mgr, geom, geom_count);
-}
-
 /* The syncing with clutter that is done before a transition */
 static
 void hd_render_manager_sync_clutter_before ()
@@ -1048,11 +991,6 @@ void hd_render_manager_sync_clutter_after ()
                              CLUTTER_ACTOR(priv->home_blur));
       hd_render_manager_blurred_changed();
     }
-
-  /* The launcher transition should hide the launcher, so we shouldn't
-   * need this.
-  if (priv->state != HDRM_STATE_LAUNCHER)
-    clutter_actor_hide(CLUTTER_ACTOR(priv->launcher));*/
 }
 
 /* ------------------------------------------------------------------------- */
@@ -2809,4 +2747,276 @@ void hd_render_manager_remove_input_blocker() {
     * dbus is so slow the message will often take >250ms. bug 128009 */
    return !hd_comp_mgr_is_portrait()
      && hd_comp_mgr_time_since_last_map(priv->comp_mgr) > 1000;
+ }
+
+ /* Set up the input mask, bounding shape and input shape of @win. */
+ static void
+ hd_render_manager_set_x_input_viewport_for_window (Display *xdpy, Window  win,
+                                                    XserverRegion region)
+ {
+   XSelectInput (xdpy, win, FocusChangeMask | ExposureMask
+                 | PropertyChangeMask | ButtonPressMask | ButtonReleaseMask
+                 | KeyPressMask | KeyReleaseMask | PointerMotionMask);
+   if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED &&
+       hd_render_manager_get_state () != HDRM_STATE_NON_COMP_PORT)
+     /* nobody knows what this actually is, let alone why shouldn't be
+      * reset in non-composited mode */
+     XFixesSetWindowShapeRegion (xdpy, win, ShapeBounding, 0, 0, None);
+   XFixesSetWindowShapeRegion (xdpy, win, ShapeInput, 0, 0, region);
+ }
+
+ /* Set up the input mask, bounding shape and input shape of the clutter
+  * and overlay windows to the contents of new_input_viewport. Called
+  * on idle after hd_render_manager_set_compositor_input_viewport */
+ static gboolean
+ hd_render_manager_set_compositor_input_viewport_idle (gpointer data)
+ {
+   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   MBWindowManager        *wm   = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+   Window        win = None;
+   Window        clwin;
+   GdkRectangle *rectangles;
+   XRectangle   *xrectangles = 0;
+   gint          i,n_rectangles;
+   XserverRegion region;
+
+   priv->input_viewport_callback = 0;
+   /* If we're not actually changing the contents of the viewport, just
+      return now */
+   if (priv->current_input_viewport &&
+       gdk_region_equal(priv->new_input_viewport,
+                        priv->current_input_viewport))
+     return FALSE;
+
+   /* Create an XFixes region from the GdkRegion. We use GdkRegion because
+    * we can check equality easily with it. */
+   gdk_region_get_rectangles (priv->new_input_viewport,
+                              &rectangles,
+                              &n_rectangles);
+   if (n_rectangles>0)
+     xrectangles = g_malloc(sizeof(XRectangle) * n_rectangles);
+   for (i=0;i<n_rectangles;i++) {
+     xrectangles[i].x = rectangles[i].x;
+     xrectangles[i].y = rectangles[i].y;
+     xrectangles[i].width = rectangles[i].width;
+     xrectangles[i].height = rectangles[i].height;
+   }
+
+   mb_wm_util_async_trap_x_errors (wm->xdpy);
+   region = XFixesCreateRegion (wm->xdpy, xrectangles, n_rectangles);
+   g_free (rectangles);
+   g_free (xrectangles);
+
+   clwin = clutter_x11_get_stage_window (
+                              CLUTTER_STAGE (clutter_stage_get_default ()));
+   /* On startup, wm->comp_mgr may not be set */
+   if (wm->comp_mgr)
+     win = mb_wm_comp_mgr_clutter_get_overlay_window(
+                              MB_WM_COMP_MGR_CLUTTER(wm->comp_mgr));
+
+    if (win != None)
+      hd_render_manager_set_x_input_viewport_for_window
+                                          (wm->xdpy, win, region);
+    if (clwin != None)
+      hd_render_manager_set_x_input_viewport_for_window
+                                          (wm->xdpy, clwin, region);
+    XFixesDestroyRegion (wm->xdpy, region);
+    mb_wm_util_async_untrap_x_errors ();
+
+    /* Update our current viewport field */
+    if (priv->current_input_viewport)
+      gdk_region_destroy(priv->current_input_viewport);
+    priv->current_input_viewport = priv->new_input_viewport;
+    priv->new_input_viewport = 0;
+
+    return FALSE;
+ }
+
+ /* Set up the input mask, bounding shape and input shape of the clutter
+  * and overlay windows to region (queues an update on idle, which updates
+  * only if there has been a change */
+ static void
+ hd_render_manager_set_compositor_input_viewport (GdkRegion *region)
+ {
+   HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+   /*  */
+   if (priv->new_input_viewport)
+     gdk_region_destroy(priv->new_input_viewport);
+   priv->new_input_viewport = region;
+
+   /* Add idle callback. This MUST be higher priority than Clutter timelines
+    * (D+30) or we won't set our input viewport correctly until any running
+    * transitions have stopped. */
+   if (!priv->input_viewport_callback)
+     priv->input_viewport_callback = g_idle_add_full(
+         G_PRIORITY_DEFAULT+20,
+         hd_render_manager_set_compositor_input_viewport_idle,
+         NULL, NULL);
+ }
+
+ /* Creates a region for anything of a type in client_mask which is
+  * above the desktop - we can use this to mask off buttons by notifications,
+  * etc. */
+ static GdkRegion*
+ hd_render_manager_get_foreground_region(MBWMClientType client_mask)
+ {
+   MBWindowManagerClient *fg_client;
+   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   MBWindowManager *wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+   GdkRegion *region = gdk_region_new();
+
+   fg_client = wm->desktop ? wm->desktop->stacked_above : 0;
+   while (fg_client)
+     {
+       if (MB_WM_CLIENT_CLIENT_TYPE(fg_client) & client_mask)
+         gdk_region_union_with_rect(region,
+             (GdkRectangle*)(void*)&fg_client->window->geometry);
+
+       fg_client = fg_client->stacked_above;
+     }
+
+   return region;
+ }
+
+ void
+ hd_render_manager_set_input_viewport()
+ {
+   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   GdkRegion         *region = gdk_region_new();
+   MBWindowManager   *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+   MBWindowManagerClient *c;
+   gboolean app_mode = STATE_IS_APP(priv->state);
+
+   /* If we get called from hd_comp_mgr_init, this won't be set */
+   if (!wm)
+     return;
+
+   /* check for windows that may have a modal blocker. If anything has one
+    * we should NOT grab any part of the screen, except what we really must. */
+   if (!hd_wm_has_modal_blockers (wm))
+     {
+
+       if (!STATE_NEED_WHOLE_SCREEN_INPUT(priv->state) &&
+           !priv->has_input_blocker)
+         {
+           gint i;
+           /* Now look at what buttons we have showing, and add each visible button X
+            * to the X input viewport. We unfortunately have to ignore
+            * HDRM_BUTTON_BACK in app mode, because matchbox wants to pick them up
+            * from X */
+           for (i = 1; i <= HDRM_BUTTON_COUNT; i++)
+             {
+               ClutterActor *button;
+               button = hd_render_manager_get_button((HDRMButtonEnum)i);
+               if (button &&
+                   hd_render_manager_actor_is_visible(button) &&
+                   (CLUTTER_ACTOR_IS_REACTIVE(button)) &&
+                   (i!=HDRM_BUTTON_BACK || !app_mode))
+                 {
+                   ClutterGeometry geom;
+                   clutter_actor_get_geometry (button, &geom);
+                   gdk_region_union_with_rect(region,
+                       (GdkRectangle*)(void*)&geom);
+                 }
+             }
+
+           /* Block status area?  If so refer to the client geometry,
+            * because we might be right after a place_titlebar_elements()
+            * which could just have moved it. */
+           if ((STATE_IS_PORTRAIT (priv->state) && priv->status_area
+                && CLUTTER_ACTOR_IS_VISIBLE (priv->status_area))
+               /* also in the case of "dialog blur": */
+               || (STATE_ONE_OF(priv->state, HDRM_STATE_APP|HDRM_STATE_APP_PORTRAIT)
+                   && priv->status_area
+                   && hd_render_manager_actor_is_visible(priv->status_area)
+                   /* FIXME: the following check does not work when there are
+                    * two levels of dialogs */
+                   && (priv->current_blur == HDRM_BLUR_BACKGROUND ||
+                       priv->current_blur == HDRM_BLUR_HOME)))
+             {
+               g_assert(priv->status_area_client);
+               gdk_region_union_with_rect(region,
+                   (GdkRectangle*)(void*)&priv->status_area_client->frame_geometry);
+             }
+         }
+       else
+         {
+           /* g_warning ("%s: get the whole screen!", __func__); */
+           GdkRectangle screen = {
+               0, 0,
+               hd_comp_mgr_get_current_screen_width (),
+               hd_comp_mgr_get_current_screen_height ()
+               };
+           gdk_region_union_with_rect(region, &screen);
+         }
+
+
+       /* we must subtract the regions for any dialogs + notes (mainly
+        * confirmation notes) from this input mask... if we are in the
+        * position of showing any of them */
+       if (STATE_UNGRAB_NOTES(hd_render_manager_get_state()))
+         {
+           GdkRegion *subtract = hd_render_manager_get_foreground_region(
+               MBWMClientTypeNote | MBWMClientTypeDialog);
+           gdk_region_subtract (region, subtract);
+           gdk_region_destroy (subtract);
+         }
+
+       /*
+        * We need the events initiated on the applets.
+        */
+       if (STATE_NEED_DESKTOP(hd_render_manager_get_state())) {
+         GdkRegion *unionregion = hd_render_manager_get_foreground_region(
+               HdWmClientTypeHomeApplet);
+           gdk_region_union (region, unionregion);
+           gdk_region_destroy (unionregion);
+       }
+     }
+
+   /* do specifically grab incoming event previews because sometimes
+    * they need to be reactive, sometimes they should not.  decide it
+    * when they are actually clicked. */
+   for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
+     if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c)
+         && hd_render_manager_is_client_visible (c))
+       gdk_region_union_with_rect(region,
+                                  (GdkRectangle*)(void*)&c->frame_geometry);
+
+   /* Now queue an update with this new region */
+   hd_render_manager_set_compositor_input_viewport(region);
+ }
+
+ /* Rotates the current inout viewport - called on rotate, so we can route
+  * events to the right place, even before everything has properly resized. */
+ void
+ hd_render_manager_flip_input_viewport()
+ {
+   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   GdkRectangle *inputshape;
+   int i, ninputshapes;
+   GdkRegion *region;
+
+   /* We should already have a viewport here, but just check */
+   if (!priv->current_input_viewport)
+     return;
+
+   /* Get our current input viewport and rotate it */
+   gdk_region_get_rectangles(priv->current_input_viewport,
+                             &inputshape, &ninputshapes);
+   region = gdk_region_new();
+   for (i = 0; i < ninputshapes; i++)
+     {
+       GdkRectangle new_inputshape;
+
+       new_inputshape.x = inputshape[i].y;
+       new_inputshape.y = inputshape[i].x;
+       new_inputshape.width = inputshape[i].height;
+       new_inputshape.height = inputshape[i].width;
+       gdk_region_union_with_rect(region, &new_inputshape);
+     }
+   g_free(inputshape);
+
+   /* Set the new viewport */
+   hd_render_manager_set_compositor_input_viewport(region);
  }

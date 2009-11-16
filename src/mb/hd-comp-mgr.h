@@ -138,11 +138,6 @@ MBWindowManagerClient * hd_comp_mgr_get_desktop_client (HdCompMgr *hmgr);
 
 void hd_comp_mgr_dump_debug_info (const gchar *tag);
 
-void hd_comp_mgr_set_input_viewport_for_window (Display *xdpy, Window  win,
-                                                XserverRegion region);
-void hd_comp_mgr_setup_input_viewport (HdCompMgr       *hmgr,
-                                       ClutterGeometry *geom,
-                                       int              count);
 gboolean hd_comp_mgr_restack (MBWMCompMgr * mgr);
 void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running);
 

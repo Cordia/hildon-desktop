@@ -256,9 +256,13 @@ hd_launcher_show (void)
     return;
 
   priv->active_page = top_page;
-  clutter_actor_show (self);
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
         HD_LAUNCHER_PAGE_TRANSITION_IN);
+  /* We must show *after* starting the transition, because starting a new
+   * transition when an old transition is in progress will cause the old
+   * transition to be ended - which will in turn hide the launcher if
+   * the transition was a LAUNCHER_OUT transition. */
+  clutter_actor_show (self);
 }
 
 void

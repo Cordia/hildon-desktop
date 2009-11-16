@@ -5,6 +5,7 @@
  * children after they have been destroyed. */
 
 #include "tidy-cached-group.h"
+#include "tidy-util.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -131,7 +132,7 @@ tidy_cached_group_paint (ClutterActor *actor)
   /* Draw children into an offscreen buffer */
   if (priv->source_changed)
     {
-      cogl_draw_buffer(COGL_OFFSCREEN_BUFFER, priv->fbo);
+      tidy_util_cogl_push_offscreen_buffer(priv->fbo);
       cogl_push_matrix();
       /* translate a bit to let bilinear filter smooth out intermediate pixels */
       cogl_translatex(CFX_ONE/2,CFX_ONE/2,0);
@@ -149,7 +150,7 @@ tidy_cached_group_paint (ClutterActor *actor)
       CLUTTER_ACTOR_CLASS (tidy_cached_group_parent_class)->paint(actor);
 
       cogl_pop_matrix();
-      cogl_draw_buffer(COGL_WINDOW_BUFFER, 0);
+      tidy_util_cogl_pop_offscreen_buffer();
 
       priv->source_changed = FALSE;
     }
