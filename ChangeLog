@@ -1,3 +1,12 @@
+2009-11-16  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Make threshold for home applet clicks 40px (like we use for launcher)
+	to help us deal with huge engadget fingers.
+	
+	* src/home/hd-home.c: Separate the threshold used for panning, and the
+	  threshold used for sending clicks to applets. panning=20px as before,
+	  clicking=40px.
+
 2009-11-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#145921 [PR1.1 proposal] UI shows turning effect while receive call

@@ -69,7 +69,8 @@
 #define HDH_LAYOUT_Y_OFFSET 60
 
 /* FIXME -- match spec */
-#define HDH_PAN_THRESHOLD 20
+#define HDH_PAN_THRESHOLD 20     // threshold for panning
+#define HDH_CLICK_THRESHOLD 40   // threshold for detecting a click
 #define PAN_NEXT_PREVIOUS_PERCENTAGE 0.25
 /* Time in secs to look back when finding average velocity */
 #define HDH_PAN_VELOCITY_HISTORY 0.125
@@ -1590,7 +1591,7 @@ do_applet_release (HdHome             *home,
               Window focused = None;
               int revert_to;
               wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-              XGetInputFocus (wm->xdpy, &focused, &revert_to); 
+              XGetInputFocus (wm->xdpy, &focused, &revert_to);
               if (focused != None &&
                   hd_home_client_owns_or_child_xwindow (client, focused))
                 applet_has_focus = TRUE;
@@ -1667,8 +1668,8 @@ do_home_applet_motion (HdHome       *home,
     return TRUE;
 
   moved_over_threshold =
-	  ABS (priv->initial_x - x) > HDH_PAN_THRESHOLD ||
-	  ABS (priv->initial_y - y) > HDH_PAN_THRESHOLD;
+	  ABS (priv->initial_x - x) > HDH_CLICK_THRESHOLD ||
+	  ABS (priv->initial_y - y) > HDH_CLICK_THRESHOLD;
 
   if (moved_over_threshold) {
       if (priv->press_timeout)
