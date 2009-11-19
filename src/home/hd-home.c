@@ -556,8 +556,8 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
   unsigned pretend_fn;
   time_t now;
 
-  if (xev->state & ControlMask ||
-      !STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ()))
+  /* We don't care if Ctrl is pressed. */
+  if (xev->state & ControlMask)
     return;
 
 /*  g_debug ("%s, display: %p, keymap: %p", __FUNCTION__, display, keymap); */
@@ -571,6 +571,12 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
       priv->key_sent = KEY_SENT_NONE;
     }
   priv->last_key_time = now;
+
+  /* If we're not at home, check if we should send keys anyway because we've
+   * already sent some to Contacts or CallUI. */
+  if (!STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ()) &&
+      (priv->key_sent == KEY_SENT_NONE))
+    return;
 
   if (priv->key_sent == KEY_SENT_CALLUI)
     {
@@ -652,11 +658,16 @@ hd_home_desktop_key_release (XKeyEvent *xev, void *userdata)
   HdHome *home = userdata;
   HdHomePrivate *priv = home->priv;
 
+  /* Ignore keys if they are not Fn. */
   if (xev->state & ControlMask
-      || !STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ())
       || XkbKeycodeToKeysym(clutter_x11_get_default_display(),
                             xev->keycode, 0, 0) != FN_KEY)
     return;
+
+  /* Ignore keys if not at home or launching an app that wants them. */
+  if (!STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ()) &&
+      (priv->key_sent == KEY_SENT_NONE))
+      return;
 
   if (priv->ignore_next_fn_release)
     priv->ignore_next_fn_release = FALSE;
