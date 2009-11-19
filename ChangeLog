@@ -1,4 +1,11 @@
-2009-11-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-11-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#147448 Task Launcher grid view needs threshold for panning
+
+	* src/tidy/tidy-finger-scroll.c (motion_event_cb, captured_event_cb):
+	  So implement it.
+
+2009-11-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#147344 [REGU] Phone application: L/P is broken to certain extent
 

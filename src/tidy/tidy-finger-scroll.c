@@ -30,6 +30,7 @@
 #include <math.h>
 
 #define TIDY_FINGER_SCROLL_INITIAL_SCROLLBAR_DELAY (1000)
+#define TIDY_FINGER_SCROLL_DRAG_TRASHOLD (25)
 
 G_DEFINE_TYPE (TidyFingerScroll, tidy_finger_scroll, TIDY_TYPE_SCROLL_VIEW)
 
@@ -48,6 +49,11 @@ struct _TidyFingerScrollPrivate
 {
   /* Scroll mode */
   TidyFingerScrollMode mode;
+
+  /* @move tells whether TIDY_FINGER_SCROLL_DRAG_TRASHOLD has been exceeded.
+   * @first_x and @first_y are the coordinates of the first touch. */
+  gboolean               move;
+  ClutterFixed           first_x, first_y;
 
   GArray                *motion_buffer;
   guint                  last_motion;
@@ -228,9 +234,24 @@ motion_event_cb (ClutterActor *actor,
           dy = CLUTTER_UNITS_TO_FIXED(motion->y - y) +
                tidy_adjustment_get_valuex (vadjust);
 
-          tidy_adjustment_set_valuex (hadjust, dx);
-          tidy_adjustment_set_valuex (vadjust, dy);
-          clutter_actor_queue_redraw( actor );
+          /* Has the drag treshold been reached? */
+          if (!priv->move)
+            {
+                ClutterFixed d1 = x - priv->first_x;
+                ClutterFixed d2 = y - priv->first_y;
+                priv->move = clutter_qmulx (d1, d1) + clutter_qmulx (d2, d2)
+                  >= CLUTTER_INT_TO_FIXED (TIDY_FINGER_SCROLL_DRAG_TRASHOLD
+                                           * TIDY_FINGER_SCROLL_DRAG_TRASHOLD);
+            }
+
+          /* If not, do everything as if it had (we already did) except
+           * for adjusting @child's position. */
+          if (priv->move)
+            {
+              tidy_adjustment_set_valuex (hadjust, dx);
+              tidy_adjustment_set_valuex (vadjust, dy);
+              clutter_actor_queue_redraw( actor );
+            }
         }
 
       priv->last_motion ++;
@@ -754,6 +775,13 @@ captured_event_cb (ClutterActor     *actor,
                                            &motion->x, &motion->y)))
         {
           g_get_current_time (&motion->time);
+
+          /* Save the coordinates of the first touch to be able to determine
+           * whether we've exceeded the drag treshold when processing motion
+           * events.  Until then don't move @child. */
+          priv->move = FALSE;
+          priv->first_x = motion->x;
+          priv->first_y = motion->y;
 
           if (priv->deceleration_timeline)
             {
