@@ -1,3 +1,14 @@
+2009-11-19  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#141736 - Background is not consistent with and without 
+	                   notification (reopened because it turns out this
+	                   isn't actually always reproducable)
+	                   
+	* src/tidy/tidy-util.c: Make sure we save the state of scissoring. We
+	  had problems before because if we updated the blur group while
+	  a partial update was queued, only a partial bit of the blur would be
+	  updated. This may fix other blur-related bugs too. 
+
 2009-11-19  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Keep sending key presses if we just opened Contacts or CallUI, even if no
