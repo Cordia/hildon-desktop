@@ -1,3 +1,13 @@
+2009-11-16  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#147344 [REGU] Phone application: L/P is broken to certain extent
+
+	* src/home/hd-title-bar.c (hd_title_bar_update_now):
+	  Be aware of the portrait-but-not-portrait-yet state and make
+	  the title bar look like in landscape for the time being.
+	  The already queued up hd_title_bar_update() will get
+	  everything right.
+
 2009-11-19  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#141736 - Background is not consistent with and without 
