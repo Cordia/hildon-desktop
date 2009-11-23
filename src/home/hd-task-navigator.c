@@ -2215,9 +2215,17 @@ free_thumb (Thumbnail * thumb, gboolean animate)
 {
   /* This will kill the entire actor hierarchy. */
   if (animate && CLUTTER_ACTOR_IS_VISIBLE (thumb->thwin))
-    /* We may be adding it, no point of animation then. */
-    fade_for_duration (NOTIFADE_OUT_DURATION, thumb->thwin, 0,
-                       FINALLY_REMOVE, CLUTTER_ACTOR (Grid));
+    { /* We may be adding it, no point of animation then. */
+      fade_for_duration (NOTIFADE_OUT_DURATION, thumb->thwin, 0,
+                         FINALLY_REMOVE, CLUTTER_ACTOR (Grid));
+
+      /* @thumb will be invalid very soon so prevent any signal handlers
+       * doing harm while we're fading out. */
+      g_signal_handlers_disconnect_matched (thumb->thwin,
+                          G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, thumb);
+      g_signal_handlers_disconnect_matched (thumb->close,
+                          G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, thumb);
+    }
   else
     clutter_container_remove_actor (CLUTTER_CONTAINER (Grid), thumb->thwin);
 

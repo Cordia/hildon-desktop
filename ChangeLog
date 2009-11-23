@@ -1,3 +1,17 @@
+2009-11-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#147866 closing a standalone notification while it's fading out
+		  yields assertion violation
+
+	While free_thumb() was doing the animation it was clicked to close
+	again which invoked nothumb_close_clicked() which referred to a
+	cleared field of its Thumbnail structure which was invalid by that
+	time anyway.
+
+	* src/home/hd-task-navigator.c (free_thumb):
+	  Disconnect signal handlers which would refer to the Thumbnail.
+	  (= all)
+
 2009-11-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#147448 Task Launcher grid view needs threshold for panning
