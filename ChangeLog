@@ -1,5 +1,13 @@
 2009-11-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#141902 - Clear recent calls? dialog shifted to the top, for
+	quick open and close of HW Keyboard
+
+	* src/mb/hd-note.c (hd_note_request_geometry): Add bottom alignment
+	insurance code for confirmation notes, similar to what dialogs have.
+
+	Focus logic fix.
+
 	* src/mb/hd-desktop.c (hd_desktop_init): Don't focus the desktop here,
 	it's now properly done in libmatchbox2.
 
