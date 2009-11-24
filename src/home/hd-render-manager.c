@@ -1566,8 +1566,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       /* Signal the state has changed. */
       g_object_notify (G_OBJECT (the_render_manager), "state");
 
-      if (state==HDRM_STATE_APP || state==HDRM_STATE_APP_PORTRAIT
-	  || state==HDRM_STATE_HOME_EDIT_DLG)
+      if ((state==HDRM_STATE_APP || state==HDRM_STATE_APP_PORTRAIT
+	   || state==HDRM_STATE_HOME_EDIT_DLG)
+          && !hd_transition_rotation_will_change_state ())
 	{
 
 	  /* Do some tidying up that used to happen in
