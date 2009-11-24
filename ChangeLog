@@ -1,3 +1,28 @@
+2009-11-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Problem: have a portrait app, open another, then close the second
+	(current) one.  After some flickering the title bar eventually
+	becomes like the one in the home view.
+
+	Cause: HdTitleBar deprives itself of HDTB_VIS_FULL_WIDTH and
+	HDTB_VIS_BTN_CLOSE because when it's updating for real it doesn't
+	get a topmost client.
+
+	Cause: After closing the second app HdCompMgr::current_client is
+	left NULL.
+
+	Cause: When HdCompMgr would have restacked it noticed that it's
+	in the middle of a rotation and decided to defer in the hope that
+	current_client and CURRENT_APP_WIN will be set by the forthcoming
+	state change.  But in reality it never happened because in the end
+	went to APP_PORTRAIT state instead of TASK_NAV because it noticed
+	that after all there's another portrait app.
+
+	Fix:
+	* home/hd-render-manager.c (hd_render_manager_set_state):
+	  hd_comp_mgr_restack() regardless of our previous state
+	  if we're going to APP or APP_PORTRAIT (or EDIT_DLG).
+
 2009-11-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#147866 closing a standalone notification while it's fading out
