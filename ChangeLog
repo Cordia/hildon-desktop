@@ -23,6 +23,11 @@
 	  hd_comp_mgr_restack() regardless of our previous state
 	  if we're going to APP or APP_PORTRAIT (or EDIT_DLG).
 
+2009-11-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-desktop.c (hd_desktop_init): Don't focus the desktop here,
+	it's now properly done in libmatchbox2.
+
 2009-11-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#147866 closing a standalone notification while it's fading out
