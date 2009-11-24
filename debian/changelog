@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.121-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#141902 - Clear recent calls? dialog shifted to the top, for
+    quick open and close of HW Keyboard
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 16 Nov 2009 14:22:45 +0200
 

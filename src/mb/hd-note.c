@@ -334,6 +334,7 @@ hd_note_request_geometry (MBWindowManagerClient *client,
   const MBGeometry * geom;
   Bool               change_pos;
   Bool               change_size;
+  MBWindowManager *wm = client->wmref;
 
   /* create a copy here, as we don't want to change the value that
    * was passed in... */
@@ -348,6 +349,14 @@ hd_note_request_geometry (MBWindowManagerClient *client,
   geom = (flags & MBWMClientReqGeomIsViaConfigureReq) ?
     &client->window->geometry : &client->frame_geometry;
 
+  if (HD_IS_CONFIRMATION_NOTE (client))
+    {
+      int diff;
+      /* make sure it's bottom-aligned */
+      diff = (new_geometry.y + new_geometry.height) - wm->xdpy_height;
+      new_geometry.y -= diff;
+    }
+
   /*
    * We only allow resizing and moving in the y axis, since notes are
    * fullscreen.
@@ -358,7 +367,6 @@ hd_note_request_geometry (MBWindowManagerClient *client,
   if (change_size || (flags & MBWMClientReqGeomForced))
     {
       int north = 0, south = 0, west = 0, east = 0;
-      MBWindowManager *wm = client->wmref;
 
       if (client->decor)
 	mb_wm_theme_get_decor_dimensions (wm->theme, client,
