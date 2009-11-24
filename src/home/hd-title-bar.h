@@ -80,6 +80,7 @@ typedef enum {
 
 GType hd_title_bar_get_type (void) G_GNUC_CONST;
 
+void hd_title_bar_print_state(HdTitleBar *bar, gboolean current);
 void hd_title_bar_set_state(HdTitleBar *bar,
                             HdTitleBarVisEnum button);
 HdTitleBarVisEnum hd_title_bar_get_state(HdTitleBar *bar);
