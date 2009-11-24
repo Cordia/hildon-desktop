@@ -621,6 +621,41 @@ static void hd_title_bar_set_state_real(HdTitleBar *bar,
     }
 }
 
+#ifndef G_DEBUG_DISABLE
+# define PRINT_STATE(state, this)       \
+  if (((state) & this) == this)         \
+    g_debug("  " G_STRINGIFY(this))
+void hd_title_bar_print_state(HdTitleBar *bar, gboolean current)
+{
+  HdTitleBarVisEnum state;
+
+  if (current)
+    {
+      state = bar->priv->current_state;
+      g_debug("HdTitleBar::current_state:");
+    }
+  else
+    {
+      state = bar->priv->state;
+      g_debug("HdTitleBar::state:");
+    }
+
+  PRINT_STATE(state, HDTB_VIS_BTN_LAUNCHER);
+  PRINT_STATE(state, HDTB_VIS_BTN_SWITCHER);
+  PRINT_STATE(state, HDTB_VIS_BTN_MENU);
+  PRINT_STATE(state, HDTB_VIS_BTN_BACK);
+  PRINT_STATE(state, HDTB_VIS_BTN_CLOSE);
+  PRINT_STATE(state, HDTB_VIS_BTN_DONE);
+  PRINT_STATE(state, HDTB_VIS_FULL_WIDTH);
+  PRINT_STATE(state, HDTB_VIS_BTN_SWITCHER_HIGHLIGHT);
+  PRINT_STATE(state, HDTB_VIS_FOREGROUND);
+  PRINT_STATE(state, HDTB_VIS_SMALL_BUTTONS);
+  PRINT_STATE(state, HDTB_VIS_BTN_LEFT_MASK);
+  PRINT_STATE(state, HDTB_VIS_BTN_RIGHT_MASK);
+}
+# undef PRINT_STATE
+#endif
+
 void hd_title_bar_set_state(HdTitleBar *bar,
                             HdTitleBarVisEnum button)
 {
@@ -1169,7 +1204,10 @@ hd_title_bar_update_now(HdTitleBar *bar)
   HdTitleBarVisEnum hack;
 
   if (priv->update_title_bar)
-    g_source_remove(priv->update_title_bar);
+    {
+      g_source_remove(priv->update_title_bar);
+      priv->update_title_bar = 0;
+    }
 
   /* We're going to portrait but we're not quite there yet,
    * so the title bar must look landscape but the title must
