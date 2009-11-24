@@ -1,5 +1,11 @@
 2009-11-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-title-bar.c (hd_title_bar_print_state):
+	  Debug function to print either the current or the desired
+	  state of HdTitleBar.  Only available if !G_DEBUG_DISABLE.
+
+2009-11-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Problem: have a portrait app, open another, then close the second
 	(current) one.  After some flickering the title bar eventually
 	becomes like the one in the home view.
