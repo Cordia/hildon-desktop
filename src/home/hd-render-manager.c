@@ -748,11 +748,15 @@ hd_render_manager_unzoom_background()
 /* Checks the whole tree for visibility */
 gboolean hd_render_manager_actor_is_visible(ClutterActor *actor)
 {
-  ClutterActor *stage = clutter_actor_get_stage(actor);
-  for (;actor;actor=clutter_actor_get_parent(actor))
-    if (actor!=stage && !CLUTTER_ACTOR_IS_VISIBLE(actor))
-      return FALSE;
+  ClutterActor *hdrm;
 
+  /* Ignore the visibility of %HdRenderManager, which is hidden
+   * when the display is off and during rotation, and which would
+   * lead to false negatives. */
+  hdrm = CLUTTER_ACTOR(hd_render_manager_get());
+  for (; actor != hdrm && actor; actor = clutter_actor_get_parent(actor))
+    if (!CLUTTER_ACTOR_IS_VISIBLE(actor))
+      return FALSE;
   return TRUE;
 }
 
