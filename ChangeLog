@@ -1,4 +1,18 @@
-2009-11-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+2009-11-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#148146 First tap on task switcher not recognised when new
+		  IM/email arrives
+
+	When the display is off we hide HdRenderManager which caused
+	hd_render_manager_actor_is_visible() to return FALSE for
+	everything, including the HdTitleBar buttons when we did
+	hd_render_manager_set_input_viewport().
+
+	* src/home/hd-render-manager.c (hd_render_manager_actor_is_visible):
+	  Ignore the visibility of HdRenderManager and don't lie about the
+	  supposed-to-be visibility of @actor.
+
+2009-11-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Improve the ctrl+shift+n compositing toggling shortcut.
 
