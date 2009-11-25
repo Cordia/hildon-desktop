@@ -45,7 +45,6 @@
 #include "tidy/tidy-sub-texture.h"
 
 #include "hd-app.h"
-#include "hd-volume-profile.h"
 #include "hd-util.h"
 
 /* The master of puppets */
@@ -1855,7 +1854,7 @@ hd_transition_play_sound (const gchar * fname)
     gint millisec;
 
     /* Canberra uses threads. */
-    if (hd_volume_profile_is_silent() || hd_disable_threads())
+    if (hd_disable_threads())
       return;
 
     /* Initialize the canberra context once. */
