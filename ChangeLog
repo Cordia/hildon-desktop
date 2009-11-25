@@ -12,7 +12,7 @@
 	  Ignore the visibility of HdRenderManager and don't lie about the
 	  supposed-to-be visibility of @actor.
 
-2009-11-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2009-11-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Improve the ctrl+shift+n compositing toggling shortcut.
 
