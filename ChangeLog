@@ -1,5 +1,15 @@
 2009-11-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Improve the ctrl+shift+n compositing toggling shortcut.
+
+	* src/mb/hd-comp-mgr.[ch] (hd_comp_mgr_unredirect_topmost_client): Add
+	an argument to redirect non-fullscreen applications.
+	* src/main.c (key_binding_func): Explicitly unredirect non-fullscreen
+	applications. Do not change mode unless we are in some application mode.
+	Support portrait modes also.
+
+2009-11-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#142364 Desktop stays in portrait mode
 
 	A situation it could happen was when there was an arbitrary window,

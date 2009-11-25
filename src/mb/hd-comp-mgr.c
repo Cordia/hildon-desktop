@@ -1468,8 +1468,10 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
   fs_comp = want_fs_comp;
 }
 
+/* 'force' allows unredirecting non-fullscreen applications, it is used
+ * for the key shortcut (handy when checking for compositing glitches) */
 void
-hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm)
+hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm, gboolean force)
 {
   MBWindowManagerClient *c, *unredir_client = NULL;
 
@@ -1479,7 +1481,8 @@ hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm)
        * application window that is fullscreen */
       if (c->cm_client && c->window->net_type ==
             wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_NORMAL] &&
-          c->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+          (c->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen
+           || force))
         {
           if (!mb_wm_comp_mgr_clutter_client_is_unredirected (c->cm_client))
             {
@@ -2187,7 +2190,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       else if (!found &&
                (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED ||
                 hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT))
-        hd_comp_mgr_unredirect_topmost_client (c->wmref);
+        hd_comp_mgr_unredirect_topmost_client (c->wmref, FALSE);
     }
   else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
     {

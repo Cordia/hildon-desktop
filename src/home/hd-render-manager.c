@@ -1614,7 +1614,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         {
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
 
-          hd_comp_mgr_unredirect_topmost_client (wm);
+          hd_comp_mgr_unredirect_topmost_client (wm, FALSE);
 	}
     }
 

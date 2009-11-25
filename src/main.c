@@ -221,8 +221,20 @@ key_binding_func (MBWindowManager   *wm,
       /* printf(" ### KEY_ACTION_TOGGLE_NON_COMP_MODE ###\n"); */
       if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)
         hd_render_manager_set_state (HDRM_STATE_APP);
-      else
-        hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+      else if (hd_render_manager_get_state () == HDRM_STATE_NON_COMP_PORT)
+        hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+      else if (hd_render_manager_get_state () == HDRM_STATE_APP)
+        {
+          hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
+          /* render manager does not unredirect non-fullscreen apps,
+           * so do it here */
+          hd_comp_mgr_unredirect_topmost_client (hd_mb_wm, TRUE);
+        }
+      else if (hd_render_manager_get_state () == HDRM_STATE_APP_PORTRAIT)
+        {
+          hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
+          hd_comp_mgr_unredirect_topmost_client (hd_mb_wm, TRUE);
+        }
       break;
     case KEY_ACTION_TAKE_SCREENSHOT:
         take_screenshot();
