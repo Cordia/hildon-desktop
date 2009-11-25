@@ -1,5 +1,20 @@
 2009-11-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	NB#142364 Desktop stays in portrait mode
+
+	A situation it could happen was when there was an arbitrary window,
+	then another one was mapped beneath forcing portrait mode (REQUEST=2).
+	The premise of foricing is that "i'll be visible, don't worry",
+	but anyway.  If it's broken we finish rotation we started optimistically
+	but we stay in APP or HOME state, and don't even think about switching
+	back.  Now reched when the forceful client is eventually map_notify()ed.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_portrait_or_not_portrait):
+	  Undo hd_comp_mgr_portrait_forecast() if it turns out to have
+	  been false.
+
+2009-11-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
 	Fixes: NB#131591 - progress bar of backup application is shown on the
 	desktop in a mentioned scenario.
 

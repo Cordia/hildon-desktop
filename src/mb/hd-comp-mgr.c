@@ -158,7 +158,8 @@ static gboolean
 hd_comp_mgr_should_be_portrait_ignoring (HdCompMgr *hmgr,
                                          MBWindowManagerClient *ignore);
 
-static void hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr);
+static void hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr,
+                                                  MBWindowManagerClient *c);
 
 static gboolean
 hd_comp_mgr_client_prefers_compositing (MBWindowManagerClient *c);
@@ -1970,7 +1971,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   /* Now the actor has been created and added to the desktop, make sure we
    * call hdrm_restack to put it in the correct group in hd-render-manager */
   hd_render_manager_restack();
-  hd_comp_mgr_portrait_or_not_portrait(mgr);
+  hd_comp_mgr_portrait_or_not_portrait(mgr, c);
 
   /* Hide the Edit button if it is currently shown */
   if (priv->home)
@@ -2822,7 +2823,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   /* Decide about portraitification in case a blocking window was unmapped. */
   hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
   hd_render_manager_restack ();
-  hd_comp_mgr_portrait_or_not_portrait (mgr);
+  hd_comp_mgr_portrait_or_not_portrait (mgr, NULL);
 
   return FALSE;
 }
@@ -3031,16 +3032,29 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
   return hd_comp_mgr_should_be_portrait_ignoring(hmgr, 0);
 }
 
-/* Based on the visible windows decide whether we should be portrait or not.
+/*
+ * Based on the visible windows decide whether we should be portrait or not.
  * Requires that the visibilities be sorted out.  Otherwise it doesn't work
- * correctly. */
+ * correctly.  @c is the client being mapped, if the context is appropriate,
+ * otherwise NULL.
+ */
 static void
-hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr)
+hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
   /* I think this is a guard for cases when we do a
    * set_state() -> portrait/unportrait() -> restack() */
   if (hd_render_manager_is_changing_state ())
     return;
+
+  /* Undo hd_comp_mgr_portrait_forecast() if in the end it was false. */
+  if (c && mb_wm_client_wants_portrait (c)
+      && !STATE_IS_PORTRAIT (hd_render_manager_get_state ())
+      && hd_transition_is_rotating_to_portrait ()
+      && !hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
+    {
+      hd_transition_rotate_screen (mgr->wm, FALSE);
+      return;
+    }
 
   /*
    * Change state if necessary:
@@ -3051,7 +3065,7 @@ hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr)
       if (hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
         hd_render_manager_set_state_portrait ();
     }
-  else if (STATE_IS_PORTRAIT(hd_render_manager_get_state ()))
+  else if (STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
     { /* Portrait -> landscape? */
       if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
         hd_render_manager_set_state_unportrait ();
