@@ -1,3 +1,19 @@
+2009-11-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#131591 - progress bar of backup application is shown on the
+	desktop in a mentioned scenario.
+
+	* src/main.c (key_binding_func): Check for system modals before
+	obeying the ctrl+backspace key shortcut.
+
+	Fixes: NB#139872 - X-term by magic shortcut Ctrl+Shift+x leaves
+	non-killable Zombie
+
+	* src/main.c (key_binding_func): Use hd_app_mgr_execute to spawn X
+	terminal nice 'n' clean.
+	* src/launcher/hd-app-mgr.[ch] (hd_app_mgr_execute): Make global and
+	add argument for specifying automatic reaping of the child.
+
 2009-11-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	APP_PORTRAIT => TASK_NAV broke because of

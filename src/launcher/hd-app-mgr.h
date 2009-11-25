@@ -99,6 +99,8 @@ void hd_app_mgr_dump_tree     (void);
 
 void hd_app_mgr_set_render_manager (GObject *rendermgr);
 
+gboolean hd_app_mgr_execute (const gchar *exec, GPid *pid, gboolean auto_reap);
+
 G_END_DECLS
 
 #endif /* __HD_APP_MGR_H__ */

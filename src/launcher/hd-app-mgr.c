@@ -220,7 +220,6 @@ gboolean hd_app_mgr_hibernate (HdRunningApp *app);
 
 static gboolean hd_app_mgr_service_top (const gchar *service,
                                         const gchar *param);
-static gboolean  hd_app_mgr_execute (const gchar *exec, GPid *pid);
 
 void hd_app_mgr_prestartable     (HdRunningApp *app, gboolean prestartable);
 
@@ -928,7 +927,7 @@ hd_app_mgr_start (HdRunningApp *app)
       if (exec)
         {
           GPid pid = 0;
-          result = hd_app_mgr_execute (exec, &pid);
+          result = hd_app_mgr_execute (exec, &pid, FALSE);
           if (result)
             {
               hd_running_app_set_pid (app, pid);
@@ -1348,8 +1347,8 @@ _hd_app_mgr_child_setup(gpointer user_data)
   }
 }
 
-static gboolean
-hd_app_mgr_execute (const gchar *exec, GPid *pid)
+gboolean
+hd_app_mgr_execute (const gchar *exec, GPid *pid, gboolean auto_reap)
 {
   gboolean res = FALSE;
   gchar *space = strchr (exec, ' ');
@@ -1382,7 +1381,7 @@ hd_app_mgr_execute (const gchar *exec, GPid *pid)
 
   res = g_spawn_async (NULL,
                        argv, NULL,
-                       G_SPAWN_DO_NOT_REAP_CHILD,
+                       auto_reap ? 0 : G_SPAWN_DO_NOT_REAP_CHILD,
                        _hd_app_mgr_child_setup, NULL,
                        pid,
                        NULL);

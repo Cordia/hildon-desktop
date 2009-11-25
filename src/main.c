@@ -213,8 +213,9 @@ key_binding_func (MBWindowManager   *wm,
   switch (action)
     {
     case KEY_ACTION_TOGGLE_SWITCHER:
-      /* printf(" ### KEY_ACTION_TOGGLE_SWITCHER ###\n"); */
-      hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+      /* don't go to the switcher if we are showing a system-modal */
+      if (!hd_wm_has_modal_blockers (hd_mb_wm))
+        hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
       break;
     case KEY_ACTION_TOGGLE_NON_COMP_MODE:
       /* printf(" ### KEY_ACTION_TOGGLE_NON_COMP_MODE ###\n"); */
@@ -228,16 +229,11 @@ key_binding_func (MBWindowManager   *wm,
 	break;
     case KEY_ACTION_XTERMINAL:
       {
-	pid_t fork(void);
-	int execl(const char *path, const char *arg, ...);
-
-	pid_t havechild=fork();
-	if (!havechild)
-	  execl("/usr/bin/osso-xterm",
-		"/usr/bin/osso-xterm", NULL);
-	/* This is a hack - don't care about the kid */
+        GPid pid;
+        if (hd_app_mgr_execute ("/usr/bin/osso-xterm", &pid, TRUE))
+          g_spawn_close_pid (pid);
+        break;
       }
-      break;
     }
 }
 
