@@ -48,7 +48,6 @@
 #include "hd-theme.h"
 #include "hd-util.h"
 #include "hd-dbus.h"
-#include "hd-volume-profile.h"
 #include "launcher/hd-app-mgr.h"
 #include "home/hd-render-manager.h"
 #include "hd-transition.h"
@@ -773,8 +772,6 @@ main (int argc, char **argv)
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 
   app_mgr = hd_app_mgr_get ();
-
-  hd_volume_profile_init ();
 
   /* Move to landscape for safety. */
   if (hd_util_change_screen_orientation (wm, FALSE));

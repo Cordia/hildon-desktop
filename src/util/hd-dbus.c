@@ -4,7 +4,6 @@
 #include "hd-switcher.h"
 #include "hd-title-bar.h"
 #include "hd-render-manager.h"
-#include "hd-volume-profile.h"
 #include "hd-task-navigator.h"
 
 #include <glib.h>
@@ -167,7 +166,7 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
       Window overlay;
       g_warning ("%s: " DSME_SHUTDOWN_SIGNAL_NAME " from DSME", __func__);
       /* send TERM to applications and exit without cleanup */
-      hd_volume_profile_set_silent (TRUE);
+
       hd_comp_mgr_kill_all_apps (hmgr);
       overlay = mb_wm_comp_mgr_clutter_get_overlay_window (
                         MB_WM_COMP_MGR_CLUTTER (hmgr));
