@@ -1,3 +1,11 @@
+2009-11-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Avoid an immediate mb_wm_sync call unless we need MBWMSyncVisibility.
+
+	* src/main.c (hd_mb_wm_sync): New idle handler for calling mb_wm_sync.
+	(clutter_x11_event_filter): Call mb_wm_sync in an idle handler unless
+	we have window visibility changes.
+
 2009-11-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#148146 First tap on task switcher not recognised when new
