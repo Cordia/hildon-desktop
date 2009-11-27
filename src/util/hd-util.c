@@ -420,7 +420,7 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
 
   /* Allow clients to redraw. */
   XUngrabServer (wm->xdpy);
-  XSync (wm->xdpy, False);
+  XFlush (wm->xdpy);  /* <-- this is required to avoid a lock-up */
 
   XRRFreeCrtcInfo (crtc_info);
   XRRFreeScreenResources (res);
