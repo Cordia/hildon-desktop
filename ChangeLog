@@ -1,3 +1,12 @@
+2009-11-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#148101 Alarm during phone app rotation paralizes the device
+
+	It seems that the X server remained grabbed indefinitely.
+
+	* src/util/hd-util.c (hd_util_change_screen_orientation):
+	  Make sure XUngrabServer() leaves the output queue.
+
 2009-11-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Avoid an immediate mb_wm_sync call unless we need MBWMSyncVisibility.
