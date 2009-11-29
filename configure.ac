@@ -134,7 +134,7 @@ if test "$ac_cv_enable_static_mb2" = yes; then
                        gdk-pixbuf-xlib-2.0 dnl
                        pangoxft dnl
                        xft dnl
-                       dnl MAEGO_DISABLED dsme
+                       dnl MAEGO_DISABLED dsme dnl TODO HAVE_DSME Convert MCE to DSME
                        ])
 else
         MB2_CFLAGS=''
@@ -157,7 +157,7 @@ else
                        gdk-pixbuf-xlib-2.0 dnl
                        xft dnl
                        libmatchbox2-0.1 dnl
-                       dnl MAEGO_DISABLED dsme
+                       dnl MAEGO_DISABLED dsme dnl TODO HAVE_DSME Convert MCE to DSME
                        ])
 fi
 

@@ -7,8 +7,11 @@
 #include "hd-task-navigator.h"
 
 #include <glib.h>
+#ifdef HAVE_DSME
++/* TODO Convert MCE to DSME */
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
+#endif
 /*
  * Application killer DBus interface
  */
@@ -180,6 +183,8 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
         }
       _exit (0);
     }
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
   else if (dbus_message_is_signal (msg, MCE_SIGNAL_IF, "tklock_mode_ind"))
     {
       const char *mode;
@@ -288,9 +293,12 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
             & (HDRM_STATE_HOME|HDRM_STATE_HOME_PORTRAIT));
     }
 
+#endif
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
 static void
 hd_dbus_prevent_display_blanking (void)
 {
@@ -344,6 +352,7 @@ hd_dbus_disable_display_blanking (gboolean setting)
       timeout_f = 0;
     }
 }
+#endif
 
 void hd_dbus_send_event (char *value)
 {
@@ -442,6 +451,8 @@ hd_dbus_init (HdCompMgr * hmgr)
       /* system bus */
       dbus_bus_add_match (sysbus_conn, "type='signal', interface='"
                           DSME_SIGNAL_INTERFACE "'", NULL);
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
       dbus_bus_add_match (sysbus_conn,
                           "type='signal',path='"MCE_SIGNAL_PATH"',"
                           "interface='"MCE_SIGNAL_IF"',"
@@ -455,6 +466,7 @@ hd_dbus_init (HdCompMgr * hmgr)
                           "type='signal',path='" MCE_SIGNAL_PATH "',"
                           "interface='" MCE_SIGNAL_IF "',"
                           "member='" MCE_CALL_STATE_SIG "'", NULL);
+#endif
 
       dbus_connection_add_filter (sysbus_conn,
                                   hd_dbus_system_bus_signal_handler,

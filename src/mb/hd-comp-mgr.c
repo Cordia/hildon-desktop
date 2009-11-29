@@ -55,7 +55,10 @@
 #include "../tidy/tidy-blur-group.h"
 
 #include <dbus/dbus-glib-bindings.h>
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
 #include <mce/dbus-names.h>
+#endif
 
 #include <sys/types.h>
 #include <fcntl.h>
@@ -109,8 +112,11 @@ struct HdCompMgrPrivate
   /* Track changes to the PORTRAIT properties. */
   unsigned long          property_changed_cb_id;
 
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
   /* MCE D-Bus Proxy */
   DBusGProxy            *mce_proxy;
+#endif
 
   /* Time of last mapped window */
   struct timeval         last_map_time;
@@ -499,7 +505,10 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   HdCompMgrPrivate     *priv;
   ClutterActor         *stage;
   ClutterActor         *arena;
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
   DBusGConnection      *system_connection;
+#endif
   GError               *error = NULL;
   extern MBWindowManager *hd_mb_wm;
 
@@ -584,7 +593,8 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   hd_render_manager_set_state(HDRM_STATE_HOME);
 
-
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
   /* Get D-Bus proxy for mce calls */
   system_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
 
@@ -601,6 +611,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
                                                    MCE_REQUEST_IF);
       g_debug ("%s. Got mce Proxy", __FUNCTION__);
     }
+#endif
 
   return 1;
 }
@@ -626,11 +637,14 @@ hd_comp_mgr_destroy (MBWMObject *obj)
                                      PropertyNotify,
                                      priv->property_changed_cb_id);
 
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
   if (priv->mce_proxy)
     {
       g_object_unref (priv->mce_proxy);
       priv->mce_proxy = NULL;
     }
+#endif
 
   if (priv->stack_sync)
     g_source_remove (priv->stack_sync);
@@ -2328,12 +2342,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           && transient_for)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
 
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
       if (unblank && priv->mce_proxy)
         { /* Turn display backlight on for banner notes. */
           g_debug ("%s. Call %s", __FUNCTION__, MCE_DISPLAY_ON_REQ);
           dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
                                       G_TYPE_INVALID, G_TYPE_INVALID);
         }
+#endif
       return;
     }
   else if (ctype == MBWMClientTypeDialog)

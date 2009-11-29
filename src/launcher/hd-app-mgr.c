@@ -42,8 +42,11 @@
 #include <dbus/dbus-glib-bindings.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <gconf/gconf-client.h>
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
+#endif
 #include "hd-launcher.h"
 #include "hd-launcher-tree.h"
 #include "home/hd-render-manager.h"
@@ -2063,6 +2066,8 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                                    INIT_DONE_SIGNAL_INTERFACE,
                                    INIT_DONE_SIGNAL_NAME))
     priv->init_done = TRUE;
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
   else
     {
       /* Check for showing CallUI flags. */
@@ -2113,6 +2118,7 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
             }
         }
     }
+#endif
 
   if (changed)
     hd_app_mgr_state_check ();
@@ -2162,6 +2168,8 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
       return;
     }
 
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
   /* We're only interested in these signals if we're going to rotate. */
   if (activate)
     {
@@ -2218,6 +2226,7 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
 
   g_debug ("%s: %s", __FUNCTION__, activate ? "enabled" : "disabled");
   priv->accel_enabled = activate;
+#endif
 
   if (update_portraitness)
     hd_app_mgr_update_portraitness(the_app_mgr);
