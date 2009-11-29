@@ -118,12 +118,10 @@ struct _HdAppMgrPrivate
   gboolean prestarting_stopped:1;
   gboolean prestarting;
 
-  /* Flags for showing CallUI. */
   GConfClient *gconf_client;
   gboolean portrait;
   gboolean unlocked;
   gboolean slide_closed;
-  gboolean disable_callui;
   gboolean accel_enabled;
 };
 
@@ -198,13 +196,8 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define MAEMO_LAUNCHER_PATH  "/org/maemo/launcher"
 #define MAEMO_LAUNCHER_APP_DIED_SIGNAL_NAME "ApplicationDied"
 
-/* Signals for showing CallUI. */
-#define CALLUI_INTERFACE         "com.nokia.CallUI"
-#define CALLUI_PORTRAIT_TIMEOUT  1
 #define GCONF_SLIDE_OPEN_DIR     "/system/osso/af"
 #define GCONF_SLIDE_OPEN_KEY     "/system/osso/af/slide-open"
-#define GCONF_DISABLE_CALLUI_DIR "/apps/osso/hildon-desktop"
-#define GCONF_DISABLE_CALLUI_KEY "/apps/osso/hildon-desktop/disable_phone_gesture"
 
 /* Forward declarations */
 static void hd_app_mgr_dispose (GObject *gobject);
@@ -263,7 +256,6 @@ static void hd_app_mgr_gconf_value_changed (GConfClient *client,
                                             guint cnxn_id,
                                             GConfEntry *entry,
                                             gpointer user_data);
-static gboolean hd_app_mgr_show_callui_cb (gpointer data);
 
 static void     hd_app_mgr_request_app_pid (HdRunningApp *app);
 static gboolean hd_app_mgr_loading_timeout (HdRunningApp *app);
@@ -411,18 +403,6 @@ hd_app_mgr_init (HdAppMgr *self)
       gconf_client_add_dir (priv->gconf_client, GCONF_SLIDE_OPEN_DIR,
                             GCONF_CLIENT_PRELOAD_NONE, NULL);
       gconf_client_notify_add (priv->gconf_client, GCONF_SLIDE_OPEN_KEY,
-                               hd_app_mgr_gconf_value_changed,
-                               (gpointer) self,
-                               NULL, NULL);
-      priv->disable_callui = gconf_client_get_bool (priv->gconf_client,
-                                                    GCONF_DISABLE_CALLUI_KEY,
-                                                    NULL);
-      /* We don't call
-      hd_app_mgr_mce_activate_accel_if_needed ();
-      here because hdrm is not ready yet. */
-      gconf_client_add_dir (priv->gconf_client, GCONF_DISABLE_CALLUI_DIR,
-                            GCONF_CLIENT_PRELOAD_NONE, NULL);
-      gconf_client_notify_add (priv->gconf_client, GCONF_DISABLE_CALLUI_KEY,
                                hd_app_mgr_gconf_value_changed,
                                (gpointer) self,
                                NULL, NULL);
@@ -1831,56 +1811,6 @@ hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable)
 }
 
 static gboolean
-_hd_app_mgr_should_show_callui ()
-{
-  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
-  extern MBWindowManager *hd_mb_wm;
-  extern gboolean hd_dbus_display_is_off;
-
-  if (STATE_SHOW_CALLUI (hd_render_manager_get_state ()) &&
-      priv->accel_enabled &&
-      priv->portrait &&
-      priv->unlocked &&
-      !hd_dbus_display_is_off &&
-      priv->slide_closed &&
-      !priv->disable_callui &&
-      !hd_wm_has_modal_blockers (hd_mb_wm))
-    {
-      return TRUE;
-    }
-
-  return FALSE;
-}
-
-/* Callback for showing the CALL UI */
-static gboolean
-hd_app_mgr_show_callui_cb (gpointer data)
-{
-  if (_hd_app_mgr_should_show_callui())
-    hd_app_mgr_service_top (CALLUI_INTERFACE, NULL);
-
-  return FALSE;
-}
-
-/* Show CallUI if
- * - Showing the desktop.
- * - In portrait mode.
- * - Unlocked.
- * - Display on.
- * - Slide closed.
- */
-void
-hd_app_mgr_check_show_callui (void)
-{
-  if (_hd_app_mgr_should_show_callui ())
-    {
-      g_timeout_add_seconds(CALLUI_PORTRAIT_TIMEOUT,
-                            (GSourceFunc) hd_app_mgr_show_callui_cb,
-                            NULL);
-    }
-}
-
-static gboolean
 hd_app_mgr_init_done_timeout (HdAppMgr *self)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
@@ -1968,7 +1898,6 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
     priv->init_done = TRUE;
   else
     {
-      /* Check for showing CallUI flags. */
       changed = FALSE;
       if (dbus_message_is_signal (msg,
                                   MCE_SIGNAL_IF,
@@ -1983,8 +1912,6 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
         {
           priv->portrait = _hd_app_mgr_dbus_check_value (msg,
                                            MCE_ORIENTATION_PORTRAIT);
-          if (priv->portrait)
-            hd_app_mgr_check_show_callui ();
 
           hd_app_mgr_update_portraitness(self);
         }
@@ -1997,8 +1924,6 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
 }
 
 /* Activate the accelerometer when
- * - The user has activated rotate-to-callui.
- * - HDRM is in a state that shows callui.
  * - We are showing an app, and all visible windows support portrait mode
  */
 void
@@ -2011,9 +1936,7 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
   gboolean activate = !hd_dbus_tklock_on;
 
   if (activate)
-    activate = (!priv->disable_callui
-                && STATE_SHOW_CALLUI (hd_render_manager_get_state ()))
-      || (STATE_IS_APP(hd_render_manager_get_state ())
+    activate = (STATE_IS_APP(hd_render_manager_get_state ())
           && hd_comp_mgr_can_be_portrait(hd_comp_mgr_get()));
   if (priv->accel_enabled == activate)
     return;
@@ -2114,15 +2037,6 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
       priv->slide_closed = !value;
 
       hd_app_mgr_update_portraitness(self);
-    }
-
-  if (!g_strcmp0 (gconf_entry_get_key (entry),
-                  GCONF_DISABLE_CALLUI_KEY))
-    {
-      priv->disable_callui = value;
-
-      /* Check if h-d needs to track the orientation. */
-      hd_app_mgr_mce_activate_accel_if_needed (TRUE);
     }
 
   return;
