@@ -46,8 +46,6 @@
 
 #include <glib/gi18n.h>
 
-#include <hildon/hildon.h>
-
 #include "hd-comp-mgr.h"
 #include "hd-home-applet.h"
 #include "hd-note.h"
@@ -303,7 +301,7 @@ hd_wm_make_dialog (MBWindowManagerClient *client)
 {
     char buf[200];
     const char *name = NULL;
-    HildonNote *note;
+    GtkWidget *dialog;
 
     HdCompMgrClient *hclient = HD_COMP_MGR_CLIENT (client->cm_client);
     if (hclient)
@@ -313,8 +311,8 @@ hd_wm_make_dialog (MBWindowManagerClient *client)
     snprintf (buf, 200, _("tana_nc_apkil_notresponding"),
         name? name : "NO NAME");
 
-    note = HILDON_NOTE (hildon_note_new_confirmation (NULL, buf));
-    /*
+    dialog = gtk_dialog_new ();   
+
     gtk_dialog_add_buttons (GTK_DIALOG (dialog),
                           _("qgn_bd_apkil_ok"),
                           GTK_RESPONSE_ACCEPT,
@@ -322,9 +320,9 @@ hd_wm_make_dialog (MBWindowManagerClient *client)
                           GTK_RESPONSE_REJECT,
                           NULL);
     gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_REJECT);
-			  */
+			  
 
-    return (GtkWidget*)note;
+    return dialog;
 }
 
 static Bool hd_wm_client_hang (MBWindowManager *wm,

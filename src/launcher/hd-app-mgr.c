@@ -42,8 +42,6 @@
 #include <dbus/dbus-glib-bindings.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <gconf/gconf-client.h>
-#include <mce/dbus-names.h>
-#include <mce/mode-names.h>
 #include "hd-launcher.h"
 #include "hd-launcher-tree.h"
 #include "home/hd-render-manager.h"
@@ -116,15 +114,6 @@ struct _HdAppMgrPrivate
   gboolean init_done:1;
   gboolean prestarting_stopped:1;
   gboolean prestarting;
-
-  /* Flags for showing CallUI. */
-  GConfClient *gconf_client;
-  gboolean portrait;
-  gboolean unlocked;
-  gboolean display_on;
-  gboolean slide_closed;
-  gboolean disable_callui;
-  gboolean accel_enabled;
 };
 
 #define HD_APP_MGR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -198,14 +187,6 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define MAEMO_LAUNCHER_PATH  "/org/maemo/launcher"
 #define MAEMO_LAUNCHER_APP_DIED_SIGNAL_NAME "ApplicationDied"
 
-/* Signals for showing CallUI. */
-#define CALLUI_INTERFACE         "com.nokia.CallUI"
-#define CALLUI_PORTRAIT_TIMEOUT  1
-#define GCONF_SLIDE_OPEN_DIR     "/system/osso/af"
-#define GCONF_SLIDE_OPEN_KEY     "/system/osso/af/slide-open"
-#define GCONF_DISABLE_CALLUI_DIR "/apps/osso/hildon-desktop"
-#define GCONF_DISABLE_CALLUI_KEY "/apps/osso/hildon-desktop/disable_phone_gesture"
-
 /* Forward declarations */
 static void hd_app_mgr_dispose (GObject *gobject);
 
@@ -259,13 +240,6 @@ static DBusHandlerResult hd_app_mgr_dbus_app_died (DBusConnection *conn,
 static DBusHandlerResult hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                                                     DBusMessage *msg,
                                                     void *data);
-static void hd_app_mgr_gconf_value_changed (GConfClient *client,
-                                            guint cnxn_id,
-                                            GConfEntry *entry,
-                                            gpointer user_data);
-static void hd_app_mgr_mce_activate_accel  (void);
-static gboolean hd_app_mgr_show_callui_cb (gpointer data);
-static void hd_app_mgr_check_show_callui (void);
 
 static void     hd_app_mgr_request_app_pid (HdRunningApp *app);
 static gboolean hd_app_mgr_loading_timeout (HdRunningApp *app);
@@ -375,16 +349,6 @@ hd_app_mgr_dbus_add_signal_match (DBusConnection *conn,
 }
 
 static void
-hd_app_mgr_dbus_remove_signal_match (DBusConnection *conn,
-                                     const gchar *interface,
-                                     const gchar *member)
-{
-  gchar *arg = _hd_app_mgr_build_match (interface, member);
-  dbus_bus_remove_match (conn, arg, NULL);
-  g_free (arg);
-}
-
-static void
 hd_app_mgr_init (HdAppMgr *self)
 {
   HdAppMgrPrivate *priv;
@@ -401,35 +365,6 @@ hd_app_mgr_init (HdAppMgr *self)
                     G_CALLBACK (hd_app_mgr_populate_tree_finished),
                     self);
   hd_launcher_tree_populate (priv->tree);
-
-  /* NOTE: Can we assume this when we start up? */
-  priv->unlocked = TRUE;
-  priv->display_on = TRUE;
-  priv->gconf_client = gconf_client_get_default ();
-  if (priv->gconf_client)
-    {
-      priv->slide_closed = !gconf_client_get_bool (priv->gconf_client,
-                                                   GCONF_SLIDE_OPEN_KEY,
-                                                   NULL);
-      gconf_client_add_dir (priv->gconf_client, GCONF_SLIDE_OPEN_DIR,
-                            GCONF_CLIENT_PRELOAD_NONE, NULL);
-      gconf_client_notify_add (priv->gconf_client, GCONF_SLIDE_OPEN_KEY,
-                               hd_app_mgr_gconf_value_changed,
-                               (gpointer) self,
-                               NULL, NULL);
-      priv->disable_callui = gconf_client_get_bool (priv->gconf_client,
-                                                    GCONF_DISABLE_CALLUI_KEY,
-                                                    NULL);
-      /* We don't call
-      hd_app_mgr_mce_activate_accel ();
-      here because hdrm is not ready yet. */
-      gconf_client_add_dir (priv->gconf_client, GCONF_DISABLE_CALLUI_DIR,
-                            GCONF_CLIENT_PRELOAD_NONE, NULL);
-      gconf_client_notify_add (priv->gconf_client, GCONF_DISABLE_CALLUI_KEY,
-                               hd_app_mgr_gconf_value_changed,
-                               (gpointer) self,
-                               NULL, NULL);
-    }
 
   /* Start memory limits. */
   priv->notify_low_pages = hd_app_mgr_read_lowmem (LOWMEM_PROC_NOTIFY_LOW);
@@ -603,13 +538,6 @@ hd_app_mgr_dispose (GObject *gobject)
           g_queue_free (priv->queues[i]);
           priv->queues[i] = NULL;
         }
-    }
-
-  if (priv->gconf_client)
-    {
-      gconf_client_remove_dir (priv->gconf_client, GCONF_SLIDE_OPEN_DIR, NULL);
-      g_object_unref (G_OBJECT (priv->gconf_client));
-      priv->gconf_client = NULL;
     }
 
   G_OBJECT_CLASS (hd_app_mgr_parent_class)->dispose (gobject);
@@ -1571,9 +1499,6 @@ hd_app_mgr_hdrm_state_change (gpointer hdrm,
       priv->prestarting_stopped = launcher;
       hd_app_mgr_state_check ();
     }
-
-  /* Also check if we should enable the accelerometer. */
-  hd_app_mgr_mce_activate_accel ();
 }
 
 static void
@@ -1837,52 +1762,6 @@ hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable)
 }
 
 static gboolean
-_hd_app_mgr_should_show_callui ()
-{
-  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
-
-  if (STATE_SHOW_CALLUI (hd_render_manager_get_state ()) &&
-      priv->portrait &&
-      priv->unlocked &&
-      priv->display_on &&
-      priv->slide_closed &&
-      !priv->disable_callui)
-    {
-      return TRUE;
-    }
-
-  return FALSE;
-}
-
-/* Callback for showing the CALL UI */
-static gboolean
-hd_app_mgr_show_callui_cb (gpointer data)
-{
-  if (_hd_app_mgr_should_show_callui())
-    hd_app_mgr_service_top (CALLUI_INTERFACE, NULL);
-
-  return FALSE;
-}
-
-/* Show CallUI if
- * - Showing the desktop.
- * - In portrait mode.
- * - Unlocked.
- * - Display on.
- * - Slide closed.
- */
-static void
-hd_app_mgr_check_show_callui (void)
-{
-  if (_hd_app_mgr_should_show_callui ())
-    {
-      g_timeout_add_seconds(CALLUI_PORTRAIT_TIMEOUT,
-                            (GSourceFunc) hd_app_mgr_show_callui_cb,
-                            NULL);
-    }
-}
-
-static gboolean
 hd_app_mgr_init_done_timeout (HdAppMgr *self)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
@@ -1893,32 +1772,6 @@ hd_app_mgr_init_done_timeout (HdAppMgr *self)
       priv->init_done = TRUE;
       hd_app_mgr_state_check ();
     }
-
-  return FALSE;
-}
-
-static gboolean
-_hd_app_mgr_dbus_check_value (DBusMessage *msg,
-                              const gchar *value)
-{
-  DBusError err;
-  gchar *arg;
-
-  dbus_error_init (&err);
-  dbus_message_get_args (msg, &err,
-                         DBUS_TYPE_STRING, &arg,
-                         DBUS_TYPE_INVALID);
-
-  if (dbus_error_is_set(&err))
-  {
-      g_warning ("%s: Error getting message args: %s\n",
-                 __FUNCTION__, err.message);
-      dbus_error_free (&err);
-      return FALSE;
-  }
-
-  if (!g_strcmp0 (arg, value))
-    return TRUE;
 
   return FALSE;
 }
@@ -1951,142 +1804,11 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                                    INIT_DONE_SIGNAL_INTERFACE,
                                    INIT_DONE_SIGNAL_NAME))
     priv->init_done = TRUE;
-  else
-    {
-      /* Check for showing CallUI flags. */
-      changed = FALSE;
-      if (dbus_message_is_signal (msg,
-                                  MCE_SIGNAL_IF,
-                                  MCE_TKLOCK_MODE_SIG))
-        {
-          priv->unlocked = _hd_app_mgr_dbus_check_value (msg,
-                                           MCE_DEVICE_UNLOCKED);
-        }
-      else if (dbus_message_is_signal (msg,
-                                       MCE_SIGNAL_IF,
-                                       MCE_DISPLAY_SIG))
-        {
-          priv->display_on = _hd_app_mgr_dbus_check_value (msg,
-                                           MCE_DISPLAY_ON_STRING);
-        }
-      else if (dbus_message_is_signal (msg,
-                                  MCE_SIGNAL_IF,
-                                  MCE_DEVICE_ORIENTATION_SIG))
-        {
-          priv->portrait = _hd_app_mgr_dbus_check_value (msg,
-                                           MCE_ORIENTATION_PORTRAIT);
-          if (priv->portrait)
-            hd_app_mgr_check_show_callui ();
-        }
-    }
 
   if (changed)
     hd_app_mgr_state_check ();
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-}
-
-/* Activate the accelerometer when
- * - The user has activated rotate-to-callui.
- * - HDRM is in a state that shows callui.
- */
-static void
-hd_app_mgr_mce_activate_accel  ()
-{
-  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (the_app_mgr);
-  DBusConnection *conn = NULL;
-  DBusMessage *msg = NULL;
-
-  gboolean activate = !priv->disable_callui &&
-                      STATE_SHOW_CALLUI (hd_render_manager_get_state ());
-  if (priv->accel_enabled == activate)
-    return;
-
-  conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
-  if (!conn)
-    {
-      g_warning ("%s: Couldn't connect to session bus.", __FUNCTION__);
-      return;
-    }
-
-  /* We're only interested in these signals if we're going to rotate. */
-  if (activate)
-    {
-      hd_app_mgr_dbus_add_signal_match (conn, MCE_SIGNAL_IF,
-                                        MCE_TKLOCK_MODE_SIG);
-      hd_app_mgr_dbus_add_signal_match (conn, MCE_SIGNAL_IF,
-                                        MCE_DEVICE_ORIENTATION_SIG);
-    }
-  else
-    {
-      hd_app_mgr_dbus_remove_signal_match (conn, MCE_SIGNAL_IF,
-                                           MCE_TKLOCK_MODE_SIG);
-      hd_app_mgr_dbus_remove_signal_match (conn, MCE_SIGNAL_IF,
-                                           MCE_DEVICE_ORIENTATION_SIG);
-    }
-
-  msg = dbus_message_new_method_call (
-          MCE_SERVICE,
-          MCE_REQUEST_PATH,
-          MCE_REQUEST_IF,
-          activate?
-              MCE_ACCELEROMETER_ENABLE_REQ :
-              MCE_ACCELEROMETER_DISABLE_REQ);
-  if (!msg)
-    {
-      g_warning ("%s: Couldn't create message.", __FUNCTION__);
-      return;
-    }
-
-  dbus_message_set_auto_start (msg, TRUE);
-  dbus_message_set_no_reply (msg, TRUE);
-
-  if (!dbus_connection_send (conn, msg, NULL))
-    {
-      g_warning ("%s: Couldn't send message.", __FUNCTION__);
-    }
-  else
-    dbus_connection_flush(conn);
-
-  dbus_message_unref (msg);
-
-  g_debug ("%s: %s", __FUNCTION__,
-           activate? "enabled" : "disabled");
-  priv->accel_enabled = activate;
-  return;
-}
-
-static void
-hd_app_mgr_gconf_value_changed (GConfClient *client,
-                                guint cnxn_id,
-                                GConfEntry *entry,
-                                gpointer user_data)
-{
-  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (HD_APP_MGR (user_data));
-  GConfValue *gvalue;
-  gboolean value = FALSE;
-
-  if (!entry)
-    return;
-
-  gvalue = gconf_entry_get_value (entry);
-  if (gvalue->type == GCONF_VALUE_BOOL)
-    value = gconf_value_get_bool (gvalue);
-
-  if (!g_strcmp0 (gconf_entry_get_key (entry),
-                  GCONF_SLIDE_OPEN_KEY))
-    priv->slide_closed = !value;
-
-  if (!g_strcmp0 (gconf_entry_get_key (entry),
-                  GCONF_DISABLE_CALLUI_KEY))
-    {
-      priv->disable_callui = value;
-
-      /* Check if h-d needs to track the orientation. */
-      hd_app_mgr_mce_activate_accel ();
-    }
-
-  return;
 }
 
 static void

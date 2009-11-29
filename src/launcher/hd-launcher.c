@@ -51,8 +51,6 @@
 #include "hd-util.h"
 #include "tidy/tidy-sub-texture.h"
 
-#include <hildon/hildon-banner.h>
-
 #define I_(str) (g_intern_static_string ((str)))
 
 typedef struct

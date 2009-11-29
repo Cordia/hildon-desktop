@@ -52,8 +52,6 @@
 
 #include <dbus/dbus-glib.h>
 
-#include <hildon/hildon-banner.h>
-
 #define LONG_PRESS_DUR 1
 
 enum
@@ -602,8 +600,6 @@ hd_switcher_app_crashed (HdSwitcher *switcher,
 
   text = g_strdup_printf (dgettext("ke-recv", "memr_ni_application_closed_no_resources"),
       app ? hd_launcher_item_get_local_name (HD_LAUNCHER_ITEM (app)) : "");
-  GtkWidget* banner = hildon_banner_show_information (NULL, NULL, text);
-  hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
   g_free (text);
 }
 
@@ -620,12 +616,6 @@ hd_switcher_insufficient_memory(HdSwitcher *switcher,
     hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME);
-
-  GtkWidget* banner = hildon_banner_show_information (NULL, NULL,
-                        dgettext("ke-recv", (waking_up ?
-                            "memr_ia_close_applications_switching" :
-                            "memr_ia_close_applications_opening")));
-  hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
 }
 
 /*
@@ -635,12 +625,6 @@ hd_switcher_insufficient_memory(HdSwitcher *switcher,
 static void
 hd_switcher_waking_fail (HdSwitcher *switcher)
 {
-  GtkWidget *banner;
-
-  banner = hildon_banner_show_information (NULL, NULL,
-                        _("ckct_ib_application_loading_failed"));
-  hildon_banner_set_timeout (HILDON_BANNER (banner), 6000);
-
   hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
 }
 

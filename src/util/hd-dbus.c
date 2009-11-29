@@ -3,11 +3,8 @@
 #include "hd-dbus.h"
 #include "hd-switcher.h"
 #include "hd-render-manager.h"
-#include "hd-volume-profile.h"
 
 #include <glib.h>
-#include <mce/dbus-names.h>
-#include <mce/mode-names.h>
 /*
  * Application killer DBus interface
  */
@@ -66,7 +63,7 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
       Window overlay;
       g_warning ("%s: " DSME_SHUTDOWN_SIGNAL_NAME " from DSME", __func__);
       /* send TERM to applications and exit without cleanup */
-      hd_volume_profile_set_silent (TRUE);
+      
       hd_comp_mgr_kill_all_apps (hmgr);
       overlay = mb_wm_comp_mgr_clutter_get_overlay_window (
                         MB_WM_COMP_MGR_CLUTTER (hmgr));
@@ -80,6 +77,7 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
         }
       _exit (0);
     }
+#if 0
   else if (dbus_message_is_signal (msg, MCE_SIGNAL_IF, "tklock_mode_ind"))
     {
       const char *mode;
@@ -148,10 +146,10 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
             }
         }
     }
-
+#endif
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
-
+#if 0
 static void
 hd_dbus_prevent_display_blanking (void)
 {
@@ -205,7 +203,7 @@ hd_dbus_disable_display_blanking (gboolean setting)
       timeout_f = 0;
     }
 }
-
+#endif
 DBusConnection *
 hd_dbus_init (HdCompMgr * hmgr)
 {
@@ -241,15 +239,6 @@ hd_dbus_init (HdCompMgr * hmgr)
       /* system bus */
       dbus_bus_add_match (sysbus_conn, "type='signal', interface='"
                           DSME_SIGNAL_INTERFACE "'", NULL);
-      dbus_bus_add_match (sysbus_conn,
-                          "type='signal',path='"MCE_SIGNAL_PATH"',"
-                          "interface='"MCE_SIGNAL_IF"',"
-                          "member='tklock_mode_ind'",
-                          NULL);
-      dbus_bus_add_match (sysbus_conn,
-                          "type='signal',path='" MCE_SIGNAL_PATH "',"
-                          "interface='" MCE_SIGNAL_IF "',"
-                          "member='" MCE_DISPLAY_SIG "'", NULL);
 
       dbus_connection_add_filter (sysbus_conn,
                                   hd_dbus_system_bus_signal_handler,

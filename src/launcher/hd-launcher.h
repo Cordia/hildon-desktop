@@ -44,6 +44,9 @@ G_BEGIN_DECLS
 #define HD_LAUNCHER_DEFAULT_ICON  "tasklaunch_default_application"
 #define HD_LAUNCHER_NO_TRANSITION "none"
 
+#define HILDON_MARGIN_HALF                       4
+#define HILDON_MARGIN_DEFAULT			 8
+
 #define HD_TYPE_LAUNCHER            (hd_launcher_get_type ())
 #define HD_LAUNCHER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), HD_TYPE_LAUNCHER, HdLauncher))
 #define HD_IS_LAUNCHER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HD_TYPE_LAUNCHER))

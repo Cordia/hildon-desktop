@@ -54,7 +54,6 @@
 #include "../tidy/tidy-blur-group.h"
 
 #include <dbus/dbus-glib-bindings.h>
-#include <mce/dbus-names.h>
 
 #include <sys/types.h>
 #include <fcntl.h>
@@ -103,9 +102,6 @@ struct HdCompMgrPrivate
 
   /* Track changes to the PORTRAIT properties. */
   unsigned long          property_changed_cb_id;
-
-  /* MCE D-Bus Proxy */
-  DBusGProxy            *mce_proxy;
 
   /* Time of last mapped window */
   struct timeval         last_map_time;
@@ -538,7 +534,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   HdTaskNavigator      *task_nav;
   ClutterActor         *stage;
   ClutterActor         *arena;
-  DBusGConnection      *system_connection;
   GError               *error = NULL;
   extern MBWindowManager *hd_mb_wm;
 
@@ -627,24 +622,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   hd_render_manager_set_state(HDRM_STATE_HOME);
 
-
-  /* Get D-Bus proxy for mce calls */
-  system_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
-
-  if (error)
-    {
-      g_warning ("Could not connect to System D-Bus. %s", error->message);
-      g_error_free (error);
-    }
-  else
-    {
-      priv->mce_proxy = dbus_g_proxy_new_for_name (system_connection,
-                                                   MCE_SERVICE,
-                                                   MCE_REQUEST_PATH,
-                                                   MCE_REQUEST_IF);
-      g_debug ("%s. Got mce Proxy", __FUNCTION__);
-    }
-
   return 1;
 }
 
@@ -668,12 +645,6 @@ hd_comp_mgr_destroy (MBWMObject *obj)
                                      MB_WM_COMP_MGR (obj)->wm->main_ctx,
                                      PropertyNotify,
                                      priv->property_changed_cb_id);
-
-  if (priv->mce_proxy)
-    {
-      g_object_unref (priv->mce_proxy);
-      priv->mce_proxy = NULL;
-    }
 
   if (priv->stack_sync)
     g_source_remove (priv->stack_sync);
@@ -2109,13 +2080,14 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           && !HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c)
           && transient_for)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
-
+#if 0
       if (HD_IS_BANNER_NOTE (c) && priv->mce_proxy)
         { /* Turn display backlight on for banner notes. */
           g_debug ("%s. Call %s", __FUNCTION__, MCE_DISPLAY_ON_REQ);
           dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
                                       G_TYPE_INVALID, G_TYPE_INVALID);
         }
+#endif
       return;
     }
   else if (ctype == MBWMClientTypeDialog)
