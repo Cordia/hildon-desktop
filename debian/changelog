@@ -1,10 +1,29 @@
-hildon-desktop (1:2.2.121-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.121-1) unstable; urgency=low
+
+  Adam:
+  * Fixes: NB#148101 - Alarm during phone app rotation paralizes the device
+  * Fixes: NB#142364 - Desktop stays in portrait mode
+  * Fixes: NB#148146 - First tap on task switcher not recognised when new
+    IM/email arrives
+  * Fixes: NB#147866 - closing a standalone notification while it's fading out
+    yields assertion violation
+  * Fixes: NB#147448 - Task Launcher grid view needs threshold for panning
+  * Fixes: NB#147344 - [REGU] Phone application: L/P is broken to certain extent
+  * Fixes: NB#145921 - UI shows turning effect while receive call in between
+    blocks game
 
   Kimmo:
   * Fixes: NB#141902 - Clear recent calls? dialog shifted to the top, for
     quick open and close of HW Keyboard
+  * Improve the ctrl+shift+n compositing toggling shortcut.
+  * Fixes: NB#139872 - X-term by magic shortcut Ctrl+Shift+x leaves
+    non-killable Zombie
+  * Fixes: NB#131591 - progress bar of backup application is shown on the
+    desktop in a mentioned scenario.
+  * Fixes: NB#141902 - Clear recent calls? dialog shifted to the top, for
+    quick open and close of HW Keyboard
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 16 Nov 2009 14:22:45 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 30 Nov 2009 15:33:12 +0200
 
 hildon-desktop (1:2.2.120-1) unstable; urgency=low
 
