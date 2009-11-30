@@ -1,3 +1,11 @@
+2009-11-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#148728 - Regressions in hildon-desktop 2.2.121-1~unreleased
+	(git master)
+
+	* src/main.c: Revert the sync changes -- apparently it's not radically
+	saving syncs after all and causes regressions.
+
 2009-11-27  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#148101 Alarm during phone app rotation paralizes the device

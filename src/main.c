@@ -249,23 +249,6 @@ key_binding_func (MBWindowManager   *wm,
     }
 }
 
-static guint hd_sync_id;
-
-static gboolean
-hd_mb_wm_sync (gpointer data)
-{
-  MBWindowManager *wm = data;
-
-  /* g_printerr("%s: calling mb_wm_sync\n", __func__);*/
-  mb_wm_sync (wm);
-  if (hd_sync_id)
-    {
-      g_source_remove (hd_sync_id);
-      hd_sync_id = 0;
-    }
-  return FALSE;
-}
-
 static ClutterX11FilterReturn
 clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
 {
@@ -273,15 +256,8 @@ clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
 
   mb_wm_main_context_handle_x_event (xev, wm->main_ctx);
 
-  if (wm->sync_type & MBWMSyncVisibility)
-    /* map/unmap -- immediate sync */
-    hd_mb_wm_sync (wm);
-  else if (wm->sync_type && !hd_sync_id)
-    hd_sync_id = g_idle_add (hd_mb_wm_sync, wm);
-  /*
-  else if (wm->sync_type)
-    g_printerr("%s: saved a sync call that would have happened before\n",
-                __func__); */
+  if (wm->sync_type)
+    mb_wm_sync (wm);
 
   return CLUTTER_X11_FILTER_CONTINUE;
 }
