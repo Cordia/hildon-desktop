@@ -1,5 +1,22 @@
 2009-12-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#130846 Layout mode screen hangs after adding shortcut
+		  - if Get started is opened in switcher
+
+	Get shared comes with a large, invisible, offscreen,
+	override-redirected window which stays on the top of
+	the window stack all the times.  When the dialog is
+	unmapped this wonderful code scans the stack to see
+	if there's something above the desktop window, finds
+	this OR window and ecides that it should stay in EDIT_DLG state.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify):
+	  Disregard MBWMClientTypeOverride windows when deciding about
+	  going back to EDIT state.  OR windows are meant to be unmanaged
+	  anyways, aren't they?
+
+2009-12-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#148662 multiline notification messages are shown wrongly
 
 	We didn't care about the height of the notification message,

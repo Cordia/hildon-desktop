@@ -2514,6 +2514,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       while (above)
         {
           if (above != c &&
+              MB_WM_CLIENT_CLIENT_TYPE(above)!=MBWMClientTypeOverride &&
               MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeHomeApplet &&
               MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeStatusArea)
             grab_spoil = TRUE;
