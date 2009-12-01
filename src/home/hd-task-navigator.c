@@ -1507,7 +1507,7 @@ turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
 }
 /* Boom effect }}} */
 
-/* Misc {{{ */
+/* %ClutterLabel utilities {{{ */
 /* Utility function to set up or change a #ClutterLabel. */
 static ClutterActor *
 set_label_text_and_color (ClutterActor * label, const char * newtext,
@@ -1547,6 +1547,29 @@ get_real_label_height (ClutterActor * label)
   return height;
 }
 
+/* Returns the number of \n-s in @label. */
+static guint
+get_nlines_of_label (ClutterActor * label)
+{
+  guint i;
+  const gchar *text;
+
+  text = clutter_label_get_text (CLUTTER_LABEL (label));
+  for (i = 1; *text; text++)
+    if (*text == '\n')
+      i++;
+  return i;
+}
+
+/* Linespacing is lost every now and then. */
+static void
+preserve_linespacing (ClutterActor * actor, gpointer unused, gpointer spc)
+{
+  set_label_line_spacing (actor, GPOINTER_TO_INT (spc));
+}
+/* %ClutterLabel:s }}} */
+
+/* Allocation callbacks {{{ */
 /* #ClutterActor::notify::allocation callback to clip @actor to its size
  * whenever it changes.  Used to clip ClutterLabel:s to their allocated
  * size. */
@@ -1567,14 +1590,9 @@ reanchor_on_resize (ClutterActor * actor, gpointer unused, gpointer grv)
 {
   clutter_actor_set_anchor_point_from_gravity (actor, GPOINTER_TO_INT (grv));
 }
+/* Allocation callbacks }}} */
 
-/* Linespacing is lost every now and then. */
-static void
-preserve_linespacing (ClutterActor * actor, gpointer unused, gpointer spc)
-{
-  set_label_line_spacing (actor, GPOINTER_TO_INT (spc));
-}
-
+/* %ClutterEffectCompleteFunc:s {{{ */
 /* #ClutterEffectCompleteFunc to hide @other when the effect is complete.
  * Used when @actor fades in in the top of @other. */
 static void
@@ -1606,7 +1624,7 @@ fade_in_when_complete (ClutterActor * actor, gpointer msecs)
   clutter_actor_set_opacity (actor, 0);
   fade_for_duration (GPOINTER_TO_INT (msecs), actor, 255, FINALLY_REST, NULL);
 }
-/* Misc }}} */
+/* %ClutterEffectCompleteFunc:s }}} */
 /* Clutter utilities }}} */
 
 /* Navigator utilities {{{ */
@@ -1922,13 +1940,17 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
     clutter_actor_get_size (tnote->message, &worig, &horig);
   clutter_actor_set_size (tnote->message, -1, -1);
   clutter_actor_get_size (tnote->message, &width, &height);
-  if (width > wmax)
+  if (width > wmax || height > hleft
+      || get_nlines_of_label (tnote->message) > maxmsg)
     {
       PangoLayout *lout;
 
-      /* Make it wrapped. */
-      width = wmax;
-      clutter_actor_set_width (tnote->message, width);
+      /* Make it wrapped if necessary. */
+      if (width > wmax)
+        {
+          width = wmax;
+          clutter_actor_set_width (tnote->message, width);
+        }
 
       /* Check the line count and restrict to @maxmsg. */
       lout = clutter_label_get_layout(CLUTTER_LABEL(tnote->message));

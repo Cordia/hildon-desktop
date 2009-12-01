@@ -1,3 +1,14 @@
+2009-12-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#148662 multiline notification messages are shown wrongly
+
+	We didn't care about the height of the notification message,
+	but only took notice if it was too wide for the thumbnail.
+
+	* src/home/hd-task-navigator.c (layout_notwin):
+	  Now consider the height as well as the number of lines,
+	  and crop if necessary.  Also some refactoring.
+
 2009-11-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.121-1
