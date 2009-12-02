@@ -1975,12 +1975,16 @@ hd_home_set_operator_applet (HdHome *home, ClutterActor *applet)
   HdHomePrivate *priv = home->priv;
 
   if (priv->operator_applet)
-    clutter_actor_destroy (priv->operator_applet);
+    {
+      clutter_actor_unparent(priv->operator_applet);
+      g_object_unref (priv->operator_applet);
+    }
 
   priv->operator_applet = applet;
 
   if (applet)
     {
+      g_object_ref(applet);
       clutter_actor_show (applet);
       clutter_actor_reparent (applet, priv->operator);
     }
