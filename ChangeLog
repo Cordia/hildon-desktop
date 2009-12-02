@@ -1,5 +1,11 @@
 2009-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	NB#142932 - Unblurring effect can be noticed while maximizing the 
+	            application from switcher
+	            
+	* src/home/hd-render-manager.c: Make sure that we don't reduce the
+	  blurring level at all from hd_render_manager_unzoom_background
+
 	NB#135249 - "More applications" view locked with the main icon view
 	            after launched under high load 
 

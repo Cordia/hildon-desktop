@@ -742,7 +742,15 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 void
 hd_render_manager_unzoom_background()
 {
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
   hd_render_manager_set_blur (HDRM_BLUR_HOME | HDRM_SHOW_TASK_NAV);
+  /* In this case we want to keep the same level of blur that we had
+   * previously, or the zoom effect looks a bit strange (it is also
+   * marginally slower as we start to fade in the new background too).
+   * It is easier to just force it here, rather than adding
+   * yet another HDRM_BLUR constant. Fixes bug 142932 */
+  priv->home_radius.b = priv->home_radius.a;
 }
 
 /* Checks the whole tree for visibility */
