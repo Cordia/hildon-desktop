@@ -244,11 +244,23 @@ hd_launcher_dispose (GObject *gobject)
   G_OBJECT_CLASS (hd_launcher_parent_class)->dispose (gobject);
 }
 
+static void
+_hd_launcher_hide_page (GQuark key_id, gpointer data, gpointer user_data)
+{
+  HdLauncherPage *page = HD_LAUNCHER_PAGE (data);
+  clutter_actor_hide (CLUTTER_ACTOR(page));
+}
+
 void
 hd_launcher_show (void)
 {
   ClutterActor *self = CLUTTER_ACTOR (hd_launcher_get ());
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (self);
+
+  /* Make sure we hide all pages when we start,
+   * to ensure that we can't get into any bad state */
+  if (priv->pages)
+    g_datalist_foreach (&priv->pages, _hd_launcher_hide_page, NULL);
 
   ClutterActor *top_page = g_datalist_get_data (&priv->pages,
                                                 HD_LAUNCHER_ITEM_TOP_CATEGORY);

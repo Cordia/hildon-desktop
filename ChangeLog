@@ -1,3 +1,11 @@
+2009-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	NB#135249 - "More applications" view locked with the main icon view
+	            after launched under high load 
+
+	* src/launcher/hd-launcher.c: Ensure that when launcher view is shown,
+	  only the main view is set as visible.
+
 2009-12-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#130846 Layout mode screen hangs after adding shortcut
