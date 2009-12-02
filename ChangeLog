@@ -1,5 +1,11 @@
 2009-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	NB#146526 - Observed hildon-desktop: GLIB CRITICAL
+	
+	* src/home/hd-home.c: Make sure we ref and unref the operator logo,
+	  rather than destroying the actor. Now comp-mgr-clutter refs and
+	  unrefs too, this all works as expected.
+
 	NB#142932 - Unblurring effect can be noticed while maximizing the 
 	            application from switcher
 	            
