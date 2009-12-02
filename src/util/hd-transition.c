@@ -1167,6 +1167,10 @@ hd_transition_notification(HdCompMgr                  *mgr,
 
   /* first call to stop flicker */
   on_notification_timeline_new_frame(data->timeline, 0, data);
+  /* Show the actor and add it to the front group */
+  clutter_actor_show(data->cclient_actor);
+  hd_render_manager_add_to_front_group(data->cclient_actor);
+  /* Finally start the timeline... */
   clutter_timeline_start (data->timeline);
 }
 

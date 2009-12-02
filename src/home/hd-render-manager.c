@@ -52,6 +52,10 @@
 /* This is to dump debug information to the console to help see whether the
  * order of clutter actors matches that of matchbox. */
 #define STACKING_DEBUG 0
+/* This dumps debug information about why we decided we should recalculate the
+ * blur for the background. This is useful if the blurring 'flickers' for some
+ * reason when it seems that nothing was updated. */
+#define BLUR_DEBUG 0
 
 /* And this one is to help debugging visibility-related problems
  * ie. when stacking is all right but but you cannot see what you want. */
@@ -2043,16 +2047,40 @@ void hd_render_manager_restack()
       /* now compare children */
       if (CLUTTER_ACTOR(it->data) != child)
         {
-          //g_debug("*** RE-BLURRING *** because contents changed at pos %d", i);
           blur_changed = TRUE;
           break;
         }
     }
   if (it || i<n_elements)
     {
-      //g_debug("*** RE-BLURRING *** because contents changed size");
       blur_changed = TRUE;
     }
+#if BLUR_DEBUG
+  if (blur_changed)
+    {
+      g_debug("*** RE-BLURRING *** because home_blur  contents changed");
+      for (it=g_list_last(previous_home_blur);it;it=it->prev)
+        {
+          ClutterActor *actor = CLUTTER_ACTOR(it->data);
+          if (clutter_actor_get_name(actor))
+            g_debug("PREVIOUS %s", clutter_actor_get_name(actor));
+          else
+            g_debug("PREVIOUS 0x%8X", (unsigned int)actor);
+        }
+        for (i=0;i<n_elements;i++)
+          {
+            ClutterActor *actor =
+                clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
+            if (CLUTTER_ACTOR_IS_VISIBLE(actor))
+              {
+                if (clutter_actor_get_name(actor))
+                  g_debug("CURRENT %s", clutter_actor_get_name(actor));
+                else
+                  g_debug("CURRENT 0x%8X", (unsigned int)actor);
+              }
+          }
+    }
+#endif
   g_list_free(previous_home_blur);
 
   /* ----------------------------- DEBUG PRINTING */
@@ -2361,6 +2389,8 @@ gboolean hd_render_manager_should_ignore_cm_client(MBWMCompMgrClutterClient *cm_
   /* HdAnimationActor sets this flag to signal to whom it may concern that it
    * want to decide the visibility and stacking order of its window's clutter
    * client on its own.
+   * HdNote sets it too for previews, to avoid being stacked along with other
+   * windows in the blur group and breaking blurring (bug 147129)
    */
   return (mb_wm_comp_mgr_clutter_client_get_flags(cm_client) &
           MBWMCompMgrClutterClientDontShow);

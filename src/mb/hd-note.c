@@ -154,6 +154,23 @@ x_window_property_changed (XPropertyEvent *event, HdNote *self)
 }
 
 static void
+hd_note_show (MBWindowManagerClient *client)
+{
+  MBWMCompMgrClutterClient *cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
+  MBWindowManagerClientClass* parent_klass =
+      MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
+
+  parent_klass->show (client);
+
+  /* Indicate to the libmatchbox code that the actor visibility and positioning
+   * logic will be overridden. */
+  if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(client))
+    mb_wm_comp_mgr_clutter_client_set_flags (cclient,
+                                             MBWMCompMgrClutterClientDontShow|
+                                             MBWMCompMgrClutterClientDontPosition);
+}
+
+static void
 hd_note_class_init (MBWMObjectClass *klass)
 {
   MBWindowManagerClientClass *client;
@@ -167,6 +184,7 @@ hd_note_class_init (MBWMObjectClass *klass)
   client->geometry     = hd_note_request_geometry;
   client->stack        = hd_note_stack;
   client->stacking_layer = hd_note_stacking_layer;
+  client->show         = hd_note_show;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdNote";

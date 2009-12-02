@@ -1,5 +1,16 @@
 2009-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	NB#147129 - Flickering is seen on the blured background when the task
+	            button is glowing.
+	            
+	* src/home/hd-render-manager.c: Updated a comment, and added some more
+	  useful (ifdef'd) debug code for reblurring
+	* src/mb/hd-note.c: As for AnimationActors, set the DontShow flag to
+	  stop the notification preview being stacked in home and causing a
+	  redraw.
+	* src/util/hd-transition.c: Show the notification preview properly when
+	  the transition for it starts.
+
 	NB#146526 - Observed hildon-desktop: GLIB CRITICAL
 	
 	* src/home/hd-home.c: Make sure we ref and unref the operator logo,
