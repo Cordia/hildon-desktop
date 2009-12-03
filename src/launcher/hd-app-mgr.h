@@ -101,6 +101,8 @@ void hd_app_mgr_set_render_manager (GObject *rendermgr);
 
 gboolean hd_app_mgr_execute (const gchar *exec, GPid *pid, gboolean auto_reap);
 
+void hd_app_mgr_mce_activate_accel_if_needed(void);
+
 G_END_DECLS
 
 #endif /* __HD_APP_MGR_H__ */

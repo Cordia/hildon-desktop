@@ -1,3 +1,21 @@
+2009-12-03  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	NB#149091 - Desktop does not respect PORTRAIT_CAPABLE flag correctly
+	
+	* src/main.c: Add Ctrl-Shift-R to toggle the portrait-capable flag for
+	              debugging
+	* src/launcher/hd-app-mgr.c
+	* src/launcher/hd-app-mgr.h: Now activate accelerometer if we have any
+	  windows that specify they are portrait-capable. Call 
+	  hd_comp_mgr_set_portrait_if_possible if we decide we should be in 
+	  portrait mode if the visible windows allow it.
+	* src/mb/hd-comp-mgr.c
+	* src/mb/hd-comp-mgr.h: Check if we need accelerometer every restack, 
+	  and add hd_comp_mgr_may_be_portrait to see if any window objects to 
+	  being in portrait. Add hd_comp_mgr_set_portrait_if_possible and
+	  related code to let us know we should transition to portrait
+	  if the windows allow it.	
+
 2009-12-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	NB#147129 - Flickering is seen on the blured background when the task

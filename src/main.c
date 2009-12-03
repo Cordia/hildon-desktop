@@ -61,6 +61,7 @@ enum {
   KEY_ACTION_TOGGLE_NON_COMP_MODE,
   KEY_ACTION_TAKE_SCREENSHOT,
   KEY_ACTION_XTERMINAL,
+  KEY_ACTION_TOGGLE_PORTRAITABLE,
 };
 
 #ifdef MBWM_DEB_VERSION
@@ -201,6 +202,32 @@ theme_button_type_func (const char *type_name,
   return 0;
 }
 
+/* Toggle the portrait-capable flag on and off on the topmost window */
+static void
+toggle_portraitable(MBWindowManager   *wm)
+{
+  HdCompMgr *hmgr = HD_COMP_MGR(wm->comp_mgr);
+  MBWindowManagerClient *c;
+  for (c=wm->stack_top;c;c=c->stacked_below)
+    {
+      MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
+      if (c_type == MBWMClientTypeDesktop)
+        break;
+      if (c_type == MBWMClientTypeApp)
+        {
+          /* actually set the portrait property to the opposite now */
+          gboolean new_supports = !hd_comp_mgr_client_supports_portrait(c);
+          guint value = new_supports ? 1 : 0;
+          mb_wm_util_async_trap_x_errors (wm->xdpy);
+          XChangeProperty(c->wmref->xdpy, c->window->xwindow,
+              hd_comp_mgr_get_atom (hmgr, HD_ATOM_WM_PORTRAIT_OK),
+                          XA_CARDINAL, 32, PropModeReplace,
+                          (unsigned char *)&value, 1);
+          mb_wm_util_async_untrap_x_errors ();
+        }
+    }
+}
+
 static void
 key_binding_func (MBWindowManager   *wm,
 		  MBWMKeyBinding    *binding,
@@ -246,6 +273,9 @@ key_binding_func (MBWindowManager   *wm,
           g_spawn_close_pid (pid);
         break;
       }
+    case KEY_ACTION_TOGGLE_PORTRAITABLE:
+        toggle_portraitable(wm);
+        break;
     }
 }
 
@@ -592,6 +622,11 @@ main (int argc, char **argv)
 				    key_binding_func,
 				    NULL,
 				    (void*)KEY_ACTION_TAKE_SCREENSHOT);
+  mb_wm_keys_binding_add_with_spec (wm,
+                                      "<shift><ctrl>r",
+                                      key_binding_func,
+                                      NULL,
+                                      (void*)KEY_ACTION_TOGGLE_PORTRAITABLE);
 
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 

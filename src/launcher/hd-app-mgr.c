@@ -263,7 +263,6 @@ static void hd_app_mgr_gconf_value_changed (GConfClient *client,
                                             guint cnxn_id,
                                             GConfEntry *entry,
                                             gpointer user_data);
-static void hd_app_mgr_mce_activate_accel  (void);
 static gboolean hd_app_mgr_show_callui_cb (gpointer data);
 static void hd_app_mgr_check_show_callui (void);
 
@@ -421,7 +420,7 @@ hd_app_mgr_init (HdAppMgr *self)
                                                     GCONF_DISABLE_CALLUI_KEY,
                                                     NULL);
       /* We don't call
-      hd_app_mgr_mce_activate_accel ();
+      hd_app_mgr_mce_activate_accel_if_needed ();
       here because hdrm is not ready yet. */
       gconf_client_add_dir (priv->gconf_client, GCONF_DISABLE_CALLUI_DIR,
                             GCONF_CLIENT_PRELOAD_NONE, NULL);
@@ -1573,7 +1572,7 @@ hd_app_mgr_hdrm_state_change (gpointer hdrm,
     }
 
   /* Also check if we should enable the accelerometer. */
-  hd_app_mgr_mce_activate_accel ();
+  hd_app_mgr_mce_activate_accel_if_needed ();
 }
 
 static void
@@ -1923,13 +1922,24 @@ _hd_app_mgr_dbus_check_value (DBusMessage *msg,
   return FALSE;
 }
 
+static void
+hd_app_mgr_update_portraitness(HdAppMgr *self)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
+  // what about priv->unlocked/priv->display_on ?
+  hd_comp_mgr_set_portrait_if_possible(hd_comp_mgr_get(),
+      priv->accel_enabled,
+      priv->portrait && priv->slide_closed);
+}
+
 static DBusHandlerResult
 hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                            DBusMessage *msg,
                            void *data)
 {
   gboolean changed = TRUE;
-  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (HD_APP_MGR (data));
+  HdAppMgr *self = HD_APP_MGR (data);
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
 
   if (dbus_message_is_signal (msg,
                               LOWMEM_ON_SIGNAL_INTERFACE,
@@ -1977,6 +1987,8 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                                            MCE_ORIENTATION_PORTRAIT);
           if (priv->portrait)
             hd_app_mgr_check_show_callui ();
+
+          hd_app_mgr_update_portraitness(self);
         }
     }
 
@@ -1989,16 +2001,19 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
 /* Activate the accelerometer when
  * - The user has activated rotate-to-callui.
  * - HDRM is in a state that shows callui.
+ * - We are showing an app, and all visible windows support portrait mode
  */
-static void
-hd_app_mgr_mce_activate_accel  ()
+void
+hd_app_mgr_mce_activate_accel_if_needed  ()
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (the_app_mgr);
   DBusConnection *conn = NULL;
   DBusMessage *msg = NULL;
 
-  gboolean activate = !priv->disable_callui &&
-                      STATE_SHOW_CALLUI (hd_render_manager_get_state ());
+  gboolean activate = (!priv->disable_callui &&
+                       STATE_SHOW_CALLUI (hd_render_manager_get_state ())) ||
+                      (STATE_IS_APP(hd_render_manager_get_state ()) &&
+                       hd_comp_mgr_can_be_portrait(hd_comp_mgr_get()));
   if (priv->accel_enabled == activate)
     return;
 
@@ -2053,6 +2068,8 @@ hd_app_mgr_mce_activate_accel  ()
   g_debug ("%s: %s", __FUNCTION__,
            activate? "enabled" : "disabled");
   priv->accel_enabled = activate;
+
+  hd_app_mgr_update_portraitness(the_app_mgr);
   return;
 }
 
@@ -2062,7 +2079,8 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
                                 GConfEntry *entry,
                                 gpointer user_data)
 {
-  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (HD_APP_MGR (user_data));
+  HdAppMgr *self = HD_APP_MGR (user_data);
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
   GConfValue *gvalue;
   gboolean value = FALSE;
 
@@ -2075,7 +2093,11 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
 
   if (!g_strcmp0 (gconf_entry_get_key (entry),
                   GCONF_SLIDE_OPEN_KEY))
-    priv->slide_closed = !value;
+    {
+      priv->slide_closed = !value;
+
+      hd_app_mgr_update_portraitness(self);
+    }
 
   if (!g_strcmp0 (gconf_entry_get_key (entry),
                   GCONF_DISABLE_CALLUI_KEY))
@@ -2083,7 +2105,7 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
       priv->disable_callui = value;
 
       /* Check if h-d needs to track the orientation. */
-      hd_app_mgr_mce_activate_accel ();
+      hd_app_mgr_mce_activate_accel_if_needed ();
     }
 
   return;
