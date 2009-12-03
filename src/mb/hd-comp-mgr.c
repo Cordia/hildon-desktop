@@ -109,6 +109,11 @@ struct HdCompMgrPrivate
 
   /* Time of last mapped window */
   struct timeval         last_map_time;
+
+  /* Portrait If Possible. If Enabled, we change mode depending on
+   * pip_portrait, IF we think it is possible. */
+  gboolean pip_enabled;
+  gboolean pip_portrait;
 };
 
 /*
@@ -153,10 +158,6 @@ HdRunningApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
                                                HdCompMgr *hmgr);
 
 static void hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr);
-
-static gboolean
-hd_comp_mgr_should_be_portrait_ignoring (HdCompMgr *hmgr,
-                                         MBWindowManagerClient *ignore);
 
 static void hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr,
                                                   MBWindowManagerClient *c);
@@ -379,6 +380,9 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
              ? -1 : priv->portrait_supported,
            priv->portrait_requested_inherited
              ? -1 : priv->portrait_requested);
+  /* If properties changed here, we need to check if we're in need of the
+   * accelerometer again. */
+  hd_app_mgr_mce_activate_accel_if_needed();
 
   return 1;
 }
@@ -2403,7 +2407,7 @@ hd_comp_mgr_determine_current_app ()
       if (!HD_IS_APP (c))
         continue;
       if (mb_wm_client_is_unmap_confirmed (c))
-        continue; 
+        continue;
       if (!mb_wm_client_is_map_confirmed (c) &&
           !hd_comp_mgr_client_is_maximized (c->frame_geometry))
         /* Not covering the whole application area. */
@@ -2827,6 +2831,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   /* Decide about portraitification in case a blocking window was unmapped. */
   hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
   hd_render_manager_restack ();
+  hd_app_mgr_mce_activate_accel_if_needed ();
   hd_comp_mgr_portrait_or_not_portrait (mgr, NULL);
 
   return FALSE;
@@ -2947,13 +2952,11 @@ hd_comp_mgr_update_clients_portrait_flags (MBWindowManagerClient *cs,
     }
   return hcmgrcs;
 }
-
-/* Does any visible client request portrait mode?
- * Are all of them concerned prepared for it? If ignore is nonzero,
- * we ignore the given client (as it may be disappearing soon). */
+/* Does any visible client request portrait mode? Or if assume_requested==TRUE
+ * we only return false if someone doesn't support portrait mode.
+ * Are all of them concerned prepared for it? */
 static gboolean
-hd_comp_mgr_should_be_portrait_ignoring (HdCompMgr *hmgr,
-                                         MBWindowManagerClient *ignore)
+hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
 {
   static guint counter;
   gboolean any_requests;
@@ -2965,13 +2968,10 @@ hd_comp_mgr_should_be_portrait_ignoring (HdCompMgr *hmgr,
   counter++;
 
   PORTRAIT ("SHOULD BE PORTRAIT?");
-  any_requests = FALSE;
+  any_requests = assume_requested;
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
     {
-      if (c == ignore)
-        continue;
-
       PORTRAIT ("CLIENT %p", c);
       PORTRAIT ("IS IGNORABLE?");
       if (MB_WM_CLIENT_CLIENT_TYPE (c) & HdWmClientTypeStatusArea)
@@ -3033,7 +3033,14 @@ hd_comp_mgr_should_be_portrait_ignoring (HdCompMgr *hmgr,
 gboolean
 hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
 {
-  return hd_comp_mgr_should_be_portrait_ignoring(hmgr, 0);
+  return hd_comp_mgr_may_be_portrait(hmgr, FALSE);
+}
+
+/* Are all clients concerned prepared for portrait mode? */
+gboolean
+hd_comp_mgr_can_be_portrait (HdCompMgr *hmgr)
+{
+  return hd_comp_mgr_may_be_portrait(hmgr, TRUE);
 }
 
 /*
@@ -3045,6 +3052,7 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
 static void
 hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 {
+  HdCompMgrPrivate *priv = HD_COMP_MGR(mgr)->priv;
   /* I think this is a guard for cases when we do a
    * set_state() -> portrait/unportrait() -> restack() */
   if (hd_render_manager_is_changing_state ())
@@ -3065,13 +3073,21 @@ hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr, MBWindowManagerClient *c
    * APP <=> APP_PORTRAIT and HOME <=> HOME_PORTRAIT
    */
   if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state ()))
-    { /* Landscape -> portrait? */
-      if (hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
+    { /* Landscape -> portrait?
+         Do this if an app says it really wants to be portrait OR
+         if we want to be in 'portrait if possible', and it is poissible */
+      if (hd_comp_mgr_should_be_portrait(HD_COMP_MGR (mgr)) ||
+          (priv->pip_enabled && priv->pip_portrait &&
+           hd_comp_mgr_can_be_portrait(HD_COMP_MGR (mgr))))
         hd_render_manager_set_state_portrait ();
     }
   else if (STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
-    { /* Portrait -> landscape? */
-      if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))
+    { /* Portrait -> landscape?
+         Do this if no app is specifically asking for portrait mode AND
+         'portrait if possible' wasn't enabled, or we're in landscape mode */
+      if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)) &&
+          (!priv->pip_enabled || !priv->pip_portrait ||
+           !hd_comp_mgr_can_be_portrait(HD_COMP_MGR (mgr))))
         hd_render_manager_set_state_unportrait ();
     }
 }
@@ -3353,3 +3369,11 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
 
   mb_wm_util_async_untrap_x_errors ();
 }
+
+void hd_comp_mgr_set_portrait_if_possible(HdCompMgr *hmgr, gboolean enabled, gboolean portrait)
+{
+  hmgr->priv->pip_enabled = enabled;
+  hmgr->priv->pip_portrait = portrait;
+  hd_comp_mgr_portrait_or_not_portrait(MB_WM_COMP_MGR(hmgr),0);
+}
+
