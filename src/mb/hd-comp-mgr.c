@@ -3008,12 +3008,6 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
         return FALSE;
       any_requests |= hcmgrc->priv->portrait_requested != 0;
 
-      /* We just finish here for the 'can handle portrait' test
-       * and assume that an app *will* fill the screen */
-      if (assume_requested &&
-          (MB_WM_CLIENT_CLIENT_TYPE (c) & MBWMClientTypeApp))
-        break;
-
       /*
        * This is a workaround for the fullscreen incoming call dialog.
        * Since it's fullscreen we can safely assume it will cover
@@ -3079,15 +3073,21 @@ hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr, MBWindowManagerClient *c
    * APP <=> APP_PORTRAIT and HOME <=> HOME_PORTRAIT
    */
   if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state ()))
-    { /* Landscape -> portrait? */
-      if ((!priv->pip_enabled && hd_comp_mgr_should_be_portrait(HD_COMP_MGR (mgr))) ||
-          (priv->pip_enabled && priv->pip_portrait && hd_comp_mgr_can_be_portrait(HD_COMP_MGR (mgr))))
+    { /* Landscape -> portrait?
+         Do this if an app says it really wants to be portrait OR
+         if we want to be in 'portrait if possible', and it is poissible */
+      if (hd_comp_mgr_should_be_portrait(HD_COMP_MGR (mgr)) ||
+          (priv->pip_enabled && priv->pip_portrait &&
+           hd_comp_mgr_can_be_portrait(HD_COMP_MGR (mgr))))
         hd_render_manager_set_state_portrait ();
     }
   else if (STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
-    { /* Portrait -> landscape? */
-      if ((!priv->pip_enabled && !hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)))||
-          (priv->pip_enabled && (!priv->pip_portrait || !hd_comp_mgr_can_be_portrait(HD_COMP_MGR (mgr)))))
+    { /* Portrait -> landscape?
+         Do this if no app is specifically asking for portrait mode AND
+         'portrait if possible' wasn't enabled, or we're in landscape mode */
+      if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)) &&
+          (!priv->pip_enabled || (!priv->pip_portrait ||
+              !hd_comp_mgr_can_be_portrait(HD_COMP_MGR (mgr)))))
         hd_render_manager_set_state_unportrait ();
     }
 }
