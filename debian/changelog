@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.122-1~unreleased) unstable; urgency=low
 
-  * foo
+  * Fixes: NB#149132 Remove doc files from hildon-desktop deb
+    rm -rf usr/share/doc/hildon-desktop in package creation time on armel.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 30 Nov 2009 15:35:29 +0200
 

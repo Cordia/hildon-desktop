@@ -36,3 +36,8 @@ binary-install/hildon-desktop::
 	dh_installxsession -u 'post 20'
 	dh_installxsession --init-script='hildon-desktop-wait' -u 'post 21'
 
+# Save SSU d/l volume.
+ifeq ($(DEB_BUILD_ARCH),armel)
+binary-post-install/hildon-desktop::
+	rm -rf "debian/$(cdbs_curpkg)/usr/share/doc"
+endif
