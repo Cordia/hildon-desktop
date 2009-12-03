@@ -36,8 +36,8 @@
 G_BEGIN_DECLS
 
 /* Hardware display dimensions */
-#define HD_COMP_MGR_LANDSCAPE_WIDTH   800
-#define HD_COMP_MGR_LANDSCAPE_HEIGHT  480
+#define HD_COMP_MGR_LANDSCAPE_WIDTH   1024
+#define HD_COMP_MGR_LANDSCAPE_HEIGHT  576
 
 /* The title bar height + HALF_MARGIN border. */
 #define HD_COMP_MGR_TOP_MARGIN         56

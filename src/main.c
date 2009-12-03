@@ -33,14 +33,13 @@
 #include <sys/time.h>
 #endif
 #include <time.h>
-
+#include <unistd.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #include <clutter/clutter-main.h>
 #include <clutter/clutter-stage.h>
 #include <clutter/x11/clutter-x11.h>
 #include <clutter/clutter-container.h>
-#include <libgnomevfs/gnome-vfs.h>
 #include <signal.h>
 #include <gdk-pixbuf-xlib/gdk-pixbuf-xlib.h>
 
@@ -510,8 +509,6 @@ main (int argc, char **argv)
   textdomain (GETTEXT_PACKAGE);
 
   g_thread_init (NULL);
-
-  gnome_vfs_init ();
 
   mb_wm_object_init();
 

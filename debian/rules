@@ -8,10 +8,6 @@ else
 ENABLE_A11Y =
 endif
 
-ifeq (,$(findstring nolauncher,$(DEB_BUILD_OPTIONS)))
-ENABLE_LAUNCHER += --enable-maemo-launcher
-endif
-
 ifeq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 CFLAGS += -DG_DEBUG_DISABLE
 else

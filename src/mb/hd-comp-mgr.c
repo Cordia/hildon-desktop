@@ -534,7 +534,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   HdTaskNavigator      *task_nav;
   ClutterActor         *stage;
   ClutterActor         *arena;
-  GError               *error = NULL;
   extern MBWindowManager *hd_mb_wm;
 
   priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
@@ -3087,8 +3086,6 @@ hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr)
     {
       priv->do_not_disturb_flag = do_not_disturb_flag;
       g_debug ("DND: %d", priv->do_not_disturb_flag);
-
-      hd_dbus_disable_display_blanking (do_not_disturb_flag);
     }
 }
 

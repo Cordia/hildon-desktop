@@ -1,14 +1,14 @@
 Source: hildon-desktop
 Section: x11
 Priority: optional
-Maintainer: Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
-Build-Depends: cdbs (>= 0.4.21), debhelper (>= 4.1.0), pkg-config (>= 0.18), libmatchbox2-dev (>> 0.2.81-1), libclutter-0.8-dev (>> 0.8.2-0maemo57), libxdamage-dev, libxcomposite-dev, libxfixes-dev, libx11-dev, libdbus-1-dev, libxft-dev, libglib2.0-dev, libgtk2.0-dev, libgconf2-dev, libhildon1-dev, libhildondesktop1-dev (>= 2.1.6), libcanberra-dev, libxrandr-dev, upstart-dev, mce-dev (>=1.8.14), libgnome-menu-dev, libcail-dev, libprofile-dev (>= 0.0.15), maemo-launcher-dev, libhildonmime-dev
+Maintainer: Moises Martinez <moimart@gmail.com>
+Build-Depends: cdbs (>= 0.4.21), debhelper (>= 4.1.0), pkg-config (>= 0.18), libmatchbox2-dev (>> 0.2.81-1), libclutter-0.8-dev (>> 0.8.2-0maemo57), libxdamage-dev, libxcomposite-dev, libxfixes-dev, libx11-dev, libdbus-1-dev, libxft-dev, libglib2.0-dev, libgtk2.0-dev, libgconf2-dev, libhildondesktop1-dev (>= 2.1.6), libcanberra-dev, libxrandr-dev, libgnome-menu-dev
 Standards-Version: 3.8.0
 
 Package: hildon-desktop
 Section: x11
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, hildon-theme | hildon-theme-devel (>= 5.10.19-1), hildon-icons | sdk-default-icons, gconf2, osso-af-startup, maemo-af-desktop-l10n-mr0 | maemo-af-desktop-l10n-mr, theme-config, ke-recv-extra, clipboard-manager, ke-recv-l10n-mr | ke-recv-l10n-mr0, libgtk2.0-0 (>= 2:2.14.7-1maemo15)
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgconf2, theme-config, ke-recv-extra, clipboard-manager, ke-recv-l10n-mr | ke-recv-l10n-mr0, libgtk2.0-0 (>= 2:2.14.7-1maemo15)
 Description: Hildon desktop for Fremantle
  Hildon desktop for Fremantle.
 
