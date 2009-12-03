@@ -3086,8 +3086,8 @@ hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr, MBWindowManagerClient *c
          Do this if no app is specifically asking for portrait mode AND
          'portrait if possible' wasn't enabled, or we're in landscape mode */
       if (!hd_comp_mgr_should_be_portrait (HD_COMP_MGR (mgr)) &&
-          (!priv->pip_enabled || (!priv->pip_portrait ||
-              !hd_comp_mgr_can_be_portrait(HD_COMP_MGR (mgr)))))
+          (!priv->pip_enabled || !priv->pip_portrait ||
+           !hd_comp_mgr_can_be_portrait(HD_COMP_MGR (mgr))))
         hd_render_manager_set_state_unportrait ();
     }
 }
