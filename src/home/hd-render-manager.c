@@ -2315,13 +2315,15 @@ void hd_render_manager_restack()
           {
             ClutterGeometry geo = {0};
             gboolean maximized;
+            MBGeometry *mg;
 
             hd_render_manager_get_geo_for_current_screen(child, &geo);
             if (!hd_render_manager_clip_geo(&geo))
               /* It's neiteher maximized nor @app_top, it doesn't exist. */
               continue;
-            maximized = hd_comp_mgr_client_is_maximized (
-                                        *((MBGeometry*)((void*)&geo)));
+
+            mg = (MBGeometry*)((void*)&geo);
+            maximized = hd_comp_mgr_client_is_maximized (*mg);
 
             /* If we are in HOME_EDIT_DLG state, the background is always
              * blurred, and if something is maximised it MUST be a dialog

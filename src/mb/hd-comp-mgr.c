@@ -509,7 +509,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 /* TODO Convert MCE to DSME */
   DBusGConnection      *system_connection;
 #endif
-  GError               *error = NULL;
   extern MBWindowManager *hd_mb_wm;
 
   priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
