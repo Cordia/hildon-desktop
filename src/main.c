@@ -33,6 +33,7 @@
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 
+#include <unistd.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #include <hildon/hildon-main.h>
@@ -40,7 +41,6 @@
 #include <clutter/clutter-stage.h>
 #include <clutter/x11/clutter-x11.h>
 #include <clutter/clutter-container.h>
-#include <libgnomevfs/gnome-vfs.h>
 #include <gdk-pixbuf-xlib/gdk-pixbuf-xlib.h>
 
 #include "hildon-desktop.h"
@@ -550,8 +550,6 @@ main (int argc, char **argv)
   textdomain (GETTEXT_PACKAGE);
 
   g_thread_init (NULL);
-
-  gnome_vfs_init ();
 
   mb_wm_object_init();
 

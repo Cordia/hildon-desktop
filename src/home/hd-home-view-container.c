@@ -31,9 +31,8 @@
 #include "hd-transition.h"
 
 #include <glib/gstdio.h>
-
+#include <gio/gio.h>
 #include <gconf/gconf-client.h>
-#include <libgnomevfs/gnome-vfs.h>
 
 #include <matchbox/core/mb-wm.h>
 
@@ -77,7 +76,8 @@ struct _HdHomeViewContainerPrivate
   /* GConf */
   GConfClient *gconf_client;
 
-  GnomeVFSMonitorHandle *backgrounds_dir_monitor;
+  GFile *bg_file;
+  GFileMonitor *backgrounds_dir_monitor;
 
   guint views_active_notify;
 };
@@ -114,23 +114,24 @@ hd_home_view_container_update_previous_and_next_view (HdHomeViewContainer *self)
 }
 
 static void
-backgrounds_dir_changed (GnomeVFSMonitorHandle    *handler,
-                         const gchar              *monitor_uri,
-                         const gchar              *info_uri,
-                         GnomeVFSMonitorEventType  event_type,
+backgrounds_dir_changed (GFileMonitor		  *monitor,
+                         GFile		          *monitor_file,
+                         GFile		          *info,
+                         GFileMonitorEvent	   event_type,
                          HdHomeViewContainer      *view_container)
 {
   HdHomeViewContainerPrivate *priv = view_container->priv;
+  gchar *info_uri = g_file_get_uri (info);
 
-  if (event_type == GNOME_VFS_MONITOR_EVENT_CREATED ||
-      event_type == GNOME_VFS_MONITOR_EVENT_CHANGED)
+  if (event_type == G_FILE_MONITOR_EVENT_CREATED ||
+      event_type == G_FILE_MONITOR_EVENT_CHANGED)
     {
       gchar *filename, *basename;
 
       g_debug ("%s. %s %s.",
                __FUNCTION__,
                info_uri,
-               event_type == GNOME_VFS_MONITOR_EVENT_CREATED ?
+               event_type == G_FILE_MONITOR_EVENT_CREATED ?
                              "created" : "changed");
 
       filename = g_filename_from_uri (info_uri, NULL, NULL);
@@ -155,6 +156,8 @@ backgrounds_dir_changed (GnomeVFSMonitorHandle    *handler,
       g_free (filename);
       g_free (basename);
     }
+
+  g_free (info_uri);
 }
 
 static void
@@ -450,8 +453,7 @@ hd_home_view_container_constructed (GObject *self)
   guint i;
   MBWindowManager *wm;
   long propvalue[1];
-  gchar *backgrounds_dir, *backgrounds_dir_uri;
-  GnomeVFSResult result;
+  gchar *backgrounds_dir;
   GError *error = NULL;
 
   if (G_OBJECT_CLASS (hd_home_view_container_parent_class)->constructed)
@@ -516,23 +518,19 @@ hd_home_view_container_constructed (GObject *self)
       g_warning ("Could not make %s dir", backgrounds_dir);
     }
 
-  backgrounds_dir_uri = gnome_vfs_get_uri_from_local_path (backgrounds_dir);
-  result = gnome_vfs_monitor_add (&priv->backgrounds_dir_monitor,
-                                  backgrounds_dir_uri,
-                                  GNOME_VFS_MONITOR_DIRECTORY,
-                                  (GnomeVFSMonitorCallback) backgrounds_dir_changed,
-                                  self);
+  priv->bg_file = g_file_new_for_path (backgrounds_dir);
 
-  if (result == GNOME_VFS_OK)
-    g_debug ("%s. Started to monitor %s",
-             __FUNCTION__,
-             backgrounds_dir_uri);
-  else
-    g_warning ("Cannot monitor directory ~/.backgrounds for changed background files. %s",
-               gnome_vfs_result_to_string (result));
+  priv->backgrounds_dir_monitor =
+    g_file_monitor_directory (priv->bg_file,
+                              G_FILE_MONITOR_NONE,
+			      NULL,NULL);
+
+  g_signal_connect (G_OBJECT (priv->backgrounds_dir_monitor),
+		    "changed",
+                    G_CALLBACK (backgrounds_dir_changed),
+                    (gpointer)self);
 
   g_free (backgrounds_dir);
-  g_free (backgrounds_dir_uri);
 
   hd_home_view_container_update_active_views (container, TRUE);
 }
@@ -546,7 +544,12 @@ hd_home_view_container_dispose (GObject *self)
     priv->home = (g_object_unref (priv->home), NULL);
 
   if (priv->backgrounds_dir_monitor)
-    priv->backgrounds_dir_monitor = (gnome_vfs_monitor_cancel (priv->backgrounds_dir_monitor), NULL);
+    {
+      g_file_monitor_cancel (priv->backgrounds_dir_monitor);
+      g_object_unref (priv->backgrounds_dir_monitor);
+    }
+
+  g_object_unref (priv->bg_file);
 
   G_OBJECT_CLASS (hd_home_view_container_parent_class)->dispose (self);
 }
@@ -719,6 +722,9 @@ hd_home_view_container_init (HdHomeViewContainer *self)
   /* Create priv member */
   priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
                                                    HD_TYPE_HOME_VIEW_CONTAINER, HdHomeViewContainerPrivate);
+
+  priv->backgrounds_dir_monitor = NULL;
+  priv->bg_file = NULL;
 }
 
 ClutterActor *
