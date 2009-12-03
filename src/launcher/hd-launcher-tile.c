@@ -31,7 +31,6 @@
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
-#include <hildon/hildon-defines.h>
 #include <stdlib.h>
 
 #include "hd-gtk-style.h"

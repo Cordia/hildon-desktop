@@ -34,7 +34,6 @@
 #include <tidy/tidy-scroll-view.h>
 #include <tidy/tidy-scroll-bar.h>
 #include <tidy/tidy-adjustment.h>
-#include <hildon/hildon-defines.h>
 #include <math.h>
 
 #include "hd-transition.h"

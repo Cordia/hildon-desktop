@@ -1309,6 +1309,7 @@ _hd_app_mgr_child_setup(gpointer user_data)
 {
   int priority;
   int fd;
+  int write_result;
 
   /* If the child process inherited desktop's high priority,
    * give child default priority */
@@ -1323,7 +1324,7 @@ _hd_app_mgr_child_setup(gpointer user_data)
   fd = open ("/proc/self/oom_adj", O_WRONLY);
   if (fd >= 0)
   {
-    write (fd, OOM_DISABLE, sizeof (OOM_DISABLE));
+    write_result = write (fd, OOM_DISABLE, sizeof (OOM_DISABLE));
     close (fd);
   }
 }
