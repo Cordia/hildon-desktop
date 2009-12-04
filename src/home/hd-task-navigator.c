@@ -595,13 +595,22 @@ static const Flyops Fly_smoothly =
 
 /* The size and position of non-fullscreen application windows
  * in application view. */
-static const ClutterGeometry App_window_geometry =
+static ClutterGeometry App_window_geometry =
 {
   .x      = 0,
   .y      = HD_COMP_MGR_TOP_MARGIN,
-  .width  = HD_COMP_MGR_LANDSCAPE_WIDTH,
-  .height = HD_COMP_MGR_LANDSCAPE_HEIGHT - HD_COMP_MGR_TOP_MARGIN,
+  .width  = 0,
+  .height = 0 - HD_COMP_MGR_TOP_MARGIN,
 };
+#define _setWindowGeometry()\
+{\
+  if (App_window_geometry.width == 0)\
+    {\
+      App_window_geometry.width = HD_COMP_MGR_LANDSCAPE_WIDTH;\
+      App_window_geometry.height += HD_COMP_MGR_LANDSCAPE_HEIGHT;\
+    }\
+}
+
 /* }}} */
 
 /* Private variables {{{ */
@@ -2044,6 +2053,8 @@ layout_thumbs (ClutterActor * newborn)
   guint xthumb, ythumb, i;
   const GtkRequisition *oldthsize;
 
+  _setWindowGeometry();
+
   /* Save the old @Thumbsize to know if it's changed. */
   calc_layout (&lout);
   oldthsize = Thumbsize;
@@ -2365,6 +2376,7 @@ claim_win (Thumbnail * apthumb)
 {
   g_assert (hd_task_navigator_is_active ());
 
+  _setWindowGeometry();
   /*
    * Take @apthumb->apwin into our care even if there is a video screenshot.
    * If we don't @apthumb->apwin will be managed by its current parent and
@@ -2611,6 +2623,7 @@ static void
 zoom_fun (gint * xposp, gint * yposp,
           gdouble * xscalep, gdouble * yscalep)
 {
+  _setWindowGeometry();
   /* The prison represents what's in @App_window_geometry in app view. */
   *xscalep = 1 / *xscalep;
   *yscalep = 1 / *yscalep;
@@ -2941,6 +2954,8 @@ create_appthumb (ClutterActor * apwin)
 
   apthumb = g_new0 (Thumbnail, 1);
   apthumb->type = APPLICATION;
+
+  _setWindowGeometry();
 
   /* We're just in a MapNotify, it shouldn't happen.
    * mb_wm_object_signal_connect() will take reference
