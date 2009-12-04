@@ -594,6 +594,10 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   hd_render_manager_set_state(HDRM_STATE_HOME);
 
+#ifndef MAEMO_CHANGES
+  clutter_stage_show_cursor (CLUTTER_STAGE (stage));
+#endif
+
 #ifdef HAVE_DSME
 /* TODO Convert MCE to DSME */
   /* Get D-Bus proxy for mce calls */
