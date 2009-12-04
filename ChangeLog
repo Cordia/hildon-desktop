@@ -1,3 +1,15 @@
+2009-12-04  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	NB#149340 - Task switcher window thumbnail quality
+	 
+	* src/home/hd-task-navigator.c: Set "FILTER_LINEAR" data on thumbnail
+	  container. The changes to libmatchbox will now make any actors in 
+	  here become linearly filtered.
+	* src/tidy/tidy-blur-group.c: Add linear filtering when rendering the
+	  blur texture (to give smoothed pixels when expanding the 1/2 size
+	  texture). Also use linear filtering when originally rendering to the
+	  1/2 size texture to provide some kind of smoothing when downscaling.
+
 2009-12-03  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	NB#149091 - Desktop does not respect PORTRAIT_CAPABLE flag correctly

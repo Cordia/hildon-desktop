@@ -313,6 +313,37 @@ tidy_blur_group_do_chequer(TidyBlurGroup *group)
                           CFX_ONE*height/CHEQUER_SIZE);
 }
 
+/* Recursively set texture filtering state on this actor and children, and
+ * save the old state in the object. */
+static void
+recursive_set_texture_filter(ClutterActor *actor, ClutterTextureQuality *filter)
+{
+  if (CLUTTER_IS_CONTAINER(actor))
+    clutter_container_foreach(CLUTTER_CONTAINER(actor),
+                              (ClutterCallback)recursive_set_texture_filter,
+                              filter);
+  if (CLUTTER_IS_TEXTURE(actor))
+    {
+      ClutterTexture *tex = CLUTTER_TEXTURE(actor);
+      if (filter)
+        {
+          /* get old quality and save it */
+          ClutterTextureQuality f = clutter_texture_get_filter_quality(tex);
+          g_object_set_data(G_OBJECT(tex), "OldFilterQuality", (void*)f);
+          /* Update quality */
+          clutter_texture_set_filter_quality(tex, *filter);
+        }
+      else
+        {
+          /* Set quality to what it was previously */
+          ClutterTextureQuality f =
+                  (ClutterTextureQuality)
+                      g_object_steal_data(G_OBJECT(tex), "OldFilterQuality");
+          clutter_texture_set_filter_quality(tex, f);
+        }
+    }
+}
+
 /* An implementation for the ClutterGroup::paint() vfunc,
    painting all the child actors: */
 static void
@@ -323,6 +354,8 @@ tidy_blur_group_paint (ClutterActor *actor)
   ClutterColor    bgcol = { 0x00, 0x00, 0x00, 0xff };
   gint            x_1, y_1, x_2, y_2;
   gint            steps_this_frame = 0;
+  CoglHandle      current_tex;
+  ClutterTextureQuality filter_linear = GL_LINEAR;
 
   if (!TIDY_IS_SANE_BLUR_GROUP(actor))
     return;
@@ -441,8 +474,6 @@ tidy_blur_group_paint (ClutterActor *actor)
     {
       tidy_util_cogl_push_offscreen_buffer(priv->fbo_a);
       cogl_push_matrix();
-      /* translate a bit to let bilinear filter smooth out intermediate pixels */
-      cogl_translatex(CFX_ONE/2,CFX_ONE/2,0);
 
       if (rotate_90) {
         cogl_scale(CFX_ONE*tex_width/height, CFX_ONE*tex_height/width);
@@ -453,10 +484,16 @@ tidy_blur_group_paint (ClutterActor *actor)
         cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height);
       }
 
+      /* translate a bit to let bilinear filter smooth out intermediate pixels */
+      cogl_translatex(CFX_ONE/2,CFX_ONE/2,0);
 
       cogl_paint_init(&bgcol);
       cogl_color (&white);
+      /* Actually do the drawing of the children, but ensure that they are
+       * all linear sampled so they are smoothly interpolated. Restore after */
+      recursive_set_texture_filter(actor, &filter_linear);
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
+      recursive_set_texture_filter(actor, NULL);
 
       cogl_pop_matrix();
       tidy_util_cogl_pop_offscreen_buffer();
@@ -620,9 +657,14 @@ tidy_blur_group_paint (ClutterActor *actor)
       cogl_translatex(-CFX_ONE*width/2, -CFX_ONE*height/2, 0);
     }
 
+  /* Set the blur texture to linear interpolation - so we draw it smoothly
+   * Onto the screen */
+  current_tex = priv->current_is_a ? priv->tex_a : priv->tex_b;
+  cogl_texture_set_filters(current_tex, CGL_LINEAR, CGL_LINEAR);
+
   if ((priv->zoom >= 1) || !priv->use_mirror)
     {
-      cogl_texture_rectangle (priv->current_is_a ? priv->tex_a : priv->tex_b,
+      cogl_texture_rectangle (current_tex,
                               mx-zx, my-zy,
                               mx+zx, my+zy,
                               0, 0, CFX_ONE, CFX_ONE);
@@ -728,11 +770,14 @@ tidy_blur_group_paint (ClutterActor *actor)
             v+=6;
           }
       /* render! */
-      cogl_texture_triangles (priv->current_is_a ? priv->tex_a : priv->tex_b,
+      cogl_texture_triangles (current_tex,
                               6*(VIGNETTE_TILES*VIGNETTE_TILES),
                               verts,
                               TRUE);
     }
+
+  /* Reset the filters on the current texture ready for normal blurring */
+  cogl_texture_set_filters(current_tex, CGL_NEAREST, CGL_NEAREST);
 
   if (rotate_90)
     {

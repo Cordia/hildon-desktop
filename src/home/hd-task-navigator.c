@@ -2975,6 +2975,9 @@ create_appthumb (ClutterActor * apwin)
   clutter_actor_set_clip (apthumb->windows,
                           App_window_geometry.x, App_window_geometry.y,
                           App_window_geometry.width, App_window_geometry.height);
+  /* See mb_wm_comp_mgr_clutter_client_actor_reparent_cb - we check this to
+   * see if we should linear filter the actor or not */
+  g_object_set_data(G_OBJECT(apthumb->windows), "FILTER_LINEAR", (void*)1);
 
   /* .prison: anchor it so that we can ignore the UI framework area
    * of its contents.  Do so even if @apwin is really fullscreen,
