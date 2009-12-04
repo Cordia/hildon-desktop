@@ -204,7 +204,7 @@ hd_launcher_page_constructed (GObject *object)
                                &text_color);
   font_string = hd_gtk_style_get_font_string (HD_GTK_BUTTON_SINGLETON);
   priv->empty_label = clutter_label_new_full(font_string,
-                                             _("tana_li_of_noapps"),
+                                             _("No applications found"),
                                              &text_color);
   clutter_label_set_line_wrap (CLUTTER_LABEL (priv->empty_label), TRUE);
   clutter_label_set_ellipsize (CLUTTER_LABEL (priv->empty_label),

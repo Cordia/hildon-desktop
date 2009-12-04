@@ -115,7 +115,7 @@ static const char *const BTN_LABELS[BTN_COUNT * 2] = {
     NULL, NULL,  // BTN_CLOSE,
     NULL, NULL,  // BTN_CLOSE_PRESSED,
     NULL, NULL,  // BTN_MENU
-    "hildon-libs", "wdgt_bd_done", // BTN_DONE
+    "hildon-libs", "I'm done!", // BTN_DONE
     NULL, NULL,  // BTN_MENU_INDICATOR
 };
 
@@ -882,7 +882,7 @@ hd_title_bar_set_for_edit_mode(HdTitleBar *bar)
 
   hd_title_bar_set_state_real(bar, state);
 
-  title = dgettext ("maemo-af-desktop", "home_ti_desktop_menu");
+  title = _("My Home menu");
   hd_title_bar_set_title (bar, title, FALSE, FALSE);
 }
 

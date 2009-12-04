@@ -39,7 +39,7 @@
 #include <string.h>
 #include <math.h>
 
-#define MAX_HOME_VIEWS 4
+#define MAX_HOME_VIEWS 8
 
 #define HD_GCONF_DIR_VIEWS         "/apps/osso/hildon-desktop/views"
 #define HD_GCONF_KEY_VIEWS_ACTIVE  HD_GCONF_DIR_VIEWS "/active"
@@ -201,8 +201,9 @@ hd_home_view_container_update_active_views (HdHomeViewContainer *self,
   /* Check if there is an view active */
   if (none_active)
     {
-      g_warning ("No active views. Make first view active");
-      active_views[0] = TRUE;
+      g_warning ("No active views. Make first four view active");
+      active_views[0] = active_views[1] = 
+      active_views[2] = active_views[3] = TRUE;
     }
 
   /* Read current view from GConf on construction */

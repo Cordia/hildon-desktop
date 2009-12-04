@@ -237,14 +237,7 @@ key_binding_func (MBWindowManager   *wm,
     case KEY_ACTION_TAKE_SCREENSHOT:
         take_screenshot();
 	break;
-    case KEY_ACTION_XTERMINAL:
-      {
-        GPid pid;
-        if (hd_app_mgr_execute ("/usr/bin/osso-xterm", &pid, TRUE))
-          g_spawn_close_pid (pid);
-        break;
-      }
-    }
+   }
 }
 
 static ClutterX11FilterReturn
@@ -573,11 +566,6 @@ main (int argc, char **argv)
 				    key_binding_func,
 				    NULL,
 				    (void*)KEY_ACTION_TOGGLE_SWITCHER);
-  mb_wm_keys_binding_add_with_spec (wm,
-				    "<shift><ctrl>x",
-				    key_binding_func,
-				    NULL,
-				    (void*)KEY_ACTION_XTERMINAL);
   mb_wm_keys_binding_add_with_spec (wm,
 				    "<shift><ctrl>n",
 				    key_binding_func,

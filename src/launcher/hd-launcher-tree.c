@@ -16,7 +16,7 @@
 #include <gmenu-tree.h>
 
 /* where the menu XML resides */
-#define HILDON_DESKTOP_APPLICATIONS_MENU        "hildon.menu"
+#define HILDON_DESKTOP_APPLICATIONS_MENU        "kde-applications.menu"
 
 #define HD_LAUNCHER_TREE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TREE, HdLauncherTreePrivate))
 
@@ -110,7 +110,7 @@ walk_thread_done_idle (gpointer user_data)
 {
   WalkThreadData *data = user_data;
   HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (data->tree);
-
+  
   if ((priv->active_walk == data) && !data->cancelled)
     {
       /* This is the correct walking. */
@@ -146,7 +146,7 @@ walk_thread_func (gpointer user_data)
   WalkThreadData *data = user_data;
   GSList *entries;
   GSList *tmp;
-
+  
   entries = gmenu_tree_directory_get_contents (data->root);
   tmp = entries;
   while (tmp)
@@ -179,8 +179,8 @@ walk_thread_func (gpointer user_data)
           GMenuTreeDirectory *entry_dir = GMENU_TREE_DIRECTORY (tmp_entry);
           id = g_strdup (gmenu_tree_directory_get_menu_id (entry_dir));
           key_file_path = gmenu_tree_directory_get_desktop_file_path (entry_dir);
-
-          /* Iterate. */
+          
+	  /* Iterate. */
           WalkThreadData *subdata = walk_thread_data_new_level (data, entry_dir);
           subdata->root = entry_dir;
           walk_thread_func ((gpointer)subdata);

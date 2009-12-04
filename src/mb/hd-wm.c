@@ -308,15 +308,15 @@ hd_wm_make_dialog (MBWindowManagerClient *client)
       name = hd_comp_mgr_client_get_app_local_name (hclient);
     if (!name)
       name = mb_wm_client_get_name (client);
-    snprintf (buf, 200, _("tana_nc_apkil_notresponding"),
+    snprintf (buf, 200, _("Application is not responding"),
         name? name : "NO NAME");
 
     dialog = gtk_dialog_new ();   
 
     gtk_dialog_add_buttons (GTK_DIALOG (dialog),
-                          _("qgn_bd_apkil_ok"),
+                          _("Ok"),
                           GTK_RESPONSE_ACCEPT,
-                          _("qgn_bd_apkil_cancel"),
+                          _("Cancel"),
                           GTK_RESPONSE_REJECT,
                           NULL);
     gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_REJECT);

@@ -620,6 +620,8 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
                   NULL);
 
   hd_render_manager_set_state(HDRM_STATE_HOME);
+  
+  clutter_stage_show_cursor (CLUTTER_STAGE (stage));
 
   return 1;
 }
