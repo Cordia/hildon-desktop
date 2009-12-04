@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.123-1~unreleased) unstable; urgency=low
+
+  * foo.
+
+ -- Gordon Williams <gordon.williams@collabora.co.uk>  Fri,  4 Dec 2009 11:17:00 +0000
+
 hildon-desktop (1:2.2.122-1) unstable; urgency=low
 
   * Fixes: NB#149132 Remove doc files from hildon-desktop deb
