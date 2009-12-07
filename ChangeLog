@@ -1,3 +1,20 @@
+2009-12-07  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Code tidyup. Remove HDRM_BUTTON*, as it is now all handled by 
+	HdTitleBar. This was part of 131801 that was reverted because of
+	regressions caused by other changes in the same patch.
+
+	* src/home/hd-render-manager.c/h: Remove references to HdTitleBar 
+	  buttons, as well as code to get/set them. Remove HDRM_BUTTON enums,
+	  and handle input viewport based on LEFT/RIGHT item masks in title bar
+	* src/home/hd-home.c/h: Handle edit button directly, do back button in
+	  HdTitleBar
+	* src/home/hd-title-bar.c: Don't set HDRM buttons, and ensure that we
+	  handle Launcher back button if it is ever made visible.
+	* src/launcher/hd-launcher.c/h: Remove parameters
+	* src/mb/hd-status-area.c: Handle visibility based on HdTitleBar state
+	  rather than actor visibility.
+
 2009-12-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Crash fix.

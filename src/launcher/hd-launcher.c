@@ -313,9 +313,7 @@ hd_launcher_hide_final (void)
 
 
 gboolean
-hd_launcher_back_button_clicked (ClutterActor *actor,
-                                 ClutterEvent *event,
-                                 gpointer data)
+hd_launcher_back_button_clicked ()
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
   ClutterActor *top_page = g_datalist_get_data (&priv->pages,
@@ -898,7 +896,7 @@ hd_launcher_background_clicked (HdLauncher *self,
   if (!priv->active_page ||
       (hd_launcher_page_get_drag_distance(HD_LAUNCHER_PAGE(priv->active_page)) <
                                           HD_LAUNCHER_TILE_MAX_DRAG))
-    hd_launcher_back_button_clicked(0, 0, 0);
+    hd_launcher_back_button_clicked();
 
   return TRUE;
 }

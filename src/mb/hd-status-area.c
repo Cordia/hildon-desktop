@@ -25,6 +25,7 @@
 #include "hd-status-area.h"
 #include "hd-comp-mgr.h"
 #include "hd-render-manager.h"
+#include "hd-title-bar.h"
 #include "hd-wm.h"
 
 #include <matchbox/theme-engines/mb-wm-theme.h>
@@ -68,9 +69,10 @@ hd_status_area_init (MBWMObject *this, va_list vap)
 
   /* This is re-adjusted by hd_render_manager_place_titlebar_elements
    * anyway... */
-  geom.x      =      hd_render_manager_get_visible (HDRM_BUTTON_TASK_NAV)
-                  || hd_render_manager_get_visible (HDRM_BUTTON_LAUNCHER)
-                ? HD_COMP_MGR_TOP_LEFT_BTN_WIDTH : 0;
+  geom.x      = 0;
+  if (hd_title_bar_get_state(HD_TITLE_BAR(hd_render_manager_get_title_bar()))
+      & HDTB_VIS_BTN_LEFT_MASK)
+    geom.x = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
   geom.y      = 0;
   geom.width  = 112;
   geom.height = HD_COMP_MGR_TOP_MARGIN;
