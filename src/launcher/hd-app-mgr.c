@@ -1926,8 +1926,13 @@ static void
 hd_app_mgr_update_portraitness(HdAppMgr *self)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
+  HdCompMgr *hmgr = hd_comp_mgr_get ();
   // what about priv->unlocked/priv->display_on ?
-  hd_comp_mgr_set_portrait_if_possible(hd_comp_mgr_get(),
+
+  if (!hmgr)
+    /* We're in some initialization state. */
+    return;
+  hd_comp_mgr_set_portrait_if_possible(hmgr,
       priv->accel_enabled,
       priv->portrait && priv->slide_closed);
 }
