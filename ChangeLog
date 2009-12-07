@@ -1,7 +1,7 @@
 2009-12-07  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Code tidyup. Remove HDRM_BUTTON*, as it is now all handled by 
-	HdTitleBar. This was part of 131801 that was reverted because of
+	HdTitleBar. This was part of 131081 that was reverted because of
 	regressions caused by other changes in the same patch.
 
 	* src/home/hd-render-manager.c/h: Remove references to HdTitleBar 
