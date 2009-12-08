@@ -380,9 +380,6 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
              ? -1 : priv->portrait_supported,
            priv->portrait_requested_inherited
              ? -1 : priv->portrait_requested);
-  /* If properties changed here, we need to check if we're in need of the
-   * accelerometer again. */
-  hd_app_mgr_mce_activate_accel_if_needed();
 
   return 1;
 }
@@ -916,16 +913,19 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
            cc->priv->portrait_requested_inherited
              ? -1 : cc->priv->portrait_requested);
 
+
   /* Switch HDRM state if we need to.  Don't consider changing the state if
    * it is approved by the new value of the property.  We must reconsider
    * if we don't know if the property appoves or not. */
   if (STATE_IS_PORTRAIT (hd_render_manager_get_state()))
     { /* Portrait => landscape? */
+      hd_app_mgr_mce_activate_accel_if_needed();
       if (*value <= 0 && !hd_comp_mgr_should_be_portrait (hmgr))
         hd_render_manager_set_state_unportrait ();
     }
   else if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state()))
     { /* Landscape => portrait? */
+      hd_app_mgr_mce_activate_accel_if_needed();
       if (*value != 0 && hd_comp_mgr_should_be_portrait (hmgr))
         hd_render_manager_set_state_portrait ();
     }

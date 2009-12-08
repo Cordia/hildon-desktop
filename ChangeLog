@@ -1,3 +1,14 @@
+2009-12-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Fix the fix of NB#149091 - Desktop does not respect PORTRAIT_CAPABLE
+	flag correctly as Urho imagined.  The accelerometer was only turned
+	on when we restacked, not when the property was set via the shortcut.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_init):
+	  Don't activate_accel_if_needed() here because we'll restack anyway.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed):
+	  ...but do that when the property is changed.
+
 2009-12-08  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Minor bugfix.
