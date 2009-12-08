@@ -1,3 +1,10 @@
+2009-12-08  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+	Listen to theme change signal and reload the task launcher when received.
+	Fixes: NB#145905
+	
+	* src/launcher/hd-launcher-tree.c:
+
 2009-12-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Fix the fix of NB#149091 - Desktop does not respect PORTRAIT_CAPABLE

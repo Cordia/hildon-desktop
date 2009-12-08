@@ -5,6 +5,8 @@
 #include "hildon-desktop.h"
 #include "hd-launcher-tree.h"
 
+#include "hd-gtk-style.h"
+
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -48,7 +50,7 @@ struct _HdLauncherTreePrivate
 
   WalkThreadData *active_walk;
 
-  guint has_finished : 1;
+  gboolean theme_changed_signal_connected : 1;
 };
 
 enum
@@ -65,6 +67,8 @@ G_DEFINE_TYPE (HdLauncherTree, hd_launcher_tree, G_TYPE_OBJECT);
 
 static void hd_launcher_tree_handle_tree_changed (GMenuTree *menu_tree,
                                                   gpointer user_data);
+
+static void hd_launcher_tree_handle_theme_changed (HdLauncherTree *tree);
 
 static WalkThreadData *
 walk_thread_data_new (HdLauncherTree *tree)
@@ -120,6 +124,16 @@ walk_thread_done_idle (gpointer user_data)
       priv->active_walk = NULL;
       gmenu_tree_item_unref (data->root);
       g_signal_emit (data->tree, tree_signals[FINISHED], 0);
+
+      /* Once the first walk is done, connect to the theme change signal. */
+      if (!priv->theme_changed_signal_connected)
+        {
+          g_signal_connect_swapped (gtk_icon_theme_get_default (),
+                                    "changed",
+                                    G_CALLBACK (hd_launcher_tree_handle_theme_changed),
+                                    data->tree);
+          priv->theme_changed_signal_connected = TRUE;
+        }
 
       walk_thread_data_free (data);
 
@@ -357,6 +371,20 @@ hd_launcher_tree_handle_tree_changed (GMenuTree *menu_tree,
       hd_mutex_enable (TRUE);
       g_thread_create (walk_thread_func, data, FALSE, NULL);
     }
+}
+
+/* When there's a theme change, tell clients to completely rebuild the
+ * tree.
+ */
+static void
+hd_launcher_tree_handle_theme_changed (HdLauncherTree *tree)
+{
+  HdLauncherTreePrivate *priv = tree->priv;
+  if (priv->active_walk)
+    return;
+
+  g_signal_emit (tree, tree_signals[STARTING], 0);
+  g_signal_emit (tree, tree_signals[FINISHED], 0);
 }
 
 /**
