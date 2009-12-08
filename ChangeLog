@@ -193,7 +193,7 @@
 	The premise of foricing is that "i'll be visible, don't worry",
 	but anyway.  If it's broken we finish rotation we started optimistically
 	but we stay in APP or HOME state, and don't even think about switching
-	back.  Now reched when the forceful client is eventually map_notify()ed.
+	back.  Now recheck when the forceful client is eventually map_notify()ed.
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_portrait_or_not_portrait):
 	  Undo hd_comp_mgr_portrait_forecast() if it turns out to have
