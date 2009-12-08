@@ -3111,7 +3111,9 @@ hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr)
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   xwindow = hd_wm_current_app_is (NULL, 0);
 
-  if (xwindow && wm->desktop && xwindow != wm->desktop->window->xwindow)
+  /* xwindow may be ~0 here if we are in TASK_NAV. In this case, we just
+   * assume the DND flag is not set. */
+  if (xwindow && (xwindow!=~0) && wm->desktop && xwindow != wm->desktop->window->xwindow)
     {
       guint32 *value;
       Atom dnd;

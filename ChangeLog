@@ -1,3 +1,12 @@
+2009-12-08  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Minor bugfix.
+	
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_check_do_not_disturb_flag): if we
+	  are in task nav, xwindow is set to 0xFFFFFFFF - and we don't check
+	  for this case, and hence try and get the DND property from an invalid
+	  window.
+
 2009-12-07  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Code tidyup. Remove HDRM_BUTTON*, as it is now all handled by 
