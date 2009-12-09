@@ -1195,7 +1195,7 @@ void
 hd_title_bar_update_now(HdTitleBar *bar)
 {
   HdTitleBarPrivate *priv = bar->priv;
-  HdTitleBarVisEnum hack;
+  HdTitleBarVisEnum prev_button_size;
 
   if (priv->update_title_bar)
     {
@@ -1206,11 +1206,16 @@ hd_title_bar_update_now(HdTitleBar *bar)
   /* We're going to portrait but we're not quite there yet,
    * so the title bar must look landscape but the title must
    * be the new portrait application's. */
-  hack = priv->state & HDTB_VIS_SMALL_BUTTONS;
-  if (hd_transition_is_rotating_to_portrait ())
-    priv->state &= ~HDTB_VIS_SMALL_BUTTONS;
+  prev_button_size = priv->state & HDTB_VIS_SMALL_BUTTONS;
+  if (hd_transition_is_rotating())
+    {
+      if (STATE_IS_PORTRAIT(hd_render_manager_get_previous_state()))
+        priv->state |= HDTB_VIS_SMALL_BUTTONS;
+      else
+        priv->state &= ~HDTB_VIS_SMALL_BUTTONS;
+    }
   hd_title_bar_update_idle(bar);
-  priv->state |= hack;
+  priv->state = (priv->state & ~HDTB_VIS_SMALL_BUTTONS) | prev_button_size;
 }
 
 /* Is the given decor one we should consider for a title bar? */
