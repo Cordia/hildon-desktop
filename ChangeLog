@@ -8,7 +8,7 @@
 	  just a copy/paste job.
 	* src/mb/hd-decor.c: Only add progress indictor if we had title text,
 	  cope with non-north decors, and textures other than the original
-	  WindowManagerSTuff texture.
+	  WindowManagerStuff texture.
 	* src/util/hd-transition.c: Still allow windows that go off the top of
 	  the screen to be animated with a popup animation.
 
