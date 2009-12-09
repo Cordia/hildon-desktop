@@ -157,9 +157,9 @@ hd_clutter_cache_get_real_texture(const char *filename, gboolean from_theme)
       strcpy(filename_alloc, HD_CLUTTER_CACHE_FALLBACK_THEME_PATH);
       strcat(filename_alloc, filename);
       filename_real = filename_alloc;
-  
+
       texture = clutter_texture_new_from_file(filename_real, 0);
-      if (!texture) 
+      if (!texture)
         {
           if (filename_alloc)
             g_free(filename_alloc);
@@ -288,17 +288,28 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
       return actor;
     }
 
-
   group = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(group), filename);
-  low_x = geo.x + (geo.width/4);
-  low_y = geo.y + (geo.height/4);
-  high_x = geo.x + (3*geo.width/4);
-  high_y = geo.y + (3*geo.height/4);
-
+  if (extend_x)
+    {
+      low_x = geo.x + (geo.width/4);
+      high_x = geo.x + (3*geo.width/4);
+    }
+  else
+    {
+      low_x = geo.x;
+      high_x = geo.x+geo.width;
+    }
   if (extend_y)
-    g_warning("%s: Y and XY texture extensions not implemented yet",
-        __FUNCTION__);
+    {
+      low_y = geo.y + (geo.height/4);
+      high_y = geo.y + (3*geo.height/4);
+    }
+  else
+    {
+      low_y = geo.y;
+      high_y = geo.y + geo.height;
+    }
 
   if (extend_y)
     {
@@ -313,7 +324,7 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
             if (x==0)
               {
                 geot.x = 0;
-                geot.width = low_x;
+                geot.width = low_x - geo.x;
                 pos.x = area->x;
                 pos.width = geot.width;
               }
@@ -321,13 +332,13 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
               {
                 geot.x = low_x;
                 geot.width = high_x - low_x;
-                pos.x = area->x+low_x;
+                pos.x = area->x + low_x - geo.x;
                 pos.width = (high_x-low_x) + area->width - geo.width;
               }
             else
               {
                 geot.x = high_x;
-                geot.width = geo.width - high_x;
+                geot.width = geo.x+geo.width - high_x;
                 pos.x = area->x + area->width - geot.width;
                 pos.width = geot.width;
               }
@@ -340,28 +351,31 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
               }
             else if (y==1)
               {
-                geot.y = low_y;
+                geot.y = low_y - geo.y;
                 geot.height = high_y - low_y;
-                pos.y = area->y+low_y;
+                pos.y = area->y + low_y - geo.y;
                 pos.height = (high_y-low_y) + area->height - geo.height;
               }
             else
               {
                 geot.y = high_y;
-                geot.height = geo.height - high_y;
+                geot.height = geo.y + geo.height - high_y;
                 pos.y = area->y + area->height - geot.height;
                 pos.height = geot.height;
               }
 
-            tex = tidy_sub_texture_new(texture);
-            tidy_sub_texture_set_region(tex, &geot);
-            if (x==1 || y==1)
-              tidy_sub_texture_set_tiled(tex, TRUE);
-            clutter_actor_set_position(CLUTTER_ACTOR(tex), pos.x, pos.y);
-            clutter_actor_set_size(CLUTTER_ACTOR(tex), pos.width, pos.height);
-            clutter_container_add_actor(
-                      CLUTTER_CONTAINER(group),
-                      CLUTTER_ACTOR(tex));
+            if (geot.width>0 && geot.height>0)
+              {
+                tex = tidy_sub_texture_new(texture);
+                tidy_sub_texture_set_region(tex, &geot);
+                if (x==1 || y==1)
+                  tidy_sub_texture_set_tiled(tex, TRUE);
+                clutter_actor_set_position(CLUTTER_ACTOR(tex), pos.x, pos.y);
+                clutter_actor_set_size(CLUTTER_ACTOR(tex), pos.width, pos.height);
+                clutter_container_add_actor(
+                          CLUTTER_CONTAINER(group),
+                          CLUTTER_ACTOR(tex));
+              }
           }
     }
   else
@@ -406,7 +420,6 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
       clutter_container_add_actor(
           CLUTTER_CONTAINER(group),
           CLUTTER_ACTOR(texc));
-      return CLUTTER_ACTOR(group);
     }
 
   /* FIXME: Do other kinds of extension */
