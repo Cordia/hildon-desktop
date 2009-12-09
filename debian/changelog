@@ -1,20 +1,21 @@
-hildon-desktop (1:2.2.124-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.124-1) unstable; urgency=low
 
-  * foo
+  * Fixes: NB#149993 - Phone application title: portrait to landscape is broken to certain extent
+  * more intermediate crash fixes
 
- -- Jan Arne Petersen <jpetersen@openismus.com>  Wed,  9 Dec 2009 11:56:06 +0100
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 09 Dec 2009 13:59:33 +0200
 
 hildon-desktop (1:2.2.123-1) unstable; urgency=low
 
   Adam:
   * Crash fixes
-  * Fixes: NB#149091 - Desktop does not respect PORTRAIT_CAPABLE flag correctly
 
   Marc:
   * Fixes: NB#145905 - Listen to theme change signal and reload the task
     launcher when received
 
   Gordon:
+  * Fixes: NB#149091 - Desktop does not respect PORTRAIT_CAPABLE flag correctly
   * Little bugfix
 
   Jan Arne:
