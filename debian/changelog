@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.125-1~unreleased) unstable; urgency=low
+
+  * :)
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 09 Dec 2009 13:59:33 +0200
+
 hildon-desktop (1:2.2.124-1) unstable; urgency=low
 
   * Fixes: NB#149993 - Phone application title: portrait to landscape is broken to certain extent
