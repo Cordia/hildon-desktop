@@ -1572,7 +1572,7 @@ hd_app_mgr_hdrm_state_change (gpointer hdrm,
     }
 
   /* Also check if we should enable the accelerometer. */
-  hd_app_mgr_mce_activate_accel_if_needed ();
+  hd_app_mgr_mce_activate_accel_if_needed (TRUE);
 }
 
 static void
@@ -2009,7 +2009,7 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
  * - We are showing an app, and all visible windows support portrait mode
  */
 void
-hd_app_mgr_mce_activate_accel_if_needed  ()
+hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (the_app_mgr);
   DBusConnection *conn = NULL;
@@ -2074,7 +2074,8 @@ hd_app_mgr_mce_activate_accel_if_needed  ()
            activate? "enabled" : "disabled");
   priv->accel_enabled = activate;
 
-  hd_app_mgr_update_portraitness(the_app_mgr);
+  if (update_portraitness)
+    hd_app_mgr_update_portraitness(the_app_mgr);
   return;
 }
 
@@ -2110,7 +2111,7 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
       priv->disable_callui = value;
 
       /* Check if h-d needs to track the orientation. */
-      hd_app_mgr_mce_activate_accel_if_needed ();
+      hd_app_mgr_mce_activate_accel_if_needed (TRUE);
     }
 
   return;

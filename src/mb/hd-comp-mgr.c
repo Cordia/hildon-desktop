@@ -919,13 +919,13 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
    * if we don't know if the property appoves or not. */
   if (STATE_IS_PORTRAIT (hd_render_manager_get_state()))
     { /* Portrait => landscape? */
-      hd_app_mgr_mce_activate_accel_if_needed();
+      hd_app_mgr_mce_activate_accel_if_needed (FALSE);
       if (*value <= 0 && !hd_comp_mgr_should_be_portrait (hmgr))
         hd_render_manager_set_state_unportrait ();
     }
   else if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state()))
     { /* Landscape => portrait? */
-      hd_app_mgr_mce_activate_accel_if_needed();
+      hd_app_mgr_mce_activate_accel_if_needed (FALSE);
       if (*value != 0 && hd_comp_mgr_should_be_portrait (hmgr))
         hd_render_manager_set_state_portrait ();
     }
@@ -2831,7 +2831,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   /* Decide about portraitification in case a blocking window was unmapped. */
   hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
   hd_render_manager_restack ();
-  hd_app_mgr_mce_activate_accel_if_needed ();
+  hd_app_mgr_mce_activate_accel_if_needed (FALSE);
   hd_comp_mgr_portrait_or_not_portrait (mgr, NULL);
 
   return FALSE;
