@@ -1428,7 +1428,7 @@ hd_transition_rotating_fsm(void)
         /* FIXME: Super massive extra large hack to remove status area when
          * launching phone app from the launcher */
         if (hd_render_manager_get_previous_state()==HDRM_STATE_LAUNCHER)
-          clutter_actor_hide(hd_render_manager_get_status_area());
+          for (ClutterActor *hsm = hd_render_manager_get_status_area(); hsm; clutter_actor_hide(hsm)) break;
         else if (hd_render_manager_get_previous_state()==HDRM_STATE_APP &&
                  hd_render_manager_get_state()==HDRM_STATE_APP_PORTRAIT)
           /* Less super hack to not show wrong title while rotating - eg from

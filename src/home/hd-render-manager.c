@@ -2826,7 +2826,8 @@ void hd_render_manager_remove_input_blocker() {
            /* Block status area?  If so refer to the client geometry,
             * because we might be right after a place_titlebar_elements()
             * which could just have moved it. */
-           if (hd_render_manager_actor_is_visible(priv->status_area) &&
+           if (priv->status_area &&
+               hd_render_manager_actor_is_visible(priv->status_area) &&
                (STATE_IS_PORTRAIT (priv->state) ||
                  (priv->state == HDRM_STATE_APP
                   /* FIXME: the following check does not work when there are
@@ -2835,9 +2836,7 @@ void hd_render_manager_remove_input_blocker() {
               )))
              {
                ClutterGeometry geom;
-               g_assert(priv->status_area);
-               clutter_actor_get_geometry(
-                   priv->status_area, &geom);
+               clutter_actor_get_geometry(priv->status_area, &geom);
                gdk_region_union_with_rect(region, (GdkRectangle*)(void*)&geom);
              }
          }
