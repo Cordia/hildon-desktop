@@ -234,7 +234,7 @@ hd_decor_create_actors(HdDecor *decor)
   MBWMXmlClient     *c;
   MBWMXmlDecor      *d;
   ClutterGeometry   /*geo, */area;
-  gboolean          is_waiting;
+  gboolean          is_waiting = FALSE;
 
   if (!client)
     return;
@@ -246,16 +246,26 @@ hd_decor_create_actors(HdDecor *decor)
         (d = mb_wm_xml_decor_find_by_type (c->decors, mb_decor->type))))
     return;
 
-  is_waiting = hd_decor_window_is_waiting(client->wmref,
-                                          client->window->xwindow);
-
   area.x = 0;
   area.y = 0;
   area.width = mb_decor->geom.width;
   area.height = mb_decor->geom.height;
 
-  decor->title_bar_actor = g_object_ref_sink(
-    hd_clutter_cache_get_texture_for_area(HD_THEME_IMG_DIALOG_BAR, TRUE, &area));
+  if (c->image_filename)
+    {
+      ClutterGeometry geo = {d->x, d->y, d->width, d->height};
+      decor->title_bar_actor = g_object_ref_sink(
+          hd_clutter_cache_get_sub_texture_for_area(c->image_filename,
+              FALSE, &geo, &area));
+    }
+  else
+    {
+      decor->title_bar_actor = g_object_ref_sink(
+          hd_clutter_cache_get_texture_for_area(HD_THEME_IMG_DIALOG_BAR,
+              TRUE, &area));
+    }
+  clutter_actor_set_position(decor->title_bar_actor,
+          mb_decor->geom.x, mb_decor->geom.y);
   clutter_container_add_actor(CLUTTER_CONTAINER(actor), decor->title_bar_actor);
 
   /* add the title */
@@ -313,6 +323,10 @@ hd_decor_create_actors(HdDecor *decor)
             (screen_width_avail - w) / 2,
             (mb_decor->geom.height - h) / 2);
       }
+      /* Check whether we should be displaying a waiting animation. We
+       * only want this is we have a title. */
+      is_waiting = hd_decor_window_is_waiting(client->wmref,
+                                              client->window->xwindow);
     }
 
   /* Add the progress indicator if required */
