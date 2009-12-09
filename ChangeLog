@@ -1,3 +1,27 @@
+2009-12-09  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#149993 - Phone application title: portrait to landscape is
+	                   broken to certain extent
+	                   
+	* src/home/hd-title-bar.c: If update_now is called from a rotation
+	  transition, set the title bar button width to the previous value.
+	* src/util/hd-transition.c: Fix to get status area hidden when going
+	  from launcher, and now update the title bar immediately when moving
+	  from any APP to APP state.         
+
+2009-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Release 2.2.123-1
+
+2009-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Enable to activate status menu in portrait mode.
+
+	Fixes: NB#142949 - Active status area also in portrait
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_input_viewport):
+	Do not block status area in portrait mode.
+
 2009-12-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Notification transition tweaks.

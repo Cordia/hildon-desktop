@@ -1425,12 +1425,15 @@ hd_transition_rotating_fsm(void)
         /* Stop displaying the loading screenshot, which was displayed
          * as a small square just over the icon when launching phone */
         hd_render_manager_set_loading(NULL);
-        /* FIXME: Super massive extra large hack to remove status area when
+        /* Super massive extra large hack to remove status area when
          * launching phone app from the launcher */
         if (hd_render_manager_get_previous_state()==HDRM_STATE_LAUNCHER)
-          for (ClutterActor *hsm = hd_render_manager_get_status_area(); hsm; clutter_actor_hide(hsm)) break;
-        else if (hd_render_manager_get_previous_state()==HDRM_STATE_APP &&
-                 hd_render_manager_get_state()==HDRM_STATE_APP_PORTRAIT)
+          {
+            ClutterActor *hsm = hd_render_manager_get_status_area();
+            if (hsm) clutter_actor_hide(hsm);
+          }
+        else if (STATE_IS_APP(hd_render_manager_get_previous_state()) &&
+                 STATE_IS_APP(hd_render_manager_get_state()))
           /* Less super hack to not show wrong title while rotating - eg from
            * calculator to phone. We must only do it in this case, as if going
            * phone->desktop we will kill the title bar too soon. Or if going
