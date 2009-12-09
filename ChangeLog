@@ -1,5 +1,9 @@
 2009-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Release 2.2.123-1
+
+2009-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Enable to activate status menu in portrait mode.
 
 	Fixes: NB#142949 - Active status area also in portrait

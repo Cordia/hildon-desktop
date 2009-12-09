@@ -1,8 +1,20 @@
-hildon-desktop (1:2.2.123-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.123-1) unstable; urgency=low
 
-  * foo.
+  Adam:
+  * Crash fixes
+  * Fixes: NB#149091 - Desktop does not respect PORTRAIT_CAPABLE flag correctly
 
- -- Gordon Williams <gordon.williams@collabora.co.uk>  Fri,  4 Dec 2009 11:17:00 +0000
+  Marc:
+  * Fixes: NB#145905 - Listen to theme change signal and reload the task
+    launcher when received
+
+  Gordon:
+  * Little bugfix
+
+  Jan Arne:
+  * Fixes: NB#142949 - Active status area also in portrait
+
+ -- Jan Arne Petersen <jpetersen@openismus.com>  Wed,  9 Dec 2009 11:49:33 +0100
 
 hildon-desktop (1:2.2.122-1) unstable; urgency=low
 
