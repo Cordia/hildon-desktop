@@ -638,19 +638,19 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
           gint dx, dy, dw, dh;
 
           /*
-           * visual geometry: 366x88+112+0 -> 96x23+8+17 or
-           *                  366x88+80+0  -> 64x15+8+20
+           * visual geometry: 366x88+112+0 -> 48x11+32+22 or
+           *                  366x88+80+0  -> 16x3+32+26
            *                  scale it down proportionally
            *                  and place it in the middle of the tasks button
            *                  leaving 8 pixels left and right, keeping the
            *                  aspect ratio
-           * opacity:         1 -> 0.75
+           * opacity:         1 -> 0.50
            * use smooth ramping
            */
 
           /* It's probably best to count it with your fingers to follow
            * this mumble-jumbo. */
-          dx = 8;
+          dx = 32;
           dw = tbw - 2*dx;
           dh = (float)dw/width * height;
           dy = (HD_COMP_MGR_TOP_LEFT_BTN_HEIGHT - dh) / 2;
@@ -662,12 +662,12 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
 
           clutter_actor_set_scale (actor, sc, sc);
           clutter_actor_set_anchor_point (actor, -cx/sc, -cy/sc);
-          clutter_actor_set_opacity(actor, 255 * ((0.75 - 1)*t + 1));
+          clutter_actor_set_opacity(actor, 255 * ((0.50 - 1)*t + 1));
         }
       else
         { /* fade: 0.75 -> 0 linearly */
           t = (now - thr) / (1.0 - thr);
-          clutter_actor_set_opacity(actor, 255 * (-0.75*t + 0.75));
+          clutter_actor_set_opacity(actor, 255 * (-0.50*t + 0.50));
         }
     }
   else

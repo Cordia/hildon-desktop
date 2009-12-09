@@ -1,5 +1,13 @@
 2009-12-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Notification transition tweaks.
+
+	* src/util/hd-transition.c (on_notification_timeline_new_frame):
+	  Make the notification disappear smaller in the second phase
+	  and fade to 50% opacity in the first.
+
+2009-12-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Crash fix during rotation if no hsm.
 
 	* src/home/hd-render-manager.c (hd_render_manager_remove_input_blocker)
