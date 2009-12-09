@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.124-1~unreleased) unstable; urgency=low
+
+  * foo
+
+ -- Jan Arne Petersen <jpetersen@openismus.com>  Wed,  9 Dec 2009 11:56:06 +0100
+
 hildon-desktop (1:2.2.123-1) unstable; urgency=low
 
   Adam:
