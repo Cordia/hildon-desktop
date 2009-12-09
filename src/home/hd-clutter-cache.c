@@ -256,6 +256,7 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
   ClutterTexture *texture = 0;
   ClutterGroup *group = 0;
   ClutterGeometry geo = *geo_;
+  gint x,y;
 
   texture = CLUTTER_TEXTURE(hd_clutter_cache_get_real_texture(filename,
                                                               from_theme));
@@ -311,118 +312,68 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
       high_y = geo.y + geo.height;
     }
 
-  if (extend_y)
-    {
-      /* Extend X and Y - so a 3x3 set of textures */
-      gint x,y;
-
-      for (y=0;y<3;y++)
-        for (x=0;x<3;x++)
+  for (y=0;y<3;y++)
+    for (x=0;x<3;x++)
+      {
+        TidySubTexture *tex;
+        ClutterGeometry geot, pos;
+        if (x==0)
           {
-            TidySubTexture *tex;
-            ClutterGeometry geot, pos;
-            if (x==0)
-              {
-                geot.x = 0;
-                geot.width = low_x - geo.x;
-                pos.x = area->x;
-                pos.width = geot.width;
-              }
-            else if (x==1)
-              {
-                geot.x = low_x;
-                geot.width = high_x - low_x;
-                pos.x = area->x + low_x - geo.x;
-                pos.width = (high_x-low_x) + area->width - geo.width;
-              }
-            else
-              {
-                geot.x = high_x;
-                geot.width = geo.x+geo.width - high_x;
-                pos.x = area->x + area->width - geot.width;
-                pos.width = geot.width;
-              }
-            if (y==0)
-              {
-                geot.y = 0;
-                geot.height = low_y;
-                pos.y = area->y;
-                pos.height = geot.height;
-              }
-            else if (y==1)
-              {
-                geot.y = low_y - geo.y;
-                geot.height = high_y - low_y;
-                pos.y = area->y + low_y - geo.y;
-                pos.height = (high_y-low_y) + area->height - geo.height;
-              }
-            else
-              {
-                geot.y = high_y;
-                geot.height = geo.y + geo.height - high_y;
-                pos.y = area->y + area->height - geot.height;
-                pos.height = geot.height;
-              }
-
-            if (geot.width>0 && geot.height>0)
-              {
-                tex = tidy_sub_texture_new(texture);
-                tidy_sub_texture_set_region(tex, &geot);
-                if (x==1 || y==1)
-                  tidy_sub_texture_set_tiled(tex, TRUE);
-                clutter_actor_set_position(CLUTTER_ACTOR(tex), pos.x, pos.y);
-                clutter_actor_set_size(CLUTTER_ACTOR(tex), pos.width, pos.height);
-                clutter_container_add_actor(
-                          CLUTTER_CONTAINER(group),
-                          CLUTTER_ACTOR(tex));
-              }
+            geot.x = geo.x;
+            geot.width = low_x - geo.x;
+            pos.x = area->x;
+            pos.width = geot.width;
           }
-    }
-  else
-    {
-      /* extend just X - so a 3x1 row of texture elements */
-      TidySubTexture *texa,*texb,*texc;
-      ClutterGeometry geoa, geob, geoc;
+        else if (x==1)
+          {
+            geot.x = low_x;
+            geot.width = high_x - low_x;
+            pos.x = area->x + low_x - geo.x;
+            pos.width = (high_x-low_x) + area->width - geo.width;
+          }
+        else
+          {
+            geot.x = high_x;
+            geot.width = geo.x + geo.width - high_x;
+            pos.x = area->x + area->width - geot.width;
+            pos.width = geot.width;
+          }
+        if (y==0)
+          {
+            geot.y = geo.y;
+            geot.height = low_y - geo.y;
+            pos.y = area->y;
+            pos.height = geot.height;
+          }
+        else if (y==1)
+          {
+            geot.y = low_y;
+            geot.height = high_y - low_y;
+            pos.y = area->y + low_y - geo.y;
+            pos.height = (high_y-low_y) + area->height - geo.height;
+          }
+        else
+          {
+            geot.y = high_y;
+            geot.height = geo.y + geo.height - high_y;
+            pos.y = area->y + area->height - geot.height;
+            pos.height = geot.height;
+          }
 
-      geoa = geob = geoc = geo;
-      geoa.width = low_x - geo.x;
-      geob.x = low_x;
-      geob.width = high_x-low_x;
-      geoc.x = high_x;
-      geoc.width = geo.x+geo.width - high_x;
+        if (geot.width>0 && geot.height>0)
+          {
+            tex = tidy_sub_texture_new(texture);
+            tidy_sub_texture_set_region(tex, &geot);
+            if (x==1 || y==1)
+              tidy_sub_texture_set_tiled(tex, TRUE);
+            clutter_actor_set_position(CLUTTER_ACTOR(tex), pos.x, pos.y);
+            clutter_actor_set_size(CLUTTER_ACTOR(tex), pos.width, pos.height);
+            clutter_container_add_actor(
+                      CLUTTER_CONTAINER(group),
+                      CLUTTER_ACTOR(tex));
+          }
+      }
 
-      texa = tidy_sub_texture_new(texture);
-      tidy_sub_texture_set_region(texa, &geoa);
-      texb = tidy_sub_texture_new(texture);
-      tidy_sub_texture_set_region(texb, &geob);
-      tidy_sub_texture_set_tiled(texb, TRUE);
-      texc = tidy_sub_texture_new(texture);
-      tidy_sub_texture_set_region(texc, &geoc);
-      clutter_actor_set_position(CLUTTER_ACTOR(texa),
-          area->x, area->y);
-      clutter_actor_set_size(CLUTTER_ACTOR(texa),
-          geoa.width, area->height);
-      clutter_actor_set_position(CLUTTER_ACTOR(texb),
-          area->x+geoa.width, area->y);
-      clutter_actor_set_size(CLUTTER_ACTOR(texb),
-          area->width - (geoa.width+geoc.width), area->height);
-      clutter_actor_set_position(CLUTTER_ACTOR(texc),
-          area->x+area->width - geoc.width, area->y);
-      clutter_actor_set_size(CLUTTER_ACTOR(texc),
-          geoc.width, area->height);
-
-      clutter_container_add_actor(
-          CLUTTER_CONTAINER(group),
-          CLUTTER_ACTOR(texa));
-      clutter_container_add_actor(
-          CLUTTER_CONTAINER(group),
-          CLUTTER_ACTOR(texb));
-      clutter_container_add_actor(
-          CLUTTER_CONTAINER(group),
-          CLUTTER_ACTOR(texc));
-    }
-
-  /* FIXME: Do other kinds of extension */
   return CLUTTER_ACTOR(group);
 }
 

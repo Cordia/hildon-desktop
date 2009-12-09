@@ -264,8 +264,16 @@ hd_decor_create_actors(HdDecor *decor)
           hd_clutter_cache_get_texture_for_area(HD_THEME_IMG_DIALOG_BAR,
               TRUE, &area));
     }
-  clutter_actor_set_position(decor->title_bar_actor,
-          mb_decor->geom.x, mb_decor->geom.y);
+  /* If clients don't have a frame, the actor will be positioned according to
+   * the normal window - so we need to correct for this. */
+  if (client->xwin_frame)
+    clutter_actor_set_position(decor->title_bar_actor,
+            mb_decor->geom.x, mb_decor->geom.y);
+  else
+    clutter_actor_set_position(decor->title_bar_actor,
+              mb_decor->geom.x+client->frame_geometry.x-client->window->geometry.x,
+              mb_decor->geom.y+client->frame_geometry.y-client->window->geometry.y);
+
   clutter_container_add_actor(CLUTTER_CONTAINER(actor), decor->title_bar_actor);
 
   /* add the title */
