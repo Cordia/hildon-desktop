@@ -1,3 +1,17 @@
+2009-12-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Fix of the fix of NB#149091 - Urho's pet feature not working properly,
+	which caused an effect similar to NB#142364 - Desktop stayed in portrait
+	when you enabled launching Phone by rotating and you close it in portrait
+	orientation.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_may_be_portrait):
+	  You may not be if there's no clients supporting it, not even
+	  if assume_requested.  (When portrait_or_not_portrait() asked
+	  for a re-evaluation it was pip_enabled and pip_portrait and
+	  because of assume_requested can_be_portrait() as well which
+	  prevented from unportrait()ification).
+
 2009-12-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Fix of the fix of the fix of NB#149091.  hd assert() failed

@@ -2959,16 +2959,16 @@ static gboolean
 hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
 {
   static guint counter;
-  gboolean any_requests;
   MBWindowManager *wm;
   HdCompMgrClient *hcmgrc;
   MBWindowManagerClient *c;
+  gboolean any_supports, any_requests;
 
   /* Invalidate all cached, inherited portrait flags at once. */
   counter++;
 
   PORTRAIT ("SHOULD BE PORTRAIT?");
-  any_requests = assume_requested;
+  any_supports = any_requests = FALSE;
   wm = MB_WM_COMP_MGR (hmgr)->wm;
   for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
     {
@@ -3006,6 +3006,7 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
       PORTRAIT ("SUPPORT IS %d", hcmgrc->priv->portrait_supported);
       if (!hcmgrc->priv->portrait_supported)
         return FALSE;
+      any_supports  = TRUE;
       any_requests |= hcmgrc->priv->portrait_requested != 0;
 
       /*
@@ -3024,6 +3025,7 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
         }
     }
 
+  any_requests |= assume_requested && any_supports;
   PORTRAIT ("SHOULD BE: %d", any_requests);
   return any_requests;
 }
