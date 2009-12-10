@@ -112,16 +112,16 @@
  * SINGLE = Bigger task switcher (see thp_tweaks), single column layout
  * TWOCOL = Bigger task switcher (see thp_tweaks), two-column layout
  */
-#define THUMB_SINGLE_WIDTH        600
-#define THUMB_SINGLE_HEIGHT       350
-#define THUMB_TWOCOL_WIDTH        324
-#define THUMB_TWOCOL_HEIGHT       204
-#define THUMB_LARGE_WIDTH         344
-#define THUMB_LARGE_HEIGHT        214
-#define THUMB_MEDIUM_WIDTH        224
-#define THUMB_MEDIUM_HEIGHT       150
-#define THUMB_SMALL_WIDTH         152
-#define THUMB_SMALL_HEIGHT        112
+#define THUMB_SINGLE_WIDTH        (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/1.33)
+#define THUMB_SINGLE_HEIGHT       (int)(THUMB_SINGLE_WIDTH/1.71)
+#define THUMB_TWOCOL_WIDTH        (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/2.47)
+#define THUMB_TWOCOL_HEIGHT       (int)(THUMB_TWOCOL_WIDTH/1.6)
+#define THUMB_LARGE_WIDTH         (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/2.32)
+#define THUMB_LARGE_HEIGHT        (int)(THUMB_LARGE_WIDTH/1.6)
+#define THUMB_MEDIUM_WIDTH        (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/3.2)
+#define THUMB_MEDIUM_HEIGHT       (int)(THUMB_MEDIUM_WIDTH/1.6)
+#define THUMB_SMALL_WIDTH         (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/5.5)
+#define THUMB_SMALL_HEIGHT        (int)(THUMB_SMALL_WIDTH/1.6)
 
 /* Metrics inside a thumbnail. */
 /*
@@ -600,26 +600,52 @@ typedef struct
 
 /* Private constantsa {{{ */
 /* Possible thumbnail sizes. */
-static const struct
+static struct
 {
     GtkRequisition small, medium, large, single, twocol;
 } Thumbsizes[2] =
 {
-  [0]={
-	.single = { THUMB_SINGLE_WIDTH, THUMB_SINGLE_HEIGHT },
-	.twocol = { THUMB_TWOCOL_WIDTH, THUMB_TWOCOL_HEIGHT },
-	.large  = { THUMB_LARGE_WIDTH ,  THUMB_LARGE_HEIGHT  },
-	.medium = { THUMB_MEDIUM_WIDTH, THUMB_MEDIUM_HEIGHT },
-	.small  = { THUMB_SMALL_WIDTH ,  THUMB_SMALL_HEIGHT  },
-    },
-  [1]={
-	.single = {  THUMB_SINGLE_HEIGHT ,THUMB_SINGLE_WIDTH+FRAME_TOP_HEIGHT},
-	.twocol = {  THUMB_TWOCOL_HEIGHT ,THUMB_TWOCOL_WIDTH+FRAME_TOP_HEIGHT},
-	.large  = {  THUMB_LARGE_HEIGHT  ,THUMB_LARGE_WIDTH+FRAME_TOP_HEIGHT},
-	.medium = {  THUMB_MEDIUM_HEIGHT * .9  ,(THUMB_MEDIUM_WIDTH+FRAME_TOP_HEIGHT)*.9},
-	.small  = {  THUMB_SMALL_HEIGHT  * .9  ,(THUMB_SMALL_WIDTH+FRAME_TOP_HEIGHT)*.9 },
-    }
+  [0] = {
+	.single = { 0, 0 },
+	.twocol = { 0, 0 },
+    .large  = { 0, 0 },
+    .medium = { 0, 0 },
+    .small  = { 0, 0 },
+  },
+  [1] = {
+	.single = { 0, 0 },
+	.twocol = { 0, 0 },
+    .large  = { 0, 0 },
+    .medium = { 0, 0 },
+    .small  = { 0, 0 },
+  }
 };
+#define _setThumbSizes() \
+if (G_LIKELY (Thumbsizes[0].large.width == 0))\
+  {\
+    Thumbsizes[0].single.width  = THUMB_SINGLE_WIDTH;\
+    Thumbsizes[0].single.height = THUMB_SINGLE_HEIGHT;\
+    Thumbsizes[0].twocol.width  = THUMB_TWOCOL_WIDTH;\
+    Thumbsizes[0].twocol.height = THUMB_TWOCOL_HEIGHT;\
+    Thumbsizes[0].large.width   = THUMB_LARGE_WIDTH;\
+    Thumbsizes[0].large.height  = THUMB_LARGE_HEIGHT;\
+    Thumbsizes[0].medium.width  = THUMB_MEDIUM_WIDTH;\
+    Thumbsizes[0].medium.height = THUMB_MEDIUM_HEIGHT;\
+    Thumbsizes[0].small.width   = THUMB_SMALL_WIDTH;\
+    Thumbsizes[0].small.height  = THUMB_SMALL_HEIGHT;\
+    \
+    Thumbsizes[1].single.width  = THUMB_SINGLE_HEIGHT;\
+    Thumbsizes[1].single.height = THUMB_SINGLE_WIDTH+FRAME_TOP_HEIGHT;\
+    Thumbsizes[1].twocol.width  = THUMB_TWOCOL_HEIGHT;\
+    Thumbsizes[1].twocol.height = THUMB_TWOCOL_WIDTH+FRAME_TOP_HEIGHT;\
+    Thumbsizes[1].large.width   = THUMB_LARGE_HEIGHT;\
+    Thumbsizes[1].large.height  = THUMB_LARGE_WIDTH+FRAME_TOP_HEIGHT;\
+    Thumbsizes[1].medium.width  = THUMB_MEDIUM_HEIGHT* .9;\
+    Thumbsizes[1].medium.height = (THUMB_MEDIUM_WIDTH+FRAME_TOP_HEIGHT)* .9;\
+    Thumbsizes[1].small.width   = THUMB_SMALL_HEIGHT * .9;\
+    Thumbsizes[1].small.height  = (THUMB_SMALL_WIDTH+FRAME_TOP_HEIGHT) * .9;\
+  }
+
 static void
 clutter_actor_set_rotation_z(ClutterActor *actor,gfloat angle,gfloat z)
 {
@@ -1874,6 +1900,8 @@ calc_layout (Layout * lout)
   int tweak_taskswitcher = hd_transition_get_int("thp_tweaks",
                                                  "taskswitcher", 0);
 
+  _setThumbSizes();
+
   /* Figure out how many thumbnails to squeeze into one row
    * (not the last one, which may be different) and the maximum
    * number of fully visible rows at a time. */
@@ -1950,7 +1978,7 @@ layout_thumb_frame (const Thumbnail * thumb, const Flyops * ops, gboolean landsc
   /* This is quite boring. */
   clutter_actor_get_size(thumb->frame.nw, &wt, &ht);
   clutter_actor_get_size(thumb->frame.sw, &wb, &hb);
-  
+
   ops->move (thumb->frame.nm, wt, 0);
   ops->move (thumb->frame.ne, Thumbsize->width, 0);
   ops->move (thumb->frame.mw, 0, ht);
@@ -1974,7 +2002,7 @@ layout_thumb_frame (const Thumbnail * thumb, const Flyops * ops, gboolean landsc
                 / clutter_actor_get_height (thumb->frame.me));
   if(landscape)
   {
-    ops->scale (thumb->frame.mep, 
+    ops->scale (thumb->frame.mep,
                 (gdouble)
                 (FRAME_TOP_HEIGHT)/clutter_actor_get_height (thumb->frame.mep)
                 ,
@@ -2275,7 +2303,7 @@ layout_thumbs (ClutterActor * newborn)
             {
               app_geom_fix = HD_COMP_MGR_TOP_MARGIN;
               wprison_fix = FRAME_TOP_HEIGHT-FRAME_WIDTH;
-              
+
               ops->clip(thumb->windows, appwgw, appwgh+app_geom_fix);
 
               /* Phone in portrait and showing not-portrait capable app thumb */
@@ -4390,7 +4418,7 @@ static int hd_thumb_compare (gconstpointer a, gconstpointer b)
 	if ( (thumb_has_notification(s) || thumb_is_notification(s)) &&
 	     !(thumb_has_notification(t) || thumb_is_notification(t))) return -1;
 	return s->last_activated - t->last_activated;
-}	
+}
 
 static int hd_thumb_compare2 (gconstpointer a, gconstpointer b)
 {
@@ -4404,7 +4432,7 @@ void hd_task_navigator_rotate_thumbs(void) {
 	s=Thumbnails;
 	Thumbnails=g_list_remove_link(Thumbnails,s);
 	t=Thumbnails;
-	while(t && !thumb_has_notification((Thumbnail *)(t->data)) && 
+	while(t && !thumb_has_notification((Thumbnail *)(t->data)) &&
 		   !thumb_is_notification((Thumbnail *)(t->data)))t=g_list_next(t);
 	if(t) {
 		Thumbnails=g_list_insert_before(Thumbnails, t, s->data);
@@ -4436,12 +4464,12 @@ void hd_task_navigator_activate(int x, int y, int close) {
 		s=g_list_sort(g_list_copy(Thumbnails), hd_thumb_compare2);
 		t=g_list_nth(s,x);
 		if(t) {
-			if(close) appthumb_close_clicked((Thumbnail *)t->data); else 
+			if(close) appthumb_close_clicked((Thumbnail *)t->data); else
 			  if (hd_task_navigator_is_active ()) appthumb_clicked((Thumbnail *)t->data);
 		}
 		g_list_free(s);
 		return ;
-	} else 
+	} else
 	if (y==-1) {
 		n=x;
 	} else {
@@ -4456,7 +4484,7 @@ void hd_task_navigator_activate(int x, int y, int close) {
 		n--;
 	}
 	if(t && !n ) {
-		if(close) appthumb_close_clicked((Thumbnail *)t->data); else 
+		if(close) appthumb_close_clicked((Thumbnail *)t->data); else
 		  if (hd_task_navigator_is_active ()) appthumb_clicked((Thumbnail *)t->data);
 	}
 }
