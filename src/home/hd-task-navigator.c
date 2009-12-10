@@ -104,12 +104,12 @@
  * button reaction area.  1-2 thumbnails are LARGE, 3-6 are MEDIUM
  * and the rest are SMALL.
  */
-#define THUMB_LARGE_WIDTH         344
-#define THUMB_LARGE_HEIGHT        214
-#define THUMB_MEDIUM_WIDTH        224
-#define THUMB_MEDIUM_HEIGHT       150
-#define THUMB_SMALL_WIDTH         152
-#define THUMB_SMALL_HEIGHT        112
+#define THUMB_LARGE_WIDTH         (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/2.32)
+#define THUMB_LARGE_HEIGHT        (int)(THUMB_LARGE_WIDTH/1.6)
+#define THUMB_MEDIUM_WIDTH        (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/3.2)
+#define THUMB_MEDIUM_HEIGHT       (int)(THUMB_MEDIUM_WIDTH/1.6)
+#define THUMB_SMALL_WIDTH         (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/5.5)
+#define THUMB_SMALL_HEIGHT        (int)(THUMB_SMALL_WIDTH/1.6)
 
 /* Metrics inside a thumbnail. */
 /*
@@ -567,12 +567,23 @@ typedef struct
 
 /* Private constantsa {{{ */
 /* Possible thumbnail sizes. */
-static const struct { GtkRequisition small, medium, large; } Thumbsizes =
+static struct { GtkRequisition small, medium, large; } Thumbsizes =
 {
-  .large  = { THUMB_LARGE_WIDTH,  THUMB_LARGE_HEIGHT  },
-  .medium = { THUMB_MEDIUM_WIDTH, THUMB_MEDIUM_HEIGHT },
-  .small  = { THUMB_SMALL_WIDTH,  THUMB_SMALL_HEIGHT  },
+  .large  = { 0,  0  },
+  .medium = { 0,  0  },
+  .small  = { 0,  0  },
 };
+
+#define _setThumbSizes() \
+if (G_LIKELY (Thumbsizes.large.width == 0))\
+  {\
+    Thumbsizes.large.width   = THUMB_LARGE_WIDTH;\
+    Thumbsizes.large.height  = THUMB_LARGE_HEIGHT;\
+    Thumbsizes.medium.width  = THUMB_MEDIUM_WIDTH;\
+    Thumbsizes.medium.height = THUMB_MEDIUM_HEIGHT;\
+    Thumbsizes.small.width   = THUMB_SMALL_WIDTH;\
+    Thumbsizes.small.height  = THUMB_SMALL_HEIGHT;\
+  }
 
 /* Place and size an actor without animation. */
 static const Flyops Fly_at_once =
@@ -1763,6 +1774,8 @@ static void
 calc_layout (Layout * lout)
 {
   guint nrows_per_page;
+ 
+  _setThumbSizes();
 
   /* Figure out how many thumbnails to squeeze into one row
    * (not the last one, which may be different) and the maximum
