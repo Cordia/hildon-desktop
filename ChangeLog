@@ -1,3 +1,17 @@
+2009-12-10  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Add support for Russian Cyrillic keyboard layout to Contacts live
+	search started by home.
+
+	Fixes: NB#143334 - Impossible to make a lookup in the address book
+	with Cyrillic keyboard layout
+
+	* src/home/hd-home.c (hd_home_desktop_press,
+	  is_russian_cyrillic_keyboard,
+	  get_keyval_for_russian_cyrillic_keyboard,
+	  hd_home_desktop_key_press): Shift the level when a Russian Cyrillic
+	  keyboard is in use.
+
 2009-12-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Fix of the fix of NB#149091 - Urho's pet feature not working properly,

@@ -534,6 +534,52 @@ hd_home_desktop_press (XButtonEvent *xev, void *userdata)
   return hd_home_desktop_do_press (home, xev->x, xev->y);
 }
 
+static gboolean
+is_russian_cyrillic_keyboard (void)
+{
+  GConfClient *client = gconf_client_get_default ();
+  char *kb_layout;
+  gboolean kb_level_shifted;
+  gboolean russian_cyrillic;
+
+  kb_layout = gconf_client_get_string (client,
+                                       "/apps/osso/inputmethod/int_kb_layout",
+                                       NULL);
+  kb_level_shifted = gconf_client_get_bool (client,
+                                            "/apps/osso/inputmethod/int_kb_level_shifted",
+                                            NULL);
+
+  russian_cyrillic = (g_strcmp0 (kb_layout, "ru") == 0) && kb_level_shifted;
+
+  g_object_unref (client);
+  g_free (kb_layout);
+
+  return russian_cyrillic;
+}
+
+static guint
+get_keyval_for_russian_cyrillic_keyboard (GdkKeymap       *keymap,
+                                          guint            keycode,
+                                          GdkModifierType  state)
+{
+  GdkKeymapKey keymap_key;
+
+  gdk_keymap_translate_keyboard_state (keymap,
+                                       keycode,
+                                       state,
+                                       0,
+                                       NULL,
+                                       &keymap_key.group,
+                                       &keymap_key.level,
+                                       NULL);
+
+  keymap_key.keycode = keycode;
+  keymap_key.level += 4;
+
+  return gdk_keymap_lookup_key (keymap,
+                                &keymap_key);
+}
+
 static void
 hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 {
@@ -576,13 +622,24 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
     {
       pretend_fn = priv->fn_state != FN_STATE_NONE ? FN_MODIFIER : 0;
     }
-  g_debug ("%s: pretend_fn: %d", __FUNCTION__, pretend_fn);
-  gdk_keymap_translate_keyboard_state (keymap,
-                                       xev->keycode,
-                                       xev->state | pretend_fn,
-                                       0,
-                                       &keyval,
-                                       NULL, NULL, NULL);
+
+  if (is_russian_cyrillic_keyboard ())
+    {
+      keyval = get_keyval_for_russian_cyrillic_keyboard (keymap,
+                                                         xev->keycode,
+                                                         xev->state | pretend_fn);
+    }
+  else
+    {
+      gdk_keymap_translate_keyboard_state (keymap,
+                                           xev->keycode,
+                                           xev->state | pretend_fn,
+                                           0,
+                                           &keyval,
+                                           NULL,
+                                           NULL,
+                                           NULL);
+    }
 
   g_debug ("%s. keycode: %u, state: %u, keyval: %u", __FUNCTION__,
            xev->keycode, xev->state, keyval);
