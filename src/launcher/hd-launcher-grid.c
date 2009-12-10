@@ -109,7 +109,7 @@ static gboolean _hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
                                         ClutterButtonEvent *event,
                                         gpointer *data);
 
-#define HD_LAUNCHER_GRID_MAX_COLUMNS 5
+#define HD_LAUNCHER_GRID_MAX_COLUMNS (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/160)
 
 G_DEFINE_TYPE_WITH_CODE (HdLauncherGrid,
                          hd_launcher_grid,
