@@ -1,3 +1,20 @@
+2009-12-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#150091 P/L switching fails in call-ui while making an
+		  outgoing call from contacts
+
+	Subview transition in progres (Contact details -> All contacts),
+	gets interrupted by the topping of Phone, restack, set_visibilities,
+	subview transition completes, messes up visibilities, may_be_portrait
+	gets dicouraged and doesn't turn to portrait, tester complains.
+
+	* src/home/hd-render-manager (hd_render_manager_set_visibilities):
+	  Publicized.
+	* src/util/hd-transition.c (hd_transition_completed):
+	  set_visibilities() when all of certain kinds of transition are done
+	* src/util/hd-transition.c (hd_transition_popup, hd_transition_fade, hd_transition_subview):
+	  them
+
 2009-12-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Fix of the fix of NB#149091 - Urho's pet feature not working properly,

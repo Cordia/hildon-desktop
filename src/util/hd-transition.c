@@ -62,6 +62,8 @@ typedef struct _HDEffectData
   MBWMCompMgrClutterClient *cclient2;
   ClutterActor             *cclient2_actor;
   HdCompMgr                *hmgr;
+  /* hd_render_manager_set_visibilities() when all transitions are done */
+  gboolean                  fixup_visibilities;
   /* original/expected position of application/menu */
   ClutterGeometry           geo;
   /* used in rotate_screen to set the direction (and amount) of movement */
@@ -164,6 +166,11 @@ static struct
    * so if we are continually getting damage we don't just hang there. */
   GTimer *timer;
 } Orientation_change;
+
+/* The number of transitions in progress requesting for @fixup_visibilities.
+ * At the moment only the popup (menus and dialogs), the fade (notes, banners)
+ * and subview transitions are involved. */
+static guint Transitions_running;
 
 /* If %TRUE keep reloading transitions.ini until we can
  * and we can watch it. */
@@ -876,6 +883,13 @@ hd_transition_completed (ClutterTimeline* timeline, HDEffectData *data)
                                         G_CALLBACK (on_screen_size_changed),
                                         data);
 
+  /* @Transitions_running only accounts for transitions asking for
+   * @fixup_visibilities.  If we're finishing off the last one it
+   * must be safe (knock-knock-knock) to re-evaluate visibilities. */
+  if (data->fixup_visibilities && --Transitions_running == 0
+      && STATE_IS_APP(hd_render_manager_get_state()))
+    hd_render_manager_set_visibilities();
+
   g_free (data);
 
   if (hmgr)
@@ -914,6 +928,7 @@ hd_transition_popup(HdCompMgr                  *mgr,
   g_signal_connect (data->timeline, "completed",
                         G_CALLBACK (hd_transition_completed), data);
   data->geo = geo;
+  Transitions_running += data->fixup_visibilities = TRUE;
 
   /*
    * If @actor is a fullscreen dialog it's not in apptop but in home_blur.
@@ -964,6 +979,7 @@ hd_transition_fade(HdCompMgr                  *mgr,
       mb_wm_comp_mgr_clutter_client_get_actor( data->cclient ) );
   data->hmgr = HD_COMP_MGR (mgr);
   data->timeline = hd_transition_timeline_new("fade", event, 250);
+  Transitions_running += data->fixup_visibilities = TRUE;
 
   if (HD_IS_BANNER_NOTE(c))
     {
@@ -1289,6 +1305,7 @@ hd_transition_subview(HdCompMgr                  *mgr,
   data->cclient2_actor = g_object_ref (
       mb_wm_comp_mgr_clutter_client_get_actor( data->cclient2 ) );
   data->hmgr = HD_COMP_MGR (mgr);
+  Transitions_running += data->fixup_visibilities = TRUE;
   data->timeline = hd_transition_timeline_new("subview", event, 250);
 
   g_signal_connect (data->timeline, "new-frame",

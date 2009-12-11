@@ -244,8 +244,6 @@ hd_render_manager_sync_clutter_after(void);
 
 static const char *
 hd_render_manager_state_str(HDRMStateEnum state);
-static void
-hd_render_manager_set_visibilities(void);
 
 static void
 hd_render_manager_get_property (GObject    *object,
@@ -2293,7 +2291,6 @@ void hd_render_manager_append_geo_cb(ClutterActor *actor, gpointer data)
     }
 }
 
-static
 void hd_render_manager_set_visibilities()
 { VISIBILITY ("SET VISIBILITIES");
   HdRenderManagerPrivate *priv;
