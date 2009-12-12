@@ -105,11 +105,11 @@
  * and the rest are SMALL.
  */
 #define THUMB_LARGE_WIDTH         (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/2.32)
-#define THUMB_LARGE_HEIGHT        (int)(THUMB_LARGE_WIDTH/1.6)
+#define THUMB_LARGE_HEIGHT        (int)(THUMB_LARGE_WIDTH/HD_COMP_MGR_SCREEN_RATIO)
 #define THUMB_MEDIUM_WIDTH        (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/3.2)
-#define THUMB_MEDIUM_HEIGHT       (int)(THUMB_MEDIUM_WIDTH/1.6)
+#define THUMB_MEDIUM_HEIGHT       (int)(THUMB_MEDIUM_WIDTH/HD_COMP_MGR_SCREEN_RATIO)
 #define THUMB_SMALL_WIDTH         (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/5.5)
-#define THUMB_SMALL_HEIGHT        (int)(THUMB_SMALL_WIDTH/1.6)
+#define THUMB_SMALL_HEIGHT        (int)(THUMB_SMALL_WIDTH/HD_COMP_MGR_SCREEN_RATIO)
 
 /* Metrics inside a thumbnail. */
 /*
@@ -609,16 +609,17 @@ static const Flyops Fly_smoothly =
 static ClutterGeometry App_window_geometry =
 {
   .x      = 0,
-  .y      = HD_COMP_MGR_TOP_MARGIN,
+  .y      = 0,
   .width  = 0,
-  .height = 0 - HD_COMP_MGR_TOP_MARGIN,
+  .height = 0,
 };
 #define _setWindowGeometry()\
 {\
   if (App_window_geometry.width == 0)\
     {\
       App_window_geometry.width = HD_COMP_MGR_LANDSCAPE_WIDTH;\
-      App_window_geometry.height += HD_COMP_MGR_LANDSCAPE_HEIGHT;\
+      App_window_geometry.height = HD_COMP_MGR_LANDSCAPE_HEIGHT + HD_COMP_MGR_TOP_MARGIN;\
+      App_window_geometry.y = HD_COMP_MGR_TOP_MARGIN;\
     }\
 }
 
