@@ -22,13 +22,9 @@ DEB_CONFIGURE_EXTRA_FLAGS += \
 	--enable-static-mb2=yes
 
 DEB_DH_STRIP_ARGS := --dbg-package=hildon-desktop
-DEB_DH_INSTALLINIT_ARGS := --no-start -- start 51 2 3 4 . stop 20 0 1 5 6 .
 
 makebuilddir/hildon-desktop::
 	[ -f configure ] || ./autogen.sh
 
 binary-install/hildon-desktop::
-	dh_maemolauncher
-	dh_installxsession -u 'post 20'
-	dh_installxsession --init-script='hildon-desktop-wait' -u 'post 21'
 

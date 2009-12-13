@@ -1,0 +1,8 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=XSession
+Exec=/usr/bin/hildon-desktop
+TryExec=/usr/bin/hildon-desktop
+Name=Hildon Desktop
+Comment=The Hildon Desktop
+X-Ubuntu-Gettext-Domain=desktop_hildon_desktop
