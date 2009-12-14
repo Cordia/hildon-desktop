@@ -184,9 +184,7 @@ src/a11y/launcher/Makefile
 src/a11y/home/Makefile
 src/a11y/tail/Makefile
 data/Makefile
-data/desktop/Makefile
 data/menu/Makefile
-data/menu/hildon/Makefile
 tests/Makefile
 ])
 
