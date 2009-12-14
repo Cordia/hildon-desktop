@@ -71,6 +71,8 @@ struct _HdLauncherPagePrivate
    * movement */
   gint drag_distance;
   gint drag_last_x, drag_last_y;
+
+  gint width, height;
 };
 
 enum
@@ -136,6 +138,9 @@ hd_launcher_page_init (HdLauncherPage *page)
         HD_LAUNCHER_PAGE_WIDTH, HD_LAUNCHER_PAGE_HEIGHT);
   clutter_actor_set_reactive (CLUTTER_ACTOR(page), FALSE);
   g_signal_connect(page, "show", G_CALLBACK(hd_launcher_page_show), 0);
+
+  page->priv->width = HD_COMP_MGR_LANDSCAPE_WIDTH;
+  page->priv->height = HD_COMP_MGR_LANDSCAPE_HEIGHT;
 }
 
 static gboolean
@@ -278,7 +283,20 @@ hd_launcher_page_dispose (GObject *gobject)
 
 static void
 hd_launcher_page_show (ClutterActor *actor)
-{
+{ 
+  HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (actor);
+  /* make the scrollbars appear and then fade out (they won't be shown
+   * if the scrollable area is less than the screen size) */
+  tidy_finger_scroll_show_scrollbars(priv->scroller);
+
+  g_debug ("W: %d REAL W: %d",priv->width,HD_COMP_MGR_LANDSCAPE_WIDTH);
+
+  if (priv->width == HD_COMP_MGR_LANDSCAPE_HEIGHT)
+  {
+    priv->width = priv->height;
+    priv->height = HD_COMP_MGR_LANDSCAPE_WIDTH;
+    hd_launcher_grid_layout (HD_LAUNCHER_GRID (priv->grid));
+  }
 }
 
 ClutterActor *
