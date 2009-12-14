@@ -470,7 +470,6 @@ hd_launcher_tree_find_item (HdLauncherTree *tree, const gchar *id)
                       "\t<MergeFile type=\"parent\">/etc/xdg/menus/hildon.menu</MergeFile>\n" \
                       "\t<AppDir>%s/applications/hildon</AppDir>\n" \
                       "\t<DirectoryDir>%s/applications/hildon</DirectoryDir>\n\n" \
-                      "\t<MergeDir>hildon/</MergeDir>\n" \
                       "</Menu>\n"
 #define CREATE_MODE (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
 
@@ -480,7 +479,7 @@ hd_launcher_tree_ensure_user_menu (void)
   gchar *menu_filename, *menu_dirname;
 
   menu_dirname = g_build_filename (g_get_user_config_dir (),
-                                   "menus","hildon", NULL);
+                                   "menus", NULL);
   if (!g_file_test (menu_dirname, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
     {
       if (g_mkdir_with_parents (menu_dirname, CREATE_MODE))

@@ -10,20 +10,7 @@
   <DirectoryDir>/usr/share/applications/hildon</DirectoryDir>
 
   <Include>
-    <Filename>browser.desktop</Filename>
-    <Filename>mediaplayer.desktop</Filename>
-    <Filename>calendar.desktop</Filename>
-    <Filename>image-viewer.desktop</Filename>
-    <Filename>osso-addressbook.desktop</Filename>
-    <Filename>rtcom-call-ui.desktop</Filename>
-    <Filename>nokia-maps.desktop</Filename>
-    <Filename>camera-ui.desktop</Filename>
-    <Filename>modest.desktop</Filename>
-    <Filename>rtcom-messaging-ui.desktop</Filename>
-    <Filename>worldclock.desktop</Filename>
-    <Filename>osso_calculator.desktop</Filename>
-    <Filename>ovi.desktop</Filename>
-    <Filename>hildon-control-panel.desktop</Filename>
+    <All/>
   </Include>
 
   <Layout>
@@ -41,11 +28,21 @@
     <Filename>osso_calculator.desktop</Filename>
     <Filename>ovi.desktop</Filename>
     <Filename>hildon-control-panel.desktop</Filename>
-    <Menuname>Applications</Menuname>
+    <Filename>osso_notes.desktop</Filename>
+    <Filename>osso_pdfviewer.desktop</Filename>
+    <Filename>filemanager.desktop</Filename>
+    <Filename>osso_rss_feed_reader.desktop</Filename>
+    <Filename>osso_sketch.desktop</Filename>
+    <Filename>hildon-application-manager.desktop</Filename>
+    <Filename>maemoblocks.desktop</Filename>
+    <Filename>chess_startup.desktop</Filename>
+    <Filename>mahjong_startup.desktop</Filename>
+    <Filename>osso_lmarbles.desktop</Filename>
+    <Filename>osso-backup.desktop</Filename>
+    <Filename>tutorial-launcher.desktop</Filename>
+    <Filename>osso-xterm.desktop</Filename>
     <Merge type="all"/>
   </Layout>
-
-  <MergeDir>hildon/</MergeDir>
 
 </Menu>
 
