@@ -36,8 +36,8 @@
 G_BEGIN_DECLS
 
 /* Hardware display dimensions */
-#define HD_COMP_MGR_LANDSCAPE_WIDTH   WidthOfScreen(ScreenOfDisplay(clutter_x11_get_default_display(),0))
-#define HD_COMP_MGR_LANDSCAPE_HEIGHT  HeightOfScreen(ScreenOfDisplay(clutter_x11_get_default_display(),0))
+#define HD_COMP_MGR_LANDSCAPE_WIDTH   hd_comp_mgr_get_current_screen_width()
+#define HD_COMP_MGR_LANDSCAPE_HEIGHT  hd_comp_mgr_get_current_screen_height()
 #define HD_COMP_MGR_SCREEN_RATIO ((double)HD_COMP_MGR_LANDSCAPE_WIDTH/HD_COMP_MGR_LANDSCAPE_HEIGHT)
 
 /* The title bar height + HALF_MARGIN border. */
