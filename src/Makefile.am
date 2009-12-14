@@ -23,28 +23,4 @@ schemadir = ${datadir}/gconf/schemas
 schema_DATA = \ 
 	hildon-desktop-views.schemas
 
-cuddir = ${sysconfdir}/osso-cud-scripts
-cud_SCRIPTS = \
-	hildon-desktop-cud.sh
-
-rfsdir = ${sysconfdir}/osso-rfs-scripts
-rfs_SCRIPTS = \
-	hildon-desktop-rfs.sh
-
-backupconfdir = ${sysconfdir}/osso-backup/applications
-backupconf_DATA = \
-	hildon-desktop.conf
-
-backupprebackupdir = ${sysconfdir}/osso-backup/pre-backup.d/
-backupprebackup_SCRIPTS = \
-	hildon-desktop.prebackup.sh
-
-backuppostbackupdir = ${sysconfdir}/osso-backup/post-backup.d/
-backuppostbackup_SCRIPTS = \
-	hildon-desktop-post-backup.sh
-
-backuprestoredir = ${sysconfdir}/osso-backup/restore.d/always/
-backuprestore_SCRIPTS = \
-	hildon-desktop-restore.sh
-
 CLEANFILES = *~
