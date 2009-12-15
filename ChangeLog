@@ -5,6 +5,9 @@
 
 2009-12-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#150492 not informed when the application loading screenshot has
+		  been taken
+
 	* src/home/hd-home.c (root_window_client_message):
 	  Notify the client when the screenshot is done + refactorization.
 	  Requires recent unreleased libhildon.
