@@ -3,6 +3,12 @@
 	Remove the second level (Applications) in the task launcher.
 	Fixes NB#150638.
 
+2009-12-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-home.c (root_window_client_message):
+	  Notify the client when the screenshot is done + refactorization.
+	  Requires recent unreleased libhildon.
+
 2009-12-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#150091 P/L switching fails in call-ui while making an

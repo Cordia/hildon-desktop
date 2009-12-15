@@ -734,6 +734,92 @@ hd_home_reset_fn_state (HdHome *home)
   home->priv->ignore_next_fn_release = FALSE;
 }
 
+/*
+ * Create the loading screenshot of the application of @xwin which will
+ * be put up the the application is started next or remove it.  If the
+ * application already has a screenshot it's retained and we don't create
+ * a new one.  If @take was requested returns whether a new screenshot
+ * was taken, otherwise whether the screenshot was removed successfully.
+ * Does nothing if @xwin doesn't have an application we know about.
+ */
+static gboolean
+take_screenshot (MBWindowManager *wm, Window xwin, gboolean take)
+{
+  MBWindowManagerClient *client;
+  HdLauncherApp *launcher_app;
+  const char *service_name;
+  char *filename;
+  gboolean isok;
+
+  client = mb_wm_managed_client_from_xwindow (wm, xwin);
+  if (!client || !client->window)
+    return FALSE;
+
+  launcher_app = hd_comp_mgr_client_get_launcher (
+                                HD_COMP_MGR_CLIENT (client->cm_client));
+  if (!launcher_app)
+    {
+      g_warning ("Window 0x%lx did not have an application associated"
+                 " with it", client->window->xwindow);
+      return FALSE;
+    }
+
+  service_name = hd_launcher_app_get_service (launcher_app);
+  if (!service_name || strchr (service_name, '/') || service_name[0] == '.')
+    {
+      g_warning ("Window 0x%lx has no sane service name",
+                 client->window->xwindow);
+      return FALSE; /* daft service name, don't get a loading pic */
+    }
+
+  filename = g_strdup_printf ("%s/.cache/launch", getenv("HOME"));
+  g_mkdir_with_parents (filename, 0770);
+  g_free (filename);
+
+  isok = FALSE;
+  filename = g_strdup_printf ("%s/.cache/launch/%s.pvr",
+                              getenv("HOME"), service_name);
+  if (take)
+  {
+    Pixmap                          pixmap;
+    GdkPixbuf                      *pixbuf;
+    guint                           depth;
+    guint                           width, height;
+    ClutterActor                   *actor, *texture;
+
+    if (g_file_test (filename, G_FILE_TEST_EXISTS))
+      {
+        g_debug ("%s: not creating '%s', already exists",
+                 __func__, filename);
+        g_free (filename);
+        return FALSE;
+      }
+
+    actor = mb_wm_comp_mgr_clutter_client_get_actor (
+                     MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client));
+    texture = clutter_group_get_nth_child (CLUTTER_GROUP (actor), 0);
+    g_object_get (texture,
+                  "pixmap", &pixmap,
+                  "pixmap-depth", &depth,
+                  "pixmap-width", &width,
+                  "pixmap-height", &height,
+                  NULL);
+
+    /* We could call mb_wm_theme_get_decor_dimensions() here and take out
+     * the titlebar, etc, but in practice these aren't drawn on the loading
+     * image so we have to keep them on. */
+    pixbuf = gdk_pixbuf_xlib_get_from_drawable (NULL, pixmap,
+                             xlib_rgb_get_cmap(), xlib_rgb_get_visual(),
+                             0, 0, 0, 0, width, height);
+    isok = hd_pvr_texture_save (filename, pixbuf, NULL);
+    g_object_unref (pixbuf);
+  } else
+    isok = unlink (filename) == 0;
+
+  g_free (filename);
+  return isok;
+}
+
 /* Called when a client message is sent to the root window. */
 static void
 root_window_client_message (XClientMessageEvent *event, HdHome *home)
@@ -742,120 +828,37 @@ root_window_client_message (XClientMessageEvent *event, HdHome *home)
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   HdCompMgr     *hmgr = HD_COMP_MGR (home->priv->comp_mgr);
 
-#if 0
-  //  FIXME should we really support NET_CURRENT_DESKTOP?
-
+#if 0 //  FIXME should we really support NET_CURRENT_DESKTOP?
   if (event->message_type == wm->atoms[MBWM_ATOM_NET_CURRENT_DESKTOP])
     {
-      gint desktop = event->data.l[0];
-      hd_home_view_container_set_current_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
-                                               desktop);
+      hd_home_view_container_set_current_view (
+                          HD_HOME_VIEW_CONTAINER (priv->view_container),
+                          event->data.l[0]);
+      return;
     }
-  else
 #endif
-    if (event->message_type == hd_comp_mgr_get_atom (hmgr, HD_ATOM_HILDON_LOADING_SCREENSHOT))
-      {
-        MBWindowManagerClient *client =
-	  mb_wm_managed_client_from_xwindow (wm,
-					     event->data.l[1]);
 
-	char *filename;
-	HdLauncherApp *launcher_app;
-	const char *service_name;
+  if (event->message_type == hd_comp_mgr_get_atom (hmgr,
+                                     HD_ATOM_HILDON_LOADING_SCREENSHOT))
+    {
+      XEvent reply;
 
-	if (!client || !client->window)
-	  return;
+      /* Tell the client when the operation is complete. */
+      reply.xclient.type = ClientMessage;
+      reply.xclient.window = event->data.l[1];
+      reply.xclient.message_type = hd_comp_mgr_get_atom (hmgr,
+                                   HD_ATOM_HILDON_LOADING_SCREENSHOT);
+      reply.xclient.format = 32;
+      reply.xclient.data.l[0] = event->serial;
+      reply.xclient.data.l[1] = take_screenshot (wm, event->data.l[1],
+                                                 event->data.l[0] != 1);
 
-	launcher_app = hd_comp_mgr_client_get_launcher (
-                                HD_COMP_MGR_CLIENT (client->cm_client));
-
-	if (!launcher_app)
-	  {
-	    g_warning ("Window %06x did not have an application associated"
-                       " with it\n", (int) client->window->xwindow);
-	    return;
-	  }
-
-	service_name = hd_launcher_app_get_service (launcher_app);
-
-	if (!service_name ||
-	    index (service_name, '/')!=NULL ||
-	    service_name[0]=='.')
-	  {
-	    g_warning ("Window %06x has no sane service name\n",
-		       (int) client->window->xwindow);
-	    return; /* daft service name, don't get a loading pic */
-	  }
-
-	filename = g_strdup_printf ("%s/.cache/launch",
-				    getenv("HOME"));
-
-	g_mkdir_with_parents (filename, 0770);
-	g_free (filename);
-
-	filename = g_strdup_printf ("%s/.cache/launch/%s.pvr",
-	                                     getenv("HOME"),
-	                                     service_name);
-
-	switch (event->data.l[0])
-	  {
-	  case 0:
-	    {
-	      Pixmap                          pixmap;
-	      GdkPixbuf                      *pixbuf;
-	      guint                           depth;
-	      guint                           width, height;
-
-              if (g_file_test (filename, G_FILE_TEST_EXISTS))
-                {
-                  g_debug ("%s: not creating '%s', already exists\n",
-                           __func__, filename);
-                  break;
-                }
-
-	      ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor
-		(MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client));
-
-	      ClutterActor *texture =
-		clutter_group_get_nth_child(CLUTTER_GROUP(actor), 0);
-
-	      g_object_get (texture,
-			    "pixmap", &pixmap,
-			    "pixmap-depth", &depth,
-			    "pixmap-width", &width,
-			    "pixmap-height", &height,
-			    NULL);
-
-	      /* We could call mb_wm_theme_get_decor_dimensions() here
-	       * and take out the titlebar, etc, but in practice these
-	       * aren't drawn on the loading image so we have to keep
-	       * them on.
-	       */
-
-	      pixbuf =
-		gdk_pixbuf_xlib_get_from_drawable (NULL,
-						   pixmap,
-						   xlib_rgb_get_cmap(),
-						   xlib_rgb_get_visual(),
-						   0, 0,
-						   0, 0,
-						   width,
-						   height);
-
-	      hd_pvr_texture_save(filename, pixbuf, NULL);
-
-	      g_object_unref (pixbuf);
-	    }
-	    break;
-	  case 1:
-	    unlink (filename);
-	    break;
-	  default:
-	    g_warning ("Unknown screenshot command.\n");
-	  }
-
-	g_free (filename);
-      }
+      mb_wm_util_async_trap_x_errors (wm->xdpy);
+      XSendEvent (wm->xdpy, reply.xclient.window, False,
+                  NoEventMask, &reply);
+      XFlush (wm->xdpy);
+      mb_wm_util_async_untrap_x_errors ();
+    }
 }
 
 static ClutterActor *
