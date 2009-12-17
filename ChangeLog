@@ -1,4 +1,4 @@
-2009-12-09  Gordon Williams <gordon.williams@collabora.co.uk>
+2009-12-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Hildon-desktop changes for NB#131671 - Camera app loading screenshot
 	These are required, but do not fix the issue until other patches
