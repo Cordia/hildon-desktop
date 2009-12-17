@@ -1,5 +1,16 @@
 2009-12-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#131081 - Class 0 SMS not correctly shown fullscreen
+	
+	* src/home/hd-render-manager.c: Now, instead of putting the title bar
+	  right at the top of everything, put it inside the topmost app. Do
+	  this on _restack.
+	* src/mb/hd-comp-mgr.c: Make sure that we do actually restack if the
+	  stack changes. Specifically, this allows actors to be restacked if
+	  we switch to the Task Navigator from an app.
+
+2009-12-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	Hildon-desktop changes for NB#131671 - Camera app loading screenshot
 	These are required, but do not fix the issue until other patches
 	are applied to libhildonmime and libosso.

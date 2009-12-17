@@ -2757,10 +2757,11 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   /* g_debug ("%s", __FUNCTION__); */
 
   /*
-   * We use the parent class restack() method to do the stacking, but as our
-   * switcher shares actors with the CM, we cannot run this when the switcher
-   * is showing, or an unmap effect is in progress; instead we set a flag, and
-   * let the switcher request stack sync when it closes.
+   * We use the parent class restack() method to do the stacking.
+   * The switcher shares clutter actors with the window manager, but actually
+   * we're aware of this in hdrm_restack and are careful about reparenting
+   * actors that are not where we consider them 'owned' by the wm
+   * (eg. in switcher). So we *can* restack here without fear of bad things.
    */
   if (priv->stack_sync)
     {
@@ -2771,7 +2772,6 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   if (STATE_NEED_TASK_NAV (hd_render_manager_get_state()))
     {
       hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
-      return FALSE;
     }
 
   /* Hide the Edit button if it is currently shown */
