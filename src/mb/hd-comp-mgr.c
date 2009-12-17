@@ -2797,6 +2797,12 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
           HdRunningApp *old_current_app;
           HdRunningApp *new_current_app;
 
+          /* Reset our 'map' timer, so that if we're asked to do a starting
+           * transition, we'll know if jitter could have meant the app was
+           * already showing when we got the request */
+          gettimeofday(&priv->last_map_time, NULL);
+
+
           /* Switch the hibernatable state for the new current client. */
           if (priv->current_hclient &&
               hd_comp_mgr_client_can_hibernate (priv->current_hclient))

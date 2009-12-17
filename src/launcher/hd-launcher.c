@@ -610,6 +610,10 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   ClutterActor *app_image = 0;
   gint cursor_x, cursor_y;
 
+  /* Refuse to do a second loading screen if we are already showing one */
+  if (STATE_IS_LOADING(hd_render_manager_get_state()))
+      return FALSE;
+
   /* Is there a cached image? */
   if (item)
     service_name = hd_launcher_app_get_service (item);
