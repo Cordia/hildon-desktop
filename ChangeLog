@@ -4,7 +4,8 @@
 	
 	* src/home/hd-render-manager.c: Now, instead of putting the title bar
 	  right at the top of everything, put it inside the topmost app. Do
-	  this on _restack.
+	  this on _restack. Make sure we ref the object to save it being freed
+	  if we unparent it from the stage.
 	* src/mb/hd-comp-mgr.c: Make sure that we do actually restack if the
 	  stack changes. Specifically, this allows actors to be restacked if
 	  we switch to the Task Navigator from an app.

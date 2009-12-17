@@ -341,7 +341,7 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   clutter_actor_reparent(priv->operator, CLUTTER_ACTOR(priv->blur_front));
 
   /* HdTitleBar */
-  priv->title_bar = g_object_new(HD_TYPE_TITLE_BAR, NULL);
+  priv->title_bar = g_object_ref_sink(g_object_new(HD_TYPE_TITLE_BAR, NULL));
   g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->title_bar);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
