@@ -38,7 +38,7 @@
 #include "hd-render-manager.h"
 #include "hd-clutter-cache.h"
 #include "hd-theme.h"
-
+#include "hd-pvr-texture.h"
 #include "hd-launcher-app.h"
 
 #include <clutter/clutter.h>
@@ -60,7 +60,6 @@
 #include <X11/XKBlib.h>
 #include <gdk/gdkx.h>
 #include <gdk/gdkkeysyms.h>
-#include <libhildondesktop/hd-pvr-texture.h>
 
 #define HDH_EDIT_BUTTON_DURATION 200
 #define HDH_EDIT_BUTTON_TIMEOUT 3000

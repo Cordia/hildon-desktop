@@ -20,7 +20,9 @@ home_h = 	hd-home.h		\
 		hd-switcher.h		\
 		hd-task-navigator.h	\
 		hd-title-bar.h		\
-		hd-clutter-cache.h
+		hd-clutter-cache.h	\
+		hd-pvr-texture.h	\
+		pvr-texture.h
 
 home_c = 	hd-home.c		\
 		hd-home-view.c		\
@@ -31,7 +33,9 @@ home_c = 	hd-home.c		\
 		hd-switcher.c		\
 		hd-task-navigator.c	\
 		hd-title-bar.c		\
-		hd-clutter-cache.c
+		hd-clutter-cache.c	\
+		hd-pvr-texture.c	\
+		pvr-texture.c
 
 noinst_LTLIBRARIES = libhome.la
 
