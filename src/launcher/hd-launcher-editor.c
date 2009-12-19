@@ -39,6 +39,7 @@
 #include <X11/Xutil.h>
 
 #include "hd-launcher-editor.h"
+#include "hd-launcher-config.h"
 #include "hd-app-mgr.h"
 #include "hd-launcher.h"
 #include "hd-launcher-item.h"
@@ -109,21 +110,23 @@ _hd_launcher_editor_load (HdLauncherEditor *editor)
       const gchar *icon_name = NULL;
       GtkIconInfo *icon_info = NULL;
       GdkPixbuf *pixbuf = NULL;
+      gint real_icon_size;
 
       icon_name = hd_launcher_item_get_icon_name (item);
+      hd_launcher_config_get_icons_size (&real_icon_size, NULL, NULL);
       if (icon_name)
         {
           icon_info = gtk_icon_theme_lookup_icon (icon_theme,
                                       icon_name,
-                                      HD_LAUNCHER_TILE_ICON_REAL_SIZE,
+                                      real_icon_size,
                                       GTK_ICON_LOOKUP_NO_SVG);
         }
       if (icon_info == NULL)
         {
           /* Try to load the default icon. */
           icon_info = gtk_icon_theme_lookup_icon(icon_theme,
-                                            HD_LAUNCHER_DEFAULT_ICON,
-                                            HD_LAUNCHER_TILE_ICON_REAL_SIZE,
+                                            hd_launcher_config_get_default_icon (),
+                                            real_icon_size,
                                             GTK_ICON_LOOKUP_NO_SVG);
         }
       if (icon_info)
@@ -133,8 +136,7 @@ _hd_launcher_editor_load (HdLauncherEditor *editor)
       if (icon_fname)
         {
           pixbuf = gdk_pixbuf_new_from_file_at_size(icon_fname,
-                                          HD_LAUNCHER_TILE_ICON_REAL_SIZE,
-                                          HD_LAUNCHER_TILE_ICON_REAL_SIZE, 0);
+                                          real_icon_size, real_icon_size, 0);
         }
 
       gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),

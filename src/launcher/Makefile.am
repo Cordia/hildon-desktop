@@ -26,7 +26,8 @@ launcher_h = \
 	hd-launcher-tile.h		\
 	hd-launcher-grid.h		\
 	hd-launcher-page.h		\
-	hd-launcher-editor.h  \
+	hd-launcher-editor.h	\
+	hd-launcher-config.h	\
 	hd-launcher.h
 
 launcher_c = \
@@ -39,7 +40,8 @@ launcher_c = \
 	hd-launcher-tile.c		\
 	hd-launcher-grid.c		\
 	hd-launcher-page.c		\
-	hd-launcher-editor.c  \
+	hd-launcher-editor.c	\
+	hd-launcher-config.c	\
 	hd-launcher.c
 
 noinst_LTLIBRARIES = liblauncher.la

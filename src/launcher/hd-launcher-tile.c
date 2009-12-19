@@ -28,6 +28,7 @@
 #include "hd-launcher.h"
 #include "hd-launcher-tile.h"
 #include "hd-launcher-grid.h"
+#include "hd-launcher-config.h"
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
@@ -46,7 +47,7 @@
 
 #define HD_LAUNCHER_TILE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TILE, HdLauncherTilePrivate))
 
-#define HD_LAUNCHER_TILE_FONT "Nokia Sans 15"
+#define HD_LAUNCHER_TILE_FONT "CorisandeBold Bold 11"
 /* We don't use a font from the theme here because apparently there are none the
  * size we want, and we don't want to add another logical font to gtkrc. */
 
@@ -134,7 +135,7 @@ hd_launcher_tile_class_init (HdLauncherTileClass *klass)
   pspec = g_param_spec_string ("icon-name",
                                "Icon Name",
                                "Name of the icon to display",
-                               HD_LAUNCHER_DEFAULT_ICON,
+                               hd_launcher_config_get_default_icon (),
                                G_PARAM_CONSTRUCT | HD_PARAM_READWRITE);
   g_object_class_install_property (gobject_class, PROP_LAUNCHER_TILE_ICON_NAME, pspec);
   pspec = g_param_spec_string ("text",
@@ -167,12 +168,13 @@ hd_launcher_tile_init (HdLauncherTile *tile)
 {
   HdLauncherTilePrivate *priv =
         tile->priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
+  gint tile_width, tile_height;
 
+  hd_launcher_config_get_tile_size (&tile_width, &tile_height);
 
   clutter_actor_set_name(CLUTTER_ACTOR(tile), "HdLauncherTile");
-  clutter_actor_set_size(CLUTTER_ACTOR(tile),
-      HD_LAUNCHER_TILE_WIDTH,
-      HD_LAUNCHER_TILE_HEIGHT);
+  clutter_actor_set_size(CLUTTER_ACTOR(tile), tile_width, tile_height);
+
   clutter_actor_show(CLUTTER_ACTOR(tile));
   /* Explicitly enable maemo-specific visibility detection to cut down
    * spurious paints */
@@ -196,9 +198,9 @@ hd_launcher_tile_init (HdLauncherTile *tile)
   clutter_actor_set_name(priv->click_area, "HdLauncherTile::click_area");
   clutter_actor_set_reactive(priv->click_area, TRUE);
   clutter_actor_set_position(priv->click_area, 0, 0);
-  clutter_actor_set_size(priv->click_area,
-      HD_LAUNCHER_TILE_WIDTH, HD_LAUNCHER_TILE_HEIGHT);
-  clutter_container_add_actor(CLUTTER_CONTAINER(tile), priv->click_area);
+  clutter_actor_set_size(priv->click_area, tile_width, tile_height);
+  
+clutter_container_add_actor(CLUTTER_CONTAINER(tile), priv->click_area);
 
   g_signal_connect_swapped(priv->click_area, "button-press-event",
                            G_CALLBACK (hd_launcher_tile_button_press), tile);
@@ -286,6 +288,17 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
   GtkIconTheme *icon_theme;
   GtkIconInfo *info;
   GdkPixbuf *pixbuf;
+  gint real_icon_size,
+       tile_icon_size,
+       glow_size, 
+       tile_width, 
+       tile_height;
+ 
+  hd_launcher_config_get_icons_size (&real_icon_size, 
+				     &tile_icon_size, 
+				     &glow_size);
+
+  hd_launcher_config_get_tile_size (&tile_width, &tile_height);
 
   if (priv->icon_name)
     {
@@ -295,7 +308,7 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
     priv->icon_name = g_strdup (icon_name);
   else
     /* Set the default if none was passed. */
-    priv->icon_name = g_strdup (HD_LAUNCHER_DEFAULT_ICON);
+    priv->icon_name = g_strdup (hd_launcher_config_get_default_icon ());
 
   /* Recreate the icon actor */
   if (priv->icon)
@@ -306,15 +319,15 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
 
   icon_theme = gtk_icon_theme_get_default();
   info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name,
-                                    HD_LAUNCHER_TILE_ICON_REAL_SIZE,
+                                    real_icon_size,
                                     GTK_ICON_LOOKUP_NO_SVG);
   if (info == NULL)
     {
       /* Try to get the default icon. */
       g_free (priv->icon_name);
-      priv->icon_name = g_strdup (HD_LAUNCHER_DEFAULT_ICON);
+      priv->icon_name = g_strdup (hd_launcher_config_get_default_icon ());
       info = gtk_icon_theme_lookup_icon(icon_theme, priv->icon_name,
-                                        HD_LAUNCHER_TILE_ICON_REAL_SIZE,
+                                        real_icon_size,
                                         GTK_ICON_LOOKUP_NO_SVG);
     }
   if (info == NULL)
@@ -338,8 +351,9 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
    * border around them, or the glow effect won't work properly. We use
    * gdk_pixbuf_new_from_file_at_size as the pixbuf pointed to by fname
    * isn't actually guaranteed to be the correct size.  */
-  pixbuf = gdk_pixbuf_new_from_file_at_size(fname,
-      HD_LAUNCHER_TILE_ICON_REAL_SIZE, HD_LAUNCHER_TILE_ICON_REAL_SIZE, 0);
+  pixbuf = 
+   gdk_pixbuf_new_from_file_at_size (fname,real_icon_size, real_icon_size, 0);
+
   if (pixbuf)
     {
       gint w = gdk_pixbuf_get_width(pixbuf);
@@ -373,11 +387,12 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
     return;
   }
 
-  clutter_actor_set_size (priv->icon,
-      HD_LAUNCHER_TILE_ICON_SIZE,
-      HD_LAUNCHER_TILE_ICON_SIZE);
+  clutter_actor_set_size (priv->icon, tile_icon_size,tile_icon_size);
+
   clutter_actor_set_position (priv->icon,
-      (HD_LAUNCHER_TILE_WIDTH - HD_LAUNCHER_TILE_ICON_SIZE) / 2, 0);
+      			      (tile_width - tile_icon_size) / 2,
+      			      hd_launcher_config_get_default_margin ()/2);
+
   clutter_container_add_actor (CLUTTER_CONTAINER(tile), priv->icon);
 
   gtk_icon_info_free(info);
@@ -388,13 +403,17 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
 
   priv->icon_glow = tidy_highlight_new(CLUTTER_TEXTURE(priv->icon));
   clutter_actor_set_size (CLUTTER_ACTOR(priv->icon_glow),
-        HD_LAUNCHER_TILE_GLOW_SIZE,
-        HD_LAUNCHER_TILE_GLOW_SIZE);
+        		  glow_size,
+        		  glow_size);
+
   clutter_actor_set_position (CLUTTER_ACTOR(priv->icon_glow),
-        (HD_LAUNCHER_TILE_WIDTH - HD_LAUNCHER_TILE_GLOW_SIZE) / 2,
-        (HD_LAUNCHER_TILE_ICON_SIZE - HD_LAUNCHER_TILE_GLOW_SIZE) / 2);
+        		      (tile_width - glow_size) / 2,
+        	 	       (hd_launcher_config_get_default_margin ()/2) +
+        		       (tile_icon_size - glow_size) / 2);
+
   clutter_container_add_actor (CLUTTER_CONTAINER(tile),
                                CLUTTER_ACTOR(priv->icon_glow));
+
   clutter_actor_lower_bottom(CLUTTER_ACTOR(priv->icon_glow));
 
   clutter_actor_hide(CLUTTER_ACTOR(priv->icon_glow));
@@ -408,6 +427,10 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   ClutterUnit label_width;
   guint label_height, label_width_px;
+  gint tile_width, tile_height, real_icon_size;
+
+  hd_launcher_config_get_tile_size (&tile_width, &tile_height);
+  hd_launcher_config_get_icons_size (&real_icon_size, NULL, NULL);
 
   if (!text)
     return;
@@ -424,7 +447,10 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
       clutter_actor_destroy (priv->label);
     }
 
-  priv->label = clutter_label_new_full (HD_LAUNCHER_TILE_FONT, priv->text, &text_color);
+  priv->label = 
+    clutter_label_new_full (hd_launcher_config_get_tile_font(),
+			    priv->text, &text_color);
+
   clutter_actor_set_name(priv->label, "HdLauncherTile::label");
 
   /* FIXME: This is a huge work-around because clutter/pango do not
@@ -438,23 +464,26 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
   clutter_label_set_line_wrap_mode (CLUTTER_LABEL (priv->label),
                                     PANGO_WRAP_CHAR);
 
-  label_height = HD_LAUNCHER_TILE_HEIGHT - (64 + HILDON_MARGIN_HALF);
+  label_height = 
+    tile_height - (real_icon_size + hd_launcher_config_get_default_margin ());
 
   clutter_actor_get_preferred_width (priv->label,
-    CLUTTER_UNITS_FROM_DEVICE(label_height),
-                              NULL, &label_width);
+    				     CLUTTER_UNITS_FROM_DEVICE(label_height),
+                              	     NULL, &label_width);
+
   label_width_px = MIN (CLUTTER_UNITS_TO_DEVICE(label_width),
-                        HD_LAUNCHER_TILE_WIDTH);
+                        tile_width);
 
   clutter_actor_set_size(priv->label, label_width_px, label_height);
   clutter_actor_set_position(priv->label,
-      (HD_LAUNCHER_TILE_WIDTH - label_width_px) / 2,
-      HD_LAUNCHER_TILE_HEIGHT - label_height);
+      			     (tile_width - label_width_px) / 2,
+      			     tile_height - label_height);
+
   clutter_container_add_actor (CLUTTER_CONTAINER(tile), priv->label);
 
-  if (CLUTTER_UNITS_TO_DEVICE(label_width) > HD_LAUNCHER_TILE_WIDTH)
+  if (CLUTTER_UNITS_TO_DEVICE(label_width) > tile_width)
     clutter_actor_set_clip (priv->label, 0, 0,
-                  HD_LAUNCHER_TILE_WIDTH, label_height);
+                  	    tile_width, label_height);
 }
 
 static void
@@ -670,20 +699,31 @@ hd_launcher_tile_allocate (ClutterActor          *self,
                            gboolean               absolute_origin_changed)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (self);
-  gint right_margin = HD_LAUNCHER_PAGE_WIDTH-HD_LAUNCHER_RIGHT_MARGIN;
+
+  gint right_margin;
   gint box_x1 = CLUTTER_UNITS_TO_INT(box->x1);
   gint box_x2 = CLUTTER_UNITS_TO_INT(box->x2);
-  /* Set our default click area - we position our icons HILDON_MARGIN_DEFAULT
+
+  gint xmin,xmax,default_margin,tile_width,margin_left,margin_right;
+
+  hd_launcher_config_get_margins_size (&margin_left, &margin_right);
+  hd_launcher_config_get_tile_size (&tile_width, NULL);
+  
+  default_margin = hd_launcher_config_get_default_margin ();
+
+  right_margin = HD_LAUNCHER_PAGE_WIDTH - margin_right; 
+
+  /* Set our default click area - we position our icons default margin
    * apart, so make us extend sideways a bit so there are no gaps */
-  gint xmin = -HILDON_MARGIN_DEFAULT/2;
-  gint xmax = HD_LAUNCHER_TILE_WIDTH + HILDON_MARGIN_DEFAULT/2;
+  xmin = -default_margin/2;
+  xmax = tile_width + default_margin/2;
 
   /* When this tile is moved around, set our click area up so that
    * it is clipped to the margins */
-  if (box_x1 < HD_LAUNCHER_LEFT_MARGIN)
-    xmin = HD_LAUNCHER_LEFT_MARGIN - box_x1;
+  if (box_x1 < margin_left)
+    xmin = margin_left - box_x1;
   if (box_x2 > right_margin)
-    xmax = HD_LAUNCHER_TILE_WIDTH - (box_x2 - right_margin);
+    xmax = tile_width - (box_x2 - right_margin);
 
   clutter_actor_set_x(priv->click_area, xmin);
   clutter_actor_set_width(priv->click_area, xmax-xmin);
@@ -697,7 +737,7 @@ void hd_launcher_tile_reset(HdLauncherTile *tile, gboolean hard)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   /* remove glow */
-  hd_launcher_tile_set_glow(tile, FALSE, hard);
+  hd_launcher_tile_set_glow (tile, FALSE, hard);
   priv->is_pressed = FALSE;
   if (priv->press_timeout)
     {

@@ -45,6 +45,7 @@
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
 #include "hd-transition.h"
+#include "hd-launcher-config.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 
@@ -396,10 +397,16 @@ _hd_launcher_grid_layout_row   (GList *l,
                                 guint h_spacing)
 {
   ClutterActor *child;
-  guint allocated = MIN (HD_LAUNCHER_GRID_MAX_COLUMNS, *remaining);
+  gint tile_width, max_columns;
+
+  hd_launcher_config_get_tile_size (&tile_width, NULL);
+  
+  max_columns = hd_launcher_config_get_columns ();
+
+  guint allocated = MIN (max_columns, *remaining);
   /* Figure out the starting X position needed to centre the icons */
-  guint icons_width = HD_LAUNCHER_TILE_WIDTH * HD_LAUNCHER_GRID_MAX_COLUMNS +
-                      h_spacing * (HD_LAUNCHER_GRID_MAX_COLUMNS-1);
+  guint icons_width = tile_width * max_columns +
+                      h_spacing * (max_columns-1);
   guint cur_x = (HD_LAUNCHER_PAGE_WIDTH - icons_width) / 2;
   /* for each icon in the row... */
   for (int i = 0; i < allocated; i++)
@@ -407,7 +414,7 @@ _hd_launcher_grid_layout_row   (GList *l,
       child = l->data;
 
       clutter_actor_set_position(child, cur_x, cur_y);
-      cur_x += HD_LAUNCHER_TILE_WIDTH + h_spacing;
+      cur_x += tile_width + h_spacing;
 
       l = l->next;
     }
@@ -420,7 +427,10 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
   HdLauncherGridPrivate *priv = grid->priv;
   GList *l;
   guint cur_height, n_visible_launchers, n_rows;
+  gint tile_height;
 
+  hd_launcher_config_get_tile_size (NULL, &tile_height); 
+  
   /* Free our list of 'blocker' actors that we use to block mouse clicks.
    * TODO: just check we have 'nrows' worth */
   g_list_foreach(priv->blockers,
@@ -441,6 +451,10 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
                                        cur_height, priv->h_spacing);
     if (l)
       {
+        gint margin_left, margin_right;
+
+        hd_launcher_config_get_margins_size (&margin_left, &margin_right);
+        
         /* If there is another row, we must create an actor that
          * goes between the two rows that will grab the clicks that
          * would have gone between them and dismissed the launcher  */
@@ -453,15 +467,15 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
                           G_CALLBACK (_hd_launcher_grid_blocker_release_cb),
                           NULL);
         clutter_actor_set_position(blocker,
-                                   HD_LAUNCHER_LEFT_MARGIN,
-                                   cur_height + HD_LAUNCHER_TILE_HEIGHT);
+                                   margin_left,
+                                   cur_height + tile_height);
         clutter_actor_set_size(blocker,
-            HD_LAUNCHER_GRID_WIDTH - (HD_LAUNCHER_LEFT_MARGIN+HD_LAUNCHER_RIGHT_MARGIN),
-            priv->v_spacing);
+            		       HD_LAUNCHER_GRID_WIDTH - (margin_left+margin_right),
+            		       priv->v_spacing);
 
         priv->blockers = g_list_prepend(priv->blockers, blocker);
       }
-    cur_height += HD_LAUNCHER_TILE_HEIGHT + priv->v_spacing;
+    cur_height += tile_height + priv->v_spacing;
   }
 
   clutter_actor_set_size(CLUTTER_ACTOR(grid),
@@ -581,9 +595,11 @@ hd_launcher_grid_init (HdLauncherGrid *launcher)
 {
   HdLauncherGridPrivate *priv;
 
+  gint default_margin = hd_launcher_config_get_default_margin ();
+
   launcher->priv = priv = HD_LAUNCHER_GRID_GET_PRIVATE (launcher);
 
-  priv->h_spacing = HILDON_MARGIN_DEFAULT;
+  priv->h_spacing = default_margin;
   priv->v_spacing = HD_LAUNCHER_GRID_ROW_SPACING;
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (launcher), FALSE);

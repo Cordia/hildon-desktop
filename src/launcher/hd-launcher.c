@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "hd-launcher.h"
+#include "hd-launcher-config.h"
 #include "hd-launcher-app.h"
 
 #include <dbus/dbus.h>
@@ -45,6 +46,7 @@
 #include "hd-render-manager.h"
 #include "hd-app-mgr.h"
 #include "hd-gtk-style.h"
+#include "hd-comp-mgr.h"
 #include "hd-theme.h"
 #include "hd-clutter-cache.h"
 #include "hd-title-bar.h"
@@ -80,6 +82,8 @@ struct _HdLauncherPrivate
 
   GtkWidget *editor;
   gboolean editor_done;
+
+  HdLauncherConfig *config;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -194,6 +198,8 @@ hd_launcher_init (HdLauncher *self)
 
   self->priv = priv = HD_LAUNCHER_GET_PRIVATE (self);
   g_datalist_init (&priv->pages);
+
+  priv->config = hd_launcher_config_get ();
 }
 
 static void hd_launcher_constructed (GObject *gobject)
@@ -246,6 +252,8 @@ hd_launcher_dispose (GObject *gobject)
     }
 
   g_datalist_clear (&priv->pages);
+
+  g_object_unref (priv->config);
 
   G_OBJECT_CLASS (hd_launcher_parent_class)->dispose (gobject);
 }
@@ -472,6 +480,9 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
 {
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = launcher->priv;
+  gint tile_width;
+
+  hd_launcher_config_get_tile_size (&tile_width, NULL);
 
   /* Send a mouse released event, because when we've put the editor window up
    * the release event will go straight to that instead of to the scroller,
@@ -493,10 +504,8 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
   gfloat x_align, y_align;
 
   clutter_actor_get_transformed_position (CLUTTER_ACTOR (tile), &x, &y);
-  x_align = (gfloat)(x + (HD_LAUNCHER_TILE_WIDTH / 2))
-                    / HD_LAUNCHER_PAGE_WIDTH;
-  y_align = (gfloat)(y + (HD_LAUNCHER_TILE_WIDTH / 2))
-                    / HD_LAUNCHER_PAGE_HEIGHT;
+  x_align = (gfloat)(x + (tile_width / 2)) / HD_LAUNCHER_PAGE_WIDTH;
+  y_align = (gfloat)(y + (tile_width / 2)) / HD_LAUNCHER_PAGE_HEIGHT;
 
   g_signal_connect (priv->editor, "destroy",
                     G_CALLBACK (_hd_launcher_editor_destroyed),
@@ -1096,7 +1105,7 @@ hd_launcher_background_clicked (HdLauncher *self,
    * If we have no page, just allow any click to take us back. */
   if (!priv->active_page ||
       (hd_launcher_page_get_drag_distance(HD_LAUNCHER_PAGE(priv->active_page)) <
-                                          HD_LAUNCHER_TILE_MAX_DRAG))
+                                          hd_launcher_config_get_max_drag ()))
     hd_launcher_back_button_clicked();
 
   return TRUE;
