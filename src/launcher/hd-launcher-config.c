@@ -264,7 +264,7 @@ hd_launcher_config_constructor (GType                  gtype,
 
   hd_launcher_config_read_keys (priv);
 
-  priv->max_columns = (gint) (HD_COMP_MGR_LANDSCAPE_WIDTH/160);
+  priv->max_columns = (gint) (HD_COMP_MGR_LANDSCAPE_WIDTH/priv->tile_width);
 
   return obj;
 }
