@@ -41,11 +41,7 @@
 G_BEGIN_DECLS
 
 /* Common defines */
-#define HD_LAUNCHER_DEFAULT_ICON  "tasklaunch_default_application"
 #define HD_LAUNCHER_NO_TRANSITION "none"
-
-#define HILDON_MARGIN_HALF                       4
-#define HILDON_MARGIN_DEFAULT			 8
 
 #define HD_TYPE_LAUNCHER            (hd_launcher_get_type ())
 #define HD_LAUNCHER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), HD_TYPE_LAUNCHER, HdLauncher))
@@ -98,8 +94,6 @@ hd_launcher_transition_app_start (HdLauncherApp *item);
 void hd_launcher_stop_loading_transition (void);
 
 /* left/right/top/bottom margin that is clicked on to go back */
-#define HD_LAUNCHER_LEFT_MARGIN (68) /* layout guide F */
-#define HD_LAUNCHER_RIGHT_MARGIN (68) /* layout guide F */
 #define HD_LAUNCHER_TOP_MARGIN (70) /* layout guide A */
 #define HD_LAUNCHER_BOTTOM_MARGIN (46) /* layout guide G */
 

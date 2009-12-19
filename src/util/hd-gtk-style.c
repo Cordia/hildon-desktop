@@ -267,7 +267,7 @@ hd_gtk_style_resolve_logical_font (const gchar * logical_name)
   if (!style)
     { /* Fall back to system font. */
       g_critical("%s: unknown font", logical_name);
-      return g_strdup ("Nokia Sans 18");
+      return g_strdup ("CorisandeBold Bold 12");
     }
   else
     return pango_font_description_to_string (style->font_desc);

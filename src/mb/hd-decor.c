@@ -288,8 +288,8 @@ hd_decor_create_actors(HdDecor *decor)
         decor->title_actor = CLUTTER_ACTOR(g_object_ref_sink(bar_title));
         clutter_container_add_actor(CLUTTER_CONTAINER(actor),
                                     decor->title_actor);
-
-        snprintf (font_name, sizeof (font_name), "%s %i%s",
+        
+	snprintf (font_name, sizeof (font_name), "%s %i%s",
                   d->font_family ? d->font_family : "Sans",
                   d->font_size ? d->font_size : 18,
                   d->font_units == MBWMXmlFontUnitsPoints ? "" : "px");

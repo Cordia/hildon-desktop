@@ -31,6 +31,7 @@
 #include "hd-launcher-item.h"
 #include "hd-launcher-app.h"
 #include "hd-launcher-cat.h"
+#include "hd-launcher-config.h"
 
 #define I_(str) (g_intern_static_string ((str)))
 #define HD_PARAM_READ (G_PARAM_READABLE    | \
@@ -203,7 +204,7 @@ hd_launcher_item_class_init (HdLauncherItemClass *klass)
   pspec = g_param_spec_string ("icon-name",
                                "Icon Name",
                                "Name of the icon to display",
-                               HD_LAUNCHER_DEFAULT_ICON,
+                               hd_launcher_config_get_default_icon (),
                                HD_PARAM_READ);
   g_object_class_install_property (gobject_class, PROP_LAUNCHER_ITEM_ICON_NAME, pspec);
 }

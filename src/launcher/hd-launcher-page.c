@@ -39,6 +39,7 @@
 #include "hd-transition.h"
 #include "hildon-desktop.h"
 #include "hd-launcher.h"
+#include "hd-launcher-config.h"
 #include "hd-launcher-grid.h"
 #include "hd-gtk-utils.h"
 #include "hd-gtk-style.h"
@@ -185,7 +186,7 @@ motion_event_cb (TidyFingerScroll *scroll,
   priv->drag_distance += (int)sqrt(dx*dx + dy*dy);
 
   /* If we dragged too far, deselect (and de-glow) */
-  if (priv->drag_distance > HD_LAUNCHER_TILE_MAX_DRAG)
+  if (priv->drag_distance > hd_launcher_config_get_max_drag ())
     {
       hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid));
     }

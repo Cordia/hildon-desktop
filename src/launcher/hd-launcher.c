@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "hd-launcher.h"
+#include "hd-launcher-config.h"
 #include "hd-launcher-app.h"
 
 #include <dbus/dbus.h>
@@ -44,6 +45,7 @@
 #include "hd-render-manager.h"
 #include "hd-app-mgr.h"
 #include "hd-gtk-style.h"
+#include "hd-comp-mgr.h"
 #include "hd-theme.h"
 #include "hd-clutter-cache.h"
 #include "hd-title-bar.h"
@@ -74,6 +76,8 @@ struct _HdLauncherPrivate
 
   HdLauncherTree *tree;
   HdLauncherTraverseData *current_traversal;
+
+  HdLauncherConfig *config;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -186,6 +190,8 @@ hd_launcher_init (HdLauncher *self)
 
   self->priv = priv = HD_LAUNCHER_GET_PRIVATE (self);
   g_datalist_init (&priv->pages);
+
+  priv->config = hd_launcher_config_get ();
 }
 
 static void hd_launcher_constructed (GObject *gobject)
@@ -238,6 +244,8 @@ hd_launcher_dispose (GObject *gobject)
     }
 
   g_datalist_clear (&priv->pages);
+
+  g_object_unref (priv->config);
 
   G_OBJECT_CLASS (hd_launcher_parent_class)->dispose (gobject);
 }
@@ -883,7 +891,7 @@ hd_launcher_background_clicked (HdLauncher *self,
    * If we have no page, just allow any click to take us back. */
   if (!priv->active_page ||
       (hd_launcher_page_get_drag_distance(HD_LAUNCHER_PAGE(priv->active_page)) <
-                                          HD_LAUNCHER_TILE_MAX_DRAG))
+                                          hd_launcher_config_get_max_drag ()))
     hd_launcher_back_button_clicked(0, 0, 0);
 
   return TRUE;
