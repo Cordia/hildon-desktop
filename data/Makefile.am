@@ -2,4 +2,5 @@ SUBDIRS = menu applications
 
 resdir = $(datadir)/hildon-desktop
 res_DATA = \
-	transitions.ini
+	transitions.ini \
+        launcher.desktop
