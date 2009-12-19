@@ -618,7 +618,7 @@ static ClutterGeometry App_window_geometry =
   if (App_window_geometry.width == 0)\
     {\
       App_window_geometry.width = HD_COMP_MGR_LANDSCAPE_WIDTH;\
-      App_window_geometry.height = HD_COMP_MGR_LANDSCAPE_HEIGHT + HD_COMP_MGR_TOP_MARGIN;\
+      App_window_geometry.height = HD_COMP_MGR_LANDSCAPE_HEIGHT - HD_COMP_MGR_TOP_MARGIN;\
       App_window_geometry.y = HD_COMP_MGR_TOP_MARGIN;\
     }\
 }
