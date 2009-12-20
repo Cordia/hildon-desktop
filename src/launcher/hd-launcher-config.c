@@ -175,13 +175,31 @@ hd_launcher_config_read_keys (HdLauncherConfigPrivate *priv)
 
   if(!error)
   {
-    priv->path = tmp_str;
+    priv->tile_font = tmp_str;
   }
   else
   {
     g_error_free (error);
     error = NULL; 
   }
+
+  tmp_str =
+    g_key_file_get_string (keyfile,
+			   HDLC_KEY_GROUP,
+			   HDLC_KEY_DEFAULT_ICON,
+			   &error);
+
+  if(!error)
+  {
+    priv->default_icon = tmp_str;
+  }
+  else
+  {
+    g_error_free (error);
+    error = NULL; 
+  }
+
+
 
   hd_launcher_config_int_key (keyfile,
 			      HDLC_KEY_LEFT_MARGIN,
