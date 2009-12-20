@@ -259,8 +259,11 @@ hd_launcher_config_finalize (GObject *object)
 
   priv = HD_LAUNCHER_CONFIG_GET_PRIVATE (launcher_config);
 
-  if (!g_str_equal (priv->path,HD_LAUNCHER_CONFIG_PATH))
-    g_free (priv->path);
+  if (!g_str_equal (priv->tile_font,HD_LAUNCHER_TILE_DEFAULT_FONT))
+    g_free (priv->tile_font);
+
+  if (!g_str_equal (priv->default_icon,HD_LAUNCHER_DEFAULT_ICON))
+    g_free (priv->default_icon);
 
   G_OBJECT_CLASS(hd_launcher_config_parent_class)->finalize (object);  
 }
@@ -283,6 +286,9 @@ hd_launcher_config_constructor (GType                  gtype,
   hd_launcher_config_read_keys (priv);
 
   priv->max_columns = (gint) (HD_COMP_MGR_LANDSCAPE_WIDTH/priv->tile_width);
+  
+  if ((HD_COMP_MGR_LANDSCAPE_WIDTH % priv->tile_width) <= 50)
+    priv->max_columns--;
 
   return obj;
 }
