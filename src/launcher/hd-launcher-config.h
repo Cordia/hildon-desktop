@@ -47,6 +47,7 @@ G_BEGIN_DECLS
 #define HDLC_KEY_TILE_FONT      "TileFont"
 #define HDLC_KEY_MAX_DRAG       "MaxDrag"
 #define HDLC_KEY_DEFAULT_MARGIN "DefaultMargin"
+#define HDLC_KEY_DEFAULT_ICON   "DefaultIcon"
 
 #define HD_TYPE_LAUNCHER_CONFIG            (hd_launcher_config_get_type ())
 #define HD_LAUNCHER_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), HD_TYPE_LAUNCHER_CONFIG, HdLauncherConfig))
