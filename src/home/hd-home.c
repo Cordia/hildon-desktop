@@ -121,6 +121,7 @@ struct _HdHomePrivate
   ClutterEffectTemplate *hide_edit_button_template;
 
   ClutterActor          *edit_group; /* An overlay group for edit mode */
+  /* TODO: Edit button should probably be handled by HdTitleBar */
   ClutterActor          *edit_button;
 
   ClutterActor          *operator;
@@ -254,17 +255,6 @@ hd_home_edit_button_clicked (ClutterActor *button,
   hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
 
   return TRUE;
-}
-
-gboolean
-hd_home_back_button_clicked (ClutterActor *button,
-			     ClutterEvent *event,
-			     HdHome       *home)
-{
-  if (hd_render_manager_get_state()==HDRM_STATE_HOME_EDIT)
-    hd_render_manager_set_state(HDRM_STATE_HOME);
-
-  return FALSE;
 }
 
 static void
@@ -1838,7 +1828,7 @@ hd_home_show_edit_button (HdHome *home)
   ClutterTimeline *timeline;
   gint             x;
 
-  if (hd_render_manager_get_visible(HDRM_BUTTON_EDIT))
+  if (hd_render_manager_actor_is_visible(priv->edit_button))
     return;
 
   clutter_actor_get_size (priv->edit_button, &button_width, &button_height);
@@ -1849,8 +1839,10 @@ hd_home_show_edit_button (HdHome *home)
                               x,
                               0);
   /* we must set the final position first so that the X input
-   * area can be set properly */
-  hd_render_manager_set_visible(HDRM_BUTTON_EDIT, TRUE);
+   * area can be set properly by HDRM */
+  clutter_actor_show(priv->edit_button);
+  hd_render_manager_set_input_viewport();
+
 
   clutter_actor_set_position (priv->edit_button,
                               x,
@@ -1871,9 +1863,15 @@ hd_home_show_edit_button (HdHome *home)
 }
 
 static void
-hd_home_edit_button_move_completed (HdHome *home)
+hd_home_edit_button_move_completed (ClutterActor *actor, gpointer data)
 {
-  hd_render_manager_set_visible(HDRM_BUTTON_EDIT, FALSE);
+  HdHome *home = HD_HOME(data);
+  HdHomePrivate   *priv = home->priv;
+
+  /* Hide the edit button, and alert hdrm it doesn't need to grab this
+   * area any more */
+  clutter_actor_hide(priv->edit_button);
+  hd_render_manager_set_input_viewport();
 }
 
 void
@@ -1884,8 +1882,9 @@ hd_home_hide_edit_button (HdHome *home)
   ClutterTimeline *timeline;
   gint             x;
 
-  if (!hd_render_manager_get_visible(HDRM_BUTTON_EDIT))
+  if (!hd_render_manager_actor_is_visible(priv->edit_button))
     return;
+
 
   if (priv->edit_button_cb)
     {
