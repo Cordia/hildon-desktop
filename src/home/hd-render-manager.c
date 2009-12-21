@@ -143,13 +143,12 @@ static guint signals[LAST_SIGNAL] = { 0, };
  * HDRM ---> home_blur         ---> home
  *       |                                         --> home_get_front (!STATE_HOME_FRONT)
  *       |                      --> apps (not app_top)
- *       |                          topmost app (not a specific entry...)
- *       |                              ---> title_bar (if >0 apps, otherwise in blur_front)
- *       |                                  --> title_bar::foreground (!HDTB_VIS_FOREGROUND)
- *       |                                  --> status_area
  *       |                      --> blur_front (STATE_BLUR_BUTTONS)
  *       |                                        ---> home_get_front (STATE_HOME_FRONT)
- *       |                                         --> loading_image (STATE_LOADING)
+ *       |                                        ---> loading_image (STATE_LOADING)
+ *       |                                         --> title_bar *       |
+ *       |                                               ---> title_bar::foreground (!HDTB_VIS_FOREGROUND)
+ *       |                                               ---> status_area
  *       |
  *       --> blur_front (!STATE_BLUR_BUTTONS)
  *       |
@@ -345,7 +344,7 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->title_bar);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
-                                CLUTTER_ACTOR(priv->title_bar));
+                              CLUTTER_ACTOR(priv->title_bar));
 
   return the_render_manager;
 }
@@ -1876,27 +1875,6 @@ void hd_render_manager_restack()
   if (clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) ==
                                CLUTTER_ACTOR(priv->home_blur))
     clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
-
-  {
-    ClutterActor *parent = CLUTTER_ACTOR(priv->blur_front);
-    /* We want to reposition the HdTitleBar group to the highest application,
-     * or the blur_front if there wasn't one above the desktop */
-    for (c = wm->stack_top; c; c = c->stacked_below)
-      {
-        MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE(c);
-        if (c_type == MBWMClientTypeDesktop)
-          break;
-        if (c_type == MBWMClientTypeApp)
-          {
-            parent = mb_wm_comp_mgr_clutter_client_get_actor(
-                MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
-            break;
-          }
-      }
-
-    if (parent != clutter_actor_get_parent(CLUTTER_ACTOR(priv->title_bar)))
-      clutter_actor_reparent(CLUTTER_ACTOR(priv->title_bar), parent);
-  }
 
   /* We could have changed the order of the windows here, so update whether
    * we blur or not based on the order. */
