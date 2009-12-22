@@ -120,9 +120,9 @@ hd_launcher_config_init (HdLauncherConfig *self)
   priv->glow_size = HD_LAUNCHER_TILE_GLOW_SIZE; 
   priv->max_drag  = HD_LAUNCHER_TILE_MAX_DRAG;
 
-  priv->tile_font = HD_LAUNCHER_TILE_DEFAULT_FONT;
+  priv->tile_font = g_strdup (HD_LAUNCHER_TILE_DEFAULT_FONT);
 
-  priv->default_icon = HD_LAUNCHER_DEFAULT_ICON;
+  priv->default_icon = g_strdup (HD_LAUNCHER_DEFAULT_ICON);
 
   priv->path = HD_LAUNCHER_CONFIG_PATH;
 }
@@ -259,11 +259,8 @@ hd_launcher_config_finalize (GObject *object)
 
   priv = HD_LAUNCHER_CONFIG_GET_PRIVATE (launcher_config);
 
-  if (!g_str_equal (priv->tile_font,HD_LAUNCHER_TILE_DEFAULT_FONT))
-    g_free (priv->tile_font);
-
-  if (!g_str_equal (priv->default_icon,HD_LAUNCHER_DEFAULT_ICON))
-    g_free (priv->default_icon);
+  g_free (priv->tile_font);
+  g_free (priv->default_icon);
 
   G_OBJECT_CLASS(hd_launcher_config_parent_class)->finalize (object);  
 }
