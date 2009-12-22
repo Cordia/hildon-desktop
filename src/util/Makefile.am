@@ -2,13 +2,13 @@ INCLUDES = @HD_INCS@ $(MB2_CFLAGS) $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
 util_h = 	hd-util.h		\
 		hd-dbus.h         \
-		hd-gtk-style.h		\
+		hd-theme-config.h		\
 		hd-gtk-utils.h		\
 		hd-transition.h
 
 util_c = 	hd-util.c		\
 		hd-dbus.c         \
-		hd-gtk-style.c		\
+		hd-theme-config.c		\
 		hd-gtk-utils.c		\
 		hd-transition.c
 

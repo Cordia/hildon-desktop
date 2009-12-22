@@ -42,7 +42,7 @@
 #include "hd-launcher-config.h"
 #include "hd-launcher-grid.h"
 #include "hd-gtk-utils.h"
-#include "hd-gtk-style.h"
+#include "hd-theme-config.h"
 #include "hd-comp-mgr.h"
 
 
@@ -198,17 +198,17 @@ static void
 hd_launcher_page_constructed (GObject *object)
 {
   ClutterColor text_color;
-  gchar *font_string;
+  const gchar *font_string;
   HdLauncherPage *page = HD_LAUNCHER_PAGE(object);
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (object);
   guint x1, y1;
   guint label_width, label_height;
 
   /* Create the label that says this page is empty */
-  hd_gtk_style_get_text_color (HD_GTK_BUTTON_SINGLETON,
-                               GTK_STATE_NORMAL,
-                               &text_color);
-  font_string = hd_gtk_style_get_font_string (HD_GTK_BUTTON_SINGLETON);
+  hd_theme_config_get_color (HD_TXT_COLOR, &text_color);
+
+  font_string = hd_theme_config_get_font (HD_SYSTEM_FONT);
+
   priv->empty_label = clutter_label_new_full(font_string,
                                              _("No applications found"),
                                              &text_color);
@@ -227,7 +227,6 @@ hd_launcher_page_constructed (GObject *object)
         HD_LAUNCHER_PAGE_YMARGIN;
   clutter_actor_set_position (priv->empty_label, x1, y1);
   clutter_container_add_actor (CLUTTER_CONTAINER (page), priv->empty_label);
-  g_free (font_string);
 
   priv->scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_container_add_actor (CLUTTER_CONTAINER (page),

@@ -28,7 +28,7 @@
 #include "hd-decor-button.h"
 #include "hd-clutter-cache.h"
 #include "hd-render-manager.h"
-#include "hd-gtk-style.h"
+#include "hd-theme-config.h"
 #include "tidy/tidy-style.h"
 #include "hd-home.h"
 #include "hd-transition.h"
@@ -84,9 +84,11 @@ static int
 hd_theme_init (MBWMObject *obj, va_list vap)
 {
   TidyStyle *style;
-  ClutterColor col;
+  ClutterColor col = { 255, 255, 255, 255 };
   GValue value;
   extern MBWindowManager *hd_mb_wm;
+
+  hd_theme_config_get ();  
 
   hd_clutter_cache_theme_changed();
   /* transitions.ini could be loaded from the theme, so we must
@@ -99,11 +101,11 @@ hd_theme_init (MBWMObject *obj, va_list vap)
   memset(&value, 0, sizeof(GValue));
   g_value_init(&value, CLUTTER_TYPE_COLOR);
 
-  hd_gtk_style_resolve_logical_color(&col, "SecondaryTextColor");
+  hd_theme_config_get_color (HD_2TXT_COLOR, &col);
   g_value_set_boxed (&value, &col);
   tidy_style_set_property(style, TIDY_ACTIVE_COLOR, &value);
 
-  hd_gtk_style_resolve_logical_color(&col, "DefaultBackgroundColor");
+  hd_theme_config_get_color (HD_BG_COLOR, &col);
   g_value_set_boxed (&value, &col);
   tidy_style_set_property(style, TIDY_BACKGROUND_COLOR, &value);
 

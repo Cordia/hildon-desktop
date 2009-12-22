@@ -54,7 +54,7 @@
 
 #define HD_LAUNCHER_TILE_DEFAULT_FONT "CorisandeBold Bold 12"
 
-#define HD_LAUNCHER_CONFIG_PATH "/usr/share/hildon-desktop/launcher.desktop"
+#define HD_LAUNCHER_CONFIG_PATH "/usr/share/themes/default/launcher.desktop"
 
 struct _HdLauncherConfigPrivate
 {

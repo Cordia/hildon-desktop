@@ -64,7 +64,7 @@
 #include "hd-transition.h"
 #include "hd-theme.h"
 #include "hd-util.h"
-#include "hd-gtk-style.h"
+#include "hd-theme-config.h"
 /* }}} */
 
 /* Standard definitions {{{ */
@@ -4102,15 +4102,12 @@ hd_task_navigator_init (HdTaskNavigator * self)
   Zoom_effect = new_animation (&Zoom_effect_timeline, ZOOM_EFFECT_DURATION);
 
   /* Master pieces */
-  LargeSystemFont = hd_gtk_style_resolve_logical_font ("LargeSystemFont");
-  SystemFont = hd_gtk_style_resolve_logical_font ("SystemFont");
-  SmallSystemFont = hd_gtk_style_resolve_logical_font ("SmallSystemFont");
-  hd_gtk_style_resolve_logical_color (&DefaultTextColor,
-                                      "DefaultTextColor");
-  hd_gtk_style_resolve_logical_color (&NotificationTextColor,
-                                      "NotificationTextColor");
-  hd_gtk_style_resolve_logical_color (&NotificationSecondaryTextColor,
-                                      "NotificationSecondaryTextColor");
+  LargeSystemFont = hd_theme_config_get_font (HD_LARGE_SYSTEM_FONT);
+  SystemFont = hd_theme_config_get_font (HD_SYSTEM_FONT);
+  SmallSystemFont = hd_theme_config_get_font (HD_SMALL_SYSTEM_FONT);
+  hd_theme_config_get_color (HD_TXT_COLOR, &DefaultTextColor);
+  hd_theme_config_get_color (HD_NOTIFICATION_TXT_COLOR, &NotificationTextColor);
+  hd_theme_config_get_color (HD_NOTIFICATION_2TXT_COLOR, &NotificationSecondaryTextColor);
 
   /* We don't have anything to show yet, so let's hide. */
   clutter_actor_hide (Navigator);

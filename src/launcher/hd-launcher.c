@@ -44,7 +44,7 @@
 #include "hd-gtk-utils.h"
 #include "hd-render-manager.h"
 #include "hd-app-mgr.h"
-#include "hd-gtk-style.h"
+#include "hd-theme-config.h"
 #include "hd-comp-mgr.h"
 #include "hd-theme.h"
 #include "hd-clutter-cache.h"
@@ -674,9 +674,8 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   if (!app_image)
     {
       ClutterColor col;
-      hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON,
-                                GTK_STATE_NORMAL,
-                                &col);
+      hd_theme_config_get_color (HD_BG_COLOR, &col);
+
       app_image = clutter_rectangle_new_with_color(&col);
     }
 

@@ -30,7 +30,7 @@
 #include "hd-render-manager.h"
 #include "hd-clutter-cache.h"
 #include "hd-transition.h"
-#include "hd-gtk-style.h"
+#include "hd-theme-config.h"
 
 #include <matchbox/theme-engines/mb-wm-theme-png.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
@@ -272,8 +272,7 @@ hd_decor_create_actors(HdDecor *decor)
           screen_width_avail -= HD_THEME_IMG_PROGRESS_SIZE+
                                 HD_TITLE_BAR_PROGRESS_MARGIN;
 
-        hd_gtk_style_get_fg_color(HD_GTK_BUTTON_SINGLETON,
-                                  GTK_STATE_NORMAL, &default_color);
+        hd_theme_config_get_color (HD_TXT_COLOR, &default_color);
 
         /* TODO: handle it so that _NET_WM_NAME has pure UTF-8 and no markup,
          * and _HILDON_WM_NAME has UTF-8 + Pango markup. If _HILDON_WM_NAME

@@ -33,8 +33,9 @@
 #include <glib-object.h>
 #include <clutter/clutter.h>
 #include <stdlib.h>
+#include <gtk/gtk.h>
 
-#include "hd-gtk-style.h"
+#include "hd-theme-config.h"
 #include "tidy/tidy-highlight.h"
 #include "hd-transition.h"
 
@@ -45,10 +46,6 @@
                             G_PARAM_STATIC_BLURB)
 
 #define HD_LAUNCHER_TILE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TILE, HdLauncherTilePrivate))
-
-#define HD_LAUNCHER_TILE_FONT "CorisandeBold Bold 11"
-/* We don't use a font from the theme here because apparently there are none the
- * size we want, and we don't want to add another logical font to gtkrc. */
 
 struct _HdLauncherTilePrivate
 {
@@ -547,8 +544,8 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
 
   /* set our glow colour from the theme */
   glow_brightness = hd_transition_get_double("launcher_glow", "brightness", 1);
-  hd_gtk_style_get_text_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL,
-                              &glow_col);
+  hd_theme_config_get_color (HD_TXT_COLOR, &glow_col);
+
   glow_col.alpha = (int)(glow_col.alpha * glow_brightness);
   tidy_highlight_set_color(priv->icon_glow, &glow_col);
   /* load our glow radius */

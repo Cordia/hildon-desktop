@@ -35,7 +35,7 @@
 #include "mb/hd-theme.h"
 #include "hd-render-manager.h"
 #include "hd-gtk-utils.h"
-#include "hd-gtk-style.h"
+#include "hd-theme-config.h"
 #include "hd-transition.h"
 #include "hd-util.h"
 #include "hd-task-navigator.h"
@@ -248,9 +248,9 @@ static void
 hd_title_bar_init (HdTitleBar *bar)
 {
   ClutterActor *actor = CLUTTER_ACTOR(bar);
-  ClutterColor title_color;
+  ClutterColor title_color = { 255, 255, 255, 255};
   ClutterGeometry title_bg_size = {0,0,112,56}; /* size of theme image */
-  gchar *font_name;
+  const gchar *font_name;
   HdTitleBarPrivate *priv = bar->priv = HD_TITLE_BAR_GET_PRIVATE(bar);
   gint i;
 
@@ -264,8 +264,8 @@ hd_title_bar_init (HdTitleBar *bar)
          hd_comp_mgr_get_current_screen_width (), HD_COMP_MGR_TOP_MARGIN);
   clutter_actor_set_name(CLUTTER_ACTOR(actor), "HdTitleBar");
 
-  hd_gtk_style_resolve_logical_color(&title_color, "TitleTextColor");
-  font_name = hd_gtk_style_resolve_logical_font(HD_TITLE_BAR_TITLE_FONT);
+  // TODO: Get color from hildon.desktop theme, now it's hardcoded to white
+  font_name = hd_theme_config_get_font (HD_TITLEBAR_FONT);
 
   priv->foreground = CLUTTER_GROUP(clutter_group_new());
   /* Explicitly enable maemo-specific visibility detection to cut down
@@ -404,8 +404,6 @@ hd_title_bar_init (HdTitleBar *bar)
   g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
                            G_CALLBACK(hd_title_bar_stage_allocation_changed),
                            bar);
-
-  g_free(font_name);
 }
 
 /*
@@ -1033,7 +1031,7 @@ static void hd_title_bar_set_title (HdTitleBar *bar,
   if (title)
     {
       ClutterActor *status_area;
-      gchar *font_name;
+      const gchar *font_name;
       gint h, w;
       int x_start = 0;
       int x_end = hd_comp_mgr_get_current_screen_width ()
@@ -1049,9 +1047,9 @@ static void hd_title_bar_set_title (HdTitleBar *bar,
       if (status_area_is_visible())
         x_start += clutter_actor_get_width(status_area);
 
-      font_name = hd_gtk_style_resolve_logical_font(HD_TITLE_BAR_TITLE_FONT);
+      font_name = hd_theme_config_get_font (HD_TITLEBAR_FONT);
       clutter_label_set_font_name(priv->title, font_name);
-      g_free(font_name);
+      
       clutter_label_set_text(priv->title, title);
 
       clutter_label_set_use_markup(priv->title, has_markup);
