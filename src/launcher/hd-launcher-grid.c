@@ -165,6 +165,9 @@ hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
   clip_y = 0;
   clip_height = 0;
   page_height = 0;
+  gint bottom_margin;
+
+  hd_launcher_config_get_margins_size (NULL, NULL, NULL, &bottom_margin);
 
   if (!priv->v_adjustment)
     return;
@@ -176,7 +179,7 @@ hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
   if (height >= CLUTTER_UNITS_FROM_INT (HD_COMP_MGR_LANDSCAPE_HEIGHT))
     {
       /* Padding at the bottom. */
-      height += CLUTTER_UNITS_FROM_INT (HD_LAUNCHER_BOTTOM_MARGIN
+      height += CLUTTER_UNITS_FROM_INT (bottom_margin
                                       - HD_LAUNCHER_GRID_ROW_SPACING);
       tidy_adjustment_set_skirtx (priv->v_adjustment,
                      clutter_qdivx (CFX_ONE, CLUTTER_INT_TO_FIXED (4)));
@@ -427,8 +430,9 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
   HdLauncherGridPrivate *priv = grid->priv;
   GList *l;
   guint cur_height, n_visible_launchers, n_rows;
-  gint tile_height;
+  gint tile_height, top_margin;
 
+  hd_launcher_config_get_margins_size (NULL, NULL, &top_margin, NULL);
   hd_launcher_config_get_tile_size (NULL, &tile_height); 
   
   /* Free our list of 'blocker' actors that we use to block mouse clicks.
@@ -442,7 +446,7 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
   _hd_launcher_grid_count_children_and_rows (grid,
       &n_visible_launchers, &n_rows);
 
-  cur_height = HD_LAUNCHER_PAGE_YMARGIN;
+  cur_height = top_margin;
 
   l = priv->tiles;
   while (l) {
@@ -453,7 +457,7 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
       {
         gint margin_left, margin_right;
 
-        hd_launcher_config_get_margins_size (&margin_left, &margin_right);
+        hd_launcher_config_get_margins_size (&margin_left, &margin_right, NULL, NULL);
         
         /* If there is another row, we must create an actor that
          * goes between the two rows that will grab the clicks that
