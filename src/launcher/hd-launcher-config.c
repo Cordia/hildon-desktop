@@ -47,6 +47,8 @@
 
 #define HD_LAUNCHER_LEFT_MARGIN (68)
 #define HD_LAUNCHER_RIGHT_MARGIN (68)
+#define HD_LAUNCHER_TOP_MARGIN (70) /* layout guide A */
+#define HD_LAUNCHER_BOTTOM_MARGIN (46) /* layout guide G */
 
 #define HD_LAUNCHER_DEFAULT_ICON  "tasklaunch_default_application"
 
@@ -64,6 +66,8 @@ struct _HdLauncherConfigPrivate
 
   gint   margin_left, 
          margin_right,
+	 margin_top,
+	 margin_bottom,
 	 default_margin,
 	 tile_width,
 	 tile_height,
@@ -109,8 +113,10 @@ hd_launcher_config_init (HdLauncherConfig *self)
   priv->tile_width  = HD_LAUNCHER_TILE_WIDTH;
   priv->tile_height = HD_LAUNCHER_TILE_HEIGHT;
 
-  priv->margin_left  = HD_LAUNCHER_LEFT_MARGIN; 
-  priv->margin_right = HD_LAUNCHER_RIGHT_MARGIN;
+  priv->margin_left   = HD_LAUNCHER_LEFT_MARGIN; 
+  priv->margin_right  = HD_LAUNCHER_RIGHT_MARGIN;
+  priv->margin_top    = HD_LAUNCHER_TOP_MARGIN; 
+  priv->margin_bottom = HD_LAUNCHER_BOTTOM_MARGIN;
 
   priv->default_margin = HILDON_MARGIN_DEFAULT;
 
@@ -201,7 +207,7 @@ hd_launcher_config_read_keys (HdLauncherConfigPrivate *priv)
 
 
 
-  hd_launcher_config_int_key (keyfile,
+   hd_launcher_config_int_key (keyfile,
 			      HDLC_KEY_LEFT_MARGIN,
 			      &tmp_int,
 			      &(priv->margin_left),
@@ -210,6 +216,16 @@ hd_launcher_config_read_keys (HdLauncherConfigPrivate *priv)
 			      HDLC_KEY_RIGHT_MARGIN,
 			      &tmp_int,
 			      &(priv->margin_right),
+			      &error);
+ hd_launcher_config_int_key (keyfile,
+			      HDLC_KEY_TOP_MARGIN,
+			      &tmp_int,
+			      &(priv->margin_top),
+			      &error);
+  hd_launcher_config_int_key (keyfile,
+			      HDLC_KEY_BOTTOM_MARGIN,
+			      &tmp_int,
+			      &(priv->margin_bottom),
 			      &error);
   hd_launcher_config_int_key (keyfile,
 			      HDLC_KEY_DEFAULT_MARGIN,
@@ -314,7 +330,10 @@ hd_launcher_config_get_tile_size (gint *width, gint *height)
 }
 
 void 
-hd_launcher_config_get_margins_size (gint *left, gint *right)
+hd_launcher_config_get_margins_size (gint *left, 
+				     gint *right,
+				     gint *top, 
+				     gint *bottom)
 {
   HdLauncherConfigPrivate *priv;
 
@@ -325,6 +344,12 @@ hd_launcher_config_get_margins_size (gint *left, gint *right)
 
   if (right != NULL)
     *right = priv->margin_right;
+
+  if (top != NULL)
+    *top = priv->margin_top;
+
+  if (bottom != NULL)
+    *bottom = priv->margin_bottom; 
 }
 
 void 

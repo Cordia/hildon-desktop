@@ -39,6 +39,8 @@ G_BEGIN_DECLS
 #define HDLC_KEY_GROUP		"Launcher Config"
 #define HDLC_KEY_LEFT_MARGIN	"LeftMargin"
 #define HDLC_KEY_RIGHT_MARGIN   "RightMargin"
+#define HDLC_KEY_TOP_MARGIN	"TopMargin"
+#define HDLC_KEY_BOTTOM_MARGIN	"BottomMargin"
 #define HDLC_KEY_TILE_WIDTH     "TileWidth"
 #define HDLC_KEY_TILE_HEIGHT    "TileHeight"
 #define HDLC_KEY_REAL_ICON_SIZE "IconSize"
@@ -78,7 +80,8 @@ HdLauncherConfig   *hd_launcher_config_get (void);
 
 void hd_launcher_config_get_tile_size (gint *width, gint *height);
 
-void hd_launcher_config_get_margins_size (gint *left, gint *right);
+void hd_launcher_config_get_margins_size (gint *left, gint *right, gint *top, gint *bottom);
+
 void hd_launcher_config_get_icons_size (gint *real, gint *size, gint *glow);
 
 const gchar *hd_launcher_config_get_tile_font (void);

@@ -203,6 +203,9 @@ hd_launcher_page_constructed (GObject *object)
   HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (object);
   guint x1, y1;
   guint label_width, label_height;
+  gint top_margin;
+
+  hd_launcher_config_get_margins_size (NULL, NULL, &top_margin, NULL);
 
   /* Create the label that says this page is empty */
   hd_theme_config_get_color (HD_TXT_COLOR, &text_color);
@@ -223,8 +226,8 @@ hd_launcher_page_constructed (GObject *object)
   clutter_actor_get_size(priv->empty_label, &label_width, &label_height);
   /* Position the 'empty label' item in the centre */
   x1 = (HD_LAUNCHER_PAGE_WIDTH - label_width) / 2;
-  y1 = ((HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN - label_height)/2) +
-        HD_LAUNCHER_PAGE_YMARGIN;
+  y1 = ((HD_LAUNCHER_PAGE_HEIGHT - top_margin - label_height)/2) +
+        top_margin;
   clutter_actor_set_position (priv->empty_label, x1, y1);
   clutter_container_add_actor (CLUTTER_CONTAINER (page), priv->empty_label);
 

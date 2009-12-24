@@ -636,7 +636,7 @@ hd_launcher_tile_allocate (ClutterActor          *self,
 
   gint xmin,xmax,default_margin,tile_width,margin_left,margin_right;
 
-  hd_launcher_config_get_margins_size (&margin_left, &margin_right);
+  hd_launcher_config_get_margins_size (&margin_left, &margin_right, NULL, NULL);
   hd_launcher_config_get_tile_size (&tile_width, NULL);
   
   default_margin = hd_launcher_config_get_default_margin ();
