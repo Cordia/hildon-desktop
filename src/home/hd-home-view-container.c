@@ -116,6 +116,9 @@ backgrounds_dir_changed (GFileMonitor		  *monitor,
                          HdHomeViewContainer      *view_container)
 {
   HdHomeViewContainerPrivate *priv = view_container->priv;
+  if (!info) 
+    info = monitor_file;
+
   gchar *info_uri = g_file_get_uri (info);
 
   if (event_type == G_FILE_MONITOR_EVENT_CREATED ||
