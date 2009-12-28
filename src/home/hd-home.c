@@ -1499,13 +1499,13 @@ hd_home_add_status_area (HdHome *home, ClutterActor *sa)
   hd_render_manager_set_status_area(sa);
 }
 
-
 static void
 hd_home_applet_emit_button_release_event (
 		HdHome             *home,
 		ClutterActor       *applet,
 		int                 x,
-		int                 y)
+		int                 y,
+		guint		    button)
 {
   HdHomePrivate      *priv = home->priv;
   MBWindowManager    *wm;
@@ -1529,8 +1529,8 @@ hd_home_applet_emit_button_release_event (
   xev.y = y;
   xev.x_root = x;
   xev.y_root = y;
-  xev.state = Button1Mask;
-  xev.button = Button1;
+  xev.state = (button == 1) ? Button1Mask : Button2Mask;
+  xev.button = button;
   xev.same_screen = True;
 
   /* We need to find the window inside the plugin. */
@@ -1557,7 +1557,8 @@ hd_home_applet_emit_button_press_event (
 		HdHome             *home,
 		ClutterActor       *applet,
 		int                 x,
-		int                 y)
+		int                 y,
+		guint		    button)
 {
   HdHomePrivate      *priv = home->priv;
   MBWindowManager    *wm;
@@ -1583,7 +1584,7 @@ hd_home_applet_emit_button_press_event (
   xev.x_root = x;
   xev.y_root = y;
   xev.state = 0;
-  xev.button = Button1;
+  xev.button = button;
   xev.same_screen = True;
 
   /* We need to find the window inside the plugin. */
@@ -1780,7 +1781,7 @@ hd_home_applet_press (ClutterActor       *applet,
     }
 
   if (!focus_will_be_assigned_to_this_applet_on_release)
-    hd_home_applet_emit_button_press_event (home, applet, event->x, event->y);
+    hd_home_applet_emit_button_press_event (home, applet, event->x, event->y, event->button);
 
   /*
    * We store the coordinates where the screen was touched. These values are
@@ -1857,7 +1858,8 @@ do_applet_release (HdHome             *home,
                           __func__, applet); */
               hd_home_applet_emit_button_release_event (home, applet,
                                                         priv->initial_x,
-                                                        priv->initial_y);
+                                                        priv->initial_y,
+							event->button);
             }
         }
       else
@@ -1928,7 +1930,6 @@ do_home_applet_motion (HdHome       *home,
       priv->initial_x = -1;
       priv->initial_y = -1;
   }
-
 
   return TRUE;
 }
