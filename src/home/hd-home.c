@@ -1255,13 +1255,13 @@ hd_home_add_status_area (HdHome *home, ClutterActor *sa)
   hd_render_manager_set_status_area(sa);
 }
 
-
 static void
 hd_home_applet_emit_button_release_event (
 		HdHome             *home,
 		ClutterActor       *applet,
 		int                 x,
-		int                 y)
+		int                 y,
+		guint		    button)
 {
   HdHomePrivate      *priv = home->priv;
   MBWindowManager    *wm;
@@ -1285,8 +1285,8 @@ hd_home_applet_emit_button_release_event (
   xev.y = y;
   xev.x_root = x;
   xev.y_root = y;
-  xev.state = Button1Mask;
-  xev.button = Button1;
+  xev.state = (button == 1) ? Button1Mask : Button2Mask;
+  xev.button = button;
   xev.same_screen = True;
 
   /* We need to find the window inside the plugin. */
@@ -1313,7 +1313,8 @@ hd_home_applet_emit_button_press_event (
 		HdHome             *home,
 		ClutterActor       *applet,
 		int                 x,
-		int                 y)
+		int                 y,
+		guint		    button)
 {
   HdHomePrivate      *priv = home->priv;
   MBWindowManager    *wm;
@@ -1339,7 +1340,7 @@ hd_home_applet_emit_button_press_event (
   xev.x_root = x;
   xev.y_root = y;
   xev.state = 0;
-  xev.button = Button1;
+  xev.button = button;
   xev.same_screen = True;
 
   /* We need to find the window inside the plugin. */
@@ -1517,7 +1518,7 @@ hd_home_applet_press (ClutterActor       *applet,
    * can abort the click with a LeaveNotify event.
    */
   hd_home_applet_emit_enter_event (home, applet, event->x, event->y);
-
+ 
   /* send the press event to the applet unless it's wanting the focus
    * and focus is not yet assigned to it */
   cclient = g_object_get_data (G_OBJECT (applet),
@@ -1535,8 +1536,8 @@ hd_home_applet_press (ClutterActor       *applet,
         focus_will_be_assigned_to_this_applet_on_release = TRUE;
     }
 
-  if (!focus_will_be_assigned_to_this_applet_on_release)
-    hd_home_applet_emit_button_press_event (home, applet, event->x, event->y);
+  if (1)//!focus_will_be_assigned_to_this_applet_on_release)
+    hd_home_applet_emit_button_press_event (home, applet, event->x, event->y, event->button);
 
   /*
    * We store the coordinates where the screen was touched. These values are
@@ -1597,7 +1598,7 @@ do_applet_release (HdHome             *home,
                 applet_has_focus = TRUE;
             }
 
-          if (client && !applet_has_focus && mb_wm_client_want_focus (client))
+          if (0)/* This does not work with Qt client && !applet_has_focus && mb_wm_client_want_focus (client)) */
             {
               /* g_printerr ("%s: set input focus for applet %p, client %p\n",
                           __func__, applet, client);*/
@@ -1608,9 +1609,12 @@ do_applet_release (HdHome             *home,
               /*g_printerr ("%s: tapped applet %p does not want focus or"
                           " already has it\n",
                           __func__, applet); */
+	      /* Focus not working with Qt? */
+	      mb_wm_client_focus (client);
               hd_home_applet_emit_button_release_event (home, applet,
                                                         priv->initial_x,
-                                                        priv->initial_y);
+                                                        priv->initial_y,
+							event->button);
             }
         }
       else
@@ -1682,7 +1686,6 @@ do_home_applet_motion (HdHome       *home,
       priv->initial_y = -1;
   }
 
-
   return TRUE;
 }
 
@@ -1736,7 +1739,7 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
                  error->message);
       g_clear_error (&error);
     }
-
+  
   /*
    * Here we connect to the pointer events of the applet actor. It is needed for
    * the panning initiated inside the applets.
