@@ -72,9 +72,9 @@ hd_status_area_init (MBWMObject *this, va_list vap)
   geom.x      = 0;
   if (hd_title_bar_get_state(HD_TITLE_BAR(hd_render_manager_get_title_bar()))
       & HDTB_VIS_BTN_LEFT_MASK)
-    geom.x = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;
+    geom.x = HD_COMP_MGR_TOP_LEFT_BTN_WIDTH; /* FIXME: CONFIG Make me configurable */
   geom.y      = 0;
-  geom.width  = 112;
+  geom.width  = 60; /* FIXME: CONFIG Make me configurable */
   geom.height = HD_COMP_MGR_TOP_MARGIN;
 
   hd_status_area_request_geometry (client, &geom, MBWMClientReqGeomForced);

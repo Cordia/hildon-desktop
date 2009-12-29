@@ -1363,6 +1363,54 @@ hd_home_applet_emit_button_press_event (
 }
 
 static void
+hd_home_applet_emit_motion_event (
+		HdHome             *home,
+		ClutterActor       *applet,
+		int                 x,
+		int                 y)
+{
+  HdHomePrivate      *priv = home->priv;
+  MBWindowManager    *wm;
+  MBWMCompMgrClient  *cclient;
+  XCrossingEvent      xev;
+  Window              mywindow;
+
+  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  cclient = g_object_get_data (G_OBJECT (applet),
+                               "HD-MBWMCompMgrClutterClient");
+  /*
+   * Emitting a leave event.
+   */
+  xev.type = MotionNotify;
+  xev.display = wm->xdpy;
+  xev.window = MB_WM_CLIENT_XWIN(cclient->wm_client);
+  xev.root = wm->root_win->xwindow;
+  xev.subwindow = None;
+  xev.time = CurrentTime;
+  xev.x = x;
+  xev.y = y;
+  xev.x_root = x;
+  xev.y_root = y;
+  xev.mode = NotifyNormal;
+  xev.focus = False;
+  xev.same_screen = True;
+
+  /* We need to find the window inside the plugin. */
+  XTranslateCoordinates (wm->xdpy,
+		  xev.root, xev.window,
+		  xev.x_root, xev.y_root,
+		  &xev.x, &xev.y,
+		  &mywindow);
+
+  if (mywindow)
+      xev.window = mywindow;
+
+  XSendEvent(wm->xdpy, xev.window, True,
+	     0, (XEvent *)&xev);
+}
+
+
+static void
 hd_home_applet_emit_leave_event (
 		HdHome             *home,
 		ClutterActor       *applet,
@@ -1696,10 +1744,12 @@ hd_home_applet_motion (ClutterActor       *applet,
 {
   g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, event->x, event->y);
 
+  hd_home_applet_emit_motion_event (home, applet, event->x, event->y); 
+
   if (!(event->modifier_state &
 	(CLUTTER_BUTTON1_MASK | CLUTTER_BUTTON2_MASK | CLUTTER_BUTTON2_MASK)))
     return FALSE;
-
+  
   return do_home_applet_motion (home, applet, event->x, event->y);
 }
 

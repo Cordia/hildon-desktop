@@ -32,8 +32,8 @@
 
 #include "hd-comp-mgr.h"
 
-#define HD_DEFAULT_COLOR "FFFFFFFF"
-#define HD_DEFAULT_FONT "CorisandeBold"
+#define HD_DEFAULT_COLOR "#FFFFFFFF"
+#define HD_DEFAULT_FONT "CorisandeBold Bold 9"
 
 #define HD_THEME_CONFIG_PATH "/usr/share/themes/default/hildon-desktop.desktop"
 

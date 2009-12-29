@@ -2469,7 +2469,9 @@ void hd_render_manager_place_titlebar_elements (void)
           c->frame_geometry.x = c->window->geometry.x = x;
           mb_wm_client_geometry_mark_dirty(c);
           mb_wm_comp_mgr_client_configure (c->cm_client);
-          x += c->window->geometry.width;
+          /* x += c->window->geometry.width; */
+          x += 60;
+	  /* FIXME: CONFIG status area should be placed launcher->width instead */
         }
       else
         x += priv->status_area_client->frame_geometry.width;
