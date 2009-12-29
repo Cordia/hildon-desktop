@@ -1298,12 +1298,12 @@ hd_home_view_load_applet_size (HdHomeView           *view,
       clutter_actor_set_size (applet,
                               GPOINTER_TO_INT (size->data),
                               GPOINTER_TO_INT (size->next->data));
-        
+
       HdHomeViewAppletData *data;
 
       data = g_hash_table_lookup (view->priv->applets, applet);
 
-      hd_home_view_applet_reposition_buttons (view, applet);
+      hd_home_view_applet_resize (applet, NULL, view);
 
       if (old_w)
         *old_w = GPOINTER_TO_INT (size->data);
