@@ -103,8 +103,13 @@ struct _HdHomeViewPrivate
   gboolean                  move_applet_left : 1;
   gboolean                  move_applet_right : 1;
 
+  gboolean		    resizing_applet;
+
   gint                      pan_gesture_start_x;
   gint                      pan_gesture_start_y;
+
+  gint			    resize_start_x;
+  gint			    resize_start_y;
 
   guint                     id;
 
@@ -162,6 +167,7 @@ struct _HdHomeViewAppletData
 
   ClutterActor *close_button;
   ClutterActor *configure_button;
+  ClutterActor *resize_button;
 };
 
 static HdHomeViewAppletData *applet_data_new  (ClutterActor *actor);
@@ -425,6 +431,10 @@ hd_home_view_init (HdHomeView *self)
   self->priv->gconf_client = gconf_client_get_default ();
 
   self->priv->layout = hd_home_view_layout_new ();
+
+  self->priv->resizing_applet = FALSE;
+
+  self->priv->resize_start_x = self->priv->resize_start_y = -1;
 }
 
 static void
@@ -889,14 +899,27 @@ hd_home_view_applet_resize (ClutterActor *applet,
 
   if (!(data = g_hash_table_lookup (view->priv->applets, applet)))
     return;
+
   clutter_actor_set_position (data->close_button,
                          clutter_actor_get_width (applet)
-                         - clutter_actor_get_width (data->close_button),
+                          - clutter_actor_get_width (data->close_button),
                          0);
-  if (data->configure_button)
-    clutter_actor_set_position (data->configure_button, 0,
-                       clutter_actor_get_height (applet)
-                       - clutter_actor_get_height (data->close_button));
+
+  if (HD_HOME_APPLET (data->cc->wm_client)->settings)
+    {
+      clutter_actor_set_position (data->configure_button,
+                                  0,
+                                  clutter_actor_get_height (applet)
+                                   - clutter_actor_get_height (data->close_button));
+    }
+
+  /* Add resize button */
+  if (1/* TODO: Make it configurable */)
+    {
+      clutter_actor_set_position (data->resize_button,
+                                  clutter_actor_get_width (applet) - clutter_actor_get_width (data->close_button),
+                                  clutter_actor_get_height (applet) - clutter_actor_get_height (data->close_button));
+    }
 }
 
 static gboolean
@@ -920,12 +943,52 @@ hd_home_view_applet_motion (ClutterActor       *applet,
 
   hd_home_show_edge_indication (priv->home);
 
+  /* Get size of home view and applet actor */
+  clutter_actor_get_size (applet, &w, &h);
+
+  if (priv->resizing_applet == TRUE)
+  {
+    HdHomeViewAppletData *data;
+
+    data = g_hash_table_lookup (view->priv->applets, applet);
+
+    if ((w + event->x - priv->resize_start_x) < (clutter_actor_get_width (data->close_button)*2) 
+        || (h + event->y - priv->resize_start_y) < (clutter_actor_get_height (data->close_button)*2))
+    {
+      return FALSE; /* Don't resize more than needed (roughly) */  
+    }
+
+    if (priv->resize_start_x == -1)
+    {
+      priv->resize_start_x = event->x;
+      priv->resize_start_y = event->y;
+    }
+
+    MBWMCompMgrClient *acclient = 
+      g_object_get_data (G_OBJECT (applet), "HD-MBWMCompMgrClutterClient"); 
+
+    MBWindowManagerClient *aclient =  MB_WM_CLIENT (acclient->wm_client);
+
+    aclient->frame_geometry.width  = w + event->x - priv->resize_start_x;
+    aclient->frame_geometry.height = h + event->y - priv->resize_start_y;
+    aclient->window->geometry.width  = w + event->x - priv->resize_start_x;
+    aclient->window->geometry.height = h + event->y - priv->resize_start_y;
+
+    mb_wm_client_geometry_mark_dirty (aclient);
+
+    //clutter_actor_set_size (applet, w + event->x - prex, h + event->y - prey);
+
+    priv->resize_start_x = event->x;
+    priv->resize_start_y = event->y;
+
+    hd_home_view_applet_resize (applet, NULL, view);
+
+    return FALSE;
+  }
+
   /* New position of applet actor based on movement */
   x = priv->applet_motion_start_position_x + event->x - priv->applet_motion_start_x;
   y = priv->applet_motion_start_position_y + event->y - priv->applet_motion_start_y;
-
-  /* Get size of home view and applet actor */
-  clutter_actor_get_size (applet, &w, &h);
 
   /* Restrict new applet actor position to allowed values */
   if (!hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)) ||
@@ -1219,6 +1282,8 @@ hd_home_view_applet_release (ClutterActor       *applet,
   HdHomeViewPrivate *priv = view->priv;
   HdHomeViewAppletData *data;
 
+  priv->resizing_applet = FALSE;
+  priv->resize_start_x = priv->resize_start_y = -1;
 /*  g_debug ("%s: %d, %d", __FUNCTION__, event->x, event->y); */
 
   /* Get all pointer events */
@@ -1451,7 +1516,31 @@ close_button_released (ClutterActor       *button,
   data = g_hash_table_lookup (priv->applets, applet);
 
   close_applet (view, data);
+  
+  return TRUE;
+}
 
+static gboolean
+resize_button_pressed (ClutterActor       *button,
+                          ClutterButtonEvent *event,
+                          HdHomeView         *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  priv->resizing_applet = TRUE;
+  
+  return FALSE;
+}
+
+static gboolean
+resize_button_released (ClutterActor       *button,
+                          ClutterButtonEvent *event,
+                          HdHomeView         *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  priv->resizing_applet = FALSE;
+  
   return TRUE;
 }
 
@@ -1533,6 +1622,32 @@ hd_home_view_add_applet (HdHomeView   *view,
                         G_CALLBACK (configure_button_clicked), view);
       data->configure_button = configure_button;
     }
+
+  /* Add resize button */
+  if (1)
+    {
+      ClutterActor *resize_button;
+
+      resize_button = hd_clutter_cache_get_texture ("AppletResizeButton.png", TRUE);
+      clutter_container_add_actor (CLUTTER_CONTAINER (applet), resize_button);
+
+      clutter_actor_set_position (resize_button,
+                                  clutter_actor_get_width (applet) - clutter_actor_get_width (close_button),
+                                  clutter_actor_get_height (applet) - clutter_actor_get_height (close_button));
+      clutter_actor_set_reactive (resize_button, TRUE);
+      clutter_actor_raise_top (resize_button);
+      if (!STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
+        clutter_actor_hide (resize_button);
+
+      g_signal_connect (resize_button, "button-press-event",
+                        G_CALLBACK (resize_button_pressed), view);
+
+      g_signal_connect (resize_button, "button-release-event",
+                        G_CALLBACK (resize_button_released), view);
+
+      data->resize_button = resize_button;
+    }
+
 
   data->release_cb = g_signal_connect (applet, "button-release-event",
                                        G_CALLBACK (hd_home_view_applet_release), view);
@@ -1742,6 +1857,8 @@ hd_home_view_update_state (HdHomeView *view)
             clutter_actor_show (data->close_button);
           if (data->configure_button)
             clutter_actor_show (data->configure_button);
+	  if (data->resize_button)
+	    clutter_actor_show (data->resize_button);
         }
       else
         {
@@ -1749,6 +1866,8 @@ hd_home_view_update_state (HdHomeView *view)
             clutter_actor_hide (data->close_button);
           if (data->configure_button)
             clutter_actor_hide (data->configure_button);
+	  if (data->resize_button)
+	    clutter_actor_hide (data->resize_button);
         }
     }
 }
@@ -1788,6 +1907,8 @@ applet_data_free (HdHomeViewAppletData *data)
     data->close_button = (clutter_actor_destroy (data->close_button), NULL);
   if (data->configure_button)
     data->configure_button = (clutter_actor_destroy (data->configure_button), NULL);
+  if (data->resize_button)
+    data->resize_button = (clutter_actor_destroy (data->resize_button), NULL);
 
   g_slice_free (HdHomeViewAppletData, data);
 }
