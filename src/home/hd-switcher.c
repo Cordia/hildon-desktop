@@ -760,10 +760,18 @@ void
 hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  MBWMCompMgrClient *cc;
 
+  cc = g_object_get_data(G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
+  
   hd_task_navigator_zoom_in (priv->task_nav, actor,
               (ClutterEffectCompleteFunc) hd_switcher_zoom_in_complete,
               switcher);
+
+  XSetInputFocus (MB_WM_COMP_MGR(priv->comp_mgr)->wm->xdpy, 
+		  MB_WM_CLIENT_XWIN(cc->wm_client), 
+		  RevertToParent,
+		  CurrentTime); 
 }
 
 static void

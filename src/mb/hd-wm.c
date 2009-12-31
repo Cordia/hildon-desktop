@@ -441,6 +441,8 @@ hd_wm_client_activate (MBWindowManager * wm,
   else
     ret = wm_class->client_activate (wm, c);
 
+  XSetInputFocus (wm->xdpy, c->window->xwindow, RevertToParent, CurrentTime);
+
   return ret;
 }
 
