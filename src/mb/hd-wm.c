@@ -371,6 +371,12 @@ hd_wm_activate_zoomed_client (MBWindowManager *wm,
   hd_render_manager_set_state (HDRM_STATE_APP);
 
   hd_render_manager_stop_transition ();
+
+  XSetInputFocus (wm->xdpy, 
+		  c->window->xwindow, 
+		  RevertToPointerRoot,
+		  CurrentTime);
+
   return ret;
 }
 
@@ -438,7 +444,10 @@ hd_wm_client_activate (MBWindowManager * wm,
   else
     ret = wm_class->client_activate (wm, c);
 
-  XSetInputFocus (wm->xdpy, c->window->xwindow, RevertToParent, CurrentTime);
+  XSetInputFocus (wm->xdpy, 
+		  c->window->xwindow, 
+		  RevertToPointerRoot,
+		  CurrentTime);
 
   return ret;
 }

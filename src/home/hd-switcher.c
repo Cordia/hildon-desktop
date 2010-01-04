@@ -756,7 +756,7 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
 
   XSetInputFocus (MB_WM_COMP_MGR(priv->comp_mgr)->wm->xdpy, 
 		  MB_WM_CLIENT_XWIN(cc->wm_client), 
-		  RevertToParent,
+		  RevertToPointerRoot,
 		  CurrentTime); 
 }
 
