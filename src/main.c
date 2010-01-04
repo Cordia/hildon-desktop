@@ -133,8 +133,8 @@ take_screenshot (void)
   GError *error = NULL;
   gboolean ret;
 
-  if (!getenv("MYDOCSDIR")) {
-    g_warning ("Screenshot failed, environment variable MYDOCSDIR missing.");
+  if (!getenv("HOME")) {
+    g_warning ("Screenshot failed, environment variable HOME missing.");
     return;
   }
 
@@ -143,7 +143,7 @@ take_screenshot (void)
   if (time (NULL) - secs < 5)
     return;
 
-  path = g_strdup_printf ("%s/.images/Screenshots", getenv("MYDOCSDIR"));
+  path = g_strdup_printf ("%s/.images/Screenshots", getenv("HOME"));
   g_mkdir_with_parents (path, 0770);
 
   secs = time(NULL);
