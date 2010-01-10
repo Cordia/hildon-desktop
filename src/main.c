@@ -43,6 +43,7 @@
 #include <signal.h>
 #include <gdk-pixbuf-xlib/gdk-pixbuf-xlib.h>
 
+#include "hd-transition.h"
 #include "hildon-desktop.h"
 #include "hd-wm.h"
 #include "hd-theme.h"
@@ -59,6 +60,7 @@ enum {
   KEY_ACTION_TOGGLE_SWITCHER = 1,
   KEY_ACTION_TOGGLE_NON_COMP_MODE,
   KEY_ACTION_TAKE_SCREENSHOT,
+  KEY_ACTION_DO_PORTRAIT,
   KEY_ACTION_XTERMINAL,
 };
 
@@ -206,6 +208,8 @@ key_binding_func (MBWindowManager   *wm,
 		  void              *userdata)
 {
   int action;
+ 
+  static gboolean portrait = FALSE;
 
   action = (int)(userdata);
 
@@ -237,6 +241,16 @@ key_binding_func (MBWindowManager   *wm,
       break;
     case KEY_ACTION_TAKE_SCREENSHOT:
         take_screenshot();
+	break;
+    case KEY_ACTION_DO_PORTRAIT:
+        portrait = !portrait;
+	if (!hd_util_change_screen_orientation (hd_mb_wm, portrait))
+	  g_debug ("SOmething failed");
+	else
+          {
+	    hd_util_root_window_configured (hd_mb_wm);
+	    //hd_transition_rotate_screen (hd_mb_wm, portrait);
+	  }
 	break;
    }
 }
@@ -577,6 +591,11 @@ main (int argc, char **argv)
 				    key_binding_func,
 				    NULL,
 				    (void*)KEY_ACTION_TAKE_SCREENSHOT);
+  mb_wm_keys_binding_add_with_spec (wm,
+				    "<shift><ctrl>u",
+				    key_binding_func,
+				    NULL,
+				    (void*)KEY_ACTION_DO_PORTRAIT);
 
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 

@@ -77,10 +77,10 @@ void          hd_launcher_grid_transition(HdLauncherGrid *grid,
 void          hd_launcher_grid_reset(HdLauncherGrid *grid);
 void          hd_launcher_grid_layout(HdLauncherGrid *grid);
 
+void 	      hd_launcher_grid_new_size (HdLauncherGrid *grid, guint width, guint height);
 /* Fixed sizes */
 #define HD_LAUNCHER_GRID_MIN_HEIGHT \
-                (HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN)
-#define HD_LAUNCHER_GRID_WIDTH  (HD_LAUNCHER_PAGE_WIDTH)
+                (HD_COMP_MGR_LANDSCAPE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN)
 
 #define HD_LAUNCHER_GRID_ROW_SPACING 32
 

@@ -349,13 +349,9 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
                               wm_client->window->xwindow,
                               hmgr->priv->atoms[HD_ATOM_WM_PORTRAIT_OK],
                               XA_CARDINAL, 32, 1, NULL);
-  if (prop)
-    {
-      priv->portrait_supported = *prop != 0;
-      XFree (prop);
-    }
-  else
-    priv->portrait_supported_inherited = TRUE;
+
+  /* All windows support portrait */
+  priv->portrait_supported = TRUE;
 
   prop = hd_util_get_win_prop_data_and_validate (
                        wm_client->wmref->xdpy,
@@ -565,6 +561,11 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   g_object_set(priv->home, "hdrm", priv->render_manager, NULL);
   clutter_container_add_actor(CLUTTER_CONTAINER (stage),
                               CLUTTER_ACTOR(priv->render_manager));
+
+  g_signal_connect_swapped (priv->render_manager,
+  	            	    "rotated",
+		    	    G_CALLBACK (hd_task_navigator_rotate),
+		    	    task_nav);
 
   /* Pass the render manager to the app mgr so it knows when it can't
    * prestart apps.

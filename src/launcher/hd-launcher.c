@@ -201,7 +201,8 @@ static void hd_launcher_constructed (GObject *gobject)
 
   clutter_actor_hide (self);
   clutter_actor_set_size (self,
-                          HD_LAUNCHER_PAGE_WIDTH, HD_LAUNCHER_PAGE_HEIGHT);
+                          hd_comp_mgr_get_current_screen_width (),
+			  hd_comp_mgr_get_current_screen_height ());
 
   priv->tree = g_object_ref (hd_app_mgr_get_tree ());
   g_signal_connect (priv->tree, "starting",
@@ -224,8 +225,8 @@ static void hd_launcher_constructed (GObject *gobject)
                                 clutter_timeline_new_for_duration (400));
   g_signal_connect (priv->launch_transition, "new-frame",
                     G_CALLBACK (hd_launcher_transition_new_frame), gobject);
-  priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
-  priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
+  priv->launch_position.x = CLUTTER_INT_TO_FIXED(hd_comp_mgr_get_current_screen_width ()) / 2;
+  priv->launch_position.y = CLUTTER_INT_TO_FIXED(hd_comp_mgr_get_current_screen_height ()) / 2;
   priv->launch_position.z = 0;
 }
 
@@ -695,8 +696,8 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   else
     {
       /* default pos to centre of the screen */
-      priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
-      priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
+      priv->launch_position.x = CLUTTER_INT_TO_FIXED(hd_comp_mgr_get_current_screen_width ()) / 2;
+      priv->launch_position.y = CLUTTER_INT_TO_FIXED(hd_comp_mgr_get_current_screen_height ()) / 2;
     }
 
   /* If a launcher tile was clicked, expand the image from the centre of the

@@ -641,7 +641,7 @@ hd_launcher_tile_allocate (ClutterActor          *self,
   
   default_margin = hd_launcher_config_get_default_margin ();
 
-  right_margin = HD_LAUNCHER_PAGE_WIDTH - margin_right; 
+  right_margin = hd_comp_mgr_get_current_screen_width () - margin_right; 
 
   /* Set our default click area - we position our icons default margin
    * apart, so make us extend sideways a bit so there are no gaps */

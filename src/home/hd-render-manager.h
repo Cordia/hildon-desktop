@@ -36,6 +36,8 @@
 #include "../launcher/hd-launcher.h"
 #include "../tidy/tidy-cached-group.h"
 
+#include <X11/extensions/Xrandr.h>
+
 G_BEGIN_DECLS
 
 #define HD_TYPE_RENDER_MANAGER_STATE (hd_render_manager_state_get_type ())
@@ -263,6 +265,10 @@ void hd_render_manager_flip_input_viewport(void);
 gboolean hd_render_manager_allow_dbus_launch_transition(void);
 
 gboolean hd_render_manager_actor_is_visible(ClutterActor *actor);
+
+void hd_render_manager_set_rotation (Rotation rotation);
+
+Rotation hd_render_manager_get_rotation (void);
 
 G_END_DECLS
 

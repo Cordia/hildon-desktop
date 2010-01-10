@@ -108,7 +108,8 @@ static HdRenderManager *the_render_manager = NULL;
 enum
 {
   PROP_0,
-  PROP_STATE
+  PROP_STATE,
+  PROP_ROTATION
 };
 /* ------------------------------------------------------------------------- */
 
@@ -128,6 +129,7 @@ typedef enum
 enum
 {
   TRANSITION_COMPLETE,
+  ROTATION_COMPLETE,
   LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0, };
@@ -216,6 +218,8 @@ struct _HdRenderManagerPrivate {
   GdkRegion           *current_input_viewport;
   GdkRegion           *new_input_viewport;
   guint                input_viewport_callback;
+
+  Rotation 	       rotation;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -394,9 +398,16 @@ hd_render_manager_class_init (HdRenderManagerClass *klass)
                       G_TYPE_FROM_CLASS (klass),
                       G_SIGNAL_RUN_LAST,
                       0, NULL, NULL,
-                      g_cclosure_marshal_VOID__VOID,
+                      g_cclosure_marshal_VOID__INT,
                       G_TYPE_NONE, 0);
 
+  signals[ROTATION_COMPLETE] =
+        g_signal_new ("rotated",
+                      G_TYPE_FROM_CLASS (klass),
+                      G_SIGNAL_RUN_LAST,
+                      0, NULL, NULL,
+                      g_cclosure_marshal_VOID__INT,
+                      G_TYPE_NONE, 1, G_TYPE_INT);
 
 
   pspec = g_param_spec_enum ("state",
@@ -408,7 +419,19 @@ hd_render_manager_class_init (HdRenderManagerClass *klass)
                              G_PARAM_STATIC_NICK |
                              G_PARAM_STATIC_NAME |
                              G_PARAM_STATIC_BLURB);
+
   g_object_class_install_property (gobject_class, PROP_STATE, pspec);
+
+  pspec = g_param_spec_int ("rotation",
+                            "rotation",
+                            "Status of just the rotation of desktop",
+                            RR_Rotate_0,
+ 			    RR_Rotate_90,
+			    RR_Rotate_0,
+                            G_PARAM_READABLE | G_PARAM_WRITABLE);
+  
+ 
+  g_object_class_install_property (gobject_class, PROP_ROTATION, pspec);
 }
 
 static void
@@ -491,6 +514,8 @@ hd_render_manager_init (HdRenderManager *self)
   priv->timeline_playing = FALSE;
 
   priv->in_set_state = FALSE;
+
+  priv->rotation = RR_Rotate_0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1572,7 +1597,12 @@ hd_render_manager_get_property (GObject    *object,
     case PROP_STATE:
       g_value_set_enum (value, hd_render_manager_get_state ());
       break;
-    default:
+
+    case PROP_ROTATION:
+      g_value_set_int (value, HD_RENDER_MANAGER (object)->priv->rotation);
+      break;
+
+   default:
       /* We don't have any other property... */
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -1589,6 +1619,10 @@ hd_render_manager_set_property (GObject      *gobject,
     {
     case PROP_STATE:
       hd_render_manager_set_state (g_value_get_enum (value));
+      break;
+
+    case PROP_ROTATION:
+      HD_RENDER_MANAGER (gobject)->priv->rotation = g_value_get_int (value);
       break;
 
     default:
@@ -2884,3 +2918,35 @@ void hd_render_manager_remove_input_blocker() {
    /* Set the new viewport */
    hd_render_manager_set_compositor_input_viewport(region);
  }
+
+void 
+hd_render_manager_set_rotation (Rotation rotation)
+{ 
+  gint old_rotation;
+
+  g_object_get (G_OBJECT (the_render_manager),
+		"rotation", &old_rotation,
+		NULL);
+
+  if (old_rotation != (gint) rotation)
+    {
+      g_object_set (G_OBJECT (the_render_manager), 
+		    "rotation", (gint) rotation,
+		    NULL);
+      g_signal_emit_by_name (G_OBJECT (the_render_manager),
+			     "rotated", rotation);
+    }
+}
+
+Rotation 
+hd_render_manager_get_rotation (void)
+{
+  gint rotation;
+
+  g_object_get (G_OBJECT (the_render_manager),
+		"rotation", &rotation,
+		NULL);
+
+  return (Rotation) rotation; 
+}
+

@@ -1438,9 +1438,13 @@ hd_transition_rotating_fsm(void)
         /* Start rotate transition */
         hd_util_set_rotating_property(Orientation_change.wm, TRUE);
         /* Layout windows at the rotated size */
-        hd_util_set_screen_size_properties(Orientation_change.wm,
-            Orientation_change.direction == GOTO_PORTRAIT ? 480 : 800,
-            Orientation_change.direction == GOTO_PORTRAIT ? 800 : 480);
+        hd_util_set_screen_size_properties (Orientation_change.wm,
+            				    Orientation_change.direction
+					    == GOTO_PORTRAIT ? hd_comp_mgr_get_current_screen_height()
+					    : hd_comp_mgr_get_current_screen_width(),
+            				    Orientation_change.direction
+					    == GOTO_PORTRAIT ? hd_comp_mgr_get_current_screen_width()
+					    : hd_comp_mgr_get_current_screen_height());
         Orientation_change.wm->flags |= MBWindowManagerFlagLayoutRotated;
         mb_wm_layout_update(Orientation_change.wm->layout);
         /* We now call ourselves back on idle. The idea is that the sudden
@@ -1563,8 +1567,12 @@ trans_start_error:
              * return to normal relative to the screen. flags is probably
              * already correct. But just for safety. */
             hd_util_set_screen_size_properties(Orientation_change.wm,
-                        Orientation_change.direction == GOTO_PORTRAIT ? 480 : 800,
-                        Orientation_change.direction == GOTO_PORTRAIT ? 800 : 480);
+                        Orientation_change.direction
+			== GOTO_PORTRAIT ? hd_comp_mgr_get_current_screen_height()
+			: hd_comp_mgr_get_current_screen_width(),
+                        Orientation_change.direction
+			== GOTO_PORTRAIT ? hd_comp_mgr_get_current_screen_width()
+			: hd_comp_mgr_get_current_screen_height());
             Orientation_change.wm->flags &= ~MBWindowManagerFlagLayoutRotated;
             mb_wm_layout_update(Orientation_change.wm->layout);
             if (Orientation_change.phase > TRANS_START)

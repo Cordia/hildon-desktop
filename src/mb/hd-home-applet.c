@@ -180,6 +180,7 @@ hd_home_applet_init (MBWMObject *this, va_list vap)
   Atom actions[] = {
     wm->atoms[MBWM_ATOM_NET_WM_ACTION_CLOSE],
     wm->atoms[MBWM_ATOM_NET_WM_ACTION_MOVE],
+    wm->atoms[MBWM_ATOM_NET_WM_ACTION_RESIZE]
   };
 
   /* Read settings property from applet window */

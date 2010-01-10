@@ -80,8 +80,6 @@
 
 /* Measures (in pixels).  Unless indicated, none of them is tunable. */
 /* Common platform metrics */
-#define SCREEN_WIDTH              HD_COMP_MGR_LANDSCAPE_WIDTH
-#define SCREEN_HEIGHT             HD_COMP_MGR_LANDSCAPE_HEIGHT
 #define MARGIN_DEFAULT             8
 #define MARGIN_HALF                4
 #define ICON_FINGER               48
@@ -574,16 +572,46 @@ static struct { GtkRequisition small, medium, large; } Thumbsizes =
   .small  = { 0,  0  },
 };
 
-#define _setThumbSizes() \
-if (G_LIKELY (Thumbsizes.large.width == 0))\
-  {\
-    Thumbsizes.large.width   = THUMB_LARGE_WIDTH;\
-    Thumbsizes.large.height  = THUMB_LARGE_HEIGHT;\
-    Thumbsizes.medium.width  = THUMB_MEDIUM_WIDTH;\
-    Thumbsizes.medium.height = THUMB_MEDIUM_HEIGHT;\
-    Thumbsizes.small.width   = THUMB_SMALL_WIDTH;\
-    Thumbsizes.small.height  = THUMB_SMALL_HEIGHT;\
-  }
+static struct { GtkRequisition small, medium, large; } ThumbsizesLandscape =
+{
+  .large  = { 0,  0  },
+  .medium = { 0,  0  },
+  .small  = { 0,  0  },
+};
+
+static struct { GtkRequisition small, medium, large; } ThumbsizesPortrait =
+{
+  .large  = { 0,  0  },
+  .medium = { 0,  0  },
+  .small  = { 0,  0  },
+};
+
+static void
+layout_set_thumb_size (void)
+{
+  if (G_UNLIKELY (Thumbsizes.large.width == 0))
+    {
+      ThumbsizesLandscape.large.width   = THUMB_LARGE_WIDTH;
+      ThumbsizesLandscape.large.height  = THUMB_LARGE_HEIGHT;
+      ThumbsizesLandscape.medium.width  = THUMB_MEDIUM_WIDTH;
+      ThumbsizesLandscape.medium.height = THUMB_MEDIUM_HEIGHT;
+      ThumbsizesLandscape.small.width   = THUMB_SMALL_WIDTH;
+      ThumbsizesLandscape.small.height  = THUMB_SMALL_HEIGHT;
+
+      ThumbsizesPortrait.large.width   = THUMB_LARGE_HEIGHT;
+      ThumbsizesPortrait.large.height  = THUMB_LARGE_WIDTH;
+      ThumbsizesPortrait.medium.width  = THUMB_MEDIUM_HEIGHT;
+      ThumbsizesPortrait.medium.height = THUMB_MEDIUM_WIDTH;
+      ThumbsizesPortrait.small.width   = THUMB_SMALL_HEIGHT;
+      ThumbsizesPortrait.small.height  = THUMB_SMALL_WIDTH;
+    }
+
+  Rotation rotation = hd_render_manager_get_rotation ();
+
+  Thumbsizes.large = (rotation == RR_Rotate_0) ? ThumbsizesLandscape.large : ThumbsizesPortrait.large;
+  Thumbsizes.medium = (rotation == RR_Rotate_0) ? ThumbsizesLandscape.medium : ThumbsizesPortrait.medium;
+  Thumbsizes.small = (rotation == RR_Rotate_0) ? ThumbsizesLandscape.small : ThumbsizesPortrait.small;
+}
 
 /* Place and size an actor without animation. */
 static const Flyops Fly_at_once =
@@ -613,14 +641,53 @@ static ClutterGeometry App_window_geometry =
   .width  = 0,
   .height = 0,
 };
-#define _setWindowGeometry()\
-{\
-  if (App_window_geometry.width == 0)\
-    {\
-      App_window_geometry.width = HD_COMP_MGR_LANDSCAPE_WIDTH;\
-      App_window_geometry.height = HD_COMP_MGR_LANDSCAPE_HEIGHT - HD_COMP_MGR_TOP_MARGIN;\
-      App_window_geometry.y = HD_COMP_MGR_TOP_MARGIN;\
-    }\
+
+static ClutterGeometry App_window_geometry_landscape =
+{
+  .x      = 0,
+  .y      = 0,
+  .width  = 0,
+  .height = 0,
+};
+
+static ClutterGeometry App_window_geometry_portrait =
+{
+  .x      = 0,
+  .y      = 0,
+  .width  = 0,
+  .height = 0,
+};
+
+static void
+layout_set_win_geometry ()
+{
+  Rotation rotation = hd_render_manager_get_rotation ();
+
+  if (G_UNLIKELY (App_window_geometry.width == 0))
+    {
+      App_window_geometry_landscape.width  = 
+	hd_comp_mgr_get_current_screen_width ();
+      App_window_geometry_landscape.height = 
+	hd_comp_mgr_get_current_screen_height () - HD_COMP_MGR_TOP_MARGIN;
+
+      App_window_geometry_portrait.width  = 
+	hd_comp_mgr_get_current_screen_height ();
+      App_window_geometry_portrait.height = 
+	hd_comp_mgr_get_current_screen_width () - HD_COMP_MGR_TOP_MARGIN;
+
+      App_window_geometry.y 	 = HD_COMP_MGR_TOP_MARGIN;
+    }
+
+  
+  App_window_geometry.width  = 
+    (rotation == RR_Rotate_0) 
+    ? App_window_geometry_landscape.width
+    : App_window_geometry_portrait.width;
+
+  App_window_geometry.height = 
+    (rotation == RR_Rotate_0) 
+    ? App_window_geometry_landscape.height
+    : App_window_geometry_portrait.height;
 }
 
 /* }}} */
@@ -1747,8 +1814,8 @@ calc_layout (Layout * lout)
 {
   guint nrows_per_page;
  
-  _setThumbSizes();
-
+  layout_set_thumb_size ();
+  
   /* Figure out how many thumbnails to squeeze into one row
    * (not the last one, which may be different) and the maximum
    * number of fully visible rows at a time. */
@@ -1779,18 +1846,32 @@ calc_layout (Layout * lout)
    * we know exactly where to start the first row.  This enables us to
    * show the titles of the thumbnails in the 4th row.
    */
-  lout->xpos = layout_fun (SCREEN_WIDTH,
+  Rotation rotation = hd_render_manager_get_rotation ();
+
+  guint width = 
+    (rotation == RR_Rotate_0) 
+    ? hd_comp_mgr_get_current_screen_width ()
+    : hd_comp_mgr_get_current_screen_height ();
+  guint height = 
+    (rotation == RR_Rotate_0) 
+    ? hd_comp_mgr_get_current_screen_height ()
+    : hd_comp_mgr_get_current_screen_width ();
+
+  lout->xpos = layout_fun ((rotation == RR_Rotate_0) ? width : height,
                            lout->thumbsize->width,
                            GRID_HORIZONTAL_GAP,
                            lout->cells_per_row);
+
   lout->last_row_xpos = lout->xpos;
+
   if (NThumbnails <= 12)
-    lout->ypos = layout_fun (SCREEN_HEIGHT + GRID_TOP_MARGIN,
+    lout->ypos = layout_fun (height + GRID_TOP_MARGIN,
                              lout->thumbsize->height,
                              GRID_VERTICAL_GAP,
                              nrows_per_page);
   else
     lout->ypos = GRID_TOP_MARGIN + MARGIN_DEFAULT;
+
   lout->hspace = lout->thumbsize->width  + GRID_HORIZONTAL_GAP;
   lout->vspace = lout->thumbsize->height + GRID_VERTICAL_GAP;
 }
@@ -1801,7 +1882,7 @@ static void
 layout_thumb_frame (const Thumbnail * thumb, const Flyops * ops)
 {
   guint wt, ht, wb, hb;
-
+  
   /* This is quite boring. */
   clutter_actor_get_size(thumb->frame.nw, &wt, &ht);
   clutter_actor_get_size(thumb->frame.sw, &wb, &hb);
@@ -2034,7 +2115,7 @@ layout_thumbs (ClutterActor * newborn)
   guint xthumb, ythumb, i;
   const GtkRequisition *oldthsize;
 
-  _setWindowGeometry();
+  layout_set_win_geometry ();
 
   /* Save the old @Thumbsize to know if it's changed. */
   calc_layout (&lout);
@@ -2075,12 +2156,12 @@ layout_thumbs (ClutterActor * newborn)
 
       /* If @Thumbnails are not changing size and this is not a newborn
        * the inners of @thumb are already setup. */
-      if (oldthsize == Thumbsize && thumb->thwin != newborn)
-        goto skip_the_circus;
+      /*if (oldthsize == Thumbsize && thumb->thwin != newborn)
+        goto skip_the_circus;*/
 
       /* Set thumbnail's reaction area. */
       clutter_actor_set_size (thumb->thwin, Thumbsize->width, Thumbsize->height);
-
+      
       /* @thumb->close */
       ops->move (thumb->close, Thumbsize->width, 0);
 
@@ -2107,7 +2188,7 @@ layout_thumbs (ClutterActor * newborn)
           layout_thumb_frame (thumb, ops);
         }
 
-skip_the_circus:
+//skip_the_circus:
       xthumb += lout.hspace;
     }
 
@@ -2358,7 +2439,7 @@ claim_win (Thumbnail * apthumb)
 {
   g_assert (hd_task_navigator_is_active ());
 
-  _setWindowGeometry();
+  layout_set_win_geometry ();
   /*
    * Take @apthumb->apwin into our care even if there is a video screenshot.
    * If we don't @apthumb->apwin will be managed by its current parent and
@@ -2605,7 +2686,7 @@ static void
 zoom_fun (gint * xposp, gint * yposp,
           gdouble * xscalep, gdouble * yscalep)
 {
-  _setWindowGeometry();
+  layout_set_win_geometry ();
   /* The prison represents what's in @App_window_geometry in app view. */
   *xscalep = 1 / *xscalep;
   *yscalep = 1 / *yscalep;
@@ -2666,7 +2747,7 @@ zoom_in_complete (ClutterActor * navigator, const Thumbnail * apthumb)
 void
 hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
                            ClutterEffectCompleteFunc fun, gpointer funparam)
-{ g_debug (__FUNCTION__);
+{ 
   const Thumbnail *apthumb;
 
   g_assert (hd_task_navigator_is_active ());
@@ -2731,7 +2812,7 @@ damage_control:
 void
 hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
                             ClutterEffectCompleteFunc fun, gpointer funparam)
-{ g_debug (__FUNCTION__);
+{
   const Thumbnail *apthumb;
   gdouble xscale, yscale;
   gint yarea, xpos, ypos;
@@ -2751,7 +2832,7 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
    * estate, but in return we need to ask how much we actually managed to
    * scroll.
    */
-  yarea = ypos - (SCREEN_HEIGHT - Thumbsize->height) / 2;
+  yarea = ypos - (hd_comp_mgr_get_current_screen_height () - Thumbsize->height) / 2;
   hd_scrollable_group_set_viewport_y (Grid, yarea);
   yarea = hd_scrollable_group_get_viewport_y (Grid);
 
@@ -2923,6 +3004,17 @@ create_apthumb_frame (Thumbnail * apthumb)
     }
 }
 
+static void
+update_appthumb (Thumbnail *apthumb)
+{
+  clutter_actor_set_name (apthumb->windows, "windows");
+  clutter_actor_set_clip (apthumb->windows,
+                          App_window_geometry.x, App_window_geometry.y,
+                          App_window_geometry.width, App_window_geometry.height);
+
+
+}
+
 /* Returns a %Thumbnail for @apwin, a window manager client actor.
  * If there is a notification for this application it will be removed
  * and added as the thumbnail title. */
@@ -2937,7 +3029,7 @@ create_appthumb (ClutterActor * apwin)
   apthumb = g_new0 (Thumbnail, 1);
   apthumb->type = APPLICATION;
 
-  _setWindowGeometry();
+  layout_set_win_geometry ();
 
   /* We're just in a MapNotify, it shouldn't happen.
    * mb_wm_object_signal_connect() will take reference
@@ -3070,7 +3162,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
                                  ClutterActor * win,
                                  ClutterEffectCompleteFunc fun,
                                  gpointer funparam)
-{ g_debug (__FUNCTION__);
+{ 
   GList *li;
   Thumbnail *apthumb;
   ClutterActor *newborn;
@@ -3174,7 +3266,7 @@ damage_control:
 void
 hd_task_navigator_add_window (HdTaskNavigator * self,
                               ClutterActor * win)
-{ g_debug (__FUNCTION__);
+{ 
   Thumbnail *apthumb;
 
   g_return_if_fail (!hd_task_navigator_has_window (self, win));
@@ -3199,7 +3291,7 @@ hd_task_navigator_add_window (HdTaskNavigator * self,
 void
 hd_task_navigator_remove_dialog (HdTaskNavigator * self,
                                  ClutterActor * dialog)
-{ g_debug (__FUNCTION__);
+{ 
   guint i;
   Thumbnail *apthumb;
 
@@ -3227,7 +3319,7 @@ void
 hd_task_navigator_add_dialog (HdTaskNavigator * self,
                               ClutterActor * parent,
                               ClutterActor * dialog)
-{ g_debug (__FUNCTION__);
+{ 
   guint i;
   Thumbnail *apthumb;
 
@@ -3286,7 +3378,7 @@ void
 hd_task_navigator_replace_window (HdTaskNavigator * self,
                                   ClutterActor * old_win,
                                   ClutterActor * new_win)
-{ g_debug (__FUNCTION__);
+{ 
   Thumbnail *apthumb;
   gboolean showing;
 
@@ -3464,7 +3556,7 @@ numstrcmp(const gchar * a, const gchar * b)
 /* HdNote::HdNoteSignalChanged signal handler. */
 static Bool
 tnote_changed (HdNote * hdnote, int unused1, TNote * tnote)
-{ g_debug(__FUNCTION__);
+{ 
   GList *li;
   Thumbnail *thumb;
   gboolean is_more;
@@ -3707,7 +3799,7 @@ remove_nothumb (GList * li, gboolean destroy_tnote)
 void
 hd_task_navigator_add_notification (HdTaskNavigator * self,
                                     HdNote * hdnote)
-{ g_debug (__FUNCTION__);
+{ 
   GList *li;
   TNote *tnote;
   Thumbnail *apthumb;
@@ -3751,7 +3843,7 @@ hd_task_navigator_add_notification (HdTaskNavigator * self,
 void
 hd_task_navigator_remove_notification (HdTaskNavigator * self,
                                        HdNote * hdnote)
-{ g_debug (__FUNCTION__);
+{ 
   GList *li;
   Thumbnail *thumb;
 
@@ -3862,7 +3954,7 @@ clicked_widget (const ClutterButtonEvent * event)
 /* @Navigator's "show" handler. */
 static void
 navigator_shown (ClutterActor * navigator, gpointer unused)
-{ g_debug(__FUNCTION__);
+{
   GList *li;
   Thumbnail *thumb;
 
@@ -3879,12 +3971,14 @@ navigator_shown (ClutterActor * navigator, gpointer unused)
 
   /* Flash the scrollbar.  %TidyFingerScroll will do the right thing. */
   tidy_finger_scroll_show_scrollbars (Scroller);
+
+  layout (NULL, FALSE);
 }
 
 /* @Navigator's "hide" handler. */
 static void
 navigator_hidden (ClutterActor * navigator, gpointer unused)
-{ g_debug(__FUNCTION__);
+{ 
   GList *li;
   Thumbnail *thumb;
 
@@ -4021,6 +4115,30 @@ grid_clicked (ClutterActor * grid, ClutterButtonEvent * event)
 }
 /* Click handling }}} */
 
+/* re-calc layout when HdRenderManager's rotation is triggered */
+void 
+hd_task_navigator_rotate (HdTaskNavigator *tn, 
+			  Rotation rotation) 
+{
+  guint width, height;
+
+  clutter_actor_get_size (CLUTTER_ACTOR (tn), &width, &height);
+  clutter_actor_set_size (CLUTTER_ACTOR (tn), height, width);
+
+  layout_set_win_geometry ();
+
+  GList *li;
+  Thumbnail *thumb;
+
+  for_each_appthumb (li, thumb)
+     update_appthumb (thumb);
+
+  layout (NULL, FALSE);
+
+  if (hd_task_navigator_is_active ())
+    hd_render_manager_set_state (HDRM_STATE_HOME);
+}
+
 /* @Grid's notify::has-clip callback to prevent clipping.
  * TODO Who clips and why? */
 static gboolean
@@ -4061,7 +4179,11 @@ hd_task_navigator_init (HdTaskNavigator * self)
 {
   Navigator = CLUTTER_ACTOR (self);
   clutter_actor_set_reactive (Navigator, TRUE);
-  clutter_actor_set_size (Navigator, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+  clutter_actor_set_size (Navigator, 
+			  hd_comp_mgr_get_current_screen_width (),
+			  hd_comp_mgr_get_current_screen_height ());
+
   g_signal_connect (Navigator, "show", G_CALLBACK (navigator_shown),  NULL);
   g_signal_connect (Navigator, "hide", G_CALLBACK (navigator_hidden), NULL);
   g_signal_connect (Navigator, "captured-event",
@@ -4073,7 +4195,10 @@ hd_task_navigator_init (HdTaskNavigator * self)
   /* Turn off visibility detection for @Scroller to it won't be clipped by it. */
   Scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_actor_set_name (Scroller, "Scroller");
-  clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
+  clutter_actor_set_size (Scroller,
+			  hd_comp_mgr_get_current_screen_width (),
+			  hd_comp_mgr_get_current_screen_height ());
+
   clutter_actor_set_visibility_detect(Scroller, FALSE);
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), Scroller);
   g_signal_connect (Scroller, "captured-event",
@@ -4111,6 +4236,7 @@ hd_task_navigator_init (HdTaskNavigator * self)
 
   /* We don't have anything to show yet, so let's hide. */
   clutter_actor_hide (Navigator);
+
 }
 
 static void

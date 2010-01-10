@@ -85,6 +85,9 @@ struct _HdLauncherGridPrivate
   HdKeyFrameList *transition_keyframes; // ramp for tile movement
   HdKeyFrameList *transition_keyframes_label; // ramp for label alpha values
   HdKeyFrameList *transition_keyframes_icon; // ramp for icon alpha values
+
+  guint width;
+  guint height;
 };
 
 enum
@@ -110,7 +113,6 @@ static gboolean _hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
                                         ClutterButtonEvent *event,
                                         gpointer *data);
 
-#define HD_LAUNCHER_GRID_MAX_COLUMNS (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/160)
 
 G_DEFINE_TYPE_WITH_CODE (HdLauncherGrid,
                          hd_launcher_grid,
@@ -175,7 +177,7 @@ hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
   clutter_actor_get_clipu (CLUTTER_ACTOR (grid),
                            NULL, &clip_y,
                            NULL, &clip_height);
-  if (height >= CLUTTER_UNITS_FROM_INT (HD_COMP_MGR_LANDSCAPE_HEIGHT))
+  if (height >= CLUTTER_UNITS_FROM_INT (priv->height))
     {
       /* Padding at the bottom. */
       height += CLUTTER_UNITS_FROM_INT (bottom_margin
@@ -188,7 +190,7 @@ hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
 
   if (clip_height == 0)
     page_height = MIN (CLUTTER_UNITS_TO_FIXED (height),
-                       CLUTTER_UNITS_TO_FIXED (CLUTTER_UNITS_FROM_DEVICE (HD_COMP_MGR_LANDSCAPE_HEIGHT)));
+                       CLUTTER_UNITS_TO_FIXED (CLUTTER_UNITS_FROM_DEVICE (priv->height)));
   else
     page_height = MIN (CLUTTER_UNITS_TO_FIXED (height),
                        CLUTTER_UNITS_TO_FIXED (clip_height - clip_y));
@@ -393,8 +395,8 @@ _hd_launcher_grid_count_children_and_rows (HdLauncherGrid *grid,
     }
 
   if (*children > 0)
-    *rows = (*children / HD_LAUNCHER_GRID_MAX_COLUMNS) +
-            (*children % HD_LAUNCHER_GRID_MAX_COLUMNS? 1 : 0);
+    *rows = (*children / hd_launcher_config_get_columns ()) +
+            (*children % hd_launcher_config_get_columns ()? 1 : 0);
   else
     *rows = 0;
 }
@@ -405,7 +407,8 @@ _hd_launcher_grid_count_children_and_rows (HdLauncherGrid *grid,
  * Returns the number of children allocated.
  */
 static GList *
-_hd_launcher_grid_layout_row   (GList *l,
+_hd_launcher_grid_layout_row   (HdLauncherGridPrivate *priv,
+				GList *l,
                                 guint *remaining,
                                 guint cur_y,
                                 guint h_spacing)
@@ -421,7 +424,7 @@ _hd_launcher_grid_layout_row   (GList *l,
   /* Figure out the starting X position needed to centre the icons */
   guint icons_width = tile_width * max_columns +
                       h_spacing * (max_columns-1);
-  guint cur_x = (HD_LAUNCHER_PAGE_WIDTH - icons_width) / 2;
+  guint cur_x = (priv->width - icons_width) / 2;
   /* for each icon in the row... */
   for (int i = 0; i < allocated; i++)
     {
@@ -467,8 +470,8 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
   l = priv->tiles;
   while (l) {
     /* Allocate all icons on this row */
-    l = _hd_launcher_grid_layout_row(l, &n_visible_launchers,
-                                       cur_height, priv->h_spacing);
+    l = _hd_launcher_grid_layout_row(priv, l, &n_visible_launchers,
+                                     cur_height, priv->h_spacing);
     if (l)
       {
         gint margin_left, margin_right;
@@ -490,7 +493,7 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
                                    margin_left,
                                    cur_height + tile_height);
         clutter_actor_set_size(blocker,
-            		       HD_LAUNCHER_GRID_WIDTH - (margin_left+margin_right),
+            		       priv->width - (margin_left+margin_right),
             		       priv->v_spacing);
 
         priv->blockers = g_list_prepend(priv->blockers, blocker);
@@ -499,7 +502,7 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
   }
 
   clutter_actor_set_size(CLUTTER_ACTOR(grid),
-                         HD_LAUNCHER_PAGE_WIDTH,
+                         priv->width,
                          cur_height);
 }
 
@@ -618,6 +621,9 @@ hd_launcher_grid_init (HdLauncherGrid *launcher)
 
   priv->h_spacing = default_margin;
   priv->v_spacing = HD_LAUNCHER_GRID_ROW_SPACING;
+
+  priv->width = HD_COMP_MGR_LANDSCAPE_WIDTH;
+  priv->height = HD_COMP_MGR_LANDSCAPE_HEIGHT;
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (launcher), FALSE);
 
@@ -799,8 +805,8 @@ hd_launcher_grid_transition(HdLauncherGrid *grid,
 
         order_diff = (CLUTTER_UNITS_TO_FLOAT(pos.x) +
                      (CLUTTER_UNITS_TO_FLOAT(pos.y))) /
-                       (HD_COMP_MGR_LANDSCAPE_WIDTH +
-                        HD_COMP_MGR_LANDSCAPE_HEIGHT);
+                      (priv->width +
+                        priv->height);
         if (order_diff>1) order_diff = 1;
         order_amt = amount*2 - order_diff;
         if (order_amt<0) order_amt = 0;
@@ -888,4 +894,13 @@ _hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
                                       gpointer *data)
 {
   return TRUE;
+}
+
+void 	      
+hd_launcher_grid_new_size (HdLauncherGrid *grid, guint width, guint height)
+{
+  HdLauncherGridPrivate *priv = grid->priv;
+
+  priv->width  = width;
+  priv->height = height;
 }

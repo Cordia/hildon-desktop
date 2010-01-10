@@ -92,6 +92,8 @@ gint hd_launcher_config_get_max_drag (void);
 
 gint hd_launcher_config_get_columns (void);
 
+void hd_launcher_config_width_changed (guint width);
+
 gint hd_launcher_config_get_default_margin (void);
 
 /* left/right/top/bottom margin that is clicked on to go back */

@@ -76,6 +76,8 @@ struct _HdLauncherConfigPrivate
          glow_size,
 	 max_drag,
 	 max_columns;
+
+  guint   width;
 };
 
 #define HD_LAUNCHER_CONFIG_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -131,6 +133,8 @@ hd_launcher_config_init (HdLauncherConfig *self)
   priv->default_icon = g_strdup (HD_LAUNCHER_DEFAULT_ICON);
 
   priv->path = HD_LAUNCHER_CONFIG_PATH;
+
+  priv->width = hd_comp_mgr_get_current_screen_width (); 
 }
 
 static void
@@ -298,9 +302,9 @@ hd_launcher_config_constructor (GType                  gtype,
 
   hd_launcher_config_read_keys (priv);
 
-  priv->max_columns = (gint) (HD_COMP_MGR_LANDSCAPE_WIDTH/priv->tile_width);
+  priv->max_columns = (gint) (priv->width/priv->tile_width);
   
-  if ((HD_COMP_MGR_LANDSCAPE_WIDTH % priv->tile_width) <= 50)
+  if ((priv->width % priv->tile_width) <= 50)
     priv->max_columns--;
 
   return obj;
@@ -409,6 +413,21 @@ hd_launcher_config_get_columns (void)
   return priv->max_columns;
 }
 
+void 
+hd_launcher_config_width_changed (guint width)
+{
+  HdLauncherConfigPrivate *priv;
+
+  priv = HD_LAUNCHER_CONFIG_GET_PRIVATE (launcher_config);
+
+  priv->width = width;
+
+  priv->max_columns = (gint) (priv->width/priv->tile_width);
+  
+  if ((priv->width % priv->tile_width) <= 50)
+    priv->max_columns--; 
+}
+
 gint
 hd_launcher_config_get_default_margin (void)
 {
@@ -418,3 +437,4 @@ hd_launcher_config_get_default_margin (void)
 
   return priv->default_margin;
 }
+

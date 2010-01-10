@@ -3,6 +3,7 @@
 
 #include <clutter/clutter.h>
 #include "hd-note.h"
+#include <X11/extensions/Xrandr.h> /* For Rotation */
 
 #define HD_TYPE_TASK_NAVIGATOR    hd_task_navigator_get_type()
 #define HD_TASK_NAVIGATOR(obj)                          \
@@ -74,5 +75,9 @@ void hd_task_navigator_add_notification    (HdTaskNavigator *self,
                                             HdNote *hdnote);
 void hd_task_navigator_remove_notification (HdTaskNavigator *self,
                                             HdNote *hdnote);
+
+void hd_task_navigator_rotate (HdTaskNavigator *tn, 
+		  	       Rotation rotation); 
+
 
 #endif /* ! __HD_TASK_NAVIGATOR_H__ */

@@ -73,6 +73,7 @@ struct _HdLauncherPagePrivate
   gint drag_distance;
   gint drag_last_x, drag_last_y;
 
+  /* These values are to track width&height, not to store them*/
   gint width, height;
 };
 
@@ -101,6 +102,9 @@ static void hd_launcher_page_new_frame(ClutterTimeline *timeline,
 static void hd_launcher_page_transition_end(ClutterTimeline *timeline,
                                             gpointer data);
 
+static void hd_launcher_page_relayout (HdRenderManager *mgr, 
+				       Rotation rotation,
+				       HdLauncherPage *page);	
 static void
 hd_launcher_page_class_init (HdLauncherPageClass *klass)
 {
@@ -135,13 +139,47 @@ hd_launcher_page_init (HdLauncherPage *page)
 {
   page->priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
 
-  clutter_actor_set_size(CLUTTER_ACTOR(page),
-        HD_LAUNCHER_PAGE_WIDTH, HD_LAUNCHER_PAGE_HEIGHT);
-  clutter_actor_set_reactive (CLUTTER_ACTOR(page), FALSE);
-  g_signal_connect(page, "show", G_CALLBACK(hd_launcher_page_show), 0);
-
   page->priv->width = HD_COMP_MGR_LANDSCAPE_WIDTH;
   page->priv->height = HD_COMP_MGR_LANDSCAPE_HEIGHT;
+
+  clutter_actor_set_size (CLUTTER_ACTOR(page),
+			  page->priv->width,
+			  page->priv->height);
+
+  clutter_actor_set_reactive (CLUTTER_ACTOR(page), FALSE);
+
+  g_signal_connect (page, "show", G_CALLBACK(hd_launcher_page_show), 0);
+
+  GObject *obj = G_OBJECT (hd_render_manager_get ());
+  g_debug ("EVEN2 %p", obj); 
+  g_signal_connect (obj,
+		    "rotated",
+		    G_CALLBACK (hd_launcher_page_relayout),
+		    page); 
+}
+
+static void 
+hd_launcher_page_relayout (HdRenderManager *mgr, 
+			   Rotation rotation,
+			   HdLauncherPage *page)
+{
+  HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
+
+  gint tmp = priv->width;
+  
+  priv->width = priv->height;
+  priv->height = tmp;
+
+  /* We should relay on hd_comp_manager_get_current_screen_width/height()*/
+
+  hd_launcher_config_width_changed (priv->width);
+  hd_launcher_grid_new_size (HD_LAUNCHER_GRID (priv->grid), 
+			     priv->width, priv->height);
+  
+  hd_launcher_grid_layout (HD_LAUNCHER_GRID (priv->grid));
+
+  if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (page)))
+    clutter_actor_show (CLUTTER_ACTOR (page));
 }
 
 static gboolean
@@ -225,8 +263,8 @@ hd_launcher_page_constructed (GObject *object)
 
   clutter_actor_get_size(priv->empty_label, &label_width, &label_height);
   /* Position the 'empty label' item in the centre */
-  x1 = (HD_LAUNCHER_PAGE_WIDTH - label_width) / 2;
-  y1 = ((HD_LAUNCHER_PAGE_HEIGHT - top_margin - label_height)/2) +
+  x1 = (priv->width - label_width) / 2;
+  y1 = ((priv->height - top_margin - label_height)/2) +
         top_margin;
   clutter_actor_set_position (priv->empty_label, x1, y1);
   clutter_container_add_actor (CLUTTER_CONTAINER (page), priv->empty_label);
@@ -234,8 +272,9 @@ hd_launcher_page_constructed (GObject *object)
   priv->scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_container_add_actor (CLUTTER_CONTAINER (page),
                                priv->scroller);
-  clutter_actor_set_size(priv->scroller, HD_LAUNCHER_PAGE_WIDTH,
-                                         HD_LAUNCHER_PAGE_HEIGHT);
+  clutter_actor_set_size (priv->scroller,
+			  priv->width,
+			  priv->height);
 
   priv->grid = hd_launcher_grid_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->scroller),
@@ -291,15 +330,6 @@ hd_launcher_page_show (ClutterActor *actor)
   /* make the scrollbars appear and then fade out (they won't be shown
    * if the scrollable area is less than the screen size) */
   tidy_finger_scroll_show_scrollbars(priv->scroller);
-
-  g_debug ("W: %d REAL W: %d",priv->width,HD_COMP_MGR_LANDSCAPE_WIDTH);
-
-  if (priv->width == HD_COMP_MGR_LANDSCAPE_HEIGHT)
-  {
-    priv->width = priv->height;
-    priv->height = HD_COMP_MGR_LANDSCAPE_WIDTH;
-    hd_launcher_grid_layout (HD_LAUNCHER_GRID (priv->grid));
-  }
 }
 
 ClutterActor *

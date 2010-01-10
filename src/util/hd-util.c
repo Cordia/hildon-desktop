@@ -245,21 +245,23 @@ get_primary_crtc (MBWindowManager *wm, XRRScreenResources *res)
                                             HD_ATOM_RANDR_CONNECTOR_TYPE);
   rr_connector_panel = hd_comp_mgr_get_atom (HD_COMP_MGR (wm->comp_mgr),
                                              HD_ATOM_RANDR_CONNECTOR_TYPE_PANEL);
-
+ 
+  output = XRRGetOutputInfo (wm->xdpy, res, res->outputs[1]);
+  return output->crtc; 
   for (i = 0; i < res->noutput; i++)
     {
       output = XRRGetOutputInfo (wm->xdpy, res, res->outputs[i]);
       if (!output)
           continue;
-
+      
       if (XRRGetOutputProperty (wm->xdpy, res->outputs[i], rr_connector_type,
                                 0, 1, False, False, AnyPropertyType, &actual_type,
                                 &actual_format, &nitems, &bytes_after,
                                 &contype) == Success)
         {
-          if (actual_type == XA_ATOM && actual_format == 32 && nitems == 1 &&
-              *(Atom *)contype == rr_connector_panel)
-            {
+          if ((actual_type == XA_ATOM && actual_format == 32 && nitems == 1 &&
+              *(Atom *)contype == rr_connector_panel) || i == 0)
+            { g_debug ("ein?");
               ret = output->crtc;
               XRRFreeOutputInfo (output);
               break;
@@ -314,7 +316,7 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
   Status ret;
   int width, height, width_mm, height_mm;
   unsigned long one = 1;
-
+  
   if (randr_supported == -1)
     {
       ret = XRRQueryVersion (wm->xdpy, &rr_major, &rr_minor);
@@ -332,21 +334,23 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
   res = XRRGetScreenResources (wm->xdpy, wm->root_win->xwindow);
   if (!res)
     {
-      g_warning ("Couldn't get RandR screen resources\n");
+      g_debug ("Couldn't get RandR screen resources\n");
       return FALSE;
     }
 
-  if (crtc == ~0UL)
+  if (1)//crtc == ~0UL)
       crtc = get_primary_crtc (wm, res);
+  else
+      g_debug ("WTF?");
   if (crtc == ~0UL)
     {
-      g_warning ("Couldn't find CRTC to rotate\n");
+      g_debug ("Couldn't find CRTC to rotate\n");
       return FALSE;
     }
   crtc_info = XRRGetCrtcInfo (wm->xdpy, res, crtc);
-  if (!crtc_info)
+  if (crtc_info == NULL)
     {
-      g_warning ("Couldn't find CRTC info\n");
+      g_debug ("Couldn't find CRTC info\n");
       return FALSE;
     }
 
@@ -414,6 +418,9 @@ hd_util_change_screen_orientation (MBWindowManager *wm,
   ret = XRRSetCrtcConfig (wm->xdpy, res, crtc, crtc_info->timestamp,
                           crtc_info->x, crtc_info->y, crtc_info->mode, want,
                           crtc_info->outputs, crtc_info->noutput);
+
+  /* Store which rotation we have from the wm's perspective */
+  hd_render_manager_set_rotation (want); 
 
   /* hd_util_root_window_configured will be called directly after this root
    * window has been reconfigured */
