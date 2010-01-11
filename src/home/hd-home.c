@@ -2161,7 +2161,7 @@ hd_is_hildon_home_dialog (MBWindowManagerClient  *c)
     return FALSE;
 
   /* We can not close confirmation notes/dialogs like this */
-  if (HD_IS_NOTE (c) && HD_NOTE (c)->note_type == HdNoteTypeConfirmation)
+  if (HD_IS_CONFIRMATION_NOTE (c))
     return FALSE;
 
   if (!c->transient_for)

@@ -126,30 +126,6 @@ struct HdCompMgrClientPrivate
 
   guint                 hibernation_key;
   gboolean              can_hibernate : 1;
-
-  /*
-   * Portrait flags are the values of the according X window properties.
-   * If a property doesn't exist the flag is inherited from the client
-   * that it is transient for.  This case the flags in this structure
-   * are cached values.  The validity of the cache is delimited by the
-   * timestamp.  This is used to decide whether it is necessary to
-   * recalculate the inherited flags of a client.
-   *
-   * Possible values of @portrait_requested are:
-   * -- 0: not requested
-   * -- 1: requested, but this can be ignored if other, nonsupporting
-   *       clients are visible
-   * -- 2: demanded, switch to portrait whatever clients are visible.
-   *       In return the client promises to maximize itself so the
-   *       other clients wouldn't matter anyway.  Like everything
-   *       else this is a hack.
-   * -- other values: treated like 2
-   */
-  gboolean              portrait_supported;
-  gboolean              portrait_supported_inherited;
-  guint                 portrait_requested;
-  gboolean              portrait_requested_inherited;
-  guint                 portrait_timestamp;
 };
 
 extern gboolean hd_dbus_display_is_off;
@@ -325,7 +301,6 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
   HdCompMgr              *hmgr;
   MBWindowManagerClient  *wm_client = MB_WM_COMP_MGR_CLIENT (obj)->wm_client;
   HdRunningApp          *app;
-  guint32                *prop;
 
   hmgr = HD_COMP_MGR (wm_client->wmref->comp_mgr);
 
@@ -347,39 +322,6 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
                            (gpointer)app,
                            (gpointer)++windows);
     }
-
-  /* Set portrait_* initially. */
-  prop = hd_util_get_win_prop_data_and_validate (
-                              wm_client->wmref->xdpy,
-                              wm_client->window->xwindow,
-                              hmgr->priv->atoms[HD_ATOM_WM_PORTRAIT_OK],
-                              XA_CARDINAL, 32, 1, NULL);
-  if (prop)
-    {
-      priv->portrait_supported = *prop != 0;
-      XFree (prop);
-    }
-  else
-    priv->portrait_supported_inherited = TRUE;
-
-  prop = hd_util_get_win_prop_data_and_validate (
-                       wm_client->wmref->xdpy,
-                       wm_client->window->xwindow,
-                       hmgr->priv->atoms[HD_ATOM_WM_PORTRAIT_REQUESTED],
-                       XA_CARDINAL, 32, 1, NULL);
-  if (prop)
-    {
-      priv->portrait_requested = *prop;
-      XFree (prop);
-    }
-  else
-    priv->portrait_requested_inherited = TRUE;
-
-  g_debug ("portrait properties of %p: supported=%d requested=%d", wm_client,
-           priv->portrait_supported_inherited
-             ? -1 : priv->portrait_supported,
-           priv->portrait_requested_inherited
-             ? -1 : priv->portrait_requested);
 
   return 1;
 }
@@ -483,7 +425,8 @@ static void hd_comp_mgr_effect (MBWMCompMgr *mgr, MBWindowManagerClient *c,
                                 MBWMCompMgrClientEvent event);
 static Bool hd_comp_mgr_client_property_changed (XPropertyEvent *event,
                                                  HdCompMgr *hmgr);
-static Bool hd_comp_mgr_portrait_forecast (MBWindowManager *wm);
+static Bool hd_comp_mgr_portrait_demanded (MBWindowManager *wm);
+static Bool hd_comp_mgr_portrait_prohibited (MBWindowManager *wm);
 
 int
 hd_comp_mgr_class_type ()
@@ -622,9 +565,13 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   /* Rotate the desktop if matchobox thinks a new client
    * will request it soon. */
   mb_wm_object_signal_connect (MB_WM_OBJECT (cmgr->wm),
-                  MBWindowManagerSignalPortraitForecast,
-                  (MBWMObjectCallbackFunc)hd_comp_mgr_portrait_forecast,
+                  MBWindowManagerSignalPortraitDemanded,
+                  (MBWMObjectCallbackFunc)hd_comp_mgr_portrait_demanded,
                   NULL);
+  mb_wm_object_signal_connect (MB_WM_OBJECT (cmgr->wm),
+                MBWindowManagerSignalPortraitProhibited,
+                (MBWMObjectCallbackFunc)hd_comp_mgr_portrait_prohibited,
+                NULL);
 
   hd_render_manager_set_state(HDRM_STATE_HOME);
 
@@ -730,10 +677,9 @@ hd_comp_mgr_client_prefers_compositing (MBWindowManagerClient *c)
 Bool
 hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
 {
-  static gint32 idontcare[] = { -1 };
-  Atom pok, prq, killable, able_to_hibernate, dnd, nothread;
+  Atom killable, able_to_hibernate, dnd, nothread;
   gboolean non_comp_changed;
-  gint32 *value;
+  gint value;
   MBWindowManager *wm;
   HdCompMgrClient *cc;
   MBWindowManagerClient *c;
@@ -874,45 +820,20 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
     }
 
   /* Process PORTRAIT flags */
-  pok = hd_comp_mgr_get_atom (hmgr, HD_ATOM_WM_PORTRAIT_OK);
-  prq = hd_comp_mgr_get_atom (hmgr, HD_ATOM_WM_PORTRAIT_REQUESTED);
-  if (event->atom != pok && event->atom != prq)
+  if (event->atom == wm->atoms[MBWM_ATOM_HILDON_PORTRAIT_MODE_SUPPORT])
+    {
+      if (!(c = mb_wm_managed_client_from_xwindow (wm, event->window)))
+        return False;
+      value = c->window->portrait_supported;
+    }
+  else if (event->atom == wm->atoms[MBWM_ATOM_HILDON_PORTRAIT_MODE_REQUEST])
+    {
+      if (!(c = mb_wm_managed_client_from_xwindow (wm, event->window)))
+        return False;
+      value = c->window->portrait_requested;
+    }
+  else
     return True;
-
-  /* Read the new property value. */
-  if (event->state == PropertyNewValue)
-    value = hd_util_get_win_prop_data_and_validate (wm->xdpy, event->window,
-                                                    event->atom, XA_CARDINAL,
-                                                    32, 1, NULL);
-  else
-    value = idontcare;
-  if (!value)
-    goto out0;
-
-  /* Get the client whose property changed. */
-  if (!(c = mb_wm_managed_client_from_xwindow (wm, event->window)))
-    /* Care about fullscreen clients. */
-    c = mb_wm_managed_client_from_frame (wm, event->window);
-  if (!c || !(cc = HD_COMP_MGR_CLIENT (c->cm_client)))
-    goto out1;
-
-  /* Process the property value. */
-  if (event->atom == pok)
-    {
-      cc->priv->portrait_supported            = *value > 0;
-      cc->priv->portrait_supported_inherited  = *value < 0;
-    }
-  else
-    {
-      cc->priv->portrait_requested            = *value > 0 ? *value : 0;
-      cc->priv->portrait_requested_inherited  = *value < 0;
-    }
-  g_debug ("portrait property of %p changed: supported=%d requested=%d", c,
-           cc->priv->portrait_supported_inherited
-             ? -1 : cc->priv->portrait_supported,
-           cc->priv->portrait_requested_inherited
-             ? -1 : cc->priv->portrait_requested);
-
 
   /* Switch HDRM state if we need to.  Don't consider changing the state if
    * it is approved by the new value of the property.  We must reconsider
@@ -920,23 +841,20 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   if (STATE_IS_PORTRAIT (hd_render_manager_get_state()))
     { /* Portrait => landscape? */
       hd_app_mgr_mce_activate_accel_if_needed (FALSE);
-      if (*value <= 0 && !hd_comp_mgr_should_be_portrait (hmgr))
+      if (value <= 0 && !hd_comp_mgr_should_be_portrait (hmgr))
         hd_render_manager_set_state_unportrait ();
     }
   else if (STATE_IS_PORTRAIT_CAPABLE (hd_render_manager_get_state()))
     { /* Landscape => portrait? */
       hd_app_mgr_mce_activate_accel_if_needed (FALSE);
-      if (*value != 0 && hd_comp_mgr_should_be_portrait (hmgr))
+      if (value != 0 && hd_comp_mgr_should_be_portrait (hmgr))
         hd_render_manager_set_state_portrait ();
     }
 
-out1:
-  if (value != idontcare)
-    XFree (value);
-out0:
   return False;
 }
 
+#if 0
 /* %MBWindowManagerSignalPortraitForecast callback */
 static Bool
 hd_comp_mgr_portrait_forecast (MBWindowManager *wm)
@@ -962,14 +880,14 @@ hd_comp_mgr_portrait_forecast (MBWindowManager *wm)
         {
           if (!mb_wm_client_is_map_confirmed (c))
             {
-              if (c->window->portrait_on_map > 1)
+              if (c->window->portrait_requested > 1)
                 /* Forceful client, surrender. */
                 break;
               else
                 continue;
             }
 
-          if (HD_COMP_MGR_CLIENT (c->cm_client)->priv->portrait_supported)
+          if (c->portrait_supported)
             /* Agrees. */
             continue;
 
@@ -992,7 +910,7 @@ hd_comp_mgr_portrait_forecast (MBWindowManager *wm)
 
   /* See who caused us the pain? */
   for (c = wm->stack_top; c; c = c->stacked_below)
-    if (!mb_wm_client_is_map_confirmed (c) && c->window->portrait_on_map)
+    if (!mb_wm_client_is_map_confirmed (c) && c->window->portrait_requested > 0)
       {
         if (activate)
           {
@@ -1009,6 +927,21 @@ hd_comp_mgr_portrait_forecast (MBWindowManager *wm)
           mb_wm_client_hide (c);
       }
 
+  return False;
+}
+#endif
+
+static Bool
+hd_comp_mgr_portrait_demanded (MBWindowManager *wm)
+{
+  hd_transition_rotate_screen (wm, TRUE);
+  return False;
+}
+
+static Bool
+hd_comp_mgr_portrait_prohibited (MBWindowManager *wm)
+{
+  hd_transition_rotate_screen (wm, FALSE);
   return False;
 }
 
@@ -1259,7 +1192,7 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (!STATE_IS_PORTRAIT (hd_render_manager_get_state ())
       && hd_transition_is_rotating_to_portrait ()
       && !mb_wm_client_is_map_confirmed (c)
-      && c->window->portrait_on_map)
+      && c->window->portrait_requested > 0)
     hd_transition_rotate_screen (mgr->wm, FALSE);
 
   /* Dialogs and Notes (including notifications) have already been dealt
@@ -2918,40 +2851,6 @@ hd_comp_mgr_kill_all_apps (HdCompMgr *hmgr)
   hd_app_mgr_kill_all ();
 }
 
-/* Update the inherited portrait flags of @cs if they were calculated
- * earlier than @now.  If @now is G_MAXUINT the flags are uncoditionally
- * updated but are not cached.  Returns @cs's %HdCompMgrClient. */
-static HdCompMgrClient *
-hd_comp_mgr_update_clients_portrait_flags (MBWindowManagerClient *cs,
-                                           guint now)
-{
-  HdCompMgrClient *hcmgrcs, *hcmgrct;
-
-  hcmgrcs = HD_COMP_MGR_CLIENT (cs->cm_client);
-  if ((hcmgrcs->priv->portrait_supported_inherited
-       || hcmgrcs->priv->portrait_requested_inherited)
-      && hcmgrcs->priv->portrait_timestamp != now)
-    { /* @cs has outdated flags */
-      if (  !hcmgrcs->priv->portrait_requested_inherited
-          && hcmgrcs->priv->portrait_requested
-          && hcmgrcs->priv->portrait_supported_inherited)
-        /* Add some crap to the pile: if you request but don't say
-         * you support you do. */
-        hcmgrcs->priv->portrait_supported = TRUE;
-      else if (cs->transient_for)
-        { /* Get the parent's and copy them. */
-          hcmgrct = hd_comp_mgr_update_clients_portrait_flags (cs->transient_for,
-                                                               now);
-          if (hcmgrcs->priv->portrait_supported_inherited)
-            hcmgrcs->priv->portrait_supported = hcmgrct->priv->portrait_supported;
-          if (hcmgrcs->priv->portrait_requested_inherited)
-            hcmgrcs->priv->portrait_requested = hcmgrct->priv->portrait_requested;
-        }
-      if (now != G_MAXUINT)
-        hcmgrcs->priv->portrait_timestamp = now;
-    }
-  return hcmgrcs;
-}
 /* Does any visible client request portrait mode? Or if assume_requested==TRUE
  * we only return false if someone doesn't support portrait mode.
  * Are all of them concerned prepared for it? */
@@ -2960,7 +2859,6 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
 {
   static guint counter;
   MBWindowManager *wm;
-  HdCompMgrClient *hcmgrc;
   MBWindowManagerClient *c;
   gboolean any_supports, any_requests;
 
@@ -3002,12 +2900,12 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
         continue;
 
       /* Get @portrait_supported/requested updated. */
-      hcmgrc = hd_comp_mgr_update_clients_portrait_flags (c, counter);
-      PORTRAIT ("SUPPORT IS %d", hcmgrc->priv->portrait_supported);
-      if (!hcmgrc->priv->portrait_supported)
+      mb_wm_client_update_portrait_flags (c, counter);
+      PORTRAIT ("SUPPORT IS %d", c->portrait_supported);
+      if (!c->portrait_supported)
         return FALSE;
       any_supports  = TRUE;
-      any_requests |= hcmgrc->priv->portrait_requested != 0;
+      any_requests |= c->portrait_requested != 0;
 
       /*
        * This is a workaround for the fullscreen incoming call dialog.
@@ -3016,8 +2914,8 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
        * clutter sense.  This is an evidence that we just cannot
        * rely on visibility checking entirely. TODO remove later
        */
-      if (hcmgrc->priv->portrait_requested > 1
-          || (hcmgrc->priv->portrait_requested && c->window
+      if (c->portrait_requested > 1
+          || (c->portrait_requested && c->window
               && c->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen))
         {
           PORTRAIT ("DEMANDED");
@@ -3098,8 +2996,8 @@ gboolean
 hd_comp_mgr_client_supports_portrait (MBWindowManagerClient *mbwmc)
 {
   /* Don't mess with hd_comp_mgr_should_be_portrait()'s @counter. */
-  return hd_comp_mgr_update_clients_portrait_flags (mbwmc, G_MAXUINT)
-    ->priv->portrait_supported;
+  mb_wm_client_update_portrait_flags (mbwmc, G_MAXUINT);
+  return mbwmc->portrait_supported;
 }
 
 static void

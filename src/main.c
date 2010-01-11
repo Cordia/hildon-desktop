@@ -206,7 +206,6 @@ theme_button_type_func (const char *type_name,
 static void
 toggle_portraitable(MBWindowManager   *wm)
 {
-  HdCompMgr *hmgr = HD_COMP_MGR(wm->comp_mgr);
   MBWindowManagerClient *c;
   for (c=wm->stack_top;c;c=c->stacked_below)
     {
@@ -219,8 +218,8 @@ toggle_portraitable(MBWindowManager   *wm)
           gboolean new_supports = !hd_comp_mgr_client_supports_portrait(c);
           guint value = new_supports ? 1 : 0;
           mb_wm_util_async_trap_x_errors (wm->xdpy);
-          XChangeProperty(c->wmref->xdpy, c->window->xwindow,
-              hd_comp_mgr_get_atom (hmgr, HD_ATOM_WM_PORTRAIT_OK),
+          XChangeProperty(wm->xdpy, c->window->xwindow,
+                          wm->atoms[MBWM_ATOM_HILDON_PORTRAIT_MODE_SUPPORT],
                           XA_CARDINAL, 32, PropModeReplace,
                           (unsigned char *)&value, 1);
           mb_wm_util_async_untrap_x_errors ();
