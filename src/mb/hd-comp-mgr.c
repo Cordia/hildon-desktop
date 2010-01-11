@@ -1120,16 +1120,17 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
       g_assert (l < stack->len);
       if (!is_interesting_client (c = stack->pdata[l]))
         continue;
-      if (c->portrait_requested)
+      mb_wm_client_update_portrait_flags (c, G_MAXUINT);
+      if (!c->portrait_supported)
         {
-          g_warning("DEMANDED");
-          hd_transition_rotate_screen (wm, TRUE);
+          g_warning("PROHIBITED %p", c);
+          hd_transition_rotate_screen (wm, FALSE);
           break;
         }
-      else if (!c->portrait_supported)
+      else if (c->portrait_requested)
         {
-          g_warning("PROHIBITED");
-          hd_transition_rotate_screen (wm, FALSE);
+          g_warning("DEMANDED %p", c);
+          hd_transition_rotate_screen (wm, TRUE);
           break;
         }
     }
