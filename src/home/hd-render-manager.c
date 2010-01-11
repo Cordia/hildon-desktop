@@ -113,9 +113,6 @@ enum
 {
   PROP_0,
   PROP_STATE,
-  PROP_STATE_IS_APP,
-  PROP_STATE_IS_TASW,
-  PROP_STATE_IS_TALU,
 };
 /* ------------------------------------------------------------------------- */
 
@@ -412,23 +409,6 @@ hd_render_manager_class_init (HdRenderManagerClass *klass)
                              G_PARAM_STATIC_NAME |
                              G_PARAM_STATIC_BLURB);
   g_object_class_install_property (gobject_class, PROP_STATE, pspec);
-
-  /* this crap is needed by libmatchbox to learn about our state a bit */
-  pspec = g_param_spec_boolean ("state-is-app", "foo",
-                                "STATE_IS_APP()", FALSE,
-                                G_PARAM_READABLE|G_PARAM_STATIC_NICK|
-                                G_PARAM_STATIC_NAME|G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (gobject_class, PROP_STATE_IS_APP, pspec);
-  pspec = g_param_spec_boolean ("state-is-tasw", "bar",
-                                "HDRM_STATE_TASK_NAV", FALSE,
-                                G_PARAM_READABLE|G_PARAM_STATIC_NICK|
-                                G_PARAM_STATIC_NAME|G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (gobject_class, PROP_STATE_IS_TASW, pspec);
-  pspec = g_param_spec_boolean ("state-is-talu", "baz",
-                                "HDRM_STATE_LAUNCHER", FALSE,
-                                G_PARAM_READABLE|G_PARAM_STATIC_NICK|
-                                G_PARAM_STATIC_NAME|G_PARAM_STATIC_BLURB);
-  g_object_class_install_property (gobject_class, PROP_STATE_IS_TALU, pspec);
 }
 
 static void
@@ -1599,18 +1579,6 @@ hd_render_manager_get_property (GObject    *object,
     {
     case PROP_STATE:
       g_value_set_enum (value, hd_render_manager_get_state ());
-      break;
-    case PROP_STATE_IS_APP:
-      g_value_set_boolean (value,
-                           STATE_IS_APP (hd_render_manager_get_state ()));
-      break;
-    case PROP_STATE_IS_TASW:
-      g_value_set_boolean (value,
-                 hd_render_manager_get_state () == HDRM_STATE_TASK_NAV);
-      break;
-    case PROP_STATE_IS_TALU:
-      g_value_set_boolean (value,
-                 hd_render_manager_get_state () == HDRM_STATE_LAUNCHER);
       break;
     default:
       /* We don't have any other property... */
