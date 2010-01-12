@@ -1,5 +1,32 @@
 2010-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#147820 Messaging UI appears improperly when tapping on
+		  IM option from the Call log in portrait mode
+
+	Implement a more generic "rotate early" heuristics which can also
+	rotate to landscape and is more courageous.
+
+	* src/home/hd-home.h:
+	* src/home/hd-home.c (hd_is_hildon_home_dialog):
+	  Made public for lp_forecast().
+	* src/mb/hd-atoms.h
+	* src/mb/hd-atoms.c:
+	  Removed the portrait atoms which are now in mb.
+	* src/main.c:
+	  Updated for that.
+	* src/mb/hd-comp-mgr.c:
+	  hd_comp_mgr_register_client:
+	    Decide if the newly registered client would cause rotation
+	    and start it beforehand.
+	  HdCompMgrClientPrivate:
+	    Moved portrait flags to mb.
+	  hd_comp_mgr_update_clients_portrait_flags:
+	    Moved to mb.
+	  hd_comp_mgr_portrait_forecast:
+	    Removed in favor of lp_forecast().
+
+2010-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_may_be_portrait):
 	  May not if we find a visible client which explicitly REQUEST:s=0.
 	  Unbreaks Phone's Orientation=Landscape setting which got broken
