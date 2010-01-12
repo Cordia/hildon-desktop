@@ -1,3 +1,11 @@
+2009-12-14  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+	Put non-categorized launcher items in the top page instead of the (possibly
+	non-existent) applications page.
+	Fixes: NB#152817
+
+	* src/launcher/hd-launcher.c:
+
 2010-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#147820 Messaging UI appears improperly when tapping on
