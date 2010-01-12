@@ -129,6 +129,7 @@ struct HdCompMgrClientPrivate
 };
 
 extern gboolean hd_dbus_display_is_off;
+static guint portrait_freshness_counter;
 
 HdRunningApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
                                                HdCompMgr *hmgr);
@@ -943,7 +944,7 @@ is_interesting_client (MBWindowManagerClient *client)
 {
   return (MB_WM_CLIENT_CLIENT_TYPE (client)
           & (MBWMClientTypeApp|MBWMClientTypeDialog))
-    || MB_WM_CLIENT_IS_CONFIRMATION_NOTE (client);
+    || HD_IS_CONFIRMATION_NOTE (client);
 }
 
 /* Returns the number of children, grandchildren, etc. of @client,
@@ -960,6 +961,8 @@ cntchildren (MBWindowManagerClient *client)
   return i;
 }
 
+/* Returns the stacking layer of @client, taking state and transiency
+ * into account. */
 static MBWMStackLayerType
 layer_of (MBWindowManagerClient *client,
           gboolean needs_desktop, gboolean goto_app_state)
@@ -993,6 +996,9 @@ ordered (MBWindowManagerClient *lc, MBWindowManagerClient *rc,
     : !(MB_WM_CLIENT_CLIENT_TYPE (rc) & MBWMClientTypeDesktop);
 }
 
+/* Guess whether we'd go to portrait or landscape when the newly mapped
+ * @client is finally settled and rotate as soon as soon we can to either
+ * direction.  Try hard not to guess wrong. */
 static void
 lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
 {
@@ -1003,20 +1009,14 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
   HDRMStateEnum state;
   unsigned l, r;
 
-#if 0
-  if (mb_wm_client_wants_portrait(client))
-    /* Leave it up to the desktop to do something and we'll show
-     * and activate the client when the screen size changes. */
-    return MBWindowManagerSignalPortraitForecast;
-#endif
-
   /* Don't bother with anything but application windows, dialogs
    * and confirmation notes.  We simply don't have any other type
    * of interesting clients. */
   if (!is_interesting_client (client))
     return;
 
-  /* Construct the plausible new window @stack:ing.  (&stack[0] == top) */
+  /* We don't know where @client would be stacked, so construct the plausible
+   * new window @stack:ing.  (&stack[0] == top) */
   stack = g_ptr_array_new ();
   for (c = wm->stack_top; c; c = c->stacked_below)
     g_ptr_array_add (stack, c);
@@ -1084,7 +1084,7 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
   goto_app_state = (ctype & MBWMClientTypeApp);
   if (client->transient_for)
     {
-      goto_app_state |= MB_WM_CLIENT_IS_CONFIRMATION_NOTE (client);
+      goto_app_state |= HD_IS_CONFIRMATION_NOTE (client);
       goto_app_state |= (ctype & MBWMClientTypeDialog)
         && state != HDRM_STATE_TASK_NAV;
     }
@@ -1107,86 +1107,30 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
         }
     }
 
-  /* Leaving EDIT_DLG state will hildon-home dialogs. */
-  if (state == HDRM_STATE_HOME_EDIT_DLG && goto_app_state)
-    /* TODO  */;
-
-  for (l = 0; l < stack->len; l++)
-    g_warning("DO %p", stack->pdata[l]);
-
   /* Find the topmost interesting client and see its portrait preferences. */
+  portrait_freshness_counter++;
   for (l = 0; stack->pdata[l] != wm->desktop; l++)
     {
       g_assert (l < stack->len);
       if (!is_interesting_client (c = stack->pdata[l]))
         continue;
-      mb_wm_client_update_portrait_flags (c, G_MAXUINT);
+      if (state == HDRM_STATE_HOME_EDIT_DLG && goto_app_state
+          && hd_is_hildon_home_dialog (c))
+        /* Leaving EDIT_DLG state would close hildon-home dialogs. */
+        continue;
+
+      mb_wm_client_update_portrait_flags (c, portrait_freshness_counter);
       if (!c->portrait_supported)
         {
-          g_warning("PROHIBITED %p", c);
           hd_transition_rotate_screen (wm, FALSE);
           break;
         }
       else if (c->portrait_requested)
         {
-          g_warning("DEMANDED %p", c);
           hd_transition_rotate_screen (wm, TRUE);
           break;
         }
     }
-
-#if 0
-  scr = gdk_screen_get_default();
-  scrw = gdk_screen_get_width (scr);
-  scrh = gdk_screen_get_height (scr);
-  if (scrw > scrh)
-    { /* screen: landscape */
-      guint unsure_w, unsure_h;
-
-      unsure_w = scrw;
-      unsure_h = scrh;
-      for (l = 0; l < stack->len; l++)
-        {
-          guint w, h;
-
-          c = stack->pdata[l];
-
-          /* Only care about apps, dialogs, and confirmation notes. */
-          if (!(MB_WM_CLIENT_CLIENT_TYPE (client)
-                & (MBWMClientTypeApp|MBWMClientTypeDialog))
-              && !MB_WM_CLIENT_IS_CONFIRMATION_NOTE (client))
-            continue;
-
-          /* Compensate for the monster hack. */
-          if ((w = client->window->geometry.width) % 10)
-            w++;
-          if ((h = client->window->geometry.height) % 10)
-            h++;
-
-          if (client->window.geometry.width < scrw)
-            { /* screen: landscape, client: portrait */
-              if (unsure_w + h > scrw)
-                {
-                  unsure_w = scrw > h ? scrw - h : 0;
-                }
-            }
-          else
-            { /* screen: landscape, client: landscape */
-              if (unsure_h + h > scrh)
-                {
-                  unsure_h = scrh > h ? scrh - h : 0;
-                }
-            }
-        }
-    }
-  else
-    { /* screen: portrait */
-      GArray *unsure;
-
-      unsure = g_array_new (FALSE, FALSE, sizeof(MBGeometry));
-      g_array_append_val (unsure, ((MBGeometry){ y: 0, height: scrh }));
-    }
-#endif
 
   g_ptr_array_free (stack, TRUE);
 }
@@ -1199,6 +1143,8 @@ hd_comp_mgr_register_client (MBWMCompMgr           * mgr,
   HdCompMgrPrivate              * priv = HD_COMP_MGR (mgr)->priv;
   MBWMCompMgrClass              * parent_klass =
     MB_WM_COMP_MGR_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(mgr)));
+  MBWindowManager               * wm = mgr->wm;
+  unsigned                        was;
 
   g_debug ("%s, c=%p ctype=%d", __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c));
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
@@ -1217,8 +1163,10 @@ hd_comp_mgr_register_client (MBWMCompMgr           * mgr,
       return;
     }
 
-  MBWindowManager *wm = mgr->wm;
-  unsigned was = gdk_screen_get_width (gdk_screen_get_default());
+  /* Rotate early if we need to.  If lp_forecast() did postpone client
+   * activation until the root window is reconfigured, otherwise do it
+   * now. */
+  was = gdk_screen_get_width (gdk_screen_get_default());
   lp_forecast (wm, c);
   if (was == gdk_screen_get_width (gdk_screen_get_default()))
     mb_wm_activate_client (wm, c);
@@ -2973,6 +2921,12 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
           HdRunningApp *old_current_app;
           HdRunningApp *new_current_app;
 
+          /* Reset our 'map' timer, so that if we're asked to do a starting
+           * transition, we'll know if jitter could have meant the app was
+           * already showing when we got the request */
+          gettimeofday(&priv->last_map_time, NULL);
+
+
           /* Switch the hibernatable state for the new current client. */
           if (priv->current_hclient &&
               hd_comp_mgr_client_can_hibernate (priv->current_hclient))
@@ -3100,13 +3054,12 @@ hd_comp_mgr_kill_all_apps (HdCompMgr *hmgr)
 static gboolean
 hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
 {
-  static guint counter;
   MBWindowManager *wm;
   MBWindowManagerClient *c;
   gboolean any_supports, any_requests;
 
   /* Invalidate all cached, inherited portrait flags at once. */
-  counter++;
+  portrait_freshness_counter++;
 
   PORTRAIT ("SHOULD BE PORTRAIT?");
   any_supports = any_requests = FALSE;
@@ -3143,12 +3096,17 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
         continue;
 
       /* Get @portrait_supported/requested updated. */
-      mb_wm_client_update_portrait_flags (c, counter);
+      mb_wm_client_update_portrait_flags (c, portrait_freshness_counter);
       PORTRAIT ("SUPPORT IS %d", c->portrait_supported);
       if (!c->portrait_supported)
         return FALSE;
       any_supports  = TRUE;
       any_requests |= c->portrait_requested != 0;
+      if (!c->portrait_requested && !c->portrait_requested_inherited)
+        { /* Client explicity !REQUESTED portrait, obey. */
+          PORTRAIT ("PROHIBITED");
+          return FALSE;
+        }
 
       /*
        * This is a workaround for the fullscreen incoming call dialog.

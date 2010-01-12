@@ -1,3 +1,24 @@
+2010-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_may_be_portrait):
+	  May not if we find a visible client which explicitly REQUEST:s=0.
+	  Unbreaks Phone's Orientation=Landscape setting which got broken
+	  because of hd's automatic rotation because Phone claimed SUPPORT
+	  but didn't mean to be automatically rotated.
+
+2009-12-17  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Hildon-desktop changes for NB#131671 - Camera app loading screenshot
+	These are required, but do not fix the issue until other patches
+	are applied to libhildonmime and libosso.
+	
+	* src/launcher/hd-launcher.c: Ensure we don't try and start one 
+	  loading screen while we're already displaying another - causes
+	  flicker.
+	* src/mb/hd-comp-mgr.c: If we change the topmost app, reset our time
+	  since map counter. This stops us doing a loading screenshot if the 
+	  app we tried to launch was already running and we just swapped to it.	   	
+
 2009-12-14  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
 	Remove the second level (Applications) in the task launcher.

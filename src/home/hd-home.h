@@ -29,6 +29,7 @@
 #include <glib-object.h>
 
 #include <clutter/clutter-group.h>
+#include <matchbox/core/mb-wm.h>
 
 #include "hd-home-view.h"
 
@@ -81,6 +82,7 @@ ClutterActor *hd_home_get_operator (HdHome *home);
 ClutterActor *hd_home_get_front (HdHome *home);
 
 void hd_home_set_operator_applet (HdHome *home, ClutterActor *operator);
+gboolean hd_is_hildon_home_dialog (MBWindowManagerClient  *c);
 
 void hd_home_show_edge_indication (HdHome *home);
 void hd_home_hide_edge_indication (HdHome *home);

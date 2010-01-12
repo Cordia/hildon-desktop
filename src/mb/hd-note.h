@@ -41,13 +41,25 @@ typedef struct HdNoteClass HdNoteClass;
 #define HD_TYPE_NOTE (hd_note_class_type ())
 #define HD_IS_NOTE(c) (MB_WM_OBJECT_TYPE(c)==HD_TYPE_NOTE)
 
-#define HD_IS_BANNER_NOTE       MB_WM_CLIENT_IS_BANNER_NOTE
-#define HD_IS_INFO_NOTE         MB_WM_CLIENT_IS_INFO_NOTE
-#define HD_IS_CONFIRMATION_NOTE MB_WM_CLIENT_IS_CONFIRMATION_NOTE
-#define HD_IS_INCOMING_EVENT_PREVIEW_NOTE  \
-  MB_WM_CLIENT_IS_INCOMING_EVENT_PREVIEW_NOTE
-#define HD_IS_INCOMING_EVENT_NOTE          \
-  MB_WM_CLIENT_IS_INCOMING_EVENT_NOTE
+#define HD_IS_BANNER_NOTE(c) (HD_IS_NOTE(c) \
+             && HD_NOTE(c)->note_type == HdNoteTypeBanner)
+#define HD_IS_INFO_NOTE(c) (HD_IS_NOTE(c) \
+             && HD_NOTE(c)->note_type == HdNoteTypeInfo)
+#define HD_IS_CONFIRMATION_NOTE(c) (HD_IS_NOTE(c) \
+             && HD_NOTE(c)->note_type == HdNoteTypeConfirmation)
+#define HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c) (HD_IS_NOTE(c) \
+             && HD_NOTE(c)->note_type == HdNoteTypeIncomingEventPreview)
+#define HD_IS_INCOMING_EVENT_NOTE(c) (HD_IS_NOTE(c) \
+             && HD_NOTE(c)->note_type == HdNoteTypeIncomingEvent)
+
+typedef enum _HdNoteType
+{
+  HdNoteTypeBanner        = 0,
+  HdNoteTypeInfo,
+  HdNoteTypeConfirmation,
+  HdNoteTypeIncomingEventPreview,
+  HdNoteTypeIncomingEvent,
+}HdNoteType;
 
 enum
 {
@@ -57,6 +69,8 @@ enum
 struct HdNote
 {
   MBWMClientNote  parent;
+
+  HdNoteType      note_type;
 
   /* For Info:s (hd_util_modal_blocker_realize()) */
   unsigned long   modal_blocker_cb_id;

@@ -85,7 +85,7 @@ resize_note (XConfigureEvent *xev, MBWindowManagerClient *client)
   geom.height = n + client->window->geometry.height + s;
 
   /* Set geom.y */
-  if (MB_WM_CLIENT_NOTE (client)->note_type == MBWMClientNoteTypeBanner)
+  if (HD_NOTE (client)->note_type == HdNoteTypeBanner)
     { /* Display right below the application title bar. */
       MBWMXmlClient *c;
       MBWMXmlDecor  *d;
@@ -97,7 +97,7 @@ resize_note (XConfigureEvent *xev, MBWindowManagerClient *client)
                                                 MBWMDecorTypeNorth)) != NULL
         ? d->height : 40;
     }
-  else if (MB_WM_CLIENT_NOTE (client)->note_type == MBWMClientNoteTypeInfo)
+  else if (HD_NOTE (client)->note_type == HdNoteTypeInfo)
     /* Center vertically. */
     geom.y = (wm->xdpy_height-geom.height) / 2;
   else /* Confirmation */
@@ -194,32 +194,31 @@ hd_note_class_init (MBWMObjectClass *klass)
 static void
 hd_note_destroy (MBWMObject *this)
 {
-  MBWMClientNote *note = MB_WM_CLIENT_NOTE (this);
-  HdNote *hdnote = HD_NOTE (this);
+  HdNote *note = HD_NOTE (this);
 
-  if (hdnote->modal_blocker_cb_id)
+  if (note->modal_blocker_cb_id)
     mb_wm_main_context_x_event_handler_remove (
                                 MB_WM_CLIENT (this)->wmref->main_ctx,
                                 ButtonRelease,
-                                hdnote->modal_blocker_cb_id);
-  if (note->note_type == MBWMClientNoteTypeBanner
-      || note->note_type == MBWMClientNoteTypeInfo
-      || note->note_type == MBWMClientNoteTypeConfirmation)
+                                note->modal_blocker_cb_id);
+  if (note->note_type == HdNoteTypeBanner
+      || note->note_type == HdNoteTypeInfo
+      || note->note_type == HdNoteTypeConfirmation)
     mb_wm_main_context_x_event_handler_remove (
                                 MB_WM_CLIENT (this)->wmref->main_ctx,
                                 ConfigureNotify,
-                                hdnote->screen_size_changed_cb_id);
-  if (note->note_type == MBWMClientNoteTypeIncomingEvent)
+                                note->screen_size_changed_cb_id);
+  if (note->note_type == HdNoteTypeIncomingEvent)
     {
       guint i;
 
       mb_wm_main_context_x_event_handler_remove (
                                   MB_WM_CLIENT (this)->wmref->main_ctx,
                                   PropertyNotify,
-                                  hdnote->property_changed_cb_id);
+                                  note->property_changed_cb_id);
       for (i = 0; i < G_N_ELEMENTS (IEProperties); i++)
-        if (hdnote->properties[i])
-          XFree (hdnote->properties[i]);
+        if (note->properties[i])
+          XFree (note->properties[i]);
     }
 }
 
@@ -229,10 +228,32 @@ hd_note_init (MBWMObject *this, va_list vap)
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
   MBWindowManager       *wm = client->wmref;
   HdNote                *note = HD_NOTE (this);
+  char                  *prop;
 
-  switch (MB_WM_CLIENT_NOTE (note)->note_type)
-  {
-    case MBWMClientNoteTypeIncomingEvent: {
+  prop = get_x_window_string_property (note,
+                                       HD_ATOM_HILDON_NOTIFICATION_TYPE);
+  if (prop != NULL)
+    {
+      if (!strcmp (prop, "_HILDON_NOTIFICATION_TYPE_BANNER"))
+	note->note_type = HdNoteTypeBanner;
+      else if (!strcmp (prop, "_HILDON_NOTIFICATION_TYPE_INFO"))
+	note->note_type = HdNoteTypeInfo;
+      else if (!strcmp (prop, "_HILDON_NOTIFICATION_TYPE_CONFIRMATION"))
+	note->note_type = HdNoteTypeConfirmation;
+      else if (!strcmp (prop, "_HILDON_NOTIFICATION_TYPE_PREVIEW"))
+	note->note_type = HdNoteTypeIncomingEventPreview;
+      else if (!strcmp (prop, "_HILDON_NOTIFICATION_TYPE_INCOMING_EVENT"))
+	note->note_type = HdNoteTypeIncomingEvent;
+      else
+	{
+	  g_warning ("Unknown hildon notification type.");
+	}
+
+      XFree (prop);
+    }
+
+  if (note->note_type == HdNoteTypeIncomingEvent)
+    {
       MBGeometry geom;
       geom.width  = client->frame_geometry.width;
       geom.height = client->frame_geometry.height;
@@ -243,18 +264,19 @@ hd_note_init (MBWMObject *this, va_list vap)
        * It will remain mapped, but the user cannot click it directly. */
       client->stacking_layer = MBWMStackLayerUnknown;
 
-      /* Leave it up to the client to specify size; we just want
-       * it off of the screen. See comments below under
-       * MBWMClientNoteTypeIncomingEventPreview */
+      /* Leave it up to the client to specify size; we just want it off of
+       * the screen. See comments below under HdNoteTypeIncomingEventPreview */
       hd_note_request_geometry (client, &geom,
                                 MBWMClientReqGeomForced);
 
       note->property_changed_cb_id = mb_wm_main_context_x_event_handler_add (
                        wm->main_ctx, client->window->xwindow, PropertyNotify,
                        (MBWMXEventFunc)x_window_property_changed, note);
-      break;
+      return 1;
     }
-    case MBWMClientNoteTypeIncomingEventPreview: {
+
+  if (note->note_type == HdNoteTypeIncomingEventPreview)
+    {
       int n, s, w, e;
       MBGeometry geom;
 
@@ -269,9 +291,9 @@ hd_note_init (MBWMObject *this, va_list vap)
       geom.height = n + client->window->geometry.height + s;
 
       hd_note_request_geometry (client, &geom, MBWMClientReqGeomForced);
-      break;
     }
-    default: { /* Banner, Info, Confirmation */
+  else /* Banner, Info, Confirmation */
+    {
       resize_note (NULL, client);
       note->screen_size_changed_cb_id =
         mb_wm_main_context_x_event_handler_add (wm->main_ctx,
@@ -279,9 +301,7 @@ hd_note_init (MBWMObject *this, va_list vap)
                                                 ConfigureNotify,
                                                 (MBWMXEventFunc)resize_note,
                                                 client);
-      break;
     }
-  }
 
   return 1;
 }
@@ -314,11 +334,11 @@ hd_note_realize (MBWindowManagerClient *client)
     MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)));
 
   parent_klass->realize (client);
-  if (MB_WM_CLIENT_NOTE (client)->note_type == MBWMClientNoteTypeInfo)
+  if (HD_NOTE (client)->note_type == HdNoteTypeInfo)
     /* Close information notes when clicked outside. */
     HD_NOTE(client)->modal_blocker_cb_id =
             hd_util_modal_blocker_realize (client, FALSE);
-  else if (MB_WM_CLIENT_NOTE (client)->note_type == MBWMClientNoteTypeConfirmation)
+  else if (HD_NOTE (client)->note_type == HdNoteTypeConfirmation)
     /* Ping confirmation notes when clicked outside. */
     HD_NOTE(client)->modal_blocker_cb_id =
             hd_util_modal_blocker_realize (client, TRUE);
@@ -456,7 +476,7 @@ hd_note_stacking_layer(MBWindowManagerClient *client)
   Window dialog;
   MBWindowManager *wm;
 
-  if (MB_WM_CLIENT_NOTE (client)->note_type == MBWMClientNoteTypeIncomingEvent)
+  if (HD_NOTE (client)->note_type == HdNoteTypeIncomingEvent)
     return MBWMStackLayerUnknown;
 
   /* if there is an application menu and 'application not responding' note,
@@ -516,9 +536,9 @@ static void
 hd_note_stack (MBWindowManagerClient *client,
 	       int                    flags)
 {
-  if ((MB_WM_CLIENT_NOTE (client)->note_type == MBWMClientNoteTypeBanner ||
-       MB_WM_CLIENT_NOTE (client)->note_type == MBWMClientNoteTypeInfo)
-      && mb_wm_client_get_transient_for (client))
+  if ((HD_NOTE (client)->note_type == HdNoteTypeBanner ||
+       HD_NOTE (client)->note_type == HdNoteTypeInfo) &&
+      mb_wm_client_get_transient_for (client))
     {
       /* we need do nothing here; we are only overriding
        * the base routine which restacks the parent window,
@@ -537,18 +557,19 @@ hd_note_stack (MBWindowManagerClient *client,
 
 /* Define an accessor function that caches @IEProperties[@prop]'s value
  * in #HdNote.properties and returns it, which must not be XFree()d. */
-#define DEFINE_ACCESSOR(prop, field)                                     \
-const char *hd_note_get_##field (HdNote *self)                           \
-{                                                                        \
-  mbwm_return_val_if_fail (MB_WM_CLIENT_NOTE (self)->note_type == MBWMClientNoteTypeIncomingEvent, NULL);                                                     \
-  if (!self->properties[prop])                                           \
-    {                                                                    \
-      mb_wm_util_async_trap_x_errors (MB_WM_CLIENT(self)->wmref->xdpy);  \
-      self->properties[prop] = get_x_window_string_property (self,       \
-                                                    IEProperties[prop]); \
-      mb_wm_util_async_untrap_x_errors ();                               \
-    }                                                                    \
-  return self->properties[prop];                                         \
+#define DEFINE_ACCESSOR(prop, field)                                          \
+const char *hd_note_get_##field (HdNote *self)                                \
+{                                                                             \
+  mbwm_return_val_if_fail (self->note_type == HdNoteTypeIncomingEvent, NULL); \
+  if (!self->properties[prop])                                                \
+    {                                                                         \
+      mb_wm_util_async_trap_x_errors (                                        \
+          MB_WM_CLIENT(self)->wmref->xdpy);                                      \
+      self->properties[prop] = get_x_window_string_property (self,            \
+                  IEProperties[prop]);                                        \
+      mb_wm_util_async_untrap_x_errors ();                                    \
+    }                                                                         \
+  return self->properties[prop];                                              \
 }
 
 DEFINE_ACCESSOR(0, icon);

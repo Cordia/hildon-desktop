@@ -219,9 +219,9 @@ hd_util_client_has_modal_blocker (MBWindowManagerClient *c)
        (c_type == HdWmClientTypeAppMenu) ||
        (c_type == HdWmClientTypeStatusMenu) ||
        (c_type == MBWMClientTypeNote &&
-        MB_WM_CLIENT_NOTE (c)->note_type != MBWMClientNoteTypeIncomingEventPreview &&
-        MB_WM_CLIENT_NOTE (c)->note_type != MBWMClientNoteTypeIncomingEvent &&
-        MB_WM_CLIENT_NOTE (c)->note_type != MBWMClientNoteTypeBanner)) &&
+        HD_NOTE (c)->note_type != HdNoteTypeIncomingEventPreview &&
+        HD_NOTE (c)->note_type != HdNoteTypeIncomingEvent &&
+        HD_NOTE (c)->note_type != HdNoteTypeBanner)) &&
       !mb_wm_client_get_transient_for (c) &&
       mb_wm_get_modality_type (c->wmref) == MBWMModalitySystem;
 }

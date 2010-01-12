@@ -2140,7 +2140,7 @@ is_status_menu_dialog (MBWindowManagerClient *c)
   return FALSE;
 }
 
-static gboolean
+gboolean
 hd_is_hildon_home_dialog (MBWindowManagerClient  *c)
 {
   if (MB_WM_CLIENT_CLIENT_TYPE(c) != MBWMClientTypeDialog)
