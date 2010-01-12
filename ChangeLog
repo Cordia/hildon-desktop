@@ -1,4 +1,4 @@
-2009-12-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2010-01-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_may_be_portrait):
 	  May not if we find a visible client which explicitly REQUEST:s=0.
