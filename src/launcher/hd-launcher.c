@@ -459,6 +459,10 @@ hd_launcher_lazy_traverse_tree (gpointer data)
   HdLauncherPage *page;
   guint i;
 
+  if (!data)
+    /* Race condition? */
+    return FALSE;
+
   /* We're called back with huge latency so let's batch the work
    * to cut the overall population time. */
   for (i = 0; i < 5; i++)
@@ -475,23 +479,35 @@ hd_launcher_lazy_traverse_tree (gpointer data)
       page = g_datalist_get_data (&priv->pages,
                                   hd_launcher_item_get_category (item));
       if (!page)
-        /* Put it in the default level. */
-        page = g_datalist_get_data (&priv->pages, HD_LAUNCHER_ITEM_DEFAULT_CATEGORY);
+        /* Put it in the top level. */
+        page = g_datalist_get_data (&priv->pages, HD_LAUNCHER_ITEM_TOP_CATEGORY);
 
-      hd_launcher_page_add_tile (page, tile);
-
-      if (hd_launcher_item_get_item_type(item) == HD_CATEGORY_LAUNCHER)
+      /* If we don't have a top level, we're in deep trouble, but we still
+       * check just in case.
+       */
+      if (!page)
         {
-          g_signal_connect (tile, "clicked",
-                            G_CALLBACK (hd_launcher_category_tile_clicked),
-                            g_datalist_get_data (&priv->pages,
-                              hd_launcher_item_get_id (item)));
+          g_warning ("%s: Couldn't find any page to accept entry %s",
+              __FUNCTION__, hd_launcher_item_get_id (item));
+          g_object_unref (tile);
         }
-      else if (hd_launcher_item_get_item_type(item) == HD_APPLICATION_LAUNCHER)
+      else
         {
-          g_signal_connect (tile, "clicked",
-                            G_CALLBACK (hd_launcher_application_tile_clicked),
-                            item);
+          hd_launcher_page_add_tile (page, tile);
+
+          if (hd_launcher_item_get_item_type(item) == HD_CATEGORY_LAUNCHER)
+            {
+              g_signal_connect (tile, "clicked",
+                                G_CALLBACK (hd_launcher_category_tile_clicked),
+                                g_datalist_get_data (&priv->pages,
+                                  hd_launcher_item_get_id (item)));
+            }
+          else if (hd_launcher_item_get_item_type(item) == HD_APPLICATION_LAUNCHER)
+            {
+              g_signal_connect (tile, "clicked",
+                                G_CALLBACK (hd_launcher_application_tile_clicked),
+                                item);
+            }
         }
 
       g_object_unref (G_OBJECT (tdata->items->data));
@@ -507,6 +523,15 @@ static void
 hd_launcher_lazy_traverse_cleanup (gpointer data)
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+  HdLauncherTraverseData *tdata = data;
+
+  /* It's possible that the traversal has been cut short, so clean up the list. */
+  if (tdata->items)
+    {
+      g_list_foreach (tdata->items, (GFunc)g_object_unref, NULL);
+      g_list_free (tdata->items);
+    }
+
   g_free (data);
   priv->current_traversal = NULL;
 }
