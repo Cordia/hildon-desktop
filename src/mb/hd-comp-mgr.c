@@ -3014,6 +3014,12 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
         return FALSE;
       any_supports  = TRUE;
       any_requests |= hcmgrc->priv->portrait_requested != 0;
+      if (!hcmgrc->priv->portrait_requested
+          && !hcmgrc->priv->portrait_requested_inherited)
+        { /* Client explicity !REQUESTED portrait, obey. */
+          PORTRAIT ("PROHIBITED");
+          return FALSE;
+        }
 
       /*
        * This is a workaround for the fullscreen incoming call dialog.

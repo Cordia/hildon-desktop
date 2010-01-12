@@ -1,3 +1,11 @@
+2009-12-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_may_be_portrait):
+	  May not if we find a visible client which explicitly REQUEST:s=0.
+	  Unbreaks Phone's Orientation=Landscape setting which got broken
+	  because of hd's automatic rotation because Phone claimed SUPPORT
+	  but didn't mean to be automatically rotated.
+
 2009-12-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Hildon-desktop changes for NB#131671 - Camera app loading screenshot
