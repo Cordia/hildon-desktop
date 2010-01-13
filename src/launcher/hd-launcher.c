@@ -59,6 +59,7 @@ typedef struct
 {
   guint gsource_id;
   GList *items;
+  gboolean cancelled;
 } HdLauncherTraverseData;
 
 struct _HdLauncherPrivate
@@ -409,9 +410,9 @@ hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
 
   if (priv->current_traversal)
     {
-      g_source_remove(priv->current_traversal->gsource_id);
-      hd_launcher_lazy_traverse_cleanup (priv->current_traversal);
+      priv->current_traversal->cancelled = TRUE;
     }
+  priv->current_traversal = NULL;
 
   if (priv->pages)
     {
@@ -459,8 +460,10 @@ hd_launcher_lazy_traverse_tree (gpointer data)
   HdLauncherPage *page;
   guint i;
 
-  if (!data)
-    /* Race condition? */
+  if (!tdata ||
+      tdata->cancelled ||
+      tdata != priv->current_traversal)
+    /* This traversal is no longer current, go to cleanup. */
     return FALSE;
 
   /* We're called back with huge latency so let's batch the work
@@ -510,10 +513,14 @@ hd_launcher_lazy_traverse_tree (gpointer data)
             }
         }
 
-      g_object_unref (G_OBJECT (tdata->items->data));
+      g_object_unref (G_OBJECT (item));
       tdata->items = g_list_delete_link (tdata->items, tdata->items);
       if (!tdata->items)
-        return FALSE;
+        {
+          /* This traversal has finished. */
+          priv->current_traversal = NULL;
+          return FALSE;
+        }
     }
 
   return TRUE;
@@ -522,18 +529,18 @@ hd_launcher_lazy_traverse_tree (gpointer data)
 static void
 hd_launcher_lazy_traverse_cleanup (gpointer data)
 {
-  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
   HdLauncherTraverseData *tdata = data;
 
   /* It's possible that the traversal has been cut short, so clean up the list. */
+  tdata->cancelled = TRUE;
   if (tdata->items)
     {
       g_list_foreach (tdata->items, (GFunc)g_object_unref, NULL);
       g_list_free (tdata->items);
+      tdata->items = NULL;
     }
 
   g_free (data);
-  priv->current_traversal = NULL;
 }
 
 static void
@@ -551,8 +558,7 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
 
   if (priv->current_traversal)
     {
-      g_source_remove(priv->current_traversal->gsource_id);
-      hd_launcher_lazy_traverse_cleanup (priv->current_traversal);
+      priv->current_traversal->cancelled = TRUE;
     }
   priv->current_traversal = tdata;
 
@@ -569,11 +575,10 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
   g_list_foreach (tdata->items, (GFunc) hd_launcher_create_page, NULL);
 
   /* Then we add the tiles to them in a idle callback. */
-  tdata->gsource_id = clutter_threads_add_idle_full (
-                                     CLUTTER_PRIORITY_REDRAW + 20,
-                                     hd_launcher_lazy_traverse_tree,
-                                     tdata,
-                                     hd_launcher_lazy_traverse_cleanup);
+  clutter_threads_add_idle_full (CLUTTER_PRIORITY_REDRAW + 20,
+                                 hd_launcher_lazy_traverse_tree,
+                                 tdata,
+                                 hd_launcher_lazy_traverse_cleanup);
 }
 
 /* handle clicks to the fake launch image. If we've been up this long the
