@@ -1,7 +1,11 @@
+2010-01-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.125-1
+
 2010-01-13  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
-	Manage finishing and cleaning up the launcher idle tree traversal directly
-	instead of trusting g_source_remove.
+	Manage finishing and cleaning up the launcher idle tree traversal
+	directly instead of trusting g_source_remove.
 	Fixes: NB#152488
 
 	* src/launcher/hd-launcher.c:
@@ -23,8 +27,8 @@
 
 2010-01-12  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
-	Put non-categorized launcher items in the top page instead of the (possibly
-	non-existent) applications page.
+	Put non-categorized launcher items in the top page instead of the
+	(possibly non-existent) applications page.
 	Fixes: NB#152817
 
 	* src/launcher/hd-launcher.c:
@@ -105,7 +109,8 @@
 	  Publicized.
 	* src/util/hd-transition.c (hd_transition_completed):
 	  set_visibilities() when all of certain kinds of transition are done
-	* src/util/hd-transition.c (hd_transition_popup, hd_transition_fade, hd_transition_subview):
+	* src/util/hd-transition.c (hd_transition_popup, hd_transition_fade,
+	hd_transition_subview):
 	  them
 
 2009-12-10  Jan Arne Petersen  <jpetersen@openismus.com>
@@ -126,8 +131,8 @@
 
 	Fix of the fix of NB#149091 - Urho's pet feature not working properly,
 	which caused an effect similar to NB#142364 - Desktop stayed in portrait
-	when you enabled launching Phone by rotating and you close it in portrait
-	orientation.
+	when you enabled launching Phone by rotating and you close it in
+	portrait orientation.
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_may_be_portrait):
 	  You may not be if there's no clients supporting it, not even
@@ -138,6 +143,8 @@
 
 2009-12-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Release 2.2.124-1
+
 	Fix of the fix of the fix of NB#149091.  hd assert() failed
 	when the topmost app REQUEST=1'ed in hd_comp_mgr_client_property_changed()
 	because hd_app_mgr_mce_activate_accel_if_needed() changed portraitness
@@ -145,9 +152,11 @@
 
 	* src/launcher/hd-app-mgr.c (hd_app_mgr_mce_activate_accel_if_needed):
 	  Don't update_portraitness unless explicitly told so.
-	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed, hd_comp_mgr_restack):
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed,
+	hd_comp_mgr_restack):
 	  Don't.
-	* src/launcher/hd-app-mgr.c (hd_app_mgr_gconf_value_changed, hd_app_mgr_hdrm_state_change):
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_gconf_value_changed,
+	hd_app_mgr_hdrm_state_change):
 	  Do (as though it may not be a good idea in hd_app_mgr_hdrm_state_change).
 
 2009-12-09  Gordon Williams <gordon.williams@collabora.co.uk>

@@ -1,12 +1,25 @@
-hildon-desktop (1:2.2.125-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.125-1) unstable; urgency=low
 
-  * :)
+  Marc:
+  * Fixes: NB#152488 - Installing application from HAM crashes desktop
+  * Fixes: NB#152817 - device goes to reboot loop due SEGFAULT in
+    hildon-desktop
+  * Fixes: NB#150638 - Make the launcher view flat
 
- -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 09 Dec 2009 13:59:33 +0200
+  Adam:
+  * Fixes: NB#143792 - Device gets sometimes stuck to portrait mode
+  * Other portrait fixes.
+
+  Jan Arne:
+  * Fixes: NB#143334 - Impossible to make a lookup in the address book
+    with Cyrillic keyboard layout
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 13 Jan 2010 15:56:43 +0200
 
 hildon-desktop (1:2.2.124-1) unstable; urgency=low
 
-  * Fixes: NB#149993 - Phone application title: portrait to landscape is broken to certain extent
+  * Fixes: NB#149993 - Phone application title: portrait to landscape is broken
+    to certain extent
   * more intermediate crash fixes
 
  -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 09 Dec 2009 13:59:33 +0200
