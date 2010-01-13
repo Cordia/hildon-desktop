@@ -1,3 +1,11 @@
+2010-01-13  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+	Manage finishing and cleaning up the launcher idle tree traversal directly
+	instead of trusting g_source_remove.
+	Fixes: NB#152488
+
+	* src/launcher/hd-launcher.c:
+
 2010-01-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#143792 Device gets sometimes stuck to portrait mode
@@ -13,7 +21,7 @@
 	* src/main.c:
 	  Handle ctrl-shift-fn-l to rotate but don't change state.
 
-2009-12-14  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+2010-01-12  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
 	Put non-categorized launcher items in the top page instead of the (possibly
 	non-existent) applications page.
