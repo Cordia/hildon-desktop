@@ -1,3 +1,18 @@
+2010-01-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#143792 Device gets sometimes stuck to portrait mode
+
+	Implement Urho's idea of parachute and testing code.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  Request orientation not only when the old and new states differ
+	  in this regard but always, just to be (supposedly by some) safe.
+	* src/util/hd-transition.c (hd_transition_rotate_screen):
+	  Don't g_warning() if we're already in the requested orientation
+	  since this would be quite common now.
+	* src/main.c:
+	  Handle ctrl-shift-fn-l to rotate but don't change state.
+
 2009-12-14  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
 	Put non-categorized launcher items in the top page instead of the (possibly

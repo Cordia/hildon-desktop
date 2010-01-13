@@ -1671,8 +1671,8 @@ hd_transition_rotate_screen (MBWindowManager *wm, gboolean goto_portrait)
     {
       if (goto_portrait == hd_comp_mgr_is_portrait ())
         {
-          g_warning("%s: already in %s mode", __FUNCTION__,
-                    goto_portrait ? "portrait" : "landscape");
+          g_debug("%s: already in %s mode", __FUNCTION__,
+                  goto_portrait ? "portrait" : "landscape");
           return FALSE;
         }
 
