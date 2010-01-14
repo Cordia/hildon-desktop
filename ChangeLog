@@ -1,3 +1,18 @@
+2010-01-14  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#151893 - Wrong window shown after popping and pushing
+	windows using hildon_window_stack_pop_and_push_list
+	Also this is fixed as a consequence:
+	Fixes: NB#138244 - Startup view's bookmark list doesn't respond to
+	folder opening or closing after moving a bookmark
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_handle_stackable): Fix transiency
+	of the next window in the stack when putting a new window into middle
+	of the stack. Correct semantics of the 'replaced' return value (which
+	is not very useful for the caller...).
+	(hd_comp_mgr_map_notify): Adjust the code to cope with the corrected
+	'replaced' semantics.
+
 2010-01-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.125-1

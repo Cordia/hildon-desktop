@@ -1,6 +1,8 @@
 hildon-desktop (1:2.2.126-1~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fixes: NB#151893 - Wrong window shown after popping and pushing windows
+    using hildon_window_stack_pop_and_push_list
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 13 Jan 2010 16:03:28 +0200
 

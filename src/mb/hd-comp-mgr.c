@@ -1745,7 +1745,14 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
    }
 }
 
-/* returns HdApp of client that was replaced, or NULL */
+/* returns HdApp of client that was replaced (because the stack_index
+ * was the same) in 'replaced', or NULL.
+ * 'add_to_tn' returns a client if that client is a new window on a stack, or
+ * the first window in a stack.
+ *
+ * NOTICE THIS: 'replacing' here does NOT mean the same as replacing actors
+ * in the switcher! 'replaced' just means that one stack member was replaced
+ * with another. */
 static void
 hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
 		              HdApp **replaced, HdApp **add_to_tn)
@@ -1866,15 +1873,13 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
       else if (app->stack_index > 0 && old_leader &&
 	  (!last_follower || last_follower->stack_index < app->stack_index))
         {
+          /* no replacement possible in this branch
+           * (replacing of the leader is handled in the first branch) */
           g_debug ("%s: %p is NEW SECONDARY OF THE STACK\n", __FUNCTION__, app);
           app->leader = old_leader;
 
           app->leader->followers = g_list_append (old_leader->followers,
                                                   client);
-	  if (last_follower)
-	    *replaced = last_follower;
-	  else
-	    *replaced = old_leader;
         }
       else if (old_leader && app->stack_index > old_leader->stack_index)
         {
@@ -1932,23 +1937,45 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
           }
           else if (f->stack_index > app->stack_index)
           {
+            GList *l;
             g_debug ("%s: %p PRECEEDS (index %d) A FOLLOWER (with index %d)"
 	             " OF THE STACK\n", __func__, app, app->stack_index,
 		     f->stack_index);
             old_leader->followers
                 = g_list_insert_before (old_leader->followers, flink, app);
+
+            /* fix up transiency of the window on top of this one */
+            l = g_list_find (old_leader->followers, app);
+            if (l && l->next)
+            {
+              mb_wm_client_detransitise (MB_WM_CLIENT (l->next->data));
+              mb_wm_client_add_transient (MB_WM_CLIENT (app),
+                                          MB_WM_CLIENT (l->next->data));
+            }
+
             mb_wm_client_theme_change ((MBWindowManagerClient*)app);
           }
 	  else  /* f->stack_index < app->stack_index */
 	  {
             if (flink && flink->next)
 	    {
+              GList *l;
               g_debug ("%s: %p PRECEEDS (index %d) A FOLLOWER (with index %d)"
 	             " OF THE STACK\n", __func__, app, app->stack_index,
 		     HD_APP (flink->next->data)->stack_index);
               old_leader->followers
                  = g_list_insert_before (old_leader->followers, flink->next,
 				         app);
+
+              /* fix up transiency of the window on top of this one */
+              l = g_list_find (old_leader->followers, app);
+              if (l && l->next)
+              {
+                mb_wm_client_detransitise (MB_WM_CLIENT (l->next->data));
+                mb_wm_client_add_transient (MB_WM_CLIENT (app),
+                                            MB_WM_CLIENT (l->next->data));
+              }
+
               mb_wm_client_theme_change ((MBWindowManagerClient*)app);
 	    }
 	    else
@@ -1963,8 +1990,10 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
         }
       else  /* we are the first window in the stack */
         {
-          g_debug ("%s: %p is FIRST WINDOW OF THE STACK\n", __FUNCTION__, app);
+          g_debug ("%s: %p is FIRST WINDOW OF THE STACK\n",
+                      __FUNCTION__, app);
           app->leader = app;
+	  *add_to_tn = app;
         }
     }
 
@@ -2331,6 +2360,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   int topmost;
   HdApp *app = HD_APP (c), *to_replace, *add_to_tn;
+  gboolean actor_handled = FALSE;
 
   hd_comp_mgr_handle_stackable (c, &to_replace, &add_to_tn);
 
@@ -2412,7 +2442,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * stack index. */
       mb_wm_client_theme_change (c);
       mb_wm_client_theme_change (MB_WM_CLIENT(to_replace));
-  } else if (to_replace && topmost)
+      actor_handled = TRUE;
+    }
+  else if (to_replace && topmost)
     {
       ClutterActor *old_actor;
       old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
@@ -2432,7 +2464,42 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         /* This forces the decors to be redone, taking into account the
          * stack index. */
         mb_wm_client_theme_change (c);
+        actor_handled = TRUE;
       }
+    }
+  else if (!to_replace && app->stack_index >= 0
+           && app->leader != app && topmost)
+    {
+      ClutterActor *old_actor;
+      g_debug ("%s: new follower that is on top\n", __func__);
+      if (app->leader->followers)
+        {
+          /* find the follower to replace in the switcher
+           * (note that app is the last on the list) */
+          GList *l;
+
+          for (l = app->leader->followers; l->next && l->next->data != app;
+               l = l->next) ;
+
+          if (l->data == app)
+            old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
+		        MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			      MB_WM_CLIENT (app->leader)->cm_client));
+          else
+            old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
+		        MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			      MB_WM_CLIENT (l->data)->cm_client));
+        }
+      else
+        {
+          old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
+		        MB_WM_COMP_MGR_CLUTTER_CLIENT (
+			      MB_WM_CLIENT (app->leader)->cm_client));
+        }
+      hd_switcher_replace_window_actor (priv->switcher_group,
+                                        old_actor, actor);
+      mb_wm_client_theme_change (c);
+      actor_handled = TRUE;
     }
   else if (to_replace && to_replace->leader == app)
     {
@@ -2459,10 +2526,11 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * stack index. */
       mb_wm_client_theme_change (c);
       mb_wm_client_theme_change (MB_WM_CLIENT(to_replace));
+      actor_handled = TRUE;
     }
   else if (add_to_tn)
     {
-      g_debug ("%s: ADD ACTOR %p", __func__, actor);
+      g_debug ("%s: ADD ACTOR %p\n", __func__, actor);
       hd_switcher_add_window_actor (priv->switcher_group, actor);
       /* and make sure we're in app mode and not transitioning as
        * we'll want to show this new app right away*/
@@ -2472,6 +2540,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       /* This forces the decors to be redone, taking into account the
        * stack index. */
       mb_wm_client_theme_change (c);
+      actor_handled = TRUE;
     }
   else if (app->leader && app->leader != app &&
 		    app->leader->followers && !topmost)
@@ -2488,14 +2557,16 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       old_actor = mb_wm_comp_mgr_clutter_client_get_actor (
 		      MB_WM_COMP_MGR_CLUTTER_CLIENT (
 			      MB_WM_CLIENT (last_follower)->cm_client));
-      g_debug ("%s: REPLACE %p WITH %p and ADD %p BACK", __func__,
+      g_debug ("%s: 1 REPLACE %p WITH %p and ADD %p BACK\n", __func__,
 		      old_actor, actor, old_actor);
       hd_switcher_replace_window_actor (priv->switcher_group, old_actor, actor);
       hd_switcher_replace_window_actor (priv->switcher_group, actor, old_actor);
+      actor_handled = TRUE;
     }
 
 
-  if (!(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar)
+  if (!actor_handled
+      && !(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar)
       && !to_replace && !add_to_tn && topmost)
     {
             /*
@@ -2514,6 +2585,24 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * stack index (if any). */
       mb_wm_client_theme_change (c);
     }
+
+#if 0
+  /* print the stack */
+  if (app->leader)
+    {
+      GList *l;
+
+      g_printerr ("  leader %p (%lx), index %d\n", app->leader,
+                  MB_WM_CLIENT(app->leader)->window->xwindow,
+                  app->leader->stack_index);
+      for (l = app->leader->followers; l; l = l->next)
+       {
+         g_printerr ("  follower %p (%lx), index %d\n", l->data,
+                     MB_WM_CLIENT(l->data)->window->xwindow,
+                     HD_APP(l->data)->stack_index);
+       }
+    }
+#endif
 }
 
 static MBWindowManagerClient *
