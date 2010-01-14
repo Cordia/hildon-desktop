@@ -1423,7 +1423,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       hd_render_manager_sync_clutter_before();
 
       /* Switch between portrait <=> landscape modes. */
-      hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
+      if (oldstate != HDRM_STATE_UNDEFINED)
+        hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
 
       /* Reset CURRENT_APP_WIN when entering tasw. */
       /* Try not to change it unnecessary. */

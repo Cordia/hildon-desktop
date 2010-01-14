@@ -1,3 +1,11 @@
+2010-01-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Crash fix on hd startup.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  Don't crash when we're coming from UNDEFINED state and wm->cmgr
+	  is not around yet.
+
 2010-01-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.125-1
