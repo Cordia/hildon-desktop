@@ -1,5 +1,7 @@
 2010-01-14  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.126-1
+
 	Fixes: NB#151893 - Wrong window shown after popping and pushing
 	windows using hildon_window_stack_pop_and_push_list
 	Also this is fixed as a consequence:
