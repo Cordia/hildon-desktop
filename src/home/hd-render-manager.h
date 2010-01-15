@@ -81,7 +81,9 @@ typedef enum
   HDRM_STATE_LOADING        = 1 << 9, /* Loading screen */
   HDRM_STATE_LOADING_SUBWIN = 1 << 10, /* Loading screen, but displaying
                                          background apps */
-  HDRM_STATE_NON_COMP_PORT  = 1 << 11 /* non-composited portrait mode */
+  HDRM_STATE_NON_COMP_PORT  = 1 << 11, /* non-composited portrait mode */
+  HDRM_STATE_AFTER_TKLOCK  = 1 << 12 /* bogus mode used in state transition
+                                         after tklock */
 } HDRMStateEnum;
 
 /* Does the desktop need to be above apps? */

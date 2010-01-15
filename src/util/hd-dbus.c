@@ -23,6 +23,7 @@
 
 gboolean hd_dbus_display_is_off = FALSE;
 gboolean hd_dbus_tklock_on = FALSE;
+HDRMStateEnum hd_dbus_state_before_tklock = HDRM_STATE_UNDEFINED;
 
 static DBusConnection *connection, *sysbus_conn;
 
@@ -83,6 +84,7 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
   else if (dbus_message_is_signal (msg, MCE_SIGNAL_IF, "tklock_mode_ind"))
     {
       const char *mode;
+
       if (dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &mode,
                                  DBUS_TYPE_INVALID));
         {
@@ -95,10 +97,15 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                    * (this only has an effect if no window is currently
                    * focused) */
                   mb_wm_unfocus_client (hd_mb_wm, NULL);
+
+                  if (hd_dbus_state_before_tklock != HDRM_STATE_UNDEFINED)
+                    /* possibly go back to the state before tklock */
+                    hd_render_manager_set_state (HDRM_STATE_AFTER_TKLOCK);
                 }
             }
-          else
+          else if (!hd_dbus_tklock_on)
             {
+              hd_dbus_state_before_tklock = hd_render_manager_get_state ();
               hd_dbus_tklock_on = TRUE;
             }
         }

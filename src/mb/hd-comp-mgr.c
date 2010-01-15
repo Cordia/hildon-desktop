@@ -1336,9 +1336,9 @@ hd_comp_mgr_unregister_client (MBWMCompMgr *mgr, MBWindowManagerClient *c)
                   app->leader = NULL;
                   app->stack_index = -1;
 		}
-	      else
-                { g_warning("%s:%u: what am i doing here?",
-                            __FUNCTION__, __LINE__);
+	      else /* e.g. non-stackable with
+                      MBWMClientWindowEWMHStateSkipTaskbar */
+                {
                   MBWindowManagerClient *current_client =
                           hd_comp_mgr_determine_current_app ();
 
@@ -1605,6 +1605,10 @@ hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm, gboolean force)
 
   for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
     {
+      if (mb_wm_client_is_unmap_confirmed (c))
+        /* client is already unmapped but remains in our stack structure */
+        continue;
+
       /* unredirect and do not track damage of the topmost
        * application window that is fullscreen */
       if (c->cm_client && c->window->net_type ==
@@ -2635,7 +2639,8 @@ hd_comp_mgr_determine_current_app ()
   return hd_mb_wm->desktop;
 }
 
-void
+/* returns TRUE if state was changed */
+gboolean
 hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
 {
   HDRMStateEnum hdrm_state = hd_render_manager_get_state ();
@@ -2663,6 +2668,7 @@ hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
             hd_render_manager_set_state (HDRM_STATE_NON_COMPOSITED);
           else
             hd_render_manager_set_state (HDRM_STATE_NON_COMP_PORT);
+          return TRUE;
         }
     }
   else if (hdrm_state == HDRM_STATE_NON_COMPOSITED ||
@@ -2690,6 +2696,7 @@ hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
                 hd_render_manager_set_state (HDRM_STATE_APP);
               else
                 hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+              return TRUE;
             }
           /* this is for the case of two clients on top of each other,
            * where the top client is unredirected and unmapped but the
@@ -2705,8 +2712,10 @@ hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr)
             hd_render_manager_set_state (HDRM_STATE_APP);
           else
             hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+          return TRUE;
         }
     }
+  return FALSE;
 }
 
 static void
@@ -2717,7 +2726,9 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   MBWMCompMgrClutterClient *cclient;
   HDRMStateEnum             hdrm_state;
 
-  g_debug ("%s: 0x%lx", __FUNCTION__, c && c->window ? c->window->xwindow : 0);
+  g_debug ("%s: 0x%lx '%s'\n", __FUNCTION__,
+           c && c->window ? c->window->xwindow : 0,
+           mb_wm_client_get_name (c));
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
   hdrm_state = hd_render_manager_get_state ();
 
@@ -2819,6 +2830,9 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
 
   if (c->window->allowed_actions & MBWMClientWindowActionNoTransitions)
     {
+      /* restack because this window could be in the blur group */
+      g_debug("%s: no transition effect for this one\n", __func__);
+      hd_render_manager_restack ();
       hd_comp_mgr_reconsider_compositing (mgr);
       return;
     }

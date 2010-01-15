@@ -1,3 +1,25 @@
+2010-01-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#147359 - Showing swipe to unlock screen causes backgrounded
+	app to maximize on screen unblank
+	(there is still a small regression of black switcher background when
+	unlocking tklock on the switcher view and when the last application
+	before tklock was non-composited)
+
+	* src/home/hd-render-manager.c: Add new state HDRM_STATE_AFTER_TKLOCK
+	to signify a special transition to the state before tklock.
+	(hd_render_manager_set_state): Hairy code to try hard to go back to
+	the same state that was active before tklock.
+	(hd_render_manager_restack): Do not use clients that have received
+	UnmapNotify in the blur effect.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unregister_client): Remove the
+	bogus warning, there is a valid case for going into that branch.
+	(hd_comp_mgr_unredirect_topmost_client): Do not unredirect clients
+	that have received UnmapNotify.
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler): Save the
+	HDRM state before tklock takes effect, and try to change to that state
+	when tklock is off again.
+
 2010-01-14  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.126-1

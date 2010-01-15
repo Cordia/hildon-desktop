@@ -88,6 +88,7 @@ hd_render_manager_state_get_type (void)
         { HDRM_STATE_NON_COMP_PORT, "HDRM_STATE_NON_COMP_PORT", "Non-composited portrait" },
         { HDRM_STATE_LOADING,        "HDRM_STATE_LOADING",        "Loading" },
         { HDRM_STATE_LOADING_SUBWIN, "HDRM_STATE_LOADING_SUBWIN", "Loading Subwindow" },
+        { HDRM_STATE_AFTER_TKLOCK, "HDRM_STATE_AFTER_TKLOCK", "After tklock" },
         { 0, NULL, NULL }
       };
 
@@ -774,7 +775,9 @@ void hd_render_manager_sync_clutter_before ()
   switch (priv->state)
     {
       case HDRM_STATE_UNDEFINED:
-        g_error("%s: NEVER supposed to be in HDRM_STATE_UNDEFINED", __func__);
+      case HDRM_STATE_AFTER_TKLOCK:
+        g_error("%s: NEVER supposed to be in HDRM_STATE_UNDEFINED"
+                "or HDRM_STATE_AFTER_TKLOCK", __func__);
 	return;
       case HDRM_STATE_HOME:
         blur |=  HDRM_ZOOM_FOR_HOME;
@@ -1190,11 +1193,12 @@ static void zoom_out_completed(ClutterActor *actor,
 void hd_render_manager_set_state(HDRMStateEnum state)
 {
   extern gboolean hd_debug_mode_set;
+  extern gboolean hd_dbus_tklock_on;
+  extern HDRMStateEnum hd_dbus_state_before_tklock;
   HdRenderManagerPrivate *priv;
   MBWMCompMgr          *cmgr;
   MBWindowManager      *wm;
   MBWindowManagerClient *c;
-
 
   priv = the_render_manager->priv;
   cmgr = MB_WM_COMP_MGR (priv->comp_mgr);
@@ -1203,7 +1207,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
     g_warning("%s -> %s", hd_render_manager_state_str(priv->state),
               hd_render_manager_state_str(state));
   else
-    g_debug("%s: STATE %s -> STATE %s", __FUNCTION__,
+    g_debug("%s: STATE %s -> STATE %s\n", __FUNCTION__,
             hd_render_manager_state_str(priv->state),
             hd_render_manager_state_str(state));
 
@@ -1224,9 +1228,61 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
   if (state != priv->state)
     {
+      gboolean going_to_before_tklock = FALSE;
       HDRMStateEnum oldstate = priv->state;
       priv->previous_state = priv->state;
-      priv->state = state;
+
+      if (hd_dbus_state_before_tklock != HDRM_STATE_UNDEFINED
+          && state != hd_dbus_state_before_tklock && !hd_dbus_tklock_on)
+        {
+          if (hd_dbus_state_before_tklock == HDRM_STATE_NON_COMPOSITED
+              || hd_dbus_state_before_tklock == HDRM_STATE_NON_COMP_PORT)
+            {
+              /* non-composited mode was the state before tklock: make a new
+               * policy check to ensure that we can still use that */
+              HDRMStateEnum old_value = hd_dbus_state_before_tklock;
+              HDRMStateEnum old_state = priv->state;
+
+              priv->in_set_state = FALSE;
+              /* change the state temporarily for the reconsideration code */
+              if (hd_dbus_state_before_tklock == HDRM_STATE_NON_COMPOSITED)
+                priv->state = HDRM_STATE_APP;
+              else
+                priv->state = HDRM_STATE_APP_PORTRAIT;
+              hd_dbus_state_before_tklock = HDRM_STATE_UNDEFINED;
+              /* this may or may not cause state change: */
+              if (hd_comp_mgr_reconsider_compositing (cmgr))
+                return;
+              priv->state = old_state;
+              priv->in_set_state = TRUE;
+              hd_dbus_state_before_tklock = old_value;
+            }
+          
+          /* loading states are temporary and non-comp. we considered above */
+          if (hd_dbus_state_before_tklock != HDRM_STATE_NON_COMPOSITED
+              && hd_dbus_state_before_tklock != HDRM_STATE_NON_COMP_PORT
+              && hd_dbus_state_before_tklock != HDRM_STATE_LOADING
+              && hd_dbus_state_before_tklock != HDRM_STATE_LOADING_SUBWIN)
+            {
+              g_debug("%s: return to state %s before tklock\n", __func__,
+               hd_render_manager_state_str(hd_dbus_state_before_tklock));
+              priv->state = state = hd_dbus_state_before_tklock;
+              /* this is used to ignore 'oldstate' in case tklock was opened
+               * with the slide to unlock window */
+              going_to_before_tklock = TRUE;
+            }
+          else
+            priv->state = state;
+        }
+      else
+        priv->state = state;
+
+      if (state == HDRM_STATE_AFTER_TKLOCK)
+        /* this happens if the state before tklock could not be used */
+        priv->state = state = HDRM_STATE_APP;
+
+      if (!hd_dbus_tklock_on)
+        hd_dbus_state_before_tklock = HDRM_STATE_UNDEFINED;
 
       if ((oldstate == HDRM_STATE_NON_COMPOSITED &&
            state != HDRM_STATE_NON_COMP_PORT) ||
@@ -1369,7 +1425,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           mb_wm_client_focus (cmgr->wm->desktop);
           hd_launcher_show();
         }
-      if (oldstate == HDRM_STATE_LAUNCHER)
+      else if (oldstate == HDRM_STATE_LAUNCHER)
         hd_launcher_hide();
 
       if (state == HDRM_STATE_HOME_EDIT)
@@ -1395,7 +1451,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           clutter_actor_show (priv->loading_image);
         }
 
-      if (STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
+      if (!going_to_before_tklock
+          && STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
         mb_wm_handle_show_desktop(wm, STATE_NEED_DESKTOP(state));
 
       if (STATE_SHOW_APPLETS(state) != STATE_SHOW_APPLETS(oldstate))
@@ -1771,6 +1828,24 @@ void hd_render_manager_restack()
               MB_WM_COMP_MGR_CLUTTER(priv->comp_mgr), c->desktop);
           actor = mb_wm_comp_mgr_clutter_client_get_actor(
               MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
+
+          /* remove clients that have received UnmapNotify, otherwise they
+           * can show as 'ghost windows' in the blur (one such case was:
+           * go to switcher, tklock, power button, slide to unlock) */
+          if (mb_wm_client_is_unmap_confirmed (c))
+            {
+              if (actor)
+                {
+                  ClutterActor *parent = clutter_actor_get_parent (actor);
+                  if (parent == CLUTTER_ACTOR (priv->app_top) ||
+                      parent == CLUTTER_ACTOR (priv->home_blur))
+                    clutter_actor_reparent (actor, CLUTTER_ACTOR (desktop));
+                }
+              g_debug ("%s: skip unmapped client '%s'\n",
+                       __func__, mb_wm_client_get_name (c));
+              continue;
+            }
+
           if (actor)
             {
               ClutterActor *parent = clutter_actor_get_parent(actor);
