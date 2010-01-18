@@ -1,3 +1,11 @@
+2010-01-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	"Screen dimming causes a hick-up in last.fm playback due to
+	re-blurring" fix.
+
+	* src/home/hd-render-manager.c (hd_render_manager_restack): Don't
+	bother adding clients that are not on the screen area to the blur.
+
 2010-01-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#147359 - Showing swipe to unlock screen causes backgrounded

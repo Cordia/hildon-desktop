@@ -2025,7 +2025,9 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   static gboolean            first_time = TRUE;
   MBWindowManagerClient    * transient_for;
 
-  g_debug ("%s: 0x%lx", __FUNCTION__, c && c->window ? c->window->xwindow : 0);
+  g_debug ("%s: 0x%lx '%s'\n", __FUNCTION__,
+           c && c->window ? c->window->xwindow : 0,
+           mb_wm_client_get_name (c));
 
   if (G_UNLIKELY (first_time == TRUE))
     {

@@ -1794,6 +1794,7 @@ void hd_render_manager_restack()
   gboolean blur_changed = FALSE;
   gint i, n_elements;
   GList *previous_home_blur = 0;
+  unsigned int screenw, screenh;
 
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   /* Add all actors currently in the home_blur group */
@@ -1805,6 +1806,9 @@ void hd_render_manager_restack()
       if (CLUTTER_ACTOR_IS_VISIBLE(child))
         previous_home_blur = g_list_prepend(previous_home_blur, child);
     }
+
+  screenw = hd_comp_mgr_get_current_screen_width ();
+  screenh = hd_comp_mgr_get_current_screen_height ();
 
   /* Order and choose which window actors will be visible */
   for (c = wm->stack_bottom; c; c = c->stacked_above)
@@ -1845,6 +1849,21 @@ void hd_render_manager_restack()
                        __func__, mb_wm_client_get_name (c));
               continue;
             }
+
+          {
+            /* ignore it if it's not at least partly inside the screen
+             * (this avoids reblurring on dimming of the screen when
+             * -15,-15,15x15 'gp_tklock' window is mapped) */
+            int x, y, w, h;
+            x = c->window->geometry.x;
+            y = c->window->geometry.y;
+            w = c->window->geometry.width;
+            h = c->window->geometry.height;
+
+            if (!((x >= 0 && x < screenw && y >= 0 && y < screenh) ||
+                (x + w > 0 && y + h > 0)))
+              continue;
+          }
 
           if (actor)
             {
