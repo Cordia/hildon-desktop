@@ -3853,6 +3853,14 @@ clicked_widget (const ClutterButtonEvent * event)
 }
 /* Private functions }}} */
 
+/* Called when the transition showing the task navigator has ended */
+void
+hd_task_navigator_transition_done(HdTaskNavigator *self)
+{
+  /* Flash the scrollbar.  %TidyFingerScroll will do the right thing. */
+  tidy_finger_scroll_show_scrollbars (Scroller);
+}
+
 /* Callbacks {{{ */
 /* Entering and exiting @Navigator {{{ */
 /* @Navigator's "show" handler. */
@@ -3872,9 +3880,6 @@ navigator_shown (ClutterActor * navigator, gpointer unused)
    * because we are responsible for showing them now. */
   for_each_appthumb (li, thumb)
     claim_win (thumb);
-
-  /* Flash the scrollbar.  %TidyFingerScroll will do the right thing. */
-  tidy_finger_scroll_show_scrollbars (Scroller);
 }
 
 /* @Navigator's "hide" handler. */

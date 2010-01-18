@@ -29,7 +29,9 @@
 #include <clutter/clutter.h>
 #include <math.h>
 
-#define TIDY_FINGER_SCROLL_INITIAL_SCROLLBAR_DELAY (1000)
+#define TIDY_FINGER_SCROLL_INITIAL_SCROLLBAR_DELAY (2000)
+#define TIDY_FINGER_SCROLL_FADE_SCROLLBAR_IN_TIME (250)
+#define TIDY_FINGER_SCROLL_FADE_SCROLLBAR_OUT_TIME (500)
 #define TIDY_FINGER_SCROLL_DRAG_TRASHOLD (25)
 
 G_DEFINE_TYPE (TidyFingerScroll, tidy_finger_scroll, TIDY_TYPE_SCROLL_VIEW)
@@ -68,7 +70,8 @@ struct _TidyFingerScrollPrivate
   ClutterFixed           bounce_back_speed_rate;
 
   /* Variables to fade in/out scroll-bars */
-  ClutterEffectTemplate *template;
+  ClutterEffectTemplate *template_in;
+  ClutterEffectTemplate *template_out;
   ClutterTimeline       *hscroll_timeline;
   ClutterTimeline       *vscroll_timeline;
 
@@ -160,10 +163,15 @@ tidy_finger_scroll_dispose (GObject *object)
       priv->vscroll_timeline = NULL;
     }
 
-  if (priv->template)
+  if (priv->template_in)
     {
-      g_object_unref (priv->template);
-      priv->template = NULL;
+      g_object_unref (priv->template_in);
+      priv->template_in = NULL;
+    }
+  if (priv->template_out)
+    {
+      g_object_unref (priv->template_out);
+      priv->template_out = NULL;
     }
 
   G_OBJECT_CLASS (tidy_finger_scroll_parent_class)->dispose (object);
@@ -323,7 +331,7 @@ show_scrollbars (TidyFingerScroll *scroll, gboolean show)
   /* Create new ones */
   if (!CLUTTER_ACTOR_IS_REACTIVE (hscroll))
     priv->hscroll_timeline = clutter_effect_fade (
-                               priv->template,
+                               show ? priv->template_in : priv->template_out,
                                hscroll,
                                show ? 0xFF : 0x00,
                                (ClutterEffectCompleteFunc)hfade_complete_cb,
@@ -331,7 +339,7 @@ show_scrollbars (TidyFingerScroll *scroll, gboolean show)
 
   if (!CLUTTER_ACTOR_IS_REACTIVE (vscroll))
     priv->vscroll_timeline = clutter_effect_fade (
-                               priv->template,
+                               show ? priv->template_in : priv->template_out,
                                vscroll,
                                show ? 0xFF : 0x00,
                                (ClutterEffectCompleteFunc)vfade_complete_cb,
@@ -866,7 +874,8 @@ static void
 tidy_finger_scroll_init (TidyFingerScroll *self)
 {
   ClutterActor *scrollbar;
-  ClutterTimeline *effect_timeline;
+  ClutterTimeline *effect_timeline_in;
+  ClutterTimeline *effect_timeline_out;
   TidyFingerScrollPrivate *priv = self->priv = FINGER_SCROLL_PRIVATE (self);
   ClutterFixed qn;
   guint i;
@@ -918,9 +927,14 @@ tidy_finger_scroll_init (TidyFingerScroll *self)
   g_signal_connect (scrollbar, "notify::reactive",
                     G_CALLBACK (vscroll_notify_reactive_cb), self);
 
-  effect_timeline = clutter_timeline_new_for_duration (250);
-  priv->template = clutter_effect_template_new (effect_timeline,
-                                                CLUTTER_ALPHA_RAMP_INC);
+  effect_timeline_in = clutter_timeline_new_for_duration
+                            (TIDY_FINGER_SCROLL_FADE_SCROLLBAR_IN_TIME);
+  priv->template_in = clutter_effect_template_new (effect_timeline_in,
+                                                   CLUTTER_ALPHA_RAMP_INC);
+  effect_timeline_out = clutter_timeline_new_for_duration
+                            (TIDY_FINGER_SCROLL_FADE_SCROLLBAR_OUT_TIME);
+  priv->template_out = clutter_effect_template_new (effect_timeline_out,
+                                                    CLUTTER_ALPHA_RAMP_INC);
 }
 
 ClutterActor *

@@ -1,3 +1,18 @@
+2010-01-18  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#153466 - Improvement in Settigs / Profiles so that user
+	scrolls down
+
+	* src/tidy/tidy-finger-scroll.c: Modify scrolling indicator timings	
+	* src/home/hd-render-manager.c
+	* src/home/hd-task-navigator.c
+	* src/home/hd-task-navigator.h: Call tasknav after transitions have
+	  finished to allow it to show the scrolling indicator. Previously
+	  indicator was faded in at the same time as the transition.
+	* src/launcher/hd-launcher-page.c: Show the scrolling indicator after
+	  transitions have finished. Previously indicator was faded in at the
+	  same time as the transition.
+	
 2010-01-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	"Screen dimming causes a hick-up in last.fm playback due to
