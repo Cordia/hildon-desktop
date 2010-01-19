@@ -1,5 +1,19 @@
 2010-01-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	To mitigate NB#141519 keep the application's fake window in place
+	when we're rotating unless it's just started growing.  This way we
+	either don't see it (if the Phone is quick to wake up) or we see
+	the regular fake window rather than some jerky launcher -> fake win
+	-> desktop -> Phone transition.
+
+	* src/launcher/hd-launcher.h
+	* src/launcher/hd-launcher.c (hd_launcher_transition_is_playing):
+	  To know if the fake window is still small.
+	* src/util/hd-transition.c (hd_transition_rotating_fsm):
+	  ...and only then stop displaying the loading screenshot.
+
+2010-01-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#135337 status area and tasks button overlayed on the top
 		  of landscape incoming call dialog
 
