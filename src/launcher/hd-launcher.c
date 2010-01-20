@@ -57,7 +57,6 @@
 
 typedef struct
 {
-  guint gsource_id;
   GList *items;
   gboolean cancelled;
 } HdLauncherTraverseData;

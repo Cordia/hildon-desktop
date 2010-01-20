@@ -43,6 +43,7 @@
 #include "hd-wm.h"
 #include "hd-util.h"
 #include "hd-title-bar.h"
+#include "hd-app.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/theme-engines/mb-wm-theme.h>
@@ -1189,6 +1190,24 @@ static void zoom_out_completed(ClutterActor *actor,
   mb_wm_object_unref(MB_WM_OBJECT(cmgrcc));
 }
 
+/* like mb_wm_get_visible_main_client but don't return clients that have
+ * received UnmapNotify or clients that have the SkipTaskbar flag */
+static MBWindowManagerClient *
+hd_render_manager_get_visible_client_for_tasknav (MBWindowManager *wm)
+{
+  MBWindowManagerClient *c;
+
+  if ((wm->flags & MBWindowManagerFlagDesktop) && wm->desktop)
+    return wm->desktop;
+
+  mb_wm_stack_enumerate_reverse (wm, c)
+    if (MB_WM_CLIENT_CLIENT_TYPE (c) & MBWMClientTypeApp
+        && !mb_wm_client_is_unmap_confirmed (c)
+        && !(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar))
+      return c;
+
+  return NULL;
+}
 
 void hd_render_manager_set_state(HDRMStateEnum state)
 {
@@ -1383,16 +1402,29 @@ void hd_render_manager_set_state(HDRMStateEnum state)
            * scroll it back to the top. */
           if (STATE_IS_APP(oldstate))
             {
-              ClutterActor *actor;
+              ClutterActor *actor = NULL;
               MBWindowManagerClient *mbwmc;
               MBWMCompMgrClutterClient *cmgrcc;
 
-              /* This beautiful code seems to survive everything. */
-              if ((mbwmc = mb_wm_get_visible_main_client(wm)) &&
-                  (cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT(mbwmc->cm_client)) &&
-                  (actor = mb_wm_comp_mgr_clutter_client_get_actor(cmgrcc)) &&
-                  CLUTTER_ACTOR_IS_VISIBLE(actor) &&
-                  hd_task_navigator_has_window(priv->task_nav, actor))
+              mbwmc = hd_render_manager_get_visible_client_for_tasknav (wm);
+              if (mbwmc && HD_IS_APP (mbwmc))
+                {
+                  cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (mbwmc->cm_client);
+                  if (cmgrcc)
+                    actor = mb_wm_comp_mgr_clutter_client_get_actor (cmgrcc);
+
+                  if (actor &&
+                      hd_task_navigator_has_window (priv->task_nav, actor))
+                    /* The corner case that requires this: non-comp. window
+                     * minimised to switcher, then touch screen lock, and then
+                     * unlocking with the slider -- sometimes switcher
+                     * background is black. But don't ask why this works... */
+                    clutter_actor_show (actor);
+                  else
+                    actor = NULL;
+              }
+
+              if (actor)
                 {
                   /* Make the tasw fully opaque as it might have been made
                    * transparent while exiting it. */
@@ -1845,8 +1877,9 @@ void hd_render_manager_restack()
                       parent == CLUTTER_ACTOR (priv->home_blur))
                     clutter_actor_reparent (actor, CLUTTER_ACTOR (desktop));
                 }
-              g_debug ("%s: skip unmapped client '%s'\n",
-                       __func__, mb_wm_client_get_name (c));
+              g_debug ("%s: skip unmapped client '%s' (actor '%s')\n",
+                       __func__, mb_wm_client_get_name (c),
+                       actor ? clutter_actor_get_name (actor) : "");
               continue;
             }
 
