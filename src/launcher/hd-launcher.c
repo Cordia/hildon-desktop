@@ -402,6 +402,13 @@ _hd_launcher_clear_page (GQuark key_id, gpointer data, gpointer user_data)
 }
 
 static void
+_hd_launcher_layout_page (GQuark key_id, gpointer data, gpointer user_data)
+{
+  HdLauncherPage *page = HD_LAUNCHER_PAGE (data);
+  hd_launcher_grid_layout(HD_LAUNCHER_GRID(hd_launcher_page_get_grid (page)));
+}
+
+static void
 hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
 {
   HdLauncher *launcher = HD_LAUNCHER (data);
@@ -456,7 +463,7 @@ hd_launcher_lazy_traverse_tree (gpointer data)
   HdLauncherTraverseData *tdata = data;
   HdLauncherItem *item;
   HdLauncherTile *tile;
-  HdLauncherPage *page;
+  HdLauncherPage *page = NULL;
   guint i;
 
   if (!tdata ||
@@ -516,11 +523,15 @@ hd_launcher_lazy_traverse_tree (gpointer data)
       tdata->items = g_list_delete_link (tdata->items, tdata->items);
       if (!tdata->items)
         {
+          g_datalist_foreach(&priv->pages, _hd_launcher_layout_page, NULL);
+
           /* This traversal has finished. */
           priv->current_traversal = NULL;
           return FALSE;
         }
     }
+
+  g_datalist_foreach(&priv->pages, _hd_launcher_layout_page, NULL);
 
   return TRUE;
 }
@@ -560,6 +571,14 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
       priv->current_traversal->cancelled = TRUE;
     }
   priv->current_traversal = tdata;
+
+  /* if after traversal starts, the user switches to LAUNCHER,
+   * we can get empty launcher (the old page) that gets stuck on
+   * the screen until the user opens the power menu */
+  if (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER)
+    {
+      hd_render_manager_set_state (HDRM_STATE_HOME);
+    }
 
   /* First we traverse the list and create all the categories,
    * so that apps can be correctly put into them.

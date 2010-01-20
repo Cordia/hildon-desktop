@@ -333,13 +333,7 @@ hd_launcher_grid_actor_added (ClutterContainer *container,
     {
       priv->tiles = g_list_append (priv->tiles, g_object_ref(actor));
 
-      hd_launcher_grid_layout(HD_LAUNCHER_GRID(container));
-
-      if (priv->h_adjustment)
-        hd_launcher_grid_refresh_h_adjustment (HD_LAUNCHER_GRID (container));
-
-      if (priv->v_adjustment)
-        hd_launcher_grid_refresh_v_adjustment (HD_LAUNCHER_GRID (container));
+      /* relayout moved to the traversal code */
     }
 
   g_object_unref (actor);
@@ -358,13 +352,7 @@ hd_launcher_grid_actor_removed (ClutterContainer *container,
       priv->tiles = g_list_remove (priv->tiles, actor);
       g_object_unref(actor);
 
-      hd_launcher_grid_layout(HD_LAUNCHER_GRID(container));
-
-      if (priv->h_adjustment)
-        hd_launcher_grid_refresh_h_adjustment (HD_LAUNCHER_GRID (container));
-
-      if (priv->v_adjustment)
-        hd_launcher_grid_refresh_v_adjustment (HD_LAUNCHER_GRID (container));
+      /* relayout moved to the traversal code */
     }
 
   g_object_unref (actor);
@@ -484,6 +472,12 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
   clutter_actor_set_size(CLUTTER_ACTOR(grid),
                          HD_LAUNCHER_PAGE_WIDTH,
                          cur_height);
+
+  if (priv->h_adjustment)
+    hd_launcher_grid_refresh_h_adjustment (grid);
+
+  if (priv->v_adjustment)
+    hd_launcher_grid_refresh_v_adjustment (grid);
 }
 
 static void

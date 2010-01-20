@@ -1,5 +1,11 @@
 2010-01-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/launcher/hd-launcher-grid.c (hd_launcher_lazy_traverse_tree):
+	Layout pages after each row of scanned tiles (could be more optimal by
+	making a list of 'dirty' pages).
+	* src/launcher/hd-launcher-grid.c: Don't relayout when tiles are added
+	or removed, it is now done from the traversal code.
+
 	Fix the small regression caused by the fix for NB#147359.
 
 	* src/home/hd-render-manager.c
