@@ -831,6 +831,17 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   return launch_anim;
 }
 
+/* Returns whether the application starting transition is moving,
+ * ie. either the fake window or the applications stored screenshot
+ * is growing. */
+gboolean
+hd_launcher_transition_is_playing(void)
+{
+  HdLauncher *launcher = hd_launcher_get();
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE(launcher);
+  return clutter_timeline_is_playing(priv->launch_transition);
+}
+
 /* When a window has been created we want to be sure we've removed our
  * screenshot. Either that or we smoothly fade it out... maybe? :) */
 void hd_launcher_window_created(void)

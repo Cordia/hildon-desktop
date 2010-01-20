@@ -1440,8 +1440,10 @@ hd_transition_rotating_fsm(void)
         tidy_cached_group_set_downsampling_factor(
           CLUTTER_ACTOR(hd_render_manager_get()), 1);
         /* Stop displaying the loading screenshot, which was displayed
-         * as a small square just over the icon when launching phone */
-        hd_render_manager_set_loading(NULL);
+         * as a small square just over the icon when launching phone.
+         * However, leave it alone if it's already there fully grown. */
+        if (hd_launcher_transition_is_playing())
+          hd_render_manager_set_loading(NULL);
         /* Super massive extra large hack to remove status area when
          * launching phone app from the launcher */
         if (hd_render_manager_get_previous_state()==HDRM_STATE_LAUNCHER)

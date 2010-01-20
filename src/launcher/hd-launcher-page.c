@@ -280,10 +280,6 @@ hd_launcher_page_dispose (GObject *gobject)
 static void
 hd_launcher_page_show (ClutterActor *actor)
 {
-  HdLauncherPagePrivate *priv = HD_LAUNCHER_PAGE_GET_PRIVATE (actor);
-  /* make the scrollbars appear and then fade out (they won't be shown
-   * if the scrollable area is less than the screen size) */
-  tidy_finger_scroll_show_scrollbars(priv->scroller);
 }
 
 ClutterActor *
@@ -399,7 +395,7 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
                     G_CALLBACK (hd_launcher_page_new_frame), page);
   g_signal_connect (priv->transition, "completed",
                     G_CALLBACK (hd_launcher_page_transition_end), page);
-                    
+
   clutter_timeline_start(priv->transition);
 
   /* force a call to lay stuff out before it gets drawn properly */
@@ -486,6 +482,10 @@ hd_launcher_page_transition_end(ClutterTimeline *timeline,
     case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
     case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
          /* already shown */
+         /* make the scrollbars appear and then fade out (they won't be shown
+          * if the scrollable area is less than the screen size). We do it here
+          * so the user has time to see the fade. */
+         tidy_finger_scroll_show_scrollbars(priv->scroller);
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:

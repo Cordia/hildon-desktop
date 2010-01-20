@@ -75,6 +75,7 @@ void          hd_launcher_show (void);
 void          hd_launcher_hide (void);
 void          hd_launcher_hide_final (void);
 void          hd_launcher_transition_stop(void);
+gboolean      hd_launcher_transition_is_playing(void);
 
 /* Called when an app window has been created */
 void          hd_launcher_window_created (void);

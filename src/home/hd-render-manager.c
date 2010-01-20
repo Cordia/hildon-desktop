@@ -599,6 +599,9 @@ on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
 
   /* to trigger a change after the transition */
   hd_render_manager_sync_clutter_after();
+
+  if (priv->state == HDRM_STATE_TASK_NAV)
+    hd_task_navigator_transition_done(priv->task_nav);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1276,7 +1279,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
               priv->in_set_state = TRUE;
               hd_dbus_state_before_tklock = old_value;
             }
-          
+
           /* loading states are temporary and non-comp. we considered above */
           if (hd_dbus_state_before_tklock != HDRM_STATE_NON_COMPOSITED
               && hd_dbus_state_before_tklock != HDRM_STATE_NON_COMP_PORT
@@ -1526,7 +1529,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       g_object_notify (G_OBJECT (the_render_manager), "state");
 
       if ((state==HDRM_STATE_APP || state==HDRM_STATE_APP_PORTRAIT
-	   || state==HDRM_STATE_HOME_EDIT_DLG)
+	   || state==HDRM_STATE_HOME || state==HDRM_STATE_HOME_EDIT_DLG)
           && !hd_transition_rotation_will_change_state ())
 	{
 
