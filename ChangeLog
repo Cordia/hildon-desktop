@@ -1,3 +1,7 @@
+2010-01-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.127-1
+
 2010-01-20  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
 	Check that the traversal hasn't been cancelled for each launcher tile,

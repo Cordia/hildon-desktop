@@ -1,10 +1,21 @@
-hildon-desktop (1:2.2.127-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.127-1) unstable; urgency=low
+
+  Marc:
+  * Fixes: NB#153463 - First row in application matrix gets duplicated
 
   Kimmo:
   * Fixes: NB#147359 - Showing swipe to unlock screen causes backgrounded
     app to maximize on screen unblank
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 14 Jan 2010 16:30:28 +0200
+  Adam:
+  * Fixes: NB#135337 - status area and tasks button overlayed on the top
+    of landscape incoming call dialog
+
+  Gordon:
+  * Fixes: NB#153466 - Improvement in Settigs / Profiles so that user
+    scrolls down
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 20 Jan 2010 18:00:31 +0200
 
 hildon-desktop (1:2.2.126-1) unstable; urgency=low
 
