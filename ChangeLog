@@ -32,10 +32,7 @@
 	We restacked too early, when we were still in TASK_NAV (or LAUNCHER)
 	state and decided there was no fullscreen clients thus didn't hide
 	the status area and the tasks button.
->>>>>>> 6eb188ee71d16dc5d879798d03836746c0b94510:ChangeLog
 
-<<<<<<< HEAD:ChangeLog
-=======
 	* src/home/hd-render-manager.c (hd_render_manager_set_state):
 	  Do restack when we're going HOME, as this is the state we're going
 	  in this situation, and that hides the status area.
@@ -55,7 +52,6 @@
 	  transitions have finished. Previously indicator was faded in at the
 	  same time as the transition.
 	
->>>>>>> 6eb188ee71d16dc5d879798d03836746c0b94510:ChangeLog
 2010-01-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	"Screen dimming causes a hick-up in last.fm playback due to
