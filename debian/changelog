@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.128-1~unreleased) unstable; urgency=low
+
+  * foo
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 20 Jan 2010 18:02:01 +0200
+
 hildon-desktop (1:2.2.127-1) unstable; urgency=low
 
   Marc:
