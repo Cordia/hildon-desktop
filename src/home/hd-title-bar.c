@@ -434,7 +434,7 @@ gint
 hd_title_bar_get_button_width(HdTitleBar *bar) {
   HdTitleBarPrivate *priv = bar->priv;
   if (priv->current_state & HDTB_VIS_SMALL_BUTTONS)
-    return 80;
+    return HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH_SMALL;
   else
     /* TODO someday, in some cases this should return the TOP_RIGHT_BIN_WIDTH */
     return HD_COMP_MGR_TOP_LEFT_BTN_WIDTH;

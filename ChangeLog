@@ -1,3 +1,16 @@
+2010-01-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#143253 Portrait mode: close button reacts to presses outside
+		  of its visible allocation
+
+	* src/mb/hd-app.c (hd_app_request_geometry):
+	  Resize the close decor button according to the app window's
+	  portraitness when it's resized.
+	* src/mb/hd-comp-mgr.h (HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH_SMALL):
+	  New constant for the small button width.
+	* src/home/hd-title-bar.c (hd_title_bar_get_button_width):
+	  Use it.
+
 2010-01-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/launcher/hd-launcher-grid.c (hd_launcher_lazy_traverse_tree):

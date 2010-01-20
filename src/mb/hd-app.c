@@ -146,6 +146,9 @@ hd_app_request_geometry (MBWindowManagerClient *client,
                          MBGeometry            *new_geometry,
                          MBWMClientReqGeomType  flags)
 {
+  MBWMDecor *decor;
+  MBWMDecorButton *button;
+
   /*
    * Ignore the layout manager's request if we're in portrait but we don't
    * support it.  The window manager ensures that we are not visible in
@@ -163,6 +166,30 @@ hd_app_request_geometry (MBWindowManagerClient *client,
       &&  mb_wm_client_is_map_confirmed (client)
       && !hd_comp_mgr_client_supports_portrait (client))
     return False;
+
+  /* Resize the close button according to portraitness. */
+  if (client->decor
+      && (decor = client->decor->data)
+      && decor->type == MBWMDecorTypeNorth
+      && decor->buttons
+      && (button = decor->buttons->data)
+      && button->type == MBWMDecorButtonClose)
+    {
+      MBGeometry geo;
+      
+      geo = button->geom;
+      geo.width = new_geometry->width > new_geometry->height
+        ? HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH
+        : HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH_SMALL;
+      geo.x = geo.width - (new_geometry->x + new_geometry->width);
+
+      if (button->geom.width != geo.width)
+        {
+          button->geom = geo;
+          button->needs_sync = True;
+        }
+    }
+
   return MB_WM_CLIENT_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(client)))
     ->geometry (client, new_geometry, flags);
 }
