@@ -1,3 +1,11 @@
+2010-01-20  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+	Check that the traversal hasn't been cancelled for each launcher tile,
+	as signals can come in when the tile is created.
+	Fixes: NB#153463
+
+	* src/launcher/hd-launcher.c:
+
 2010-01-20  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#143253 Portrait mode: close button reacts to presses outside

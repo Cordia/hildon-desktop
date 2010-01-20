@@ -413,6 +413,11 @@ hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
 {
   HdLauncher *launcher = HD_LAUNCHER (data);
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
+  if (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER)
+    {
+      hd_render_manager_set_state (HDRM_STATE_HOME);
+    }
+  priv->active_page = NULL;
 
   if (priv->current_traversal)
     {
@@ -427,12 +432,6 @@ hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
       priv->pages = NULL;
     }
   g_datalist_init(&priv->pages);
-  priv->active_page = NULL;
-
-  if (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER)
-    {
-      hd_render_manager_set_state (HDRM_STATE_HOME);
-    }
 }
 
 /*
@@ -483,6 +482,13 @@ hd_launcher_lazy_traverse_tree (gpointer data)
       tile = hd_launcher_tile_new (
           hd_launcher_item_get_icon_name (item),
           hd_launcher_item_get_local_name (item));
+      /* Signals can be handled during construction, so check this hasn't
+       * been cancelled. */
+      if (tdata->cancelled)
+        {
+          g_object_unref (tile);
+          return FALSE;
+        }
 
       /* Find in which page it goes */
       page = g_datalist_get_data (&priv->pages,
