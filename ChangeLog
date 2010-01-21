@@ -1,5 +1,13 @@
 2010-01-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#135012 - Device UI freezes for minutes when long-pressing
+	the screenshot shortcut
+
+	* src/main.c (take_screenshot): Limit the maximum frequency of taking
+	screenshots to once every five seconds. Now if the shortcut is kept
+	pressed down, the first keypress is handled and others are ignored
+	until at least five seconds has passed from taking the screenshot.
+
 	Fixes: NB#129916 - It is not possible to tap incoming Chat/SMS
 	notification if there is Virtual Keyboard window visible.
 

@@ -126,7 +126,7 @@ take_screenshot (void)
 {
   char *path, *filename;
   static gchar datestamp[255];
-  time_t secs;
+  static time_t secs = 0;
   struct tm *tm = NULL;
   GdkDrawable *window;
   int width, height;
@@ -138,6 +138,11 @@ take_screenshot (void)
     g_warning ("Screenshot failed, environment variable MYDOCSDIR missing.");
     return;
   }
+
+  /* limit the rate of screenshots to avoid jamming HD when the key
+   * is pressed all the time */
+  if (time (NULL) - secs < 5)
+    return;
 
   path = g_strdup_printf ("%s/.images/Screenshots", getenv("MYDOCSDIR"));
   g_mkdir_with_parents (path, 0770);

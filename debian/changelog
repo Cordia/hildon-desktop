@@ -3,6 +3,8 @@ hildon-desktop (1:2.2.128-1~unreleased) unstable; urgency=low
   Kimmo:
   * Fixes: NB#129916 - It is not possible to tap incoming Chat/SMS
     notification if there is Virtual Keyboard window visible.
+  * Fixes: NB#135012 - Device UI freezes for minutes when long-pressing
+    the screenshot shortcut
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 20 Jan 2010 18:02:01 +0200
 
