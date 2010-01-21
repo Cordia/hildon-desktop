@@ -633,6 +633,12 @@ hd_theme_simple_get_button_size (MBWMTheme             *theme,
 
       if (parent_klass->button_size)
 	parent_klass->button_size (theme, decor, type, width, height);
+
+      /* Make the close/back button narrower in portrait. */
+      if (width && type == MBWMDecorButtonClose
+          && (hd_comp_mgr_is_portrait()
+              || hd_transition_is_rotating_to_portrait()))
+        *width = HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH_SMALL;
     }
 }
 

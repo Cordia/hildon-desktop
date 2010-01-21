@@ -1,3 +1,12 @@
+2010-01-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Amendment to NB#143253 to set correct button reaction size when
+	the button is first realized.
+
+	* src/mb/hd-theme.c (hd_theme_simple_get_button_size):
+	  Override the width with the smaller one for the close button
+	  if we are in/moving to portrait mode.
+
 2010-01-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#135012 - Device UI freezes for minutes when long-pressing
