@@ -1,3 +1,12 @@
+2010-01-21  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#129916 - It is not possible to tap incoming Chat/SMS
+	notification if there is Virtual Keyboard window visible.
+
+	* src/mb/hd-wm.c (hd_wm_close_modal_blockers): Consider fullscreen VKB
+	window as closeable blocker and close it.
+	(hd_wm_is_fullscreen_vkb): Rather ugly way to recognise VKB window.
+
 2010-01-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.127-1

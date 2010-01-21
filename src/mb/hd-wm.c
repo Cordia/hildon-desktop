@@ -491,6 +491,20 @@ hd_wm_current_app_is (MBWindowManager *wm, Window xid)
   return last;
 }
 
+static gboolean
+hd_wm_is_fullscreen_vkb (MBWindowManagerClient *client)
+{
+  MBWindowManager *wm = client->wmref;
+  const char *name = mb_wm_client_get_name (client);
+  if (name && strcmp("hildon-input-method", name) == 0 &&
+      client->window->geometry.height >= wm->xdpy_height &&
+      client->window->geometry.width >= wm->xdpy_width &&
+      client->window->geometry.x <= 0 &&
+      client->window->geometry.y <= 0)
+    return TRUE;
+  return FALSE;
+}
+
 /*
  * Closes all the modal blockers that can be safely closed (currently all the
  * menus). Returns TRUE if there are no modal blockers left. If there is at
@@ -501,41 +515,27 @@ gboolean
 hd_wm_close_modal_blockers (const MBWindowManager *wm)
 {
   MBWindowManagerClient *client;
-  gboolean has_blocker = TRUE;
 
   for (client = wm->stack_top; client && client != wm->desktop;
-       client=client->stacked_below)
+       client = client->stacked_below)
     {
-      if (hd_util_client_has_modal_blocker(client))
+      if (hd_util_client_has_modal_blocker (client))
         {
-	  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE(client);
-          if (c_type == MBWMClientTypeMenu ||
-		    c_type == HdWmClientTypeAppMenu ||
-		    c_type == HdWmClientTypeStatusMenu) 
-	    {
-		has_blocker = TRUE;
-	    } else {
-	        return FALSE;
-	    }
+	  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
+          if (!(c_type == MBWMClientTypeMenu ||
+                c_type == HdWmClientTypeAppMenu ||
+                c_type == HdWmClientTypeStatusMenu)
+              && !hd_wm_is_fullscreen_vkb (client)) 
+            /* a real blocker that cannot be deleted */
+	    return FALSE;
 	}
     }
 
-  /*
-   * If there were no modal blockers we can return, if there was we close them
-   * all.
-   */
-  if (!has_blocker) 
-    {
-      return TRUE;
-    } else {
-      for (client = wm->stack_top; client && client != wm->desktop;
-	   client=client->stacked_below) 
-        {
-          if (hd_util_client_has_modal_blocker(client)) 
-	    mb_wm_client_deliver_delete (client);
-	}
-
-    }
+  /* the remaining blockers should be deleteable menus */
+  for (client = wm->stack_top; client && client != wm->desktop;
+       client = client->stacked_below) 
+    if (hd_util_client_has_modal_blocker (client)) 
+      mb_wm_client_deliver_delete (client);
 
   return TRUE;
 }
@@ -547,7 +547,7 @@ hd_wm_has_modal_blockers (const MBWindowManager *wm)
   MBWindowManagerClient *client;
 
   for (client = wm->stack_top; client && client != wm->desktop;
-       client=client->stacked_below)
+       client = client->stacked_below)
     if (hd_util_client_has_modal_blocker(client))
       return TRUE;
   return FALSE;
