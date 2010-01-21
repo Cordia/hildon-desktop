@@ -1,5 +1,16 @@
 2010-01-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#153980 Task button and status area are not shown on the desktop.
+
+	The fix of NB#135337 made hdrm restack in home, it found the
+	fullscreen window and made the status area and the tasks button
+	go away.
+
+	* src/home/hd-render-manager (hd_render_manager_set_visibilities):
+	  Don't search for fullscreen windows beyond the desktop.
+
+2010-01-21  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Amendment to NB#143253 to set correct button reaction size when
 	the button is first realized.
 

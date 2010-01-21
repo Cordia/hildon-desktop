@@ -2517,7 +2517,8 @@ void hd_render_manager_set_visibilities()
   if (STATE_IS_APP(priv->state)
       || priv->state == HDRM_STATE_HOME
       || priv->state == HDRM_STATE_HOME_PORTRAIT)
-    for (c = wm->stack_top; c && !has_fullscreen; c = c->stacked_below)
+    for (c = wm->stack_top; c && c != wm->desktop && !has_fullscreen;
+         c = c->stacked_below)
       {
         if (!c->cm_client || c->desktop < 0 || !c->window)
           /* It's probably an unnecessary check. */
