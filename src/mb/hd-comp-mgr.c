@@ -2741,14 +2741,17 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       gboolean grab_spoil = FALSE;
       MBWindowManagerClient *above = mgr->wm->desktop;
       if (above) above = above->stacked_above;
-      while (above)
+      for (; above; above = above->stacked_above)
         {
-          if (above != c &&
+          if (above != c && !mb_wm_client_is_unmap_confirmed (above) &&
               MB_WM_CLIENT_CLIENT_TYPE(above)!=MBWMClientTypeOverride &&
               MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeHomeApplet &&
-              MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeStatusArea)
+              MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeStatusArea &&
+              !HD_IS_BANNER_NOTE (above))
+          {
             grab_spoil = TRUE;
-          above = above->stacked_above;
+            break;
+          }
         }
       if (!grab_spoil)
         hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);

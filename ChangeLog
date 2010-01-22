@@ -1,5 +1,11 @@
 2010-01-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#133564 - Able to pane in layout mode when usb cable is
+	connected
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify): Don't count
+	infobanners or unmapped clients as requiring HOME_EDIT_DLG mode.
+
 	Fixes: NB#134973 - stacking order: mapping another dialog reveals
 	underlaying window
 
