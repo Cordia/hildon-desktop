@@ -116,6 +116,7 @@ static HdRenderManager *the_render_manager = NULL;
 enum
 {
   PROP_0,
+  PROP_STATE,
 };
 /* ------------------------------------------------------------------------- */
 
@@ -385,6 +386,7 @@ static void
 hd_render_manager_class_init (HdRenderManagerClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  GParamSpec *pspec;
 
   g_type_class_add_private (klass, sizeof (HdRenderManagerPrivate));
 
@@ -400,6 +402,17 @@ hd_render_manager_class_init (HdRenderManagerClass *klass)
                       0, NULL, NULL,
                       g_cclosure_marshal_VOID__VOID,
                       G_TYPE_NONE, 0);
+
+  pspec = g_param_spec_enum ("state",
+                             "State", "Render manager state",
+                             HD_TYPE_RENDER_MANAGER_STATE,
+                             HDRM_STATE_UNDEFINED,
+                             G_PARAM_READABLE    |
+                             G_PARAM_WRITABLE    |
+                             G_PARAM_STATIC_NICK |
+                             G_PARAM_STATIC_NAME |
+                             G_PARAM_STATIC_BLURB);
+  g_object_class_install_property (gobject_class, PROP_STATE, pspec);
 }
 
 static void
@@ -1514,6 +1527,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       else if (oldstate == HDRM_STATE_TASK_NAV && !STATE_IS_APP (state))
         hd_wm_current_app_is (wm,  0);
 
+      /* Signal the state has changed. */
+      g_object_notify (G_OBJECT (the_render_manager), "state");
+
       if ((state==HDRM_STATE_APP || state==HDRM_STATE_APP_PORTRAIT
 	   || state==HDRM_STATE_HOME || state==HDRM_STATE_HOME_EDIT_DLG)
           && !hd_transition_rotation_will_change_state ())
@@ -1650,8 +1666,11 @@ hd_render_manager_get_property (GObject    *object,
 {
   switch (property_id)
     {
+    case PROP_STATE:
+      g_value_set_enum (value, hd_render_manager_get_state ());
+      break;
     default:
-      /* We don't have any property... */
+      /* We don't have any other property... */
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
     }
@@ -1665,6 +1684,10 @@ hd_render_manager_set_property (GObject      *gobject,
 {
   switch (prop_id)
     {
+    case PROP_STATE:
+      hd_render_manager_set_state (g_value_get_enum (value));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop_id, pspec);
       break;
