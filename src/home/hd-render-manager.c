@@ -44,6 +44,8 @@
 #include "hd-util.h"
 #include "hd-title-bar.h"
 #include "hd-app.h"
+#include "hd-dialog.h"
+#include "hd-app-menu.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/theme-engines/mb-wm-theme.h>
@@ -2382,6 +2384,17 @@ void hd_render_manager_append_geo_cb(ClutterActor *actor, gpointer data)
   if (hd_render_manager_actor_opaque(actor))
     {
       ClutterGeometry geo;
+      MBWMCompMgrClient *cc;
+
+      cc = g_object_get_data (G_OBJECT (actor),
+                              "HD-MBWMCompMgrClutterClient");
+      if (cc && cc->wm_client &&
+          (HD_IS_DIALOG (cc->wm_client) || HD_IS_APP_MENU (cc->wm_client)))
+        {
+          /* dialogs and menus have animation in/out of the screen, so
+           * strictly speaking they are not hiding actors under them */
+          return;
+        }
 
       hd_render_manager_get_geo_for_current_screen(actor, &geo);
       if (!hd_render_manager_clip_geo (&geo))
