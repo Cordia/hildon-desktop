@@ -1,4 +1,4 @@
-hildon-desktop (1:2.2.128-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.128-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#129916 - It is not possible to tap incoming Chat/SMS
@@ -6,7 +6,13 @@ hildon-desktop (1:2.2.128-1~unreleased) unstable; urgency=low
   * Fixes: NB#135012 - Device UI freezes for minutes when long-pressing
     the screenshot shortcut
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 20 Jan 2010 18:02:01 +0200
+  Adam:
+  * Fix regression NB#153980 - Task button and status area are not shown on
+    the desktop.
+  * Fixes: NB#143253 - Portrait mode: close button reacts to presses outside
+    of its visible allocation
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 22 Jan 2010 10:05:04 +0200
 
 hildon-desktop (1:2.2.127-1) unstable; urgency=low
 
