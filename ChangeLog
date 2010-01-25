@@ -1,5 +1,7 @@
 2010-01-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Release 2.2.129-1
+
 	Fix broken "go back to the state before tklock" logic.
 
 	* src/home/hd-render-manager.c (hd_render_manager_set_state): Show
