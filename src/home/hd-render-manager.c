@@ -1252,7 +1252,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
   if (state != priv->state)
     {
-      gboolean going_to_before_tklock = FALSE;
       HDRMStateEnum oldstate = priv->state;
       priv->previous_state = priv->state;
 
@@ -1291,9 +1290,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
               g_debug("%s: return to state %s before tklock\n", __func__,
                hd_render_manager_state_str(hd_dbus_state_before_tklock));
               priv->state = state = hd_dbus_state_before_tklock;
-              /* this is used to ignore 'oldstate' in case tklock was opened
-               * with the slide to unlock window */
-              going_to_before_tklock = TRUE;
             }
           else
             priv->state = state;
@@ -1488,8 +1484,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           clutter_actor_show (priv->loading_image);
         }
 
-      if (!going_to_before_tklock
-          && STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
+      if (STATE_NEED_DESKTOP(state) != STATE_NEED_DESKTOP(oldstate))
         mb_wm_handle_show_desktop(wm, STATE_NEED_DESKTOP(state));
 
       if (STATE_SHOW_APPLETS(state) != STATE_SHOW_APPLETS(oldstate))

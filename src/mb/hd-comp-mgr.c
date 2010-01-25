@@ -3003,6 +3003,10 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   if (STATE_NEED_TASK_NAV (hd_render_manager_get_state()))
     {
       hd_comp_mgr_check_do_not_disturb_flag (HD_COMP_MGR (mgr));
+      /* current_hclient should be desktop now */
+      if (mgr->wm->desktop)
+        priv->current_hclient = HD_COMP_MGR_CLIENT (
+                                    mgr->wm->desktop->cm_client);
       return FALSE;
     }
 
@@ -3019,6 +3023,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
   if (mgr->wm && mgr->wm->root_win && mgr->wm->desktop
       && !hd_transition_rotation_will_change_state ())
     {
+      gboolean current_client_changed = FALSE;
       MBWindowManagerClient *current_client =
                               hd_comp_mgr_determine_current_app ();
 
@@ -3028,6 +3033,8 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
         {
           HdRunningApp *old_current_app;
           HdRunningApp *new_current_app;
+
+          current_client_changed = TRUE;
 
           /* Reset our 'map' timer, so that if we're asked to do a starting
            * transition, we'll know if jitter could have meant the app was
@@ -3058,9 +3065,10 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
 
       hd_wm_current_app_is (mgr->wm, current_client->window->xwindow);
 
-      /* If we have an app as the current client and we're not in
+      /* If we have a new app as the current client and we're not in
        * app mode - enter app mode. */
-      if (!(MB_WM_CLIENT_CLIENT_TYPE(current_client) &
+      if (current_client_changed &&
+          !(MB_WM_CLIENT_CLIENT_TYPE(current_client) &
                                      MBWMClientTypeDesktop) &&
           !STATE_IS_APP(hd_render_manager_get_state()))
         hd_render_manager_set_state(HDRM_STATE_APP);
