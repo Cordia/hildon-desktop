@@ -1,5 +1,12 @@
 2010-01-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Fixes: NB#151877 - title bar is blank for ordinary X applications
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_determine_current_app): Use the new
+	mb_wm_client_is_geometry_requested to check that the client has been
+	resized already.
+	* debian/control: Depend on newer libmatchbox2.
+
 	Release 2.2.129-1
 
 	Fix broken "go back to the state before tklock" logic.

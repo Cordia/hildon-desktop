@@ -2628,6 +2628,7 @@ hd_comp_mgr_determine_current_app ()
       if (mb_wm_client_is_unmap_confirmed (c))
         continue;
       if (!mb_wm_client_is_map_confirmed (c) &&
+          mb_wm_client_is_geometry_requested (c) &&
           !hd_comp_mgr_client_is_maximized (c->frame_geometry))
         /* Not covering the whole application area. */
         continue;
