@@ -3057,6 +3057,9 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
             {
               new_current_app =
                 hd_comp_mgr_client_get_app (new_current_hclient);
+              /* re-check compositing for the case that we raise composited
+               * client on top of non-composited client */
+              hd_comp_mgr_reconsider_compositing (mgr);
               if (new_current_app)
                 hd_app_mgr_hibernatable (new_current_app, FALSE);
             }

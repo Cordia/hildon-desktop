@@ -1,3 +1,11 @@
+2010-01-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#149962 - Poor handling of an application window raising
+	itself above a non-composited window
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_restack): Call
+	hd_comp_mgr_reconsider_compositing if the current application changed.
+
 2010-01-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#151877 - title bar is blank for ordinary X applications
