@@ -4,6 +4,7 @@ hildon-desktop (1:2.2.130-1~unreleased) unstable; urgency=low
   * Fixes: NB#149943 - hildon-desktop animations are not linear after
     enabling asynchronous swap
 
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 25 Jan 2010 13:25:19 +0200
 
 hildon-desktop (1:2.2.129-1) unstable; urgency=low
