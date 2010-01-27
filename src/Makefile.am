@@ -47,4 +47,8 @@ backuprestoredir = ${sysconfdir}/osso-backup/restore.d/always/
 backuprestore_SCRIPTS = \
 	hildon-desktop-restore.sh
 
+powervrconfdir = ${sysconfdir}/powervr.d
+powervrconf_DATA = \
+	hildon-desktop.ini
+
 CLEANFILES = *~

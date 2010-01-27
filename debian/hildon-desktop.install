@@ -2,6 +2,7 @@ debian/tmp/etc/osso-backup
 debian/tmp/etc/osso-cud-scripts
 debian/tmp/etc/osso-rfs-scripts
 debian/tmp/etc/xdg/menus
+debian/tmp/etc/powervr.d
 debian/tmp/usr/bin
 debian/tmp/usr/share
 debian/tmp/usr/lib/gtk-*/modules/*.so
