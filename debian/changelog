@@ -28,22 +28,22 @@ hildon-desktop (1:2.2.128-1) unstable; urgency=low
   Adam:
   * Fix regression NB#153980 - Task button and status area are not shown on
     the desktop.
-  * Fixes: NB#143253 - Portrait mode: close button reacts to presses outside
-    of its visible allocation
+  * Fix related to NB#143253 - Portrait mode: close button reacts to presses
+    outside of its visible allocation
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 22 Jan 2010 10:05:04 +0200
 
 hildon-desktop (1:2.2.127-1) unstable; urgency=low
 
   Marc:
-  * Fixes: NB#153463 - First row in application matrix gets duplicated
+  * Fix wrt NB#153463 - First row in application matrix gets duplicated
 
   Kimmo:
   * Fixes: NB#147359 - Showing swipe to unlock screen causes backgrounded
     app to maximize on screen unblank
 
   Adam:
-  * Fixes: NB#135337 - status area and tasks button overlayed on the top
+  * Fix wrt NB#135337 - status area and tasks button overlayed on the top
     of landscape incoming call dialog
 
   Gordon:
