@@ -1,3 +1,12 @@
+2010-01-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#137722 - Information banners are appearing on top of other
+	applications.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Don't put the banner
+	to the front group if it's transient to a background window. Handle
+	unblanking of screen correctly also.
+
 2010-01-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#149943 - hildon-desktop animations are not linear after
