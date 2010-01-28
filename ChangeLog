@@ -1,3 +1,8 @@
+2010-01-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Check if
+	_HILDON_LIVE_DESKTOP_BACKGROUND was changed.
+
 2010-01-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#149943 - hildon-desktop animations are not linear after
