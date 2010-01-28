@@ -8,7 +8,7 @@ Standards-Version: 3.8.0
 Package: hildon-desktop
 Section: x11
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgconf2, theme-config, ke-recv-extra, clipboard-manager, ke-recv-l10n-mr | ke-recv-l10n-mr0, libgtk2.0-0 (>= 2:2.14.7)
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgconf2-4, libgtk2.0-0
 Description: Fremantle's Hildon Desktop
  Fremantle's HildonDesktop
 
