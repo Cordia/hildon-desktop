@@ -1,3 +1,9 @@
+hildon-desktop (1:2.3.1-1) karmic; urgency=low
+
+  * Improved support for Ubuntu. 
+
+ -- Moises Martinez <moimart@gmail.com>  Thu, 28 Jan 2010 15:41:22 +0200
+
 hildon-desktop (1:2.3.0-1~ubuntu1) karmic; urgency=low
 
   * Updated debian packaging and lots of changes to work with Ubuntu. 

@@ -483,10 +483,19 @@ hd_home_view_container_allocate (ClutterActor          *self,
   CLUTTER_ACTOR_CLASS (hd_home_view_container_parent_class)->allocate (self,
                                                                        box,
                                                                        absolute_origin_changed);
+  Rotation rotation = hd_render_manager_get_rotation ();
 
-  width = box->x2 - box->x1;
-  height = box->y2 - box->y1;
-
+  if (rotation == RR_Rotate_0)
+    {
+      width = box->x2 - box->x1;
+      height = box->y2 - box->y1;
+    }
+  else
+    {
+      width = box->y2 - box->y1;
+      height = box->x2 - box->x1; 
+    }
+g_debug ("CHAIN UP %d %d", width, height);
   if (priv->previous_view != priv->current_view && priv->next_view != priv->current_view)
     offset = CLUTTER_UNITS_FROM_INT(priv->offset) +
              CLUTTER_UNITS_FROM_INT(priv->offset_anim);

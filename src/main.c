@@ -244,12 +244,19 @@ key_binding_func (MBWindowManager   *wm,
 	break;
     case KEY_ACTION_DO_PORTRAIT:
         portrait = !portrait;
+	
+	//hd_transition_rotate_screen (hd_mb_wm, portrait);
+	
 	if (!hd_util_change_screen_orientation (hd_mb_wm, portrait))
 	  g_debug ("SOmething failed");
 	else
           {
+  	    /*if (portrait)
+ 	      hd_render_manager_set_state_portrait ();
+	    else
+	      hd_render_manager_set_state_unportrait ();*/
+	
 	    hd_util_root_window_configured (hd_mb_wm);
-	    //hd_transition_rotate_screen (hd_mb_wm, portrait);
 	  }
 	break;
    }

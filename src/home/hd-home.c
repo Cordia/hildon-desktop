@@ -157,10 +157,6 @@ struct _HdHomePrivate
 
   Window                 desktop;
 
-  /* DBus Proxy for the call to com.nokia.CallUI.ShowDialpad */
-  DBusGProxy            *call_ui_proxy;
-  DBusGProxy            *osso_addressbook_proxy;
-
   /* For hd_home_desktop_key_press() */
   enum
   {
@@ -595,40 +591,7 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
       else if (g_unichar_isalpha (unicode))
         priv->key_sent = KEY_SENT_ADDRESSBOOK;
     }
-
-  if (priv->key_sent == KEY_SENT_CALLUI)
-    {
-      char buffer[10] = {0,};
-
-      g_unichar_to_utf8 (unicode, buffer);
-
-      g_debug ("%s, digit: keyval: %u, unicode: %u, buffer: %s",
-               __FUNCTION__, keyval, unicode, buffer);
-
-      if (priv->call_ui_proxy)
-        {
-          dbus_g_proxy_call_no_reply (priv->call_ui_proxy,
-                CALL_UI_DBUS_METHOD_SHOW_DIALPAD,
-                G_TYPE_STRING, buffer, G_TYPE_INVALID);
-        }
-    }
-  else if (priv->key_sent == KEY_SENT_ADDRESSBOOK)
-    {
-      char buffer[10] = {0,};
-
-      g_unichar_to_utf8 (unicode, buffer);
-
-      g_debug ("%s, letter: keyval: %u, unicode: %u, buffer: %s",
-               __FUNCTION__, keyval, unicode, buffer);
-
-      if (priv->osso_addressbook_proxy)
-        {
-          dbus_g_proxy_call_no_reply (priv->osso_addressbook_proxy,
-                OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND,
-                G_TYPE_STRING, buffer, G_TYPE_INVALID);
-        }
-    }
-
+  
  if (xev->state & FN_MODIFIER)
    {
      priv->fn_state = FN_STATE_NONE;
@@ -938,8 +901,8 @@ hd_home_constructed (GObject *object)
   priv->desktop = XCreateWindow (wm->xdpy,
 				 wm->root_win->xwindow,
 				 0, 0,
-				 HD_COMP_MGR_LANDSCAPE_WIDTH,
-				 HD_COMP_MGR_LANDSCAPE_WIDTH,
+				 hd_comp_mgr_get_current_screen_width (),
+				 hd_comp_mgr_get_current_screen_height (),
 				 0,
 				 CopyFromParent,
 				 InputOnly,
@@ -1079,16 +1042,6 @@ hd_home_init (HdHome *self)
   g_debug ("%s registered to session bus at %s",
            HD_HOME_DBUS_NAME,
            HD_HOME_DBUS_PATH);
-
-  priv->call_ui_proxy = dbus_g_proxy_new_for_name (connection,
-                                                   CALL_UI_DBUS_NAME,
-                                                   CALL_UI_DBUS_PATH,
-                                                   CALL_UI_DBUS_NAME);
-
-  priv->osso_addressbook_proxy = dbus_g_proxy_new_for_name (connection,
-                                                            OSSO_ADDRESSBOOK_DBUS_NAME,
-                                                            OSSO_ADDRESSBOOK_DBUS_PATH,
-                                                            OSSO_ADDRESSBOOK_DBUS_NAME);
 
 cleanup:
   if (bus_proxy != NULL)
@@ -2230,4 +2183,10 @@ hd_home_unregister_applet (HdHome       *home,
                             "HD-HomeView");
   if (HD_IS_HOME_VIEW (view))
     hd_home_view_unregister_applet (view, applet);
+}
+
+void 
+hd_home_update_rotation (HdHome *home, Rotation rotation)
+{
+  g_debug ("ALALALA");
 }

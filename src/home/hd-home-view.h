@@ -84,6 +84,8 @@ void     hd_home_view_set_active (HdHomeView *view,
 void hd_home_view_load_background (HdHomeView *view);
 void hd_home_view_update_state (HdHomeView *view);
 
+void hd_home_view_rotate (HdHomeView *view);
+
 G_END_DECLS
 
 #endif

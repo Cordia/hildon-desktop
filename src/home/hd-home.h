@@ -29,6 +29,7 @@
 #include <glib-object.h>
 
 #include <clutter/clutter-group.h>
+#include <X11/extensions/Xrandr.h>
 
 #include "hd-home-view.h"
 
@@ -101,6 +102,9 @@ void hd_home_theme_changed (HdHome *home);
 
 void hd_home_unregister_applet (HdHome       *home,
                                 ClutterActor *applet);
+
+void hd_home_update_rotation (HdHome *home, Rotation rotation);
+
 G_END_DECLS
 
 #endif

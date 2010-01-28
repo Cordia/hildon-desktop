@@ -169,7 +169,7 @@ hd_home_view_allocate (ClutterActor          *actor,
                        gboolean               absolute_origin_changed)
 {
 #if 0
-  FIXME unused remove
+  //FIXME unused remove
   HdHomeView        *view = HD_HOME_VIEW (actor);
   HdHomeViewPrivate *priv = view->priv;
 
@@ -264,7 +264,9 @@ is_button_press_in_gesture_start_area (ClutterEvent *event)
            __FUNCTION__,
            event->button.x, event->button.y);
 
-  return event->button.x <= 15 || event->button.x >= HD_COMP_MGR_LANDSCAPE_WIDTH - 15;
+  gint width = hd_comp_mgr_get_current_screen_width (); 
+ 
+  return event->button.x <= 15 || event->button.x >= width - 15;
 }
 
 static gboolean stop_pan_gesture (HdHomeView *view);
@@ -359,8 +361,8 @@ hd_home_view_constructed (GObject *object)
   clutter_actor_set_visibility_detect(priv->background_container, FALSE);
   clutter_actor_set_position (priv->background_container, 0, 0);
   clutter_actor_set_size (priv->background_container,
-                          HD_COMP_MGR_LANDSCAPE_WIDTH,
-                          HD_COMP_MGR_LANDSCAPE_HEIGHT);
+                          hd_comp_mgr_get_current_screen_width (),
+                          hd_comp_mgr_get_current_screen_height ());
   g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
                            G_CALLBACK(hd_home_view_rotate_background),
                            priv->background_container);
@@ -371,8 +373,8 @@ hd_home_view_constructed (GObject *object)
   clutter_actor_set_visibility_detect(priv->applets_container, FALSE);
   clutter_actor_set_position (priv->applets_container, 0, 0);
   clutter_actor_set_size (priv->applets_container,
-                          HD_COMP_MGR_LANDSCAPE_WIDTH,
-                          HD_COMP_MGR_LANDSCAPE_HEIGHT);
+                          hd_comp_mgr_get_current_screen_width (),
+                          hd_comp_mgr_get_current_screen_height ());
   clutter_container_add_actor (CLUTTER_CONTAINER (hd_home_get_front(priv->home)),
                                priv->applets_container);
 
@@ -380,8 +382,8 @@ hd_home_view_constructed (GObject *object)
   priv->background = clutter_rectangle_new_with_color (&clr);
   clutter_actor_set_name (priv->background, "HdHomeView::background");
   clutter_actor_set_size (priv->background,
-                          HD_COMP_MGR_LANDSCAPE_WIDTH,
-                          HD_COMP_MGR_LANDSCAPE_HEIGHT);
+                          hd_comp_mgr_get_current_screen_width (),
+                          hd_comp_mgr_get_current_screen_height ());
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->background_container),
                                priv->background);
 
@@ -555,8 +557,8 @@ load_background_idle (gpointer data)
       /* Add a black background */
       new_bg = clutter_rectangle_new_with_color (&clr);
       clutter_actor_set_size (new_bg,
-                              HD_COMP_MGR_LANDSCAPE_WIDTH,
-                              HD_COMP_MGR_LANDSCAPE_HEIGHT);
+                              hd_comp_mgr_get_current_screen_width (),
+                              hd_comp_mgr_get_current_screen_height ());
     }
   else
     {
@@ -814,10 +816,10 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   if (!hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)) ||
       !hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
     x = MAX (MIN (x,
-                  (gint) HD_COMP_MGR_LANDSCAPE_WIDTH - ((gint) w)),
+                  (gint) hd_comp_mgr_get_current_screen_width () - ((gint) w)),
              0);
   y = MAX (MIN (y,
-                (gint) HD_COMP_MGR_LANDSCAPE_HEIGHT - ((gint) h)),
+                (gint) hd_comp_mgr_get_current_screen_height () - ((gint) h)),
            HD_COMP_MGR_TOP_MARGIN);
 
   /* Update applet actor position */
@@ -840,7 +842,7 @@ hd_home_view_applet_motion (ClutterActor       *applet,
 
   if (event->x < HD_EDGE_INDICATION_WIDTH)
     priv->move_applet_left = TRUE;
-  else if (event->x > HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH)
+  else if (event->x > hd_comp_mgr_get_current_screen_width () - HD_EDGE_INDICATION_WIDTH)
     priv->move_applet_right = TRUE;
 
   hd_home_highlight_edge_indication (priv->home, priv->move_applet_left, priv->move_applet_right);
@@ -966,6 +968,11 @@ hd_home_view_store_applet_size_position (HdHomeView   *view,
   HdHomeViewAppletData *data;
   ClutterGeometry c_geom;
   MBGeometry mb_geom;
+  guint width, height;
+
+  width =  hd_comp_mgr_get_current_screen_width ();
+
+  height = hd_comp_mgr_get_current_screen_height ();
 
   data = g_hash_table_lookup (priv->applets, applet);
 
@@ -976,10 +983,10 @@ hd_home_view_store_applet_size_position (HdHomeView   *view,
 
   /* Move into allowed area */
   c_geom.x = MAX (MIN (c_geom.x,
-                       (gint) HD_COMP_MGR_LANDSCAPE_WIDTH - ((gint) c_geom.width)),
+                       (gint) width - ((gint) c_geom.width)),
                   0);
   c_geom.y = MAX (MIN (c_geom.y,
-                       (gint) HD_COMP_MGR_LANDSCAPE_HEIGHT - ((gint) c_geom.height)),
+                       (gint) height - ((gint) c_geom.height)),
                   HD_COMP_MGR_TOP_MARGIN);
 
   clutter_actor_set_position (applet, c_geom.x, c_geom.y);
@@ -1731,6 +1738,10 @@ hd_home_view_allocation_changed (HdHomeView    *view,
 {
   HdHomeViewPrivate *priv = view->priv;
   ClutterGeometry geom;
+  gint width;
+
+  width = hd_comp_mgr_get_current_screen_width ();
+
 
   /* We need to update the position of the applets container,
    * as it is not a child of ours. Rather than just setting
@@ -1741,17 +1752,17 @@ hd_home_view_allocation_changed (HdHomeView    *view,
 
   /* For scrolling either way from the home position, make the applets
    * move faster than the background to produce the parallax effect. */
-  if (geom.x > -HD_COMP_MGR_LANDSCAPE_WIDTH && geom.x < 0)
+  if (geom.x > -width && geom.x < 0)
     {
-      geom.x = (int)(geom.x * HD_HOME_VIEW_PARALLAX_AMOUNT);
-      if (geom.x < -HD_COMP_MGR_LANDSCAPE_WIDTH)
-        geom.x = -HD_COMP_MGR_LANDSCAPE_WIDTH;
+      geom.x = (gint)(geom.x * HD_HOME_VIEW_PARALLAX_AMOUNT);
+      if (geom.x < -width)
+        geom.x = -width;
     }
-  if (geom.x < HD_COMP_MGR_LANDSCAPE_WIDTH && geom.x > 0)
+  if (geom.x < width && geom.x > 0)
     {
       geom.x = (int)(geom.x * HD_HOME_VIEW_PARALLAX_AMOUNT);
-      if (geom.x > HD_COMP_MGR_LANDSCAPE_WIDTH)
-        geom.x = HD_COMP_MGR_LANDSCAPE_WIDTH;
+      if (geom.x > width)
+        geom.x = width;
     }
 
   clutter_actor_set_position(priv->applets_container, geom.x, geom.y);
@@ -1780,3 +1791,20 @@ hd_home_view_rotate_background(ClutterActor *actor, GParamSpec *unused,
     }
   clutter_actor_set_size(actor, w, h);
 }
+
+void 
+hd_home_view_rotate (HdHomeView *view)
+{
+  guint width, height;
+
+  clutter_actor_get_size (CLUTTER_ACTOR (view->priv->background_container), &width, &height);
+  clutter_actor_set_size (CLUTTER_ACTOR (view->priv->background_container), height, width);
+
+  clutter_actor_get_size (CLUTTER_ACTOR (view->priv->applets_container), &width, &height);
+  clutter_actor_set_size (CLUTTER_ACTOR (view->priv->applets_container), height, width);
+
+  clutter_actor_get_size (CLUTTER_ACTOR (view), &width, &height);
+  clutter_actor_set_size (CLUTTER_ACTOR (view), height, width);
+
+}
+

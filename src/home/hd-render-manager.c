@@ -528,9 +528,10 @@ static void
 stage_allocation_changed(ClutterActor *actor, GParamSpec *unused,
                          ClutterActor *stage)
 {
-  clutter_actor_set_size(actor,
-                         hd_comp_mgr_get_current_screen_width (),
-                         hd_comp_mgr_get_current_screen_height ());
+  guint width =  hd_comp_mgr_get_current_screen_width ();
+  guint height = hd_comp_mgr_get_current_screen_height ();
+
+  clutter_actor_set_size (actor, width, height);
 }
 
 static void

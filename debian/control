@@ -5,7 +5,7 @@ Maintainer: Moises Martinez <moimart@gmail.com>
 Build-Depends: cdbs (>= 0.4.21), debhelper (>= 4.1.0), pkg-config (>= 0.18), libmatchbox2-dev (>> 0.2.81-1), libclutter-0.8-dev (>> 0.8.2-0maemo57), libxdamage-dev, libxcomposite-dev, libxfixes-dev, libx11-dev, libdbus-1-dev, libxft-dev, libglib2.0-dev, libgtk2.0-dev, libgconf2-dev, libcanberra-dev, libxrandr-dev, libgnome-menu-dev
 Standards-Version: 3.8.0
 
-Package: hildon-desktop2
+Package: hildon-desktop
 Section: x11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libgconf2, theme-config, ke-recv-extra, clipboard-manager, ke-recv-l10n-mr | ke-recv-l10n-mr0, libgtk2.0-0 (>= 2:2.14.7)
