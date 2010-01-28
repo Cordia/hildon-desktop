@@ -614,6 +614,132 @@ load_background_idle (gpointer data)
   return FALSE;
 }
 
+/* Use Window as background. JNi220110 */
+void
+hd_home_view_window_background (HdHomeView *view, Window xwin)
+{
+  g_printerr("%s: view ptr = %p\n", __func__, view);
+  HdHomeViewPrivate *priv = view->priv;
+  #if 1
+  ClutterActor *new_bg = 0;
+  TidySubTexture *new_bg_sub = 0;
+  GError *error = NULL;
+  ClutterColor clr = BACKGROUND_COLOR;
+  ClutterActor *actor = CLUTTER_ACTOR (view);
+
+  MBWindowManagerClient *desktop_client;
+  desktop_client = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
+  MBWindowManager *wm = desktop_client->wmref;
+  MBWindowManagerClient *wmc = mb_wm_managed_client_from_xwindow (wm, xwin);
+  if (wmc) 
+  {
+  	MBWMCompMgrClient *client = wmc->cm_client;
+  	MBWMCompMgrClutterClient *cclient  = MB_WM_COMP_MGR_CLUTTER_CLIENT(client);
+  	new_bg = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+	g_printerr("window actor = %p\n", new_bg);
+  }
+  else
+  {
+	g_printerr ("Cannot find MBWindowManagerClient for Window %d.\n", (int)xwin);
+  }
+
+  if (!new_bg)
+    {
+      g_printerr ("Error getting background window. %s",
+                 error?error->message:"");
+      if (error)
+        g_error_free (error);
+
+      /* Add a black background */
+      new_bg = clutter_rectangle_new_with_color (&clr);
+      clutter_actor_set_size (new_bg,
+                              HD_COMP_MGR_LANDSCAPE_WIDTH,
+                              HD_COMP_MGR_LANDSCAPE_HEIGHT);
+    }
+  else
+    {
+		#if 1
+      guint bg_width, bg_height;
+      guint actual_width, actual_height;
+      bg_width = clutter_actor_get_width (actor);
+      bg_height = clutter_actor_get_height (actor);
+      actual_width = clutter_actor_get_width (new_bg);
+      actual_height = clutter_actor_get_height (new_bg);
+		g_printerr("size is %d x %d, should be %d x %d\n",
+			actual_width, actual_height, bg_width, bg_height);
+      /* It may be that we get a bigger texture than we need
+       * (because PVR texture compression has to use 2^n width
+       * and height). In this case we want to crop off the
+       * bottom + right sides, which we can do more efficiently
+       * with TidySubTexture than we can with set_clip.
+       */
+      if (bg_width != actual_width ||
+          bg_height != actual_height)
+        {
+		  g_printerr("clipping\n");
+          ClutterGeometry region;
+          region.x = 0;
+          region.y = 0;
+          region.width = actual_width > bg_width ? bg_width : actual_width;
+          region.height = actual_height > bg_height ? bg_height : actual_height;
+
+          new_bg_sub = tidy_sub_texture_new(CLUTTER_TEXTURE(new_bg));
+          tidy_sub_texture_set_region(new_bg_sub, &region);
+          clutter_actor_set_size(CLUTTER_ACTOR(new_bg_sub), bg_width, bg_height);
+          clutter_actor_hide(new_bg);
+          clutter_actor_show(CLUTTER_ACTOR(new_bg_sub));
+        }
+		#endif
+    }
+
+  //clutter_actor_set_name (new_bg, "HdHomeView::background");
+  clutter_actor_show(new_bg);
+
+  /* Add new background to the background container */
+  clutter_container_add_actor (
+              CLUTTER_CONTAINER (priv->background_container),
+              new_bg);
+  if (new_bg_sub)
+    clutter_container_add_actor (
+                CLUTTER_CONTAINER (priv->background_container),
+                CLUTTER_ACTOR(new_bg_sub));
+
+  /* Raise the texture above the solid color */
+  if (priv->background)
+    clutter_actor_raise (new_bg, priv->background);
+
+  /* Remove the old background (color or image) and the subtexture
+   * that may have been used to make it smaller */
+  if (priv->background_sub)
+      clutter_actor_destroy (CLUTTER_ACTOR(priv->background_sub));
+  if (priv->background)
+    //clutter_actor_hide (priv->background);
+    clutter_actor_destroy (priv->background);
+
+  /* Only update blur if we're currently active */
+  if (hd_home_view_container_get_current_view (priv->view_container) == priv->id)
+    hd_render_manager_blurred_changed();
+
+  priv->background = new_bg;
+  priv->background_sub = new_bg_sub;
+
+  priv->load_background_source = 0;
+
+  g_printerr("%s - done\n", __func__);
+  #else
+  /* Remove the old background (color or image) and the subtexture
+   * that may have been used to make it smaller */
+  if (priv->background_sub)
+      clutter_actor_destroy (CLUTTER_ACTOR(priv->background_sub));
+  priv->background_sub = 0;
+  if (priv->background)
+    clutter_actor_destroy (priv->background);
+  priv->background = 0;
+  #endif
+
+}
+// end of JNi220110
+
 void
 hd_home_view_load_background (HdHomeView *view)
 {

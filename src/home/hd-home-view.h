@@ -26,6 +26,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include <X11/Xlib.h> // JNi220110
 
 #include <clutter/clutter-group.h>
 
@@ -81,6 +82,7 @@ ClutterActor * hd_home_view_get_applets_container (HdHomeView *view);
 gboolean hd_home_view_get_active (HdHomeView *view);
 void     hd_home_view_set_active (HdHomeView *view,
                                   gboolean    active);
+void hd_home_view_window_background (HdHomeView *view, Window xwin);
 void hd_home_view_load_background (HdHomeView *view);
 void hd_home_view_update_state (HdHomeView *view);
 
