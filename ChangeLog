@@ -1,5 +1,14 @@
 2010-01-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Make the launcher less CRITICAL when refreshing the grid layout.
+
+	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_dispose):
+	  Don't unparent the ->blockers totally unnecessarily because
+	  it drops ClutterGroup's references to the objects without its
+	  consent.
+
+2010-01-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	* src/mb/hd-note.c (hd_note_request_geometry):
 	  Maximize the confirmation notes' height in xdpy_width-TITLE_BAR_HEIGHT
 	* tests/test-large-note.c:
