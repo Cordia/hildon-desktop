@@ -1,3 +1,10 @@
+2010-01-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-note.c (hd_note_request_geometry):
+	  Maximize the confirmation notes' height in xdpy_width-TITLE_BAR_HEIGHT
+	* tests/test-large-note.c:
+	  Make it fullscreenable.
+
 2010-01-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fixes: NB#137722 - Information banners are appearing on top of other

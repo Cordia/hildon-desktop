@@ -35,6 +35,8 @@ main (int argc, char **argv)
   HildonNote *note;
 
   note = HILDON_NOTE(hildon_note_new_confirmation(NULL, "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18"));
+  if (argv[1])
+    gtk_window_fullscreen(GTK_WINDOW(note));
   gtk_widget_show_all (GTK_WIDGET (note));
 
   gtk_main ();
