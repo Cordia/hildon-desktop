@@ -103,6 +103,8 @@ void hd_home_theme_changed (HdHome *home);
 
 void hd_home_unregister_applet (HdHome       *home,
                                 ClutterActor *applet);
+void hd_home_set_live_background (HdHome *home, MBWindowManagerClient *client);
+
 G_END_DECLS
 
 #endif

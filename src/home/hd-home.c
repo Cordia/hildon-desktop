@@ -820,6 +820,14 @@ take_screenshot (MBWindowManager *wm, Window xwin, gboolean take)
   return isok;
 }
 
+void
+hd_home_set_live_background (HdHome *home, MBWindowManagerClient *client)
+{
+  HdHomePrivate *priv = home->priv;
+  hd_home_view_container_set_live_bg (HD_HOME_VIEW_CONTAINER (
+                                           priv->view_container), client);
+}
+
 /* Called when a client message is sent to the root window. */
 static void
 root_window_client_message (XClientMessageEvent *event, HdHome *home)

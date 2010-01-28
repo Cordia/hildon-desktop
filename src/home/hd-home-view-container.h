@@ -79,6 +79,10 @@ ClutterTimeline *hd_home_view_container_scroll_to_next     (HdHomeViewContainer 
 void             hd_home_view_container_set_reactive       (HdHomeViewContainer *container,
                                                             gboolean             reactive);
 
+void 
+hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
+                                    MBWindowManagerClient *client);
+
 G_END_DECLS
 
 #endif

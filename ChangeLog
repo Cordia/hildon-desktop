@@ -1,5 +1,13 @@
 2010-01-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/home/hd-home-view-container.[ch]
+	(hd_home_view_container_set_live_bg): New public function to set
+	background to a client. Used from hd_home_set_live_background.
+	* src/home/hd-home.[ch] (hd_home_set_live_background): New public
+	function for setting live background.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Connect
+	the property to hd_home_set_live_background.
+
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Check if
 	_HILDON_LIVE_DESKTOP_BACKGROUND was changed.
 

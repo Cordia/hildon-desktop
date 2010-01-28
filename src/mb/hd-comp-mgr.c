@@ -685,6 +685,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
 
   if (event->atom == wm->atoms[MBWM_ATOM_HILDON_LIVE_DESKTOP_BACKGROUND])
     {
+      HdCompMgrPrivate *priv = hmgr->priv;
       c = mb_wm_managed_client_from_xwindow (wm, event->window);
       if (c)
         {
@@ -692,7 +693,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
           g_printerr ("%s: client '%s' now has live-bg value %d\n", __func__,
                       mb_wm_client_get_name (c),
                       c->window->live_background); */
-          /* TODO: do something with it */
+          hd_home_set_live_background (HD_HOME (priv->home), c);
         }
       return False;
     }

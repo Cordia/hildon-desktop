@@ -332,6 +332,23 @@ gconf_bgwindow_notify (GConfClient *client,
 #endif
 // end of JNi220110
 
+void 
+hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
+                                    MBWindowManagerClient *client)
+{
+  int view;
+  HdHomeView *hhview;
+  HdHomeViewContainerPrivate *priv = container->priv;
+
+  view = client->window->live_background;
+  if (view > 0 && view <= MAX_HOME_VIEWS)
+    {
+      hhview = HD_HOME_VIEW (priv->views[view - 1]);
+      hd_home_view_window_background (hhview, client->window->xwindow);
+    }
+  /* TODO: removing of live background */
+}
+
 static void
 hd_home_view_container_constructed (GObject *self)
 {
