@@ -1,3 +1,18 @@
+2010-01-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Make addressbook and call UI D-Bus interfaces configurable through
+	GConf.
+
+	* src/hildon-desktop-views.schemas: Add callui_dbus_interface and
+	addressbook_dbus_interface GConf keys with sensible default values.
+	* src/home/hd-home.c (update_dbus_interfaces_from_gconf): New function
+	to update the D-Bus interface information and proxy.
+	(dbus_interface_notify_func): New function for listening to changes to
+	the new keys.
+	(hd_home_init): Move code away from here to
+	update_dbus_interfaces_from_gconf and install GConf notification
+	handler.
+
 2010-01-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#146769 Random flicker when a stackable window is opened

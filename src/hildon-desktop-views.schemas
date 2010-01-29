@@ -32,5 +32,27 @@
         <short>Disable showing CallUI when desktop is rotated to portrait.</short>
       </locale>
     </schema>
+    <schema>
+      <key>/schemas/apps/osso/hildon-desktop/addressbook_dbus_interface</key>
+      <applyto>/apps/osso/hildon-desktop/addressbook_dbus_interface</applyto>
+      <owner>hildon-desktop</owner>
+      <type>list</type>
+      <list_type>string</list_type>
+      <default>[com.nokia.osso_addressbook,/com/nokia/osso_addressbook,search_append]</default>
+      <locale name="C">
+        <short>Addressbook D-Bus interface for desktop live search.</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/osso/hildon-desktop/callui_dbus_interface</key>
+      <applyto>/apps/osso/hildon-desktop/callui_dbus_interface</applyto>
+      <owner>hildon-desktop</owner>
+      <type>list</type>
+      <list_type>string</list_type>
+      <default>[com.nokia.CallUI,/com/nokia/CallUI,ShowDialpad]</default>
+      <locale name="C">
+        <short>Call UI D-Bus interface for desktop live search.</short>
+      </locale>
+    </schema>
   </schemalist>
 </gconfschemafile>
