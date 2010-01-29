@@ -1,3 +1,18 @@
+2010-01-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#146769 Random flicker when a stackable window is opened
+
+	hd_render_manager_set_visibilities() decided the mainview was covered
+	while it was in transition.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_visibilities):
+	  See if the actor to be hidden is in a subview transition and don't
+	  hide it then but leave it up to the transition to do that at the
+	  end.  This code was only enabled on i386 previsely to avoid flicker
+	  because it wasn't visible on the device at that time.
+	* src/util/hd-transition.c (hd_transition_actor_will_go_away):
+	  Consider mainview going away in mainview->subview transition.
+
 2010-01-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Make the launcher less CRITICAL when refreshing the grid layout.

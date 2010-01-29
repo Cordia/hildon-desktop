@@ -1761,9 +1761,13 @@ hd_transition_actor_will_go_away (ClutterActor *actor)
   if (!(hcmgrc = g_object_get_data(G_OBJECT(actor),
                                    "HD-MBWMCompMgrClutterClient")))
     return FALSE;
-  if (!hcmgrc->effect || hcmgrc->effect->event != MBWMCompMgrClientEventUnmap)
+  if (!hcmgrc->effect)
     return FALSE;
-  return hcmgrc->effect->cclient == MB_WM_COMP_MGR_CLUTTER_CLIENT (hcmgrc);
+  if (hcmgrc->effect->event == MBWMCompMgrClientEventMap)
+    return hcmgrc->effect->cclient2 == MB_WM_COMP_MGR_CLUTTER_CLIENT (hcmgrc);
+  if (hcmgrc->effect->event == MBWMCompMgrClientEventUnmap)
+    return hcmgrc->effect->cclient  == MB_WM_COMP_MGR_CLUTTER_CLIENT (hcmgrc);
+  return FALSE;
 }
 
 /* Start playing @fname asynchronously. */
