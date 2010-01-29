@@ -39,14 +39,14 @@
 
 #include <string.h>
 #include <math.h>
-#include <X11/Xproto.h> // JNi220110
+#include <X11/Xproto.h>
 
 #define MAX_HOME_VIEWS 4
 
 #define HD_GCONF_DIR_VIEWS         "/apps/osso/hildon-desktop/views"
 #define HD_GCONF_KEY_VIEWS_ACTIVE  HD_GCONF_DIR_VIEWS "/active"
 #define HD_GCONF_KEY_VIEWS_CURRENT HD_GCONF_DIR_VIEWS "/current"
-#define HD_GCONF_KEY_WINDOW		   HD_GCONF_DIR_VIEWS "/window" // JNi220110
+#define HD_GCONF_KEY_WINDOW		   HD_GCONF_DIR_VIEWS "/window"
 
 #define BACKGROUNDS_DIR ".backgrounds"
 
@@ -77,7 +77,7 @@ struct _HdHomeViewContainerPrivate
   GnomeVFSMonitorHandle *backgrounds_dir_monitor;
 
   guint views_active_notify;
-  guint bg_window_notify; // JNi220110
+  guint bg_window_notify;
 };
 
 enum
@@ -305,8 +305,6 @@ views_active_notify_func (GConfClient *client,
                                               FALSE);
 }
 
-// JNi220110
-#if 1
 static void 
 gconf_bgwindow_notify (GConfClient *client,
                       guint        cnxn_id,
@@ -329,8 +327,6 @@ gconf_bgwindow_notify (GConfClient *client,
   	g_printerr("hd_home_view_window_background returned\n");
   }
 }
-#endif
-// end of JNi220110
 
 void 
 hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
@@ -441,25 +437,22 @@ hd_home_view_container_constructed (GObject *self)
   g_free (backgrounds_dir);
   g_free (backgrounds_dir_uri);
 
-	// Monitor Window-as-background key here. JNi220110
-	#if 1
-      priv->bg_window_notify = gconf_client_notify_add (priv->gconf_client,
-                                                          HD_GCONF_KEY_WINDOW,
-                                                          (GConfClientNotifyFunc) gconf_bgwindow_notify,
-                                                          self,
-                                                          NULL,
-                                                          &error);
-    g_printerr ("notify add ok\n");
-      if (error)
-        {
-          g_warning ("%s. Could not add notification to GConf %s. %s",
-                     __FUNCTION__,
-                     HD_GCONF_KEY_WINDOW,
-                     error->message);
-          g_clear_error (&error);
-        }
-	#endif
-	// end of JNi220110
+  // Monitor Window-as-background key here
+  priv->bg_window_notify = gconf_client_notify_add (priv->gconf_client,
+	                                                  HD_GCONF_KEY_WINDOW,
+	                                                  (GConfClientNotifyFunc) gconf_bgwindow_notify,
+	                                                  self,
+	                                                  NULL,
+	                                                  &error);
+  g_printerr ("notify add ok\n");
+  if (error)
+  {
+    g_warning ("%s. Could not add notification to GConf %s. %s",
+               __FUNCTION__,
+               HD_GCONF_KEY_WINDOW,
+               error->message);
+    g_clear_error (&error);
+  }
 
   hd_home_view_container_update_active_views (container, TRUE);
 }
@@ -475,13 +468,9 @@ hd_home_view_container_dispose (GObject *self)
   if (priv->backgrounds_dir_monitor)
     priv->backgrounds_dir_monitor = (gnome_vfs_monitor_cancel (priv->backgrounds_dir_monitor), NULL);
 
-	// JNi220110
-	#if 1
+  // live background support
   if (priv->bg_window_notify)
-    priv->bg_window_notify = (gconf_client_notify_remove (priv->gconf_client,
-                                                                    priv->bg_window_notify), 0);
-	#endif
-	// end of JNi220110
+    priv->bg_window_notify = (gconf_client_notify_remove (priv->gconf_client, priv->bg_window_notify), 0);
 
   G_OBJECT_CLASS (hd_home_view_container_parent_class)->dispose (self);
 }

@@ -1865,7 +1865,7 @@ void hd_render_manager_restack()
           actor = mb_wm_comp_mgr_clutter_client_get_actor(
               MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
 
-		  #if 0
+		  #if 0 // Temporarily away for enabling live background
           /* remove clients that have received UnmapNotify, otherwise they
            * can show as 'ghost windows' in the blur (one such case was:
            * go to switcher, tklock, power button, slide to unlock) */
@@ -1903,7 +1903,7 @@ void hd_render_manager_restack()
           if (actor)
             {
               ClutterActor *parent = clutter_actor_get_parent(actor);
-              if (1)//past_desktop) // JNi260110
+              if (1)//past_desktop) // This is a temporary kludge for live background
                 {
                   /* if we want to render this, add it. we need to be careful
                    * not to pull applets or other things out from where they
@@ -1922,7 +1922,7 @@ void hd_render_manager_restack()
                             clutter_actor_get_name(actor)?clutter_actor_get_name(actor):"?",
                             clutter_actor_get_name(parent)?clutter_actor_get_name(parent):"?");
 #endif /*STACKING_DEBUG*/
-				if (past_desktop) // JNi260110
+					  if (past_desktop) // This is a temporary kludge for live background
 		      			clutter_actor_raise_top(actor);
                     }
 #if STACKING_DEBUG

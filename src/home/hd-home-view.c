@@ -614,7 +614,7 @@ load_background_idle (gpointer data)
   return FALSE;
 }
 
-/* Use Window as background. JNi220110 */
+/* Use Window as background */
 void
 hd_home_view_window_background (HdHomeView *view, Window xwin)
 {
@@ -738,7 +738,6 @@ hd_home_view_window_background (HdHomeView *view, Window xwin)
   #endif
 
 }
-// end of JNi220110
 
 void
 hd_home_view_load_background (HdHomeView *view)
