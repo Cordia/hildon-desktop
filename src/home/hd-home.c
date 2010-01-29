@@ -110,6 +110,13 @@ enum EdgeIndicationOpacity
   EDGE_INDICATION_OPACITY_WIDGET_OVER = 0xff,
 };
 
+typedef enum
+{
+  HD_HOME_GCONF_UPDATE_BOTH,
+  HD_HOME_GCONF_UPDATE_ABOOK,
+  HD_HOME_GCONF_UPDATE_CALLUI
+} HdHomeGconfUpdateMode;
+
 struct _HdHomePrivate
 {
   MBWMCompMgrClutter    *comp_mgr;
@@ -218,6 +225,8 @@ static gboolean do_home_applet_motion (HdHome       *home,
 static void update_edge_indication_visibility (HdHome *home,
                                                guint8  left_opacity,
                                                guint8  right_opacity);
+static void
+update_dbus_interfaces_from_gconf (HdHome *home, HdHomeGconfUpdateMode what);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -583,6 +592,7 @@ get_keyval_for_russian_cyrillic_keyboard (GdkKeymap       *keymap,
 static void
 hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 {
+  static gboolean proxies_initialised = FALSE;
   HdHome *home = userdata;
   HdHomePrivate *priv = home->priv;
   GdkDisplay *display = gdk_display_get_default ();
@@ -591,6 +601,12 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
   guint32 unicode;
   unsigned pretend_fn;
   time_t now;
+
+  if (!proxies_initialised)
+    {
+      update_dbus_interfaces_from_gconf (home, HD_HOME_GCONF_UPDATE_BOTH);
+      proxies_initialised = TRUE;
+    }
 
   /* We don't care if Ctrl is pressed. */
   if (xev->state & ControlMask)
@@ -1073,13 +1089,6 @@ hd_home_constructed (GObject *object)
 					  object);
 }
 
-typedef enum
-{
-  HD_HOME_GCONF_UPDATE_BOTH,
-  HD_HOME_GCONF_UPDATE_ABOOK,
-  HD_HOME_GCONF_UPDATE_CALLUI
-} HdHomeGconfUpdateMode;
-
 static void
 update_dbus_interfaces_from_gconf (HdHome *home, HdHomeGconfUpdateMode what)
 {
@@ -1233,8 +1242,6 @@ hd_home_init (HdHome *self)
   g_debug ("%s registered to session bus at %s",
            HD_HOME_DBUS_NAME,
            HD_HOME_DBUS_PATH);
-
-  update_dbus_interfaces_from_gconf (self, HD_HOME_GCONF_UPDATE_BOTH);
 
   gconf_client_notify_add (gconf_client, ADDRESSBOOK_GCONF_KEY,
                            dbus_interface_notify_func, self, NULL, NULL);
