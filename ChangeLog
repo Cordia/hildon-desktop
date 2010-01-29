@@ -1,3 +1,12 @@
+2010-01-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#154727 Notification glow effect should fire up when screen
+		  is unlocked
+
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler):
+	  (Re)start pulsating the tasks button when display_status_ind
+	  becomes "on".
+
 2010-01-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Make addressbook and call UI D-Bus interfaces configurable through

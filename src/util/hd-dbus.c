@@ -2,6 +2,7 @@
 
 #include "hd-dbus.h"
 #include "hd-switcher.h"
+#include "hd-title-bar.h"
 #include "hd-render-manager.h"
 #include "hd-volume-profile.h"
 
@@ -132,6 +133,12 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                    * screen will be visible (see below) */
                   hd_dbus_display_is_off = FALSE;
                   clutter_redraw (CLUTTER_STAGE (stage));
+                  if (hd_task_navigator_has_notifications ())
+                    { /* (Re)start pulsating if we have notifs. */
+                      HdTitleBar *tb = HD_TITLE_BAR (hd_render_manager_get_title_bar ());
+                      hd_title_bar_set_switcher_pulse (tb, FALSE);
+                      hd_title_bar_set_switcher_pulse (tb, TRUE);
+                    }
                 }
               else if (strcmp (str, "off") == 0)
                 {
