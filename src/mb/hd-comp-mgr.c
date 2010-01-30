@@ -98,6 +98,8 @@ struct HdCompMgrPrivate
   MBWindowManagerClient *status_area_client;
   MBWindowManagerClient *status_menu_client;
 
+  MBWindowManagerClient *keyboard;
+
   HdCompMgrClient       *current_hclient;
 
   /* Track changes to the PORTRAIT properties. */
@@ -1014,6 +1016,10 @@ hd_comp_mgr_register_client (MBWMCompMgr           * mgr,
     {
       priv->desktop = c;
       return;
+    }
+  else if (MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeKeyboard)
+    {
+      priv->keyboard = c;
     }
 
   if (parent_klass->register_client)

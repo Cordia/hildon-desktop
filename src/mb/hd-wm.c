@@ -33,6 +33,7 @@
 #include "hd-desktop.h"
 #include "hd-app.h"
 #include "hd-switcher.h"
+#include "hd-keyboard.h"
 
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/core/mb-wm.h>
@@ -162,8 +163,7 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
       win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_MENU]           ||
       win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_POPUP_MENU]     ||
       win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_DROPDOWN_MENU]  ||
-      win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_TOOLBAR]        ||
-      win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_INPUT])
+      win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_TOOLBAR])
     /* Pass to libmatchbox the types we don't want to handle.
      * We'll handle the unknowns. */
     return wm_class ?  wm_class->client_new (wm, win) : NULL;
@@ -215,6 +215,11 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
       g_debug ("### is notification ###");
       return hd_note_new (wm, win);
     }
+  else if (win->net_type == wm->atoms[MBWM_ATOM_NET_WM_WINDOW_TYPE_INPUT])
+    {
+      g_debug ("### is keyboard ###");
+      return hd_keyboard_new (wm, win);
+    }
   else if (win->net_type == hd_comp_mgr_get_atom (hmgr,
                           HD_ATOM_HILDON_WM_WINDOW_TYPE_ANIMATION_ACTOR))
     {
@@ -227,7 +232,7 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
       g_debug ("### is remote texture ###");
       return hd_remote_texture_new (wm, win);
     }
-  else
+ else
     {
       /* All of hildon-desktop relies on %MBWMClientTypeApp:s being
        * represented by %HdApp:s.  Don't let them down. */

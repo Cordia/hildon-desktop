@@ -36,6 +36,7 @@ typedef enum _HdWmClientType
   HdWmClientTypeStatusMenu  = MBWMClientTypeLast << 4,
   HdWmClientTypeAnimationActor = MBWMClientTypeLast << 5,
   HdWmClientTypeRemoteTexture = MBWMClientTypeLast << 6,
+  HdWmClientTypeKeyboard = MBWMClientTypeLast << 7
 } HdWmClientType;
 
 typedef struct HdWmClass   HdWmClass;

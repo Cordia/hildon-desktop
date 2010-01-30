@@ -15,7 +15,8 @@ mb_h =		hd-atoms.h			\
 		hd-decor.h			\
 		hd-decor-button.h		\
 		hd-animation-actor.h		\
-		hd-remote-texture.h
+		hd-remote-texture.h		\
+		hd-keyboard.h
 
 mb_c = 		hd-atoms.c			\
 		hd-comp-mgr.c			\
@@ -32,7 +33,8 @@ mb_c = 		hd-atoms.c			\
 		hd-decor.c			\
 		hd-decor-button.c		\
 		hd-animation-actor.c		\
-		hd-remote-texture.c
+		hd-remote-texture.c		\
+		hd-keyboard.c	
 
 noinst_LTLIBRARIES = libmb.la
 
