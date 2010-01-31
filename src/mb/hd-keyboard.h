@@ -1,10 +1,9 @@
 /*
  * This file is part of hildon-desktop
  *
- * Copyright (C) 2008 Nokia Corporation.
+ * Copyright (C) 2010 Moises Martinez
  *
- * Authors:  Tomas Frydrych <tf@o-hand.com>
- *           Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+ * Author:  Moises Martinez <moimart@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License

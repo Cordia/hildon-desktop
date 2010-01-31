@@ -1,10 +1,9 @@
 /*
  * This file is part of hildon-desktop
  *
- * Copyright (C) 2008 Nokia Corporation.
+ * Copyright (C) 2010 Moises Martinez
  *
- * Authors:  Tomas Frydrych <tf@o-hand.com>
- *           Kimmo H�m�l�inen <kimmo.hamalainen@nokia.com>
+ * Author:  Moises Martinez <moimart@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -112,7 +111,7 @@ hd_keyboard_init (MBWMObject *this, va_list vap)
 
   geom.x = 0;
   geom.width  = wm->xdpy_width;
-  geom.height = wm->xdpy_height*0.66;
+  geom.height = wm->xdpy_height/2;
   geom.y = wm->xdpy_height - geom.height;
 g_debug ("Keyboard size w: %d h: %d", geom.width, geom.height);
   //client->frame_geometry.height = 0;
