@@ -1,10 +1,20 @@
-hildon-desktop (1:2.2.130-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.130-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#149943 - hildon-desktop animations are not linear after
     enabling asynchronous swap
+  * Make addressbook and call UI D-Bus interfaces configurable through GConf.
+  * NB#137722 - Information banners are appearing on top of other applications.
+  * NB#149962 - Poor handling of an application window raising itself above a
+    non-composited window
+  * NB#151877 - title bar is blank for ordinary X applications
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 25 Jan 2010 13:25:19 +0200
+  Adam:
+  * NB#154727 Notification glow effect should fire up when screen is unlocked
+  * Make the launcher less CRITICAL when refreshing the grid layout.
+  * NB#146769 Random flicker when a stackable window is opened
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 01 Feb 2010 13:07:28 +0200
 
 hildon-desktop (1:2.2.129-1) unstable; urgency=low
 
