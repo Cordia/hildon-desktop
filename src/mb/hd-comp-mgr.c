@@ -2270,7 +2270,30 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     }
   else if (ctype == MBWMClientTypeNote)
     {
-      if (HD_IS_BANNER_NOTE (c) || HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c))
+      gboolean unblank = FALSE;
+      if (HD_IS_BANNER_NOTE (c))
+        {
+          if (transient_for) 
+            {
+              /* don't put the banner to front group if it's transient to
+               * a background window */
+              MBWindowManagerClient *tmp;
+              for (tmp = hd_comp_mgr_determine_current_app (); tmp;
+                   tmp = tmp->stacked_above)
+                if (tmp == transient_for)
+                  {
+                    hd_render_manager_add_to_front_group (actor);
+                    unblank = TRUE;
+                    break;
+                  }
+            }
+          else
+            {
+              hd_render_manager_add_to_front_group (actor);
+              unblank = TRUE;
+            }
+        }
+      else if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c))
         hd_render_manager_add_to_front_group(actor);
 
       if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c))
@@ -2288,7 +2311,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
           && transient_for)
         hd_switcher_add_dialog (priv->switcher_group, c, actor);
 
-      if (HD_IS_BANNER_NOTE (c) && priv->mce_proxy)
+      if (unblank && priv->mce_proxy)
         { /* Turn display backlight on for banner notes. */
           g_debug ("%s. Call %s", __FUNCTION__, MCE_DISPLAY_ON_REQ);
           dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,

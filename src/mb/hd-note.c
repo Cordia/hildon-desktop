@@ -431,6 +431,22 @@ hd_note_request_geometry (MBWindowManagerClient *client,
 	  client->frame_geometry.width  = new_geometry.width;
 	  client->frame_geometry.height = new_geometry.height;
 
+          if (HD_IS_CONFIRMATION_NOTE (client)
+              && !(client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen))
+            {
+              int diff;
+
+              diff  = 0*client->frame_geometry.y + client->frame_geometry.height;
+              diff -= wm->xdpy_height - HD_COMP_MGR_TOP_MARGIN;
+              g_warning("DIFF %d", diff);
+              if (diff > 0)
+                {
+                  client->frame_geometry.height -= diff;
+                  client->frame_geometry.y      += diff;
+                  g_warning("HEIGHT %d Y %d", client->frame_geometry.height, client->frame_geometry.y);
+                }
+            }
+
 	  client->window->geometry.x
 	    = client->frame_geometry.x + west;
 	  client->window->geometry.y

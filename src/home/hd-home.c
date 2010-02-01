@@ -78,13 +78,9 @@
 #define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home"
 #define HD_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
 
-#define CALL_UI_DBUS_NAME "com.nokia.CallUI"
-#define CALL_UI_DBUS_PATH "/com/nokia/CallUI"
-#define CALL_UI_DBUS_METHOD_SHOW_DIALPAD "ShowDialpad"
-
-#define OSSO_ADDRESSBOOK_DBUS_NAME "com.nokia.osso_addressbook"
-#define OSSO_ADDRESSBOOK_DBUS_PATH "/com/nokia/osso_addressbook"
-#define OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND "search_append"
+#define CALL_UI_GCONF_KEY "/apps/osso/hildon-desktop/callui_dbus_interface"
+#define ADDRESSBOOK_GCONF_KEY \
+           "/apps/osso/hildon-desktop/addressbook_dbus_interface"
 
 #define INDICATION_WIDTH 50
 #define HD_EDGE_INDICATION_COLOR "SelectionColor"
@@ -113,6 +109,13 @@ enum EdgeIndicationOpacity
   EDGE_INDICATION_OPACITY_WIDGET_MOVING = 0x7f,
   EDGE_INDICATION_OPACITY_WIDGET_OVER = 0xff,
 };
+
+typedef enum
+{
+  HD_HOME_GCONF_UPDATE_BOTH,
+  HD_HOME_GCONF_UPDATE_ABOOK,
+  HD_HOME_GCONF_UPDATE_CALLUI
+} HdHomeGconfUpdateMode;
 
 struct _HdHomePrivate
 {
@@ -160,7 +163,7 @@ struct _HdHomePrivate
 
   /* DBus Proxy for the call to com.nokia.CallUI.ShowDialpad */
   DBusGProxy            *call_ui_proxy;
-  DBusGProxy            *osso_addressbook_proxy;
+  DBusGProxy            *addressbook_proxy;
 
   /* For hd_home_desktop_key_press() */
   enum
@@ -182,6 +185,10 @@ struct _HdHomePrivate
    * Don't change @fn_state if it was wasn't pressed alone. */
   gboolean ignore_next_fn_release;
   /* These are all reset when the HDRM state is changed. */
+
+  /* addressbook and Call UI D-Bus interfaces (name, path, method) */
+  gchar *abook_interface[3];
+  gchar *callui_interface[3];
 };
 
 typedef struct {
@@ -218,6 +225,8 @@ static gboolean do_home_applet_motion (HdHome       *home,
 static void update_edge_indication_visibility (HdHome *home,
                                                guint8  left_opacity,
                                                guint8  right_opacity);
+static void
+update_dbus_interfaces_from_gconf (HdHome *home, HdHomeGconfUpdateMode what);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
 
@@ -583,6 +592,7 @@ get_keyval_for_russian_cyrillic_keyboard (GdkKeymap       *keymap,
 static void
 hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
 {
+  static gboolean proxies_initialised = FALSE;
   HdHome *home = userdata;
   HdHomePrivate *priv = home->priv;
   GdkDisplay *display = gdk_display_get_default ();
@@ -591,6 +601,12 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
   guint32 unicode;
   unsigned pretend_fn;
   time_t now;
+
+  if (!proxies_initialised)
+    {
+      update_dbus_interfaces_from_gconf (home, HD_HOME_GCONF_UPDATE_BOTH);
+      proxies_initialised = TRUE;
+    }
 
   /* We don't care if Ctrl is pressed. */
   if (xev->state & ControlMask)
@@ -666,7 +682,7 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
       if (priv->call_ui_proxy)
         {
           dbus_g_proxy_call_no_reply (priv->call_ui_proxy,
-                CALL_UI_DBUS_METHOD_SHOW_DIALPAD,
+                priv->callui_interface[2],
                 G_TYPE_STRING, buffer, G_TYPE_INVALID);
         }
     }
@@ -679,10 +695,10 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
       g_debug ("%s, letter: keyval: %u, unicode: %u, buffer: %s",
                __FUNCTION__, keyval, unicode, buffer);
 
-      if (priv->osso_addressbook_proxy)
+      if (priv->addressbook_proxy)
         {
-          dbus_g_proxy_call_no_reply (priv->osso_addressbook_proxy,
-                OSSO_ADDRESSBOOK_DBUS_METHOD_SEARCH_APPEND,
+          dbus_g_proxy_call_no_reply (priv->addressbook_proxy,
+                priv->abook_interface[2],
                 G_TYPE_STRING, buffer, G_TYPE_INVALID);
         }
     }
@@ -1082,6 +1098,87 @@ hd_home_constructed (GObject *object)
 }
 
 static void
+update_dbus_interfaces_from_gconf (HdHome *home, HdHomeGconfUpdateMode what)
+{
+  int i;
+  GSList *l, *l_start;
+  HdHomePrivate *priv = home->priv;
+  GConfClient *gconf_client = gconf_client_get_default ();
+  DBusGConnection *connection;
+  GError *error = NULL;
+
+  connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+  if (error)
+    {
+      g_error_free (error);
+      return;
+    }
+
+  if (what == HD_HOME_GCONF_UPDATE_BOTH || what == HD_HOME_GCONF_UPDATE_ABOOK)
+    {
+      l_start = l = gconf_client_get_list (gconf_client,
+                                           ADDRESSBOOK_GCONF_KEY,
+                                           GCONF_VALUE_STRING,
+                                           NULL);
+      for (i = 0; l && i < 3; ++i, l = l->next)
+        {
+          if (priv->abook_interface[i])
+            g_free (priv->abook_interface[i]);
+          priv->abook_interface[i] = g_strdup (l->data);
+        }
+
+      g_slist_free (l_start);
+
+      if (priv->addressbook_proxy)
+        g_object_unref (priv->addressbook_proxy);
+
+      priv->addressbook_proxy = dbus_g_proxy_new_for_name (connection,
+                                                   priv->abook_interface[0],
+                                                   priv->abook_interface[1],
+                                                   priv->abook_interface[0]);
+    }
+
+  if (what == HD_HOME_GCONF_UPDATE_BOTH || what == HD_HOME_GCONF_UPDATE_CALLUI)
+    {
+      l_start = l = gconf_client_get_list (gconf_client,
+                                           CALL_UI_GCONF_KEY,
+                                           GCONF_VALUE_STRING,
+                                           NULL);
+      for (i = 0; l && i < 3; ++i, l = l->next)
+        {
+          if (priv->callui_interface[i])
+            g_free (priv->callui_interface[i]);
+          priv->callui_interface[i] = g_strdup (l->data);
+        }
+
+      g_slist_free (l_start);
+
+      if (priv->call_ui_proxy)
+        g_object_unref (priv->call_ui_proxy);
+
+      priv->call_ui_proxy = dbus_g_proxy_new_for_name (connection,
+                                                   priv->callui_interface[0],
+                                                   priv->callui_interface[1],
+                                                   priv->callui_interface[0]);
+    }
+}
+
+static void
+dbus_interface_notify_func (GConfClient *client,
+                            guint        cnxn_id,
+                            GConfEntry  *entry,
+                            gpointer     user_data)
+{
+  HdHome *home = user_data;
+  const char *key = gconf_entry_get_key (entry);
+
+  if (g_strcmp0 (key, CALL_UI_GCONF_KEY) == 0)
+    update_dbus_interfaces_from_gconf (home, HD_HOME_GCONF_UPDATE_CALLUI);
+  else
+    update_dbus_interfaces_from_gconf (home, HD_HOME_GCONF_UPDATE_ABOOK);
+}
+
+static void
 hd_home_init (HdHome *self)
 {
   HdHomePrivate *priv;
@@ -1089,20 +1186,25 @@ hd_home_init (HdHome *self)
   DBusGProxy *bus_proxy = NULL;
   guint result;
   GError *error = NULL;
+  GConfClient *gconf_client;
 
-  priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME, HdHomePrivate);
+  priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME,
+                                                   HdHomePrivate);
 
   priv->initial_x = -1;
   priv->initial_y = -1;
   priv->last_move_time = g_timer_new();
 
-  priv->show_edit_button_template = clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
-                                                                              CLUTTER_ALPHA_SINE_INC);
-  priv->hide_edit_button_template = clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
-                                                                              CLUTTER_ALPHA_SINE_INC);
+  priv->show_edit_button_template =
+          clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
+                                                    CLUTTER_ALPHA_SINE_INC);
+  priv->hide_edit_button_template =
+          clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
+                                                    CLUTTER_ALPHA_SINE_INC);
 
   /* Listen to gconf notifications */
-  gconf_client_add_dir (gconf_client_get_default (),
+  gconf_client = gconf_client_get_default ();
+  gconf_client_add_dir (gconf_client,
                         "/apps/osso/hildon-desktop",
 			GCONF_CLIENT_PRELOAD_NONE,
 			NULL);
@@ -1149,15 +1251,10 @@ hd_home_init (HdHome *self)
            HD_HOME_DBUS_NAME,
            HD_HOME_DBUS_PATH);
 
-  priv->call_ui_proxy = dbus_g_proxy_new_for_name (connection,
-                                                   CALL_UI_DBUS_NAME,
-                                                   CALL_UI_DBUS_PATH,
-                                                   CALL_UI_DBUS_NAME);
-
-  priv->osso_addressbook_proxy = dbus_g_proxy_new_for_name (connection,
-                                                            OSSO_ADDRESSBOOK_DBUS_NAME,
-                                                            OSSO_ADDRESSBOOK_DBUS_PATH,
-                                                            OSSO_ADDRESSBOOK_DBUS_NAME);
+  gconf_client_notify_add (gconf_client, ADDRESSBOOK_GCONF_KEY,
+                           dbus_interface_notify_func, self, NULL, NULL);
+  gconf_client_notify_add (gconf_client, CALL_UI_GCONF_KEY,
+                           dbus_interface_notify_func, self, NULL, NULL);
 
 cleanup:
   if (bus_proxy != NULL)

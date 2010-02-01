@@ -491,9 +491,6 @@ hd_launcher_grid_dispose (GObject *gobject)
   g_list_free (priv->tiles);
   priv->tiles = NULL;
 
-  g_list_foreach(priv->blockers,
-                 (GFunc) clutter_actor_unparent,
-                 NULL);
   g_list_free(priv->blockers);
   priv->blockers = NULL;
 

@@ -1,11 +1,26 @@
-hildon-desktop (1:2.2.130-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.131-1~unreleased) unstable; urgency=low
+
+  * foo
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  1 Feb 2010 13:08:53 +0200
+
+hildon-desktop (1:2.2.130-1) unstable; urgency=low
 
   Kimmo:
   * Fixes: NB#149943 - hildon-desktop animations are not linear after
     enabling asynchronous swap
+  * Make addressbook and call UI D-Bus interfaces configurable through GConf.
+  * NB#137722 - Information banners are appearing on top of other applications.
+  * NB#149962 - Poor handling of an application window raising itself above a
+    non-composited window
+  * NB#151877 - title bar is blank for ordinary X applications
 
+  Adam:
+  * NB#154727 Notification glow effect should fire up when screen is unlocked
+  * Make the launcher less CRITICAL when refreshing the grid layout.
+  * NB#146769 Random flicker when a stackable window is opened
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 25 Jan 2010 13:25:19 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 01 Feb 2010 13:07:28 +0200
 
 hildon-desktop (1:2.2.129-1) unstable; urgency=low
 
@@ -29,22 +44,22 @@ hildon-desktop (1:2.2.128-1) unstable; urgency=low
   Adam:
   * Fix regression NB#153980 - Task button and status area are not shown on
     the desktop.
-  * Fixes: NB#143253 - Portrait mode: close button reacts to presses outside
-    of its visible allocation
+  * Fix related to NB#143253 - Portrait mode: close button reacts to presses
+    outside of its visible allocation
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 22 Jan 2010 10:05:04 +0200
 
 hildon-desktop (1:2.2.127-1) unstable; urgency=low
 
   Marc:
-  * Fixes: NB#153463 - First row in application matrix gets duplicated
+  * Fix wrt NB#153463 - First row in application matrix gets duplicated
 
   Kimmo:
   * Fixes: NB#147359 - Showing swipe to unlock screen causes backgrounded
     app to maximize on screen unblank
 
   Adam:
-  * Fixes: NB#135337 - status area and tasks button overlayed on the top
+  * Fix wrt NB#135337 - status area and tasks button overlayed on the top
     of landscape incoming call dialog
 
   Gordon:

@@ -2495,13 +2495,14 @@ void hd_render_manager_set_visibilities()
             }
           else
             { /* Not visible, hide it unless... */
-              VISIBILITY ("ISNT");
-#ifdef __i386__
-              /* On the device the flicker we can avoid with this check
-               * upon subview->mainview transition is not visible. */
+              /* Avoid flicker with subview transition. */
               if (!hd_transition_actor_will_go_away(child))
-#endif
-                clutter_actor_hide(child);
+                {
+                  VISIBILITY ("ISNT");
+                  clutter_actor_hide(child);
+                }
+              else
+                VISIBILITY ("ISNT BUT WILL GO AWAY");
             }
         }
     }

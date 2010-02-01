@@ -1,3 +1,64 @@
+2010-02-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.130-1
+
+2010-01-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#154727 Notification glow effect should fire up when screen
+		  is unlocked
+
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler):
+	  (Re)start pulsating the tasks button when display_status_ind
+	  becomes "on".
+
+2010-01-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Make addressbook and call UI D-Bus interfaces configurable through
+	GConf.
+
+	* src/hildon-desktop-views.schemas: Add callui_dbus_interface and
+	addressbook_dbus_interface GConf keys with sensible default values.
+	* src/home/hd-home.c (update_dbus_interfaces_from_gconf): New function
+	to update the D-Bus interface information and proxy.
+	(dbus_interface_notify_func): New function for listening to changes to
+	the new keys.
+	(hd_home_init): Move code away from here to
+	update_dbus_interfaces_from_gconf and install GConf notification
+	handler.
+	(hd_home_desktop_key_press): Initialise D-Bus proxies here so that we
+	don't block for an answer from the Gconf daemon at startup.
+
+2010-01-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#146769 Random flicker when a stackable window is opened
+
+	hd_render_manager_set_visibilities() decided the mainview was covered
+	while it was in transition.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_visibilities):
+	  See if the actor to be hidden is in a subview transition and don't
+	  hide it then but leave it up to the transition to do that at the
+	  end.  This code was only enabled on i386 previsely to avoid flicker
+	  because it wasn't visible on the device at that time.
+	* src/util/hd-transition.c (hd_transition_actor_will_go_away):
+	  Consider mainview going away in mainview->subview transition.
+
+2010-01-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Make the launcher less CRITICAL when refreshing the grid layout.
+
+	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_dispose):
+	  Don't unparent the ->blockers totally unnecessarily because
+	  it drops ClutterGroup's references to the objects without its
+	  consent.
+
+2010-01-28  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-note.c (hd_note_request_geometry):
+	  Maximize the confirmation notes' height in xdpy_width-TITLE_BAR_HEIGHT
+	* tests/test-large-note.c:
+	  Make it fullscreenable.
+
 2010-01-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-home-view-container.[ch]
@@ -7,9 +68,15 @@
 	function for setting live background.
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Connect
 	the property to hd_home_set_live_background.
-
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Check if
 	_HILDON_LIVE_DESKTOP_BACKGROUND was changed.
+
+	Fixes: NB#137722 - Information banners are appearing on top of other
+	applications.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Don't put the banner
+	to the front group if it's transient to a background window. Handle
+	unblanking of screen correctly also.
 
 2010-01-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
