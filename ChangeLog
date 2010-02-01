@@ -14,6 +14,20 @@
 	  Stop the $transition rather than mindlessly unreffing it.
 	  Stop will also clean up.
 
+2010-02-01  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#137235 - Transparent menu corners
+	
+	* src/home/hd-clutter-cache.c: Fix stretching of textures
+	* src/main.c: add "status-menu" client type for theme.xml
+	* src/mb/hd-app-menu.c: Remove hd_app_menu_request_geometry, as it was
+	  just a copy/paste job.
+	* src/mb/hd-decor.c: Only add progress indictor if we had title text,
+	  cope with non-north decors, and textures other than the original
+	  WindowManagerStuff texture.
+	* src/util/hd-transition.c: Still allow windows that go off the top of
+	  the screen to be animated with a popup animation.
+
 2010-02-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.130-1
@@ -473,21 +487,9 @@
 	  Don't.
 	* src/launcher/hd-app-mgr.c (hd_app_mgr_gconf_value_changed,
 	hd_app_mgr_hdrm_state_change):
-	  Do (as though it may not be a good idea in hd_app_mgr_hdrm_state_change).
+	  Do (as though it may not be a good idea in hd_app_mgr_hdrm_state_change).      
 
 2009-12-09  Gordon Williams <gordon.williams@collabora.co.uk>
-
-	Fixes: NB#137235 - Transparent menu corners
-	
-	* src/home/hd-clutter-cache.c: Fix stretching of textures
-	* src/main.c: add "status-menu" client type for theme.xml
-	* src/mb/hd-app-menu.c: Remove hd_app_menu_request_geometry, as it was
-	  just a copy/paste job.
-	* src/mb/hd-decor.c: Only add progress indictor if we had title text,
-	  cope with non-north decors, and textures other than the original
-	  WindowManagerStuff texture.
-	* src/util/hd-transition.c: Still allow windows that go off the top of
-	  the screen to be animated with a popup animation.
 
 	Fixes: NB#149993 - Phone application title: portrait to landscape is
 	                   broken to certain extent
@@ -496,7 +498,7 @@
 	  transition, set the title bar button width to the previous value.
 	* src/util/hd-transition.c: Fix to get status area hidden when going
 	  from launcher, and now update the title bar immediately when moving
-	  from any APP to APP state.         
+	  from any APP to APP state.   
 
 2009-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
