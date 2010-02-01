@@ -3049,25 +3049,3 @@ void hd_render_manager_remove_input_blocker() {
    /* Set the new viewport */
    hd_render_manager_set_compositor_input_viewport(region);
  }
-
-gboolean
-hd_render_manager_windows_showing (void)
-{
-   HdRenderManagerPrivate *priv = the_render_manager->priv;
-   MBWindowManager        *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
-   MBWindowManagerClient  *candidate = wm->stack_top;
-
-   while (candidate && candidate!=wm->desktop)
-     {
-       if (candidate->stacking_layer==MBWMStackLayerUnknown ||
-           candidate->stacking_layer==MBWMStackLayerMid ||
-	   candidate->stacking_layer > MBWMStackLayerTop)
-         {
-           return 1;
-	 }
-
-     candidate = candidate->stacked_below;
-   }
-
-   return 0;
-}

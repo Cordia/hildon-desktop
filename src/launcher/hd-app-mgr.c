@@ -1845,8 +1845,7 @@ _hd_app_mgr_should_show_callui ()
       priv->unlocked &&
       priv->display_on &&
       priv->slide_closed &&
-      !priv->disable_callui &&
-      !hd_render_manager_windows_showing ())
+      !priv->disable_callui)
     {
       return TRUE;
     }
