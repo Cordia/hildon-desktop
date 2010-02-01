@@ -2076,6 +2076,14 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   if (MB_WM_CLIENT_CLIENT_TYPE (c) == MBWMClientTypeDesktop)
     return;
 
+  if (c->window->live_background)
+    {
+      g_printerr ("%s: client '%s' is live background\n", __func__,
+                  mb_wm_client_get_name (c));
+      hd_home_set_live_background (HD_HOME (priv->home), c);
+      return;
+    }
+
   /* discard notification previews if necessary */
   if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
     {
