@@ -385,7 +385,7 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
    * a habit of changing size while they move. */
   clutter_actor_get_geometry(actor, &geo);
 
-  pop_top = geo.y==0;
+  pop_top = geo.y<=0;
   pop_bottom = geo.y+geo.height==hd_comp_mgr_get_current_screen_height();
   if (pop_top && pop_bottom)
     pop_top = FALSE;
@@ -398,7 +398,7 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
 
   if (pop_top)
     {
-      status_low = -geo.height;
+      status_low = geo.y-geo.height;
       status_high = geo.y;
     }
   else if (pop_bottom)

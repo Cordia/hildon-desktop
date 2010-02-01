@@ -157,9 +157,9 @@ hd_clutter_cache_get_real_texture(const char *filename, gboolean from_theme)
       strcpy(filename_alloc, HD_CLUTTER_CACHE_FALLBACK_THEME_PATH);
       strcat(filename_alloc, filename);
       filename_real = filename_alloc;
-  
+
       texture = clutter_texture_new_from_file(filename_real, 0);
-      if (!texture) 
+      if (!texture)
         {
           if (filename_alloc)
             g_free(filename_alloc);
@@ -256,6 +256,7 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
   ClutterTexture *texture = 0;
   ClutterGroup *group = 0;
   ClutterGeometry geo = *geo_;
+  gint x,y;
 
   texture = CLUTTER_TEXTURE(hd_clutter_cache_get_real_texture(filename,
                                                               from_theme));
@@ -288,71 +289,79 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
       return actor;
     }
 
-
   group = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(group), filename);
-  low_x = geo.x + (geo.width/4);
-  low_y = geo.y + (geo.height/4);
-  high_x = geo.x + (3*geo.width/4);
-  high_y = geo.y + (3*geo.height/4);
-
-  if (extend_y)
-    g_warning("%s: Y and XY texture extensions not implemented yet",
-        __FUNCTION__);
-
+  if (extend_x)
+    {
+      low_x = geo.x + (geo.width/4);
+      high_x = geo.x + (3*geo.width/4);
+    }
+  else
+    {
+      low_x = geo.x;
+      high_x = geo.x+geo.width;
+    }
   if (extend_y)
     {
-      /* Extend X and Y - so a 3x3 set of textures */
-      gint x,y;
+      low_y = geo.y + (geo.height/4);
+      high_y = geo.y + (3*geo.height/4);
+    }
+  else
+    {
+      low_y = geo.y;
+      high_y = geo.y + geo.height;
+    }
 
-      for (y=0;y<3;y++)
-        for (x=0;x<3;x++)
+  for (y=0;y<3;y++)
+    for (x=0;x<3;x++)
+      {
+        TidySubTexture *tex;
+        ClutterGeometry geot, pos;
+        if (x==0)
           {
-            TidySubTexture *tex;
-            ClutterGeometry geot, pos;
-            if (x==0)
-              {
-                geot.x = 0;
-                geot.width = low_x;
-                pos.x = area->x;
-                pos.width = geot.width;
-              }
-            else if (x==1)
-              {
-                geot.x = low_x;
-                geot.width = high_x - low_x;
-                pos.x = area->x+low_x;
-                pos.width = (high_x-low_x) + area->width - geo.width;
-              }
-            else
-              {
-                geot.x = high_x;
-                geot.width = geo.width - high_x;
-                pos.x = area->x + area->width - geot.width;
-                pos.width = geot.width;
-              }
-            if (y==0)
-              {
-                geot.y = 0;
-                geot.height = low_y;
-                pos.y = area->y;
-                pos.height = geot.height;
-              }
-            else if (y==1)
-              {
-                geot.y = low_y;
-                geot.height = high_y - low_y;
-                pos.y = area->y+low_y;
-                pos.height = (high_y-low_y) + area->height - geo.height;
-              }
-            else
-              {
-                geot.y = high_y;
-                geot.height = geo.height - high_y;
-                pos.y = area->y + area->height - geot.height;
-                pos.height = geot.height;
-              }
+            geot.x = geo.x;
+            geot.width = low_x - geo.x;
+            pos.x = area->x;
+            pos.width = geot.width;
+          }
+        else if (x==1)
+          {
+            geot.x = low_x;
+            geot.width = high_x - low_x;
+            pos.x = area->x + low_x - geo.x;
+            pos.width = (high_x-low_x) + area->width - geo.width;
+          }
+        else
+          {
+            geot.x = high_x;
+            geot.width = geo.x + geo.width - high_x;
+            pos.x = area->x + area->width - geot.width;
+            pos.width = geot.width;
+          }
+        if (y==0)
+          {
+            geot.y = geo.y;
+            geot.height = low_y - geo.y;
+            pos.y = area->y;
+            pos.height = geot.height;
+          }
+        else if (y==1)
+          {
+            geot.y = low_y;
+            geot.height = high_y - low_y;
+            pos.y = area->y + low_y - geo.y;
+            pos.height = (high_y-low_y) + area->height - geo.height;
+          }
+        else
+          {
+            geot.y = high_y;
+            geot.height = geo.y + geo.height - high_y;
+            pos.y = area->y + area->height - geot.height;
+            pos.height = geot.height;
+          }
 
+        if (geot.width>0 && geot.height>0)
+          {
             tex = tidy_sub_texture_new(texture);
             tidy_sub_texture_set_region(tex, &geot);
             if (x==1 || y==1)
@@ -363,53 +372,8 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
                       CLUTTER_CONTAINER(group),
                       CLUTTER_ACTOR(tex));
           }
-    }
-  else
-    {
-      /* extend just X - so a 3x1 row of texture elements */
-      TidySubTexture *texa,*texb,*texc;
-      ClutterGeometry geoa, geob, geoc;
+      }
 
-      geoa = geob = geoc = geo;
-      geoa.width = low_x - geo.x;
-      geob.x = low_x;
-      geob.width = high_x-low_x;
-      geoc.x = high_x;
-      geoc.width = geo.x+geo.width - high_x;
-
-      texa = tidy_sub_texture_new(texture);
-      tidy_sub_texture_set_region(texa, &geoa);
-      texb = tidy_sub_texture_new(texture);
-      tidy_sub_texture_set_region(texb, &geob);
-      tidy_sub_texture_set_tiled(texb, TRUE);
-      texc = tidy_sub_texture_new(texture);
-      tidy_sub_texture_set_region(texc, &geoc);
-      clutter_actor_set_position(CLUTTER_ACTOR(texa),
-          area->x, area->y);
-      clutter_actor_set_size(CLUTTER_ACTOR(texa),
-          geoa.width, area->height);
-      clutter_actor_set_position(CLUTTER_ACTOR(texb),
-          area->x+geoa.width, area->y);
-      clutter_actor_set_size(CLUTTER_ACTOR(texb),
-          area->width - (geoa.width+geoc.width), area->height);
-      clutter_actor_set_position(CLUTTER_ACTOR(texc),
-          area->x+area->width - geoc.width, area->y);
-      clutter_actor_set_size(CLUTTER_ACTOR(texc),
-          geoc.width, area->height);
-
-      clutter_container_add_actor(
-          CLUTTER_CONTAINER(group),
-          CLUTTER_ACTOR(texa));
-      clutter_container_add_actor(
-          CLUTTER_CONTAINER(group),
-          CLUTTER_ACTOR(texb));
-      clutter_container_add_actor(
-          CLUTTER_CONTAINER(group),
-          CLUTTER_ACTOR(texc));
-      return CLUTTER_ACTOR(group);
-    }
-
-  /* FIXME: Do other kinds of extension */
   return CLUTTER_ACTOR(group);
 }
 

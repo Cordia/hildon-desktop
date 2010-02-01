@@ -461,6 +461,18 @@
 
 2009-12-09  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#137235 - Transparent menu corners
+	
+	* src/home/hd-clutter-cache.c: Fix stretching of textures
+	* src/main.c: add "status-menu" client type for theme.xml
+	* src/mb/hd-app-menu.c: Remove hd_app_menu_request_geometry, as it was
+	  just a copy/paste job.
+	* src/mb/hd-decor.c: Only add progress indictor if we had title text,
+	  cope with non-north decors, and textures other than the original
+	  WindowManagerStuff texture.
+	* src/util/hd-transition.c: Still allow windows that go off the top of
+	  the screen to be animated with a popup animation.
+
 	Fixes: NB#149993 - Phone application title: portrait to landscape is
 	                   broken to certain extent
 	                   
