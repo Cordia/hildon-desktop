@@ -1,3 +1,13 @@
+2010-02-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#155074 When tapped on close button App menu is coming up and hence
+		  not able to close the application in a given scenario.
+
+	Stupid thinko.
+
+	* src/mb/hd-app.c (hd_app_request_geometry):
+	  Pack the button at the end of the decor correctly.
+
 2010-02-01  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#137235 - Transparent menu corners

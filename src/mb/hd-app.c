@@ -181,7 +181,7 @@ hd_app_request_geometry (MBWindowManagerClient *client,
       geo.width = new_geometry->width > new_geometry->height
         ? HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH
         : HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH_SMALL;
-      geo.x = geo.width - (new_geometry->x + new_geometry->width);
+      geo.x = decor->geom.width - geo.width;
 
       if (button->geom.width != geo.width)
         {
