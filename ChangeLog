@@ -1,3 +1,12 @@
+2010-02-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fixes: NB#155155 - Desktop home view is not updated when camera lid
+	is opened and closed from device sleep
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state): When
+	trying to go to the state before tklock, don't go to app state
+	(composited or not) if the switcher is empty.
+
 2010-02-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#155074 When tapped on close button App menu is coming up and hence

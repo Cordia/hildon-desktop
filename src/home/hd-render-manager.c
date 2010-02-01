@@ -1263,22 +1263,28 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             {
               /* non-composited mode was the state before tklock: make a new
                * policy check to ensure that we can still use that */
-              HDRMStateEnum old_value = hd_dbus_state_before_tklock;
-              HDRMStateEnum old_state = priv->state;
-
-              priv->in_set_state = FALSE;
-              /* change the state temporarily for the reconsideration code */
-              if (hd_dbus_state_before_tklock == HDRM_STATE_NON_COMPOSITED)
-                priv->state = HDRM_STATE_APP;
+              if (!hd_task_navigator_is_empty ())
+                {
+                  HDRMStateEnum old_value = hd_dbus_state_before_tklock;
+                  HDRMStateEnum old_state = priv->state;
+                  priv->in_set_state = FALSE;
+                  /* change the state temporarily for the reconsideration
+                   * code */
+                  if (hd_dbus_state_before_tklock == HDRM_STATE_NON_COMPOSITED)
+                    priv->state = HDRM_STATE_APP;
+                  else
+                    priv->state = HDRM_STATE_APP_PORTRAIT;
+                  hd_dbus_state_before_tklock = HDRM_STATE_UNDEFINED;
+                  /* this may or may not cause state change: */
+                  if (hd_comp_mgr_reconsider_compositing (cmgr))
+                    return;
+                  priv->state = old_state;
+                  priv->in_set_state = TRUE;
+                  hd_dbus_state_before_tklock = old_value;
+                }
               else
-                priv->state = HDRM_STATE_APP_PORTRAIT;
-              hd_dbus_state_before_tklock = HDRM_STATE_UNDEFINED;
-              /* this may or may not cause state change: */
-              if (hd_comp_mgr_reconsider_compositing (cmgr))
-                return;
-              priv->state = old_state;
-              priv->in_set_state = TRUE;
-              hd_dbus_state_before_tklock = old_value;
+                /* there is no application to switch to -> HOME */
+                hd_dbus_state_before_tklock = HDRM_STATE_HOME;
             }
 
           /* loading states are temporary and non-comp. we considered above */
@@ -1289,6 +1295,16 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             {
               g_debug("%s: return to state %s before tklock\n", __func__,
                hd_render_manager_state_str(hd_dbus_state_before_tklock));
+
+              if ((hd_dbus_state_before_tklock == HDRM_STATE_APP
+                  || hd_dbus_state_before_tklock == HDRM_STATE_APP_PORTRAIT)
+                  && hd_task_navigator_is_empty ())
+                {
+                  /* we can't switch to application if there's none in the
+                   * switcher */
+                  hd_dbus_state_before_tklock = HDRM_STATE_HOME;
+                }
+
               priv->state = state = hd_dbus_state_before_tklock;
             }
           else
