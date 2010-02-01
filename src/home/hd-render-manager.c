@@ -1315,7 +1315,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
       if (state == HDRM_STATE_AFTER_TKLOCK)
         /* this happens if the state before tklock could not be used */
-        priv->state = state = HDRM_STATE_APP;
+        priv->state = state = HDRM_STATE_HOME;
 
       if (!hd_dbus_tklock_on)
         hd_dbus_state_before_tklock = HDRM_STATE_UNDEFINED;

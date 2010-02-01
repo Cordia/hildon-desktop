@@ -6,6 +6,8 @@
 	* src/home/hd-render-manager.c (hd_render_manager_set_state): When
 	trying to go to the state before tklock, don't go to app state
 	(composited or not) if the switcher is empty.
+	Also, use HDRM_STATE_HOME as the fallback state, not HDRM_STATE_APP
+	which requires running applications.
 
 2010-02-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
