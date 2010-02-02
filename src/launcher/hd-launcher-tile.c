@@ -364,8 +364,7 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
       HD_LAUNCHER_TILE_ICON_SIZE,
       HD_LAUNCHER_TILE_ICON_SIZE);
   clutter_actor_set_position (priv->icon,
-      (HD_LAUNCHER_TILE_WIDTH - HD_LAUNCHER_TILE_ICON_SIZE) / 2,
-      HILDON_MARGIN_HALF);
+      (HD_LAUNCHER_TILE_WIDTH - HD_LAUNCHER_TILE_ICON_SIZE) / 2, 0);
   clutter_container_add_actor (CLUTTER_CONTAINER(tile), priv->icon);
 
   gtk_icon_info_free(info);
@@ -380,7 +379,6 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
         HD_LAUNCHER_TILE_GLOW_SIZE);
   clutter_actor_set_position (CLUTTER_ACTOR(priv->icon_glow),
         (HD_LAUNCHER_TILE_WIDTH - HD_LAUNCHER_TILE_GLOW_SIZE) / 2,
-        HILDON_MARGIN_HALF +
         (HD_LAUNCHER_TILE_ICON_SIZE - HD_LAUNCHER_TILE_GLOW_SIZE) / 2);
   clutter_container_add_actor (CLUTTER_CONTAINER(tile),
                                CLUTTER_ACTOR(priv->icon_glow));
@@ -427,7 +425,7 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
   clutter_label_set_line_wrap_mode (CLUTTER_LABEL (priv->label),
                                     PANGO_WRAP_CHAR);
 
-  label_height = HD_LAUNCHER_TILE_HEIGHT - (64 + (HILDON_MARGIN_HALF * 2));
+  label_height = HD_LAUNCHER_TILE_HEIGHT - (64 + HILDON_MARGIN_HALF);
 
   clutter_actor_get_preferred_width (priv->label,
     CLUTTER_UNITS_FROM_DEVICE(label_height),
