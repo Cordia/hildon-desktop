@@ -1903,7 +1903,7 @@ void hd_render_manager_restack()
           if (actor)
             {
               ClutterActor *parent = clutter_actor_get_parent(actor);
-              if (1)//past_desktop) // This is a temporary kludge for live background
+              if (past_desktop)
                 {
                   /* if we want to render this, add it. we need to be careful
                    * not to pull applets or other things out from where they
