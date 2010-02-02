@@ -268,6 +268,43 @@ hd_home_edit_button_clicked (ClutterActor *button,
 }
 
 static void
+hd_home_live_bg_emit_button1_event (
+		HdHome             *home,
+		Window       		mywindow,
+		int                 x,
+		int                 y,
+		int					event_type)
+{
+  HdHomePrivate      *priv = home->priv;
+  MBWindowManager    *wm;
+  XButtonEvent        xev;
+  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
+  /* Emitting an event. */
+  xev.type = event_type;
+  xev.send_event = False;
+  xev.display = wm->xdpy;
+  xev.window = mywindow;
+  xev.root = wm->root_win->xwindow;
+  xev.subwindow = None;
+  xev.time = CurrentTime;
+  xev.x = x;
+  xev.y = y;
+  xev.x_root = x;
+  xev.y_root = y;
+  xev.state = 0;
+  xev.button = Button1;
+  xev.same_screen = True;
+  /* Get the actual coordinates inside the window. */
+  while (mywindow)
+    XTranslateCoordinates (wm->xdpy,
+		  	xev.root, xev.window,
+		  	xev.x_root, xev.y_root,
+		  	&xev.x, &xev.y,
+		  	&mywindow);
+  XSendEvent(wm->xdpy, xev.window, True, 0, (XEvent *)&xev);
+}
+
+static void
 hd_home_desktop_do_motion (HdHome *home,
                            int     x,
                            int     y)
@@ -284,6 +321,10 @@ hd_home_desktop_do_motion (HdHome *home,
    * in the wrong position (bug 127320) */
   if (!priv->desktop_motion_cb)
     return;
+  /* live background stuff */
+  Window win = hd_home_view_get_live_background(HD_HOME_VIEW(hd_home_get_current_view (home)));
+  if (win)
+  	hd_home_live_bg_emit_button1_event (home, win, x, y, MotionNotify);
 
   drag_item = g_malloc(sizeof(HdHomeDrag));
   drag_item->period = g_timer_elapsed(priv->last_move_time, NULL);
@@ -492,6 +533,10 @@ hd_home_desktop_do_press (HdHome *home,
     {
       /* g_printerr ("%s: focus the desktop\n", __func__); */
       mb_wm_client_focus (wm->desktop);
+	  /* live background stuff */
+	  Window win = hd_home_view_get_live_background(HD_HOME_VIEW(hd_home_get_current_view (home)));
+	  if (win)
+	  	hd_home_live_bg_emit_button1_event (home, win, x, y, ButtonPress);
     }
 
   priv->long_press = FALSE;
@@ -529,6 +574,10 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 
   hd_home_desktop_do_motion (home, xev->x, xev->y);
   hd_home_desktop_do_release (home);
+  /* live background stuff */
+  Window win = hd_home_view_get_live_background(HD_HOME_VIEW(hd_home_get_current_view (home)));
+  if (win)
+  	hd_home_live_bg_emit_button1_event (home, win, xev->x, xev->y, ButtonRelease);
 
   return True;
 }

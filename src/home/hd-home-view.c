@@ -82,6 +82,7 @@ struct _HdHomeViewPrivate
 
   ClutterActor             *background;
   TidySubTexture           *background_sub;
+  Window				   live_background;
 
   GHashTable               *applets;
 
@@ -614,13 +615,13 @@ load_background_idle (gpointer data)
   return FALSE;
 }
 
-/* Use Window as background */
+/* Use Window as background, mostly copied from above. 
+ * FIXME: Use a shared function, instead. */
 void
-hd_home_view_window_background (HdHomeView *view, Window xwin)
+hd_home_view_set_live_background (HdHomeView *view, Window xwin)
 {
   g_printerr("%s: view ptr = %p\n", __func__, view);
   HdHomeViewPrivate *priv = view->priv;
-  #if 1
   ClutterActor *new_bg = 0;
   TidySubTexture *new_bg_sub = 0;
   GError *error = NULL;
@@ -658,7 +659,7 @@ hd_home_view_window_background (HdHomeView *view, Window xwin)
     }
   else
     {
-		#if 1
+	  priv->live_background = xwin;
       guint bg_width, bg_height;
       guint actual_width, actual_height;
       bg_width = clutter_actor_get_width (actor);
@@ -689,11 +690,20 @@ hd_home_view_window_background (HdHomeView *view, Window xwin)
           clutter_actor_hide(new_bg);
           clutter_actor_show(CLUTTER_ACTOR(new_bg_sub));
         }
-		#endif
     }
 
-  //clutter_actor_set_name (new_bg, "HdHomeView::background");
-  clutter_actor_show(new_bg);
+  // remove prev. actors
+  /*clutter_container_remove_actor (
+              CLUTTER_CONTAINER (priv->background_container),
+              priv->background);
+  if (priv->background_sub)
+    clutter_container_remove_actor (
+                CLUTTER_CONTAINER (priv->background_container),
+                CLUTTER_ACTOR(priv->background_sub));*/
+
+  g_printerr("reparenting window\n");
+  clutter_actor_reparent(new_bg, priv->background_container);
+  clutter_actor_set_name (new_bg, "HdHomeView::background");
 
   /* Add new background to the background container */
   clutter_container_add_actor (
@@ -703,6 +713,8 @@ hd_home_view_window_background (HdHomeView *view, Window xwin)
     clutter_container_add_actor (
                 CLUTTER_CONTAINER (priv->background_container),
                 CLUTTER_ACTOR(new_bg_sub));
+
+  clutter_actor_show(new_bg);
 
   /* Raise the texture above the solid color */
   if (priv->background)
@@ -726,17 +738,12 @@ hd_home_view_window_background (HdHomeView *view, Window xwin)
   priv->load_background_source = 0;
 
   g_printerr("%s - done\n", __func__);
-  #else
-  /* Remove the old background (color or image) and the subtexture
-   * that may have been used to make it smaller */
-  if (priv->background_sub)
-      clutter_actor_destroy (CLUTTER_ACTOR(priv->background_sub));
-  priv->background_sub = 0;
-  if (priv->background)
-    clutter_actor_destroy (priv->background);
-  priv->background = 0;
-  #endif
-
+  g_printerr("flags = %s|%s|%s|%s\n", 
+	(CLUTTER_ACTOR_IS_MAPPED(new_bg))? "MAPPED": "",
+	(CLUTTER_ACTOR_IS_REALIZED(new_bg))? "REALIZED": "",
+	(CLUTTER_ACTOR_IS_REACTIVE(new_bg))? "REACTIVE": "",
+	(CLUTTER_ACTOR_IS_VISIBLE(new_bg))? "VISIBLE": ""
+  );
 }
 
 void
@@ -869,6 +876,8 @@ hd_home_view_applet_motion (ClutterActor       *applet,
 
   /* Update applet actor position */
   clutter_actor_set_position (applet, x, y);
+  g_printerr("%s: trying to move bkg\n", __func__);
+  clutter_actor_set_position (priv->background_container, x, y); // test
   if (hd_transition_get_int ("edit_mode",
                              "snap_to_grid_while_move",
                              1))
@@ -1308,6 +1317,7 @@ configure_button_clicked (ClutterActor       *button,
                           ClutterButtonEvent *event,
                           HdHomeView         *view)
 {
+  g_printerr("%s\n", __func__);
   HdHomeViewPrivate *priv = view->priv;
   ClutterActor *applet;
   HdHomeViewAppletData *data;
@@ -1328,6 +1338,13 @@ configure_button_clicked (ClutterActor       *button,
                                     0, 0, 0, 0, 0);
     }
 
+  g_printerr("bkg flags = %s|%s|%s|%s\n", 
+	(CLUTTER_ACTOR_IS_MAPPED(priv->background))? "MAPPED": "",
+	(CLUTTER_ACTOR_IS_REALIZED(priv->background))? "REALIZED": "",
+	(CLUTTER_ACTOR_IS_REACTIVE(priv->background))? "REACTIVE": "",
+	(CLUTTER_ACTOR_IS_VISIBLE(priv->background))? "VISIBLE": ""
+  );
+  CLUTTER_ACTOR_SET_FLAGS(priv->background, CLUTTER_ACTOR_MAPPED|CLUTTER_ACTOR_REALIZED|CLUTTER_ACTOR_REACTIVE);
   return TRUE;
 }
 
@@ -1498,6 +1515,14 @@ hd_home_view_get_background (HdHomeView *view)
   HdHomeViewPrivate *priv = view->priv;
 
   return priv->background;
+}
+
+Window
+hd_home_view_get_live_background (HdHomeView *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  return priv->live_background;
 }
 
 ClutterActor *

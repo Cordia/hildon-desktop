@@ -26,7 +26,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include <X11/Xlib.h> // JNi220110
+#include <X11/Xlib.h>
 
 #include <clutter/clutter-group.h>
 
@@ -77,12 +77,13 @@ void hd_home_view_move_applet (HdHomeView   *old_view, HdHomeView   *new_view,
 void hd_home_view_close_all_applets (HdHomeView *view);
 
 ClutterActor * hd_home_view_get_background (HdHomeView *view);
+Window hd_home_view_get_live_background (HdHomeView *view);
 ClutterActor * hd_home_view_get_applets_container (HdHomeView *view);
 
 gboolean hd_home_view_get_active (HdHomeView *view);
 void     hd_home_view_set_active (HdHomeView *view,
                                   gboolean    active);
-void hd_home_view_window_background (HdHomeView *view, Window xwin);
+void hd_home_view_set_live_background (HdHomeView *view, Window xwin);
 void hd_home_view_load_background (HdHomeView *view);
 void hd_home_view_update_state (HdHomeView *view);
 

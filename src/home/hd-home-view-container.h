@@ -61,6 +61,8 @@ void             hd_home_view_container_set_current_view   (HdHomeViewContainer 
 
 ClutterActor    *hd_home_view_container_get_view           (HdHomeViewContainer *container,
                                                             guint                view_id);
+Window		     hd_home_view_container_get_live_bg        (HdHomeViewContainer *container,
+                                                            guint                view_id);
 gboolean         hd_home_view_container_get_active         (HdHomeViewContainer *container,
                                                             guint                view_id);
 

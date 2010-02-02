@@ -46,7 +46,6 @@
 #define HD_GCONF_DIR_VIEWS         "/apps/osso/hildon-desktop/views"
 #define HD_GCONF_KEY_VIEWS_ACTIVE  HD_GCONF_DIR_VIEWS "/active"
 #define HD_GCONF_KEY_VIEWS_CURRENT HD_GCONF_DIR_VIEWS "/current"
-#define HD_GCONF_KEY_WINDOW		   HD_GCONF_DIR_VIEWS "/window"
 
 #define BACKGROUNDS_DIR ".backgrounds"
 
@@ -77,7 +76,6 @@ struct _HdHomeViewContainerPrivate
   GnomeVFSMonitorHandle *backgrounds_dir_monitor;
 
   guint views_active_notify;
-  guint bg_window_notify;
 };
 
 enum
@@ -286,10 +284,12 @@ hd_home_view_container_update_active_views (HdHomeViewContainer *self,
       /* FIXME scroll to new view and do not switch */
       if (current_view != priv->current_view)
         {
+		  g_printerr("fixme scroll set current\n");
           hd_home_view_container_set_current_view (self, current_view);
         }
       else
         {
+		  g_printerr("fixme scroll update\n");
           hd_home_view_container_update_previous_and_next_view (self);
         }
     }
@@ -305,29 +305,6 @@ views_active_notify_func (GConfClient *client,
                                               FALSE);
 }
 
-static void 
-gconf_bgwindow_notify (GConfClient *client,
-                      guint        cnxn_id,
-                      GConfEntry  *entry,
-                      gpointer     user_data)
-{
-  g_printerr("%s\n", __func__);
-  g_printerr("user_data=%p\n", user_data);
-  HdHomeViewContainer *container = HD_HOME_VIEW_CONTAINER (user_data);
-  HdHomeViewContainerPrivate *priv = container->priv;
-  //HdHomeViewContainerPrivate *priv = (HdHomeViewContainerPrivate *)user_data;
-  GConfValue *val = gconf_entry_get_value(entry);
-  Window xwin = (Window)gconf_value_get_int(val);
-  g_printerr("xwin=%d priv=%p\n", (int)xwin, priv);
-  for (int i=0; i<4; i++)
-  {
-  	HdHomeView *hhview = HD_HOME_VIEW (priv->views[i]);
-  	g_printerr("hhview=%p funcptr=%p\n", hhview, hd_home_view_window_background);
-  	hd_home_view_window_background (hhview, xwin);
-  	g_printerr("hd_home_view_window_background returned\n");
-  }
-}
-
 void 
 hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
                                     MBWindowManagerClient *client)
@@ -340,7 +317,7 @@ hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
   if (view > 0 && view <= MAX_HOME_VIEWS)
     {
       hhview = HD_HOME_VIEW (priv->views[view - 1]);
-      hd_home_view_window_background (hhview, client->window->xwindow);
+      hd_home_view_set_live_background (hhview, client->window->xwindow);
     }
   /* TODO: removing of live background */
 }
@@ -437,23 +414,6 @@ hd_home_view_container_constructed (GObject *self)
   g_free (backgrounds_dir);
   g_free (backgrounds_dir_uri);
 
-  // Monitor Window-as-background key here
-  priv->bg_window_notify = gconf_client_notify_add (priv->gconf_client,
-	                                                  HD_GCONF_KEY_WINDOW,
-	                                                  (GConfClientNotifyFunc) gconf_bgwindow_notify,
-	                                                  self,
-	                                                  NULL,
-	                                                  &error);
-  g_printerr ("notify add ok\n");
-  if (error)
-  {
-    g_warning ("%s. Could not add notification to GConf %s. %s",
-               __FUNCTION__,
-               HD_GCONF_KEY_WINDOW,
-               error->message);
-    g_clear_error (&error);
-  }
-
   hd_home_view_container_update_active_views (container, TRUE);
 }
 
@@ -467,10 +427,6 @@ hd_home_view_container_dispose (GObject *self)
 
   if (priv->backgrounds_dir_monitor)
     priv->backgrounds_dir_monitor = (gnome_vfs_monitor_cancel (priv->backgrounds_dir_monitor), NULL);
-
-  // live background support
-  if (priv->bg_window_notify)
-    priv->bg_window_notify = (gconf_client_notify_remove (priv->gconf_client, priv->bg_window_notify), 0);
 
   G_OBJECT_CLASS (hd_home_view_container_parent_class)->dispose (self);
 }
@@ -761,11 +717,12 @@ hd_home_view_container_set_offset (HdHomeViewContainer *container,
 {
   HdHomeViewContainerPrivate *priv;
 
-  g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
+  //g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
   priv = container->priv;
 
   priv->offset = CLUTTER_UNITS_TO_INT(offset);
+  g_printerr("%s priv-offset=%d\n", __func__, priv->offset);
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
 }
@@ -816,11 +773,12 @@ scroll_back_completed_cb (ClutterTimeline     *timeline,
 void
 hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocity)
 {
+  g_printerr("%s\n", __func__);
   HdHomeViewContainerPrivate *priv;
   guint width;
   gint offset;
 
-  g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
+  //g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
   priv = container->priv;
 
@@ -881,10 +839,11 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocit
 void
 hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container, gint velocity)
 {
+  g_printerr("%s\n", __func__);
   HdHomeViewContainerPrivate *priv;
   guint width;
 
-  g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
+  //g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
   priv = container->priv;
 
@@ -900,10 +859,11 @@ hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container, gint 
 ClutterTimeline *
 hd_home_view_container_scroll_to_next (HdHomeViewContainer *container, gint velocity)
 {
+  g_printerr("%s\n", __func__);
   HdHomeViewContainerPrivate *priv;
   guint width;
 
-  g_return_val_if_fail (HD_IS_HOME_VIEW_CONTAINER (container), NULL);
+  //g_return_val_if_fail (HD_IS_HOME_VIEW_CONTAINER (container), NULL);
 
   priv = container->priv;
 
