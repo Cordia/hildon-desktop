@@ -1,5 +1,10 @@
 2010-02-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Increase decceleration of TidyFingerScroll because some users felt
+	like in space.
+
+2010-02-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Task Launcher Grid layout tuning to match the upcoming v2.7 version:
 
 	12:56 <MartinG> ok ready for some values?
