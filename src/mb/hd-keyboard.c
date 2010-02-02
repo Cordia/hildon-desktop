@@ -30,6 +30,8 @@
 #include <matchbox/theme-engines/mb-wm-theme.h>
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 
+static Window previous_focus;
+
 static Bool hd_keyboard_request_geometry (MBWindowManagerClient *client,
                                              MBGeometry            *new_geometry,
                                              MBWMClientReqGeomType  flags);
@@ -38,16 +40,19 @@ static void
 hd_keyboard_stack (MBWindowManagerClient *client,
                    int                    flags)
 {
-  mb_wm_stack_move_top(client);
-
   MBWindowManager *wm = client->wmref;
   Window w;
   int focus;
 
+  mb_wm_stack_move_top(client);
+
   XGetInputFocus (wm->xdpy, &w, &focus);
 
   if (w == client->window->xwindow)
-    g_debug ("$$$$$ BINGO");
+    {
+      g_debug ("$$$$$ BINGO current: 0x%lx previous: 0x%lx",w,previous_focus);
+      XSetInputFocus (wm->xdpy, previous_focus, focus, CurrentTime);
+    }
 }
 
 static Bool
@@ -56,7 +61,7 @@ hd_keyboard_set_focus (MBWindowManagerClient *client)
   MBWindowManager *wm = client->wmref;
   //Window xwin = client->window->xwindow;
   gboolean success = True;
-
+  
   if (client->window->protos & MBWMClientWindowProtosFocus)
     {
       Time t;
@@ -102,7 +107,12 @@ hd_keyboard_init (MBWMObject *this, va_list vap)
   MBWindowManagerClient *client = MB_WM_CLIENT (this);
   MBGeometry             geom;
   MBWindowManager       *wm = client->wmref;
+  int f;
 
+  XGetInputFocus (wm->xdpy, &previous_focus, &f);
+
+  g_debug ("Focus is in: 0x%lx",previous_focus);  
+ 
   mb_wm_client_set_layout_hints (client, LayoutPrefOverlaps |
 					 LayoutPrefPositionFree | 
 					 LayoutPrefVisible);
