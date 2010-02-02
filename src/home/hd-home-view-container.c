@@ -317,9 +317,24 @@ hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
   if (view > 0 && view <= MAX_HOME_VIEWS)
     {
       hhview = HD_HOME_VIEW (priv->views[view - 1]);
-      hd_home_view_set_live_background (hhview, client->window->xwindow);
+      hd_home_view_set_live_background (hhview, client);
     }
-  /* TODO: removing of live background */
+  else if (view == 0)
+    {
+      /* remove live background */
+      int i;
+      for (i = 0; i < MAX_HOME_VIEWS; ++i)
+        {
+          MBWindowManagerClient *c;
+          hhview = HD_HOME_VIEW (priv->views[i]);
+          c = hd_home_view_get_live_background (hhview);
+          if (c && c == client)
+            {
+              hd_home_view_set_live_background (hhview, NULL);
+              return;
+            }
+        }
+    }
 }
 
 static void

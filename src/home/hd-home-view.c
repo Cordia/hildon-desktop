@@ -82,7 +82,7 @@ struct _HdHomeViewPrivate
 
   ClutterActor             *background;
   TidySubTexture           *background_sub;
-  Window				   live_background;
+  MBWindowManagerClient    *live_background;
 
   GHashTable               *applets;
 
@@ -618,39 +618,43 @@ load_background_idle (gpointer data)
 /* Use Window as background, mostly copied from above. 
  * FIXME: Use a shared function, instead. */
 void
-hd_home_view_set_live_background (HdHomeView *view, Window xwin)
+hd_home_view_set_live_background (HdHomeView *view,
+                                  MBWindowManagerClient *client)
 {
-  g_printerr("%s: view ptr = %p\n", __func__, view);
   HdHomeViewPrivate *priv = view->priv;
   ClutterActor *new_bg = 0;
   TidySubTexture *new_bg_sub = 0;
-  GError *error = NULL;
-  ClutterColor clr = BACKGROUND_COLOR;
   ClutterActor *actor = CLUTTER_ACTOR (view);
+  MBWMCompMgrClutterClient *cclient;
+  ClutterColor clr = BACKGROUND_COLOR;
 
-  MBWindowManagerClient *desktop_client;
-  desktop_client = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
-  MBWindowManager *wm = desktop_client->wmref;
-  MBWindowManagerClient *wmc = mb_wm_managed_client_from_xwindow (wm, xwin);
-  if (wmc) 
-  {
-  	MBWMCompMgrClient *client = wmc->cm_client;
-  	MBWMCompMgrClutterClient *cclient  = MB_WM_COMP_MGR_CLUTTER_CLIENT(client);
-  	new_bg = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-	g_printerr("window actor = %p\n", new_bg);
-  }
+  /* FIXME: shouldn't we ref and unref? */
+  if (client) 
+    {
+      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
+      new_bg = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+    }
   else
-  {
-	g_printerr ("Cannot find MBWindowManagerClient for Window %d.\n", (int)xwin);
-  }
+    {
+      /* remove it */
+      client = priv->live_background;
+      if (client)
+        {
+          cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
+          new_bg = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+          clutter_container_remove_actor (
+                CLUTTER_CONTAINER (priv->background_container), new_bg);
+        }
+      priv->live_background = NULL;
+      clutter_actor_hide (new_bg);
+      /* restore the normal background */
+      hd_home_view_load_background (view);
+      /* create black background to replace priv->background */
+      new_bg = priv->background = NULL;
+    }
 
   if (!new_bg)
     {
-      g_printerr ("Error getting background window. %s",
-                 error?error->message:"");
-      if (error)
-        g_error_free (error);
-
       /* Add a black background */
       new_bg = clutter_rectangle_new_with_color (&clr);
       clutter_actor_set_size (new_bg,
@@ -659,7 +663,7 @@ hd_home_view_set_live_background (HdHomeView *view, Window xwin)
     }
   else
     {
-	  priv->live_background = xwin;
+      priv->live_background = client;
       guint bg_width, bg_height;
       guint actual_width, actual_height;
       bg_width = clutter_actor_get_width (actor);
@@ -692,16 +696,6 @@ hd_home_view_set_live_background (HdHomeView *view, Window xwin)
         }
     }
 
-  // remove prev. actors
-  /*clutter_container_remove_actor (
-              CLUTTER_CONTAINER (priv->background_container),
-              priv->background);
-  if (priv->background_sub)
-    clutter_container_remove_actor (
-                CLUTTER_CONTAINER (priv->background_container),
-                CLUTTER_ACTOR(priv->background_sub));*/
-
-  g_printerr("reparenting window\n");
   clutter_actor_reparent(new_bg, priv->background_container);
   clutter_actor_set_name (new_bg, "HdHomeView::background");
 
@@ -1517,7 +1511,7 @@ hd_home_view_get_background (HdHomeView *view)
   return priv->background;
 }
 
-Window
+MBWindowManagerClient *
 hd_home_view_get_live_background (HdHomeView *view)
 {
   HdHomeViewPrivate *priv = view->priv;

@@ -314,6 +314,7 @@ hd_home_desktop_do_motion (HdHome *home,
   gdouble time;
   gint drag_distance;
   GList  *list;
+  MBWindowManagerClient *live_bg;
 
   /* If the callback is 0, we're getting events after we got a do_release.
    * This is because clutter has stored up the events, and we're called from
@@ -321,10 +322,13 @@ hd_home_desktop_do_motion (HdHome *home,
    * in the wrong position (bug 127320) */
   if (!priv->desktop_motion_cb)
     return;
+
   /* live background stuff */
-  Window win = hd_home_view_get_live_background(HD_HOME_VIEW(hd_home_get_current_view (home)));
-  if (win)
-  	hd_home_live_bg_emit_button1_event (home, win, x, y, MotionNotify);
+  live_bg = hd_home_view_get_live_background(HD_HOME_VIEW(
+                                             hd_home_get_current_view (home)));
+  if (live_bg)
+    hd_home_live_bg_emit_button1_event (home, live_bg->window->xwindow,
+                                        x, y, MotionNotify);
 
   drag_item = g_malloc(sizeof(HdHomeDrag));
   drag_item->period = g_timer_elapsed(priv->last_move_time, NULL);
@@ -531,12 +535,15 @@ hd_home_desktop_do_press (HdHome *home,
   g_slist_free (applets);
   if (!applet_hit)
     {
+      MBWindowManagerClient *live_bg;
       /* g_printerr ("%s: focus the desktop\n", __func__); */
       mb_wm_client_focus (wm->desktop);
-	  /* live background stuff */
-	  Window win = hd_home_view_get_live_background(HD_HOME_VIEW(hd_home_get_current_view (home)));
-	  if (win)
-	  	hd_home_live_bg_emit_button1_event (home, win, x, y, ButtonPress);
+      /* live background stuff */
+      live_bg = hd_home_view_get_live_background(HD_HOME_VIEW(
+                                           hd_home_get_current_view (home)));
+      if (live_bg)
+        hd_home_live_bg_emit_button1_event (home, live_bg->window->xwindow,
+                                            x, y, ButtonPress);
     }
 
   priv->long_press = FALSE;
@@ -569,15 +576,18 @@ static Bool
 hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 {
   HdHome *home = userdata;
+  MBWindowManagerClient *live_bg;
 
   g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, xev->x, xev->y);
 
   hd_home_desktop_do_motion (home, xev->x, xev->y);
   hd_home_desktop_do_release (home);
   /* live background stuff */
-  Window win = hd_home_view_get_live_background(HD_HOME_VIEW(hd_home_get_current_view (home)));
-  if (win)
-  	hd_home_live_bg_emit_button1_event (home, win, xev->x, xev->y, ButtonRelease);
+  live_bg = hd_home_view_get_live_background(HD_HOME_VIEW(
+                                    hd_home_get_current_view (home)));
+  if (live_bg)
+    hd_home_live_bg_emit_button1_event (home, live_bg->window->xwindow,
+                                        xev->x, xev->y, ButtonRelease);
 
   return True;
 }

@@ -2778,6 +2778,15 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   g_debug ("%s: 0x%lx '%s'\n", __FUNCTION__,
            c && c->window ? c->window->xwindow : 0,
            mb_wm_client_get_name (c));
+
+  if (c->window->live_background)
+    {
+            g_printerr ("%s: remove live_bg\n", __func__);
+      c->window->live_background = 0;
+      hd_home_set_live_background (HD_HOME (priv->home), c);
+      return;
+    }
+
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
   hdrm_state = hd_render_manager_get_state ();
 
