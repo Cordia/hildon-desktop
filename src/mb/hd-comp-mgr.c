@@ -1431,85 +1431,6 @@ hd_comp_mgr_get_client_transient_for (MBWindowManagerClient *c)
 }
 
 static void
-hd_comp_mgr_live_bg_update_area(HdCompMgr *hmgr,
-                                int x, int y, int width, int height,
-                                ClutterActor* actor)
-{
-  ClutterActor *parent;
-  HdCompMgrPrivate * priv;
-  gboolean blur_update = FALSE;
-  ClutterActor *actors_stage;
-
-  if (!actor || !CLUTTER_ACTOR_IS_VISIBLE(actor) || hmgr == 0)
-    return;
-
-  if (hd_dbus_display_is_off)
-    {
-            /*
-      g_printerr ("%s: update for actor %p (%d,%d) %dx%d '%s'"
-                  " while display is off\n", __func__, actor, x, y,
-                  width, height, clutter_actor_get_name (actor));
-                  */
-      return;
-    }
-
-  /* If we are in the blanking period of the rotation transition
-   * then we don't want to issue a redraw every time something changes.
-   * This function also assumes that it is called because there was damage,
-   * and makes sure it prolongs the blanking period a bit.
-   */
-  if (hd_transition_rotate_ignore_damage())
-    return;
-
-  priv = hmgr->priv;
-
-  /* TFP textures are usually bundled into another group, and it is
-   * this group that sets visibility - so we must check it too */
-  parent = clutter_actor_get_parent(actor);
-  actors_stage = clutter_actor_get_stage(actor);
-  if (!actors_stage)
-    /* if it's not on stage, it's not visible */
-    return;
-
-  while (parent && parent != actors_stage)
-    {
-      if (!CLUTTER_ACTOR_IS_VISIBLE(parent))
-      {
-        /* FIXME: this is an evil hack to show live background updates */
-        clutter_actor_show (parent);
-      }
-      /* if we're a child of a blur group, tell it that it has changed */
-      if (TIDY_IS_BLUR_GROUP(parent))
-        {
-          /* we don't update blur on every change of
-           * an application now as it causes a flicker, so
-           * instead we just hint that next time we become
-           * unblurred, we need to recalculate. */
-          tidy_blur_group_hint_source_changed(parent);
-          /* ONLY set blur_update if the image is buffered ->
-           * we are actually blurred */
-          if (tidy_blur_group_source_buffered(parent))
-            blur_update = TRUE;
-        }
-      parent = clutter_actor_get_parent(parent);
-    }
-
-  /* We no longer display changes that occur on blurred windows, so if
-   * this damage was actually on a blurred window, forget about it. */
-  /*
-  if (blur_update)
-    return;
-    */
-
-  /* Update the screen. This function checks for scaling/visibility and
-   * chooses the area to update accordingly */
-  {
-    ClutterGeometry area = {x,y,width, height};
-    hd_util_partial_redraw_if_possible(actor, &area);
-  }
-}
-
-static void
 hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
                                 int x, int y, int width, int height,
                                 ClutterActor* actor)
@@ -1581,29 +1502,6 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
     ClutterGeometry area = {x,y,width, height};
     hd_util_partial_redraw_if_possible(actor, &area);
   }
-}
-
-static void
-hd_comp_mgr_hook_live_bg_update (HdCompMgr *hmgr, ClutterActor *actor)
-{
-  if (CLUTTER_IS_GROUP(actor))
-    {
-      gint i;
-      gint n = clutter_group_get_n_children(CLUTTER_GROUP(actor));
-
-      for (i=0;i<n;i++)
-        {
-          ClutterActor *child =
-              clutter_group_get_nth_child(CLUTTER_GROUP(actor), i);
-          if (CLUTTER_X11_IS_TEXTURE_PIXMAP(child))
-            {
-              g_signal_connect_swapped(
-                      G_OBJECT(child), "update-area",
-                      G_CALLBACK(hd_comp_mgr_live_bg_update_area), hmgr);
-              clutter_actor_set_allow_redraw (child, FALSE);
-            }
-        }
-    }
 }
 
 /* Hook onto and X11 texture pixmap children of this actor */
@@ -2194,7 +2092,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-      hd_comp_mgr_hook_live_bg_update (HD_COMP_MGR (mgr), actor);
+      hd_comp_mgr_hook_update_area (HD_COMP_MGR (mgr), actor);
       hd_render_manager_restack ();
       return;
     }

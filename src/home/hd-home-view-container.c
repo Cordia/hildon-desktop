@@ -730,7 +730,7 @@ hd_home_view_container_set_offset (HdHomeViewContainer *container,
 {
   HdHomeViewContainerPrivate *priv;
 
-  //g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
+  g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
   priv = container->priv;
 
@@ -789,7 +789,7 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocit
   guint width;
   gint offset;
 
-  //g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
+  g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
   priv = container->priv;
 
@@ -853,7 +853,7 @@ hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container, gint 
   HdHomeViewContainerPrivate *priv;
   guint width;
 
-  //g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
+  g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
   priv = container->priv;
 
@@ -872,7 +872,7 @@ hd_home_view_container_scroll_to_next (HdHomeViewContainer *container, gint velo
   HdHomeViewContainerPrivate *priv;
   guint width;
 
-  //g_return_val_if_fail (HD_IS_HOME_VIEW_CONTAINER (container), NULL);
+  g_return_val_if_fail (HD_IS_HOME_VIEW_CONTAINER (container), NULL);
 
   priv = container->priv;
 
