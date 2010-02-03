@@ -670,8 +670,8 @@ hd_home_view_set_live_background (HdHomeView *view,
       bg_height = clutter_actor_get_height (actor);
       actual_width = clutter_actor_get_width (new_bg);
       actual_height = clutter_actor_get_height (new_bg);
-		g_printerr("size is %d x %d, should be %d x %d\n",
-			actual_width, actual_height, bg_width, bg_height);
+      g_printerr("%s: size is %d x %d, should be %d x %d\n", __func__,
+                 actual_width, actual_height, bg_width, bg_height);
       /* It may be that we get a bigger texture than we need
        * (because PVR texture compression has to use 2^n width
        * and height). In this case we want to crop off the
@@ -681,7 +681,6 @@ hd_home_view_set_live_background (HdHomeView *view,
       if (bg_width != actual_width ||
           bg_height != actual_height)
         {
-		  g_printerr("clipping\n");
           ClutterGeometry region;
           region.x = 0;
           region.y = 0;
@@ -722,21 +721,13 @@ hd_home_view_set_live_background (HdHomeView *view,
     clutter_actor_destroy (priv->background);
 
   /* Only update blur if we're currently active */
-  if (hd_home_view_container_get_current_view (priv->view_container) == priv->id)
+  if (hd_home_view_container_get_current_view(priv->view_container) == priv->id)
     hd_render_manager_blurred_changed();
 
   priv->background = new_bg;
   priv->background_sub = new_bg_sub;
 
   priv->load_background_source = 0;
-
-  g_printerr("%s - done\n", __func__);
-  g_printerr("flags = %s|%s|%s|%s\n", 
-	(CLUTTER_ACTOR_IS_MAPPED(new_bg))? "MAPPED": "",
-	(CLUTTER_ACTOR_IS_REALIZED(new_bg))? "REALIZED": "",
-	(CLUTTER_ACTOR_IS_REACTIVE(new_bg))? "REACTIVE": "",
-	(CLUTTER_ACTOR_IS_VISIBLE(new_bg))? "VISIBLE": ""
-  );
 }
 
 void
@@ -869,8 +860,6 @@ hd_home_view_applet_motion (ClutterActor       *applet,
 
   /* Update applet actor position */
   clutter_actor_set_position (applet, x, y);
-  g_printerr("%s: trying to move bkg\n", __func__);
-  clutter_actor_set_position (priv->background_container, x, y); // test
   if (hd_transition_get_int ("edit_mode",
                              "snap_to_grid_while_move",
                              1))
@@ -1310,7 +1299,6 @@ configure_button_clicked (ClutterActor       *button,
                           ClutterButtonEvent *event,
                           HdHomeView         *view)
 {
-  g_printerr("%s\n", __func__);
   HdHomeViewPrivate *priv = view->priv;
   ClutterActor *applet;
   HdHomeViewAppletData *data;
@@ -1331,13 +1319,6 @@ configure_button_clicked (ClutterActor       *button,
                                     0, 0, 0, 0, 0);
     }
 
-  g_printerr("bkg flags = %s|%s|%s|%s\n", 
-	(CLUTTER_ACTOR_IS_MAPPED(priv->background))? "MAPPED": "",
-	(CLUTTER_ACTOR_IS_REALIZED(priv->background))? "REALIZED": "",
-	(CLUTTER_ACTOR_IS_REACTIVE(priv->background))? "REACTIVE": "",
-	(CLUTTER_ACTOR_IS_VISIBLE(priv->background))? "VISIBLE": ""
-  );
-  CLUTTER_ACTOR_SET_FLAGS(priv->background, CLUTTER_ACTOR_MAPPED|CLUTTER_ACTOR_REALIZED|CLUTTER_ACTOR_REACTIVE);
   return TRUE;
 }
 

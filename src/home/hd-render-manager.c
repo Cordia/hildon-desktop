@@ -1856,8 +1856,9 @@ void hd_render_manager_restack()
 	   * its own stacking as well.
 	   */
 	  if (hd_render_manager_should_ignore_cm_client
-	      (MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client)))
-	      continue;
+	      (MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client))
+              || c->window->live_background)
+            continue;
 
           ClutterActor *actor = 0;
           ClutterActor *desktop = mb_wm_comp_mgr_clutter_get_nth_desktop(
@@ -1865,7 +1866,6 @@ void hd_render_manager_restack()
           actor = mb_wm_comp_mgr_clutter_client_get_actor(
               MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
 
-		  #if 0 // Temporarily away for enabling live background
           /* remove clients that have received UnmapNotify, otherwise they
            * can show as 'ghost windows' in the blur (one such case was:
            * go to switcher, tklock, power button, slide to unlock) */
@@ -1883,7 +1883,6 @@ void hd_render_manager_restack()
                        actor ? clutter_actor_get_name (actor) : "");
               continue;
             }
-		  #endif
 
           {
             /* ignore it if it's not at least partly inside the screen
@@ -1922,8 +1921,7 @@ void hd_render_manager_restack()
                             clutter_actor_get_name(actor)?clutter_actor_get_name(actor):"?",
                             clutter_actor_get_name(parent)?clutter_actor_get_name(parent):"?");
 #endif /*STACKING_DEBUG*/
-					  if (past_desktop) // This is a temporary kludge for live background
-		      			clutter_actor_raise_top(actor);
+                     clutter_actor_raise_top(actor);
                     }
 #if STACKING_DEBUG
                   else

@@ -284,12 +284,10 @@ hd_home_view_container_update_active_views (HdHomeViewContainer *self,
       /* FIXME scroll to new view and do not switch */
       if (current_view != priv->current_view)
         {
-		  g_printerr("fixme scroll set current\n");
           hd_home_view_container_set_current_view (self, current_view);
         }
       else
         {
-		  g_printerr("fixme scroll update\n");
           hd_home_view_container_update_previous_and_next_view (self);
         }
     }
@@ -737,7 +735,6 @@ hd_home_view_container_set_offset (HdHomeViewContainer *container,
   priv = container->priv;
 
   priv->offset = CLUTTER_UNITS_TO_INT(offset);
-  g_printerr("%s priv-offset=%d\n", __func__, priv->offset);
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
 }
@@ -788,7 +785,6 @@ scroll_back_completed_cb (ClutterTimeline     *timeline,
 void
 hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocity)
 {
-  g_printerr("%s\n", __func__);
   HdHomeViewContainerPrivate *priv;
   guint width;
   gint offset;
@@ -854,7 +850,6 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocit
 void
 hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container, gint velocity)
 {
-  g_printerr("%s\n", __func__);
   HdHomeViewContainerPrivate *priv;
   guint width;
 
@@ -874,7 +869,6 @@ hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container, gint 
 ClutterTimeline *
 hd_home_view_container_scroll_to_next (HdHomeViewContainer *container, gint velocity)
 {
-  g_printerr("%s\n", __func__);
   HdHomeViewContainerPrivate *priv;
   guint width;
 

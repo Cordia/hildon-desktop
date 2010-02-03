@@ -694,6 +694,9 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
                       mb_wm_client_get_name (c),
                       c->window->live_background); */
           hd_home_set_live_background (HD_HOME (priv->home), c);
+          mb_wm_comp_mgr_clutter_client_set_flags (
+                          MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client),
+                          MBWMCompMgrClutterClientDontPosition);
         }
       return False;
     }
@@ -1472,16 +1475,12 @@ hd_comp_mgr_live_bg_update_area(HdCompMgr *hmgr,
     {
       if (!CLUTTER_ACTOR_IS_VISIBLE(parent))
       {
-              g_printerr ("parent '%s' is not visible\n",
-                              clutter_actor_get_name (parent));
         /* FIXME: this is an evil hack to show live background updates */
         clutter_actor_show (parent);
       }
       /* if we're a child of a blur group, tell it that it has changed */
       if (TIDY_IS_BLUR_GROUP(parent))
         {
-              g_printerr ("parent '%s' is a blur group\n",
-                              clutter_actor_get_name (parent));
           /* we don't update blur on every change of
            * an application now as it causes a flicker, so
            * instead we just hint that next time we become
@@ -2186,9 +2185,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       g_printerr ("%s: client '%s' is live background\n", __func__,
                   mb_wm_client_get_name (c));
-      hd_home_set_live_background (HD_HOME (priv->home), c);
-
       parent_klass->map_notify (mgr, c);
+
+      hd_home_set_live_background (HD_HOME (priv->home), c);
+      mb_wm_comp_mgr_clutter_client_set_flags (
+                          MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client),
+                          MBWMCompMgrClutterClientDontPosition);
 
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
