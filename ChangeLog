@@ -1,3 +1,7 @@
+2010-02-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.131-1
+
 2010-02-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Increase decceleration of TidyFingerScroll because some users felt
@@ -11,9 +15,11 @@
 	12:56 <MartinG> the top margin: 72px
 	12:56 <androide> joo
 	12:56 <MartinG> margin between rows: 40px
-	12:57 <MartinG> for some reason, previously, each icon had a 4px margin on top of it
-	12:58 <MartinG> it was pointless, so I removed it; the construction of each element 
-			is now (from top to bottom): icon (64), 4px margin, label (28)
+	12:57 <MartinG> for some reason, previously, each icon had a 4px margin
+	on top of it
+	12:58 <MartinG> it was pointless, so I removed it; the construction of 
+	each element is now (from top to bottom): icon (64), 4px margin,
+	label (28)
 	12:58 <MartinG> equals 96px high
 	12:58 <androide> bottom margin == top margin?
 	12:58 <MartinG> hmmh
