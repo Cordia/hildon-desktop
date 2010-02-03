@@ -80,6 +80,7 @@ void hd_home_view_close_all_applets (HdHomeView *view);
 
 ClutterActor * hd_home_view_get_background (HdHomeView *view);
 ClutterActor * hd_home_view_get_applets_container (HdHomeView *view);
+
 gboolean hd_home_view_get_active (HdHomeView *view);
 void     hd_home_view_set_active (HdHomeView *view,
                                   gboolean    active);

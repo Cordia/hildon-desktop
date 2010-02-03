@@ -324,7 +324,6 @@ hd_home_desktop_do_motion (HdHome *home,
   if (!priv->desktop_motion_cb)
     return;
 
-  /* live background stuff */
   live_bg = hd_home_view_get_live_background(HD_HOME_VIEW(
                                              hd_home_get_current_view (home)));
   if (live_bg)
@@ -539,7 +538,7 @@ hd_home_desktop_do_press (HdHome *home,
       MBWindowManagerClient *live_bg;
       /* g_printerr ("%s: focus the desktop\n", __func__); */
       mb_wm_client_focus (wm->desktop);
-      /* live background stuff */
+
       live_bg = hd_home_view_get_live_background(HD_HOME_VIEW(
                                            hd_home_get_current_view (home)));
       if (live_bg)
@@ -583,7 +582,7 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 
   hd_home_desktop_do_motion (home, xev->x, xev->y);
   hd_home_desktop_do_release (home);
-  /* live background stuff */
+
   live_bg = hd_home_view_get_live_background(HD_HOME_VIEW(
                                     hd_home_get_current_view (home)));
   if (live_bg)
