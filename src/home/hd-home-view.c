@@ -697,7 +697,6 @@ hd_home_view_set_live_background (HdHomeView *view,
     }
 
   clutter_actor_reparent(new_bg, priv->background_container);
-  clutter_actor_set_name (new_bg, "HdHomeView::background");
 
   /* Add new background to the background container */
   clutter_container_add_actor (
