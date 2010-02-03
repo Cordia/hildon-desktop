@@ -2193,6 +2193,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
       hd_comp_mgr_hook_live_bg_update (HD_COMP_MGR (mgr), actor);
+      hd_render_manager_restack ();
       return;
     }
 
@@ -3001,7 +3002,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
   /*g_debug ("%s, c=%p ctype=%d event=%d",
             __FUNCTION__, c, MB_WM_CLIENT_CLIENT_TYPE (c), event);*/
 
-  if (c->window->allowed_actions & MBWMClientWindowActionNoTransitions)
+  if (c->window->allowed_actions & MBWMClientWindowActionNoTransitions
+      || c->window->live_background)
     {
       /* restack because this window could be in the blur group */
       g_debug("%s: no transition effect for this one\n", __func__);

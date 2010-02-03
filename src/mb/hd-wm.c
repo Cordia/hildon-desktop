@@ -382,7 +382,7 @@ hd_wm_client_activate (MBWindowManager * wm,
 {
   MBWindowManagerClass *wm_class = 
     MB_WINDOW_MANAGER_CLASS(MB_WM_OBJECT_GET_PARENT_CLASS(MB_WM_OBJECT(wm)));
-  gboolean ret;
+  Bool ret = True;
 
   /* If we're in switcher when the client is activated try to zoom in.
    * Otherwisw just go to APP state. */
@@ -406,7 +406,8 @@ hd_wm_client_activate (MBWindowManager * wm,
        * because when a new %MBWindowManagerClient is created it is activated
        * but its window is not added to the switcher yet.
        */
-      a = mb_wm_comp_mgr_clutter_client_get_actor (MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client));
+      a = mb_wm_comp_mgr_clutter_client_get_actor (
+                      MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client));
       sw = HD_SWITCHER (hd_comp_mgr_get_switcher (HD_COMP_MGR (wm->comp_mgr)));
       tn = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (sw));
       state = hd_render_manager_get_state();
@@ -415,7 +416,7 @@ hd_wm_client_activate (MBWindowManager * wm,
           hd_switcher_item_selected (sw, a);
           ret = True;
         }
-      else if (!STATE_IS_APP (state))
+      else if (!STATE_IS_APP (state) && !c->window->live_background)
         {
           /* This will restack, which is necessary for us before going to
            * APP state, because it makes decisions based on the topmost
