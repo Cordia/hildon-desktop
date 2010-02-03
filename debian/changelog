@@ -19,6 +19,8 @@ hildon-desktop (1:2.2.130-1) unstable; urgency=low
   * NB#154727 Notification glow effect should fire up when screen is unlocked
   * Make the launcher less CRITICAL when refreshing the grid layout.
   * NB#146769 Random flicker when a stackable window is opened
+  * NB#155060 Desktop hangs after installing an application
+    from Application Manager
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 01 Feb 2010 13:07:28 +0200
 

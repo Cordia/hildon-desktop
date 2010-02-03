@@ -82,7 +82,7 @@ void          hd_launcher_grid_layout(HdLauncherGrid *grid);
                 (HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN)
 #define HD_LAUNCHER_GRID_WIDTH  (HD_LAUNCHER_PAGE_WIDTH)
 
-#define HD_LAUNCHER_GRID_ROW_SPACING 32
+#define HD_LAUNCHER_GRID_ROW_SPACING 40
 
 G_END_DECLS
 
