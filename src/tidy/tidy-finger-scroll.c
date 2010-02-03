@@ -883,7 +883,7 @@ tidy_finger_scroll_init (TidyFingerScroll *self)
   priv->motion_buffer = g_array_sized_new (FALSE, TRUE,
                                            sizeof (TidyFingerScrollMotion), 3);
   g_array_set_size (priv->motion_buffer, 3);
-  priv->decel_rate = CLUTTER_FLOAT_TO_FIXED(0.99f);
+  priv->decel_rate = CLUTTER_FLOAT_TO_FIXED(0.85f);
   priv->bouncing_decel_rate = CLUTTER_FLOAT_TO_FIXED (0.7f);
 
   /*

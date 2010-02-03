@@ -266,7 +266,7 @@ hd_launcher_page_dispose (GObject *gobject)
     }
 
   if (priv->transition)
-    priv->transition = (g_object_unref(priv->transition), NULL);
+    hd_launcher_page_transition_stop (HD_LAUNCHER_PAGE (gobject));
 
   if (priv->scroller)
     {

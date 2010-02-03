@@ -195,6 +195,8 @@ theme_client_type_func (const char *type_name, void *user_data)
     return HdWmClientTypeAppMenu;
   else if (!strcmp (type_name, "home-applet"))
     return HdWmClientTypeHomeApplet;
+  else if (!strcmp (type_name, "status-menu"))
+      return HdWmClientTypeStatusMenu;
 
   return 0;
 }

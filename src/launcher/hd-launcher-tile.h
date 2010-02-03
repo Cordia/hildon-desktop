@@ -77,7 +77,7 @@ ClutterActor *hd_launcher_tile_get_label (HdLauncherTile *tile);
 void hd_launcher_tile_reset(HdLauncherTile *tile);
 
 /* Fixed size */
-#define HD_LAUNCHER_TILE_HEIGHT (100)
+#define HD_LAUNCHER_TILE_HEIGHT (96)
 #define HD_LAUNCHER_TILE_WIDTH  (142)
 /* For the glow, we unfortunately have to have a 1px transparent border
  * around the icons. */

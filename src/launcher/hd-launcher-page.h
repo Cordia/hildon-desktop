@@ -88,7 +88,7 @@ const char *hd_launcher_page_get_transition_string(
  */
 #define HD_LAUNCHER_PAGE_WIDTH  (HD_COMP_MGR_LANDSCAPE_WIDTH)
 #define HD_LAUNCHER_PAGE_HEIGHT (HD_COMP_MGR_LANDSCAPE_HEIGHT)
-#define HD_LAUNCHER_PAGE_YMARGIN (70)
+#define HD_LAUNCHER_PAGE_YMARGIN (72)
 
 G_END_DECLS
 
