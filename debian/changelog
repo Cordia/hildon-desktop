@@ -1,8 +1,25 @@
-hildon-desktop (1:2.2.131-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.132-1~unreleased) unstable; urgency=low
 
   * foo
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  1 Feb 2010 13:08:53 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  3 Feb 2010 15:19:19 +0200
+
+hildon-desktop (1:2.2.131-1) unstable; urgency=low
+
+  Adam:
+  * Increase decceleration of TidyFingerScroll.
+  * Task Launcher Grid layout tuning to match the upcoming v2.7 version.
+  * Fixes: NB#155074 - When tapped on close button App menu is coming up and
+    hence not able to close the application in a given scenario.
+
+  Kimmo:
+  * Fixes: NB#155155 - Desktop home view is not updated when camera lid
+    is opened and closed from device sleep
+
+  Gordon:
+  * HD's part of NB#137235 - Transparent menu corners
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 03 Feb 2010 15:15:52 +0200
 
 hildon-desktop (1:2.2.130-1) unstable; urgency=low
 
