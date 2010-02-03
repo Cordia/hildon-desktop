@@ -250,7 +250,7 @@ hd_decor_create_actors(HdDecor *decor)
                                           client->window->xwindow);
 
   area.x = 0;
-  area.y = 0;
+  area.y = client->window->geometry.height;
   area.width = mb_decor->geom.width;
   area.height = mb_decor->geom.height;
 
@@ -262,56 +262,59 @@ hd_decor_create_actors(HdDecor *decor)
   if (d->show_title)
     {
       const char* title = mb_wm_client_get_name (client);
-      if (title && strlen(title)) {
-        ClutterLabel *bar_title;
-        ClutterColor default_color = { 0xFF, 0xFF, 0xFF, 0xFF };
-        char font_name[512];
-        guint w = 0, h = 0;
-        int screen_width_avail = hd_comp_mgr_get_current_screen_width ();
-        if (is_waiting)
-          screen_width_avail -= HD_THEME_IMG_PROGRESS_SIZE+
-                                HD_TITLE_BAR_PROGRESS_MARGIN;
 
-        hd_theme_config_get_color (HD_TXT_COLOR, &default_color);
+      if (title && strlen(title))
+        {
+          ClutterLabel *bar_title;
+          ClutterColor default_color = { 0xFF, 0xFF, 0xFF, 0xFF };
+          char font_name[512];
+          guint w = 0, h = 0;
+          int screen_width_avail = hd_comp_mgr_get_current_screen_width ();
+          if (is_waiting)
+            screen_width_avail -= HD_THEME_IMG_PROGRESS_SIZE+
+                                  HD_TITLE_BAR_PROGRESS_MARGIN;
 
-        /* TODO: handle it so that _NET_WM_NAME has pure UTF-8 and no markup,
-         * and _HILDON_WM_NAME has UTF-8 + Pango markup. If _HILDON_WM_NAME
-         * is there, it is used, otherwise use the traditional properties. */
-        bar_title = CLUTTER_LABEL(clutter_label_new());
-        clutter_label_set_color(bar_title, &default_color);
+          hd_theme_config_get_color (HD_TXT_COLOR, &default_color);
 
-        /* set Pango markup only if the string is XML fragment */
-        if (client->window->name_has_markup)
-          clutter_label_set_use_markup(bar_title, TRUE);
+          /* TODO: handle it so that _NET_WM_NAME has pure UTF-8 and no markup,
+           * and _HILDON_WM_NAME has UTF-8 + Pango markup. If _HILDON_WM_NAME
+           * is there, it is used, otherwise use the traditional properties. */
+          bar_title = CLUTTER_LABEL (clutter_label_new());
+          clutter_label_set_color (bar_title, &default_color);
 
-        decor->title_actor = CLUTTER_ACTOR(g_object_ref_sink(bar_title));
-        clutter_container_add_actor(CLUTTER_CONTAINER(actor),
+          /* set Pango markup only if the string is XML fragment */
+          if (client->window->name_has_markup)
+            clutter_label_set_use_markup(bar_title, TRUE);
+
+          decor->title_actor = CLUTTER_ACTOR(g_object_ref_sink(bar_title));
+          clutter_container_add_actor(CLUTTER_CONTAINER(actor),
                                     decor->title_actor);
         
-	snprintf (font_name, sizeof (font_name), "%s %i%s",
-                  d->font_family ? d->font_family : "Sans",
-                  d->font_size ? d->font_size : 18,
-                  d->font_units == MBWMXmlFontUnitsPoints ? "" : "px");
-        clutter_label_set_font_name(bar_title, font_name);
-        clutter_label_set_text(bar_title, title);
+	  snprintf (font_name, sizeof (font_name), "%s %i%s",
+                    d->font_family ? d->font_family : "Sans",
+                    d->font_size ? d->font_size : 18,
+                    d->font_units == MBWMXmlFontUnitsPoints ? "" : "px");
 
-        clutter_actor_get_size(CLUTTER_ACTOR(bar_title), &w, &h);
-        /* if it's too big, make sure we crop it */
-        if (w > screen_width_avail)
-          {
-            clutter_label_set_ellipsize(bar_title, PANGO_ELLIPSIZE_NONE);
-            clutter_actor_set_width(CLUTTER_ACTOR(bar_title),
-                                    screen_width_avail);
-            clutter_actor_set_clip(CLUTTER_ACTOR(bar_title),
-                                   0, 0,
-                                   screen_width_avail, h);
-            w = screen_width_avail;
-          }
+          clutter_label_set_font_name(bar_title, font_name);
+          clutter_label_set_text(bar_title, title);
 
-        clutter_actor_set_position(CLUTTER_ACTOR(bar_title),
-            (screen_width_avail - w) / 2,
-            (mb_decor->geom.height - h) / 2);
-      }
+          clutter_actor_get_size (CLUTTER_ACTOR(bar_title), &w, &h);
+          /* if it's too big, make sure we crop it */
+          if (w > screen_width_avail)
+            {
+              clutter_label_set_ellipsize (bar_title, PANGO_ELLIPSIZE_NONE);
+              clutter_actor_set_width (CLUTTER_ACTOR(bar_title),
+                                       screen_width_avail);
+              clutter_actor_set_clip (CLUTTER_ACTOR(bar_title),
+                                      0, 0, screen_width_avail, h);
+              w = screen_width_avail;
+            }
+
+          clutter_actor_set_position (CLUTTER_ACTOR(bar_title),
+            			      (screen_width_avail - w) / 2, 
+				      client->window->geometry.height + h/3);
+            //(mb_decor->geom.height - h) / 2);
+       }
     }
 
   /* Add the progress indicator if required */

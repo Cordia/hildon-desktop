@@ -91,7 +91,7 @@ hd_dialog_init (MBWMObject *this, va_list vap)
       geom.x      = 0;
       geom.width  = wm->xdpy_width;
       geom.height = client->window->geometry.height;
-      geom.y      = wm->xdpy_height - geom.height;
+      geom.y      = 0;
     }
   else
     {
@@ -103,7 +103,7 @@ hd_dialog_init (MBWMObject *this, va_list vap)
       geom.x      = 0;
       geom.width  = wm->xdpy_width;
       geom.height = client->window->geometry.height + n + s;
-      geom.y      = wm->xdpy_height - geom.height;
+      geom.y      = 0;
     }
 
   /*
@@ -277,8 +277,8 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
   /* make sure it's bottom-aligned */
   diff = (client->frame_geometry.y + client->frame_geometry.height)
     - wm->xdpy_height;
-  client->frame_geometry.y   -= diff;
-  client->window->geometry.y -= diff;
+  client->frame_geometry.y   = 0;
+  client->window->geometry.y = 0;
 
   mb_wm_client_geometry_mark_dirty (client);
 
