@@ -1130,6 +1130,8 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
           hd_transition_rotate_screen (wm, TRUE);
           break;
         }
+      else if (!c->portrait_requested_inherited)
+        break;
     }
 
   g_ptr_array_free (stack, TRUE);
