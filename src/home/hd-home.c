@@ -324,7 +324,11 @@ hd_home_desktop_do_motion (HdHome *home,
   if (!priv->desktop_motion_cb)
     return;
 
-  live_bg = hd_home_view_get_live_background(HD_HOME_VIEW(
+  /* MotionNotify is forwarded to any live background */
+  live_bg = hd_home_view_container_get_live_bg (
+                  HD_HOME_VIEW_CONTAINER (priv->view_container));
+  if (!live_bg)
+    live_bg = hd_home_view_get_live_bg (HD_HOME_VIEW(
                                              hd_home_get_current_view (home)));
   if (live_bg)
     hd_home_live_bg_emit_button1_event (home, live_bg->window->xwindow,
@@ -539,8 +543,11 @@ hd_home_desktop_do_press (HdHome *home,
       /* g_printerr ("%s: focus the desktop\n", __func__); */
       mb_wm_client_focus (wm->desktop);
 
-      live_bg = hd_home_view_get_live_background(HD_HOME_VIEW(
-                                           hd_home_get_current_view (home)));
+      live_bg = hd_home_view_container_get_live_bg (
+                    HD_HOME_VIEW_CONTAINER (priv->view_container));
+      if (!live_bg)
+        live_bg = hd_home_view_get_live_bg (HD_HOME_VIEW(
+                                             hd_home_get_current_view (home)));
       if (live_bg)
         hd_home_live_bg_emit_button1_event (home, live_bg->window->xwindow,
                                             x, y, ButtonPress);
@@ -576,6 +583,7 @@ static Bool
 hd_home_desktop_release (XButtonEvent *xev, void *userdata)
 {
   HdHome *home = userdata;
+  HdHomePrivate *priv = home->priv;
   MBWindowManagerClient *live_bg;
 
   g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, xev->x, xev->y);
@@ -583,8 +591,11 @@ hd_home_desktop_release (XButtonEvent *xev, void *userdata)
   hd_home_desktop_do_motion (home, xev->x, xev->y);
   hd_home_desktop_do_release (home);
 
-  live_bg = hd_home_view_get_live_background(HD_HOME_VIEW(
-                                    hd_home_get_current_view (home)));
+  live_bg = hd_home_view_container_get_live_bg (
+                    HD_HOME_VIEW_CONTAINER (priv->view_container));
+  if (!live_bg)
+    live_bg = hd_home_view_get_live_bg (HD_HOME_VIEW(
+                                          hd_home_get_current_view (home)));
   if (live_bg)
     hd_home_live_bg_emit_button1_event (home, live_bg->window->xwindow,
                                         xev->x, xev->y, ButtonRelease);

@@ -6,22 +6,7 @@
 #include <X11/Xutil.h>
 #include <string.h>
 #include <stdio.h>
-
-/*
-static void set_non_compositing (Display *display, Window xwindow)
-{
-        Atom atom;
-        int one = 1;
-
-        atom = XInternAtom (display, "_HILDON_NON_COMPOSITED_WINDOW", False);
-
-        XChangeProperty (display,
-                       xwindow,
-                       atom,
-                       XA_INTEGER, 32, PropModeReplace,
-                       (unsigned char *) &one, 1);
-}
-*/
+#include <stdlib.h>
 
 static void set_fullscreen (Display *dpy, Window w)
 {
@@ -35,10 +20,9 @@ static void set_fullscreen (Display *dpy, Window w)
                    (unsigned char *) &state_fs, 1);
 }
 
-static void set_live_bg (Display *display, Window xwindow)
+static void set_live_bg (Display *display, Window xwindow, int mode)
 {
         Atom atom;
-        int one = 1;
 
         atom = XInternAtom (display, "_HILDON_LIVE_DESKTOP_BACKGROUND", False);
         fprintf (stderr, "XID: 0x%x\n", (unsigned)xwindow);
@@ -47,7 +31,7 @@ static void set_live_bg (Display *display, Window xwindow)
                        xwindow,
                        atom,
                        XA_INTEGER, 32, PropModeReplace,
-                       (unsigned char *) &one, 1);
+                       (unsigned char *) &mode, 1);
 }
 
 static void draw_rect (Display *dpy, Window w, GC gc, XColor *col,
@@ -132,7 +116,11 @@ int main(int argc, char **argv)
 
         set_fullscreen(dpy, w);
         set_window_type(dpy, w);
-        set_live_bg (dpy, w);
+
+        if (argc == 2)
+          set_live_bg (dpy, w, atoi(argv[1]));
+        else
+          set_live_bg (dpy, w, 1);
 
 #if 0
         /* tell the window manager that we want keyboard focus */

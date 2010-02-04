@@ -82,6 +82,8 @@ void             hd_home_view_container_set_reactive       (HdHomeViewContainer 
 void 
 hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
                                     MBWindowManagerClient *client);
+MBWindowManagerClient *
+hd_home_view_container_get_live_bg (HdHomeViewContainer *container);
 
 G_END_DECLS
 

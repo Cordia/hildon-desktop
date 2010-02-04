@@ -82,7 +82,7 @@ struct _HdHomeViewPrivate
 
   ClutterActor             *background;
   TidySubTexture           *background_sub;
-  MBWindowManagerClient    *live_background;
+  MBWindowManagerClient    *live_bg;
 
   GHashTable               *applets;
 
@@ -626,10 +626,12 @@ load_background_idle (gpointer data)
   return FALSE;
 }
 
-/* Use Window as background, mostly copied from above. */
+/* Use Window as background, mostly copied from above.
+ * 1) client != NULL means setting live-bg for this view.
+ * 2) client == NULL means unsetting the live-bg for this view. */
 void
-hd_home_view_set_live_background (HdHomeView *view,
-                                  MBWindowManagerClient *client)
+hd_home_view_set_live_bg (HdHomeView *view,
+                          MBWindowManagerClient *client)
 {
   HdHomeViewPrivate *priv = view->priv;
   ClutterActor *new_bg = 0;
@@ -638,27 +640,29 @@ hd_home_view_set_live_background (HdHomeView *view,
   /* FIXME: shouldn't we ref and unref? */
   if (client) 
     {
+      if (priv->live_bg)
+        /* remove the old one */
+        hd_home_view_set_live_bg (view, NULL);
+
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
       new_bg = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-      priv->live_background = client;
       /* the actor is already parented to something, so reparent */
       clutter_actor_reparent (new_bg, priv->background_container);
+      priv->live_bg = client;
     }
   else
     {
       /* remove it */
-      client = priv->live_background;
+      client = priv->live_bg;
       if (client)
         {
           cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
           new_bg = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
           clutter_container_remove_actor (
                 CLUTTER_CONTAINER (priv->background_container), new_bg);
+          clutter_actor_hide (new_bg);
         }
-      priv->live_background = NULL;
-      clutter_actor_hide (new_bg);
-      /* restore the normal background */
-      hd_home_view_load_background (view);
+      priv->live_bg = NULL;
       /* create black background to replace priv->background */
       new_bg = priv->background = NULL;
     }
@@ -1428,11 +1432,11 @@ hd_home_view_get_background (HdHomeView *view)
 }
 
 MBWindowManagerClient *
-hd_home_view_get_live_background (HdHomeView *view)
+hd_home_view_get_live_bg (HdHomeView *view)
 {
   HdHomeViewPrivate *priv = view->priv;
 
-  return priv->live_background;
+  return priv->live_bg;
 }
 
 ClutterActor *
