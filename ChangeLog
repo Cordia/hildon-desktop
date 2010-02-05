@@ -1,3 +1,11 @@
+2010-02-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	In relation with NB#139190 Closing 'x' for widget misplaced
+
+	* src/home/hd-home-view.c:
+	  Watch the geometry allocation of the applets and reposition
+	  the close and the configure buttons when it changes.
+
 2010-02-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#155541 [video-call] Landscape request is ignored in certain case
