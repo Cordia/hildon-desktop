@@ -1385,22 +1385,6 @@ hd_home_view_move_applet (HdHomeView   *view,
   mb_wm_client_stacking_mark_dirty (desktop_client);
 }
 
-ClutterActor *
-hd_home_view_get_background (HdHomeView *view)
-{
-  HdHomeViewPrivate *priv = view->priv;
-
-  return priv->background;
-}
-
-ClutterActor *
-hd_home_view_get_applets_container (HdHomeView *view)
-{
-  HdHomeViewPrivate *priv = view->priv;
-
-  return priv->applets_container;
-}
-
 gboolean
 hd_home_view_get_active (HdHomeView *view)
 {
