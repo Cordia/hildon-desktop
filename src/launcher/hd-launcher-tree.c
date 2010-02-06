@@ -16,7 +16,7 @@
 #include <gmenu-tree.h>
 
 /* where the menu XML resides */
-#define HILDON_DESKTOP_APPLICATIONS_MENU        "kde-applications.menu"
+#define HILDON_DESKTOP_APPLICATIONS_MENU        "applications.menu"
 
 #define HD_LAUNCHER_TREE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TREE, HdLauncherTreePrivate))
 
