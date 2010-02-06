@@ -569,11 +569,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 		    	    G_CALLBACK (hd_task_navigator_rotate),
 		    	    task_nav);
 
-  g_signal_connect_swapped (priv->render_manager,
-  	            	    "rotated",
-		    	    G_CALLBACK (hd_home_update_rotation),
-		    	    priv->home);
-
   /* Pass the render manager to the app mgr so it knows when it can't
    * prestart apps.
    */

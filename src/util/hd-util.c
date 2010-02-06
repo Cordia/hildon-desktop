@@ -261,7 +261,7 @@ get_primary_crtc (MBWindowManager *wm, XRRScreenResources *res)
         {
           if ((actual_type == XA_ATOM && actual_format == 32 && nitems == 1 &&
               *(Atom *)contype == rr_connector_panel) || i == 0)
-            { g_debug ("ein?");
+            {
               ret = output->crtc;
               XRRFreeOutputInfo (output);
               break;

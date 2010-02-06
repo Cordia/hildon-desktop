@@ -32,9 +32,30 @@
 
 static Window previous_focus;
 
+
 static Bool hd_keyboard_request_geometry (MBWindowManagerClient *client,
                                              MBGeometry            *new_geometry,
                                              MBWMClientReqGeomType  flags);
+
+static MBWMStackLayerType 
+hd_keyboard_stacking_layer (MBWindowManagerClient *client)
+{
+  MBWMList *l; 
+  MBWindowManagerClient *iter;
+  MBWindowManager *wm = client->wmref;
+ 
+  for (l = wm->clients; l != NULL; l = l->next)
+    {
+      iter = (MBWindowManagerClient *)l->data;
+
+      if (MB_WM_CLIENT_CLIENT_TYPE (iter) == MBWMClientTypeDialog)
+        {
+	   return iter->stacking_layer - 1;
+        }
+    }
+
+  return MBWMStackLayerTop;
+}
 
 static void
 hd_keyboard_stack (MBWindowManagerClient *client,
@@ -90,6 +111,7 @@ hd_keyboard_class_init (MBWMObjectClass *klass)
   client->geometry     = hd_keyboard_request_geometry;
   client->stack	       = hd_keyboard_stack;
   client->focus	       = hd_keyboard_set_focus;
+  client->stacking_layer = hd_keyboard_stacking_layer;
 
 #if MBWM_WANT_DEBUG
   klass->klass_name = "HdKeyboard";

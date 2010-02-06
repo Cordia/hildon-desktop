@@ -269,7 +269,7 @@ hd_decor_create_actors(HdDecor *decor)
           ClutterColor default_color = { 0xFF, 0xFF, 0xFF, 0xFF };
           char font_name[512];
           guint w = 0, h = 0;
-          int screen_width_avail = hd_comp_mgr_get_current_screen_width ();
+          int screen_width_avail = hd_comp_mgr_get_current_screen_width () - 224;
           if (is_waiting)
             screen_width_avail -= HD_THEME_IMG_PROGRESS_SIZE+
                                   HD_TITLE_BAR_PROGRESS_MARGIN;

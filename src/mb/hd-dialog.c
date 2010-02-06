@@ -88,8 +88,8 @@ hd_dialog_init (MBWMObject *this, va_list vap)
    */
   if (client->window->undecorated)
     {
-      geom.x      = 0;
-      geom.width  = wm->xdpy_width;
+      geom.x      = 112;//FIXME: NON-FIXED VALUE
+      geom.width  = wm->xdpy_width-224;
       geom.height = client->window->geometry.height;
       geom.y      = 0;
     }
@@ -100,8 +100,8 @@ hd_dialog_init (MBWMObject *this, va_list vap)
       n = s = w = e = 0;
       mb_wm_theme_get_decor_dimensions (wm->theme, client, &n, &s, &w, &e);
 
-      geom.x      = 0;
-      geom.width  = wm->xdpy_width;
+      geom.x      = 112;// FIXME: NON-FIXED VALUE
+      geom.width  = wm->xdpy_width-224;
       geom.height = client->window->geometry.height + n + s;
       geom.y      = 0;
     }
@@ -196,7 +196,7 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
       && !(client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen))
     mb_wm_theme_get_decor_dimensions (wm->theme, client,
                                       &north, &south, &west, &east);
-
+  
   /* remember the requested frame height */
   if (flags & (MBWMClientReqGeomForced))
     HD_DIALOG (client)->requested_height = new_geometry->height;
@@ -208,7 +208,7 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
       /*
        * Calculate the frame size from the window size
        */
-      MBWM_DBG ("ConfigureRequest [%d,%d;%dx%d] -> [%d,%d;%dx%d]\n",
+      g_debug  ("ConfigureRequest [%d,%d;%dx%d] -> [%d,%d;%dx%d]\n",
                 client->window->geometry.x,
                 client->window->geometry.y,
                 client->window->geometry.width,
@@ -226,10 +226,10 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
         (client->frame_geometry.height);
       client->window->geometry.y = client->frame_geometry.y + north;
 
-      client->frame_geometry.width = wm->xdpy_width;
+      client->frame_geometry.width = wm->xdpy_width-224;//FIXME:NON-FIXED VALUE
       client->window->geometry.width = wm->xdpy_width - (west + east);
 
-      client->frame_geometry.x = 0;
+      client->frame_geometry.x = 112;//FIXME:NON-FIXED VALUE
       client->window->geometry.x = west;
     }
   else
@@ -245,8 +245,8 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
        * then @new_geometry contains the right size as specified by base
        * display sync, and the client may not have requested it explicitly.
        */
-      client->frame_geometry.x      = 0;
-      client->frame_geometry.width  = wm->xdpy_width;
+      client->frame_geometry.x      = 112;//FIXME:NON-FIXED VALUE
+      client->frame_geometry.width  = wm->xdpy_width-224;//FIXME:NON-FIXED VALUE
       client->frame_geometry.height = HD_DIALOG (client)->requested_height
           && !(client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
         ? HD_DIALOG (client)->requested_height

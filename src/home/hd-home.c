@@ -2185,8 +2185,3 @@ hd_home_unregister_applet (HdHome       *home,
     hd_home_view_unregister_applet (view, applet);
 }
 
-void 
-hd_home_update_rotation (HdHome *home, Rotation rotation)
-{
-  g_debug ("ALALALA");
-}
