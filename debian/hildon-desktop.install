@@ -1,0 +1,4 @@
+debian/tmp/etc/xdg/menus
+debian/tmp/usr/bin
+debian/tmp/usr/share
+
