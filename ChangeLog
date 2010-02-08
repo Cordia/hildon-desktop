@@ -1,3 +1,17 @@
+2010-02-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Support zero value for the Hildon non-comp. window property and
+	fix a bug in the logic where the property would be considered before
+	determining whether or not the application is a stackable window.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_is_non_composited): Respect zero
+	value and remember the compositing preference in case it's a
+	non-stackable.
+	(hd_comp_mgr_map_notify): Make sure we choose compositing before the
+	stackable status is clear. Move initialisation of stackable status
+	earlier to allow non-composited mode for non-stackables at mapping
+	time.
+
 2010-02-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-home-view.[ch] (hd_home_view_get_background,
