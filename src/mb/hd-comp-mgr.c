@@ -1664,6 +1664,7 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
   unsigned long items, left;
   unsigned char *prop;
   Status ret;
+  int value = 1;
 
   if (!HD_IS_APP (client))
     return FALSE;
@@ -1704,9 +1705,7 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
   if (HD_APP (client)->non_composited_read && !force_re_read)
     {
       if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen &&
-          (HD_APP (client)->non_composited ||
-           /* non-stackable */
-           HD_APP (client)->stack_index < 0))
+          HD_APP (client)->non_composited)
         return TRUE;
       else
         return FALSE;
@@ -1730,25 +1729,35 @@ hd_comp_mgr_is_non_composited (MBWindowManagerClient *client,
   HD_APP (client)->non_composited_read = True;
 
   if (prop)
-    XFree (prop);
+    {
+      value = (int)*prop;
+      XFree (prop);
+    }
 
   if (actual_type == XA_INTEGER)
     {
-      HD_APP (client)->non_composited = True;
-      if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
-        return TRUE;
+      if (value)
+        {
+          HD_APP (client)->non_composited = True;
+          if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+            return TRUE;
+        }
       else
-        return FALSE;
+        HD_APP (client)->non_composited = False;
     }
   else
    {
-     HD_APP (client)->non_composited = False;
-     if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen &&
-         HD_APP (client)->stack_index < 0)
-       return TRUE;
+     /* non-stackable "prefers" non-compositing in fullscreen mode */
+     if (HD_APP (client)->stack_index < 0)
+       {
+         HD_APP (client)->non_composited = True;
+         if (client->window->ewmh_state & MBWMClientWindowEWMHStateFullscreen)
+           return TRUE;
+       }
      else
-       return FALSE;
+       HD_APP (client)->non_composited = False;
    }
+  return FALSE;
 }
 
 /* returns HdApp of client that was replaced (because the stack_index
@@ -2121,7 +2130,10 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    */
   if (!HD_IS_INCOMING_EVENT_NOTE(c))
     {
-      if (hd_comp_mgr_client_prefers_compositing (c))
+      /* we don't know yet if it is stackable or not, so assume compositing
+       * in case of an application */
+      if (ctype == MBWMClientTypeApp
+          || hd_comp_mgr_client_prefers_compositing (c))
         {
           /* TODO: should check that this client really is above the
            * non-composited client */
@@ -2353,7 +2365,15 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       g_hash_table_remove (priv->hibernating_apps, (gpointer)hkey);
     }
 
-  if (hd_comp_mgr_is_non_composited (c, FALSE))
+  int topmost;
+  HdApp *app = HD_APP (c), *to_replace, *add_to_tn;
+  gboolean actor_handled = FALSE;
+
+  hd_comp_mgr_handle_stackable (c, &to_replace, &add_to_tn);
+
+  /* have to re-read the property here because stack_index
+   * is now initialised */
+  if (hd_comp_mgr_is_non_composited (c, TRUE))
     {
       MBWindowManagerClient *tmp;
       gboolean found = FALSE;
@@ -2388,12 +2408,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     {
       hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
     }
-
-  int topmost;
-  HdApp *app = HD_APP (c), *to_replace, *add_to_tn;
-  gboolean actor_handled = FALSE;
-
-  hd_comp_mgr_handle_stackable (c, &to_replace, &add_to_tn);
 
   if (app->stack_index < 0 /* non-stackable */
       /* leader without followers: */
