@@ -12,6 +12,11 @@
 	earlier to allow non-composited mode for non-stackables at mapping
 	time.
 
+2010-02-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/tidy/tidy-finger-scroll.c (tidy_finger_scroll_init):
+	  Tune the decceleration again.
+
 2010-02-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-home-view.[ch] (hd_home_view_get_background,
