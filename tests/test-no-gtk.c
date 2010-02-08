@@ -5,6 +5,8 @@
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 #include <string.h>
+#include <time.h>
+#include <stdio.h>
 
 static void set_non_compositing (Display *display, Window xwindow)
 {
@@ -42,6 +44,27 @@ static void set_no_transitions (Display *dpy, Window w)
   XChangeProperty (dpy, w, no_trans,
                    XA_CARDINAL, 32, PropModeReplace,
                    (unsigned char *)&one, 1);
+}
+
+static void raise_window (Display *dpy, Window w)
+{
+  XClientMessageEvent xclient;
+
+  printf ("%s: window %lx\n", __func__, w);
+  memset (&xclient, 0, sizeof (xclient));
+  xclient.type = ClientMessage;
+  xclient.window = w;
+  xclient.message_type = XInternAtom (dpy, "_NET_ACTIVE_WINDOW", False);
+  xclient.format = 32;
+  xclient.data.l[0] = 1; /* requestor type; we're an app */
+  xclient.data.l[1] = CurrentTime; /* should use a proper timestamp here */
+  xclient.data.l[2] = None; /* currently active window */
+  xclient.data.l[3] = 0;
+  xclient.data.l[4] = 0;
+      
+  XSendEvent (dpy, DefaultRootWindow (dpy), False,
+              SubstructureRedirectMask | SubstructureNotifyMask,
+              (XEvent *)&xclient);
 }
 
 static void set_window_type (Display *dpy, Window w)
@@ -88,6 +111,8 @@ int main(int argc, char **argv)
         Display *dpy;
         Window w;
         XWMHints *wmhints;
+        time_t start_time;
+        int raised = 0;
 
         /* TODO: X error handling is missing */
 
@@ -113,11 +138,23 @@ int main(int argc, char **argv)
 
         XMapWindow(dpy, w);  /* map the window */
 
+        start_time = time(NULL);
+
+        /* listen to property changes just to receive some X events
+         * for the timer */
+        XSelectInput (dpy, DefaultRootWindow (dpy), PropertyChangeMask);
+
         for (;;) {
                 XEvent xev;
 
                 /* useless main loop that just reads incoming X events */
                 XNextEvent(dpy, &xev);
+
+                if (!raised && time(NULL) - start_time > 10)
+                  {
+                    raised = 1;
+                    raise_window(dpy, w);
+                  }
         }
 
         return 0;
