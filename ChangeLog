@@ -1,3 +1,10 @@
+2010-02-09  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+	Put the User Guide launch icon in the correct place.
+	For: NB#155449
+
+	* data/menu/hildon.menu:
+
 2010-02-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fix couple of regressions.
