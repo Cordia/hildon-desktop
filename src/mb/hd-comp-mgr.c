@@ -689,14 +689,15 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
       c = mb_wm_managed_client_from_xwindow (wm, event->window);
       if (c)
         {
-                /*
-          g_printerr ("%s: client '%s' now has live-bg value %d\n", __func__,
+          /* TODO: handle zero value */
+          /*g_printerr ("%s: client '%s' now has live-bg value %d\n", __func__,
                       mb_wm_client_get_name (c),
-                      c->window->live_background); */
+                      c->window->live_background);*/
           hd_home_set_live_background (HD_HOME (priv->home), c);
           mb_wm_comp_mgr_clutter_client_set_flags (
                           MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client),
                           MBWMCompMgrClutterClientDontPosition);
+          hd_render_manager_set_state (HDRM_STATE_HOME);
         }
       return False;
     }
