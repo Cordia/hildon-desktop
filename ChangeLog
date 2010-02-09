@@ -1,5 +1,12 @@
 2010-02-09  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
+	Move launcher icons to the correct places according to spec 2.11.
+	Fixes: NB#156185
+
+	* data/menu/hildon.menu:
+
+2010-02-09  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
 	Put the User Guide launch icon in the correct place.
 	For: NB#155449
 
