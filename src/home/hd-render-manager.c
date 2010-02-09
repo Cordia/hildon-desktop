@@ -1196,7 +1196,7 @@ static void zoom_out_completed(ClutterActor *actor,
 }
 
 /* like mb_wm_get_visible_main_client but don't return clients that have
- * received UnmapNotify or clients that have the SkipTaskbar flag */
+ * the SkipTaskbar flag */
 static MBWindowManagerClient *
 hd_render_manager_get_visible_client_for_tasknav (MBWindowManager *wm)
 {
@@ -1207,7 +1207,6 @@ hd_render_manager_get_visible_client_for_tasknav (MBWindowManager *wm)
 
   mb_wm_stack_enumerate_reverse (wm, c)
     if (MB_WM_CLIENT_CLIENT_TYPE (c) & MBWMClientTypeApp
-        && !mb_wm_client_is_unmap_confirmed (c)
         && !(c->window->ewmh_state & MBWMClientWindowEWMHStateSkipTaskbar))
       return c;
 
@@ -1311,7 +1310,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             priv->state = state;
         }
       else
-        priv->state = state;
+        {
+          priv->state = state;
+          if (hd_dbus_tklock_on && state == HDRM_STATE_TASK_NAV
+              && hd_dbus_state_before_tklock != HDRM_STATE_UNDEFINED)
+            /* if we go to tasknav during tklock, use that on unlock */
+            hd_dbus_state_before_tklock = HDRM_STATE_TASK_NAV;
+        }
 
       if (state == HDRM_STATE_AFTER_TKLOCK)
         /* this happens if the state before tklock could not be used */
