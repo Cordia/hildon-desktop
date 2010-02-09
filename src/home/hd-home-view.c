@@ -146,6 +146,7 @@ struct _HdHomeViewAppletData
 
   guint press_cb;
   guint release_cb;
+  guint resize_cb;
   guint motion_cb;
 
   ClutterActor *close_button;
@@ -766,6 +767,24 @@ hd_home_view_get_view_id (HdHomeView *view)
   return priv->id;
 }
 
+static void
+hd_home_view_applet_resize (ClutterActor *applet,
+                            gpointer unused, HdHomeView *view)
+{
+  HdHomeViewAppletData *data;
+
+  if (!(data = g_hash_table_lookup (view->priv->applets, applet)))
+    return;
+  clutter_actor_set_position (data->close_button,
+                         clutter_actor_get_width (applet)
+                         - clutter_actor_get_width (data->close_button),
+                         0);
+  if (data->configure_button)
+    clutter_actor_set_position (data->configure_button, 0,
+                       clutter_actor_get_height (applet)
+                       - clutter_actor_get_height (data->close_button));
+}
+
 static gboolean
 hd_home_view_applet_motion (ClutterActor       *applet,
 			    ClutterMotionEvent *event,
@@ -1291,9 +1310,7 @@ hd_home_view_add_applet (HdHomeView   *view,
   /* Add close button */
   close_button = hd_clutter_cache_get_texture ("AppletCloseButton.png", TRUE);
   clutter_container_add_actor (CLUTTER_CONTAINER (applet), close_button);
-  clutter_actor_set_position (close_button,
-                              clutter_actor_get_width (applet) - clutter_actor_get_width (close_button),
-                              0);
+
   clutter_actor_set_reactive (close_button, TRUE);
   clutter_actor_raise_top (close_button);
   if (!STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
@@ -1310,9 +1327,6 @@ hd_home_view_add_applet (HdHomeView   *view,
       configure_button = hd_clutter_cache_get_texture ("AppletConfigureButton.png", TRUE);
       clutter_container_add_actor (CLUTTER_CONTAINER (applet), configure_button);
 
-      clutter_actor_set_position (configure_button,
-                                  0,
-                                  clutter_actor_get_height (applet) - clutter_actor_get_height (close_button));
       clutter_actor_set_reactive (configure_button, TRUE);
       clutter_actor_raise_top (configure_button);
       if (!STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
@@ -1326,6 +1340,9 @@ hd_home_view_add_applet (HdHomeView   *view,
                                        G_CALLBACK (hd_home_view_applet_release), view);
   data->press_cb = g_signal_connect (applet, "button-press-event",
                                      G_CALLBACK (hd_home_view_applet_press), view);
+
+  data->resize_cb = g_signal_connect (applet, "notify::allocation",
+                                      G_CALLBACK (hd_home_view_applet_resize), view);
 
   g_object_set_data (G_OBJECT (applet), "HD-HomeView", view);
 
@@ -1344,6 +1361,7 @@ hd_home_view_add_applet (HdHomeView   *view,
                                       applet,
                                       old_x,
                                       old_y);
+  hd_home_view_applet_resize (applet, NULL, view);
 
   desktop = hd_comp_mgr_get_desktop_client (HD_COMP_MGR (priv->comp_mgr));
   if (desktop)
@@ -1522,6 +1540,8 @@ applet_data_free (HdHomeViewAppletData *data)
     data->press_cb = (g_signal_handler_disconnect (data->actor, data->press_cb), 0);
   if (data->release_cb)
     data->release_cb = (g_signal_handler_disconnect (data->actor, data->release_cb), 0);
+  if (data->resize_cb)
+    data->resize_cb = (g_signal_handler_disconnect (data->actor, data->resize_cb), 0);
   if (data->motion_cb)
     data->motion_cb = (g_signal_handler_disconnect (data->actor, data->motion_cb), 0);
 

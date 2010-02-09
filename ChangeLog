@@ -1,3 +1,52 @@
+2010-02-09  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+	Put the User Guide launch icon in the correct place.
+	For: NB#155449
+
+	* data/menu/hildon.menu:
+
+2010-02-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fix couple of regressions.
+
+	* src/home/hd-render-manager.c
+	(hd_render_manager_get_visible_client_for_tasknav): Select unmapped
+	clients also, because it's needed for zoom out effect.
+	(hd_render_manager_set_state): If we go to tasknav during tklock, use
+	that when display is unlocked.
+
+2010-02-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Support zero value for the Hildon non-comp. window property and
+	fix a bug in the logic where the property would be considered before
+	determining whether or not the application is a stackable window.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_is_non_composited): Respect zero
+	value and remember the compositing preference in case it's a
+	non-stackable.
+	(hd_comp_mgr_map_notify): Make sure we choose compositing before the
+	stackable status is clear. Move initialisation of stackable status
+	earlier to allow non-composited mode for non-stackables at mapping
+	time.
+
+2010-02-08  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/tidy/tidy-finger-scroll.c (tidy_finger_scroll_init):
+	  Tune the decceleration again.
+
+2010-02-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-home-view.[ch] (hd_home_view_get_background,
+	hd_home_view_get_applets_container): Remove unused accessors.
+
+2010-02-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	In relation with NB#139190 Closing 'x' for widget misplaced
+
+	* src/home/hd-home-view.c:
+	  Watch the geometry allocation of the applets and reposition
+	  the close and the configure buttons when it changes.
+
 2010-02-04  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#155541 [video-call] Landscape request is ignored in certain case

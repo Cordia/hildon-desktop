@@ -40,6 +40,7 @@
     <Filename>osso_lmarbles.desktop</Filename>
     <Filename>osso-backup.desktop</Filename>
     <Filename>tutorial-launcher.desktop</Filename>
+    <Filename>user-guide.desktop</Filename>
     <Filename>osso-xterm.desktop</Filename>
     <Merge type="all"/>
   </Layout>
