@@ -87,8 +87,6 @@ void
 hd_switcher_hibernate_window_actor (HdSwitcher   * switcher,
 				    ClutterActor * actor);
 
-ClutterActor *hd_switcher_get_task_navigator (HdSwitcher *switcher);
-
 void hd_switcher_item_selected (HdSwitcher *switcher,
                                 ClutterActor *actor);
 

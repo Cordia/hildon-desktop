@@ -395,9 +395,9 @@ hd_wm_client_activate (MBWindowManager * wm,
   else if (HD_IS_APP (c))
     {
       HdSwitcher *sw;
-      HdTaskNavigator *tn;
       ClutterActor *a;
       HDRMStateEnum state;
+      extern HdTaskNavigator *hd_task_navigator;
 
       /*
        * We need to verify the thing is in the switcher already, otherwise
@@ -409,9 +409,9 @@ hd_wm_client_activate (MBWindowManager * wm,
       a = mb_wm_comp_mgr_clutter_client_get_actor (
                       MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client));
       sw = HD_SWITCHER (hd_comp_mgr_get_switcher (HD_COMP_MGR (wm->comp_mgr)));
-      tn = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (sw));
       state = hd_render_manager_get_state();
-      if (state == HDRM_STATE_TASK_NAV && hd_task_navigator_has_window (tn, a))
+      if (state == HDRM_STATE_TASK_NAV
+          && hd_task_navigator_has_window (hd_task_navigator, a))
         {
           hd_switcher_item_selected (sw, a);
           ret = True;

@@ -73,6 +73,8 @@
 # define PORTRAIT(...)  /* NOP */
 #endif
 
+HdTaskNavigator *hd_task_navigator;
+
 struct HdCompMgrPrivate
 {
   MBWindowManagerClient *desktop;
@@ -479,7 +481,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   MBWindowManager      *wm = cmgr->wm;
   HdCompMgr            *hmgr = HD_COMP_MGR (obj);
   HdCompMgrPrivate     *priv;
-  HdTaskNavigator      *task_nav;
   ClutterActor         *stage;
   ClutterActor         *arena;
   DBusGConnection      *system_connection;
@@ -508,12 +509,12 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   clutter_actor_show (priv->home);
 
-  task_nav = hd_task_navigator_new ();
+  hd_task_navigator = hd_task_navigator_new ();
 
   priv->render_manager = hd_render_manager_create(hmgr,
 		                                  hd_launcher_get(),
 		                                  HD_HOME(priv->home),
-						  task_nav);
+						  hd_task_navigator);
   g_object_set(priv->home, "hdrm", priv->render_manager, NULL);
   clutter_container_add_actor(CLUTTER_CONTAINER (stage),
                               CLUTTER_ACTOR(priv->render_manager));
@@ -528,7 +529,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
    */
   priv->switcher_group = g_object_new (HD_TYPE_SWITCHER,
 				       "comp-mgr", cmgr,
-				       "task-nav", task_nav,
+				       "task-nav", hd_task_navigator,
 				       NULL);
 
   /* When a MBWMCompMgrClutterClient is first created, it is added to the arena.
@@ -690,13 +691,20 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
       if (c)
         {
           /* TODO: handle zero value */
+          ClutterActor *actor;
+          MBWMCompMgrClutterClient *cclient =
+                MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
+          actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
           /*g_printerr ("%s: client '%s' now has live-bg value %d\n", __func__,
                       mb_wm_client_get_name (c),
                       c->window->live_background);*/
+          mb_wm_comp_mgr_clutter_client_set_flags (cclient,
+                                   MBWMCompMgrClutterClientDontPosition);
+          /* remove it from the switcher */
+          if (hd_task_navigator_has_window (hd_task_navigator, actor))
+            hd_switcher_remove_window_actor (priv->switcher_group,
+                                             actor, cclient);
           hd_home_set_live_background (HD_HOME (priv->home), c);
-          mb_wm_comp_mgr_clutter_client_set_flags (
-                          MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client),
-                          MBWMCompMgrClutterClientDontPosition);
           hd_render_manager_set_state (HDRM_STATE_HOME);
         }
       return False;
@@ -808,13 +816,10 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
     {
       char *str;
       ClutterActor *a;
-      HdTaskNavigator *tasw;
 
       c = mb_wm_managed_client_from_xwindow (wm, event->window);
       if (!c || !c->cm_client)
         return False;
-      tasw = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (
-                                           hmgr->priv->switcher_group));
       a = mb_wm_comp_mgr_clutter_client_get_actor (
                           MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client));
       str = event->state == PropertyNewValue
@@ -823,7 +828,8 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
         : NULL;
       if (event->state != PropertyNewValue || str)
         /* Otherwise don't mess up more. */
-        hd_task_navigator_notification_thread_changed (tasw, a, str);
+        hd_task_navigator_notification_thread_changed (hd_task_navigator,
+                                                       a, str);
       return False;
     }
 
@@ -2459,14 +2465,11 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    * in the switcher yet */
   if (app->stack_index >= 0 && !topmost)
     {
-      HdTaskNavigator *tasknav;
       MBWMCompMgrClutterClient *cclient;
       gboolean in_tasknav;
 
-      tasknav = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (
-                                   priv->switcher_group));
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
-      if (hd_task_navigator_has_window (tasknav,
+      if (hd_task_navigator_has_window (hd_task_navigator,
           mb_wm_comp_mgr_clutter_client_get_actor (cclient)))
         in_tasknav = TRUE;
       else
@@ -2484,7 +2487,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
             {
               cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (
                              MB_WM_CLIENT (l->data)->cm_client);
-              if (hd_task_navigator_has_window (tasknav,
+              if (hd_task_navigator_has_window (hd_task_navigator,
                   mb_wm_comp_mgr_clutter_client_get_actor (cclient)))
                 {
                   child_found = TRUE;

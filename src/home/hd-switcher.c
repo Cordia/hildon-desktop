@@ -917,13 +917,6 @@ hd_switcher_hibernate_window_actor (HdSwitcher   * switcher,
   hd_task_navigator_hibernate_window (priv->task_nav, actor);
 }
 
-ClutterActor *
-hd_switcher_get_task_navigator (HdSwitcher *switcher)
-{
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
-  return CLUTTER_ACTOR(priv->task_nav);
-}
-
 static void
 hd_switcher_group_background_clicked (HdSwitcher   *switcher,
 				      ClutterActor *actor)

@@ -637,7 +637,13 @@ hd_home_view_set_live_bg (HdHomeView *view,
   ClutterActor *new_bg = 0;
   MBWMCompMgrClutterClient *cclient;
 
-  /* FIXME: shouldn't we ref and unref? */
+  if (priv->load_background_source)
+    {
+      /* cancel ongoing background loading job */
+      g_source_remove (priv->load_background_source);
+      priv->load_background_source = 0;
+    }
+
   if (client) 
     {
       if (priv->live_bg)
