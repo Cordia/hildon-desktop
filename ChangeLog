@@ -1,3 +1,22 @@
+2010-02-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Optimise few clutter_group_get_n_children calls away, it's O(n).
+
+	* src/home/hd-render-manager.c (hd_render_manager_restack): No need to
+	call clutter_group_get_n_children in the first for loop.
+
+2010-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-note.c:
+	  Removed accidentally committed debug output.
+
+2010-02-09  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+	Move launcher icons to the correct places according to spec 2.11.
+	Fixes: NB#156185
+
+	* data/menu/hildon.menu:
+
 2010-02-09  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
 	Put the User Guide launch icon in the correct place.

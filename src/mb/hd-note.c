@@ -438,12 +438,10 @@ hd_note_request_geometry (MBWindowManagerClient *client,
 
               diff  = 0*client->frame_geometry.y + client->frame_geometry.height;
               diff -= wm->xdpy_height - HD_COMP_MGR_TOP_MARGIN;
-              g_warning("DIFF %d", diff);
               if (diff > 0)
                 {
                   client->frame_geometry.height -= diff;
                   client->frame_geometry.y      += diff;
-                  g_warning("HEIGHT %d Y %d", client->frame_geometry.height, client->frame_geometry.y);
                 }
             }
 

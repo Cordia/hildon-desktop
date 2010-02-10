@@ -27,18 +27,18 @@
     <Filename>worldclock.desktop</Filename>
     <Filename>osso_calculator.desktop</Filename>
     <Filename>ovi.desktop</Filename>
-    <Filename>hildon-control-panel.desktop</Filename>
     <Filename>osso_notes.desktop</Filename>
+    <Filename>hildon-control-panel.desktop</Filename>
+    <Filename>hildon-application-manager.desktop</Filename>
     <Filename>osso_pdfviewer.desktop</Filename>
     <Filename>filemanager.desktop</Filename>
     <Filename>osso_rss_feed_reader.desktop</Filename>
     <Filename>osso_sketch.desktop</Filename>
-    <Filename>hildon-application-manager.desktop</Filename>
+    <Filename>osso-backup.desktop</Filename>
     <Filename>maemoblocks.desktop</Filename>
     <Filename>chess_startup.desktop</Filename>
     <Filename>mahjong_startup.desktop</Filename>
     <Filename>osso_lmarbles.desktop</Filename>
-    <Filename>osso-backup.desktop</Filename>
     <Filename>tutorial-launcher.desktop</Filename>
     <Filename>user-guide.desktop</Filename>
     <Filename>osso-xterm.desktop</Filename>
