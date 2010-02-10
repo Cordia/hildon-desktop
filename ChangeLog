@@ -1,3 +1,8 @@
+2010-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-note.c:
+	  Removed accidentally committed debug output.
+
 2010-02-09  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
 	Move launcher icons to the correct places according to spec 2.11.
