@@ -84,7 +84,8 @@ void     hd_home_view_set_active (HdHomeView *view,
 
 MBWindowManagerClient *hd_home_view_get_live_bg (HdHomeView *view);
 void hd_home_view_set_live_bg (HdHomeView *view,
-                               MBWindowManagerClient *client);
+                               MBWindowManagerClient *client,
+                               gboolean above_applets);
 void hd_home_view_load_background (HdHomeView *view);
 void hd_home_view_update_state (HdHomeView *view);
 

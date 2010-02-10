@@ -136,6 +136,8 @@ hd_home_view_allocation_changed (HdHomeView    *home_view,
 
 static void snap_widget_to_grid (ClutterActor *widget);
 
+static void hd_home_view_restack_applets (HdHomeView *view);
+
 typedef struct _HdHomeViewAppletData HdHomeViewAppletData;
 
 struct _HdHomeViewAppletData
@@ -632,7 +634,8 @@ load_background_idle (gpointer data)
  * 2) client == NULL means unsetting the live-bg for this view. */
 void
 hd_home_view_set_live_bg (HdHomeView *view,
-                          MBWindowManagerClient *client)
+                          MBWindowManagerClient *client,
+                          gboolean above_applets)
 {
   HdHomeViewPrivate *priv = view->priv;
   ClutterActor *new_bg = 0;
@@ -649,13 +652,20 @@ hd_home_view_set_live_bg (HdHomeView *view,
     {
       if (priv->live_bg)
         /* remove the old one */
-        hd_home_view_set_live_bg (view, NULL);
+        hd_home_view_set_live_bg (view, NULL, FALSE);
 
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
       new_bg = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-      /* the actor is already parented to something, so reparent */
-      clutter_actor_reparent (new_bg, priv->background_container);
+      clutter_actor_set_reactive (new_bg, FALSE);
       priv->live_bg = client;
+      /* the actor is already parented to something, so reparent */
+      if (above_applets)
+        {
+          clutter_actor_reparent (new_bg, priv->applets_container);
+          hd_home_view_restack_applets (view);
+        }
+      else
+        clutter_actor_reparent (new_bg, priv->background_container);
     }
   else
     {
@@ -665,8 +675,11 @@ hd_home_view_set_live_bg (HdHomeView *view,
         {
           cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
           new_bg = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+          /* it is in either container */
           clutter_container_remove_actor (
                 CLUTTER_CONTAINER (priv->background_container), new_bg);
+          clutter_container_remove_actor (
+                CLUTTER_CONTAINER (priv->applets_container), new_bg);
           clutter_actor_hide (new_bg);
         }
       priv->live_bg = NULL;
@@ -1146,7 +1159,9 @@ hd_home_view_get_all_applets (HdHomeView *view)
 static void
 hd_home_view_restack_applets (HdHomeView *view)
 {
+  HdHomeViewPrivate *priv = view->priv;
   GSList *sorted = NULL, *s;
+  ClutterActor *applet_actor;
 
   /* Get a list of all applets sorted by modified time
    * and raise them in the order of the list. */
@@ -1154,11 +1169,32 @@ hd_home_view_restack_applets (HdHomeView *view)
   for (s = sorted; s; s = s->next)
     {
       MBWMCompMgrClutterClient *cc = s->data;
-      ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor (cc);
+      applet_actor = mb_wm_comp_mgr_clutter_client_get_actor (cc);
 
-      clutter_actor_raise_top (actor);
+      clutter_actor_raise_top (applet_actor);
     }
   g_slist_free (sorted);
+
+  /* raise transparent live-bg above the applets */
+  if (priv->live_bg)
+    {
+      MBWMCompMgrClutterClient *cclient;
+      ClutterActor *actor, *parent;
+      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (priv->live_bg->cm_client);
+      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      if ((parent = clutter_actor_get_parent (actor))
+          && parent == priv->applets_container)
+      {
+        g_printerr ("%s: raise %p (%s)\n", __func__, actor,
+                    clutter_actor_get_name (actor));
+        clutter_actor_raise_top (actor);
+        /* sort the children in applets_container based on current depths */
+        clutter_container_sort_depth_order (CLUTTER_CONTAINER (
+                                             priv->applets_container));
+        /* raise status area etc. on top of it */
+        hd_render_manager_sync_clutter_before ();
+      }
+    }
 }
 
 static void

@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
 
 static void set_fullscreen (Display *dpy, Window w)
 {
@@ -38,7 +40,7 @@ static void draw_rect (Display *dpy, Window w, GC gc, XColor *col,
                        int x, int y)
 {
   XSetForeground (dpy, gc, col->pixel);
-  XDrawRectangle (dpy, w, gc, x, y, 10, 10);
+  XFillRectangle (dpy, w, gc, x, y, 10, 10);
 }
 
 /*
@@ -65,6 +67,20 @@ static void set_window_type (Display *dpy, Window w)
   XChangeProperty (dpy, w, w_type,
                    XA_ATOM, 32, PropModeReplace,
                    (unsigned char *) &normal, 1);
+}
+
+static void set_non_compositing (Display *display, Window xwindow)
+{
+        Atom atom;
+        int zero = 0;
+
+        atom = XInternAtom (display, "_HILDON_NON_COMPOSITED_WINDOW", False);
+
+        XChangeProperty (display,
+                       xwindow,
+                       atom,
+                       XA_INTEGER, 32, PropModeReplace,
+                       (unsigned char *) &zero, 1);
 }
 
 /* this can be used to set fullscreenness after mapping the window */
@@ -101,16 +117,39 @@ int main(int argc, char **argv)
         GC green_gc;
         XColor green_col;
         Colormap colormap;
-        char green[] = "#00FF00";
-
-        /* TODO: X error handling is missing */
+        char green[] = "#00ff00";
+        XVisualInfo *visuals;
+        XVisualInfo v_template = {0};
+        int n_visuals;
+        time_t last_time;
+        XSetWindowAttributes attrs;
+        XGCValues gcvals;
 
         dpy = XOpenDisplay(NULL);
-        w = XCreateSimpleWindow(dpy, DefaultRootWindow (dpy), 0, 0,
-                                800, 480, 0, 0, 0);
 
-        colormap = DefaultColormap (dpy, 0);
-        green_gc = XCreateGC (dpy, w, 0, 0);
+        v_template.depth = 32;
+        v_template.red_mask = 0xff0000;
+        v_template.green_mask = 0x00ff00;
+        v_template.blue_mask = 0x0000ff;
+        v_template.bits_per_rgb = 8;
+
+        visuals = XGetVisualInfo (dpy, VisualScreenMask | VisualDepthMask |
+                                  VisualBitsPerRGBMask,
+                                  &v_template, &n_visuals);
+        printf("matching visuals %d\n", n_visuals);
+
+        colormap = XCreateColormap (dpy, DefaultRootWindow (dpy),
+                                    visuals->visual, AllocNone);
+
+        w = XCreateWindow(dpy, DefaultRootWindow (dpy), 0, 0,
+                          800, 480, 0, CopyFromParent, InputOutput,
+                          CopyFromParent, //visuals->visual,
+                          0, &attrs);
+        set_non_compositing(dpy, w);
+
+        //colormap = DefaultColormap (dpy, 0);
+        gcvals.function = GXor;
+        green_gc = XCreateGC (dpy, w, GCFunction, &gcvals);
         XParseColor (dpy, colormap, green, &green_col);
         XAllocColor (dpy, colormap, &green_col);
 
@@ -122,33 +161,35 @@ int main(int argc, char **argv)
         else
           set_live_bg (dpy, w, 1);
 
-#if 0
-        /* tell the window manager that we want keyboard focus */
-        XWMHints *wmhints;
-        wmhints = XAllocWMHints();
-        wmhints->input = True;
-        wmhints->flags = InputHint;
-        XSetWMHints(dpy, w, wmhints);
-        XFree(wmhints);
-#endif
-
-        /* optional: disable compositing for this window to speed up */
-        //set_non_compositing(dpy, w);
-
         /* optional: disable compositor's transitions for this window */
         //set_no_transitions(dpy, w);
 
         XSelectInput (dpy, w,
                       ExposureMask | ButtonReleaseMask | ButtonPressMask);
         XMapWindow(dpy, w);  /* map the window */
+        last_time = time(NULL);
 
         for (;;) {
                 XEvent xev;
 
-                XNextEvent(dpy, &xev);
+                if (XEventsQueued (dpy, QueuedAfterFlush))
+                  XNextEvent(dpy, &xev);
+                else {
+                  int t = time(NULL);
+                  if (t - last_time > 0) {
+                    unsigned int rx = rand() * 1000 % 800 + 1,
+                                 ry = rand() * 1000 % 480 + 1;
+                    draw_rect (dpy, w, green_gc, &green_col, rx, ry);
+                    last_time = t;
+                  }
+                  usleep (300000);
+                  continue;
+                }
 
-                if (xev.type == Expose)
+                if (xev.type == Expose) {
+                  printf("expose\n");
                   draw_rect (dpy, w, green_gc, &green_col, 100, 100);
+                }
                 else if (xev.type == ButtonRelease) {
                   XButtonEvent *e = (XButtonEvent*)&xev;
                   draw_rect (dpy, w, green_gc, &green_col, e->x, e->y);

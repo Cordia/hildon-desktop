@@ -242,8 +242,6 @@ static void
 on_timeline_blur_completed(ClutterTimeline *timeline, gpointer data);
 
 static void
-hd_render_manager_sync_clutter_before(void);
-static void
 hd_render_manager_sync_clutter_after(void);
 
 static const char *
@@ -762,7 +760,6 @@ gboolean hd_render_manager_actor_is_visible(ClutterActor *actor)
 }
 
 /* The syncing with clutter that is done before a transition */
-static
 void hd_render_manager_sync_clutter_before ()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;

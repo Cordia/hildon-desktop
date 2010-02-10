@@ -321,7 +321,13 @@ hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
   if (view > 0 && view <= MAX_HOME_VIEWS)
     {
       hhview = HD_HOME_VIEW (priv->views[view - 1]);
-      hd_home_view_set_live_bg (hhview, client);
+      hd_home_view_set_live_bg (hhview, client, FALSE);
+    }
+  /* live-bg above applets */
+  else if (view > 100 && view <= 100 + MAX_HOME_VIEWS)
+    {
+      hhview = HD_HOME_VIEW (priv->views[view - 1 - 100]);
+      hd_home_view_set_live_bg (hhview, client, TRUE);
     }
   else if (view == 0)
     {
@@ -350,7 +356,7 @@ hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
             c = hd_home_view_get_live_bg (hhview);
             if (c && c == client)
               {
-                hd_home_view_set_live_bg (hhview, NULL);
+                hd_home_view_set_live_bg (hhview, NULL, FALSE);
                 /* restore normal background */
                 hd_home_view_load_background (hhview);
               }
@@ -364,7 +370,7 @@ hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
       for (i = 0; i < MAX_HOME_VIEWS; ++i)
         {
           hhview = HD_HOME_VIEW (priv->views[i]);
-          hd_home_view_set_live_bg (hhview, NULL);
+          hd_home_view_set_live_bg (hhview, NULL, FALSE);
         }
 
       if (priv->live_bg)
