@@ -1,8 +1,24 @@
-hildon-desktop (1:2.2.132-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.132-1) unstable; urgency=low
 
-  * foo
+  Marc:
+  * Fixes: NB#143390 - Fremantle PR1.1 end-user UX for app menu re-ordering
+  * Fixes: NB#156185 - Move launcher icons to the correct places according to
+    spec 2.11.
+  * Fixes: NB#155449 - Put the User Guide launch icon in the correct place.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  3 Feb 2010 15:19:19 +0200
+  Kimmo:
+  * Fix couple of regressions (including NB#156130).
+  * Support zero value for the Hildon non-comp. window property and
+    fix a bug in the logic where the property would be considered before
+    determining whether or not the application is a stackable window.
+
+  Adam:
+  * Tune the TidyFingerScroll decceleration again.
+  * Fixes: NB#155541 - [video-call] Landscape request is ignored in certain
+    case
+  * Fix wrt NB#139190 Closing 'x' for widget misplaced
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 11 Feb 2010 14:45:42 +0200
 
 hildon-desktop (1:2.2.131-1) unstable; urgency=low
 
