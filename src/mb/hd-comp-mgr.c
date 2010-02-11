@@ -39,6 +39,7 @@
 #include "hd-render-manager.h"
 #include "hd-title-bar.h"
 #include "launcher/hd-app-mgr.h"
+#include "launcher/hd-launcher-editor.h"
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-window-manager.h>
@@ -1072,7 +1073,7 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
       if (dst != src)
         {
           g_assert (src < dst);
-          memmove (&stack->pdata[src], &stack->pdata[src+1], 
+          memmove (&stack->pdata[src], &stack->pdata[src+1],
                    sizeof (stack->pdata[0]) * (dst - src));
           stack->pdata[dst] = client;
         }
@@ -2272,7 +2273,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       gboolean unblank = FALSE;
       if (HD_IS_BANNER_NOTE (c))
         {
-          if (transient_for) 
+          if (transient_for)
             {
               /* don't put the banner to front group if it's transient to
                * a background window */
@@ -2931,7 +2932,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
               HdCompMgrClient *hclient = HD_COMP_MGR_CLIENT (c->cm_client);
               HdRunningApp *app = hd_comp_mgr_client_get_app (hclient);
 
-              /* Avoid this transition if app is being hibernated */
+              /* Avoid this transition if app is being hibernated,
+               * or if it's the launcher editor */
               if (!app ||
                   !hd_running_app_is_hibernating (app))
                 {

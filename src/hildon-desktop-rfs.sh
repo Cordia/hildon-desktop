@@ -11,3 +11,11 @@ done
 if ! rmdir $CFGDIR; then
   echo -n '' # NOOP
 fi
+
+MENUDIR=$HOME/.config/menus
+rm -rf $MENUDIR/hildon.menu
+rm -rf $MENUDIR/hildon
+
+DESKTOPDIR=$HOME/.local/share/applications/hildon
+rm -rf $DESKTOPDIR
+

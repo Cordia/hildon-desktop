@@ -1,3 +1,8 @@
+2010-02-11  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+	Add task launcher editor.
+	Fixes: NB#143390
+
 2010-02-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-clutter-cache.c (hd_clutter_cache_get_real_texture):

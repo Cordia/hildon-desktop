@@ -447,8 +447,6 @@ hd_switcher_leave (HdSwitcher *switcher)
 {
   HdSwitcherPrivate *priv = switcher->priv;
 
-  priv->pressed = FALSE;
-
   if (priv->press_timeout)
     {
       g_source_remove (priv->press_timeout);
