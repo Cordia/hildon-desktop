@@ -1494,13 +1494,13 @@ hd_comp_mgr_hook_update_area(HdCompMgr *hmgr, ClutterActor *actor)
 {
   if (CLUTTER_IS_GROUP(actor))
     {
+      ClutterActor *child;
       gint i;
-      gint n = clutter_group_get_n_children(CLUTTER_GROUP(actor));
 
-      for (i=0;i<n;i++)
+      for (i = 0, child = clutter_group_get_nth_child(CLUTTER_GROUP(actor), 0);
+           child;
+           child = clutter_group_get_nth_child(CLUTTER_GROUP(actor), ++i))
         {
-          ClutterActor *child =
-              clutter_group_get_nth_child(CLUTTER_GROUP(actor), i);
           if (CLUTTER_X11_IS_TEXTURE_PIXMAP(child))
             {
               g_signal_connect_swapped(

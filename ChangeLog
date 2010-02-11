@@ -1,3 +1,11 @@
+2010-02-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-clutter-cache.c (hd_clutter_cache_get_real_texture):
+	* src/home/hd-render-manager.c (hd_render_manager_restack):
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_hook_update_area):
+	* src/tidy/tidy-blur-group.c (tidy_blur_group_children_visible):
+	Optimise more clutter_group_get_n_children calls away.
+
 2010-02-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Optimise few clutter_group_get_n_children calls away, it's O(n).
