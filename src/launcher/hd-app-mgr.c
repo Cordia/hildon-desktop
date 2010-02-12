@@ -1787,13 +1787,12 @@ static DBusHandlerResult hd_app_mgr_dbus_app_died (DBusConnection *conn,
 }
 
 gboolean
-hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id)
+hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *service)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
-  HdLauncherItem *item;
   HdLauncherApp *app = NULL;
 
-  if (!id || !strlen(id))
+  if (!service || !strlen(service))
     { /* If no ID was specified, all we want to do is trigger the
          app start animation with a blank window, not do anything fancy.
          We must check first that we haven't had a window mapped recently,
@@ -1804,15 +1803,9 @@ hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id)
       return TRUE;
     }
 
-  item = hd_launcher_tree_find_item (priv->tree, id);
-
-  if (!item)
+  app = hd_launcher_tree_find_app_by_service (priv->tree, service);
+  if (!app)
     return FALSE;
-  if (hd_launcher_item_get_item_type (item) != HD_APPLICATION_LAUNCHER)
-    return FALSE;
-
-  app = HD_LAUNCHER_APP (item);
-
   return hd_app_mgr_launch (app);
 }
 
@@ -1845,7 +1838,8 @@ _hd_app_mgr_should_show_callui ()
       priv->unlocked &&
       priv->display_on &&
       priv->slide_closed &&
-      !priv->disable_callui)
+      !priv->disable_callui &&
+      !hd_render_manager_windows_showing ())
     {
       return TRUE;
     }

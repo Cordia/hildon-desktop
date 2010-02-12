@@ -40,6 +40,7 @@
 #include "hildon-desktop.h"
 #include "hd-launcher-grid.h"
 #include "hd-launcher-page.h"
+#include "hd-launcher-editor.h"
 #include "hd-gtk-utils.h"
 #include "hd-render-manager.h"
 #include "hd-app-mgr.h"
@@ -76,6 +77,9 @@ struct _HdLauncherPrivate
 
   HdLauncherTree *tree;
   HdLauncherTraverseData *current_traversal;
+
+  GtkWidget *editor;
+  gboolean editor_done;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -104,6 +108,8 @@ static void hd_launcher_category_tile_clicked (HdLauncherTile *tile,
                                                gpointer data);
 static void hd_launcher_application_tile_clicked (HdLauncherTile *tile,
                                                   gpointer data);
+static void hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
+                                                       gpointer data);
 static gboolean hd_launcher_captured_event_cb (HdLauncher *launcher,
                                                ClutterEvent *event,
                                                gpointer data);
@@ -268,8 +274,15 @@ hd_launcher_show (void)
     return;
 
   priv->active_page = top_page;
+
+  if (priv->editor_done)
+    {
+      /* TODO?: Avoid the transition if we're coming from the editor. */
+      priv->editor_done = FALSE;
+    }
+
   hd_launcher_page_transition(HD_LAUNCHER_PAGE(priv->active_page),
-        HD_LAUNCHER_PAGE_TRANSITION_IN);
+      HD_LAUNCHER_PAGE_TRANSITION_IN);
   /* We must show *after* starting the transition, because starting a new
    * transition when an old transition is in progress will cause the old
    * transition to be ended - which will in turn hide the launcher if
@@ -392,6 +405,99 @@ hd_launcher_application_tile_clicked (HdLauncherTile *tile,
 
   g_signal_emit (hd_launcher_get (), launcher_signals[APP_LAUNCHED],
                  0, data, NULL);
+}
+
+/* This is a little complex, h-d needs to:
+ * - Go back to the launcher when the user closes the editor window.
+ * - Hide and destroy the editor window when the user is taken away from it,
+ * i.e., for an incoming call.
+ */
+
+static void
+_hd_launcher_editor_is_topmost (HildonWindow *editor,
+                                GParamSpec   *pspec,
+                                HdLauncher   *launcher)
+{
+  HdLauncherPrivate *priv = launcher->priv;
+
+  g_debug ("%s: topmost: %d", __FUNCTION__,
+           hildon_window_get_is_topmost (editor));
+
+  /* If something has replaced the editor, close it. */
+  if (!hildon_window_get_is_topmost (editor))
+    {
+      gtk_widget_destroy (priv->editor);
+    }
+}
+
+static void
+_hd_launcher_editor_done (HdLauncherEditor *editor,
+                          gboolean          modified,
+                          HdLauncher       *launcher)
+{
+  HdLauncherPrivate *priv = launcher->priv;
+
+  g_debug ("%s: modified: %d", __FUNCTION__,
+           modified);
+
+  priv->editor_done = TRUE;
+
+  if (!modified)
+    {
+      /* Go back directly to the launcher. */
+      hd_render_manager_set_state (HDRM_STATE_LAUNCHER);
+    }
+}
+
+static gboolean
+_hd_launcher_editor_destroyed (GtkWidget  *widget,
+                               HdLauncher *launcher)
+{
+  HdLauncherPrivate *priv = launcher->priv;
+
+  g_debug ("%s", __FUNCTION__);
+
+  priv->editor_done = FALSE;
+  if (priv->editor)
+    {
+      priv->editor = NULL;
+    }
+
+  return FALSE;
+}
+
+static void
+hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
+                                           gpointer data)
+{
+  HdLauncher *launcher = hd_launcher_get();
+  HdLauncherPrivate *priv = launcher->priv;
+
+  priv->editor = hd_launcher_editor_new ();
+  gint x, y;
+  gfloat x_align, y_align;
+
+  clutter_actor_get_transformed_position (CLUTTER_ACTOR (tile), &x, &y);
+  x_align = (gfloat)(x + (HD_LAUNCHER_TILE_WIDTH / 2))
+                    / HD_LAUNCHER_PAGE_WIDTH;
+  y_align = (gfloat)(y + (HD_LAUNCHER_TILE_WIDTH / 2))
+                    / HD_LAUNCHER_PAGE_HEIGHT;
+
+  g_signal_connect (priv->editor, "destroy",
+                    G_CALLBACK (_hd_launcher_editor_destroyed),
+                    launcher);
+  g_signal_connect (priv->editor, "notify::is-topmost",
+                    G_CALLBACK (_hd_launcher_editor_is_topmost),
+                    launcher);
+  g_signal_connect (priv->editor, "done",
+                    G_CALLBACK (_hd_launcher_editor_done),
+                    launcher);
+
+  hd_launcher_editor_select (HD_LAUNCHER_EDITOR (priv->editor),
+                             hd_launcher_tile_get_text (tile),
+                             x_align, y_align);
+
+  hd_launcher_editor_show (priv->editor);
 }
 
 static void
@@ -523,6 +629,10 @@ hd_launcher_lazy_traverse_tree (gpointer data)
                                 G_CALLBACK (hd_launcher_application_tile_clicked),
                                 item);
             }
+
+          g_signal_connect (tile, "long-clicked",
+                        G_CALLBACK (hd_launcher_application_tile_long_clicked),
+                        item);
         }
 
       g_object_unref (G_OBJECT (item));
@@ -533,6 +643,14 @@ hd_launcher_lazy_traverse_tree (gpointer data)
 
           /* This traversal has finished. */
           priv->current_traversal = NULL;
+
+          /* If the changes came when an editor is present, switch back to
+           * launcher
+           */
+          if (priv->editor && priv->editor_done)
+            {
+              hd_render_manager_set_state (HDRM_STATE_LAUNCHER);
+            }
           return FALSE;
         }
     }

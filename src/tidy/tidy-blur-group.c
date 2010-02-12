@@ -226,12 +226,12 @@ static void tidy_blur_group_check_shaders(TidyBlurGroup *group)
 static gboolean
 tidy_blur_group_children_visible(ClutterGroup *group)
 {
-  gint n = clutter_group_get_n_children(group);
   gint i;
+  ClutterActor *actor;
 
-  for (i=0;i<n;i++)
+  for (i = 0, actor = clutter_group_get_nth_child(group, 0);
+       actor; actor = clutter_group_get_nth_child(group, ++i))
     {
-      ClutterActor *actor = clutter_group_get_nth_child(group, i);
       if (CLUTTER_IS_GROUP(actor))
         {
           if (tidy_blur_group_children_visible(CLUTTER_GROUP(actor)))

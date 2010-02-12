@@ -1842,23 +1842,22 @@ void hd_render_manager_restack()
   MBWindowManagerClient *c;
   gboolean past_desktop = FALSE;
   gboolean blur_changed = FALSE;
-  gint i, n_elements;
+  gint i;
   GList *previous_home_blur = 0;
   unsigned int screenw, screenh;
-  int n_children, curr_view;
+  int curr_view;
   ClutterActor *live_bg_actor = NULL;
+  ClutterActor *child;
 
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   /* Add all actors currently in the home_blur group */
 
-  n_children = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
-  for (i = 0; i < n_children; ++i)
-    {
-      ClutterActor *child =
-        clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
-      if (CLUTTER_ACTOR_IS_VISIBLE(child))
-        previous_home_blur = g_list_prepend(previous_home_blur, child);
-    }
+  for (i = 0,
+       child = clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), 0);
+       child;
+       child = clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), ++i))
+    if (CLUTTER_ACTOR_IS_VISIBLE(child))
+      previous_home_blur = g_list_prepend(previous_home_blur, child);
 
   screenw = hd_comp_mgr_get_current_screen_width ();
   screenh = hd_comp_mgr_get_current_screen_height ();
@@ -2044,23 +2043,16 @@ void hd_render_manager_restack()
    * actually changed... We only look at *visible* children, which is
    * why it is a little complicated. */
   GList *it;
-  n_elements = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
-  for (i = 0, it = g_list_last(previous_home_blur);
-       (i<n_elements) && it;
-       i++, it=it->prev)
+  for (i = 0, it = g_list_last(previous_home_blur),
+       child = clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), 0);
+       child && it;
+       child = clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), ++i),
+       it=it->prev)
     {
-      ClutterActor *child =
-          clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
       /* search for next visible child */
       while (child && !CLUTTER_ACTOR_IS_VISIBLE(child))
-        {
-          i++;
-          if (i<n_elements)
-            child = clutter_group_get_nth_child(
-                CLUTTER_GROUP(priv->home_blur),i);
-          else
-            child = NULL;
-        }
+        child=clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), ++i);
+
       /* now compare children */
       if (CLUTTER_ACTOR(it->data) != child)
         {
@@ -2068,13 +2060,15 @@ void hd_render_manager_restack()
           break;
         }
     }
-  if (it || i<n_elements)
+  if (it || child)
     {
       blur_changed = TRUE;
     }
 #if BLUR_DEBUG
   if (blur_changed)
     {
+      int n_elements;
+      n_elements = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
       g_debug("*** RE-BLURRING *** because home_blur  contents changed");
       for (it=g_list_last(previous_home_blur);it;it=it->prev)
         {
@@ -3085,3 +3079,12 @@ void hd_render_manager_remove_input_blocker() {
    /* Set the new viewport */
    hd_render_manager_set_compositor_input_viewport(region);
  }
+
+gboolean
+hd_render_manager_windows_showing (void)
+{
+   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   MBWindowManager        *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+
+   return hd_wm_has_modal_blockers (wm);
+}

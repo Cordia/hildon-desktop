@@ -50,6 +50,8 @@
 /* We don't use a font from the theme here because apparently there are none the
  * size we want, and we don't want to add another logical font to gtkrc. */
 
+#define HD_LAUNCHER_TILE_LONG_PRESS_DUR (1000)
+
 struct _HdLauncherTilePrivate
 {
   gchar *icon_name;
@@ -66,6 +68,7 @@ struct _HdLauncherTilePrivate
   float glow_radius; // radius of glow - loaded from transitions.ini
 
   /* We need to know if there's been scrolling. */
+  guint    press_timeout;
   gboolean is_pressed;
 };
 
@@ -80,6 +83,7 @@ enum
 enum
 {
   CLICKED,
+  LONG_CLICKED,
 
   LAST_SIGNAL
 };
@@ -104,6 +108,7 @@ static gboolean hd_launcher_tile_button_release (ClutterActor       *actor);
 static void hd_launcher_on_glow_frame(ClutterTimeline *timeline,
                                       gint frame_num,
                                       ClutterActor *actor);
+
 static void hd_launcher_tile_allocate (ClutterActor          *self,
                                        const ClutterActorBox *box,
                                        gboolean       absolute_origin_changed);
@@ -141,6 +146,14 @@ hd_launcher_tile_class_init (HdLauncherTileClass *klass)
 
   launcher_tile_signals[CLICKED] =
     g_signal_new (I_("clicked"),
+                  G_TYPE_FROM_CLASS (klass),
+                  G_SIGNAL_RUN_LAST,
+                  0,
+                  NULL, NULL,
+                  g_cclosure_marshal_VOID__VOID,
+                  G_TYPE_NONE, 0);
+  launcher_tile_signals[LONG_CLICKED] =
+    g_signal_new (I_("long-clicked"),
                   G_TYPE_FROM_CLASS (klass),
                   G_SIGNAL_RUN_LAST,
                   0,
@@ -531,6 +544,21 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
 }
 
 static gboolean
+_hd_launcher_tile_long_timeout (gpointer data)
+{
+  HdLauncherTile *tile = data;
+  HdLauncherTilePrivate *priv = tile->priv;
+
+  if (!priv->is_pressed)
+    return FALSE;
+
+  hd_launcher_tile_reset (tile);
+  g_signal_emit (tile, launcher_tile_signals[LONG_CLICKED], 0);
+
+  return FALSE;
+}
+
+static gboolean
 hd_launcher_tile_button_press (ClutterActor       *actor)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
@@ -540,6 +568,14 @@ hd_launcher_tile_button_press (ClutterActor       *actor)
   /* Set the 'pressed' flag */
   priv->is_pressed = TRUE;
 
+  if (priv->press_timeout)
+    {
+      g_source_remove (priv->press_timeout);
+      priv->press_timeout = 0;
+    }
+  priv->press_timeout = g_timeout_add (HD_LAUNCHER_TILE_LONG_PRESS_DUR,
+                                       _hd_launcher_tile_long_timeout,
+                                       actor);
   return TRUE;
 }
 
@@ -547,6 +583,12 @@ static gboolean
 hd_launcher_tile_button_release (ClutterActor       *actor)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
+
+  if (priv->press_timeout)
+    {
+      g_source_remove (priv->press_timeout);
+      priv->press_timeout = 0;
+    }
 
   if (!priv->is_pressed)
     return TRUE;

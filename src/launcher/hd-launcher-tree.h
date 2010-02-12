@@ -31,6 +31,7 @@
 
 #include <glib-object.h>
 #include "hd-launcher-item.h"
+#include "hd-launcher-app.h"
 
 G_BEGIN_DECLS
 
@@ -67,9 +68,26 @@ GList *         hd_launcher_tree_get_items   (HdLauncherTree *tree);
 guint           hd_launcher_tree_get_size    (HdLauncherTree *tree);
 HdLauncherItem *hd_launcher_tree_find_item   (HdLauncherTree *tree,
                                               const gchar *id);
+HdLauncherApp  *hd_launcher_tree_find_app_by_service (
+                                              HdLauncherTree *tree,
+                                              const gchar *service);
 
 /* Utility functions. */
 void hd_launcher_tree_ensure_user_menu (void);
+
+/* Launcher menu templates. */
+#define HD_LAUNCHER_MENU_FILE  "hildon.menu"
+#define HD_LAUNCHER_MENU_START \
+  "<!DOCTYPE Menu PUBLIC \"-//freedesktop//DTD Menu 1.0//EN\"\n" \
+  " \"http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd\">\n\n" \
+  "<Menu>\n" \
+  "\t<Name>Main</Name>\n" \
+  "\t<MergeFile type=\"parent\">/etc/xdg/menus/hildon.menu</MergeFile>\n" \
+  "\t<AppDir>%s/applications/hildon</AppDir>\n" \
+  "\t<DirectoryDir>%s/applications/hildon</DirectoryDir>\n\n"
+#define HD_LAUNCHER_MENU_END \
+  "\t<MergeDir>%s/menus/hildon</MergeDir>\n\n" \
+  "</Menu>\n"
 
 G_END_DECLS
 

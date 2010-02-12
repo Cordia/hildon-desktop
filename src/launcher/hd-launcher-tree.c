@@ -17,9 +17,6 @@
 #define GMENU_I_KNOW_THIS_IS_UNSTABLE
 #include <gmenu-tree.h>
 
-/* where the menu XML resides */
-#define HILDON_DESKTOP_APPLICATIONS_MENU        "hildon.menu"
-
 #define HD_LAUNCHER_TREE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TREE, HdLauncherTreePrivate))
 
 typedef struct
@@ -404,7 +401,7 @@ hd_launcher_tree_populate (HdLauncherTree *tree)
   g_return_if_fail (HD_IS_LAUNCHER_TREE (tree));
   HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (tree);
 
-  priv->tree = gmenu_tree_lookup (HILDON_DESKTOP_APPLICATIONS_MENU,
+  priv->tree = gmenu_tree_lookup (HD_LAUNCHER_MENU_FILE,
                                   GMENU_TREE_FLAGS_SHOW_EMPTY);
   if (!priv->tree)
     {
@@ -463,14 +460,28 @@ hd_launcher_tree_find_item (HdLauncherTree *tree, const gchar *id)
   return NULL;
 }
 
-#define MENU_CONTENTS "<!DOCTYPE Menu PUBLIC \"-//freedesktop//DTD Menu 1.0//EN\"\n" \
-                      " \"http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd\">\n\n" \
-                      "<Menu>\n" \
-                      "\t<Name>Main</Name>\n" \
-                      "\t<MergeFile type=\"parent\">/etc/xdg/menus/hildon.menu</MergeFile>\n" \
-                      "\t<AppDir>%s/applications/hildon</AppDir>\n" \
-                      "\t<DirectoryDir>%s/applications/hildon</DirectoryDir>\n\n" \
-                      "</Menu>\n"
+static gint
+_compare_service (gconstpointer a, gconstpointer b)
+{
+  if (!HD_IS_LAUNCHER_APP(a))
+    return !0;
+  return g_strcmp0(hd_launcher_app_get_service(HD_LAUNCHER_APP (a)),
+                   (const gchar *)b);
+}
+
+HdLauncherApp *
+hd_launcher_tree_find_app_by_service (HdLauncherTree *tree, const gchar *service)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_TREE (tree), NULL);
+  HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (tree);
+
+  GList *res = g_list_find_custom (priv->items_list, service,
+                                   (GCompareFunc)_compare_service);
+  if (res)
+    return res->data;
+  return NULL;
+}
+
 #define CREATE_MODE (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
 
 void
@@ -478,26 +489,43 @@ hd_launcher_tree_ensure_user_menu (void)
 {
   gchar *menu_filename, *menu_dirname;
 
+  /* The menu directory. */
   menu_dirname = g_build_filename (g_get_user_config_dir (),
-                                   "menus", NULL);
+                                   "menus/hildon", NULL);
   if (!g_file_test (menu_dirname, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
     {
       if (g_mkdir_with_parents (menu_dirname, CREATE_MODE))
         {
           g_warning ("%s: Couldn't create dir %s", __FUNCTION__, menu_dirname);
+          g_free (menu_dirname);
           return;
         }
     }
 
   menu_filename = g_build_filename (g_get_user_config_dir (),
-                                    "menus", HILDON_DESKTOP_APPLICATIONS_MENU,
+                                    "menus", HD_LAUNCHER_MENU_FILE,
                                     NULL);
   if (!g_file_test (menu_filename, G_FILE_TEST_EXISTS))
     {
       GString *menu = g_string_new (NULL);
-      g_string_printf (menu, MENU_CONTENTS,
+      g_string_printf (menu, HD_LAUNCHER_MENU_START,
                        g_get_user_data_dir (),
                        g_get_user_data_dir ());
+      g_string_append_printf (menu, HD_LAUNCHER_MENU_END,
+                              g_get_user_config_dir ());
       g_file_set_contents (menu_filename, menu->str, -1, NULL);
     }
+  g_free (menu_filename);
+
+  /* The desktop files directory. */
+  menu_dirname = g_build_filename (g_get_user_data_dir (),
+                                   "applications/hildon", NULL);
+  if (!g_file_test (menu_dirname, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
+    {
+      if (g_mkdir_with_parents (menu_dirname, CREATE_MODE))
+        {
+          g_warning ("%s: Couldn't create dir %s", __FUNCTION__, menu_dirname);
+        }
+    }
+  g_free (menu_dirname);
 }

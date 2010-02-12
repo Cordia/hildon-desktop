@@ -95,8 +95,8 @@ static ClutterActor *
 hd_clutter_cache_get_real_texture(const char *filename, gboolean from_theme)
 {
   HdClutterCache *cache = hd_get_clutter_cache();
-  gint n_elements, i;
-  ClutterActor *texture;
+  gint i;
+  ClutterActor *texture, *actor;
   const char *filename_real = filename;
   char *filename_alloc = 0;
 
@@ -122,11 +122,9 @@ hd_clutter_cache_get_real_texture(const char *filename, gboolean from_theme)
       filename_real = filename_alloc;
     }
 
-  n_elements = clutter_group_get_n_children(CLUTTER_GROUP(cache));
-  for (i = 0; i < n_elements; i++)
+  for (i = 0, actor = clutter_group_get_nth_child(CLUTTER_GROUP(cache), 0);
+       actor; actor = clutter_group_get_nth_child(CLUTTER_GROUP(cache), ++i))
     {
-      ClutterActor *actor =
-        clutter_group_get_nth_child(CLUTTER_GROUP(cache), i);
       const char *name = clutter_actor_get_name(actor);
       if (name && g_str_equal(name, filename_real))
         {

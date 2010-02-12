@@ -1,3 +1,35 @@
+2010-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#156056 Phone application is minimized/closed automatically
+		  when brought to foreground in certain scenarious
+
+	The fix of NB#131671 was a little buggy and searched for
+	applications by launcher id, not D-BUS service name.
+
+	The other half of the fix is in libosso > 2.30.
+
+	* src/launcher/hd-launcher-tree.c (+hd_launcher_tree_find_app_by_service):
+	  New function to find a HdLauncherApp by D-BUS service name.
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_dbus_launch_app):
+	  Use it instead of hd_launcher_tree_find_item().
+
+2010-02-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.132-1
+
+2010-02-11  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+	Add task launcher editor.
+	Fixes: NB#143390
+
+2010-02-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-clutter-cache.c (hd_clutter_cache_get_real_texture):
+	* src/home/hd-render-manager.c (hd_render_manager_restack):
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_hook_update_area):
+	* src/tidy/tidy-blur-group.c (tidy_blur_group_children_visible):
+	Optimise more clutter_group_get_n_children calls away.
+
 2010-02-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Optimise few clutter_group_get_n_children calls away, it's O(n).
@@ -30,7 +62,7 @@
 
 	* src/home/hd-render-manager.c
 	(hd_render_manager_get_visible_client_for_tasknav): Select unmapped
-	clients also, because it's needed for zoom out effect.
+	clients also, because it's needed for zoom out effect.  (NB#156130)
 	(hd_render_manager_set_state): If we go to tasknav during tklock, use
 	that when display is unlocked.
 

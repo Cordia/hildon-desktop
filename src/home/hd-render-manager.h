@@ -269,6 +269,9 @@ gboolean hd_render_manager_actor_is_visible(ClutterActor *actor);
 void hd_render_manager_set_visibilities(void);
 void hd_render_manager_sync_clutter_before (void);
 
+/* Whether we have any windows showing above the desktop. */
+gboolean hd_render_manager_windows_showing(void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */

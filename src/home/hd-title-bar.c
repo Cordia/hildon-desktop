@@ -238,6 +238,9 @@ enum
   CLICKED_TOP_LEFT,
   PRESS_TOP_LEFT,
   LEAVE_TOP_LEFT,
+  CLICKED_TOP_RIGHT,
+  PRESS_TOP_RIGHT,
+  LEAVE_TOP_RIGHT,
   LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0, };
@@ -505,6 +508,27 @@ hd_title_bar_class_init (HdTitleBarClass *klass)
                       0, NULL, NULL,
                       g_cclosure_marshal_VOID__VOID,
                       G_TYPE_NONE, 0);
+  signals[CLICKED_TOP_RIGHT] =
+      g_signal_new ("clicked-top-right",
+                    G_TYPE_FROM_CLASS (klass),
+                    G_SIGNAL_RUN_LAST,
+                    0, NULL, NULL,
+                    g_cclosure_marshal_VOID__VOID,
+                    G_TYPE_NONE, 0);
+  signals[PRESS_TOP_RIGHT] =
+        g_signal_new ("press-top-right",
+                      G_TYPE_FROM_CLASS (klass),
+                      G_SIGNAL_RUN_LAST,
+                      0, NULL, NULL,
+                      g_cclosure_marshal_VOID__VOID,
+                      G_TYPE_NONE, 0);
+  signals[LEAVE_TOP_RIGHT] =
+        g_signal_new ("leave-top-right",
+                      G_TYPE_FROM_CLASS (klass),
+                      G_SIGNAL_RUN_LAST,
+                      0, NULL, NULL,
+                      g_cclosure_marshal_VOID__VOID,
+                      G_TYPE_NONE, 0);
 }
 
 static void hd_title_bar_set_state_real(HdTitleBar *bar,
@@ -677,6 +701,8 @@ hd_title_bar_left_pressed(HdTitleBar *bar, gboolean pressed)
   if (!HD_IS_TITLE_BAR(bar))
     return;
   priv = bar->priv;
+
+  g_debug ("%s: pressed: %d", __FUNCTION__, pressed);
 
   if (pressed)
     {
@@ -1356,9 +1382,6 @@ hd_title_bar_top_left_press (HdTitleBar *bar)
 {
   if (!STATE_IN_EDIT_MODE(hd_render_manager_get_state()))
     hd_title_bar_left_pressed(bar, TRUE);
-  /* For if we ever add the back button back into launcher */
-  if (hd_render_manager_get_state() == HDRM_STATE_LAUNCHER)
-    hd_launcher_back_button_clicked();
 
   g_signal_emit (bar, signals[PRESS_TOP_LEFT], 0);
 }
@@ -1372,6 +1395,16 @@ hd_title_bar_top_left_leave (HdTitleBar *bar)
 }
 
 static void
+hd_title_bar_top_right_clicked (HdTitleBar *bar)
+{
+  /* For if we ever add the back button back into launcher */
+  if (hd_render_manager_get_state() == HDRM_STATE_LAUNCHER)
+    hd_launcher_back_button_clicked();
+
+  g_signal_emit (bar, signals[CLICKED_TOP_RIGHT], 0);
+}
+
+static void
 hd_title_bar_top_right_press (HdTitleBar *bar)
 {
   hd_title_bar_right_pressed(bar, TRUE);
@@ -1379,7 +1412,7 @@ hd_title_bar_top_right_press (HdTitleBar *bar)
   if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
     hd_render_manager_set_state(HDRM_STATE_HOME);
 
-  g_signal_emit (bar, signals[PRESS_TOP_LEFT], 0);
+  g_signal_emit (bar, signals[PRESS_TOP_RIGHT], 0);
 }
 
 static void
@@ -1387,7 +1420,7 @@ hd_title_bar_top_right_leave (HdTitleBar *bar)
 {
   hd_title_bar_right_pressed(bar, FALSE);
 
-  g_signal_emit (bar, signals[LEAVE_TOP_LEFT], 0);
+  g_signal_emit (bar, signals[LEAVE_TOP_RIGHT], 0);
 }
 
 static void
@@ -1409,6 +1442,9 @@ static void
 hd_title_bar_add_right_signals(HdTitleBar *bar, ClutterActor *actor)
 {
   clutter_actor_set_reactive(actor, TRUE);
+  g_signal_connect_swapped (actor, "button-release-event",
+                            G_CALLBACK (hd_title_bar_top_right_clicked),
+                            bar);
   g_signal_connect_swapped (actor, "button-press-event",
                             G_CALLBACK (hd_title_bar_top_right_press),
                             bar);
