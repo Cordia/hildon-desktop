@@ -136,8 +136,6 @@ hd_home_view_allocation_changed (HdHomeView    *home_view,
 
 static void snap_widget_to_grid (ClutterActor *widget);
 
-static void hd_home_view_restack_applets (HdHomeView *view);
-
 typedef struct _HdHomeViewAppletData HdHomeViewAppletData;
 
 struct _HdHomeViewAppletData
@@ -660,10 +658,7 @@ hd_home_view_set_live_bg (HdHomeView *view,
       priv->live_bg = client;
       /* the actor is already parented to something, so reparent */
       if (above_applets)
-        {
-          clutter_actor_reparent (new_bg, priv->applets_container);
-          hd_home_view_restack_applets (view);
-        }
+        clutter_actor_reparent (new_bg, priv->applets_container);
       else
         clutter_actor_reparent (new_bg, priv->background_container);
     }
@@ -1160,7 +1155,6 @@ static void
 hd_home_view_restack_applets (HdHomeView *view)
 {
   GSList *sorted = NULL, *s;
-  ClutterActor *applet_actor;
 
   /* Get a list of all applets sorted by modified time
    * and raise them in the order of the list. */
@@ -1168,9 +1162,9 @@ hd_home_view_restack_applets (HdHomeView *view)
   for (s = sorted; s; s = s->next)
     {
       MBWMCompMgrClutterClient *cc = s->data;
-      applet_actor = mb_wm_comp_mgr_clutter_client_get_actor (cc);
+      ClutterActor *actor = mb_wm_comp_mgr_clutter_client_get_actor (cc);
 
-      clutter_actor_raise_top (applet_actor);
+      clutter_actor_raise_top (actor);
     }
   g_slist_free (sorted);
 }
