@@ -1845,7 +1845,8 @@ void hd_render_manager_restack()
   gint i, n_elements;
   GList *previous_home_blur = 0;
   unsigned int screenw, screenh;
-  int n_children;
+  int n_children, curr_view;
+  ClutterActor *live_bg_actor = NULL;
 
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   /* Add all actors currently in the home_blur group */
@@ -1861,6 +1862,7 @@ void hd_render_manager_restack()
 
   screenw = hd_comp_mgr_get_current_screen_width ();
   screenh = hd_comp_mgr_get_current_screen_height ();
+  curr_view = hd_home_get_current_view_id (priv->home);
 
   /* Order and choose which window actors will be visible */
   for (c = wm->stack_bottom; c; c = c->stacked_above)
@@ -1872,6 +1874,16 @@ void hd_render_manager_restack()
       if (c->cm_client && c->desktop >= 0) /* FIXME: should check against
 					      current desktop? */
         {
+          ClutterActor *actor;
+
+          /* remember live background to keep it above applets */
+          if (c->desktop == curr_view && c->window->live_background > 100)
+            {
+              actor = mb_wm_comp_mgr_clutter_client_get_actor(
+                               MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
+              live_bg_actor = actor;
+              continue;
+            }
 	  /* If the client decides its own visibility, let it figure out
 	   * its own stacking as well.
 	   */
@@ -1880,7 +1892,6 @@ void hd_render_manager_restack()
               || c->window->live_background)
             continue;
 
-          ClutterActor *actor = 0;
           ClutterActor *desktop = mb_wm_comp_mgr_clutter_get_nth_desktop(
               MB_WM_COMP_MGR_CLUTTER(priv->comp_mgr), c->desktop);
           actor = mb_wm_comp_mgr_clutter_client_get_actor(
@@ -1942,6 +1953,10 @@ void hd_render_manager_restack()
                             clutter_actor_get_name(parent)?clutter_actor_get_name(parent):"?");
 #endif /*STACKING_DEBUG*/
                      clutter_actor_raise_top(actor);
+                     if (live_bg_actor && c->desktop == curr_view
+                         && MB_WM_CLIENT_CLIENT_TYPE (c)
+                                             == HdWmClientTypeHomeApplet)
+                       clutter_actor_raise_top (live_bg_actor);
                     }
 #if STACKING_DEBUG
                   else
