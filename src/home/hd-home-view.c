@@ -1180,13 +1180,30 @@ close_applet (HdHomeView *view, HdHomeViewAppletData *data)
 }
 
 static gboolean
-close_button_clicked (ClutterActor       *button,
-                      ClutterButtonEvent *event,
-                      HdHomeView         *view)
+close_button_pressed (ClutterActor       *button,
+                     ClutterButtonEvent *event,
+                     HdHomeView         *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+
+  priv->applet_motion_start_x = event->x;
+  priv->applet_motion_start_y = event->y;
+
+  return TRUE;
+}
+
+static gboolean
+close_button_released (ClutterActor       *button,
+                       ClutterButtonEvent *event,
+                       HdHomeView         *view)
 {
   HdHomeViewPrivate *priv = view->priv;
   ClutterActor *applet;
   HdHomeViewAppletData *data;
+
+  if (ABS (priv->applet_motion_start_x - event->x) > MAX_TAP_DISTANCE ||
+      ABS (priv->applet_motion_start_y - event->y) > MAX_TAP_DISTANCE)
+    return TRUE;
 
   applet = clutter_actor_get_parent (button);
 
@@ -1254,7 +1271,9 @@ hd_home_view_add_applet (HdHomeView   *view,
   if (!STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     clutter_actor_hide (close_button);
   g_signal_connect (close_button, "button-press-event",
-                    G_CALLBACK (close_button_clicked), view);
+                    G_CALLBACK (close_button_pressed), view);
+  g_signal_connect (close_button, "button-release-event",
+                    G_CALLBACK (close_button_released), view);
   data->close_button = close_button;
 
   /* Add configure button */

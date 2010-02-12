@@ -1849,7 +1849,7 @@ hd_home_applet_motion (ClutterActor       *applet,
 		       ClutterMotionEvent *event,
 		       HdHome             *home)
 {
-  g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, event->x, event->y);
+//  g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, event->x, event->y);
 
   if (!(event->modifier_state &
 	(CLUTTER_BUTTON1_MASK | CLUTTER_BUTTON2_MASK | CLUTTER_BUTTON2_MASK)))

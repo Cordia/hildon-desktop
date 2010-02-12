@@ -1,4 +1,14 @@
-2010-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2010-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#156104 Home applet close buttons should active on release,
+		  ignore drags
+
+	* src/home/hd-home-view.c (close_button_pressed, close_button_released):
+	  Do just that.
+	* src/home/hd-home.c (hd_home_applet_motion):
+	  Commented out the all too verbose g_debug().
+
+2010-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#156056 Phone application is minimized/closed automatically
 		  when brought to foreground in certain scenarious
