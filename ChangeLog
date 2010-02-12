@@ -1,5 +1,11 @@
 2010-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	* src/home/hd-home.c (hd_home_applet_motion)
+	* src/home/hd-title-bar.c (hd_title_bar_left_pressed):
+	  Removed some g_debug()s.
+
+2010-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#156104 Home applet close buttons should active on release,
 		  ignore drags
 
