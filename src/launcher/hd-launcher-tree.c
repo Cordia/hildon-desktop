@@ -460,6 +460,28 @@ hd_launcher_tree_find_item (HdLauncherTree *tree, const gchar *id)
   return NULL;
 }
 
+static gint
+_compare_service (gconstpointer a, gconstpointer b)
+{
+  if (!HD_IS_LAUNCHER_APP(a))
+    return !0;
+  return g_strcmp0(hd_launcher_app_get_service(HD_LAUNCHER_APP (a)),
+                   (const gchar *)b);
+}
+
+HdLauncherApp *
+hd_launcher_tree_find_app_by_service (HdLauncherTree *tree, const gchar *service)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_TREE (tree), NULL);
+  HdLauncherTreePrivate *priv = HD_LAUNCHER_TREE_GET_PRIVATE (tree);
+
+  GList *res = g_list_find_custom (priv->items_list, service,
+                                   (GCompareFunc)_compare_service);
+  if (res)
+    return res->data;
+  return NULL;
+}
+
 #define CREATE_MODE (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
 
 void

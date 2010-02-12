@@ -1,3 +1,16 @@
+2010-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#156056 Phone application is minimized/closed automatically
+		  when brought to foreground in certain scenarious
+
+	The fix of NB#131671 was a little buggy and searched for
+	applications by launcher id, not D-BUS service name.
+
+	* src/launcher/hd-launcher-tree.c (+hd_launcher_tree_find_app_by_service):
+	  New function to find a HdLauncherApp by D-BUS service name.
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_dbus_launch_app):
+	  Use it instead of hd_launcher_tree_find_item().
+
 2010-02-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.132-1
