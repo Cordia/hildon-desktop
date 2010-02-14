@@ -275,6 +275,8 @@ void hd_render_manager_set_visibilities(void);
 void hd_render_manager_update_blur_state(void);
 void hd_render_manager_pause_blur_animation(void);
 
+void hd_render_manager_press_effect (void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */
