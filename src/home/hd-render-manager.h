@@ -270,6 +270,8 @@ void hd_render_manager_set_rotation (Rotation rotation);
 
 Rotation hd_render_manager_get_rotation (void);
 
+void hd_render_manager_press_effect (void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */
