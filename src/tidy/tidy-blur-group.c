@@ -53,7 +53,7 @@
 /* The OpenGL fragment shader used to do blur and desaturation.
  * We use 3 samples here arranged in a rough triangle. We need
  * 2 versions as GLES and GL use slightly different syntax */
-#if CLUTTER_COGL_HAS_GLES
+#if CLUTTER_COGL_HAS_GLES || CLUTTER_COGL_HAS_GL
 const char *BLUR_FRAGMENT_SHADER =
 "precision lowp float;\n"
 "varying mediump vec2  tex_coord;\n"
