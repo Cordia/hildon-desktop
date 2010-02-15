@@ -272,6 +272,10 @@ Rotation hd_render_manager_get_rotation (void);
 
 void hd_render_manager_press_effect (void);
 
+void hd_render_manager_zoom_in (void);
+
+void hd_render_manager_zoom_out (void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */

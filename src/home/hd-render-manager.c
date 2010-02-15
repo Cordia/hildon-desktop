@@ -170,6 +170,8 @@ struct _HdRenderManagerPrivate {
   HDRMStateEnum state;
   HDRMStateEnum previous_state;
 
+  gboolean zoomed;
+
   /* The input blocker is added with hd_render_manager_add_input_blocker.
    * It grabs the whole screen's input until either a window appears or
    * a timeout expires. */
@@ -505,6 +507,8 @@ hd_render_manager_init (HdRenderManager *self)
   priv->state = HDRM_STATE_UNDEFINED;
   priv->previous_state = HDRM_STATE_UNDEFINED;
   priv->current_blur = HDRM_BLUR_NONE;
+
+  priv->zoomed = FALSE;
 
   priv->home_blur = TIDY_BLUR_GROUP(tidy_blur_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->home_blur),
@@ -3012,6 +3016,7 @@ void
 hd_render_manager_press_effect (void)
 {
   g_return_if_fail (the_render_manager != NULL);
+  g_return_if_fail (!the_render_manager->priv->zoomed);
 
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
@@ -3020,5 +3025,51 @@ hd_render_manager_press_effect (void)
     clutter_timeline_start (priv->timeline_press);
     priv->press_effect = TRUE;
   }
+}
+
+void
+hd_render_manager_zoom_in (void)
+{
+  g_return_if_fail (the_render_manager != NULL);
+
+  ClutterActor *stage = CLUTTER_ACTOR (the_render_manager);
+  gdouble sx, sy;
+  gint ax, ay;
+
+  clutter_actor_get_scale (stage, &sx, &sy);
+  clutter_actor_get_anchor_point (stage, &ax, &ay);
+
+  clutter_actor_set_scale (stage, sx + 0.02, sy + 0.02);
+
+  clutter_actor_get_scale (stage, &sx, &sy);
+
+  if (sx == 1)
+    the_render_manager->priv->zoomed = FALSE;
+  else 
+    the_render_manager->priv->zoomed = TRUE;
+}
+
+void 
+hd_render_manager_zoom_out (void)
+{
+  g_return_if_fail (the_render_manager != NULL);
+
+  ClutterActor *stage = CLUTTER_ACTOR (the_render_manager);
+  gdouble sx, sy;
+  gint ax, ay;
+
+  clutter_actor_get_scale (stage, &sx, &sy);
+  clutter_actor_get_anchor_point (stage, &ax, &ay);
+
+  g_return_if_fail (sx > 1);
+
+  clutter_actor_set_scale (stage, sx - 0.02, sy - 0.02);  
+
+  clutter_actor_get_scale (stage, &sx, &sy);
+
+  if (sx == 1)
+    the_render_manager->priv->zoomed = FALSE;
+  else 
+    the_render_manager->priv->zoomed = TRUE;
 }
 

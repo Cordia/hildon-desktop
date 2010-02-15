@@ -61,6 +61,8 @@ enum {
   KEY_ACTION_TOGGLE_NON_COMP_MODE,
   KEY_ACTION_TAKE_SCREENSHOT,
   KEY_ACTION_DO_PORTRAIT,
+  KEY_ACTION_ZOOM_IN,
+  KEY_ACTION_ZOOM_OUT,
   KEY_ACTION_XTERMINAL,
 };
 
@@ -241,6 +243,12 @@ key_binding_func (MBWindowManager   *wm,
       break;
     case KEY_ACTION_TAKE_SCREENSHOT:
         take_screenshot();
+	break;
+    case KEY_ACTION_ZOOM_IN:
+	hd_render_manager_zoom_in ();
+	break;
+    case KEY_ACTION_ZOOM_OUT:
+	hd_render_manager_zoom_out ();
 	break;
     case KEY_ACTION_DO_PORTRAIT:
         portrait = !portrait;
@@ -611,6 +619,17 @@ main (int argc, char **argv)
 				    key_binding_func,
 				    NULL,
 				    (void*)KEY_ACTION_DO_PORTRAIT);
+  mb_wm_keys_binding_add_with_spec (wm,
+				    "<shift><ctrl>r",
+				    key_binding_func,
+				    NULL,
+				    (void*)KEY_ACTION_ZOOM_IN);
+  mb_wm_keys_binding_add_with_spec (wm,
+				    "<shift><ctrl>f",
+				    key_binding_func,
+				    NULL,
+				    (void*)KEY_ACTION_ZOOM_OUT);
+
 
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 
