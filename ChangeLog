@@ -5,6 +5,14 @@
 	* src/launcher/hd-app-mgr.c (_hd_app_mgr_should_show_callui): Call
 	hd_wm_has_modal_blockers directly.
 
+2010-02-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Fix broken desktop shortcuts.
+
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_dbus_launch_app):
+	  Sometimes $id is a desktop file id (hildon-home),
+	  sometimes it's a D-BUS service name (libosso).
+
 2010-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-home.c (hd_home_applet_motion)
