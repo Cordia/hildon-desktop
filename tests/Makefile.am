@@ -2,7 +2,7 @@ noinst_PROGRAMS = test-hung-process test-applet test-app-launch \
 		  test-do-not-disturb test-large-note \
 		  test-portrait-win test-portrait-dlg test-signals \
 		  test-speed test-winstack test-non-compositing \
-		  test-no-gtk test-live-bg
+		  test-no-gtk test-live-bg test-live-bg-transp
 
 test_hung_process_SOURCES = test-hung-process.c
 test_hung_process_CFLAGS = `pkg-config --cflags gtk+-2.0`
@@ -43,6 +43,10 @@ test_speed_LDFLAGS = `pkg-config --libs gtk+-2.0`
 test_live_bg_SOURCES = test-live-bg.c
 test_live_bg_CFLAGS = `pkg-config --cflags gtk+-2.0`
 test_live_bg_LDFLAGS = `pkg-config --libs gtk+-2.0`
+
+test_live_bg_transp_SOURCES = test-live-bg-transp.c
+test_live_bg_transp_CFLAGS = `pkg-config --cflags gtk+-2.0`
+test_live_bg_transp_LDFLAGS = `pkg-config --libs gtk+-2.0`
 
 test_winstack_SOURCES = test-large-window-stack.c
 test_winstack_CFLAGS = `pkg-config --cflags hildon-1`
