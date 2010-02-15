@@ -48,6 +48,7 @@
 #include "hd-launcher-tree.h"
 #include "home/hd-render-manager.h"
 #include "hd-transition.h"
+#include "hd-wm.h"
 
 #undef  G_LOG_DOMAIN
 #define G_LOG_DOMAIN "hd-app-mgr"
@@ -1787,12 +1788,13 @@ static DBusHandlerResult hd_app_mgr_dbus_app_died (DBusConnection *conn,
 }
 
 gboolean
-hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *service)
+hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *id)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (self);
-  HdLauncherApp *app = NULL;
+  HdLauncherItem *item;
+  HdLauncherApp *app;
 
-  if (!service || !strlen(service))
+  if (!id || !strlen(id))
     { /* If no ID was specified, all we want to do is trigger the
          app start animation with a blank window, not do anything fancy.
          We must check first that we haven't had a window mapped recently,
@@ -1803,10 +1805,12 @@ hd_app_mgr_dbus_launch_app (HdAppMgr *self, const gchar *service)
       return TRUE;
     }
 
-  app = hd_launcher_tree_find_app_by_service (priv->tree, service);
-  if (!app)
-    return FALSE;
-  return hd_app_mgr_launch (app);
+  item = hd_launcher_tree_find_item (priv->tree, id);
+  if (!item || hd_launcher_item_get_item_type (item) != HD_APPLICATION_LAUNCHER)
+    app = hd_launcher_tree_find_app_by_service (priv->tree, id);
+  else
+    app = HD_LAUNCHER_APP (item);
+  return app ? hd_app_mgr_launch (app) : FALSE;
 }
 
 gboolean
@@ -1832,6 +1836,7 @@ static gboolean
 _hd_app_mgr_should_show_callui ()
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+  extern MBWindowManager *hd_mb_wm;
 
   if (STATE_SHOW_CALLUI (hd_render_manager_get_state ()) &&
       priv->portrait &&
@@ -1839,7 +1844,7 @@ _hd_app_mgr_should_show_callui ()
       priv->display_on &&
       priv->slide_closed &&
       !priv->disable_callui &&
-      !hd_render_manager_windows_showing ())
+      !hd_wm_has_modal_blockers (hd_mb_wm))
     {
       return TRUE;
     }

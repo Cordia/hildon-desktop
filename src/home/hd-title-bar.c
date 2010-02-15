@@ -702,8 +702,6 @@ hd_title_bar_left_pressed(HdTitleBar *bar, gboolean pressed)
     return;
   priv = bar->priv;
 
-  g_debug ("%s: pressed: %d", __FUNCTION__, pressed);
-
   if (pressed)
     {
       if (CLUTTER_ACTOR_IS_VISIBLE(priv->buttons[BTN_BG_ATTACHED]))

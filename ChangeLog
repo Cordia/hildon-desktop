@@ -1,4 +1,35 @@
-2010-02-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2010-02-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-render-manager.[ch] (hd_render_manager_windows_showing):
+	Remove in favor of using hd_wm_has_modal_blockers directly.
+	* src/launcher/hd-app-mgr.c (_hd_app_mgr_should_show_callui): Call
+	hd_wm_has_modal_blockers directly.
+
+2010-02-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Fix broken desktop shortcuts.
+
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_dbus_launch_app):
+	  Sometimes $id is a desktop file id (hildon-home),
+	  sometimes it's a D-BUS service name (libosso).
+
+2010-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/home/hd-home.c (hd_home_applet_motion)
+	* src/home/hd-title-bar.c (hd_title_bar_left_pressed):
+	  Removed some g_debug()s.
+
+2010-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#156104 Home applet close buttons should active on release,
+		  ignore drags
+
+	* src/home/hd-home-view.c (close_button_pressed, close_button_released):
+	  Do just that.
+	* src/home/hd-home.c (hd_home_applet_motion):
+	  Commented out the all too verbose g_debug().
+
+2010-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#156056 Phone application is minimized/closed automatically
 		  when brought to foreground in certain scenarious
