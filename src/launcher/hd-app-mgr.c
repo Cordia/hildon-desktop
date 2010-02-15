@@ -48,6 +48,7 @@
 #include "hd-launcher-tree.h"
 #include "home/hd-render-manager.h"
 #include "hd-transition.h"
+#include "hd-wm.h"
 
 #undef  G_LOG_DOMAIN
 #define G_LOG_DOMAIN "hd-app-mgr"
@@ -1832,6 +1833,7 @@ static gboolean
 _hd_app_mgr_should_show_callui ()
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+  extern MBWindowManager *hd_mb_wm;
 
   if (STATE_SHOW_CALLUI (hd_render_manager_get_state ()) &&
       priv->portrait &&
@@ -1839,7 +1841,7 @@ _hd_app_mgr_should_show_callui ()
       priv->display_on &&
       priv->slide_closed &&
       !priv->disable_callui &&
-      !hd_render_manager_windows_showing ())
+      !hd_wm_has_modal_blockers (hd_mb_wm))
     {
       return TRUE;
     }

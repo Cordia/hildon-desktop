@@ -1,3 +1,10 @@
+2010-02-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/home/hd-render-manager.[ch] (hd_render_manager_windows_showing):
+	Remove in favor of using hd_wm_has_modal_blockers directly.
+	* src/launcher/hd-app-mgr.c (_hd_app_mgr_should_show_callui): Call
+	hd_wm_has_modal_blockers directly.
+
 2010-02-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/home/hd-home.c (hd_home_applet_motion)
