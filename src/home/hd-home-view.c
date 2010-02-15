@@ -497,10 +497,6 @@ set_background_common (HdHomeView *hview, ClutterActor *new_bg)
                 CLUTTER_CONTAINER (priv->background_container),
                 CLUTTER_ACTOR(new_bg_sub));
 
-  /* Raise the texture above the solid color */
-  if (priv->background)
-    clutter_actor_raise (new_bg, priv->background);
-
   /* Remove the old background (color or image) and the subtexture
    * that may have been used to make it smaller */
   if (priv->background_sub)
@@ -639,9 +635,10 @@ hd_home_view_set_live_bg (HdHomeView *view,
   ClutterActor *new_bg = 0;
   MBWMCompMgrClutterClient *cclient;
 
-  if (priv->load_background_source)
+  if (priv->load_background_source && !above_applets)
     {
-      /* cancel ongoing background loading job */
+      /* cancel ongoing background loading job unless we have transparent
+       * live background */
       g_source_remove (priv->load_background_source);
       priv->load_background_source = 0;
     }
@@ -661,6 +658,10 @@ hd_home_view_set_live_bg (HdHomeView *view,
         clutter_actor_reparent (new_bg, priv->applets_container);
       else
         clutter_actor_reparent (new_bg, priv->background_container);
+
+      if (!priv->background && above_applets)
+        /* use normal background below the live-bg */
+        hd_home_view_load_background (view);
     }
   else
     {
@@ -682,7 +683,8 @@ hd_home_view_set_live_bg (HdHomeView *view,
       new_bg = priv->background = NULL;
     }
 
-  set_background_common (view, new_bg);
+  if (!client || !above_applets)
+    set_background_common (view, new_bg);
 }
 
 void
