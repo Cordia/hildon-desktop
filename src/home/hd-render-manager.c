@@ -215,6 +215,7 @@ struct _HdRenderManagerPrivate {
    * out for ourselves */
   gboolean            timeline_playing;
   gboolean	      press_effect;
+  gboolean	      press_effect_paused;
 
   gboolean            in_set_state;
 
@@ -332,6 +333,9 @@ press_effect_new_frame (ClutterTimeline *timeline,
 	priv->press_effect = FALSE;
 	clutter_actor_set_anchor_point (stage, 0, 0);
      }
+
+   if (time > 0.15 && time <= 0.17 && priv->press_effect_paused)
+     clutter_timeline_pause (timeline);
 
    clutter_actor_queue_redraw (stage);
 }
@@ -566,6 +570,7 @@ hd_render_manager_init (HdRenderManager *self)
 		    G_CALLBACK (press_effect_new_frame),
 		    priv);
   priv->press_effect = FALSE;
+  priv->press_effect_paused = FALSE;
 
   priv->timeline_blur = clutter_timeline_new_for_duration(250);
   g_signal_connect (priv->timeline_blur, "new-frame",
@@ -3024,6 +3029,22 @@ hd_render_manager_press_effect (void)
   {
     clutter_timeline_start (priv->timeline_press);
     priv->press_effect = TRUE;
+    priv->press_effect_paused = TRUE;
+  }
+}
+
+void 
+hd_render_manager_end_press_effect (void)
+{
+  g_return_if_fail (the_render_manager != NULL);
+
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  priv->press_effect_paused = FALSE;
+
+  if (priv->press_effect)
+  {
+    clutter_timeline_start (priv->timeline_press);
   }
 }
 

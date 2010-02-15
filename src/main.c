@@ -276,14 +276,17 @@ clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
   MBWindowManager * wm = data;
 
   if (xev->type == ButtonPress)
-    {
-      XButtonEvent *bev = (XButtonEvent *)cev;
-
-      g_debug ("Do the dew! %p",bev);
-
-      hd_render_manager_press_effect ();
-    }
-
+  {
+    hd_render_manager_press_effect ();
+    g_debug ("Do the dew 1!");
+  }
+  else
+  if (xev->type == ButtonRelease)
+  {
+    hd_render_manager_end_press_effect ();
+    g_debug ("Do the dew 2!");
+  }
+ 
   mb_wm_main_context_handle_x_event (xev, wm->main_ctx);
 
   if (wm->sync_type)
