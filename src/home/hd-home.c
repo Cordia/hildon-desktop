@@ -1651,6 +1651,8 @@ hd_home_applet_emit_motion_event (
 
   XSendEvent(wm->xdpy, xev.window, True,
 	     0, (XEvent *)&xev);
+
+  clutter_actor_queue_redraw (applet);
 }
 
 
