@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <X11/extensions/Xrender.h>
 
 static void set_fullscreen (Display *dpy, Window w)
 {
@@ -110,6 +111,40 @@ static void set_fullscreen (Display *display, Window xwindow)
 }
 #endif
 
+static Visual*
+get_argb32_visual (Display *dpy)
+{
+  XVisualInfo         * xvi;
+  XVisualInfo           template;
+  int                   nvi;
+  int                   i;
+  XRenderPictFormat   * format;
+  Visual              * visual = NULL;
+
+  template.depth  = 32;
+  template.class  = TrueColor;
+
+  if ((xvi = XGetVisualInfo (dpy,
+                             VisualDepthMask|VisualClassMask,
+                             &template,
+                             &nvi)) == NULL)
+    return NULL;
+  
+  for (i = 0; i < nvi; i++) 
+    {
+      format = XRenderFindVisualFormat (dpy, xvi[i].visual);
+      if (format->type == PictTypeDirect && format->direct.alphaMask)
+        {
+          printf("%s: ARGB visual found\n", __func__);
+          visual = xvi[i].visual;
+          break;
+        }
+    }
+
+  XFree (xvi);
+  return visual;
+}
+
 int main(int argc, char **argv)
 {
         Display *dpy;
@@ -118,48 +153,47 @@ int main(int argc, char **argv)
         XColor green_col;
         Colormap colormap;
         char green[] = "#00ff00";
-        XVisualInfo *visuals;
-        XVisualInfo v_template = {0};
-        int n_visuals;
         time_t last_time;
-        XSetWindowAttributes attrs;
-        XGCValues gcvals;
+        int mode = 1;
+
+        if (argc == 2)
+          mode = atoi(argv[1]);
 
         dpy = XOpenDisplay(NULL);
 
-        v_template.depth = 32;
-        v_template.red_mask = 0xff0000;
-        v_template.green_mask = 0x00ff00;
-        v_template.blue_mask = 0x0000ff;
-        v_template.bits_per_rgb = 8;
+        if (mode > 100) {
+          /* use ARGB window */
+          XSetWindowAttributes attrs;
+          Visual *visual;
 
-        visuals = XGetVisualInfo (dpy, VisualScreenMask | VisualDepthMask |
-                                  VisualBitsPerRGBMask,
-                                  &v_template, &n_visuals);
-        printf("matching visuals %d\n", n_visuals);
+          visual = get_argb32_visual (dpy);
+          colormap = XCreateColormap (dpy, DefaultRootWindow (dpy),
+                                      visual, AllocNone);
+          attrs.colormap = colormap;
+          attrs.border_pixel = BlackPixel (dpy, 0);
+          w = XCreateWindow(dpy, DefaultRootWindow (dpy), 0, 0,
+                            800, 480, 0, 32,
+                            InputOutput,
+                            visual,
+                            CWColormap | CWBorderPixel, &attrs);
+        } else {
+          w = XCreateWindow(dpy, DefaultRootWindow (dpy), 0, 0,
+                            800, 480, 0, CopyFromParent, InputOutput,
+                            CopyFromParent,
+                            0, NULL);
+          colormap = DefaultColormap (dpy, 0);
+        }
 
-        colormap = XCreateColormap (dpy, DefaultRootWindow (dpy),
-                                    visuals->visual, AllocNone);
-
-        w = XCreateWindow(dpy, DefaultRootWindow (dpy), 0, 0,
-                          800, 480, 0, CopyFromParent, InputOutput,
-                          CopyFromParent, //visuals->visual,
-                          0, &attrs);
         set_non_compositing(dpy, w);
 
-        //colormap = DefaultColormap (dpy, 0);
-        gcvals.function = GXor;
-        green_gc = XCreateGC (dpy, w, GCFunction, &gcvals);
+        green_gc = XCreateGC (dpy, w, 0, NULL);
         XParseColor (dpy, colormap, green, &green_col);
         XAllocColor (dpy, colormap, &green_col);
 
         set_fullscreen(dpy, w);
         set_window_type(dpy, w);
 
-        if (argc == 2)
-          set_live_bg (dpy, w, atoi(argv[1]));
-        else
-          set_live_bg (dpy, w, 1);
+        set_live_bg (dpy, w, mode);
 
         /* optional: disable compositor's transitions for this window */
         //set_no_transitions(dpy, w);
