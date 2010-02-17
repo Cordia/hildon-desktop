@@ -41,8 +41,8 @@ test_speed_CFLAGS = `pkg-config --cflags gtk+-2.0`
 test_speed_LDFLAGS = `pkg-config --libs gtk+-2.0`
 
 test_live_bg_SOURCES = test-live-bg.c
-test_live_bg_CFLAGS = `pkg-config --cflags gtk+-2.0`
-test_live_bg_LDFLAGS = `pkg-config --libs gtk+-2.0`
+test_live_bg_CFLAGS = `pkg-config --cflags x11 xrender`
+test_live_bg_LDFLAGS = `pkg-config --libs x11 xrender`
 
 test_live_bg_transp_SOURCES = test-live-bg-transp.c
 test_live_bg_transp_CFLAGS = `pkg-config --cflags gtk+-2.0`
