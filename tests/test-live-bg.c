@@ -222,6 +222,32 @@ int main(int argc, char **argv)
 
                 if (xev.type == Expose) {
                   printf("expose\n");
+
+                  if (mode > 100) {
+                    /* draw background with transparent colour */
+                    XImage ximage;
+                    ximage.width = 800;
+                    ximage.height = 480;
+                    ximage.format = ZPixmap;
+                    ximage.byte_order = LSBFirst;
+                    ximage.bitmap_unit = 32;
+                    ximage.bitmap_bit_order = LSBFirst;
+                    ximage.bitmap_pad = 32;
+                    ximage.depth = 32;
+                    ximage.red_mask = 0;
+                    ximage.green_mask = 0;
+                    ximage.blue_mask = 0;
+                    ximage.xoffset = 0;
+                    ximage.bits_per_pixel = 32;
+                    ximage.bytes_per_line = 800 * 4;
+                    ximage.data = calloc (1, 800 * 480 * 4);
+
+                    XInitImage (&ximage);
+
+                    XPutImage (dpy, w, green_gc, &ximage, 0, 0, 0, 0,
+                               800, 480);
+                    free (ximage.data);
+                  }
                   draw_rect (dpy, w, green_gc, &green_col, 100, 100);
                 }
                 else if (xev.type == ButtonRelease) {
