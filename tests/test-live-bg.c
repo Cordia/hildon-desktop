@@ -161,7 +161,7 @@ int main(int argc, char **argv)
 
         dpy = XOpenDisplay(NULL);
 
-        if (mode > 100) {
+        if (mode > 100 || mode < -100) {
           /* use ARGB window */
           XSetWindowAttributes attrs;
           Visual *visual;
@@ -181,6 +181,7 @@ int main(int argc, char **argv)
                             800, 480, 0, CopyFromParent, InputOutput,
                             CopyFromParent,
                             0, NULL);
+          XSetWindowBackground (dpy, w, BlackPixel (dpy, 0));
           colormap = DefaultColormap (dpy, 0);
         }
 
@@ -223,7 +224,7 @@ int main(int argc, char **argv)
                 if (xev.type == Expose) {
                   printf("expose\n");
 
-                  if (mode > 100) {
+                  if (mode > 100 || mode < -100) {
                     /* draw background with transparent colour */
                     XImage ximage;
                     ximage.width = 800;

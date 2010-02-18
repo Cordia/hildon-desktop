@@ -307,6 +307,31 @@ views_active_notify_func (GConfClient *client,
                                               FALSE);
 }
 
+static void
+remove_global_live_bg (HdHomeViewContainer *container)
+{
+  HdHomeViewContainerPrivate *priv = container->priv;
+  ClutterActor *actor;
+  MBWMCompMgrClutterClient *cclient;
+
+  if (!priv->live_bg) return;
+
+  cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (priv->live_bg->cm_client);
+  actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+
+  if (priv->live_bg->window->live_background == -1)
+    {
+      clutter_container_remove_actor (CLUTTER_CONTAINER (container), actor);
+      clutter_actor_hide (actor);
+    }
+  else if (priv->live_bg->window->live_background == -101)
+    {
+      ClutterActor *hfront = hd_home_get_front (priv->home);
+      clutter_container_remove_actor (CLUTTER_CONTAINER (hfront), actor);
+      clutter_actor_hide (actor);
+    }
+}
+
 void 
 hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
                                     MBWindowManagerClient *client)
@@ -370,22 +395,50 @@ hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
       for (i = 0; i < MAX_HOME_VIEWS; ++i)
         {
           hhview = HD_HOME_VIEW (priv->views[i]);
-          hd_home_view_set_live_bg (hhview, NULL, FALSE);
+          if (hd_home_view_get_live_bg (hhview))
+            hd_home_view_set_live_bg (hhview, NULL, FALSE);
         }
 
       if (priv->live_bg)
-        {
-          cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (priv->live_bg->cm_client);
-          actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
-          clutter_container_remove_actor (CLUTTER_CONTAINER (container), actor);
-          clutter_actor_hide (actor);
-        }
+        remove_global_live_bg (container);
 
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
       /* the actor is already parented to something, so reparent */
       clutter_actor_reparent (actor, CLUTTER_ACTOR (container));
       priv->live_bg = client;
+    }
+  else if (view == -101)
+    {
+      /* use this live background above applets on all desktops and without
+       * scrolling */
+      int i;
+      ClutterActor *hfront;
+
+      for (i = 0; i < MAX_HOME_VIEWS; ++i)
+        {
+          hhview = HD_HOME_VIEW (priv->views[i]);
+          if (hd_home_view_get_live_bg (hhview))
+            hd_home_view_set_live_bg (hhview, NULL, FALSE);
+        }
+
+      if (priv->live_bg)
+        remove_global_live_bg (container);
+
+      hfront = hd_home_get_front (priv->home);
+      cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (client->cm_client);
+      actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
+      /* the actor is already parented to something, so reparent */
+      clutter_actor_reparent (actor, CLUTTER_ACTOR (hfront));
+      priv->live_bg = client;
+
+      /* restore normal backgrounds, FIXME: could be smarter by checking
+       * if the backgrounds are already there */
+      for (i = 0; i < MAX_HOME_VIEWS; ++i)
+        {
+          hhview = HD_HOME_VIEW (priv->views[i]);
+          hd_home_view_load_background (hhview);
+        }
     }
 }
 
