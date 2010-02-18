@@ -278,6 +278,8 @@ void hd_render_manager_zoom_in (void);
 
 void hd_render_manager_zoom_out (void);
 
+void hd_render_manager_unzoom (void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */
