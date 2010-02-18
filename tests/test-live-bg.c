@@ -251,9 +251,14 @@ int main(int argc, char **argv)
                   }
                   draw_rect (dpy, w, green_gc, &green_col, 100, 100);
                 }
+                else if (xev.type == ButtonPress) {
+                  XButtonEvent *e = (XButtonEvent*)&xev;
+                  printf("ButtonPress (%d, %d)\n", e->x, e->y);
+                }
                 else if (xev.type == ButtonRelease) {
                   XButtonEvent *e = (XButtonEvent*)&xev;
                   draw_rect (dpy, w, green_gc, &green_col, e->x, e->y);
+                  printf("ButtonRelease (%d, %d)\n", e->x, e->y);
                 }
         }
 

@@ -507,7 +507,7 @@ hd_home_desktop_do_press (HdHome *home,
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
   GSList *applets, *a;
-  gboolean applet_hit = FALSE;
+  gboolean focus_applet_hit = FALSE, applet_hit = FALSE;
 
   DRAG_DEBUG("drag press %dx%d", x, y);
 
@@ -529,23 +529,29 @@ hd_home_desktop_do_press (HdHome *home,
       MBWMCompMgrClient *cc = a->data;
       MBWindowManagerClient *c;
       if (cc && (c = cc->wm_client) &&
-          mb_wm_client_want_focus (c) &&
           c->frame_geometry.x <= x &&
           c->frame_geometry.y <= y &&
           c->frame_geometry.x + c->frame_geometry.width >= x &&
           c->frame_geometry.y + c->frame_geometry.height >= y)
         {
           applet_hit = TRUE;
-          break;
+          if (mb_wm_client_want_focus (c))
+            {
+              focus_applet_hit = TRUE;
+              break;
+            }
         }
     }
   g_slist_free (applets);
+  if (!focus_applet_hit)
+    {
+      /* g_printerr ("%s: focus the desktop\n", __func__); */
+      mb_wm_client_focus (wm->desktop);
+    }
+
   if (!applet_hit)
     {
       MBWindowManagerClient *live_bg;
-      /* g_printerr ("%s: focus the desktop\n", __func__); */
-      mb_wm_client_focus (wm->desktop);
-
       live_bg = hd_home_view_container_get_live_bg (
                     HD_HOME_VIEW_CONTAINER (priv->view_container));
       if (!live_bg)
