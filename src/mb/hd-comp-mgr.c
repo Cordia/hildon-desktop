@@ -2260,7 +2260,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   /* Hide status menu if any window except an applet is mapped */
   if (priv->status_menu_client &&
       ctype != HdWmClientTypeHomeApplet &&
-      ctype != MBWMClientTypeOverride)
+      ctype != MBWMClientTypeOverride &&
+      !HD_IS_BANNER_NOTE(c))
     mb_wm_client_deliver_delete (priv->status_menu_client);
 
   if (ctype == HdWmClientTypeHomeApplet)

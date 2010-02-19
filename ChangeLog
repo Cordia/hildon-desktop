@@ -1,3 +1,10 @@
+2010-02-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#134435 - a hildon-banner makes the status-menu close
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Do not close status
+	menu when a banner is mapped.
+
 2010-02-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	'Live background' enabler based on Jarmo Nikula's
