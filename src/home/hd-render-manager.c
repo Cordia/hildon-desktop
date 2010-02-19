@@ -2144,7 +2144,9 @@ hd_render_manager_restack (void)
   wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   /* Add all actors currently in the home_blur group */
 
-  for (i=0;i<clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));i++)
+  gint n_children = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
+
+  for (i = 0; i < n_children; i++)
     {
       ClutterActor *child =
         clutter_group_get_nth_child(CLUTTER_GROUP(priv->home_blur), i);
