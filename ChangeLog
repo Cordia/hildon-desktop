@@ -1,3 +1,67 @@
+2010-02-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	'Live background' enabler based on Jarmo Nikula's
+	<jarmo.nikula@nokia.com> first prototype.
+	A new, integer-valued window property _HILDON_LIVE_DESKTOP_BACKGROUND
+	is introduced for each client. The value of the property can be:
+
+	0        this client is not a live background
+	1-4      home view specific live background
+	101-104  home view specific live foreground (above applets)
+	-1       global live background used for all home views
+	-101     global live foreground used for all home views
+
+	* src/home/hd-home-view-container.[ch]
+	(hd_home_view_container_set_live_bg): New public function to set
+	background to a client. Used from hd_home_set_live_background.
+	(hd_home_view_container_get_live_bg): New accessor to return global
+	live background.
+	* src/home/hd-home.[ch] (hd_home_set_live_background): New public
+	function for setting live background.
+	(hd_home_live_bg_emit_button1_event): New function to forward button
+	events to a live background.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Connect
+	the property to hd_home_set_live_background. Check if
+	_HILDON_LIVE_DESKTOP_BACKGROUND was changed.
+	* src/home/hd-home-view-container.c (struct
+	_HdHomeViewContainerPrivate): Add new member 'live_bg' that contains
+	global live background client, common for all desktops.
+	(remove_global_live_bg): New function to remove global live
+	background.
+	* src/home/hd-home-view.c (struct _HdHomeViewPrivate): Add new member
+	'live_bg' that contains live background client of this home view.
+	(set_background_common): New function to have the common parts for
+	load_background_idle and hd_home_view_set_live_bg.
+	(load_background_idle): Move common part to set_background_common.
+	Remove raising of the texture above the solid color --- that is not
+	needed because the solid color actor is destroyed and thus vanishes.
+	(hd_home_view_set_live_bg): New function to add and remove live
+	background for the home view. The live background can be either below
+	or above the applets (belonging to background_container or
+	applets_container respectively). In the case the live background is
+	above applets, the normal background image is used below the applets.
+	(hd_home_view_get_live_bg): Returns the live background or NULL.
+	(hd_home_desktop_do_motion): Send MotionNotify to any live background.
+	(hd_home_desktop_do_press): Send ButtonPress to any live background
+	unless an applet was hit.
+	(hd_home_desktop_release): Send ButtonRelease to any live background.
+	(hd_home_set_live_background): New function to set live background.
+	* src/home/hd-render-manager.c (hd_render_manager_restack): Raise live
+	background above applets if necessary. Do not reparent live
+	backgrounds.
+	* src/home/hd-switcher.c (hd_switcher_get_task_navigator): Replaced
+	with a global variable.
+	* src/mb/hd-comp-mgr.c (hd_task_navigator): New global variable for
+	task navigator object.
+	(hd_comp_mgr_map_notify): Special handling for live backgrounds. They
+	are not added to the task navigator and do not count as applications.
+	(hd_comp_mgr_unmap_notify): Remove unmapped live background.
+	(hd_comp_mgr_effect): Do not show effects for live backgrounds.
+	* src/mb/hd-wm.c (hd_wm_client_activate): Use the new global variable
+	and do not go to HDRM_STATE_APP for live backgrounds.
+	* tests/Makefile.am, tests/test-live-bg.c: A new test program that can
+	act as live background.
+
 2010-02-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/home/hd-render-manager.[ch] (hd_render_manager_windows_showing):
@@ -284,16 +348,6 @@
 	  Make it fullscreenable.
 
 2010-01-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
-
-	* src/home/hd-home-view-container.[ch]
-	(hd_home_view_container_set_live_bg): New public function to set
-	background to a client. Used from hd_home_set_live_background.
-	* src/home/hd-home.[ch] (hd_home_set_live_background): New public
-	function for setting live background.
-	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Connect
-	the property to hd_home_set_live_background.
-	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed): Check if
-	_HILDON_LIVE_DESKTOP_BACKGROUND was changed.
 
 	Fixes: NB#137722 - Information banners are appearing on top of other
 	applications.
