@@ -373,10 +373,12 @@ int main(int argc, char **argv)
                   printf("PropertyNotify\n");
 				  if (is_applet(dpy, xev.xproperty.window)) {
 					char color[16];
-					sprintf(color, "#%06x", (unsigned int)xev.xproperty.window & 0xffffff);
+					sprintf(color, "#%02x0000",
+						(unsigned int)(xev.xproperty.window & 0xff)/2+64);
 					XParseColor (dpy, colormap, color, &red_col);
 					XAllocColor (dpy, colormap, &red_col);
-			      	show_winbox(dpy, xev.xproperty.window, w, red_gc, &red_col);
+			      	show_winbox(dpy, xev.xproperty.window, w,
+						red_gc, &red_col);
 				  }
 				}
                 else if (xev.type == ButtonRelease) {
