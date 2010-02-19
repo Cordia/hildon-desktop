@@ -185,11 +185,11 @@ hd_launcher_tile_init (HdLauncherTile *tile)
    * It's good that we can make this actor a rectangle and see exactly
    * where the user is allowed to click - but to make it not draw anything
    * but still be selectable */
-  if (TRUE)
+  if (!hd_transition_get_int("blur", "turbo", 0))
     priv->click_area = clutter_group_new();
   else
     {
-      ClutterColor red = {0xFF, 0x00, 0x00, 0x3F};
+      ClutterColor red = {0x7F, 0x20, 0x20, 0xA0};
       priv->click_area = clutter_rectangle_new_with_color(&red);
     }
 

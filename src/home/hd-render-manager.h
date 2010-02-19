@@ -30,7 +30,7 @@
 #define __HD_RENDER_MANAGER_H__
 
 #include <clutter/clutter.h>
-#include "hd-comp-mgr.h"
+#include "mb/hd-comp-mgr.h"
 #include "hd-task-navigator.h"
 #include "hd-home.h"
 #include "../launcher/hd-launcher.h"

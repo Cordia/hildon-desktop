@@ -20,6 +20,8 @@
 #include <string.h>
 #include <locale.h>
 
+#include "util/hd-transition.h"
+
 /* #define it something sane */
 #define TIDY_IS_SANE_BLUR_GROUP(obj)    ((obj) != NULL)
 
@@ -831,7 +833,8 @@ tidy_blur_group_class_init (TidyBlurGroupClass *klass)
 
   /* Provide implementations for ClutterActor vfuncs: */
   klass->overridden_paint = actor_class->paint;
-  actor_class->paint = tidy_blur_group_paint;
+  if (!hd_transition_get_int("blur", "turbo", 0))
+    actor_class->paint = tidy_blur_group_paint;
   actor_class->notify_modified = tidy_blur_group_notify_modified_real;
 }
 

@@ -24,9 +24,9 @@
 #ifndef __HD_TRANSITION_H__
 #define __HD_TRANSITION_H__
 
-#include "hd-comp-mgr.h"
-#include "hd-render-manager.h"
-#include "hd-util.h"
+#include "mb/hd-comp-mgr.h"
+#include "home/hd-render-manager.h"
+#include "util/hd-util.h"
 
 /* The file name of the particle image used in close-app transitions
  * and the number of them to show in the transition. */

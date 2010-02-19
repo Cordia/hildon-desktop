@@ -2,7 +2,7 @@
 #define __HD_TASK_NAVIGATOR_H__
 
 #include <clutter/clutter.h>
-#include "hd-note.h"
+#include "mb/hd-note.h"
 
 #define HD_TYPE_TASK_NAVIGATOR    hd_task_navigator_get_type()
 #define HD_TASK_NAVIGATOR(obj)                          \

@@ -1,3 +1,19 @@
+2010-02-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Make blurring opt-out
+
+	* data/transitions.ini:
+	  with a switch
+	* src/tidy/tidy-blur-group.c (tidy_blur_group_class_init):
+	  then don't do fancy painting
+	* src/launcher/hd-launcher-tile.c (hd_launcher_tile_init):
+	  except for some background for the labels for legibility
+	* src/home/hd-render-manager.h
+	* src/home/hd-task-navigator.h
+	* src/util/hd-transition.h
+	* src/util/hd-util.h:
+	  and make sure we still compile.
+
 2010-02-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* tests/test-live-bg.c: Add and improve applet position detecting code
