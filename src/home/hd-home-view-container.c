@@ -837,13 +837,11 @@ void
 hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container, gint velocity)
 {
   HdHomeViewContainerPrivate *priv;
-  guint width;
+  gint width = hd_comp_mgr_get_current_screen_width ();
 
   g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
   priv = container->priv;
-
-  clutter_actor_get_size (CLUTTER_ACTOR (container), &width, NULL);
 
   priv->offset -= width;
   hd_home_view_container_set_current_view (container,
@@ -856,13 +854,11 @@ ClutterTimeline *
 hd_home_view_container_scroll_to_next (HdHomeViewContainer *container, gint velocity)
 {
   HdHomeViewContainerPrivate *priv;
-  guint width;
+  gint width = hd_comp_mgr_get_current_screen_width ();
 
   g_return_val_if_fail (HD_IS_HOME_VIEW_CONTAINER (container), NULL);
 
   priv = container->priv;
-
-  clutter_actor_get_size (CLUTTER_ACTOR (container), &width, NULL);
 
   priv->offset += width;
   hd_home_view_container_set_current_view (container,
