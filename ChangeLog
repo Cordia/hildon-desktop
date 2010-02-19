@@ -1,3 +1,9 @@
+2010-02-19  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* tests/test-live-bg.c: Add and improve applet position detecting code
+	from Jarmo Nikula. Red rectangles are drawn in the place of detected
+	applets.
+
 2010-02-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#134435 - a hildon-banner makes the status-menu close
