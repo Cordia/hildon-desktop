@@ -3364,6 +3364,8 @@ void
 hd_render_manager_set_rotation (Rotation rotation)
 { 
   gint old_rotation;
+  HdRenderManagerPrivate *priv = 
+    HD_RENDER_MANAGER_GET_PRIVATE (render_manager);
 
   g_object_get (G_OBJECT (render_manager),
 		"rotation", &old_rotation,
@@ -3376,6 +3378,8 @@ hd_render_manager_set_rotation (Rotation rotation)
 		    NULL);
       g_signal_emit_by_name (G_OBJECT (render_manager),
 			     "rotated", rotation);
+
+      hd_home_update_rotation (priv->home, rotation);
     }
 }
 

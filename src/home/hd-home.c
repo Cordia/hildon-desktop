@@ -215,6 +215,10 @@ static void update_edge_indication_visibility (HdHome *home,
                                                guint8  right_opacity);
 
 G_DEFINE_TYPE (HdHome, hd_home, CLUTTER_TYPE_GROUP);
+#define HD_HOME_GET_PRIVATE(obj) \
+                (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
+                HD_TYPE_HOME, HdHomePrivate))
+
 
 static void
 hd_home_class_init (HdHomeClass *klass)
@@ -2186,4 +2190,31 @@ hd_home_unregister_applet (HdHome       *home,
   if (HD_IS_HOME_VIEW (view))
     hd_home_view_unregister_applet (view, applet);
 }
+
+void 
+hd_home_update_rotation (HdHome *home, Rotation rotation)
+{
+  HdHomePrivate *priv = 
+    HD_HOME_GET_PRIVATE (home);
+
+  /* We are told orientation is changed before is actually changed */
+
+  clutter_actor_set_size (priv->edge_indication_left,
+			  HD_EDGE_INDICATION_WIDTH,
+			  hd_comp_mgr_get_current_screen_width ());
+  clutter_actor_set_size (priv->edge_indication_right,
+			  HD_EDGE_INDICATION_WIDTH,
+			  hd_comp_mgr_get_current_screen_width ());
+
+  clutter_actor_set_position (priv->edge_indication_left, 0, 0);
+  clutter_actor_set_position 
+    (priv->edge_indication_right,
+     hd_comp_mgr_get_current_screen_height () - HD_EDGE_INDICATION_WIDTH,
+     0);  
+
+  g_debug ("position right: %d height %d", 
+	   hd_comp_mgr_get_current_screen_height () - HD_EDGE_INDICATION_WIDTH, 
+	   hd_comp_mgr_get_current_screen_width ());
+}
+
 
