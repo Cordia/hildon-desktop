@@ -239,12 +239,6 @@ hd_home_class_init (HdHomeClass *klass)
 				"MBWMCompMgrClutter Object",
 				G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
   g_object_class_install_property (object_class, PROP_COMP_MGR, pspec);
-
-  pspec = g_param_spec_pointer ("hdrm",
-				"HdRenderManager",
-				"--""--",
-				G_PARAM_WRITABLE);
-  g_object_class_install_property (object_class, PROP_HDRM, pspec);
 }
 
 static gboolean
@@ -634,13 +628,6 @@ hd_home_desktop_key_release (XKeyEvent *xev, void *userdata)
   else
     priv->fn_state = FN_STATE_NONE;
   g_debug ("%s. FN state: %d", __FUNCTION__, priv->fn_state);
-}
-
-static void
-hd_home_reset_fn_state (HdHome *home)
-{
-  home->priv->fn_state = FN_STATE_NONE;
-  home->priv->ignore_next_fn_release = FALSE;
 }
 
 /* Called when a client message is sent to the root window. */
@@ -1088,12 +1075,7 @@ hd_home_set_property (GObject       *object,
     case PROP_COMP_MGR:
       priv->comp_mgr = g_value_get_pointer (value);
       break;
-    case PROP_HDRM:
-      g_signal_connect_swapped (g_value_get_pointer (value),
-                                "notify::state",
-                                G_CALLBACK (hd_home_reset_fn_state),
-                                object);
-      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -1110,12 +1092,13 @@ hd_home_get_property (GObject      *object,
 
   switch (prop_id)
     {
-    case PROP_COMP_MGR:
-      g_value_set_pointer (value, priv->comp_mgr);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
+      case PROP_COMP_MGR:
+        g_value_set_pointer (value, priv->comp_mgr);
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+        break;
     }
 }
 
@@ -1712,6 +1695,12 @@ hd_home_applet_motion (ClutterActor       *applet,
   return do_home_applet_motion (home, applet, event->x, event->y);
 }
 
+void
+hd_home_reset_fn_state (HdHome *home)
+{
+  home->priv->fn_state = FN_STATE_NONE;
+  home->priv->ignore_next_fn_release = FALSE;
+}
 
 void
 hd_home_add_applet (HdHome *home, ClutterActor *applet)
@@ -1882,7 +1871,7 @@ hd_home_edit_button_move_completed (ClutterActor *actor, gpointer data)
 
   /* Hide the edit button, and alert hdrm it doesn't need to grab this
    * area any more */
-  clutter_actor_hide(priv->edit_button);
+  clutter_actor_hide (priv->edit_button);
   hd_render_manager_set_input_viewport();
 }
 

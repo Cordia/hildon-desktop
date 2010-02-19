@@ -105,6 +105,8 @@ void hd_home_unregister_applet (HdHome       *home,
 
 void hd_home_update_rotation (HdHome *home, Rotation rotation);
 
+void hd_home_reset_fn_state (HdHome *home);
+
 G_END_DECLS
 
 #endif

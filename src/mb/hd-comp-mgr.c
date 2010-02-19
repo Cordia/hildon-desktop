@@ -556,18 +556,18 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   task_nav = hd_task_navigator_new ();
 
-  priv->render_manager = hd_render_manager_create(hmgr,
-		                                  hd_launcher_get(),
-		                                  HD_HOME(priv->home),
-						  task_nav);
-  g_object_set(priv->home, "hdrm", priv->render_manager, NULL);
-  clutter_container_add_actor(CLUTTER_CONTAINER (stage),
-                              CLUTTER_ACTOR(priv->render_manager));
-
-  g_signal_connect_swapped (priv->render_manager,
-  	            	    "rotated",
-		    	    G_CALLBACK (hd_task_navigator_rotate),
-		    	    task_nav);
+  priv->render_manager = 
+    HD_RENDER_MANAGER (g_object_new (HD_TYPE_RENDER_MANAGER,
+		  		     "comp-mgr", hmgr,
+		  		     "launcher", hd_launcher_get (),
+		  		     "home", HD_HOME (priv->home),
+		  		     "task-navigator", task_nav,
+		  		     NULL));
+ 
+  g_object_ref (priv->render_manager);
+ 
+  clutter_container_add_actor (CLUTTER_CONTAINER (stage),
+                               CLUTTER_ACTOR (priv->render_manager));
 
   /* Pass the render manager to the app mgr so it knows when it can't
    * prestart apps.
@@ -641,7 +641,8 @@ hd_comp_mgr_destroy (MBWMObject *obj)
       g_object_unref (priv->app_mgr);
       priv->app_mgr = NULL;
     }
-  g_object_unref( priv->render_manager );
+
+  g_object_unref (priv->render_manager);
 
   mb_wm_main_context_x_event_handler_remove (
                                      MB_WM_COMP_MGR (obj)->wm->main_ctx,

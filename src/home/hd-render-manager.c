@@ -410,26 +410,6 @@ unzoom_effect (ClutterTimeline *timeline,
 }
 
 HdRenderManager *
-hd_render_manager_create (HdCompMgr *hdcompmgr,
-                          HdLauncher *launcher,
-                          HdHome *home,
-                          HdTaskNavigator *task_nav)
-{
-  g_assert (render_manager == NULL);
-  HdRenderManager *rm;
-   
-  rm =
-    HD_RENDER_MANAGER (g_object_new (HD_TYPE_RENDER_MANAGER,
-				     "comp-mgr", hdcompmgr,
-				     "launcher", launcher,
-				     "task-navigator", task_nav,
-				     "home", home,
-				     NULL));
- 
-  return HD_RENDER_MANAGER (g_object_ref (rm));
-}
-
-HdRenderManager *
 hd_render_manager_get (void)
 {
   return 
@@ -489,10 +469,15 @@ hd_render_manager_constructor (GType                  gtype,
                               hd_comp_mgr_get_current_screen_height ());
 
       clutter_container_add_actor (CLUTTER_CONTAINER (obj),
-                                   CLUTTER_ACTOR(priv->task_nav));
+                                   CLUTTER_ACTOR (priv->task_nav));
 
       clutter_actor_move_anchor_point_from_gravity 
 	(CLUTTER_ACTOR(priv->task_nav), CLUTTER_GRAVITY_CENTER);
+
+      g_signal_connect_swapped (obj,
+  	            	        "rotated",
+		    	    	G_CALLBACK (hd_task_navigator_rotate),
+		    	        priv->task_nav);
 
       /* Add the launcher widget. */
       clutter_container_add_actor (CLUTTER_CONTAINER (obj),
@@ -508,6 +493,11 @@ hd_render_manager_constructor (GType                  gtype,
                                 G_CALLBACK (stage_allocation_changed),
 			        priv->home);
 
+      g_signal_connect_swapped (obj,
+                                "notify::state",
+                                G_CALLBACK (hd_home_reset_fn_state),
+                                priv->home);
+ 
       clutter_container_add_actor (CLUTTER_CONTAINER (priv->home_blur),
                                    CLUTTER_ACTOR (priv->home));
 

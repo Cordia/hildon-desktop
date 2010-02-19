@@ -188,10 +188,6 @@ typedef enum
 GType hd_render_manager_state_get_type (void) G_GNUC_CONST;
 GType hd_render_manager_get_type       (void) G_GNUC_CONST;
 
-HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
-		                           HdLauncher *launcher,
-					   HdHome *home,
-					   HdTaskNavigator *task_nav);
 HdRenderManager *hd_render_manager_get (void);
 
 void hd_render_manager_set_status_area (ClutterActor *item);
