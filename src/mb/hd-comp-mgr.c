@@ -2100,8 +2100,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   if (c->window->live_background)
     {
-      g_printerr ("%s: client '%s' is live background\n", __func__,
-                  mb_wm_client_get_name (c));
+      /*g_printerr ("%s: client '%s' is live background\n", __func__,
+                  mb_wm_client_get_name (c)); */
       parent_klass->map_notify (mgr, c);
 
       hd_home_set_live_background (HD_HOME (priv->home), c);
@@ -2815,7 +2815,7 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
 
   if (c->window->live_background)
     {
-            g_printerr ("%s: remove live_bg\n", __func__);
+      /*g_printerr ("%s: remove live_bg\n", __func__);*/
       c->window->live_background = 0;
       hd_home_set_live_background (HD_HOME (priv->home), c);
       return;
