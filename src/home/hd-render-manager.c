@@ -179,8 +179,6 @@ _HdRenderManagerPrivate
   gboolean zoomed;
   gboolean zoom_drag_started;
   gulong zoom_pressed_handler;
-  gulong zoom_released_handler;
-  gulong zoom_motion_handler;
   guint  zoom_x;
   guint  zoom_y;
 
@@ -363,12 +361,8 @@ unzoom_reset (void)
 
   g_signal_handler_disconnect (clutter_stage_get_default (),
 			       priv->zoom_pressed_handler);
-  g_signal_handler_disconnect (clutter_stage_get_default (),
-			       priv->zoom_released_handler);
-  g_signal_handler_disconnect (clutter_stage_get_default (),
-			       priv->zoom_motion_handler);
 
-  priv->zoom_pressed_handler = priv->zoom_released_handler = 0;
+  priv->zoom_pressed_handler = 0;
 
   hd_render_manager_remove_input_blocker ();
 }
@@ -673,7 +667,7 @@ hd_render_manager_init (HdRenderManager *self)
 
   /* General Zoom initial state */
   priv->zoomed = FALSE;
-  priv->zoom_pressed_handler = priv->zoom_released_handler = 0;
+  priv->zoom_pressed_handler = 0;
   priv->zoom_drag_started = FALSE;
 
   /* Home blur */
@@ -3420,6 +3414,14 @@ hd_render_manager_end_press_effect (void)
   }
 }
 
+static gboolean 
+zoom_motion (HdRenderManager *hdrm,
+	     ClutterMotionEvent *event);
+
+static gboolean 
+zoom_released (HdRenderManager *hdrm,
+	       ClutterButtonEvent *event);
+
 static gboolean
 zoom_pressed (HdRenderManager *hdrm,
 	      ClutterButtonEvent *event)
@@ -3430,9 +3432,30 @@ zoom_pressed (HdRenderManager *hdrm,
   if (!priv->zoomed)
     return FALSE;
 
-  if (priv->zoom_drag_started)
+  g_signal_connect_swapped (clutter_stage_get_default (),
+	  	            "button-release-event",
+	  	            G_CALLBACK (zoom_released),
+	  	            render_manager);
+
+  g_signal_connect_swapped (clutter_stage_get_default (),
+		            "motion-event",
+		            G_CALLBACK (zoom_motion),
+		            render_manager);
+
+  if (priv->zoom_drag_started) /* Just in case */
     {
       priv->zoom_drag_started = FALSE;
+
+      g_signal_handlers_disconnect_by_func 
+        (clutter_stage_get_default (),
+         zoom_motion,
+         render_manager);
+
+      g_signal_handlers_disconnect_by_func 
+        (clutter_stage_get_default (),
+         zoom_released,
+         render_manager);
+
       return FALSE;
     }
 
@@ -3524,7 +3547,15 @@ zoom_released (HdRenderManager *hdrm,
 
   priv->zoom_drag_started = FALSE;
 
-  g_debug ("RELEASING?");
+  g_signal_handlers_disconnect_by_func 
+    (clutter_stage_get_default (),
+     zoom_motion,
+     render_manager);
+
+  g_signal_handlers_disconnect_by_func 
+    (clutter_stage_get_default (),
+     zoom_released,
+     render_manager);
 
   return TRUE;
 }
@@ -3562,17 +3593,6 @@ hd_render_manager_zoom_in (void)
 			  		G_CALLBACK (zoom_pressed),
 			  		render_manager);
 
-      	    priv->zoom_released_handler =
-	      g_signal_connect_swapped (clutter_stage_get_default (),
-			  		"button-release-event",
-			  		G_CALLBACK (zoom_released),
-			  		render_manager);
-
-	    priv->zoom_motion_handler =
-              g_signal_connect_swapped (clutter_stage_get_default (),
-					"motion-event",
-					G_CALLBACK (zoom_motion),
-					render_manager);
 	  }
       priv->zoomed = TRUE;
       hd_render_manager_add_input_blocker ();
