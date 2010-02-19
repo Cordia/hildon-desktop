@@ -22,8 +22,8 @@ static char *get_atom_prop(Display *dpy, Window w, Atom atom)
       int format, rc;
       unsigned long items;
       unsigned long left;
-	  unsigned char *value; // will point to Atom, actually
-  	  char *copy;
+      unsigned char *value; // will point to Atom, actually
+      char *copy = NULL;
 
       rc = XGetWindowProperty (dpy, w, atom, 0, 1, False,
                           XA_ATOM, &type, &format,
@@ -63,16 +63,21 @@ static void show_winbox(Display *dpy, Window w, Window drawwin, GC gc,
 	Window qroot;
 	unsigned int bw, d, width, height;
 	int x, y;
-	int on_desktop = get_card_prop(dpy, w, on_current_desktop_atom);
-	XGetGeometry(dpy, w, &qroot, &x, &y, &width, &height, &bw, &d);
-	printf(
-		"Applet %lu at x=%3d y=%3d w=%3d h=%3d, on current desktop - %s\n",
-		w, x, y, width, height,	(on_desktop? "YES": "NO"));
-	if (on_desktop)
-	{
-    	XSetForeground (dpy, gc, col->pixel);
-    	XFillRectangle (dpy, drawwin, gc, x, y, width, height);
-	}
+        XWindowAttributes attrs;
+
+        if (XGetWindowAttributes (dpy, w, &attrs)
+            && attrs.map_state == IsViewable) {
+	  int on_desktop = get_card_prop(dpy, w, on_current_desktop_atom);
+	  XGetGeometry(dpy, w, &qroot, &x, &y, &width, &height, &bw, &d);
+	  printf("Applet 0x%lx at x=%3d y=%3d w=%3d h=%3d, on current "
+               "desktop - %s\n",
+               w, x, y, width, height, (on_desktop? "YES": "NO"));
+	  if (on_desktop)
+	  {
+    	    XSetForeground (dpy, gc, col->pixel);
+    	    XFillRectangle (dpy, drawwin, gc, x, y, width, height);
+	  }
+        }
 }
 
 static int is_applet(Display *dpy, Window w)
@@ -80,18 +85,19 @@ static int is_applet(Display *dpy, Window w)
 	char *wmtype;
 	int ret = 0;
 	wmtype = get_atom_prop(dpy, w, win_type_atom);
-	if (!strcmp(wmtype, "_HILDON_WM_WINDOW_TYPE_HOME_APPLET"))
+	if (wmtype && !strcmp(wmtype, "_HILDON_WM_WINDOW_TYPE_HOME_APPLET"))
 	{
 		ret = 1;
 	}
-	free(wmtype);
+        if (wmtype)
+	  free(wmtype);
 	return ret;
 }
 
 static void check_all_windows(Display *dpy, Window w, Window drawwin, GC gc, 
 							  XColor *col)
 {
-	unsigned int n_children = 0;
+        unsigned int n_children = 0;
 	Window *child_l = NULL;
 	Window root_ret, parent_ret;
 	unsigned int i;
@@ -100,11 +106,11 @@ static void check_all_windows(Display *dpy, Window w, Window drawwin, GC gc,
 
 	if (is_applet(dpy, w))
 	{
-		XSelectInput(dpy, w, PropertyChangeMask); // listen for changes
-		show_winbox(dpy, w, drawwin, gc, col);
+          XSelectInput(dpy, w, PropertyChangeMask | StructureNotifyMask);
+          show_winbox(dpy, w, drawwin, gc, col);
 	}
 	for (i = 0; i < n_children; ++i) {
-		check_all_windows(dpy, child_l[i], drawwin, gc, col); // do recursive
+          check_all_windows(dpy, child_l[i], drawwin, gc, col);
 	}
 	XFree(child_l);
 }
@@ -112,13 +118,9 @@ static void check_all_windows(Display *dpy, Window w, Window drawwin, GC gc,
 static void read_applet_positions(Display *dpy, Window drawwin, GC gc, 
 								  XColor *col)
 {
-    win_type_atom = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
-    on_current_desktop_atom = XInternAtom(dpy, 
-								"_HILDON_APPLET_ON_CURRENT_DESKTOP",
-                                False);
-	printf("READING APPLET POSITIONS\n");
-	check_all_windows(dpy, XDefaultRootWindow(dpy), drawwin, gc, col);
-	printf("DONE\n");
+  printf("READING APPLET POSITIONS\n");
+  check_all_windows(dpy, XDefaultRootWindow(dpy), drawwin, gc, col);
+  printf("DONE\n");
 }
 
 /* End of applets position reading. */
@@ -257,6 +259,11 @@ get_argb32_visual (Display *dpy)
   return visual;
 }
 
+static int error_handler (Display *dpy, XErrorEvent *err)
+{
+        return 0;
+}
+
 int main(int argc, char **argv)
 {
         Display *dpy;
@@ -318,8 +325,19 @@ int main(int argc, char **argv)
 
         XSelectInput (dpy, w,
                       ExposureMask | ButtonReleaseMask | ButtonPressMask);
+        /* receive MapNotifys for root's children to detect when a new
+         * applet appears on the screen */
+        XSelectInput (dpy, DefaultRootWindow (dpy), SubstructureNotifyMask);
+
         XMapWindow(dpy, w);  /* map the window */
         last_time = time(NULL);
+
+        win_type_atom = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
+        on_current_desktop_atom = XInternAtom(dpy, 
+                                        "_HILDON_APPLET_ON_CURRENT_DESKTOP",
+                                        False);
+        /* ignore X errors */
+        XSetErrorHandler (error_handler);
 
         for (;;) {
                 XEvent xev;
@@ -367,23 +385,46 @@ int main(int argc, char **argv)
                     free (ximage.data);
                   }
                   draw_rect (dpy, w, green_gc, &green_col, 100, 100);
-			      read_applet_positions(dpy, w, red_gc, &red_col);
+                  read_applet_positions(dpy, w, red_gc, &red_col);
                 }
-				else if (xev.type == PropertyNotify) {
-                  printf("PropertyNotify\n");
-				  if (is_applet(dpy, xev.xproperty.window)) {
-					char color[16];
-					sprintf(color, "#%02x0000",
-						(unsigned int)(xev.xproperty.window & 0xff)/2+64);
-					XParseColor (dpy, colormap, color, &red_col);
-					XAllocColor (dpy, colormap, &red_col);
-			      	show_winbox(dpy, xev.xproperty.window, w,
-						red_gc, &red_col);
-				  }
-				}
+                else if (xev.type == PropertyNotify) {
+                  if (is_applet(dpy, xev.xproperty.window)) {
+                    char color[16];
+                    sprintf(color, "#%02x0000",
+                            (unsigned int)(xev.xproperty.window & 0xff)/2+64);
+                    XParseColor (dpy, colormap, color, &red_col);
+                    XAllocColor (dpy, colormap, &red_col);
+                    show_winbox(dpy, xev.xproperty.window, w,
+                                red_gc, &red_col);
+                  }
+                }
                 else if (xev.type == ButtonRelease) {
                   XButtonEvent *e = (XButtonEvent*)&xev;
                   draw_rect (dpy, w, green_gc, &green_col, e->x, e->y);
+                }
+                else if (xev.type == MapNotify) {
+                  XMapEvent *e = (XMapEvent*)&xev;
+                  if (is_applet (dpy, e->window)) {
+                    printf("new applet window 0x%lx\n", e->window);
+                    show_winbox(dpy, e->window, w, red_gc, &red_col);
+                    XSelectInput(dpy, e->window,
+                                 PropertyChangeMask | StructureNotifyMask);
+                  }
+                }
+                else if (xev.type == UnmapNotify) {
+                  XUnmapEvent *e = (XUnmapEvent*)&xev;
+                  if (is_applet (dpy, e->window)) {
+                    printf("applet window 0x%lx unmapped\n", e->window);
+                    XClearWindow (dpy, w);
+                    read_applet_positions(dpy, w, red_gc, &red_col);
+                  }
+                }
+                else if (xev.type == ConfigureNotify) {
+                  XConfigureEvent *e = (XConfigureEvent*)&xev;
+                  if (is_applet(dpy, e->window)) {
+                    /* FIXME: proper thing would be moving the red box... */
+                    show_winbox(dpy, e->window, w, red_gc, &red_col);
+                  }
                 }
         }
 
