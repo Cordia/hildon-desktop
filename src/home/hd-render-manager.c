@@ -1802,11 +1802,16 @@ static gboolean
 hd_render_manager_geo_is_suitable_for_screen(const ClutterGeometry *geo,
                                              guint scrw, guint scrh)
 {
+  ClutterGeometry test;
+
   if (geo->x + (gint)geo->width  > (gint)scrw)
     return FALSE;
   if (geo->y + (gint)geo->height > (gint)scrh)
     return FALSE;
-  return TRUE;
+
+  /* Are you off-screen?  Then you're unsuitable. */
+  test = *geo;
+  return hd_render_manager_clip_geo(&test);
 }
 
 /*
@@ -2189,7 +2194,7 @@ static void hd_render_manager_update_blur_state()
            * Also this dialog is probably the VKB, which appears *over*
            * the top-left icon - so it acts like a system modal blocker
            * and we should not attempt to display unblurred top-left buttons */
-          if (hd_comp_mgr_client_is_maximized (c->window->geometry))
+          if (hd_comp_mgr_client_is_maximized (c->frame_geometry))
             {
               blur_buttons = TRUE;
               break;
@@ -2207,7 +2212,7 @@ static void hd_render_manager_update_blur_state()
 
       /* If anything fills the entire screen, stop looking for things
        * to blur as you wouldn't see them anyway. */
-      if (hd_comp_mgr_client_is_maximized(c->window->geometry))
+      if (hd_comp_mgr_client_is_maximized(c->frame_geometry))
         break;
     }
 

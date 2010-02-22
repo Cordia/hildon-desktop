@@ -187,11 +187,13 @@ hd_comp_mgr_client_is_maximized (MBGeometry geom)
 {
   extern MBWindowManager *hd_mb_wm;
 
-  if (geom.x != 0 || geom.y != 0)
+  if (geom.x > 0 || geom.y > 0)
     return FALSE;
-  if (geom.width >= hd_mb_wm->xdpy_width && geom.height >= hd_mb_wm->xdpy_height)
+  if (geom.x+geom.width >= hd_mb_wm->xdpy_width-1
+      && geom.y+geom.height >= hd_mb_wm->xdpy_height-1)
     return TRUE;
-  if (geom.width >= hd_mb_wm->xdpy_height && geom.height >= hd_mb_wm->xdpy_width)
+  if (geom.x+geom.width >= hd_mb_wm->xdpy_height-1
+      && geom.y+geom.height >= hd_mb_wm->xdpy_width-1)
     /* Client covers the rotated screen.  If we select it as the CURRENT_APP,
      * we'll rotate [back] and everything will make sense. */
     return TRUE;

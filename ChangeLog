@@ -1,3 +1,27 @@
+2010-02-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#157525 problem with CSM over movieClip and button
+
+	First problem: oversized CSM caused blurring.
+	* src/mb/hd-comp-mgr.h (hd_comp_mgr_client_is_maximized):
+	  Take monsterization into account when deciding about maximalness.
+	  Also don't reject it flatly if it's a little offscreen.
+	* src/home/hd-render-manager.c (hd_render_manager_update_blur_state):
+	  Use the frame geometry insted of the window geometry as we have
+	  started to add thick borders.
+
+	Second problem: submenus of the CSM could be blurred.
+	Because of the funny geometry, geo_is_suitable_for_screen()
+	thought it wasn't and rotated it, and consequently clip_geo()
+	decided it was off-screen and the actor was left in home_blur
+	rather than moved to app_top in hdrm_restack().
+	* src/home/hd-render-manager.c (hd_render_manager_geo_is_suitable_for_screen):
+	  Consider the geometry unsuitable if it would be rendered
+	  off-screen completely.
+
+	Third problem: the title bar is not blurred.
+	Anyone?
+
 2010-02-19  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Make blurring opt-out
