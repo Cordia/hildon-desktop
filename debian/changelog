@@ -1,8 +1,13 @@
-hildon-desktop (1:2.2.133-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.133-1) unstable; urgency=low
 
-  * foo
+  Adam:
+  * Fixes: NB#157525 - [8237] Certification tests - problem with CSM over
+    movieClip and button
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 11 Feb 2010 14:48:12 +0200
+  Kimmo & Jarmo:
+  * Live background support.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 22 Feb 2010 17:07:53 +0200
 
 hildon-desktop (1:2.2.132-1) unstable; urgency=low
 

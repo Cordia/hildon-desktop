@@ -1,3 +1,7 @@
+2010-02-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.133-1
+
 2010-02-22  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#157525 problem with CSM over movieClip and button
@@ -15,7 +19,8 @@
 	thought it wasn't and rotated it, and consequently clip_geo()
 	decided it was off-screen and the actor was left in home_blur
 	rather than moved to app_top in hdrm_restack().
-	* src/home/hd-render-manager.c (hd_render_manager_geo_is_suitable_for_screen):
+	* src/home/hd-render-manager.c
+	(hd_render_manager_geo_is_suitable_for_screen):
 	  Consider the geometry unsuitable if it would be rendered
 	  off-screen completely.
 
