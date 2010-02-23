@@ -1582,6 +1582,7 @@ trans_start_error:
                   hd_transition_get_int("rotate", "damage_timeout", 50),
                   (GSourceFunc)hd_transition_rotating_fsm, NULL,
                   hd_transition_damage_timer_destroyed);
+            g_timer_start(Orientation_change.timer);
             Orientation_change.phase = WAIT_FOR_DAMAGES;
           }
         else /* WAIT_FOR_DAMAGES || FADE_OUT error path || TRANS_START error */
@@ -1741,7 +1742,7 @@ hd_transition_rotate_ignore_damage()
        * it too long already. This stops us getting stuck
        * in the WAITING state if an app keeps redrawing. */
       max = hd_transition_get_int("rotate", "damage_timeout_max", 1000);
-      Orientation_change.timeout_id->expiry =
+      Orientation_change.timeout_id->remaining =
           g_timer_elapsed(Orientation_change.timer, NULL) < max / 1000.0
             ? hd_transition_get_int("rotate", "damage_timeout_plus", 50)
             : 0;

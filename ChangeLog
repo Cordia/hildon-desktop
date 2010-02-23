@@ -1,3 +1,14 @@
+2010-02-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Innocent bug fixes which defeated damage_timeout_plus and
+	damage_timeout_max entirely :)
+
+	* src/util/hd-transition.c:
+	  hd_transition_rotating_fsm(): don't forget to restart the
+	  damage_timeout_max timer.
+	  hd_transition_rotate_ignore_damage(): reset the remaining time,
+	  not the expiry (which is only relevant when the hptimer expires)
+
 2010-02-23  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
 
 	Add the icon for the User Guide.
