@@ -185,6 +185,7 @@ src/a11y/home/Makefile
 src/a11y/tail/Makefile
 data/Makefile
 data/menu/Makefile
+data/applications/Makefile
 tests/Makefile
 ])
 

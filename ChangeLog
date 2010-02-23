@@ -1,3 +1,13 @@
+2010-02-23  Marc Ordinas i Llopis  <marc.ordinasillopis@collabora.co.uk>
+
+	Add the icon for the User Guide.
+	Fixes: NB#155449
+
+	* configure.ac:
+	* data/Makefile.am:
+	* data/applications/Makefile.am:
+	* data/applications/user-guide.desktop:
+
 2010-02-23  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
 	Task launcher editor changes.

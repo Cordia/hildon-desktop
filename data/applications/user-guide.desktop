@@ -1,0 +1,12 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Name=tana_ap_user_guide
+Comment=Show the user guide in a new window
+Exec=dbus-send --print-reply --dest=com.nokia.osso_browser /com/nokia/osso_browser/request com.nokia.osso_browser.open_new_window string:http://maemo.nokia.com/n900/userguides/
+Icon=tasklaunch_user_guide
+Terminal=false
+Type=Application
+Categories=System
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Type=application/x-executable
