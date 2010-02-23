@@ -405,8 +405,8 @@ hd_launcher_editor_init (HdLauncherEditor *editor)
   g_object_set (G_OBJECT (renderer),
                 "xalign", 0.5,
                 "yalign", 0.5,
-                "width", 142,
-                "height", 64+(HILDON_MARGIN_HALF*2),
+                "width", 64,
+                "height", 64,
                 NULL);
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (priv->icon_view),
                               renderer,
@@ -418,12 +418,10 @@ hd_launcher_editor_init (HdLauncherEditor *editor)
   /* Add the label renderer */
   renderer = gtk_cell_renderer_text_new ();
   g_object_set (G_OBJECT (renderer),
-                "xalign", 0.0,
-                "yalign", 0.0,
                 "width", 142,
-                // "height", 38,
+                "height", 96 - (64 + HILDON_MARGIN_HALF),
                 "alignment", PANGO_ALIGN_CENTER,
-                "ellipsize", PANGO_ELLIPSIZE_NONE,
+                "ellipsize", PANGO_ELLIPSIZE_END,
                 "wrap-width", 142,
                 "wrap-mode", PANGO_WRAP_WORD_CHAR,
                 "font", "Nokia Sans 15",
@@ -436,12 +434,15 @@ hd_launcher_editor_init (HdLauncherEditor *editor)
                                  "text", COL_LABEL);
 
   gtk_icon_view_set_columns (GTK_ICON_VIEW (priv->icon_view), 5);
-  gtk_icon_view_set_item_width (GTK_ICON_VIEW (priv->icon_view), 152);
-  gtk_icon_view_set_column_spacing (GTK_ICON_VIEW (priv->icon_view), 0);
-  gtk_icon_view_set_row_spacing (GTK_ICON_VIEW (priv->icon_view), 32);
-  gtk_icon_view_set_spacing (GTK_ICON_VIEW (priv->icon_view), 0);
+  gtk_icon_view_set_item_width (GTK_ICON_VIEW (priv->icon_view), 142);
+  gtk_icon_view_set_column_spacing (GTK_ICON_VIEW (priv->icon_view),
+                                    HILDON_MARGIN_DEFAULT);
+  gtk_icon_view_set_row_spacing (GTK_ICON_VIEW (priv->icon_view), 40);
+  gtk_icon_view_set_spacing (GTK_ICON_VIEW (priv->icon_view),
+                             HILDON_MARGIN_HALF);
 
-  gtk_icon_view_set_selection_mode (GTK_ICON_VIEW (priv->icon_view), GTK_SELECTION_SINGLE);
+  gtk_icon_view_set_selection_mode (GTK_ICON_VIEW (priv->icon_view),
+                                    GTK_SELECTION_SINGLE);
   gtk_icon_view_unselect_all (GTK_ICON_VIEW (priv->icon_view));
 
   g_signal_connect_swapped (priv->icon_view, "selection-changed",
