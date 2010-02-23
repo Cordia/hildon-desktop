@@ -1,4 +1,4 @@
-2010-02-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2010-02-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Innocent bug fixes which defeated damage_timeout_plus and
 	damage_timeout_max entirely :)
