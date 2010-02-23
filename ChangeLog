@@ -1,4 +1,8 @@
-2010-02-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+2010-02-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.134-1
+
+2010-02-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Innocent bug fixes which defeated damage_timeout_plus and
 	damage_timeout_max entirely :)
@@ -24,8 +28,8 @@
 	Task launcher editor changes.
 	Fixes: NB#157292
 
-	* src/launcher/hd-launcher.c: Select the correct editor tile after showing
-	  the window.
+	* src/launcher/hd-launcher.c: Select the correct editor tile after
+	  showing the window.
 	* src/launcher/hd-launcher-editor.c: Layout improvements.
 
 2010-02-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>

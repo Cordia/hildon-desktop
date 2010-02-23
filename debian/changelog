@@ -1,8 +1,10 @@
-hildon-desktop (1:2.2.134-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.134-1) unstable; urgency=low
 
-  * foo
+  Marc:
+  * Fixes: NB#155449 - Add the icon for the User Guide.
+  * Fixes: NB#157292 - Task launcher editor changes.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 22 Feb 2010 17:12:41 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 23 Feb 2010 15:09:13 +0200
 
 hildon-desktop (1:2.2.133-1) unstable; urgency=low
 
