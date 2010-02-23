@@ -1,7 +1,11 @@
 2010-02-23  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
-	Task launcher editor layout changes.
-	For: NB#157292
+	Task launcher editor changes.
+	Fixes: NB#157292
+
+	* src/launcher/hd-launcher.c: Select the correct editor tile after showing
+	  the window.
+	* src/launcher/hd-launcher-editor.c: Layout improvements.
 
 2010-02-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 

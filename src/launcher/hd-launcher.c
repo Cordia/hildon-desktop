@@ -493,11 +493,10 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
                     G_CALLBACK (_hd_launcher_editor_done),
                     launcher);
 
+  hd_launcher_editor_show (priv->editor);
   hd_launcher_editor_select (HD_LAUNCHER_EDITOR (priv->editor),
                              hd_launcher_tile_get_text (tile),
                              x_align, y_align);
-
-  hd_launcher_editor_show (priv->editor);
 }
 
 static void
