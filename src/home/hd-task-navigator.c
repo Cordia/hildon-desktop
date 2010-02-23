@@ -1,3 +1,28 @@
+/*
+ * This file is part of hildon-desktop
+ *
+ * Copyright (C) 2010 Moises Martinez
+ *
+ * Author:  Moises Martinez <moimart@gmail.com>
+ *	    inspired by old hd-task-navigator.[ch] which
+ *          didn't indicate license or author
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
 #include <math.h>
 #include <errno.h>
 #include <string.h>
@@ -96,7 +121,6 @@
  *                                it take to zoom thumbnails.  Tunable.
  *                                Increase for the better observation of
  *                                effects or decrase for faster feedback.
- * %FLY_EFFECT_DURATION:          Same for the flying animation, ie. when
  *                                the windows are repositioned.
  * %NOTIFADE_IN_DURATION,
  * %NOTIFADE_OUT_DURATION:        Milisecs to fade in and out notifications.
@@ -130,28 +154,13 @@
 #define MAX_CLICK_TIME          300000
 /* Standard definitions }}} */
 
-/* Macros {{{ */
-#define for_each_thumbnail(li, thumb)                                   \
-  for ((li) = Thumbnails;                                               \
-       (li) ? ((thumb) = li->data) : ((thumb) = NULL);                  \
-       (li) = (li)->next)
-#define for_each_appthumb(li, thumb)                                    \
-  for ((li) = Thumbnails;                                               \
-       (li) != Notifications ? ((thumb) = li->data) : ((thumb) = NULL); \
-       (li) = (li)->next)
-#define for_each_notification(li, thumb)                                \
-  for ((li) = Notifications;                                            \
-       (li) ? ((thumb) = li->data) : ((thumb) = NULL);                  \
-       (li) = (li)->next)
-
-#define thumb_is_application(thumb)   ((thumb)->type == APPLICATION)
-#define thumb_is_notification(thumb)  ((thumb)->type == NOTIFICATION)
-#define thumb_has_notification(thumb) ((thumb)->tnote != NULL)
-#define apthumb_has_dialogs(apthumb)  \
-  ((apthumb)->dialogs && (apthumb)->dialogs->len > 0)
-
-#define THUMBSIZE_IS(what)            (Thumbsize == &Thumbsizes.what)
-#define FLY(ops, how)                 ((ops) == &Fly_##how)
+typedef struct
+{
+  HdTaskNavigatorFunc fun;
+  ClutterActor *actor;
+  gpointer	param;
+  HdTaskNavigator *navigator;
+} TaskNavigatorClosure;
 
 G_DEFINE_TYPE (HdTaskNavigator, hd_task_navigator, CLUTTER_TYPE_GROUP);
 #define HD_TASK_NAVIGATOR_GET_PRIVATE(obj) \
@@ -173,6 +182,13 @@ struct _HdTaskNavigatorPrivate
   GList	*thumbnails;
 
   guint n_thumbnails;
+
+  ClutterTimeline *zoom_timeline;
+  ClutterBehaviourScale *sbehaviour;
+  ClutterBehaviourPath  *mbehaviour;
+  ClutterKnot		origin;
+  ClutterKnot		destination;
+  ClutterActor	       *zoomed_actor;
 
   guint current_th_width;
   guint current_th_height;
@@ -362,18 +378,16 @@ hd_task_navigator_hide (ClutterActor *actor)
   for (l = priv->thumbnails; l != NULL; l = l->next)
     hd_tn_thumbnail_release_window (HD_TN_THUMBNAIL (l->data));
 
-#if 0
-  GList *li;
 
   /* Finish in-progress animations, allowing for the final placement of
    * the involved actors. */
-  if (animation_in_progress (Zoom_effect_timeline))
+  if (clutter_timeline_is_playing (priv->zoom_timeline))
     {
       /* %HdSwitcher must make sure it doesn't do silly things if the
        * user cancelled the zooming. */
-      stop_animation (Zoom_effect_timeline);
-      g_assert (!animation_in_progress (Zoom_effect_timeline));
+      clutter_timeline_stop (priv->zoom_timeline);
     }
+#if 0
   if (animation_in_progress (Fly_effect_timeline))
     {`
       stop_animation (Fly_effect_timeline);
@@ -393,7 +407,7 @@ within_grid (HdTaskNavigator *navigator, const ClutterButtonEvent *event)
   HdTaskNavigatorPrivate *priv =
     HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
 
-  if (priv->n_thumbnails)
+  if (priv->n_thumbnails == 0)
     return FALSE;
 
   //calc_layout (&lout);
@@ -524,14 +538,14 @@ clicked_widget (HdTaskNavigator *navigator,
 {
   HdTaskNavigatorPrivate *priv = 
     HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
-/*
+
   if (event->source != CLUTTER_ACTOR (navigator)
       && event->source != CLUTTER_ACTOR (priv->scroller)
       && event->source != CLUTTER_ACTOR (priv->grid))
     {
       return event->source;
     }
-  else*/ 
+  else 
   if (within_grid (navigator, event))
     return CLUTTER_ACTOR (priv->grid);
   else
@@ -612,11 +626,28 @@ find_thumbnail_by_apwin (HdTaskNavigatorPrivate *priv, ClutterActor *apwin)
 }
 
 static void
-hd_task_navigator_init (HdTaskNavigator *navigator)
+hd_task_navigator_timeline_end (HdTaskNavigator *navigator)
 {
   HdTaskNavigatorPrivate *priv =
     HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
 
+  if (priv->zoomed_actor != NULL)
+    {
+       clutter_behaviour_remove (CLUTTER_BEHAVIOUR (priv->sbehaviour),
+				priv->zoomed_actor);
+       clutter_behaviour_remove (CLUTTER_BEHAVIOUR (priv->mbehaviour),
+				priv->zoomed_actor);
+
+       priv->zoomed_actor = NULL;
+    }
+}
+
+static void
+hd_task_navigator_init (HdTaskNavigator *navigator)
+{
+  HdTaskNavigatorPrivate *priv =
+    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
+  ClutterAlpha *alpha;
 
   priv->thumbnails = NULL;
 
@@ -627,6 +658,32 @@ hd_task_navigator_init (HdTaskNavigator *navigator)
   clutter_actor_set_size (CLUTTER_ACTOR (navigator), 
 			  hd_comp_mgr_get_current_screen_width (),
 			  hd_comp_mgr_get_current_screen_height ());
+
+  priv->zoomed_actor = NULL;
+
+  priv->zoom_timeline = 
+#ifndef CLUTTER_08
+    clutter_timeline_new_for_duration (ZOOM_EFFECT_DURATION); 
+#else
+    clutter_timeline_new (ZOOM_EFFECT_DURATION);
+#endif  
+
+  g_signal_connect_swapped (priv->zoom_timeline,
+			    "completed",
+			    G_CALLBACK (hd_task_navigator_timeline_end),
+			    navigator);
+
+#ifndef CLUTTER_08
+  alpha = clutter_alpha_new_full (priv->zoom_timeline,
+				  CLUTTER_ALPHA_SMOOTHSTEP_INC,
+			          NULL, NULL);
+#else
+  alpha = clutter_alpha_new_full (priv->zoom_timeline,
+				  CLUTTER_LINEAR);
+#endif
+
+  priv->sbehaviour = CLUTTER_BEHAVIOUR_SCALE (clutter_behaviour_scale_new (alpha, 0, 0, 1, 1));
+  priv->mbehaviour = CLUTTER_BEHAVIOUR_PATH (clutter_behaviour_path_new (alpha, &priv->destination, 1));
 
   g_signal_connect (navigator,
 		    "captured-event",
@@ -693,6 +750,169 @@ hd_task_navigator_init (HdTaskNavigator *navigator)
 
   /* We don't have anything to show yet, so let's hide. */
   clutter_actor_hide (CLUTTER_ACTOR (navigator));
+}
+
+static void
+closure_zoom_in (TaskNavigatorClosure *tnc, ClutterTimeline *timeline);
+
+static void
+closure_zoom_in (TaskNavigatorClosure *tnc, ClutterTimeline *timeline)
+{
+   if (tnc->fun != NULL)
+     tnc->fun (tnc->actor, tnc->param);
+
+
+   g_signal_handlers_disconnect_by_func (timeline,
+                                         closure_zoom_in,
+					 tnc);
+
+   g_free (tnc);
+}
+
+static void
+hd_task_navigator_postpone_remove (TaskNavigatorClosure *tnc,
+				   ClutterTimeline *timeline);
+
+static void
+hd_task_navigator_postpone_remove (TaskNavigatorClosure *tnc,
+				   ClutterTimeline *timeline)
+{
+  hd_task_navigator_remove_window (tnc->navigator,
+				   tnc->actor,
+				   tnc->fun,
+				   tnc->param);
+
+  
+  g_signal_handlers_disconnect_by_func (timeline,
+                                        hd_task_navigator_postpone_remove,
+					tnc);
+
+  g_free (tnc);
+}
+
+static void
+zoom_fun (gint * xposp, gint * yposp,
+          gdouble * xscalep, gdouble * yscalep)
+{
+  /* The prison represents what's in @App_window_geometry in app view. */
+  *xscalep = 1 / *xscalep;
+  *yscalep = 1 / *yscalep;
+  *xposp = -*xposp * *xscalep;
+  *yposp = -*yposp * *yscalep + HD_COMP_MGR_TOP_MARGIN;
+}
+
+static void
+hd_task_navigator_real_zoom_in (HdTaskNavigator *navigator,
+				HdTnThumbnail *thumbnail)
+{
+  HdTaskNavigatorPrivate *priv = 
+    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
+
+  gint scrxpos, scrypos, xpos, ypos;
+  gdouble xscale, yscale, scrx, scry;
+
+  /* @xpos, @ypos := .prison's absolute coordinates. */
+  clutter_actor_get_position  (CLUTTER_ACTOR (thumbnail),  &xpos,    &ypos);
+  hd_tn_thumbnail_get_jail_scale (thumbnail, &xscale,  &yscale);
+
+  ypos -= hd_scrollable_group_get_viewport_y (priv->grid);
+  xpos += PRISON_XPOS;
+  ypos += PRISON_YPOS;
+
+  /* If zoom-in is already in progress this will just change its direction
+   * such that it will focus on @apthumb's current position. */
+  zoom_fun (&xpos, &ypos, &xscale, &yscale);
+
+  clutter_actor_get_scale (CLUTTER_ACTOR (priv->scroller), &scrx, &scry);
+
+  clutter_behaviour_scale_set_bounds (priv->sbehaviour, 
+				     scrx, scry,
+				     xscale, yscale);
+
+  clutter_behaviour_apply (CLUTTER_BEHAVIOUR (priv->sbehaviour),
+			   CLUTTER_ACTOR (priv->scroller));
+
+  clutter_actor_get_position (CLUTTER_ACTOR (priv->scroller),
+			      &scrxpos, &scrypos);
+
+  priv->origin.x = scrxpos;
+  priv->origin.y = scrypos;
+  priv->destination.x = xpos; 
+  priv->destination.y = ypos;
+
+  clutter_behaviour_path_clear (priv->mbehaviour);
+  
+  clutter_behaviour_path_append_knot (priv->mbehaviour, &priv->origin);
+  clutter_behaviour_path_append_knot (priv->mbehaviour, &priv->destination);
+
+  clutter_behaviour_apply (CLUTTER_BEHAVIOUR (priv->mbehaviour),
+                           CLUTTER_ACTOR (priv->scroller));
+
+  priv->zoomed_actor = CLUTTER_ACTOR (priv->scroller);
+   
+  clutter_timeline_start (priv->zoom_timeline); 
+}
+
+static void
+hd_task_navigator_real_zoom_out (HdTaskNavigator *navigator,
+				 HdTnThumbnail *thumbnail)
+{
+  HdTaskNavigatorPrivate *priv = 
+    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
+  gdouble xscale, yscale;
+  gint yarea, xpos, ypos;
+
+  clutter_actor_get_position (CLUTTER_ACTOR (thumbnail), &xpos, &ypos); 
+
+  /*
+   * Scroll the @Grid so that @apthumb is closest the middle of the screen.
+   * #HdScrollableGroup does not let us scroll the viewport out of the real
+   * estate, but in return we need to ask how much we actually managed to
+   * scroll.
+   */
+  yarea = ypos - (hd_comp_mgr_get_current_screen_height () - priv->current_th_height) / 2;
+  hd_scrollable_group_set_viewport_y (priv->grid, yarea);
+  yarea = hd_scrollable_group_get_viewport_y (priv->grid);
+
+  /* Make @ypos absolute (relative to the top of the screen). */
+  ypos -= yarea;
+
+  /* @xpos, @ypos := absolute position of .prison. */
+  xpos += PRISON_XPOS;
+  ypos += PRISON_YPOS;
+  
+  hd_tn_thumbnail_get_jail_scale (thumbnail, &xscale, &yscale);
+
+  /* Reposition and rescale the @Scroller so that .apwin is shown exactly
+   * in the same position and size as in the application view. */
+  zoom_fun (&xpos, &ypos, &xscale, &yscale);
+
+  clutter_actor_set_scale     (priv->scroller, xscale,  yscale);
+  clutter_actor_set_position  (priv->scroller, xpos,    ypos);
+
+  clutter_behaviour_scale_set_bounds (priv->sbehaviour, 
+				     xscale, yscale,
+				     1, 1);
+
+  clutter_behaviour_apply (CLUTTER_BEHAVIOUR (priv->sbehaviour),
+			   CLUTTER_ACTOR (priv->scroller));
+
+  priv->origin.x = xpos;
+  priv->origin.y = ypos;
+  priv->destination.x = 0; 
+  priv->destination.y = 0;
+
+  clutter_behaviour_path_clear (priv->mbehaviour);
+  
+  clutter_behaviour_path_append_knot (priv->mbehaviour, &priv->origin);
+  clutter_behaviour_path_append_knot (priv->mbehaviour, &priv->destination);
+
+  clutter_behaviour_apply (CLUTTER_BEHAVIOUR (priv->mbehaviour),
+                           CLUTTER_ACTOR (priv->scroller));
+
+  priv->zoomed_actor = CLUTTER_ACTOR (priv->scroller);
+   
+  clutter_timeline_start (priv->zoom_timeline); 
 }
 
 #if 0
@@ -879,6 +1099,7 @@ hd_task_navigator_scroll_back (HdTaskNavigator * navigator)
  * with @funparam.  If there is zooming in progress the operation is
  * delayed until it's completed.
  */
+
 void
 hd_task_navigator_remove_window (HdTaskNavigator *navigator,
                                  ClutterActor *win,
@@ -889,6 +1110,23 @@ hd_task_navigator_remove_window (HdTaskNavigator *navigator,
     HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
 
   GList *l;
+
+  if (clutter_timeline_is_playing (priv->zoom_timeline))
+    {
+      TaskNavigatorClosure *tnc = g_new0 (TaskNavigatorClosure, 1);
+
+      tnc->fun   = fun;
+      tnc->actor = win;
+      tnc->param = funparam;
+      tnc->navigator = navigator;
+
+      g_signal_connect_swapped (priv->zoom_timeline,
+				"completed",
+				G_CALLBACK (hd_task_navigator_postpone_remove),
+			        tnc);
+
+      return;
+    }
 
   for (l = priv->thumbnails; l != NULL; l = l->next)
     {
@@ -1153,7 +1391,7 @@ hd_task_navigator_remove_notification (HdTaskNavigator * navigator,
  * {{{
  * Is easy, but we need to consider a few circumstances:
  * a) The "grid" (the thumbnailed area) may be non-rectangular
- *    and it has its own behavior.  within_grid() help us in this.
+ *    and it has its own behaviour.  within_grid() help us in this.
  * b) We need to filter out clicks which are not clicks per UX Guidance.
  *    We have three criteria:
  *    1. the clicked widget (must be unambigous)
@@ -1163,7 +1401,7 @@ hd_task_navigator_remove_notification (HdTaskNavigator * navigator,
  *    which simply removes unwanted release-events.  The third is
  *    guarded by the captured-event handler of @Grid.
  *
- * Talking high-level our widgets have these behaviors:
+ * Talking high-level our widgets have these behaviours:
  * -- close:      close thumbnails
  * -- thumbnail:  zoom in
  * -- grid:       do nothing
@@ -1201,10 +1439,41 @@ hd_task_navigator_new (void)
   return g_object_new (HD_TYPE_TASK_NAVIGATOR, NULL);
 }
 
-void hd_task_navigator_zoom_in   (HdTaskNavigator *navigator,
-                                  ClutterActor *win,
-                                  HdTaskNavigatorFunc fun,
-                                  gpointer funparam)
+static void
+zoom_in_completed (HdTnThumbnail *thumbnail, 
+                   ClutterTimeline *timeline);
+
+static void
+zoom_in_completed (HdTnThumbnail *thumbnail, 
+		   ClutterTimeline *timeline)
+{
+  HdTaskNavigator *navigator =
+    g_object_get_data (G_OBJECT (thumbnail),
+		       "task-nav");
+
+  if (navigator != NULL)
+    {
+      ClutterActor *window = NULL;
+
+      g_signal_handlers_disconnect_by_func (timeline,
+					    zoom_in_completed,
+					    thumbnail);
+  
+      g_object_get (G_OBJECT (thumbnail),
+		    "window", &window,
+		    NULL);
+
+      g_signal_emit_by_name (navigator, 
+			     "zoom-in-complete",
+			     window);
+    }					
+}
+
+void 
+hd_task_navigator_zoom_in (HdTaskNavigator *navigator,
+                           ClutterActor *win,
+                           HdTaskNavigatorFunc fun,
+                           gpointer funparam)
 {
   HdTnThumbnail *thumbnail;
   HdTaskNavigatorPrivate *priv =
@@ -1215,17 +1484,18 @@ void hd_task_navigator_zoom_in   (HdTaskNavigator *navigator,
   if (!(thumbnail = find_thumbnail_by_apwin (priv, win)))
     goto damage_control;
 
-  /* Must have gotten a gtk_window_present() during a zooming, ignore it. 
-  if (animation_in_progress (Zoom_effect_timeline))
-    goto damage_control;*/
+  /* Must have gotten a gtk_window_present() during a zooming, ignore it. */
+  if (clutter_timeline_is_playing (priv->zoom_timeline))
+    goto damage_control;
 
   /* This is the actual zooming, but we do other effects as well. */
   hd_render_manager_unzoom_background ();
-  /*zoom_in (apthumb);*/
+  hd_task_navigator_real_zoom_in (navigator, thumbnail);
 
-  /* Crossfade .plate with .titlebar.
-  clutter_actor_show (apthumb->titlebar);
-  clutter_actor_set_opacity (apthumb->titlebar, 0);
+  /* Crossfade .plate with .titlebar.*/
+  //clutter_actor_show (apthumb->titlebar);
+  //clutter_actor_set_opacity (apthumb->titlebar, 0);
+  /*
   clutter_effect_fade (Zoom_effect, apthumb->titlebar, 255, NULL, NULL);
   clutter_effect_fade (Zoom_effect, apthumb->plate,      0, NULL, NULL);*/
 
@@ -1261,8 +1531,30 @@ void hd_task_navigator_zoom_in   (HdTaskNavigator *navigator,
                       CLUTTER_ACTOR (self), (Thumbnail *)apthumb);
   add_effect_closure (Zoom_effect_timeline,
                       (ClutterEffectCompleteFunc)fun, win, funparam);
-  return;
 */
+  TaskNavigatorClosure *tnc = 
+    g_new0 (TaskNavigatorClosure, 1);
+
+  tnc->fun   = fun;
+  tnc->actor = win;
+  tnc->param = funparam;
+
+  g_signal_connect_swapped (priv->zoom_timeline,
+		    	    "completed",
+		    	    G_CALLBACK (closure_zoom_in),
+                    	    tnc);
+/*
+  g_signal_connect_swapped (thumbnail,
+		    	    "notify::allocation",
+		    	    G_CALLBACK (hd_task_navigator_real_zoom_in),
+			    navigator);
+*/
+  g_signal_connect_swapped (priv->zoom_timeline,
+ 			    "completed",
+			    G_CALLBACK (zoom_in_completed),
+			    thumbnail);
+  return;
+
 damage_control:
   if (fun != NULL)
     fun (win, funparam);
@@ -1274,9 +1566,7 @@ hd_task_navigator_zoom_out  (HdTaskNavigator *navigator,
                              HdTaskNavigatorFunc fun,
                              gpointer funparam)
 {
-  gdouble xscale, yscale;
-  gint yarea, xpos, ypos;
-  HdTnThumbnail *thumbnail;
+ HdTnThumbnail *thumbnail;
   HdTaskNavigatorPrivate *priv =
     HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
 
@@ -1286,39 +1576,9 @@ hd_task_navigator_zoom_out  (HdTaskNavigator *navigator,
   if (!(thumbnail = find_thumbnail_by_apwin (priv, win)))
     goto damage_control;
 
-  /* @xpos, @ypos:= intended real position of @apthumb */
-  clutter_actor_get_position (CLUTTER_ACTOR (thumbnail),  &xpos, &ypos);
-
   hd_task_navigator_thumbnail_size (navigator);
 
-  /*
-   * Scroll the @Grid so that @apthumb is closest the middle of the screen.
-   * #HdScrollableGroup does not let us scroll the viewport out of the real
-   * estate, but in return we need to ask how much we actually managed to
-   * scroll.
-   */
-  yarea = ypos - (hd_comp_mgr_get_current_screen_height () - priv->current_th_height) / 2;
-  hd_scrollable_group_set_viewport_y (priv->grid, yarea);
-  yarea = hd_scrollable_group_get_viewport_y (priv->grid);
-
-  /* Make @ypos absolute (relative to the top of the screen). */
-  ypos -= yarea;
-
-  /* @xpos, @ypos := absolute position of .prison. */
-  xpos += PRISON_XPOS;
-  ypos += PRISON_YPOS;
-  hd_tn_thumbnail_get_jail_scale (thumbnail, &xscale, &yscale);
-
-  g_debug ("SCALE X: %lf, Y: %lf", xscale, yscale);
-  /* Reposition and rescale the @Scroller so that .apwin is shown exactly
-   * in the same position and size as in the application view. */
-  //zoom_fun (&xpos, &ypos, &xscale, &yscale);
-  //clutter_actor_set_scale     (priv->scroller, xscale,  yscale);
-  //clutter_actor_set_position  (priv->scroller, xpos,    ypos);
-
-  clutter_actor_get_scale (CLUTTER_ACTOR (thumbnail), &xscale, &yscale);
-
-  g_debug ("TH SCALE X: %lf, Y: %lf. POSX %d POSY %d", xscale, yscale, xpos, ypos);  
+  hd_task_navigator_real_zoom_out (navigator, thumbnail);
 
 damage_control:
   if (fun != NULL)
@@ -1943,6 +2203,7 @@ hd_tn_thumbnail_init (HdTnThumbnail *thumbnail)
     HD_TN_THUMBNAIL_GET_PRIVATE (thumbnail);
 
   priv->dialogs = NULL;
+  priv->jail = NULL;
 }
 
 static void
@@ -2457,7 +2718,18 @@ hd_tn_thumbnail_get_jail_scale (HdTnThumbnail *thumbnail,
   gdouble jail_x, jail_y;
   HdTnThumbnailPrivate *priv = 
     HD_TN_THUMBNAIL_GET_PRIVATE (thumbnail);
-  
+
+  if (priv->jail == NULL)
+    {
+      if (x != NULL)
+        clutter_actor_get_scale (CLUTTER_ACTOR (thumbnail), x, NULL);
+
+      if (y != NULL)
+        clutter_actor_get_scale (CLUTTER_ACTOR (thumbnail), NULL, y);
+
+      return;
+    } 
+ 
   clutter_actor_get_scale (priv->jail, &jail_x, &jail_y);
 
   if (x != NULL)

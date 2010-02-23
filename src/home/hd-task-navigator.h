@@ -1,3 +1,28 @@
+/*
+ * This file is part of hildon-desktop
+ *
+ * Copyright (C) 2010 Moises Martinez
+ *
+ * Author:  Moises Martinez <moimart@gmail.com>
+ *	    inspired by old hd-task-navigator.[ch] which
+ *          didn't indicate license or author
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
 #ifndef __HD_TASK_NAVIGATOR_H__
 #define __HD_TASK_NAVIGATOR_H__
 
@@ -56,7 +81,7 @@ void hd_task_navigator_zoom_in   (HdTaskNavigator *navigator,
 
 void hd_task_navigator_zoom_out  (HdTaskNavigator *navigator,
                                   ClutterActor *win,
-                                  ClutterEffectCompleteFunc fun,
+                                  HdTaskNavigatorFunc fun,
                                   gpointer funparam);
 
 void hd_task_navigator_add_window       (HdTaskNavigator *navigator,
