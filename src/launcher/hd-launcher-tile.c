@@ -605,6 +605,11 @@ hd_launcher_tile_dispose (GObject *gobject)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (gobject);
 
+  if (priv->press_timeout)
+    {
+      g_source_remove (priv->press_timeout);
+      priv->press_timeout = 0;
+    }
   if (priv->glow_timeline)
     {
       clutter_timeline_stop(priv->glow_timeline);
@@ -675,4 +680,9 @@ void hd_launcher_tile_reset(HdLauncherTile *tile)
   /* remove glow */
   hd_launcher_tile_set_glow(tile, FALSE);
   priv->is_pressed = FALSE;
+  if (priv->press_timeout)
+    {
+      g_source_remove (priv->press_timeout);
+      priv->press_timeout = 0;
+    }
 }

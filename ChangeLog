@@ -1,3 +1,9 @@
+2010-02-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/launcher/hd-launcher-tile.c (hd_launcher_tile_dispose,
+	hd_launcher_tile_reset): Remove press timeout just in case we are
+	reset or destroyed while pressed.
+
 2010-02-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.134-1
