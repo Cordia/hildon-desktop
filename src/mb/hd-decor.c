@@ -256,7 +256,7 @@ hd_decor_create_actors(HdDecor *decor)
       ClutterGeometry geo = {d->x, d->y, d->width, d->height};
       decor->title_bar_actor = g_object_ref_sink(
           hd_clutter_cache_get_sub_texture_for_area(c->image_filename,
-              FALSE, &geo, &area));
+              TRUE, &geo, &area));
     }
   else
     {
