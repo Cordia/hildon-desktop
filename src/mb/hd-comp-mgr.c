@@ -80,6 +80,7 @@ struct HdCompMgrPrivate
 
   HdSwitcher            *switcher_group;
   ClutterActor          *home;
+  HdTaskNavigator	*task_nav;
 
   GHashTable            *shown_apps;
   GHashTable            *hibernating_apps;
@@ -529,7 +530,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   MBWindowManager      *wm = cmgr->wm;
   HdCompMgr            *hmgr = HD_COMP_MGR (obj);
   HdCompMgrPrivate     *priv;
-  HdTaskNavigator      *task_nav;
   ClutterActor         *stage;
   ClutterActor         *arena;
   extern MBWindowManager *hd_mb_wm;
@@ -554,14 +554,14 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
 
   clutter_actor_show (priv->home);
 
-  task_nav = hd_task_navigator_new ();
+  priv->task_nav = hd_task_navigator_new ();
 
   priv->render_manager = 
     HD_RENDER_MANAGER (g_object_new (HD_TYPE_RENDER_MANAGER,
 		  		     "comp-mgr", hmgr,
 		  		     "launcher", hd_launcher_get (),
 		  		     "home", HD_HOME (priv->home),
-		  		     "task-navigator", task_nav,
+		  		     "task-navigator", priv->task_nav,
 		  		     NULL));
  
   g_object_ref (priv->render_manager);
@@ -579,7 +579,7 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
    */
   priv->switcher_group = g_object_new (HD_TYPE_SWITCHER,
 				       "comp-mgr", cmgr,
-				       "task-nav", task_nav,
+				       "task-nav", priv->task_nav,
 				       NULL);
 
   /* When a MBWMCompMgrClutterClient is first created, it is added to the arena.
@@ -832,8 +832,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
       c = mb_wm_managed_client_from_xwindow (wm, event->window);
       if (!c || !c->cm_client)
         return False;
-      tasw = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (
-                                           hmgr->priv->switcher_group));
+      tasw = HD_TASK_NAVIGATOR (hmgr->priv->task_nav);
       a = mb_wm_comp_mgr_clutter_client_get_actor (
                           MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client));
       str = event->state == PropertyNewValue
@@ -2202,8 +2201,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       MBWMCompMgrClutterClient *cclient;
       gboolean in_tasknav;
 
-      tasknav = HD_TASK_NAVIGATOR (hd_switcher_get_task_navigator (
-                                   priv->switcher_group));
+      tasknav = HD_TASK_NAVIGATOR (priv->task_nav);
+
       cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
       if (hd_task_navigator_has_window (tasknav,
           mb_wm_comp_mgr_clutter_client_get_actor (cclient)))
@@ -2620,7 +2619,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
             }
           else if ((app->stack_index < 0
                     || (app->leader == app && !app->followers))
-                   && hd_task_navigator_is_crowded ()
+                   && hd_task_navigator_is_crowded (hmgr->priv->task_nav)
                    && c->window->xwindow == hd_wm_current_app_is (NULL, 0)
                    && hd_render_manager_get_state () != HDRM_STATE_APP_PORTRAIT
                    && !hd_wm_has_modal_blockers (mgr->wm)

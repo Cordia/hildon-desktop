@@ -23,6 +23,9 @@
  *
  */
 
+#include "hd-task-navigator.h"
+#include "hd-tn-layout.h"
+
 #include <math.h>
 #include <errno.h>
 #include <string.h>
@@ -41,7 +44,6 @@
 #include "hildon-desktop.h"
 #include "hd-atoms.h"
 #include "hd-comp-mgr.h"
-#include "hd-task-navigator.h"
 #include "hd-scrollable-group.h"
 #include "hd-switcher.h"
 #include "hd-render-manager.h"
@@ -55,34 +57,9 @@
 #undef  G_LOG_DOMAIN
 #define G_LOG_DOMAIN              "hd-task-navigator"
 
-#define MARGIN_DEFAULT             8
 #define MARGIN_HALF                4
 #define ICON_FINGER               48
 #define ICON_STYLUS               32
-
-/*
- * %GRID_TOP_MARGIN:              Space not considered at the top of the
- *                                switcher when layout out the thumbnails.
- * %GRID_HORIZONTAL_GAP,
- * %GRID_VERTICAL_GAP:            How much gap to leave between thumbnails.
- */
-#define GRID_TOP_MARGIN           HD_COMP_MGR_TOP_MARGIN
-#define GRID_HORIZONTAL_GAP       16
-#define GRID_VERTICAL_GAP         16
-
-/*
- * Application thumbnail dimensions, depending on the number of
- * currently running applications.  These dimension include everything
- * except gaps between thumbnails (naturally) and and enlarged close
- * button reaction area.  1-2 thumbnails are LARGE, 3-6 are MEDIUM
- * and the rest are SMALL.
- */
-#define THUMB_LARGE_WIDTH         (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/2.32)
-#define THUMB_LARGE_HEIGHT        (int)(THUMB_LARGE_WIDTH/HD_COMP_MGR_SCREEN_RATIO)
-#define THUMB_MEDIUM_WIDTH        (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/3.2)
-#define THUMB_MEDIUM_HEIGHT       (int)(THUMB_MEDIUM_WIDTH/HD_COMP_MGR_SCREEN_RATIO)
-#define THUMB_SMALL_WIDTH         (int)(HD_COMP_MGR_LANDSCAPE_WIDTH/5.5)
-#define THUMB_SMALL_HEIGHT        (int)(THUMB_SMALL_WIDTH/HD_COMP_MGR_SCREEN_RATIO)
 
 /* Metrics inside a thumbnail. */
 /*
@@ -98,7 +75,7 @@
  */
 #define CLOSE_ICON_SIZE           32
 #define CLOSE_AREA_SIZE           64
-#define TITLE_LEFT_MARGIN         MARGIN_DEFAULT
+#define TITLE_LEFT_MARGIN         8
 #define TITLE_RIGHT_MARGIN        MARGIN_HALF
 #define TITLE_HEIGHT              32
 
@@ -111,7 +88,7 @@
 
 /* Read: reduce by 4 pixels; only relevant if the time(label) wraps. */
 #define NOTE_TIME_LINESPACING     pango_units_from_double(-4)
-#define NOTE_MARGINS              MARGIN_DEFAULT
+#define NOTE_MARGINS              8 
 #define NOTE_BOTTOM_MARGIN        MARGIN_HALF
 #define NOTE_ICON_GAP             MARGIN_HALF
 #define NOTE_SEPARATOR_PADDING    0
@@ -190,152 +167,8 @@ struct _HdTaskNavigatorPrivate
   ClutterKnot		destination;
   ClutterActor	       *zoomed_actor;
 
-  guint current_th_width;
-  guint current_th_height;
-  
-  struct
-  {
-    guint cells_per_row;
-    guint xpos, last_row_xpos, ypos;
-    guint hspace, vspace;
-    guint nrows_per_page;
-  } layout;
+  HdTnLayout	       *layout;
 };
-
-static void 
-hd_task_navigator_thumbnail_size (HdTaskNavigator *navigator)
-{
-  HdTaskNavigatorPrivate *priv =
-    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
-
-  if (priv->n_thumbnails <= 2)
-    {
-      priv->current_th_width  = THUMB_LARGE_WIDTH; 
-      priv->current_th_height = THUMB_LARGE_HEIGHT;
-
-      priv->layout.cells_per_row = priv->n_thumbnails;
-      priv->layout.nrows_per_page = 1;
-    }
-  else
-  if (priv->n_thumbnails <= 6)
-    {
-      priv->current_th_width  = THUMB_MEDIUM_WIDTH;
-      priv->current_th_height = THUMB_MEDIUM_HEIGHT;
-
-      priv->layout.cells_per_row = 3;
-      priv->layout.nrows_per_page = 2;
-    }
-  else
-    {
-      priv->current_th_width  = THUMB_SMALL_WIDTH;
-      priv->current_th_height = THUMB_SMALL_HEIGHT;
-
-      priv->layout.cells_per_row = 4;
-      priv->layout.nrows_per_page = (priv->n_thumbnails <= 8) ? 2 : 3;
-    }
-}
-
-static inline gint __attribute__ ((const))
-layout_fun (gint total, gint term1, gint term2, gint factor)
-{
-  /* Make sure all terms and factors are int:s because the result of
-   * the outer subtraction can be negative and division is sensitive
-   * to signedness. */
-  return (total - (term1*factor + term2*(factor - 1))) / 2;
-}
-
-static void
-hd_task_navigator_set_layout (HdTaskNavigator *navigator)
-{
-  HdTaskNavigatorPrivate *priv =
-    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
-
-  hd_task_navigator_thumbnail_size (navigator);
-
-  guint width  = hd_comp_mgr_get_current_screen_width ();
-  guint height = hd_comp_mgr_get_current_screen_height (); 
-
-  priv->layout.xpos = layout_fun (width,
-                           	   priv->current_th_width,
-                           	   GRID_HORIZONTAL_GAP,
-                          	   priv->layout.cells_per_row);
-
-  priv->layout.last_row_xpos = priv->layout.xpos;
-
-  if (priv->n_thumbnails <= 12)
-    priv->layout.ypos = layout_fun (height + GRID_TOP_MARGIN,
-                             	     priv->current_th_height,
-                             	     GRID_VERTICAL_GAP,
-                             	     priv->layout.nrows_per_page);
-  else
-    priv->layout.ypos = GRID_TOP_MARGIN + MARGIN_DEFAULT;
-
-  priv->layout.hspace = priv->current_th_width  + GRID_HORIZONTAL_GAP;
-  priv->layout.vspace = priv->current_th_height + GRID_VERTICAL_GAP;
-}  
-
-static void
-hd_task_navigator_layout_thumbs (HdTaskNavigator *navigator)
-{
-  HdTaskNavigatorPrivate *priv = 
-    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
-  gint maxwtitle,xthumb,ythumb, i;
-  GList *l;
-
-  hd_task_navigator_set_layout (navigator);
-
-   /* Clip titles longer than this. */
-  maxwtitle = priv->current_th_width
-    - (TITLE_LEFT_MARGIN + TITLE_RIGHT_MARGIN + CLOSE_ICON_SIZE);
-
-  /* Place and scale each thumbnail row by row. */
-  xthumb = ythumb = 0xB002E;
-  for (l = priv->thumbnails, i = 0; l != NULL && (l->data != NULL); l = l->next, i++)
-    {
-
-      /* If it's a new row re/set @ythumb and @xthumb. */
-      g_assert (priv->layout.cells_per_row > 0);
-
-      if (!(i % priv->layout.cells_per_row))
-        {
-          if (i == 0)
-            /* This is the very first row. */
-            ythumb = priv->layout.ypos;
-          else
-            ythumb += priv->layout.vspace;
-
-          /* Use @last_row_xpos if it's the last row. */
-          xthumb = i + (priv->layout.cells_per_row <= priv->n_thumbnails)
-            ? priv->layout.xpos : priv->layout.last_row_xpos;
-        }
-
-      /* If @thwin's been there, animate as it's moving.  Otherwise if it's
-       * a new one to enter the navigator, don't, it's hidden anyway. */
-      //ops = thumb->thwin == newborn ? &Fly_at_once : &Fly_smoothly;
-
-      /* Place @thwin in any case. */
-      clutter_actor_set_position (CLUTTER_ACTOR (l->data), xthumb, ythumb);
-
-      /* If @Thumbnails are not changing size and this is not a newborn
-       * the inners of @thumb are already setup. */
-      /*if (oldthsize == Thumbsize && thumb->thwin != newborn)
-        goto skip_the_circus;*/
-
-      /* Set thumbnail's reaction area. */
-      clutter_actor_set_size (CLUTTER_ACTOR (l->data), 
-			      priv->current_th_width, 
-			      priv->current_th_height);
-
-      /* @thumb->close */
-      hd_tn_thumbnail_update_inners (HD_TN_THUMBNAIL (l->data), maxwtitle);
-
-    xthumb += priv->layout.hspace;
-  }
- 
-  hd_scrollable_group_set_real_estate (priv->grid,
-                                       HD_SCROLLABLE_GROUP_VERTICAL,
-                                       ythumb + priv->current_th_height);
-}
 
 static void
 hd_task_navigator_show (ClutterActor *actor)
@@ -361,7 +194,9 @@ hd_task_navigator_show (ClutterActor *actor)
   /* Flash the scrollbar.  %TidyFingerScroll will do the right thing. */
   tidy_finger_scroll_show_scrollbars (priv->scroller);
  
-  hd_task_navigator_layout_thumbs (HD_TASK_NAVIGATOR (actor));
+  hd_tn_layout_calculate (priv->layout, 
+			  priv->thumbnails, 
+			  CLUTTER_ACTOR (priv->grid));
 
 }
 
@@ -401,64 +236,26 @@ hd_task_navigator_hide (ClutterActor *actor)
 }
 
 static gboolean
-within_grid (HdTaskNavigator *navigator, const ClutterButtonEvent *event)
-{
-  gint x, y, n, m;
-  HdTaskNavigatorPrivate *priv =
-    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
-
-  if (priv->n_thumbnails == 0)
-    return FALSE;
-
-  //calc_layout (&lout);
-
-  /* y := top of the first row */
-  y = priv->layout.ypos - hd_scrollable_group_get_viewport_y (priv->grid);
-  if (event->y < y)
-    /* Clicked above the first row. */
-    return FALSE;
-
-  /* y := the bottom of the last complete row */
-  n  = priv->n_thumbnails / priv->layout.cells_per_row;
-  m  = priv->n_thumbnails % priv->layout.cells_per_row;
-  y += priv->layout.vspace*(n-1) + priv->current_th_height;
-
-    if (event->y <= y)
-    { /* Clicked somewhere in the complete rows. */
-      x = priv->layout.xpos;
-      n = priv->layout.cells_per_row;
-    }
-  else if (m && event->y <= y + priv->layout.vspace)
-    { /* Clicked somewhere in the incomplete row. */
-      x = priv->layout.last_row_xpos;
-      n = m;
-    }
-  else /* Clicked below the last row. */
-    return FALSE;
-
-  /* Clicked somehere in the last (either complete or incomplete) row. */
-  g_assert (n > 0);
-  if (event->x < x)
-    return FALSE;
-  if (event->x > x + priv->layout.hspace*(n-1) + priv->current_th_width)
-    return FALSE;
-
-  /* Clicked between the thumbnails. */
-  return TRUE;
-}
-
-static gboolean
 grid_touched (ClutterActor * grid, ClutterEvent * event, HdTaskNavigator *navigator)
 {
+  HdTaskNavigatorPrivate *priv = 
+    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
+
   return (event->type == CLUTTER_BUTTON_RELEASE 
-	  && within_grid (navigator, &event->button) 
+	  && hd_tn_layout_within_grid (priv->layout, &event->button, priv->thumbnails, grid) 
 	  && !hd_scrollable_group_is_clicked (HD_SCROLLABLE_GROUP (grid)));
 }
 
 static gboolean
 grid_clicked (HdTaskNavigator *navigator, ClutterButtonEvent * event)
 { /* Don't propagate the signal to @Navigator if it happened within_grid(). */
-  return within_grid (navigator, event);
+  HdTaskNavigatorPrivate *priv = 
+    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
+
+ return hd_tn_layout_within_grid (priv->layout, 
+				  event, 
+				  priv->thumbnails, 
+				  CLUTTER_ACTOR (priv->grid));
 }
 
 static gboolean
@@ -523,18 +320,27 @@ hd_task_navigator_class_init (HdTaskNavigatorClass * klass)
 }
 
 static gboolean
-scroller_touched (ClutterActor *scroller, const ClutterEvent *event, HdTaskNavigator *navigator)
-{ 
+scroller_touched (ClutterActor *scroller, ClutterEvent *event, HdTaskNavigator *navigator)
+{
+  HdTaskNavigatorPrivate *priv =
+    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
+ 
   /* Don't start scrolling outside the grid. */
-  if (event->type == CLUTTER_BUTTON_PRESS && !within_grid (navigator, &event->button))
-    g_signal_stop_emission_by_name (scroller, "captured-event");
+  if (event->type == CLUTTER_BUTTON_PRESS 
+      && !hd_tn_layout_within_grid (priv->layout, 
+				    &event->button, 
+				    priv->thumbnails, 
+				    CLUTTER_ACTOR (priv->grid)))
+    {
+      g_signal_stop_emission_by_name (scroller, "captured-event");
+    }
 
   return FALSE;
 }
 
 static ClutterActor *
 clicked_widget (HdTaskNavigator *navigator,
-		const ClutterButtonEvent *event)
+		ClutterButtonEvent *event)
 {
   HdTaskNavigatorPrivate *priv = 
     HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
@@ -546,7 +352,7 @@ clicked_widget (HdTaskNavigator *navigator,
       return event->source;
     }
   else 
-  if (within_grid (navigator, event))
+  if (hd_tn_layout_within_grid (priv->layout, event, priv->thumbnails, CLUTTER_ACTOR (priv->grid)))
     return CLUTTER_ACTOR (priv->grid);
   else
     return CLUTTER_ACTOR (navigator);
@@ -652,6 +458,8 @@ hd_task_navigator_init (HdTaskNavigator *navigator)
   priv->thumbnails = NULL;
 
   priv->n_thumbnails = 0;
+
+  priv->layout = hd_default_layout_new ();
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (navigator), TRUE);
 
@@ -860,7 +668,11 @@ hd_task_navigator_real_zoom_out (HdTaskNavigator *navigator,
   HdTaskNavigatorPrivate *priv = 
     HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
   gdouble xscale, yscale;
-  gint yarea, xpos, ypos;
+  gint yarea, xpos, ypos, th_height;
+
+  g_object_get (G_OBJECT (priv->layout),
+		"height", &th_height,
+		NULL);
 
   clutter_actor_get_position (CLUTTER_ACTOR (thumbnail), &xpos, &ypos); 
 
@@ -870,7 +682,7 @@ hd_task_navigator_real_zoom_out (HdTaskNavigator *navigator,
    * estate, but in return we need to ask how much we actually managed to
    * scroll.
    */
-  yarea = ypos - (hd_comp_mgr_get_current_screen_height () - priv->current_th_height) / 2;
+  yarea = ypos - (hd_comp_mgr_get_current_screen_height () - th_height) / 2;
   hd_scrollable_group_set_viewport_y (priv->grid, yarea);
   yarea = hd_scrollable_group_get_viewport_y (priv->grid);
 
@@ -1188,7 +1000,9 @@ damage_control:
   priv->n_thumbnails--;
 
   /* Re order the stuff. This should be animated */
-  hd_task_navigator_layout_thumbs (navigator);
+  hd_tn_layout_calculate (priv->layout,
+			  priv->thumbnails,
+			  CLUTTER_ACTOR (priv->grid));
 
   if (fun != NULL)
     fun (CLUTTER_ACTOR (navigator), funparam);
@@ -1576,7 +1390,7 @@ hd_task_navigator_zoom_out  (HdTaskNavigator *navigator,
   if (!(thumbnail = find_thumbnail_by_apwin (priv, win)))
     goto damage_control;
 
-  hd_task_navigator_thumbnail_size (navigator);
+  //hd_task_navigator_thumbnail_size (navigator);
 
   hd_task_navigator_real_zoom_out (navigator, thumbnail);
 

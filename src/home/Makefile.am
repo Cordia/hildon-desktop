@@ -19,6 +19,7 @@ home_h = 	hd-home.h		\
 		hd-scrollable-group.h	\
 		hd-switcher.h		\
 		hd-task-navigator.h	\
+		hd-tn-layout.h		\
 		hd-title-bar.h		\
 		hd-clutter-cache.h	\
 		hd-pvr-texture.h	\
@@ -32,6 +33,7 @@ home_c = 	hd-home.c		\
 		hd-scrollable-group.c	\
 		hd-switcher.c		\
 		hd-task-navigator.c	\
+		hd-tn-layout.c		\
 		hd-title-bar.c		\
 		hd-clutter-cache.c	\
 		hd-pvr-texture.c	\

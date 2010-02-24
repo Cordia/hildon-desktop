@@ -137,6 +137,10 @@ static void hd_switcher_insufficient_memory(HdSwitcher *switcher,
                                             gpointer data);
 
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, G_TYPE_OBJECT);
+#define HD_SWITCHER_GET_PRIVATE(obj) \
+                (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
+                HD_TYPE_SWITCHER, HdSwitcherPrivate))
+
 
 static void
 hd_switcher_class_init (HdSwitcherClass *klass)
@@ -382,7 +386,7 @@ hd_switcher_clicked (HdSwitcher *switcher)
       g_debug("hd_switcher_clicked: show switcher, switcher=%p\n", switcher);
       hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
     }
-  else if (hd_task_navigator_is_empty())
+  else if (hd_task_navigator_is_empty (priv->task_nav))
     hd_render_manager_set_state(HDRM_STATE_LAUNCHER);
   else
     hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
@@ -572,10 +576,14 @@ hd_switcher_loading_fail (HdSwitcher *switcher,
                           HdLauncherApp *app,
                           gpointer data)
 {
+  HdSwitcherPrivate *priv =
+    HD_SWITCHER_GET_PRIVATE (switcher);
+
   hd_launcher_stop_loading_transition ();
+
   if (STATE_IS_LOADING(hd_render_manager_get_state ()))
     {
-      if (hd_task_navigator_has_apps ())
+      if (hd_task_navigator_has_apps (priv->task_nav))
         hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
       else
         hd_render_manager_set_state (HDRM_STATE_HOME);
@@ -612,7 +620,9 @@ hd_switcher_insufficient_memory(HdSwitcher *switcher,
                                 gboolean waking_up,
                                 gpointer data)
 {
-  if (hd_task_navigator_has_apps ())
+  HdSwitcherPrivate *priv = HD_SWITCHER_GET_PRIVATE (switcher);
+
+  if (hd_task_navigator_has_apps (priv->task_nav))
     hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME);
@@ -694,7 +704,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
                 "HD-MBWMCompMgrClutterClient", __FUNCTION__);
       /* this is a real problem - not a normal use case, so just return
        * to home, as everything should be ok there */
-      hd_render_manager_set_state(HDRM_STATE_HOME);
+      hd_render_manager_set_state (HDRM_STATE_HOME);
       return;
     }
 
@@ -751,8 +761,8 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
   cc = g_object_get_data(G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
   
   hd_task_navigator_zoom_in (priv->task_nav, actor,
-              (ClutterEffectCompleteFunc) hd_switcher_zoom_in_complete,
-              switcher);
+              		     (HdTaskNavigatorFunc) hd_switcher_zoom_in_complete,
+              		     switcher);
 
   XSetInputFocus (MB_WM_COMP_MGR(priv->comp_mgr)->wm->xdpy, 
 		  MB_WM_CLIENT_XWIN(cc->wm_client), 
@@ -847,49 +857,49 @@ hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
 /* Called when a window or a notification is removed from the switcher.
  * Exit the switcher if it's become empty. */
 static void
-hd_switcher_something_removed (void)
+hd_switcher_something_removed (HdTaskNavigator *navigator)
 {
   if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV
-      && hd_task_navigator_is_empty ())
+      && hd_task_navigator_is_empty (navigator))
     hd_render_manager_set_state (HDRM_STATE_HOME);
 }
 
 void
 hd_switcher_remove_notification (HdSwitcher * switcher, HdNote * note)
 {
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdSwitcherPrivate *priv = HD_SWITCHER_GET_PRIVATE (switcher);
 
   hd_task_navigator_remove_notification (priv->task_nav, note);
-  hd_switcher_something_removed ();
+  hd_switcher_something_removed (priv->task_nav);
 }
 
 void
 hd_switcher_remove_dialog (HdSwitcher * switcher,
                            ClutterActor * dialog)
 {
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdSwitcherPrivate *priv = HD_SWITCHER_GET_PRIVATE (switcher);
   hd_task_navigator_remove_dialog (priv->task_nav, dialog);
 }
 
 static void
-hd_switcher_window_removed (ClutterActor * unused,
+hd_switcher_window_removed (HdTaskNavigator *navigator,
                             MBWMCompMgrClutterClient * cmgrcc)
 {
   mb_wm_object_unref (MB_WM_OBJECT (cmgrcc));
-  hd_switcher_something_removed ();
+  hd_switcher_something_removed (navigator);
 }
 
 void
 hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor,
                                  MBWMCompMgrClutterClient * cmgrcc)
 {
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdSwitcherPrivate *priv = HD_SWITCHER_GET_PRIVATE (switcher);
 
   /* Make sure @cmgrcc stays as long as %HdTaskNavigator animates. */
   mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
-  hd_task_navigator_remove_window (priv->task_nav, actor,
-                  (ClutterEffectCompleteFunc)hd_switcher_window_removed,
-                  cmgrcc);
+  hd_task_navigator_remove_window (priv->task_nav, CLUTTER_ACTOR (actor),
+                  		   (HdTaskNavigatorFunc)hd_switcher_window_removed,
+                  		   cmgrcc);
 }
 
 void
@@ -897,7 +907,7 @@ hd_switcher_replace_window_actor (HdSwitcher   * switcher,
 				  ClutterActor * old,
 				  ClutterActor * new)
 {
-  HdSwitcherPrivate *priv = HD_SWITCHER (switcher)->priv;
+  HdSwitcherPrivate *priv = HD_SWITCHER_GET_PRIVATE (switcher);
   hd_task_navigator_replace_window (priv->task_nav, old, new);
 }
 

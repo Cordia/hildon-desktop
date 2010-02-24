@@ -1061,7 +1061,7 @@ void hd_render_manager_sync_clutter_before (void)
       case HDRM_STATE_HOME:
         blur |=  HDRM_ZOOM_FOR_HOME;
       case HDRM_STATE_HOME_PORTRAIT: /* Fallen truth */
-        if (hd_task_navigator_is_empty())
+        if (hd_task_navigator_is_empty (priv->task_nav))
           btn_state |= HDTB_VIS_BTN_LAUNCHER;
         else
           btn_state |= HDTB_VIS_BTN_SWITCHER;
@@ -1076,7 +1076,7 @@ void hd_render_manager_sync_clutter_before (void)
         break;
       case HDRM_STATE_LOADING: /* fall through intentionally */
       case HDRM_STATE_LOADING_SUBWIN:
-        if (hd_task_navigator_is_empty())
+        if (hd_task_navigator_is_empty (priv->task_nav))
           btn_state |= HDTB_VIS_BTN_LAUNCHER;
         else
           btn_state |= HDTB_VIS_BTN_SWITCHER;
@@ -1578,7 +1578,8 @@ hd_render_manager_set_state (HDRMStateEnum state)
           gboolean goto_tasw_now, goto_tasw_later;
 
           goto_tasw_now = goto_tasw_later = FALSE;
-          if (!hd_task_navigator_is_empty() && !hd_wm_has_modal_blockers (wm))
+          if (!hd_task_navigator_is_empty (priv->task_nav) 
+	      && !hd_wm_has_modal_blockers (wm))
             {
               if (STATE_IS_PORTRAIT (oldstate))
                 goto_tasw_later = TRUE;
@@ -1660,9 +1661,9 @@ hd_render_manager_set_state (HDRMStateEnum state)
 
                   /* Make sure @cmgrcc stays around as long as needed. */
                   mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
-                  hd_task_navigator_zoom_out(priv->task_nav, actor,
-                          (ClutterEffectCompleteFunc)zoom_out_completed,
-                          cmgrcc);
+                  hd_task_navigator_zoom_out (priv->task_nav, actor,
+                          		      (HdTaskNavigatorFunc)zoom_out_completed,
+                          		       cmgrcc);
                 }
             }
           else if (oldstate != HDRM_STATE_LAUNCHER)

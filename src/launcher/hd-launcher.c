@@ -563,12 +563,20 @@ static gboolean
 hd_launcher_transition_loading_timeout()
 {
   hd_launcher_stop_loading_transition();
+
+  HdTaskNavigator *task_nav;
+
+  g_object_get (hd_render_manager_get (),
+		"task-navigator", &task_nav,
+		NULL);
+
   /* Change state back to switcher (if other apps exist) or home if the app
    * starting failed */
-  if (hd_task_navigator_has_apps())
-    hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+  if (hd_task_navigator_has_apps (task_nav))
+    hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
   else
-    hd_render_manager_set_state(HDRM_STATE_HOME);
+    hd_render_manager_set_state (HDRM_STATE_HOME);
+
   return FALSE; // don't call again
 }
 
