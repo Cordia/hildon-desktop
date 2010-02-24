@@ -1,6 +1,8 @@
-hildon-desktop (1:2.2.135-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.135-1) unstable; urgency=low
 
-  * foo
+  Gordon:
+  * Fixes: NB#158114 - When starting device with beta theme, menu borders are 
+    from devel theme
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 23 Feb 2010 15:10:42 +0200
 

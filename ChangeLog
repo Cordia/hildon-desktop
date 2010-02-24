@@ -1,3 +1,7 @@
+2010-02-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 2.2.135-1
+
 2010-02-24  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	* src/util/hd-transition.c: Changed g_warning to g_debug, as the lack
