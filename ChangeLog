@@ -1,5 +1,11 @@
 2010-02-24  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	* src/util/hd-transition.c: Changed g_warning to g_debug, as the lack
+	  of a relevant item in transitions.ini really isn't warning-worthy
+	  any more (as different versions are included in different themes).
+
+2010-02-24  Gordon Williams <gordon.williams@collabora.co.uk>
+
 	NB#158114 - When starting device with beta theme, menu borders are 
 	            from devel theme
 	            

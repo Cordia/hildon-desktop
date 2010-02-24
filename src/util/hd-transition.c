@@ -1951,7 +1951,7 @@ hd_transition_get_int(const gchar *transition, const char *key,
   value = g_key_file_get_integer(ini, transition, key, &error);
   if (error)
     {
-      g_warning("couldn't read %s::%s from transitions.ini: %s",
+      g_debug("couldn't read int %s::%s from transitions.ini: %s",
                 transition, key, error->message);
       g_error_free(error);
       return default_val;
@@ -1975,7 +1975,7 @@ hd_transition_get_double(const gchar *transition,
   value = g_key_file_get_double (ini, transition, key, &error);
   if (error)
     {
-      g_warning("couldn't read %s::%s from transitions.ini: %s",
+      g_debug("couldn't read double %s::%s from transitions.ini: %s",
                 transition, key, error->message);
       g_error_free(error);
       return default_val;
@@ -2000,7 +2000,7 @@ hd_transition_get_string(const gchar *transition, const char *key,
   value = g_key_file_get_string (ini, transition, key, &error);
   if (error)
     {
-      g_warning("couldn't read %s::%s from transitions.ini: %s",
+      g_debug("couldn't read string %s::%s from transitions.ini: %s",
                 transition, key, error->message);
       g_error_free(error);
       return g_strdup(default_val);
