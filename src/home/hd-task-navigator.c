@@ -210,10 +210,6 @@ hd_task_navigator_hide (ClutterActor *actor)
 
   GList *l;
 
-  for (l = priv->thumbnails; l != NULL; l = l->next)
-    hd_tn_thumbnail_release_window (HD_TN_THUMBNAIL (l->data));
-
-
   /* Finish in-progress animations, allowing for the final placement of
    * the involved actors. */
   if (clutter_timeline_is_playing (priv->zoom_timeline))
@@ -222,17 +218,14 @@ hd_task_navigator_hide (ClutterActor *actor)
        * user cancelled the zooming. */
       clutter_timeline_stop (priv->zoom_timeline);
     }
-#if 0
-  if (animation_in_progress (Fly_effect_timeline))
-    {`
-      stop_animation (Fly_effect_timeline);
-      g_assert (!animation_in_progress (Fly_effect_timeline));
+
+  if (hd_tn_layout_animation_in_progress (priv->layout))
+    {
+      hd_tn_layout_stop_animation (priv->layout);
     }
 
-  /* Undo navigator_shown(). */
-  for_each_appthumb (li, thumb)
-    release_win (thumb);
-#endif
+  for (l = priv->thumbnails; l != NULL; l = l->next)
+    hd_tn_thumbnail_release_window (HD_TN_THUMBNAIL (l->data));
 }
 
 static gboolean
@@ -459,7 +452,7 @@ hd_task_navigator_init (HdTaskNavigator *navigator)
 
   priv->n_thumbnails = 0;
 
-  priv->layout = hd_default_layout_new ();
+  priv->layout = hd_tn_layout_factory_get_layout ();
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (navigator), TRUE);
 
@@ -1306,23 +1299,6 @@ hd_task_navigator_zoom_in (HdTaskNavigator *navigator,
   hd_render_manager_unzoom_background ();
   hd_task_navigator_real_zoom_in (navigator, thumbnail);
 
-  /* Crossfade .plate with .titlebar.*/
-  //clutter_actor_show (apthumb->titlebar);
-  //clutter_actor_set_opacity (apthumb->titlebar, 0);
-  /*
-  clutter_effect_fade (Zoom_effect, apthumb->titlebar, 255, NULL, NULL);
-  clutter_effect_fade (Zoom_effect, apthumb->plate,      0, NULL, NULL);*/
-
-  /* Fade out our notification smoothly if we have one.
-  if (thumb_has_notification (apthumb))
-    {  fade() robustly to be friendly with ongoing adopt/
-        orphan_notification() 
-      clutter_actor_show (apthumb->jail);
-      fade (Zoom_effect_timeline, apthumb->tnote->notwin, 0,
-            FINALLY_REST, NULL);
-    }
-   */
-
   /*
    * rezoom() if @apthumb changes its position while we're trying to
    * zoom it in.  This may happen if somebody adds a window or adds
@@ -1589,11 +1565,15 @@ actor_to_client_window (ClutterActor * win, const HdCompMgrClient **hcmgrcp)
   return cmgrc->wm_client->window;
 }
 
+static void
+hd_tn_thumbnail_reset_title (HdTnThumbnail *thumbnail);
+
 static Bool
 win_title_changed (MBWMClientWindow * win, 
 		   gint unused1,
 		   HdTnThumbnail *thumb)
 {
+  hd_tn_thumbnail_reset_title (thumb);
   return True;
 }
 

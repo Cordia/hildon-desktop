@@ -59,9 +59,16 @@ struct _HdTnLayoutClass
 			   ClutterButtonEvent *event,
 			   GList *thumbnails,
 			   ClutterActor *grid);
+
+  gboolean (*animation_in_progress) (HdTnLayout *layout);
+
+  void (*stop_animation) (HdTnLayout *layout);
 };
 
 GType hd_tn_layout_get_type (void) G_GNUC_CONST;
+
+/* Static class member */
+HdTnLayout *hd_tn_layout_factory_get_layout (void); 
 
 void hd_tn_layout_calculate (HdTnLayout *layout, 
 			     GList *thumbnails,
@@ -73,6 +80,10 @@ gboolean hd_tn_layout_within_grid (HdTnLayout *layout,
 				   ClutterButtonEvent *event, 
 				   GList *thumbnails, 
 				   ClutterActor *grid);
+
+gboolean hd_tn_layout_animation_in_progress (HdTnLayout *layout);
+
+void hd_tn_layout_stop_animation (HdTnLayout *layout);
 
 #define HD_TYPE_DEFAULT_LAYOUT       (hd_default_layout_get_type ())
 #define HD_DEFAULT_LAYOUT(obj)       (G_TYPE_CHECK_INSTANCE_CAST ((obj), HD_TYPE_DEFAULT_LAYOUT, HdDefaultLayout))

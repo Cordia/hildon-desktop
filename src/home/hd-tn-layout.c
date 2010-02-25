@@ -137,6 +137,12 @@ hd_tn_layout_init (HdTnLayout *layout)
   priv->width = priv->height = 0;
 }
 
+HdTnLayout *
+hd_tn_layout_factory_get_layout (void)
+{
+  return hd_default_layout_new ();
+} 
+
 void 
 hd_tn_layout_calculate (HdTnLayout *layout, 
 			GList *thumbnails, 
@@ -180,6 +186,22 @@ hd_tn_layout_within_grid (HdTnLayout *layout,
 						         grid);
 
   return FALSE;
+}
+
+gboolean 
+hd_tn_layout_animation_in_progress (HdTnLayout *layout)
+{
+  if (HD_TN_LAYOUT_GET_CLASS (layout)->animation_in_progress != NULL)
+    return HD_TN_LAYOUT_GET_CLASS (layout)->animation_in_progress (layout);
+
+  return FALSE;
+}
+
+void 
+hd_tn_layout_stop_animation (HdTnLayout *layout)
+{
+  if (HD_TN_LAYOUT_GET_CLASS (layout)->stop_animation != NULL)
+    HD_TN_LAYOUT_GET_CLASS (layout)->stop_animation (layout);
 }
 
 /* Default layout object */
