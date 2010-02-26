@@ -2113,6 +2113,16 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
       hd_comp_mgr_hook_update_area (HD_COMP_MGR (mgr), actor);
       hd_render_manager_restack ();
+
+      if (STATE_IS_LOADING(hd_render_manager_get_state ()))
+        {
+          /* make sure to hide the loading screen and go to a sane state */
+          hd_launcher_stop_loading_transition ();
+          hd_render_manager_set_loading (NULL);
+        }
+      /* Move to HDRM_STATE_HOME even if we don't have a loading screen,
+       * otherwise we hide the launcher and go to a broken state. */
+      hd_render_manager_set_state (HDRM_STATE_HOME);
       return;
     }
 

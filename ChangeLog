@@ -1,3 +1,11 @@
+2010-02-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fix live background application starting from the launcher.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Handle live-bg window
+	with and without loading screen so that we don't either go to a funny
+	state or wait for the loading screen timeout.
+
 2010-04-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Release 2.2.138-1.
