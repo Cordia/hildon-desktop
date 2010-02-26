@@ -707,6 +707,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
                                              actor, cclient);
           hd_home_set_live_background (HD_HOME (priv->home), c);
           hd_render_manager_set_state (HDRM_STATE_HOME);
+          hd_launcher_hide ();
         }
       return False;
     }
@@ -2123,6 +2124,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
       /* Move to HDRM_STATE_HOME even if we don't have a loading screen,
        * otherwise we hide the launcher and go to a broken state. */
       hd_render_manager_set_state (HDRM_STATE_HOME);
+      hd_launcher_hide ();
       return;
     }
 
