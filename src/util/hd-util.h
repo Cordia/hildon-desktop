@@ -26,7 +26,7 @@ unsigned long hd_util_modal_blocker_realize(MBWindowManagerClient *client,
 Bool hd_util_client_has_modal_blocker (MBWindowManagerClient *c);
 
 void hd_util_set_rotating_property(MBWindowManager *wm, gboolean is_rotating);
-void hd_util_set_screen_size_properties(MBWindowManager *wm, guint width, guint height);
+void hd_util_set_screen_size_property(MBWindowManager *wm, gboolean is_portrait);
 gboolean hd_util_change_screen_orientation (MBWindowManager *wm,
                                             gboolean goto_portrait);
 void hd_util_root_window_configured(MBWindowManager *wm);
