@@ -11,6 +11,7 @@ INCLUDES = \
         -DG_DISABLE_DEPRECATED          \
         -DG_LOG_DOMAIN=\"Tidy\"         \
 	$(HD_CFLAGS)			\
+	$(MB2_CFLAGS)			\
         $(NULL)
 BUILT_SOURCES = \
         tidy-enum-types.h       \
