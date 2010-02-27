@@ -1,11 +1,11 @@
-SUBDIRS = mb tidy util launcher home $(A11Y_DIR)
+SUBDIRS = mb tidy util launcher libhildondesktop $(A11Y_DIR)
 
 INCLUDES = @HD_INCS@ $(MB2_CFLAGS) $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
 MY_LIBS =	$(top_builddir)/src/mb/libmb.la			\
 		$(MB2_STATIC_LIB)                               \
 		$(top_builddir)/src/launcher/liblauncher.la 	\
-		$(top_builddir)/src/home/libhome.la		\
+		$(top_builddir)/src/libhildondesktop/libhildondesktop.la		\
 		$(top_builddir)/src/util/libutil.la
 
 bin_PROGRAMS = hildon-desktop
