@@ -44,7 +44,7 @@
 #include <gconf/gconf-client.h>
 #include "hd-launcher.h"
 #include "hd-launcher-tree.h"
-#include "home/hd-render-manager.h"
+#include "hd-render-manager.h"
 #include "hd-transition.h"
 
 #undef  G_LOG_DOMAIN

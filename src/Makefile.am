@@ -1,4 +1,4 @@
-SUBDIRS = mb tidy util launcher libhildondesktop $(A11Y_DIR)
+SUBDIRS = mb tidy util launcher desktop $(A11Y_DIR)
 
 INCLUDES = @HD_INCS@ $(MB2_CFLAGS) $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 

@@ -49,7 +49,7 @@
 #include "hd-theme.h"
 #include "hd-util.h"
 #include "launcher/hd-app-mgr.h"
-#include "home/hd-render-manager.h"
+#include "hd-render-manager.h"
 #include "hd-theme-config.h"
 
 #ifndef DISABLE_A11Y

@@ -165,7 +165,7 @@ AC_CONFIG_FILES([
 Makefile
 src/Makefile
 src/mb/Makefile
-src/libhildondesktop/Makefile
+src/desktop/Makefile
 src/launcher/Makefile
 src/tidy/Makefile
 src/util/Makefile

@@ -25,7 +25,7 @@
 #include "hd-decor-button.h"
 #include "hd-theme.h"
 #include "hd-render-manager.h"
-#include "../home/hd-title-bar.h"
+#include "hd-title-bar.h"
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-wm-util.h>
 #include <matchbox/theme-engines/mb-wm-theme.h>
