@@ -151,7 +151,7 @@ else
                        libmatchbox2-0.1])
 fi
 
-HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util -I$(top_srcdir)/src/a11y'
+HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/libhildondesktop -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util -I$(top_srcdir)/src/a11y'
 
 # only CFLAGS are needed from MB2 since we are statically linking
 AC_SUBST(MB2_CFLAGS)
@@ -165,7 +165,7 @@ AC_CONFIG_FILES([
 Makefile
 src/Makefile
 src/mb/Makefile
-src/home/Makefile
+src/libhildondesktop/Makefile
 src/launcher/Makefile
 src/tidy/Makefile
 src/util/Makefile
