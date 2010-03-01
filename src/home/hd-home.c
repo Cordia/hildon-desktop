@@ -304,7 +304,6 @@ hd_home_live_bg_emit_button1_event (
                              &xev.x, &xev.y,
                              &mywindow);
     }
-  xev.x += priv->cumulative_x;
   XSendEvent(wm->xdpy, xev.window, True, 0, (XEvent *)&xev);
 }
 
