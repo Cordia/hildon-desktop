@@ -24,6 +24,12 @@
 	    ...or start with damage_timeout_max right away if a
 	    request was queued up even before we started waiting.
 
+2010-03-01  Jarmo Nikula <jarmo.nikula@nokia.com>
+
+	* src/home/hd-home.c (hd_home_live_bg_emit_button1_event):
+    Remove cumulative x-coordinate adjustment, since it was wrong when
+    scrolling screen, causing live-background to get wrong coordinate.
+
 2010-02-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify,
