@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@/libhildondesktop
+localedir=@localedir@
+
+Name: libhildondesktop
+Description: Hildon Desktop headers and libs for plugins
+Requires: gmodule-2.0 clutter-0.8 xrandr libmatchbox2
+Version: @VERSION@
+Libs: 
+Cflags: -I${includedir}
