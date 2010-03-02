@@ -535,7 +535,8 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
   hd_gtk_style_get_text_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL,
                               &glow_col);
   glow_col.alpha = (int)(glow_col.alpha * glow_brightness);
-  tidy_highlight_set_color(priv->icon_glow, &glow_col);
+  if (priv->icon_glow)
+    tidy_highlight_set_color(priv->icon_glow, &glow_col);
   /* load our glow radius */
   priv->glow_radius = hd_transition_get_double("launcher_glow", "radius", 8);
 
