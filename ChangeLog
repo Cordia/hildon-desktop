@@ -1,3 +1,14 @@
+2010-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#158431 After window self closing in portrait mode, home view
+		  becomes the current view
+
+	We went to HOME_PORTRAIT rather than APP because we didn't
+	recognize HDRM_STATE_NON_COMP_PORT as-a APP_PORTRAIT state.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  Now do.
+
 2010-02-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fix live background application starting from the launcher.
