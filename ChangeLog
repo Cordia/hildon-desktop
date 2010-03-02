@@ -1,5 +1,12 @@
 2010-03-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Crash fix: tidy_highlight_set_color SEGV,
+	eg. core 4c1e01d8b138658cec54b3b34512726579ebd08c
+	
+	* src/launcher/hd-launcher-tile.c: add a check for icon_glow, because
+	  it isn't guaranteed to exist if there was no loadable icon for a
+	  tile.
+
 	Crash fix: div0, eg. core 7fc01bc53203f78e2bd2d4305d1f8e440429f29d
 	
 	* src/tidy/tidy-cached-group.c: Add a check for a width or height of
