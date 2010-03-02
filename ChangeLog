@@ -1,3 +1,32 @@
+2010-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#158431 After window self closing in portrait mode, home view
+		  becomes the current view
+
+	We went to HOME_PORTRAIT rather than APP because we didn't
+	recognize HDRM_STATE_NON_COMP_PORT as-a APP_PORTRAIT state.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  Now do.
+
+2010-03-01  Jarmo Nikula <jarmo.nikula@nokia.com>
+
+	* src/home/hd-home.c (hd_home_live_bg_emit_button1_event):
+    Remove cumulative x-coordinate adjustment, since it was wrong when
+    scrolling screen, causing live-background to get wrong coordinate.
+
+2010-02-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify,
+	hd_comp_mgr_client_property_changed): Hide the launcher after setting
+	a live background and going to Home state, otherwise it shows in blur.
+
+	Fix live background application starting from the launcher.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Handle live-bg window
+	with and without loading screen so that we don't either go to a funny
+	state or wait for the loading screen timeout.
+
 2010-02-26  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Implement rotation synchronization between the wm and its clients.
@@ -23,24 +52,6 @@
 	  hd_transition_rotating_fsm():
 	    ...or start with damage_timeout_max right away if a
 	    request was queued up even before we started waiting.
-
-2010-03-01  Jarmo Nikula <jarmo.nikula@nokia.com>
-
-	* src/home/hd-home.c (hd_home_live_bg_emit_button1_event):
-    Remove cumulative x-coordinate adjustment, since it was wrong when
-    scrolling screen, causing live-background to get wrong coordinate.
-
-2010-02-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
-
-	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify,
-	hd_comp_mgr_client_property_changed): Hide the launcher after setting
-	a live background and going to Home state, otherwise it shows in blur.
-
-	Fix live background application starting from the launcher.
-
-	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify): Handle live-bg window
-	with and without loading screen so that we don't either go to a funny
-	state or wait for the loading screen timeout.
 
 2010-04-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 

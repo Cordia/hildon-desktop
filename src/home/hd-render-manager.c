@@ -1395,7 +1395,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                * This is to avoid a visible rountrip to p->l->p if we should.
                */
               state = priv->state =
-                goto_tasw_later && oldstate == HDRM_STATE_APP_PORTRAIT
+                goto_tasw_later && (oldstate & (HDRM_STATE_APP_PORTRAIT|HDRM_STATE_NON_COMP_PORT))
                   ? HDRM_STATE_APP
                   : STATE_IS_PORTRAIT (oldstate)
                     ? HDRM_STATE_HOME_PORTRAIT
