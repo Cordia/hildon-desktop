@@ -9,7 +9,7 @@
 #include <matchbox/core/mb-wm.h>
 #include <clutter/clutter.h>
 
-#include "hd-atoms.h"
+#include <hd-atoms.h>
 
 void * hd_util_get_win_prop_data_and_validate (Display   *xpdy,
 					       Window     xwin,

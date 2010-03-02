@@ -26,7 +26,7 @@
 #endif
 
 #include "hd-render-manager.h"
-
+#include "shell-recorder.h"
 #include <gdk/gdk.h>
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -1499,7 +1499,6 @@ zoom_out_completed (ClutterActor *actor,
 void 
 hd_render_manager_set_state (HDRMStateEnum state)
 {
-  extern gboolean hd_debug_mode_set;
   HdRenderManagerPrivate *priv;
   MBWMCompMgr          *cmgr;
   MBWindowManager      *wm;
@@ -1509,13 +1508,9 @@ hd_render_manager_set_state (HDRMStateEnum state)
   priv = HD_RENDER_MANAGER_GET_PRIVATE (render_manager);
   cmgr = MB_WM_COMP_MGR (priv->comp_mgr);
 
-  if (hd_debug_mode_set)
-    g_warning("%s -> %s", hd_render_manager_state_str(priv->state),
-              hd_render_manager_state_str(state));
-  else
-    g_debug("%s: STATE %s -> STATE %s", __FUNCTION__,
-            hd_render_manager_state_str(priv->state),
-            hd_render_manager_state_str(state));
+  g_debug ("%s: STATE %s -> STATE %s", __FUNCTION__,
+           hd_render_manager_state_str(priv->state),
+           hd_render_manager_state_str(state));
 
   if (!cmgr)
   {
@@ -2233,15 +2228,19 @@ hd_render_manager_restack (void)
           {
             ClutterGeometry geo = {0};
             gboolean maximized;
-            MBGeometry *mg;
+            MBGeometry mg;
 
             hd_render_manager_get_geo_for_current_screen(child, &geo);
             if (!hd_render_manager_clip_geo(&geo))
               /* It's neiteher maximized nor @app_top, it doesn't exist. */
               continue;
 		
-            mg = (MBGeometry*)((void*)&geo); 
-            maximized = hd_comp_mgr_client_is_maximized (*mg);
+	    mg.x = geo.x;
+	    mg.y = geo.y;
+	    mg.width  = geo.width;
+	    mg.height = geo.height;
+
+            maximized = hd_comp_mgr_client_is_maximized (mg);
 
             /* Maximized stuff should never be blurred (unless there
              * is nothing else) */
@@ -3675,4 +3674,3 @@ hd_render_manager_unzoom (void)
      unzoom_reset ();
   }
 }
-

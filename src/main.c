@@ -43,14 +43,14 @@
 #include <signal.h>
 #include <gdk-pixbuf-xlib/gdk-pixbuf-xlib.h>
 
-#include "hd-transition.h"
-#include "hildon-desktop.h"
-#include "hd-wm.h"
-#include "hd-theme.h"
-#include "hd-util.h"
-#include "launcher/hd-app-mgr.h"
-#include "hd-render-manager.h"
-#include "hd-theme-config.h"
+#include <hd-transition.h>
+#include <hildon-desktop.h>
+#include <hd-wm.h>
+#include <hd-theme.h>
+#include <hd-util.h>
+#include <hd-app-mgr.h>
+#include <hd-render-manager.h>
+#include <hd-theme-config.h>
 
 #ifndef DISABLE_A11Y
 #include "hildon-desktop-a11y.h"
@@ -72,8 +72,8 @@ asm(".string \"built with libmatchbox2 "MBWM_DEB_VERSION"\"");
 asm(".previous");
 #endif
 
-gboolean hd_debug_mode_set = FALSE;
-MBWindowManager *hd_mb_wm = NULL;
+static gboolean hd_debug_mode_set = FALSE;
+static MBWindowManager *hd_mb_wm = NULL;
 static int hd_clutter_mutex_enabled = FALSE;
 static int hd_clutter_mutex_do_unlock_after_disabling = FALSE;
 static GStaticMutex hd_clutter_mutex = G_STATIC_MUTEX_INIT;
@@ -591,6 +591,8 @@ main (int argc, char **argv)
 					    NULL));
   if (wm == NULL)
     mb_wm_util_fatal_error("OOM?");
+
+  hd_mb_wm = wm;
 
   mb_wm_rename_window (wm, wm->root_win->hidden_window, PACKAGE);
   mb_wm_init (wm);

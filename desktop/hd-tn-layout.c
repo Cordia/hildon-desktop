@@ -1,4 +1,4 @@
-#/*
+/*
  * This file is part of hildon-desktop
  *
  * Copyright (C) 2010 Moises Martinez
@@ -25,6 +25,7 @@
 #include "hd-task-navigator.h"
 #include "hd-comp-mgr.h"
 #include "hd-scrollable-group.h"
+#include "hd-plugin-module.h"
 
 enum 
 {
@@ -140,7 +141,27 @@ hd_tn_layout_init (HdTnLayout *layout)
 HdTnLayout *
 hd_tn_layout_factory_get_layout (void)
 {
+#if 1
+#define PATH "/usr/lib/hildon-desktop/circular-layout.so"
+  HDPluginModule *plugin;
+ 
+  plugin = hd_plugin_module_new (PATH);
+
+  if (g_type_module_use (G_TYPE_MODULE (plugin)) == FALSE)
+    {
+      g_warning ("Error loading module at %s", PATH);
+      return hd_default_layout_new ();
+    }  
+
+  GObject *object = hd_plugin_module_get_object (plugin);
+
+  if (object != NULL && HD_IS_TN_LAYOUT (object))
+    return HD_TN_LAYOUT (object);
+  else
+    return hd_default_layout_new ();
+#else
   return hd_default_layout_new ();
+#endif
 } 
 
 void 

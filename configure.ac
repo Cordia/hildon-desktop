@@ -130,6 +130,9 @@ if test "$ac_cv_enable_static_mb2" = yes; then
 		       libgnome-menu dnl
 		       gdk-pixbuf-xlib-2.0 dnl
                        pangoxft dnl
+		       gmodule-2.0 dnl
+		       gstreamer-0.10 dnl
+		       gstreamer-base-0.10 dnl
                        xft])
 else
         MB2_CFLAGS=''
@@ -148,10 +151,13 @@ else
 		       libgnome-menu dnl
 		       gdk-pixbuf-xlib-2.0 dnl
                        xft dnl
+		       gmodule-2.0 dnl
+		       gstreamer-0.10 dnl
+		       gstreamer-base-0.10 dnl
                        libmatchbox2-0.1])
 fi
 
-HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/desktop -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util -I$(top_srcdir)/src/a11y'
+HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/desktop -I$(top_srcdir)/desktop/mb -I$(top_srcdir)/desktop/launcher -I$(top_srcdir)/desktop/util -I$(top_srcdir)/src/a11y'
 
 # only CFLAGS are needed from MB2 since we are statically linking
 AC_SUBST(MB2_CFLAGS)
@@ -164,11 +170,12 @@ AC_SUBST(HD_INCS)
 AC_CONFIG_FILES([
 Makefile
 src/Makefile
-src/mb/Makefile
-src/desktop/Makefile
-src/launcher/Makefile
-src/tidy/Makefile
-src/util/Makefile
+desktop/mb/Makefile
+desktop/Makefile 
+desktop/libhildondesktop.pc 
+desktop/launcher/Makefile
+desktop/tidy/Makefile
+desktop/util/Makefile
 src/a11y/Makefile
 src/a11y/launcher/Makefile
 src/a11y/home/Makefile

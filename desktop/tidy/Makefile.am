@@ -1,3 +1,10 @@
+pkgincludedir = $(includedir)/libhildondesktop/tidy
+pkginclude_HEADERS = \
+	tidy-types.h		\
+	tidy-actor.h		\
+	tidy-scroll-view.h
+
+
 NULL =
 
 GLIB_GENMARSHAL = `pkg-config --variable=glib_genmarshal glib-2.0`
@@ -5,7 +12,7 @@ GLIB_MKENUMS = `pkg-config --variable=glib_mkenums glib-2.0`
 
 INCLUDES = \
         -I$(top_srcdir)                 \
-	-I$(top_srcdir)/src/		\
+	-I$(top_srcdir)/desktop	\
         -DPREFIX=\""$(prefix)"\"        \
         -DLIBDIR=\""$(libdir)"\"        \
         -DG_DISABLE_DEPRECATED          \
@@ -23,23 +30,23 @@ STAMP_FILES = stamp-tidy-marshal.h stamp-tidy-enum-types.h
 noinst_LTLIBRARIES = libtidy.la
 
 source_h = \
-	$(top_srcdir)/src/tidy/tidy-actor.h 		\
-	$(top_srcdir)/src/tidy/tidy-adjustment.h	\
-	$(top_srcdir)/src/tidy/tidy-blur-group.h 	\
-	$(top_srcdir)/src/tidy/tidy-cached-group.h 	\
-	$(top_srcdir)/src/tidy/tidy-finger-scroll.h	\
-	$(top_srcdir)/src/tidy/tidy-frame.h	\
-	$(top_srcdir)/src/tidy/tidy-highlight.h		\
-	$(top_srcdir)/src/tidy/tidy-interval.h		\
-	$(top_srcdir)/src/tidy/tidy-mem-texture.h	\
-	$(top_srcdir)/src/tidy/tidy-scroll-bar.h	\
-	$(top_srcdir)/src/tidy/tidy-scrollable.h	\
-	$(top_srcdir)/src/tidy/tidy-scroll-view.h	\
-	$(top_srcdir)/src/tidy/tidy-stylable.h		\
-	$(top_srcdir)/src/tidy/tidy-style.h 		\
-	$(top_srcdir)/src/tidy/tidy-sub-texture.h 	\
-	$(top_srcdir)/src/tidy/tidy-types.h 		\
-	$(top_srcdir)/src/tidy/tidy-util.h 		\
+	$(top_srcdir)/desktop/tidy/tidy-actor.h 		\
+	$(top_srcdir)/desktop/tidy/tidy-adjustment.h	\
+	$(top_srcdir)/desktop/tidy/tidy-blur-group.h 	\
+	$(top_srcdir)/desktop/tidy/tidy-cached-group.h 	\
+	$(top_srcdir)/desktop/tidy/tidy-finger-scroll.h	\
+	$(top_srcdir)/desktop/tidy/tidy-frame.h	\
+	$(top_srcdir)/desktop/tidy/tidy-highlight.h		\
+	$(top_srcdir)/desktop/tidy/tidy-interval.h		\
+	$(top_srcdir)/desktop/tidy/tidy-mem-texture.h	\
+	$(top_srcdir)/desktop/tidy/tidy-scroll-bar.h	\
+	$(top_srcdir)/desktop/tidy/tidy-scrollable.h	\
+	$(top_srcdir)/desktop/tidy/tidy-scroll-view.h	\
+	$(top_srcdir)/desktop/tidy/tidy-stylable.h		\
+	$(top_srcdir)/desktop/tidy/tidy-style.h 		\
+	$(top_srcdir)/desktop/tidy/tidy-sub-texture.h 	\
+	$(top_srcdir)/desktop/tidy/tidy-types.h 		\
+	$(top_srcdir)/desktop/tidy/tidy-util.h 		\
 	$(NULL)
 
 source_h_private = \
@@ -71,7 +78,7 @@ stamp-tidy-marshal.h: Makefile tidy-marshal.list
 	$(GLIB_GENMARSHAL) \
 		--prefix=_tidy_marshal \
 		--header \
-	$(srcdir)/tidy-marshal.list > xgen-tmh && \
+	$(top_srcdir)/desktop/tidy/tidy-marshal.list > xgen-tmh && \
 	(cmp -s xgen-tmh tidy-marshal.h || cp -f xgen-tmh tidy-marshal.h) && \
 	rm -f xgen-tmh && \
 	echo timestamp > $(@F)
@@ -81,7 +88,7 @@ tidy-marshal.c: Makefile tidy-marshal.list
 	 $(GLIB_GENMARSHAL) \
 		--prefix=_tidy_marshal \
 		--body \
-	 $(srcdir)/tidy-marshal.list ) > xgen-tmc && \
+	 $(top_srcdir)/desktop/tidy/tidy-marshal.list ) > xgen-tmc && \
 	cp -f xgen-tmc tidy-marshal.c && \
 	rm -f xgen-tmc
 
@@ -89,7 +96,7 @@ tidy-enum-types.h: stamp-tidy-enum-types.h Makefile
 	@true
 stamp-tidy-enum-types.h: $(source_h) $(srcdir)/tidy-enum-types.h.in
 	( $(GLIB_MKENUMS) \
-	    --template $(srcdir)/tidy-enum-types.h.in \
+	    --template $(top_srcdir)/desktop/tidy/tidy-enum-types.h.in \
 	  $(source_h) ) >> xgen-teth && \
 	(cmp xgen-teth tidy-enum-types.h || cp xgen-teth tidy-enum-types.h) && \
 	rm -f xgen-teth && \
@@ -97,7 +104,7 @@ stamp-tidy-enum-types.h: $(source_h) $(srcdir)/tidy-enum-types.h.in
 
 tidy-enum-types.c: stamp-tidy-enum-types.h $(srcdir)/tidy-enum-types.c.in
 	( $(GLIB_MKENUMS) \
-	    --template $(srcdir)/tidy-enum-types.c.in \
+	    --template $(top_srcdir)/desktop/tidy/tidy-enum-types.c.in \
 	  $(source_h) ) >> xgen-tetc && \
 	cp xgen-tetc tidy-enum-types.c && \
 	rm -f xgen-tetc

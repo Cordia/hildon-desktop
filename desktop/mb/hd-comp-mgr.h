@@ -30,8 +30,7 @@
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
 #include <clutter/x11/clutter-x11.h>
-#include "hd-atoms.h"
-#include "launcher/hd-running-app.h"
+#include <hd-atoms.h>
 
 G_BEGIN_DECLS
 
@@ -83,8 +82,8 @@ int hd_comp_mgr_client_class_type (void);
 gboolean hd_comp_mgr_client_is_hibernating (HdCompMgrClient *hclient);
 gboolean hd_comp_mgr_client_can_hibernate (HdCompMgrClient *hclient);
 
-HdRunningApp  *hd_comp_mgr_client_get_app (HdCompMgrClient *hclient);
-HdLauncherApp *hd_comp_mgr_client_get_launcher (HdCompMgrClient *hclient);
+GObject  *hd_comp_mgr_client_get_app (HdCompMgrClient *hclient);
+GObject *hd_comp_mgr_client_get_launcher (HdCompMgrClient *hclient);
 const gchar   *hd_comp_mgr_client_get_app_local_name (HdCompMgrClient *hclient);
 
 typedef struct HdCompMgrClass   HdCompMgrClass;
@@ -140,55 +139,18 @@ MBWindowManagerClient * hd_comp_mgr_get_desktop_client (HdCompMgr *hmgr);
 void hd_comp_mgr_dump_debug_info (const gchar *tag);
 
 gboolean hd_comp_mgr_restack (MBWMCompMgr * mgr);
+
 void hd_comp_mgr_set_effect_running(HdCompMgr *hmgr, gboolean running);
 
 void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr);
 
-static inline guint
-hd_comp_mgr_get_current_screen_width(void);
-static inline guint
-hd_comp_mgr_get_current_screen_width (void)
-{
-  extern MBWindowManager *hd_mb_wm;
-  return hd_mb_wm->xdpy_width;
-}
+guint hd_comp_mgr_get_current_screen_width (void);
 
-static inline guint
-hd_comp_mgr_get_current_screen_height(void);
-static inline guint
-hd_comp_mgr_get_current_screen_height(void)
-{
-  extern MBWindowManager *hd_mb_wm;
-  return hd_mb_wm->xdpy_height;
-}
+guint hd_comp_mgr_get_current_screen_height (void);
 
-static inline
-gboolean hd_comp_mgr_is_portrait(void);
-static inline
-gboolean hd_comp_mgr_is_portrait(void)
-{ /* This is a very typesafe macro. */
-  extern MBWindowManager *hd_mb_wm;
-  return hd_mb_wm->xdpy_width < hd_mb_wm->xdpy_height;
-}
+gboolean hd_comp_mgr_is_portrait (void);
 
-static inline gboolean
-hd_comp_mgr_client_is_maximized (MBGeometry geom);
-static inline gboolean
-hd_comp_mgr_client_is_maximized (MBGeometry geom)
-{
-  extern MBWindowManager *hd_mb_wm;
-
-  if (geom.x != 0 || geom.y != 0)
-    return FALSE;
-  if (geom.width >= hd_mb_wm->xdpy_width && geom.height >= hd_mb_wm->xdpy_height)
-    return TRUE;
-  if (geom.width >= hd_mb_wm->xdpy_height && geom.height >= hd_mb_wm->xdpy_width)
-    /* Client covers the rotated screen.  If we select it as the CURRENT_APP,
-     * we'll rotate [back] and everything will make sense. */
-    return TRUE;
-
-  return FALSE;
-}
+gboolean hd_comp_mgr_client_is_maximized (MBGeometry geom);
 
 gint hd_comp_mgr_time_since_last_map(HdCompMgr *hmgr);
 

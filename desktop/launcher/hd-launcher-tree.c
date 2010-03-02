@@ -123,7 +123,7 @@ walk_thread_done_idle (gpointer user_data)
 
       walk_thread_data_free (data);
 
-      hd_mutex_enable (FALSE);
+      //hd_mutex_enable (FALSE);
     }
   else
     {
@@ -354,7 +354,7 @@ hd_launcher_tree_handle_tree_changed (GMenuTree *menu_tree,
     walk_thread_func (data);
   else
     {
-      hd_mutex_enable (TRUE);
+      //hd_mutex_enable (TRUE);
       g_thread_create (walk_thread_func, data, FALSE, NULL);
     }
 }

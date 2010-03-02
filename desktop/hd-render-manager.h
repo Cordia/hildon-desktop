@@ -33,8 +33,8 @@
 #include "hd-comp-mgr.h"
 #include "hd-task-navigator.h"
 #include "hd-home.h"
-#include "../launcher/hd-launcher.h"
-#include "../tidy/tidy-cached-group.h"
+#include "hd-launcher.h"
+#include "tidy-cached-group.h"
 
 #include <X11/extensions/Xrandr.h>
 

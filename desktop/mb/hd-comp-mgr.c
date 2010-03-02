@@ -146,7 +146,7 @@ struct HdCompMgrClientPrivate
   guint                 portrait_timestamp;
 };
 
-extern gboolean hd_dbus_display_is_off;
+MBWindowManager *hd_mb_wm;
 
 HdRunningApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
                                                HdCompMgr *hmgr);
@@ -434,18 +434,18 @@ hd_comp_mgr_client_can_hibernate (HdCompMgrClient *hclient)
   return priv->can_hibernate;
 }
 
-HdRunningApp *
+GObject *
 hd_comp_mgr_client_get_app (HdCompMgrClient *hclient)
 {
   if (!hclient) return NULL;
-  return hclient->priv->app;
+  return G_OBJECT (hclient->priv->app);
 }
 
-HdLauncherApp *
+GObject *
 hd_comp_mgr_client_get_launcher (HdCompMgrClient *hclient)
 {
   if (!hclient || !hclient->priv->app) return NULL;
-  return hd_running_app_get_launcher_app(hclient->priv->app);
+  return G_OBJECT (hd_running_app_get_launcher_app(hclient->priv->app));
 }
 
 const gchar *
@@ -532,7 +532,6 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   HdCompMgrPrivate     *priv;
   ClutterActor         *stage;
   ClutterActor         *arena;
-  extern MBWindowManager *hd_mb_wm;
 
   priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
 
@@ -804,7 +803,7 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
       if (!app)
         return False;
       current_app =
-        hd_comp_mgr_client_get_app (hd_comp_mgr_get_current_client (hmgr));
+        HD_RUNNING_APP (hd_comp_mgr_client_get_app (hd_comp_mgr_get_current_client (hmgr)));
       if (!current_app || app == current_app)
         return False;
 
@@ -1273,16 +1272,6 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
 
   if (!actor || !CLUTTER_ACTOR_IS_VISIBLE(actor) || hmgr == 0)
     return;
-
-  if (hd_dbus_display_is_off)
-    {
-            /*
-      g_printerr ("%s: update for actor %p (%d,%d) %dx%d '%s'"
-                  " while display is off\n", __func__, actor, x, y,
-                  width, height, clutter_actor_get_name (actor));
-                  */
-      return;
-    }
 
   /* If we are in the blanking period of the rotation transition
    * then we don't want to issue a redraw every time something changes.
@@ -2630,7 +2619,8 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
           else
             {
               HdCompMgrClient *hclient = HD_COMP_MGR_CLIENT (c->cm_client);
-              HdRunningApp *app = hd_comp_mgr_client_get_app (hclient);
+              HdRunningApp *app = 
+		HD_RUNNING_APP (hd_comp_mgr_client_get_app (hclient));
 
               /* Avoid this transition if app is being hibernated */
               if (!app ||
@@ -2775,7 +2765,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
               hd_comp_mgr_client_can_hibernate (priv->current_hclient))
             {
               old_current_app =
-                hd_comp_mgr_client_get_app (priv->current_hclient);
+                HD_RUNNING_APP (hd_comp_mgr_client_get_app (priv->current_hclient));
               if (old_current_app)
                 hd_app_mgr_hibernatable (old_current_app, TRUE);
             }
@@ -2783,7 +2773,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
           if (new_current_hclient)
             {
               new_current_app =
-                hd_comp_mgr_client_get_app (new_current_hclient);
+                HD_RUNNING_APP (hd_comp_mgr_client_get_app (new_current_hclient));
               if (new_current_app)
                 hd_app_mgr_hibernatable (new_current_app, FALSE);
             }
@@ -3264,9 +3254,6 @@ gint hd_comp_mgr_time_since_last_map(HdCompMgr *hmgr)
          ((current.tv_usec - hmgr->priv->last_map_time.tv_usec) / 1000);
 }
 
-extern gboolean hd_dbus_display_is_off;
-extern MBWindowManager *hd_mb_wm;
-
 void
 hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
 {
@@ -3286,8 +3273,7 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
               = MB_WM_COMP_MGR_CLIENT (a->data)->wm_client;
       guint32 on_desktop = 1;
       if (STATE_NEED_DESKTOP (hd_render_manager_get_state ()) &&
-          STATE_SHOW_APPLETS (hd_render_manager_get_state ()) &&
-          !hd_dbus_display_is_off)
+          STATE_SHOW_APPLETS (hd_render_manager_get_state ()))
         {
           XChangeProperty (wm_client->wmref->xdpy,
                            wm_client->window->xwindow,
@@ -3328,3 +3314,39 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
 
   mb_wm_util_async_untrap_x_errors ();
 }
+
+guint
+hd_comp_mgr_get_current_screen_width (void)
+{
+  return hd_mb_wm->xdpy_width;
+}
+
+guint
+hd_comp_mgr_get_current_screen_height(void)
+{
+  return hd_mb_wm->xdpy_height;
+}
+
+gboolean 
+hd_comp_mgr_is_portrait(void)
+{ /* This is a very typesafe macro. */
+  return hd_mb_wm->xdpy_width < hd_mb_wm->xdpy_height;
+}
+
+gboolean
+hd_comp_mgr_client_is_maximized (MBGeometry geom)
+{
+
+  if (geom.x != 0 || geom.y != 0)
+    return FALSE;
+  if (geom.width >= hd_mb_wm->xdpy_width && geom.height >= hd_mb_wm->xdpy_height)
+    return TRUE;
+  if (geom.width >= hd_mb_wm->xdpy_height && geom.height >= hd_mb_wm->xdpy_width)
+    /* Client covers the rotated screen.  If we select it as the CURRENT_APP,
+     * we'll rotate [back] and everything will make sense. */
+    return TRUE;
+
+  return FALSE;
+}
+
+

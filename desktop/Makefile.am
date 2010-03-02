@@ -1,3 +1,16 @@
+SUBDIRS = mb util tidy launcher
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libhildondesktop.pc
+
+pkgincludedir = $(includedir)/libhildondesktop
+pkginclude_HEADERS = \
+	hd-plugin-module.h \
+	hd-task-navigator.h	\
+	hd-tn-layout.h		\
+	hd-scrollable-group.h
+
+
 INCLUDES = -I $(top_srcdir)/src/launcher \
 	-I $(top_srcdir)src/tidy \
 	@HD_INCS@ $(MB2_CFLAGS) $(HD_CFLAGS) \
@@ -23,7 +36,8 @@ hildondesktop_h = 	hd-home.h		\
 			hd-title-bar.h		\
 			hd-clutter-cache.h	\
 			hd-pvr-texture.h	\
-			pvr-texture.h		
+			pvr-texture.h	 	\
+			hd-plugin-module.h	
 
 hildondesktop_c = 	hd-home.c		\
 			hd-home-view.c		\
@@ -37,17 +51,20 @@ hildondesktop_c = 	hd-home.c		\
 			hd-title-bar.c		\
 			hd-clutter-cache.c	\
 			hd-pvr-texture.c	\
-			pvr-texture.c		
+			pvr-texture.c		\
+			hd-plugin-module.c 	
 
-noinst_LTLIBRARIES = libhildondesktop.la
+lib_LTLIBRARIES = libhildondesktop.la
 
-libhildondesktop_la_SOURCES = $(hildondesktop_h) $(hildondesktop_c) $(BUILT_SOURCES)
+libhildondesktop_la_SOURCES = $(hildondesktop_h) \
+			      $(hildondesktop_c) \
+			      $(BUILT_SOURCES)
+
 libhildondesktop_la_CFLAGS =  @HD_CFLAGS@						\
 		     -DHD_DATADIR=\"$(datadir)/hildon-desktop\"
 libhildondesktop_la_LIBADD = @HD_LIBS@ \
-		    $(top_builddir)/src/launcher/liblauncher.la \
-                    $(top_builddir)/src/util/libutil.la
-
+		    $(top_builddir)/desktop/launcher/liblauncher.la	\
+		    $(top_builddir)/desktop/mb/libmb.la
 EXTRA_DIST = hd-home-dbus.xml
 
 CLEANFILES = *~ $(BUILT_SOURCES)

@@ -27,8 +27,8 @@
 #define __HD_TASK_NAVIGATOR_H__
 
 #include <clutter/clutter.h>
-#include "hd-note.h"
 #include <X11/extensions/Xrandr.h> /* For Rotation */
+#include <hd-note.h>
 
 G_BEGIN_DECLS
 

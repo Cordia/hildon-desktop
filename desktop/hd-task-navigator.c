@@ -1913,8 +1913,9 @@ hd_tn_thumbnail_constructor (GType                  gtype,
 
   mb_wm_util_async_untrap_x_errors ();
 
+  app = HD_LAUNCHER_APP (hd_comp_mgr_client_get_launcher (HD_COMP_MGR_CLIENT (hmgrc)));
   /* .video_fname */
-  if ((app = hd_comp_mgr_client_get_launcher (HD_COMP_MGR_CLIENT (hmgrc))) != NULL)
+  if (app != NULL)
     priv->video_fname = hd_launcher_app_get_switcher_icon (HD_LAUNCHER_APP (app));
 
   /* Now the actors: .apwin (from set_property at construction), .titlebar, .windows. */

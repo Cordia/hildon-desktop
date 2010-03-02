@@ -1,3 +1,9 @@
+pkgincludedir = $(includedir)/hildon-desktop/mb
+pkginclude_HEADERS = \
+	hd-comp-mgr.h \
+	hd-note.h \
+	hd-atoms.h
+
 INCLUDES = @HD_INCS@ $(MB2_CFLAGS) $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 
 mb_h =		hd-atoms.h			\
