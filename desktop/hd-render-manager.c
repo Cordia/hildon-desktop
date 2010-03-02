@@ -26,7 +26,6 @@
 #endif
 
 #include "hd-render-manager.h"
-#include "shell-recorder.h"
 #include <gdk/gdk.h>
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>

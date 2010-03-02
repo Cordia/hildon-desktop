@@ -30,11 +30,11 @@
 #define __HD_RENDER_MANAGER_H__
 
 #include <clutter/clutter.h>
-#include "hd-comp-mgr.h"
-#include "hd-task-navigator.h"
-#include "hd-home.h"
-#include "hd-launcher.h"
-#include "tidy-cached-group.h"
+#include <hd-comp-mgr.h>
+#include <hd-task-navigator.h>
+#include <hd-home.h>
+#include <hd-launcher.h>
+#include <tidy-cached-group.h>
 
 #include <X11/extensions/Xrandr.h>
 
