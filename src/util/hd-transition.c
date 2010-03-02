@@ -165,6 +165,15 @@ static struct
   /* This timer counts from when we first entered the WAITING state,
    * so if we are continually getting damage we don't just hang there. */
   GTimer *timer;
+
+  /*
+   * The number of %_MAEMO_ROTATION_PATIENCE requests we received since
+   * we notified our clients about the screen size change.  We we get one
+   * we extend our patience with regards to client redraws to our maximum.
+   * If we were asked for patience and then notified that it's not longer
+   * necessary we stop waiting for damages immedeately.
+   */
+  guint patience_requests;
 } Orientation_change;
 
 /* The number of transitions in progress requesting for @fixup_visibilities.
@@ -1412,10 +1421,47 @@ hd_transition_fade_and_rotate(gboolean first_part,
   clutter_timeline_start (data->timeline);
 }
 
+/* Process %_MAEMO_ROTATION_PATIENCE requests. */
 static void
-hd_transition_damage_timer_destroyed (gpointer unused)
+patience (XClientMessageEvent *event, void *unused)
 {
-  Orientation_change.timeout_id = NULL;
+  /* Is somebody probing our patience? */
+  if (event->message_type != hd_comp_mgr_get_atom (
+                          HD_COMP_MGR (Orientation_change.wm->comp_mgr),
+                          HD_ATOM_MAEMO_ROTATION_PATIENCE))
+    return;
+
+  if (event->data.l[0])
+    { /* Grant @max:imal patience. */
+      gint max;
+
+g_warning("PING");
+      if (Orientation_change.timeout_id)
+        {
+          /* remaining := max(damage_timeout_max-elapsed, 0) */
+          max  = hd_transition_get_int("rotate", "damage_timeout_max", 1000);
+          max -= g_timer_elapsed(Orientation_change.timer, NULL) * 1000.0;
+          if (max > 0)
+            {
+              Orientation_change.timeout_id->remaining = max;
+g_warning("NEW REMAINING: %d", max);
+            }
+        }
+      if (Orientation_change.phase <= WAIT_FOR_DAMAGES)
+        Orientation_change.patience_requests++;
+    }
+  else
+    { /* Get out of WAIT_FOR_DAMAGES as quickly as possible. */
+g_warning("PONG");
+      if (Orientation_change.patience_requests)
+        Orientation_change.patience_requests--;
+      if (!Orientation_change.patience_requests
+          && Orientation_change.timeout_id)
+        {
+          Orientation_change.timeout_id->remaining = 0;
+g_warning("NEW REMAINING: 0");
+        }
+    }
 }
 
 static gboolean
@@ -1465,9 +1511,8 @@ hd_transition_rotating_fsm(void)
         /* Start rotate transition */
         hd_util_set_rotating_property(Orientation_change.wm, TRUE);
         /* Layout windows at the rotated size */
-        hd_util_set_screen_size_properties(Orientation_change.wm,
-            Orientation_change.direction == GOTO_PORTRAIT ? 480 : 800,
-            Orientation_change.direction == GOTO_PORTRAIT ? 800 : 480);
+        hd_util_set_screen_size_property(Orientation_change.wm,
+                         Orientation_change.direction == GOTO_PORTRAIT);
         Orientation_change.wm->flags |= MBWindowManagerFlagLayoutRotated;
         mb_wm_layout_update(Orientation_change.wm->layout);
         /* We now call ourselves back on idle. The idea is that the sudden
@@ -1578,10 +1623,15 @@ trans_start_error:
             hd_util_root_window_configured(Orientation_change.wm);
 
             g_assert(!Orientation_change.timeout_id);
+g_warning("PATIENCE REQUESTED %d", Orientation_change.patience_requests);
             Orientation_change.timeout_id = hptimer_new(
-                  hd_transition_get_int("rotate", "damage_timeout", 50),
-                  (GSourceFunc)hd_transition_rotating_fsm, NULL,
-                  hd_transition_damage_timer_destroyed);
+                  Orientation_change.patience_requests
+                    ? hd_transition_get_int("rotate", "damage_timeout_max",
+                                            1000)
+                    : hd_transition_get_int("rotate", "damage_timeout", 50),
+                  (GSourceFunc)hd_transition_rotating_fsm,
+                  &Orientation_change.timeout_id,
+                  (GDestroyNotify)g_nullify_pointer);
             g_timer_start(Orientation_change.timer);
             Orientation_change.phase = WAIT_FOR_DAMAGES;
           }
@@ -1590,9 +1640,8 @@ trans_start_error:
             /* We must update the layout again so the window sizes
              * return to normal relative to the screen. flags is probably
              * already correct. But just for safety. */
-            hd_util_set_screen_size_properties(Orientation_change.wm,
-                        Orientation_change.direction == GOTO_PORTRAIT ? 480 : 800,
-                        Orientation_change.direction == GOTO_PORTRAIT ? 800 : 480);
+            hd_util_set_screen_size_property(Orientation_change.wm,
+                         Orientation_change.direction == GOTO_PORTRAIT);
             Orientation_change.wm->flags &= ~MBWindowManagerFlagLayoutRotated;
             mb_wm_layout_update(Orientation_change.wm->layout);
             if (Orientation_change.phase > TRANS_START)
@@ -1645,10 +1694,11 @@ trans_start_error:
             /* No sense resetting the rotating property. */
             hd_transition_rotating_fsm();
           else
-            {
+            { /* We're finally settled. */
               hd_comp_mgr_reconsider_compositing (
                             Orientation_change.wm->comp_mgr);
               hd_util_set_rotating_property (Orientation_change.wm, FALSE);
+              Orientation_change.patience_requests = 0;
             }
           break;
         }
@@ -1663,13 +1713,21 @@ trans_start_error:
 gboolean
 hd_transition_rotate_screen (MBWindowManager *wm, gboolean goto_portrait)
 { g_debug("%s(goto_portrait=%d)", __FUNCTION__, goto_portrait);
+  static unsigned long cmsg_id;
+
+  /* Initialize the fsm infrastructure. */
   Orientation_change.wm = wm;
   if (!Orientation_change.timer)
     Orientation_change.timer = g_timer_new();
+  if (!cmsg_id)
+    cmsg_id = mb_wm_main_context_x_event_handler_add (wm->main_ctx,
+                                               wm->root_win->xwindow,
+                                               ClientMessage,
+                                               (MBWMXEventFunc)patience,
+                                               NULL);
 
   Orientation_change.new_direction = goto_portrait
     ? GOTO_PORTRAIT : GOTO_LANDSCAPE;
-
   if (Orientation_change.phase == IDLE)
     {
       if (goto_portrait == hd_comp_mgr_is_portrait ())
@@ -1738,14 +1796,30 @@ hd_transition_rotate_ignore_damage()
     {
       gint max;
 
-      /* Only postpone the timeout if we haven't postponed
+      /*
+       * Only postpone the timeout if we haven't postponed
        * it too long already. This stops us getting stuck
-       * in the WAITING state if an app keeps redrawing. */
-      max = hd_transition_get_int("rotate", "damage_timeout_max", 1000);
-      Orientation_change.timeout_id->remaining =
-          g_timer_elapsed(Orientation_change.timer, NULL) < max / 1000.0
-            ? hd_transition_get_int("rotate", "damage_timeout_plus", 50)
-            : 0;
+       * in the WAITING state if an app keeps redrawing.
+       *
+       * remaining := min(max(remaining, damage_timeout_plus),
+       *                  max(damage_timeout_max-elapsed, 0))
+       */
+      max  = hd_transition_get_int("rotate", "damage_timeout_max", 1000);
+      max -= g_timer_elapsed(Orientation_change.timer, NULL) * 1000.0;
+      if (max > 0)
+        {
+          gint remaining;
+
+          remaining = hd_transition_get_int("rotate", "damage_timeout_plus",
+                                            50);
+          if (Orientation_change.timeout_id->remaining < remaining)
+            Orientation_change.timeout_id->remaining = remaining;
+          if (Orientation_change.timeout_id->remaining > max)
+            Orientation_change.timeout_id->remaining = max;
+        }
+      else
+        Orientation_change.timeout_id->remaining = 0;
+
       return TRUE;
     }
   return FALSE;

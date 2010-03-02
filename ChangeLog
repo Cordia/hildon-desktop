@@ -1,3 +1,29 @@
+2010-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Implement rotation synchronization between the wm and its clients.
+	Previously we only had this damage_timeout mechanism but it's been
+	impossible to find a value that's good for everyone.  Now listen
+	for requests from the clients and be willing to wait some more
+	(up to damage_timeout_max) if it takes them time to redraw.
+	Then stop waiting when they notify us about their completition.
+	This allows us to set a higher damage_timeout_max, suitable for
+	complex applications like browser open at http://megaporn.com.
+
+	* src/mb/hd-atoms.h:
+	* src/mb/hd-atoms.c:
+	  Add the _MAEMO_ROTATION_PATIENCE atom.
+	* src/util/hd-util.h
+	* src/util/hd-util.c (hd_util_set_screen_size_property):
+	  Cleaned up the interface a bit.
+	* src/util/hd-transition.c:
+	  hd_transition_rotate_screen():
+	    Listen to _MAEMO_ROTATION_PATIENCE ClientMessage:s...
+	  patience():
+	    ...and extend/reset the damage timeout as appropriate...
+	  hd_transition_rotating_fsm():
+	    ...or start with damage_timeout_max right away if a
+	    request was queued up even before we started waiting.
+
 2010-03-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Crash fix: tidy_highlight_set_color SEGV,

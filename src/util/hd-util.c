@@ -284,14 +284,14 @@ void hd_util_set_rotating_property(MBWindowManager *wm, gboolean is_rotating)
                   (unsigned char *)&value, 1);
 }
 
-void hd_util_set_screen_size_properties(MBWindowManager *wm,
-                                        guint width, guint height)
+void hd_util_set_screen_size_property(MBWindowManager *wm,
+                                      gboolean is_portrait)
 {
-  long value[2];
+  unsigned value[2];
   HdCompMgr *hmgr = HD_COMP_MGR(wm->comp_mgr);
 
-  value[0] = width;
-  value[1] = height;
+  value[!!is_portrait] = HD_COMP_MGR_LANDSCAPE_WIDTH;
+  value[ !is_portrait] = HD_COMP_MGR_LANDSCAPE_HEIGHT;
   XChangeProperty(wm->xdpy, wm->root_win->hidden_window,
         hd_comp_mgr_get_atom (hmgr, HD_ATOM_MAEMO_SCREEN_SIZE),
                     XA_CARDINAL, 32, PropModeReplace,
