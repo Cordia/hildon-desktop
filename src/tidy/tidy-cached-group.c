@@ -60,16 +60,20 @@ tidy_cached_group_paint (ClutterActor *actor)
   TidyCachedGroup *container = TIDY_CACHED_GROUP(group);
   TidyCachedGroupPrivate *priv = container->priv;
 
-  /* If we are rendering normally then shortcut all this, and
-   just render directly without the texture */
-  if (priv->cache_amount< 0.01)
+  clutter_actor_get_allocation_coords (actor, &x_1, &y_1, &x_2, &y_2);
+  int width = x_2 - x_1;
+  int height = y_2 - y_1;
+
+  /* If we are rendering normally, or for some reason the size has been
+   * set so small we couldn't create a texture then shortcut all this, and
+   * just render directly without the texture */
+  if (priv->cache_amount < 0.01 ||
+      width==0 || height==0)
     {
       /* render direct */
       CLUTTER_ACTOR_CLASS (tidy_cached_group_parent_class)->paint(actor);
       return;
     }
-
-  clutter_actor_get_allocation_coords (actor, &x_1, &y_1, &x_2, &y_2);
 
 #ifdef __i386__
   if (!cogl_features_available(COGL_FEATURE_OFFSCREEN))
@@ -79,8 +83,6 @@ tidy_cached_group_paint (ClutterActor *actor)
     }
 #endif
 
-  int width = x_2 - x_1;
-  int height = y_2 - y_1;
   int exp_width = width/priv->downsample;
   int exp_height = height/priv->downsample;
   int tex_width = 0;
