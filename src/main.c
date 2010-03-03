@@ -50,7 +50,6 @@
 #include <hd-util.h>
 #include <hd-app-mgr.h>
 #include <hd-render-manager.h>
-#include <hd-theme-config.h>
 
 #ifndef DISABLE_A11Y
 #include "hildon-desktop-a11y.h"

@@ -68,8 +68,6 @@ guint           hd_launcher_tree_get_size    (HdLauncherTree *tree);
 HdLauncherItem *hd_launcher_tree_find_item   (HdLauncherTree *tree,
                                               const gchar *id);
 
-/* Utility functions. */
-void hd_launcher_tree_ensure_user_menu (void);
 
 G_END_DECLS
 

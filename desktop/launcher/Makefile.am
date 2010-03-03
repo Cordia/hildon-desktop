@@ -45,7 +45,9 @@ launcher_c = \
 noinst_LTLIBRARIES = liblauncher.la
 
 liblauncher_la_SOURCES = $(launcher_h) $(launcher_c) $(BUILT_SOURCES)
-liblauncher_la_CFLAGS =  $(HD_CFLAGS)
+liblauncher_la_CFLAGS =  $(HD_CFLAGS) \
+			 -DHD_XDG_MENUDIR=\"$(hildondesktopmenudir)\"
+
 liblauncher_la_LIBADD = $(HD_LIBS) \
                         $(top_builddir)/desktop/util/libutil.la \
                         $(top_builddir)/desktop/tidy/libtidy.la

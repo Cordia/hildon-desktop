@@ -35,7 +35,7 @@
 #include "mb/hd-theme.h"
 #include "hd-render-manager.h"
 #include "hd-gtk-utils.h"
-#include "hd-theme-config.h"
+#include "hd-desktop-config.h"
 #include "hd-transition.h"
 #include "hd-util.h"
 #include "hd-task-navigator.h"
@@ -265,7 +265,7 @@ hd_title_bar_init (HdTitleBar *bar)
   clutter_actor_set_name(CLUTTER_ACTOR(actor), "HdTitleBar");
 
   // TODO: Get color from hildon.desktop theme, now it's hardcoded to white
-  font_name = hd_theme_config_get_font (HD_TITLEBAR_FONT);
+  font_name = hd_desktop_config_get_font (HD_TITLEBAR_FONT);
 
   priv->foreground = CLUTTER_GROUP(clutter_group_new());
   /* Explicitly enable maemo-specific visibility detection to cut down
@@ -1047,7 +1047,7 @@ static void hd_title_bar_set_title (HdTitleBar *bar,
       if (status_area_is_visible())
         x_start += clutter_actor_get_width(status_area);
 
-      font_name = hd_theme_config_get_font (HD_TITLEBAR_FONT);
+      font_name = hd_desktop_config_get_font (HD_TITLEBAR_FONT);
       clutter_label_set_font_name(priv->title, font_name);
       
       clutter_label_set_text(priv->title, title);

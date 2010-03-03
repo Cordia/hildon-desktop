@@ -22,12 +22,12 @@
  */
 
 /*
- * An HDThemeConfig is a singleton GObject that manages the size configuration
- * of all the elements in the theme_config.
+ * An HDDesktopConfig is a singleton GObject that manages the size configuration
+ * of all the elements in the desktop_config.
  */
 
-#ifndef __HD_THEME_CONFIG_H__
-#define __HD_THEME_CONFIG_H__
+#ifndef __HD_DESKTOP_CONFIG_H__
+#define __HD_DESKTOP_CONFIG_H__
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
@@ -37,6 +37,7 @@ G_BEGIN_DECLS
 /* Defines hildon-desktop.desktop */
 
 #define HDTC_KEY_GROUP			 "Hildon Desktop Config"
+#define HDTC_KEY_TN_LAYOUT		 "TnLayout"
 #define HDTC_KEY_DEFAULT_TXT_COLOR	 "DefaultTextColor"
 #define HDTC_KEY_NOTIFICATION_TXT_COLOR  "NotificationTextColor"
 #define HDTC_KEY_NOTIFICATION_2TXT_COLOR "NotificationSecondaryTextColor"
@@ -66,37 +67,39 @@ typedef enum
 }
 HDConfigFont;
 
-#define HD_TYPE_THEME_CONFIG            (hd_theme_config_get_type ())
-#define HD_THEME_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), HD_TYPE_THEME_CONFIG, HDThemeConfig))
-#define HD_IS_THEME_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HD_TYPE_THEME_CONFIG))
-#define HD_THEME_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_TYPE ((klass), HD_TYPE_THEME_CONFIG, HDThemeConfigClass))
-#define HD_IS_THEME_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), HD_TYPE_THEME_CONFIG))
-#define HD_THEME_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), HD_TYPE_THEME_CONFIG, HDThemeConfigClass))
+#define HD_TYPE_DESKTOP_CONFIG            (hd_desktop_config_get_type ())
+#define HD_DESKTOP_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), HD_TYPE_DESKTOP_CONFIG, HDDesktopConfig))
+#define HD_IS_DESKTOP_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HD_TYPE_DESKTOP_CONFIG))
+#define HD_DESKTOP_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_TYPE ((klass), HD_TYPE_DESKTOP_CONFIG, HDDesktopConfigClass))
+#define HD_IS_DESKTOP_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), HD_TYPE_DESKTOP_CONFIG))
+#define HD_DESKTOP_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), HD_TYPE_DESKTOP_CONFIG, HDDesktopConfigClass))
 
-typedef struct _HDThemeConfig        HDThemeConfig;
-typedef struct _HDThemeConfigPrivate HDThemeConfigPrivate;
-typedef struct _HDThemeConfigClass   HDThemeConfigClass;
+typedef struct _HDDesktopConfig        HDDesktopConfig;
+typedef struct _HDDesktopConfigPrivate HDDesktopConfigPrivate;
+typedef struct _HDDesktopConfigClass   HDDesktopConfigClass;
 
-struct _HDThemeConfig
+struct _HDDesktopConfig
 {
   GObject parent_instance;
 
-  HDThemeConfigPrivate *priv;
+  HDDesktopConfigPrivate *priv;
 };
 
-struct _HDThemeConfigClass
+struct _HDDesktopConfigClass
 {
   GObjectClass parent_class;
 };
 
-GType hd_theme_config_get_type (void) G_GNUC_CONST;
+GType hd_desktop_config_get_type (void) G_GNUC_CONST;
 
-HDThemeConfig   *hd_theme_config_get (void);
+HDDesktopConfig   *hd_desktop_config_get (void);
 
-void hd_theme_config_get_color (HDConfigColor type, ClutterColor *color);
+const gchar *hd_desktop_config_get_tn_layout (void);
 
-const gchar *hd_theme_config_get_font (HDConfigFont type);
+void hd_desktop_config_get_color (HDConfigColor type, ClutterColor *color);
+
+const gchar *hd_desktop_config_get_font (HDConfigFont type);
 
 G_END_DECLS
 
-#endif /* __HD_THEME_CONFIG_H__ */
+#endif /* __HD_DESKTOP_CONFIG_H__ */

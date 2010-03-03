@@ -42,7 +42,7 @@
 #include "hd-launcher-config.h"
 #include "hd-launcher-grid.h"
 #include "hd-gtk-utils.h"
-#include "hd-theme-config.h"
+#include "hd-desktop-config.h"
 #include "hd-comp-mgr.h"
 
 
@@ -246,9 +246,9 @@ hd_launcher_page_constructed (GObject *object)
   hd_launcher_config_get_margins_size (NULL, NULL, &top_margin, NULL);
 
   /* Create the label that says this page is empty */
-  hd_theme_config_get_color (HD_TXT_COLOR, &text_color);
+  hd_desktop_config_get_color (HD_TXT_COLOR, &text_color);
 
-  font_string = hd_theme_config_get_font (HD_SYSTEM_FONT);
+  font_string = hd_desktop_config_get_font (HD_SYSTEM_FONT);
 
   priv->empty_label = clutter_label_new_full(font_string,
                                              _("No applications found"),

@@ -52,7 +52,7 @@
 #include "hd-transition.h"
 #include "hd-theme.h"
 #include "hd-util.h"
-#include "hd-theme-config.h"
+#include "hd-desktop-config.h"
 
 #undef  G_LOG_DOMAIN
 #define G_LOG_DOMAIN              "hd-task-navigator"
@@ -1846,7 +1846,7 @@ hd_tn_thumbnail_reset_title (HdTnThumbnail *thumbnail)
   g_assert (priv->title != NULL);
   ClutterColor DefaultTextColor; 
 
-  hd_theme_config_get_color (HD_TXT_COLOR, &DefaultTextColor);
+  hd_desktop_config_get_color (HD_TXT_COLOR, &DefaultTextColor);
 
   set_label_text_and_color (priv->title, new_title,
                             /*thumb_has_notification (thumb)
@@ -1947,15 +1947,15 @@ hd_tn_thumbnail_constructor (GType                  gtype,
   const gchar *LargeSystemFont, *SystemFont, *SmallSystemFont;
   
 
-  LargeSystemFont = hd_theme_config_get_font (HD_LARGE_SYSTEM_FONT);
-  SystemFont      = hd_theme_config_get_font (HD_SYSTEM_FONT);
-  SmallSystemFont = hd_theme_config_get_font (HD_SMALL_SYSTEM_FONT);
+  LargeSystemFont = hd_desktop_config_get_font (HD_LARGE_SYSTEM_FONT);
+  SystemFont      = hd_desktop_config_get_font (HD_SYSTEM_FONT);
+  SmallSystemFont = hd_desktop_config_get_font (HD_SMALL_SYSTEM_FONT);
 
   ClutterColor NotificationTextColor,
 	       NotificationSecondaryTextColor;
 
-  hd_theme_config_get_color (HD_NOTIFICATION_TXT_COLOR, &NotificationTextColor);
-  hd_theme_config_get_color (HD_NOTIFICATION_2TXT_COLOR, &NotificationSecondaryTextColor);
+  hd_desktop_config_get_color (HD_NOTIFICATION_TXT_COLOR, &NotificationTextColor);
+  hd_desktop_config_get_color (HD_NOTIFICATION_2TXT_COLOR, &NotificationSecondaryTextColor);
 
 
     /* .title */

@@ -32,7 +32,7 @@
 #include "hd-home-view-container.h"
 #include "hd-comp-mgr.h"
 #include "hd-util.h"
-#include "hd-theme-config.h"
+#include "hd-desktop-config.h"
 #include "hd-gtk-utils.h"
 #include "hd-home-applet.h"
 #include "hd-render-manager.h"
@@ -2200,7 +2200,7 @@ hd_home_theme_changed (HdHome *home)
   ClutterColor col;
 
   /* Get color from theme */
-  hd_theme_config_get_color (HD_BG_COLOR, &col); /*FIXME: Which color is HD_EDGE_INDICATION_COLOR??? */
+  hd_desktop_config_get_color (HD_BG_COLOR, &col); /*FIXME: Which color is HD_EDGE_INDICATION_COLOR??? */
 
   clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_left),
                                &col);

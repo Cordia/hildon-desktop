@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <gtk/gtk.h>
 
-#include "hd-theme-config.h"
+#include "hd-desktop-config.h"
 #include "tidy/tidy-highlight.h"
 #include "hd-transition.h"
 
@@ -544,7 +544,7 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
 
   /* set our glow colour from the theme */
   glow_brightness = hd_transition_get_double("launcher_glow", "brightness", 1);
-  hd_theme_config_get_color (HD_TXT_COLOR, &glow_col);
+  hd_desktop_config_get_color (HD_TXT_COLOR, &glow_col);
 
   glow_col.alpha = (int)(glow_col.alpha * glow_brightness);
   tidy_highlight_set_color(priv->icon_glow, &glow_col);

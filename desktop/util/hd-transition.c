@@ -36,7 +36,7 @@
 
 #include "hd-transition.h"
 #include "hd-comp-mgr.h"
-#include "hd-theme-config.h"
+#include "hd-desktop-config.h"
 #include "hd-render-manager.h"
 #include "hildon-desktop.h"
 #include "hd-theme.h"
@@ -935,7 +935,7 @@ hd_transition_popup(HdCompMgr                  *mgr,
   /* Add actor for the background when we pop a bit too far */
   data->particles[0] = g_object_ref(clutter_rectangle_new());
   clutter_container_add_actor(CLUTTER_CONTAINER(actor), data->particles[0]);
-  hd_theme_config_get_color (HD_BG_COLOR, &col);
+  hd_desktop_config_get_color (HD_BG_COLOR, &col);
 
   clutter_rectangle_set_color(CLUTTER_RECTANGLE(data->particles[0]),
                               &col);

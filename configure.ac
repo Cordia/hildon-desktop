@@ -167,6 +167,14 @@ AC_SUBST(HD_LIBS)
 AC_SUBST(HD_CFLAGS)
 AC_SUBST(HD_INCS)
 
+hildondesktopconfdir=${datadir}/hildon-desktop
+hildondesktoplibdir=${userdir}/hildon-desktop
+AC_SUBST(hildondesktoplibdir)
+AC_SUBST(hildondesktopconfdir)
+
+hildondesktopmenudir=/etc/xdg/menus
+AC_SUBST(hildondesktopmenudir)
+
 AC_CONFIG_FILES([
 Makefile
 src/Makefile

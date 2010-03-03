@@ -33,7 +33,7 @@
 #include "hd-wm.h"
 #include "hd-home-applet.h"
 #include "hd-app.h"
-#include "hd-theme-config.h"
+#include "hd-desktop-config.h"
 #include "hd-note.h"
 #include "hd-animation-actor.h"
 #include "hd-render-manager.h"

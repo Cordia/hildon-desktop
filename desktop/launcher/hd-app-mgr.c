@@ -360,7 +360,7 @@ hd_app_mgr_init (HdAppMgr *self)
     priv->queues[i] = g_queue_new ();
 
   priv->tree = hd_launcher_tree_new ();
-  hd_launcher_tree_ensure_user_menu ();
+  
   g_signal_connect (priv->tree, "finished",
                     G_CALLBACK (hd_app_mgr_populate_tree_finished),
                     self);

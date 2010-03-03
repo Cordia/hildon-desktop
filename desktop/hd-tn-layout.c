@@ -26,6 +26,7 @@
 #include "hd-comp-mgr.h"
 #include "hd-scrollable-group.h"
 #include "hd-plugin-module.h"
+#include "hd-desktop-config.h"
 
 enum 
 {
@@ -141,15 +142,19 @@ hd_tn_layout_init (HdTnLayout *layout)
 HdTnLayout *
 hd_tn_layout_factory_get_layout (void)
 {
-#if 1
-#define PATH "/usr/lib/hildon-desktop/circular-layout.so"
   HDPluginModule *plugin;
+  const gchar *path;
+
+  path = hd_desktop_config_get_tn_layout ();
+
+  if (!path)
+    return hd_default_layout_new ();
  
-  plugin = hd_plugin_module_new (PATH);
+  plugin = hd_plugin_module_new (path);
 
   if (g_type_module_use (G_TYPE_MODULE (plugin)) == FALSE)
     {
-      g_warning ("Error loading module at %s", PATH);
+      g_warning ("Error loading module at %s", path);
       return hd_default_layout_new ();
     }  
 
@@ -159,9 +164,6 @@ hd_tn_layout_factory_get_layout (void)
     return HD_TN_LAYOUT (object);
   else
     return hd_default_layout_new ();
-#else
-  return hd_default_layout_new ();
-#endif
 } 
 
 void 

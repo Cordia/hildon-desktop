@@ -61,7 +61,11 @@ libhildondesktop_la_SOURCES = $(hildondesktop_h) \
 			      $(BUILT_SOURCES)
 
 libhildondesktop_la_CFLAGS =  @HD_CFLAGS@						\
-		     -DHD_DATADIR=\"$(datadir)/hildon-desktop\"
+		     -DHD_DATADIR=\"$(datadir)/hildon-desktop\" \
+		     -DHD_CONF_DIR=$(hildondesktopconfdir) \
+		     -DHD_LIB_DIR=$(hildondesktoplibdir)
+
+
 libhildondesktop_la_LIBADD = @HD_LIBS@ \
 		    $(top_builddir)/desktop/launcher/liblauncher.la	\
 		    $(top_builddir)/desktop/mb/libmb.la
