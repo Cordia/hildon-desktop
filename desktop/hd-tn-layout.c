@@ -142,7 +142,7 @@ hd_tn_layout_init (HdTnLayout *layout)
 HdTnLayout *
 hd_tn_layout_factory_get_layout (void)
 {
-  HDPluginModule *plugin;
+  static HDPluginModule *plugin = NULL;
   const gchar *path;
 
   path = hd_desktop_config_get_tn_layout ();
@@ -150,6 +150,9 @@ hd_tn_layout_factory_get_layout (void)
   if (!path)
     return hd_default_layout_new ();
  
+  if (plugin != NULL)
+    g_object_unref (plugin);
+
   plugin = hd_plugin_module_new (path);
 
   if (g_type_module_use (G_TYPE_MODULE (plugin)) == FALSE)
@@ -158,7 +161,10 @@ hd_tn_layout_factory_get_layout (void)
       return hd_default_layout_new ();
     }  
 
+  g_type_module_use (G_TYPE_MODULE (plugin));
   GObject *object = hd_plugin_module_get_object (plugin);
+
+  g_debug ("NEW LAYOUT: %s OBJECT: %p", path, object);
 
   if (object != NULL && HD_IS_TN_LAYOUT (object))
     return HD_TN_LAYOUT (object);

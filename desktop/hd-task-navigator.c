@@ -448,6 +448,30 @@ hd_task_navigator_timeline_end (HdTaskNavigator *navigator)
 }
 
 static void
+new_layout_manager (HdTaskNavigator *navigator)
+{
+   HdTaskNavigatorPrivate *priv =
+    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
+
+  HdTnLayout *old_layout;
+
+  if (hd_tn_layout_animation_in_progress (priv->layout))
+    hd_tn_layout_stop_animation (priv->layout);
+ 
+  hd_render_manager_set_state (HDRM_STATE_HOME);
+
+  old_layout = priv->layout;
+
+  priv->layout = hd_tn_layout_factory_get_layout ();
+
+  hd_tn_layout_calculate (priv->layout, 
+			  priv->thumbnails,
+                          CLUTTER_ACTOR (priv->grid)); 
+
+  g_object_unref (old_layout);
+}
+
+static void
 hd_task_navigator_init (HdTaskNavigator *navigator)
 {
   HdTaskNavigatorPrivate *priv =
@@ -459,6 +483,11 @@ hd_task_navigator_init (HdTaskNavigator *navigator)
   priv->n_thumbnails = 0;
 
   priv->layout = hd_tn_layout_factory_get_layout ();
+
+  g_signal_connect_swapped (hd_desktop_config_get (),
+			    "configuration-changed",
+			    G_CALLBACK (new_layout_manager),
+			    navigator);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (navigator), TRUE);
 
@@ -619,16 +648,17 @@ hd_task_navigator_real_zoom_in (HdTaskNavigator *navigator,
   HdTaskNavigatorPrivate *priv = 
     HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
 
-  gint scrxpos, scrypos, xpos, ypos;
+  gint scrxpos, scrypos, xpos, ypos, anchorx, anchory;
   gdouble xscale, yscale, scrx, scry;
 
   /* @xpos, @ypos := .prison's absolute coordinates. */
   clutter_actor_get_position  (CLUTTER_ACTOR (thumbnail),  &xpos,    &ypos);
+  clutter_actor_get_anchor_point (CLUTTER_ACTOR (thumbnail), &anchorx, &anchory);
   hd_tn_thumbnail_get_jail_scale (thumbnail, &xscale,  &yscale);
 
   ypos -= hd_scrollable_group_get_viewport_y (priv->grid);
-  xpos += PRISON_XPOS;
-  ypos += PRISON_YPOS;
+  xpos = xpos + PRISON_XPOS - anchorx;
+  ypos = ypos + PRISON_YPOS - anchory;
 
   /* If zoom-in is already in progress this will just change its direction
    * such that it will focus on @apthumb's current position. */

@@ -27,6 +27,7 @@
 
 #include <glib.h>
 #include <string.h>
+#include <gio/gio.h>
 
 #include "hd-desktop-config.h"
 
@@ -52,6 +53,8 @@ struct _HDDesktopConfigPrivate
   ClutterColor  ntxt_color;
   ClutterColor  bg_color;
 
+  GFileMonitor *conf_monitor;
+  GFile	       *path_file;
 };
 
 #define HD_DESKTOP_CONFIG_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -66,7 +69,21 @@ hd_desktop_config_constructor (GType                  gtype,
 
 static void hd_desktop_config_finalize (GObject *gobject);
 
+static void hd_desktop_config_read_keys (HDDesktopConfigPrivate *priv);
+
 static HDDesktopConfig *desktop_config = NULL;
+
+static void
+configuration_changed (HDDesktopConfig *self)
+{
+  HDDesktopConfigPrivate *priv;
+
+  priv = HD_DESKTOP_CONFIG_GET_PRIVATE (self);
+
+  hd_desktop_config_read_keys (priv);
+
+  g_signal_emit_by_name (self, "configuration-changed", NULL);
+}
 
 static void
 hd_desktop_config_class_init (HDDesktopConfigClass *klass)
@@ -77,6 +94,13 @@ hd_desktop_config_class_init (HDDesktopConfigClass *klass)
 
   gobject_class->constructor = hd_desktop_config_constructor;
   gobject_class->finalize    = hd_desktop_config_finalize;
+
+  g_signal_new ("configuration-changed", 
+		G_TYPE_FROM_CLASS (klass),
+                G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+                0, NULL, NULL, 
+		g_cclosure_marshal_VOID__VOID,
+                G_TYPE_NONE, 0);
 }
 
 static void
@@ -99,6 +123,18 @@ hd_desktop_config_init (HDDesktopConfig *self)
   priv->small_font  = g_strdup (HD_DEFAULT_FONT);
   priv->title_font  = g_strdup (HD_DEFAULT_FONT);
   priv->tn_lib_path = NULL;
+
+  priv->path_file = g_file_new_for_path (priv->path);
+
+  priv->conf_monitor =
+    g_file_monitor_file (priv->path_file,
+                         G_FILE_MONITOR_NONE,
+                         NULL,NULL);
+
+  g_signal_connect_swapped (G_OBJECT (priv->conf_monitor),
+                    	    "changed",
+                    	    G_CALLBACK (configuration_changed),
+                    	    (gpointer)self);
 }
 
 static void
@@ -255,7 +291,13 @@ hd_desktop_config_finalize (GObject *object)
   g_free (priv->small_font);
   g_free (priv->title_font);
 
-  G_OBJECT_CLASS(hd_desktop_config_parent_class)->finalize (object);  
+  if (priv->tn_lib_path != NULL)
+    g_free (priv->tn_lib_path);
+ 
+  if (priv->path_file != NULL)
+    g_object_unref (priv->path_file);
+
+  G_OBJECT_CLASS (hd_desktop_config_parent_class)->finalize (object);  
 }
 
 static GObject *
