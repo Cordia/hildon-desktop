@@ -1,3 +1,10 @@
+2010-03-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#158934 - Status area moving to down left corner
+	
+	* src/home/hd-render-manager.c: Don't restore back to HOME_PORTRAIT
+	  state when coming back from tklock, instead just go to HOME.
+
 2010-02-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.135-1
