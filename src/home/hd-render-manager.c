@@ -1292,8 +1292,11 @@ void hd_render_manager_set_state(HDRMStateEnum state)
               && hd_dbus_state_before_tklock != HDRM_STATE_LOADING
               && hd_dbus_state_before_tklock != HDRM_STATE_LOADING_SUBWIN)
             {
-              g_debug("%s: return to state %s before tklock\n", __func__,
-               hd_render_manager_state_str(hd_dbus_state_before_tklock));
+              /* If we got a call and then locked right after, we can be
+               * in HDRM_STATE_HOME_PORTRAIT state, which is *meant* to
+               * be transitional. See bug 158934 */
+              if (hd_dbus_state_before_tklock == HDRM_STATE_HOME_PORTRAIT)
+                hd_dbus_state_before_tklock = HDRM_STATE_HOME;
 
               if ((hd_dbus_state_before_tklock == HDRM_STATE_APP
                   || hd_dbus_state_before_tklock == HDRM_STATE_APP_PORTRAIT)
@@ -1303,6 +1306,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                    * switcher */
                   hd_dbus_state_before_tklock = HDRM_STATE_HOME;
                 }
+
+              g_debug("%s: return to state %s before tklock\n", __func__,
+                      hd_render_manager_state_str(hd_dbus_state_before_tklock));
 
               priv->state = state = hd_dbus_state_before_tklock;
             }
