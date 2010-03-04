@@ -452,7 +452,7 @@ hd_render_manager_constructor (GType                  gtype,
 
       /* Task switcher widget: anchor it at the centre so it is zoomed in
        * the middle when blurred. */
-#ifndef CLUTTER_08
+#ifdef MAEMO_CHANGES
       clutter_actor_set_visibility_detect (CLUTTER_ACTOR(priv->task_nav), FALSE);
 #endif
       clutter_actor_set_position (CLUTTER_ACTOR(priv->task_nav), 0, 0);
@@ -674,7 +674,7 @@ hd_render_manager_init (HdRenderManager *self)
 
   clutter_actor_set_name (CLUTTER_ACTOR (priv->home_blur),
 			  "HdRenderManager:home_blur");
-#ifndef CLUTTER_08
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect (CLUTTER_ACTOR(priv->home_blur),FALSE);
 #endif
   tidy_blur_group_set_use_alpha(CLUTTER_ACTOR(priv->home_blur), FALSE);
@@ -698,7 +698,7 @@ hd_render_manager_init (HdRenderManager *self)
 			    "notify::allocation",
                             G_CALLBACK (stage_allocation_changed),
 			    priv->app_top);
-#ifndef CLUTTER_08
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->app_top), FALSE);
 #endif
 
@@ -715,7 +715,7 @@ hd_render_manager_init (HdRenderManager *self)
 			    "notify::allocation",
                             G_CALLBACK(stage_allocation_changed), 
 			    priv->front);
-#ifndef CLUTTER_08
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->front), FALSE);
 #endif
 
@@ -732,7 +732,7 @@ hd_render_manager_init (HdRenderManager *self)
 			    "notify::allocation",
                             G_CALLBACK (stage_allocation_changed),
 			    priv->blur_front);
-#ifndef CLUTTER_08
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->blur_front), FALSE);
 #endif
 

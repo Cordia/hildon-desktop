@@ -358,7 +358,9 @@ hd_home_view_constructed (GObject *object)
 
   priv->background_container = clutter_group_new ();
   clutter_actor_set_name (priv->background_container, "HdHomeView::background-container");
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(priv->background_container, FALSE);
+#endif
   clutter_actor_set_position (priv->background_container, 0, 0);
   clutter_actor_set_size (priv->background_container,
                           hd_comp_mgr_get_current_screen_width (),
@@ -370,7 +372,9 @@ hd_home_view_constructed (GObject *object)
 
   priv->applets_container = clutter_group_new ();
   clutter_actor_set_name (priv->applets_container, "HdHomeView::applets-container");
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(priv->applets_container, FALSE);
+#endif
   clutter_actor_set_position (priv->applets_container, 0, 0);
   clutter_actor_set_size (priv->applets_container,
                           hd_comp_mgr_get_current_screen_width (),
@@ -409,10 +413,11 @@ hd_home_view_init (HdHomeView *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME_VIEW, HdHomeViewPrivate);
 
   clutter_actor_set_name(CLUTTER_ACTOR(self), "HdHomeView");
+#ifdef MAEMO_CHANGES
   /* Explicitly enable maemo-specific visibility detection to cut down
    * spurious paints */
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(self), TRUE);
-
+#endif
   self->priv->gconf_client = gconf_client_get_default ();
 
   self->priv->layout = hd_home_view_layout_new ();

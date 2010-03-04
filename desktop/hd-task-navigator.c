@@ -544,7 +544,7 @@ hd_task_navigator_init (HdTaskNavigator *navigator)
   clutter_actor_set_size (priv->scroller,
 			  hd_comp_mgr_get_current_screen_width (),
 			  hd_comp_mgr_get_current_screen_height ());
-#ifndef CLUTTER_08
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(priv->scroller, FALSE);
 #endif
   clutter_container_add_actor (CLUTTER_CONTAINER (navigator), 
@@ -567,7 +567,7 @@ hd_task_navigator_init (HdTaskNavigator *navigator)
   clutter_actor_set_name (CLUTTER_ACTOR (priv->grid), "Grid");
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (priv->grid), TRUE);
-#ifndef CLUTTER_08
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR (priv->grid), FALSE);
 #endif
   g_signal_connect (priv->grid, 

@@ -1506,7 +1506,7 @@ hd_transition_rotating_fsm(void)
              * damage_timeout_max.
              */
             Orientation_change.phase = WAIT_FOR_ROOT_CONFIG;
-
+#ifdef MAEMO_CHANGES
             /* Don't allow anything inside the render manager to tell clutter
              * to redraw. actor_hide should have done this, but it doesn't.
              * We now need to totally blank the screen before the rotation,
@@ -1515,6 +1515,7 @@ hd_transition_rotating_fsm(void)
              * hd_dbus_system_bus_signal_handler */
             clutter_actor_set_allow_redraw(
                 CLUTTER_ACTOR(hd_render_manager_get()), FALSE);
+#endif
             clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
             clutter_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
 
@@ -1579,8 +1580,9 @@ trans_start_error:
               { /* Fade back in */
                 /* Undo the redraw stopping that happened in FADE_OUT */
                 Orientation_change.phase = FADE_IN;
-                clutter_actor_set_allow_redraw(
-                                CLUTTER_ACTOR(hd_render_manager_get()), TRUE);
+#ifdef MAEMO_CHANGES
+                clutter_actor_set_allow_redraw (CLUTTER_ACTOR (hd_render_manager_get()), TRUE);
+#endif
                 clutter_actor_show(CLUTTER_ACTOR(hd_render_manager_get()));
                 hd_transition_fade_and_rotate(
                         FALSE, Orientation_change.direction == GOTO_PORTRAIT,

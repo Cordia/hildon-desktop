@@ -588,7 +588,9 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   arena = mb_wm_comp_mgr_clutter_get_arena(MB_WM_COMP_MGR_CLUTTER(cmgr));
   if (arena)
     {
+#ifdef MAEMO_CHANGES
       clutter_actor_set_allow_redraw(arena, FALSE);
+#endif
       clutter_actor_hide(arena);
       g_object_unref(arena); /* mb_wm_comp_mgr_clutter_get_arena refs us */
     }
@@ -1342,7 +1344,9 @@ hd_comp_mgr_hook_update_area(HdCompMgr *hmgr, ClutterActor *actor)
               g_signal_connect_swapped(
                       G_OBJECT(child), "update-area",
                       G_CALLBACK(hd_comp_mgr_texture_update_area), hmgr);
+#ifdef MAEMO_CHANGES
               clutter_actor_set_allow_redraw(child, FALSE);
+#endif
             }
         }
     }

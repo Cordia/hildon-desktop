@@ -255,10 +255,11 @@ hd_title_bar_init (HdTitleBar *bar)
   gint i;
 
   priv->state = HDTB_VIS_NONE;
-
+#ifdef MAEMO_CHANGES
   /* Explicitly enable maemo-specific visibility detection to cut down
    * spurious paints */
   clutter_actor_set_visibility_detect(actor, TRUE);
+#endif
   clutter_actor_set_position(actor, 0, 0);
   clutter_actor_set_size(actor,
          hd_comp_mgr_get_current_screen_width (), HD_COMP_MGR_TOP_MARGIN);
@@ -268,9 +269,11 @@ hd_title_bar_init (HdTitleBar *bar)
   font_name = hd_desktop_config_get_font (HD_TITLEBAR_FONT);
 
   priv->foreground = CLUTTER_GROUP(clutter_group_new());
+#ifdef MAEMO_CHANGES
   /* Explicitly enable maemo-specific visibility detection to cut down
    * spurious paints */
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->foreground), TRUE);
+#endif
   clutter_actor_set_name(CLUTTER_ACTOR(priv->foreground),
       "HdTitleBar::foreground");
   clutter_container_add_actor(CLUTTER_CONTAINER(bar),
@@ -316,12 +319,12 @@ hd_title_bar_init (HdTitleBar *bar)
           clutter_actor_set_position (label, HD_TITLE_BAR_TEXT_MARGIN,
                                       (HD_COMP_MGR_TOP_MARGIN - h) / 2);
         }
-
+#ifdef MAEMO_CHANGES
       /* Explicitly enable maemo-specific visibility detection to cut down
        * spurious paints */
       clutter_actor_set_visibility_detect(
           CLUTTER_ACTOR(priv->buttons[i]), TRUE);
-
+#endif
       /* The position of left-aligned buttons is (0, 0) by default,
        * and right aligned ones will be placed on the initial
        * stage_allocation_changed(). */
@@ -357,9 +360,11 @@ hd_title_bar_init (HdTitleBar *bar)
 
   /* Create the title */
   priv->title = CLUTTER_LABEL(clutter_label_new());
+#ifdef MAEMO_CHANGES
   /* Explicitly enable maemo-specific visibility detection to cut down
    * spurious paints */
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->title), TRUE);
+#endif
   clutter_label_set_color(priv->title, &title_color);
   /* do not call clutter_label_set_use_markup() until we know whether
    * or not the text has markup */
@@ -386,8 +391,10 @@ hd_title_bar_init (HdTitleBar *bar)
                                                     &progress_geo);
     clutter_container_add_actor(CLUTTER_CONTAINER(bar),
                                 priv->progress_texture);
+#ifdef MAEMO_CHANGES
     clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->progress_texture),
                                         TRUE);
+#endif
     clutter_actor_set_size(priv->progress_texture,
                 HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE);
     clutter_actor_hide(priv->progress_texture);
@@ -1312,12 +1319,12 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
       clutter_actor_set_opacity(priv->buttons[BTN_SWITCHER_HIGHLIGHT], 255);
       return;
     }
-
+#ifdef MAEMO_CHANGES
   /* Only get this to fire a redraw if it is visible... fixes bug 113278.
      (and now only update the actual area using
       hd_util_partial_redraw_if_possible...) */
   clutter_actor_set_allow_redraw(CLUTTER_ACTOR(bar), FALSE);
-
+#endif
   amt =  (float)clutter_timeline_get_progress(timeline)
               * HD_TITLE_BAR_SWITCHER_PULSE_NPULSES / 2;
   if (priv->state & HDTB_VIS_BTN_SWITCHER)
@@ -1327,7 +1334,9 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
     }
 
   hd_util_partial_redraw_if_possible(priv->buttons[BTN_SWITCHER_HIGHLIGHT], 0);
+#ifdef MAEMO_CHANGES
   clutter_actor_set_allow_redraw(CLUTTER_ACTOR(bar), TRUE);
+#endif
 }
 
 /* Realign all right-aligned buttons when the screen size changes. */

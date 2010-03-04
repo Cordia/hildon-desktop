@@ -566,6 +566,7 @@ hd_util_click (const MBWindowManagerClient *c)
   XSendEvent(xdpy, xwin, False, ButtonPressMask, (XEvent *)&ev);
 }
 
+#ifdef MAEMO_CHANGES
 /* Try and get the translated bounds for an actor (the actual pixel position
  * of it on the screen). If geo is 0 or width/height are 0, this func will
  * use the full bounds of the actor. Otherwise we translate the bounds given
@@ -638,6 +639,7 @@ hd_util_get_actor_bounds(ClutterActor *actor, ClutterGeometry *geo, gboolean *is
     }
   return valid;
 }
+#endif
 
 /* Call this after an actor is updated, and it will ask the stage to redraw
  * in whatever way is best (a small area if it can manage, or the whole
@@ -650,8 +652,9 @@ hd_util_get_actor_bounds(ClutterActor *actor, ClutterGeometry *geo, gboolean *is
 void
 hd_util_partial_redraw_if_possible(ClutterActor *actor, ClutterGeometry *bounds)
 {
-  ClutterGeometry area = {0,0,0,0};
   ClutterActor *stage = clutter_stage_get_default();
+#ifdef MAEMO_CHANGES
+  ClutterGeometry area = {0,0,0,0};
   gboolean visible, valid;
 
   if (bounds)
@@ -667,8 +670,11 @@ hd_util_partial_redraw_if_possible(ClutterActor *actor, ClutterGeometry *bounds)
     }
   else
     {
-      clutter_actor_queue_redraw(stage);
+      clutter_actor_queue_redraw (stage);
     }
+#else
+  clutter_actor_queue_redraw (stage);
+#endif
 }
 
 /* Check to see whether clients above this one totally obscure it */
