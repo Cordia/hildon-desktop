@@ -73,8 +73,6 @@
  * Tunable. */
 #define MANUAL_SCROLL_PPS                   200
 
-typedef void (*ScrollableGroupCallback) (ClutterActor *actor, gpointer data);
-
 static void hd_scrollable_group_iface_init (TidyScrollableInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (HdScrollableGroup, hd_scrollable_group,
@@ -110,7 +108,7 @@ typedef struct
    *
    * These variables are used as a means of communication between
    * hsg_scroll_viewport() and hsg_tick():
-   * @manual_scroll_from: #ClutterFixed pixel number of the starting
+   * @manual_scroll_from: pixel number of the starting
    *                      point of manual scrolling.
    * @manual_scroll_to:   Likewise for the destination pixel.
    * @on_manual_scroll_complete, @on_manual_scroll_complete_param:
@@ -128,7 +126,7 @@ typedef struct
   TidyAdjustment           *adjustment;
   ClutterTimeline          *manual_scroll_timeline;
   gdouble                   manual_scroll_from, manual_scroll_to;
-  ScrollableGroupCallback   on_manual_scroll_complete;
+  ClutterCallback   on_manual_scroll_complete;
   gpointer                  on_manual_scroll_complete_param;
   gdouble                   new_upper;
 } DirectionInfo;
@@ -377,7 +375,7 @@ static void
 hd_scrollable_group_scroll_viewport (HdScrollableGroup * self,
                                      HdScrollableGroupDirection direction,
                                      gboolean is_relative, gint diff,
-                                     ScrollableGroupCallback fun,
+                                     ClutterCallback fun,
                                      gpointer funparam)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
@@ -403,8 +401,7 @@ hd_scrollable_group_scroll_viewport (HdScrollableGroup * self,
 			      &page);
 
   dir->manual_scroll_to = 
-    (is_relative) ? dir->manual_scroll_from + CLUTTER_INT_TO_FIXED (diff)
-    : CLUTTER_INT_TO_FIXED (diff);
+    (is_relative) ? dir->manual_scroll_from + diff : diff;
 
   /* Confine the destination within the bounds. */
   if (dir->manual_scroll_to > upper - page)
@@ -506,7 +503,7 @@ hd_scrollable_group_set_real_estate (HdScrollableGroup * self,
     { /* Invariant #1 violated, align with the top. */
       dir->new_upper = pagesize;
       hd_scrollable_group_scroll_viewport (self, direction, FALSE, 0,
-                                           (ScrollableGroupCallback)
+                                           (ClutterCallback)
                                            hd_scrollable_group_set_new_upper,
                                            dir);
       return;
@@ -516,7 +513,7 @@ hd_scrollable_group_set_real_estate (HdScrollableGroup * self,
       dir->new_upper = upper;
       hd_scrollable_group_scroll_viewport (self, direction, FALSE,
                                            upper - pagesize,
-                                           (ScrollableGroupCallback)
+                                           (ClutterCallback)
                                            hd_scrollable_group_set_new_upper,
                                            dir);
       return;

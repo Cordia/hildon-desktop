@@ -761,7 +761,7 @@ hd_switcher_item_selected (HdSwitcher *switcher, ClutterActor *actor)
   cc = g_object_get_data(G_OBJECT (actor), "HD-MBWMCompMgrClutterClient");
   
   hd_task_navigator_zoom_in (priv->task_nav, actor,
-              		     (HdTaskNavigatorFunc) hd_switcher_zoom_in_complete,
+              		     (ClutterCallback) hd_switcher_zoom_in_complete,
               		     switcher);
 
   if (cc->wm_client)
@@ -899,7 +899,7 @@ hd_switcher_remove_window_actor (HdSwitcher * switcher, ClutterActor * actor,
   /* Make sure @cmgrcc stays as long as %HdTaskNavigator animates. */
   mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
   hd_task_navigator_remove_window (priv->task_nav, CLUTTER_ACTOR (actor),
-                  		   (HdTaskNavigatorFunc)hd_switcher_window_removed,
+                  		   (ClutterCallback)hd_switcher_window_removed,
                   		   cmgrcc);
 }
 

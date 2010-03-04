@@ -32,8 +32,6 @@
 
 G_BEGIN_DECLS
 
-typedef void (*HdTaskNavigatorFunc) (ClutterActor *actor, gpointer data);
-
 #define HD_TYPE_TASK_NAVIGATOR            (hd_task_navigator_get_type ())
 #define HD_TASK_NAVIGATOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), HD_TYPE_TASK_NAVIGATOR, HdTaskNavigator))
 #define HD_TASK_NAVIGATOR_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), HD_TYPE_TASK_NAVIGATOR, HdTaskNavigatorClass))
@@ -76,12 +74,12 @@ void hd_task_navigator_scroll_back (HdTaskNavigator *navigator);
 
 void hd_task_navigator_zoom_in   (HdTaskNavigator *navigator,
                                   ClutterActor *win,
-                                  HdTaskNavigatorFunc fun,
+                                  ClutterCallback fun,
                                   gpointer funparam);
 
 void hd_task_navigator_zoom_out  (HdTaskNavigator *navigator,
                                   ClutterActor *win,
-                                  HdTaskNavigatorFunc fun,
+                                  ClutterCallback fun,
                                   gpointer funparam);
 
 void hd_task_navigator_add_window       (HdTaskNavigator *navigator,
@@ -89,7 +87,7 @@ void hd_task_navigator_add_window       (HdTaskNavigator *navigator,
 
 void hd_task_navigator_remove_window    (HdTaskNavigator *navigator,
                                          ClutterActor *win,
-                                         HdTaskNavigatorFunc fun,
+                                         ClutterCallback fun,
                                          gpointer funparam);
 
 void hd_task_navigator_hibernate_window (HdTaskNavigator *navigator,

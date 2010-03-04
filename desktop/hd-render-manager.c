@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <math.h>
 #include "hd-render-manager.h"
 #include <gdk/gdk.h>
 #include <clutter/clutter.h>
@@ -310,13 +311,11 @@ press_effect_new_frame (ClutterTimeline *timeline,
    gfloat time = (gfloat)n_frame / (gfloat)clutter_get_default_frame_rate ();
    gdouble sx, sy;
    gint ax, ay;
-   ClutterFixed w,h;
+   gdouble w,h;
    ClutterActor *stage = CLUTTER_ACTOR (render_manager);
 
-   w = clutter_qmulx (CLUTTER_INT_TO_FIXED (hd_comp_mgr_get_current_screen_width()),
-		      CLUTTER_FLOAT_TO_FIXED (PRESS_ANCHOR));
-   h = clutter_qmulx (CLUTTER_INT_TO_FIXED (hd_comp_mgr_get_current_screen_width()),
-		      CLUTTER_FLOAT_TO_FIXED (PRESS_ANCHOR));
+   w = ceil (hd_comp_mgr_get_current_screen_width() * PRESS_ANCHOR);
+   h = ceil (hd_comp_mgr_get_current_screen_width() * PRESS_ANCHOR);
    
    clutter_actor_get_scale (stage, &sx, &sy);
    clutter_actor_get_anchor_point (stage, &ax, &ay);
@@ -326,16 +325,16 @@ press_effect_new_frame (ClutterTimeline *timeline,
        clutter_actor_set_scale (stage, sx - PRESS_SCALE, sy - PRESS_SCALE);
 
        clutter_actor_set_anchor_point (stage, 
-				       ax - CLUTTER_FIXED_TO_INT (w),
-				       ay - CLUTTER_FIXED_TO_INT (h));
+				       ax - w,
+				       ay - h);
      }
    else if (sx < 1)
      {
        clutter_actor_set_scale (stage, sx + PRESS_SCALE, sy + PRESS_SCALE);
 
        clutter_actor_set_anchor_point (stage,
-				       ax + CLUTTER_FIXED_TO_INT (w),
-				       ay + CLUTTER_FIXED_TO_INT (h));
+				       ax + w,
+				       ay + h);
      }
 
    if (n_frame == clutter_timeline_get_n_frames (priv->timeline_press))
@@ -1656,7 +1655,7 @@ hd_render_manager_set_state (HDRMStateEnum state)
                   /* Make sure @cmgrcc stays around as long as needed. */
                   mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
                   hd_task_navigator_zoom_out (priv->task_nav, actor,
-                          		      (HdTaskNavigatorFunc)zoom_out_completed,
+                          		      (ClutterCallback)zoom_out_completed,
                           		       cmgrcc);
                 }
             }

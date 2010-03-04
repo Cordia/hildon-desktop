@@ -133,7 +133,7 @@
 
 typedef struct
 {
-  HdTaskNavigatorFunc fun;
+  ClutterCallback fun;
   ClutterActor *actor;
   gpointer	param;
   HdTaskNavigator *navigator;
@@ -957,7 +957,7 @@ hd_task_navigator_scroll_back (HdTaskNavigator * navigator)
 void
 hd_task_navigator_remove_window (HdTaskNavigator *navigator,
                                  ClutterActor *win,
-                                 HdTaskNavigatorFunc fun,
+                                 ClutterCallback fun,
                                  gpointer funparam)
 { 
   HdTaskNavigatorPrivate *priv = 
@@ -1328,7 +1328,7 @@ zoom_in_completed (HdTnThumbnail *thumbnail,
 void 
 hd_task_navigator_zoom_in (HdTaskNavigator *navigator,
                            ClutterActor *win,
-                           HdTaskNavigatorFunc fun,
+                           ClutterCallback fun,
                            gpointer funparam)
 {
   HdTnThumbnail *thumbnail;
@@ -1402,7 +1402,7 @@ damage_control:
 void 
 hd_task_navigator_zoom_out  (HdTaskNavigator *navigator,
                              ClutterActor *win,
-                             HdTaskNavigatorFunc fun,
+                             ClutterCallback fun,
                              gpointer funparam)
 {
  HdTnThumbnail *thumbnail;
