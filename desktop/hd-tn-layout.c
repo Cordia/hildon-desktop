@@ -416,7 +416,7 @@ hd_default_layout_calculate (HdTnLayout *layout,
   xthumb = ythumb = 0xB002E;
   for (l = thumbnails, i = 0; l != NULL && (l->data != NULL); l = l->next, i++)
     {
-
+      clutter_actor_set_anchor_point (CLUTTER_ACTOR (l->data), 0, 0);
       /* If it's a new row re/set @ythumb and @xthumb. */
       g_assert (priv->cells_per_row > 0);
 

@@ -701,11 +701,14 @@ hd_task_navigator_real_zoom_out (HdTaskNavigator *navigator,
   HdTaskNavigatorPrivate *priv = 
     HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
   gdouble xscale, yscale;
-  gint yarea, xpos, ypos, th_height;
+  gint yarea, xpos, ypos, th_height, anchorx, anchory;
 
   hd_tn_layout_calculate (priv->layout,
 			  priv->thumbnails,
 			  CLUTTER_ACTOR (priv->grid));
+
+  clutter_actor_get_anchor_point (CLUTTER_ACTOR (thumbnail),
+				  &anchorx, &anchory);
 
   priv->zoomed_out = TRUE;
 
@@ -729,8 +732,8 @@ hd_task_navigator_real_zoom_out (HdTaskNavigator *navigator,
   ypos -= yarea;
 
   /* @xpos, @ypos := absolute position of .prison. */
-  xpos += PRISON_XPOS;
-  ypos += PRISON_YPOS;
+  xpos = xpos + PRISON_XPOS - anchorx;
+  ypos = ypos + PRISON_YPOS - anchory;
   
   hd_tn_thumbnail_get_jail_scale (thumbnail, &xscale, &yscale);
 
