@@ -941,10 +941,43 @@ hd_task_navigator_find_app_actor (HdTaskNavigator * navigator, const gchar * id)
 void
 hd_task_navigator_scroll_back (HdTaskNavigator * navigator)
 {
-  //hd_scrollable_group_set_viewport_y (Grid, 0);
+  HdTaskNavigatorPrivate *priv =
+    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
+
+  hd_scrollable_group_set_viewport_y (priv->grid, 0);
 }
 
 /* Updates our #HdScrollableGroup's idea about the @Grid's height. */
+
+static void
+close_animation_completed (HdTnThumbnail *thumbnail, HdTnLayout *layout)
+{
+  ClutterActor *window;
+  MBWMCompMgrClutterClient *cmgrcc;
+
+  g_signal_handlers_disconnect_by_func (layout,
+					G_CALLBACK (close_animation_completed),
+					thumbnail);
+
+  g_object_get (G_OBJECT (thumbnail),
+		"window", &window,
+		NULL);
+
+  g_assert (window != NULL);
+
+  cmgrcc = g_object_get_data (G_OBJECT (window),
+		     	      "HD-MBWMCompMgrClutterClient");
+
+  mb_wm_comp_mgr_clutter_client_unset_flags 
+          (cmgrcc, MBWMCompMgrClutterClientDontUpdate
+		   | MBWMCompMgrClutterClientEffectRunning);
+
+  mb_wm_object_unref (MB_WM_OBJECT (cmgrcc));
+
+  hd_tn_thumbnail_release_window (thumbnail);
+
+  clutter_actor_destroy (CLUTTER_ACTOR (thumbnail));
+}
 
 /*
  * Asks the navigator to forget about @win.  If @fun is not %NULL it is
@@ -995,8 +1028,17 @@ hd_task_navigator_remove_window (HdTaskNavigator *navigator,
 	   break;
     }
 
+  g_assert (l != NULL);
+
   if (hd_task_navigator_is_active (navigator))
     {
+
+       g_signal_connect_swapped (priv->layout,
+			    	 "close-animation-completed",
+		    	    	 G_CALLBACK (close_animation_completed),
+		    	    	 l->data);
+
+
       MBWMCompMgrClutterClient *cmgrcc;
 
       /* Hold a reference on @win's clutter client. */
@@ -1007,30 +1049,25 @@ hd_task_navigator_remove_window (HdTaskNavigator *navigator,
         }
 
       mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
-      mb_wm_comp_mgr_clutter_client_set_flags (cmgrcc,
-                                 MBWMCompMgrClutterClientDontUpdate
-                               | MBWMCompMgrClutterClientEffectRunning);
+      mb_wm_comp_mgr_clutter_client_set_flags 
+	(cmgrcc,
+         MBWMCompMgrClutterClientDontUpdate
+	 | MBWMCompMgrClutterClientEffectRunning);
 
       /* At the end of effect free @apthumb and release @cmgrcc. */
       clutter_actor_raise_top (CLUTTER_ACTOR (l->data));
+      
+      if (!hd_tn_layout_close_animation (priv->layout, CLUTTER_ACTOR (l->data)))
+	{
+          mb_wm_comp_mgr_clutter_client_unset_flags 
+          (cmgrcc, MBWMCompMgrClutterClientDontUpdate
+		   | MBWMCompMgrClutterClientEffectRunning);
 
-      /* Animate and destroy the window when finished
-      turnoff_effect (Fly_effect_timeline, apthumb->thwin);
-      add_effect_closure (Fly_effect_timeline,
-                          (ClutterEffectCompleteFunc)appthumb_turned_off_1,
-                          apthumb->thwin, apthumb);
-      add_effect_closure (Fly_effect_timeline,
-                          (ClutterEffectCompleteFunc)appthumb_turned_off_2,
-                          apthumb->thwin, cmgrcc);*/
+          mb_wm_object_unref (MB_WM_OBJECT (cmgrcc));
 
-      /* This code should be moved to the end of the effect */
-      mb_wm_comp_mgr_clutter_client_unset_flags 
-        (cmgrcc, MBWMCompMgrClutterClientDontUpdate | MBWMCompMgrClutterClientEffectRunning);
-
-      mb_wm_object_unref (MB_WM_OBJECT (cmgrcc));
-
-      hd_tn_thumbnail_release_window (HD_TN_THUMBNAIL (l->data));
-      goto damage_control;
+          hd_tn_thumbnail_release_window (HD_TN_THUMBNAIL (l->data));
+          goto damage_control;
+	}
     }
   else
     {
@@ -1041,7 +1078,7 @@ damage_control:
   priv->thumbnails = g_list_delete_link (priv->thumbnails, l);
   priv->n_thumbnails--;
 
-  /* Re order the stuff. This should be animated */
+  /* Re order the stuff. Layout takes care of animation. */
   hd_tn_layout_calculate (priv->layout,
 			  priv->thumbnails,
 			  CLUTTER_ACTOR (priv->grid));
@@ -1678,10 +1715,10 @@ hd_tn_thumbnail_get_property (GObject    *object,
 static void 
 clip_on_resize (ClutterActor *actor) 
 { 
-  ClutterUnit width, height; 
+  guint width, height; 
  
-  clutter_actor_get_sizeu (actor, &width, &height); 
-  clutter_actor_set_clipu (actor, 0, 0, width, height); 
+  clutter_actor_get_size (actor, &width, &height); 
+  clutter_actor_set_clip (actor, 0, 0, width, height); 
 }
 
 static void

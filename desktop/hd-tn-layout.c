@@ -128,6 +128,11 @@ hd_tn_layout_class_init (HdTnLayoutClass *klass)
 
   g_object_class_install_property (object_class, PROP_HEIGHT, pspec);
 
+  g_signal_new ("close-animation-completed", 
+		G_TYPE_FROM_CLASS (klass),
+                G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
+                0, NULL, NULL, g_cclosure_marshal_VOID__VOID,
+                G_TYPE_NONE, 0);
 }
 
 static void 
@@ -239,6 +244,16 @@ hd_tn_layout_last_active_window (HdTnLayout *layout, ClutterActor *window)
   if (HD_TN_LAYOUT_GET_CLASS (layout)->last_active_window != NULL)
     HD_TN_LAYOUT_GET_CLASS (layout)->last_active_window (layout,
 							 window);
+}
+
+gboolean 
+hd_tn_layout_close_animation (HdTnLayout *layout, ClutterActor *thumbnail)
+{
+  if (HD_TN_LAYOUT_GET_CLASS (layout)->close_animation != NULL)
+    return HD_TN_LAYOUT_GET_CLASS (layout)->close_animation (layout,
+							     thumbnail);
+
+  return FALSE;
 }
 
 /* Default layout object */

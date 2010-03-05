@@ -66,6 +66,9 @@ struct _HdTnLayoutClass
 
   void (*last_active_window) (HdTnLayout *layout,
 				 ClutterActor *window);
+
+  gboolean (*close_animation) (HdTnLayout *layout, 
+			       ClutterActor *thumbnail);
 };
 
 GType hd_tn_layout_get_type (void) G_GNUC_CONST;
@@ -90,6 +93,9 @@ void hd_tn_layout_stop_animation (HdTnLayout *layout);
 
 void hd_tn_layout_last_active_window (HdTnLayout *layout,
 				      ClutterActor *window);
+
+gboolean hd_tn_layout_close_animation (HdTnLayout *layout, 
+				       ClutterActor *thumbnail);
 
 #define HD_TYPE_DEFAULT_LAYOUT       (hd_default_layout_get_type ())
 #define HD_DEFAULT_LAYOUT(obj)       (G_TYPE_CHECK_INSTANCE_CAST ((obj), HD_TYPE_DEFAULT_LAYOUT, HdDefaultLayout))
