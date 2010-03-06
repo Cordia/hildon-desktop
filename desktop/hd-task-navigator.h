@@ -149,6 +149,8 @@ void hd_tn_thumbnail_release_window (HdTnThumbnail *thumbnail);
 
 void hd_tn_thumbnail_replace_window (HdTnThumbnail *thumbnail, ClutterActor *new_window);
 
+void hd_tn_thumbnail_to_be_closed (HdTnThumbnail *thumbnail);
+
 void hd_tn_thumbnail_add_dialog (HdTnThumbnail *thumbnail, ClutterActor *dialog);
 
 void hd_tn_thumbnail_remove_dialog (HdTnThumbnail *thumbnail, ClutterActor *dialog);

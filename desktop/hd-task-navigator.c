@@ -1056,6 +1056,8 @@ hd_task_navigator_remove_window (HdTaskNavigator *navigator,
 
       /* At the end of effect free @apthumb and release @cmgrcc. */
       clutter_actor_raise_top (CLUTTER_ACTOR (l->data));
+
+      hd_tn_thumbnail_to_be_closed (HD_TN_THUMBNAIL (l->data));
       
       if (!hd_tn_layout_close_animation (priv->layout, CLUTTER_ACTOR (l->data)))
 	{
@@ -1486,6 +1488,7 @@ struct _HdTnThumbnailPrivate
 {
   ThumbnailType type;
 
+  gboolean to_be_closed;
   /*
    * -- @thwin:       The @Grid's thumbnail window and event responder.
    *                  Can be faded in/out if the thumbnail is a notification.
@@ -1845,9 +1848,16 @@ thumbnail_clicked (HdTnThumbnail *thumbnail,
 static gboolean
 appthumb_close_clicked (HdTnThumbnail *thumbnail)
 {
+  HdTnThumbnailPrivate *priv =
+    HD_TN_THUMBNAIL_GET_PRIVATE (thumbnail);
+
   if (hd_render_manager_get_state () != HDRM_STATE_TASK_NAV)
     /* Be consistent with appthumb_clicked(). */
     return TRUE;
+
+  if (priv->to_be_closed)
+    return TRUE;
+
 #if 0
   if (animation_in_progress (Fly_effect_timeline)
       || animation_in_progress (Zoom_effect_timeline))
@@ -1855,10 +1865,7 @@ appthumb_close_clicked (HdTnThumbnail *thumbnail)
     /* Maybe not anymore but let's play safe. */
     return TRUE;
 #endif
-
   HdTaskNavigator *navigator;
-  HdTnThumbnailPrivate *priv =
-    HD_TN_THUMBNAIL_GET_PRIVATE (thumbnail);
 
   navigator = 
     HD_TASK_NAVIGATOR (g_object_get_data (G_OBJECT (thumbnail), "task-nav"));
@@ -2154,6 +2161,8 @@ hd_tn_thumbnail_init (HdTnThumbnail *thumbnail)
   priv->dialogs = NULL;
   priv->jail = NULL;
   priv->pressed = FALSE;
+
+  priv->to_be_closed = FALSE;
 }
 
 static void
@@ -2604,6 +2613,15 @@ hd_tn_thumbnail_replace_window (HdTnThumbnail *thumbnail,
       if (FALSE)//!thumb_has_notification (apthumb))
         hd_tn_thumbnail_reset_title (thumbnail);
     }
+}
+
+void 
+hd_tn_thumbnail_to_be_closed (HdTnThumbnail *thumbnail)
+{
+  HdTnThumbnailPrivate *priv = 
+    HD_TN_THUMBNAIL_GET_PRIVATE (thumbnail);
+
+  priv->to_be_closed = TRUE;
 }
 
 void 
