@@ -1319,10 +1319,17 @@ hd_task_navigator_remove_notification (HdTaskNavigator * navigator,
 
 /* re-calc layout when HdRenderManager's rotation is triggered */
 void 
-hd_task_navigator_rotate (HdTaskNavigator *tn, 
+hd_task_navigator_rotate (HdTaskNavigator *navigator, 
 			  Rotation rotation) 
 {
+  HdTaskNavigatorPrivate *priv =
+    HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
 
+  hd_render_manager_set_state (HDRM_STATE_HOME);
+
+  hd_tn_layout_calculate (priv->layout,
+			  priv->thumbnails,
+			  CLUTTER_ACTOR (priv->grid)); 
 }
 
 
@@ -2726,7 +2733,7 @@ hd_tn_thumbnail_update_inners (HdTnThumbnail *thumbnail, gint title_size)
 
    clutter_actor_set_size (priv->title, 
 			   title_size,
-			   clutter_actor_get_height (priv->title)*2);
+			   clutter_actor_get_height (priv->title));
 
    guint wt, ht, wb, hb;
    /* This is quite boring. */
@@ -2767,6 +2774,12 @@ hd_tn_thumbnail_update_inners (HdTnThumbnail *thumbnail, gint title_size)
                      		       (gdouble)wjail / wwidth,
                       		       (gdouble)hjail / wheight);     
      }
+
+  clutter_actor_set_name (priv->windows, "windows");
+  clutter_actor_set_clip (priv->windows,
+                          0, HD_COMP_MGR_TOP_MARGIN,
+                          hd_comp_mgr_get_current_screen_width (), 
+			  hd_comp_mgr_get_current_screen_height ());
 }
 
 ClutterActor *
