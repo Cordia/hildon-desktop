@@ -954,6 +954,8 @@ close_animation_completed (HdTnThumbnail *thumbnail, HdTnLayout *layout)
 {
   ClutterActor *window;
   MBWMCompMgrClutterClient *cmgrcc;
+  HdTaskNavigator *navigator;
+  HdTaskNavigatorPrivate *npriv;
 
   g_signal_handlers_disconnect_by_func (layout,
 					G_CALLBACK (close_animation_completed),
@@ -962,6 +964,10 @@ close_animation_completed (HdTnThumbnail *thumbnail, HdTnLayout *layout)
   g_object_get (G_OBJECT (thumbnail),
 		"window", &window,
 		NULL);
+
+  navigator = g_object_get_data (G_OBJECT (thumbnail), "task-nav");
+
+  npriv = HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
 
   g_assert (window != NULL);
 
@@ -977,6 +983,10 @@ close_animation_completed (HdTnThumbnail *thumbnail, HdTnLayout *layout)
   hd_tn_thumbnail_release_window (thumbnail);
 
   clutter_actor_destroy (CLUTTER_ACTOR (thumbnail));
+
+  hd_tn_layout_calculate (layout,
+			  npriv->thumbnails,
+			  CLUTTER_ACTOR (npriv->grid));
 }
 
 /*
@@ -997,6 +1007,7 @@ hd_task_navigator_remove_window (HdTaskNavigator *navigator,
     HD_TASK_NAVIGATOR_GET_PRIVATE (navigator);
 
   GList *l;
+  gboolean postpone_calculate = FALSE;
 
   if (clutter_timeline_is_playing (priv->zoom_timeline))
     {
@@ -1070,6 +1081,8 @@ hd_task_navigator_remove_window (HdTaskNavigator *navigator,
           hd_tn_thumbnail_release_window (HD_TN_THUMBNAIL (l->data));
           goto damage_control;
 	}
+      else
+	postpone_calculate = TRUE;
     }
   else
     {
@@ -1081,9 +1094,10 @@ damage_control:
   priv->n_thumbnails--;
 
   /* Re order the stuff. Layout takes care of animation. */
-  hd_tn_layout_calculate (priv->layout,
-			  priv->thumbnails,
-			  CLUTTER_ACTOR (priv->grid));
+  if (!postpone_calculate)
+    hd_tn_layout_calculate (priv->layout,
+			    priv->thumbnails,
+			    CLUTTER_ACTOR (priv->grid));
 
   if (fun != NULL)
     fun (CLUTTER_ACTOR (navigator), funparam);
