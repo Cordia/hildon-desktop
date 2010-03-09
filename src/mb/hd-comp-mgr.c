@@ -1537,14 +1537,18 @@ void hd_comp_mgr_reset_overlay_shape (HdCompMgr *hmgr)
                          BlackPixel(wm->xdpy, DefaultScreen(wm->xdpy)));
 
     /* g_printerr ("%s: COMPOSITING: FULL SCREEN\n", __FUNCTION__); */
+#ifdef MAEMO_CHANGES
     clutter_stage_set_shaped_mode (stage, 0);
+#endif
   } else {
     /* g_printerr ("%s: COMPOSITING: ZERO REGION\n", __FUNCTION__); */
     /* Change the stage background to None before we do anything, to avoid
      * ugly black flashes. */
     XSetWindowBackgroundPixmap(wm->xdpy, clutter_window, None);
     /* tell Clutter not to draw on the window */
+#ifdef MAEMO_CHANGES
     clutter_stage_set_shaped_mode (stage, 1);
+#endif
     /* Reparent X back to the root window - and move it offscreen, then
      * reset its background to black. */
     XReparentWindow (wm->xdpy, clutter_window, wm->root_win->xwindow, 0, 0);

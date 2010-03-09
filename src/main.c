@@ -271,7 +271,7 @@ key_binding_func (MBWindowManager   *wm,
       break;
     case KEY_ACTION_TAKE_SCREENSHOT:
         take_screenshot();
-	break;
+	    break;
     case KEY_ACTION_TOGGLE_PORTRAITABLE:
         toggle_portraitable(wm);
         break;
@@ -573,8 +573,9 @@ main (int argc, char **argv)
   clutter_set_use_mipmapped_text(FALSE);
   /* Use software-based selection, which is much faster on SGX than rendering
    * with 'GL and reading back */
+#ifdef MAEMO_CHANGES
   clutter_set_software_selection(TRUE);
-
+#endif
 #ifndef DISABLE_A11Y
   hildon_desktop_a11y_init ();
 #endif

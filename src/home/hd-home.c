@@ -1789,8 +1789,11 @@ hd_home_applet_press (ClutterActor       *applet,
    */
   priv->initial_x = event->x;
   priv->initial_y = event->y;
-
+#ifdef MAEMO_CHANGES
   clutter_grab_pointer_without_pick (applet);
+#else
+  clutter_grab_pointer (applet);
+#endif
   hd_home_desktop_do_press (home, event->x, event->y);
 
   priv->pressed_applet = applet;

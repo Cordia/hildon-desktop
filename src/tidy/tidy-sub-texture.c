@@ -225,10 +225,21 @@ tidy_sub_texture_paint (ClutterActor *self)
               }
 
           /* render! */
+#ifdef MAEMO_CHANGES
           cogl_texture_triangles (cogl_texture,
                                   6*c,
                                   verts,
                                   FALSE);
+#else
+	  gint i;
+	  gint n_vertices = 6*c;
+  
+	  for (i = 0; i < n_vertices-2; i += 3)
+    	     cogl_texture_polygon (cogl_texture,
+             	             	   3,
+                          	   &verts[i],
+                          	   FALSE);
+#endif
           g_free(verts);
         }
     }
