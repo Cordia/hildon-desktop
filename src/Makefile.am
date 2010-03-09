@@ -6,7 +6,7 @@ MY_LIBS = $(top_builddir)/desktop/libhildondesktop.la
 
 bin_PROGRAMS = hildon-desktop
 
-hildon_desktop_SOURCES = main.c hildon-desktop.h
+hildon_desktop_SOURCES = main.c hildon-desktop.h shell-recorder.c shell-recorder.h shell-recorder-src.c shell-recorder-src.h
 
 UNWANTED = -Wl,--export-dynamic -export-dynamic -rdynamic
 hildon_desktop_LDADD = \

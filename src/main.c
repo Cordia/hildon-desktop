@@ -51,6 +51,8 @@
 #include <hd-app-mgr.h>
 #include <hd-render-manager.h>
 
+#include "shell-recorder.h"
+
 #ifndef DISABLE_A11Y
 #include "hildon-desktop-a11y.h"
 #endif
@@ -242,6 +244,21 @@ key_binding_func (MBWindowManager   *wm,
       break;
     case KEY_ACTION_TAKE_SCREENSHOT:
         take_screenshot();
+
+	static ShellRecorder *recorder = NULL;
+
+	if (recorder == NULL)
+	  {
+	     recorder = shell_recorder_new (CLUTTER_STAGE (clutter_stage_get_default ()));
+	     g_debug ("recording");
+	     shell_recorder_set_filename (recorder, "/home/moimart/testi.mp4");
+	     shell_recorder_record (recorder);
+	  }
+	else
+	  {
+	    shell_recorder_close (recorder);
+	    recorder = NULL;
+	  }
 	break;
     case KEY_ACTION_ZOOM_IN:
 	hd_render_manager_zoom_in ();
@@ -566,8 +583,9 @@ main (int argc, char **argv)
   clutter_set_use_mipmapped_text(FALSE);
   /* Use software-based selection, which is much faster on SGX than rendering
    * with 'GL and reading back */
+#ifdef MAEMO_CHANGES
   clutter_set_software_selection(TRUE);
-
+#endif
 #ifndef DISABLE_A11Y
   hildon_desktop_a11y_init ();
 #endif

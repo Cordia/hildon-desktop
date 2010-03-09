@@ -690,7 +690,7 @@ hd_task_navigator_real_zoom_in (HdTaskNavigator *navigator,
                            CLUTTER_ACTOR (priv->scroller));
 
   priv->zoomed_actor = CLUTTER_ACTOR (priv->scroller);
-   
+
   clutter_timeline_start (priv->zoom_timeline); 
 }
 
@@ -765,7 +765,7 @@ hd_task_navigator_real_zoom_out (HdTaskNavigator *navigator,
                            CLUTTER_ACTOR (priv->scroller));
 
   priv->zoomed_actor = CLUTTER_ACTOR (priv->scroller);
-   
+
   clutter_timeline_start (priv->zoom_timeline); 
 }
 
@@ -1631,19 +1631,6 @@ struct _HdTnThumbnailPrivate
        *                  matching the appropriate TNote for this application.
        */
       gchar               *nodest;
-
-      /*
-       * -- @video_fname: Where to look for the last-frame video screenshot
-       *                  for this application.  Deduced from some property
-       *                  in the application's .desktop file.
-       * -- @video_mtime: The last modification time of the image loaded as
-       *                  .video.  Used to decide if it should be refreshed.
-       * -- @video:       The downsampled texture of the image loaded from
-       *                  .video_fname or %NULL.
-       */
-      ClutterActor        *video;
-      const gchar         *video_fname;
-      time_t               video_mtime;
     };
 
     /* Currently we don't have notification-specific fields. */
@@ -1968,7 +1955,6 @@ hd_tn_thumbnail_constructor (GType                  gtype,
   HdTnThumbnailPrivate *priv =
     HD_TN_THUMBNAIL_GET_PRIVATE (obj);
 
-  const HdLauncherApp *app;
   const HdCompMgrClient *hmgrc;
 
   priv->type = THUMBNAIL_APP;
@@ -2010,11 +1996,6 @@ hd_tn_thumbnail_constructor (GType                  gtype,
     }
 
   mb_wm_util_async_untrap_x_errors ();
-
-  app = HD_LAUNCHER_APP (hd_comp_mgr_client_get_launcher (HD_COMP_MGR_CLIENT (hmgrc)));
-  /* .video_fname */
-  if (app != NULL)
-    priv->video_fname = hd_launcher_app_get_switcher_icon (HD_LAUNCHER_APP (app));
 
   /* Now the actors: .apwin (from set_property at construction), .titlebar, .windows. */
   priv->titlebar = 
@@ -2225,66 +2206,6 @@ hd_tn_thumbnail_class_init (HdTnThumbnailClass * klass)
                 G_TYPE_NONE, 0);
 }
 
-/* Returns whether the application represented by @apthumb has
- * a video screenshot and it should be loaded or reloaded.
- * If so it refreshes @apthumb->video_mtime. */
-static gboolean
-hd_tn_thumbnail_need_load_video (HdTnThumbnail *thumbnail)
-{
-  HdTnThumbnailPrivate *priv =
-    HD_TN_THUMBNAIL_GET_PRIVATE (thumbnail);
-
-  /* Already has a video loaded? */
-  if (priv->video)
-    {
-      struct stat sbuf;
-      gboolean clear_video, load_video;
-
-      /* Refresh or unload it? */
-      load_video = clear_video = FALSE;
-
-      g_assert (priv->video_fname);
-
-      if (stat (priv->video_fname, &sbuf) < 0)
-        {
-          if (errno != ENOENT)
-            g_warning ("%s: %m", priv->video_fname);
-          clear_video = TRUE;
-        }
-      else if (sbuf.st_mtime > priv->video_mtime)
-        {
-          clear_video = load_video = TRUE;
-          priv->video_mtime = sbuf.st_mtime;
-        }
-
-      if (clear_video)
-        {
-          clutter_container_remove_actor (CLUTTER_CONTAINER (priv->jail),
-                                          priv->video);
-          priv->video = NULL;
-        }
-
-      return load_video;
-    }
-  else 
-  if (priv->video_fname)
-    {
-      struct stat sbuf;
-
-      /* Do we need to load it? */
-      if (stat (priv->video_fname, &sbuf) == 0)
-        {
-          priv->video_mtime = sbuf.st_mtime;
-          return TRUE;
-        }
-      else 
-      if (errno != ENOENT)
-        g_warning ("%s: %m", priv->video_fname);
-    }
-
-  return FALSE; 
-}
-
 ClutterActor *
 hd_tn_thumbnail_new (ClutterActor *window)
 {
@@ -2292,167 +2213,6 @@ hd_tn_thumbnail_new (ClutterActor *window)
 		       "window",
 		       window,
 		       NULL);
-}
-
-/* Destroying @pixbuf, turns it into a #ClutterTexture.
- * Returns %NULL on failure. */
-static ClutterActor *
-pixbuf2texture (GdkPixbuf *pixbuf)
-{
-  GError *err;
-  gboolean isok;
-  ClutterActor *texture;
-
-#ifndef G_DISABLE_CHECKS
-  if (gdk_pixbuf_get_colorspace (pixbuf) != GDK_COLORSPACE_RGB
-      || gdk_pixbuf_get_bits_per_sample (pixbuf) != 8
-      || gdk_pixbuf_get_n_channels (pixbuf) !=
-         (gdk_pixbuf_get_has_alpha (pixbuf) ? 4 : 3))
-    {
-      g_critical ("image not in expected rgb/8bps format");
-      goto damage_control;
-    }
-#endif
-
-  err = NULL;
-  texture = clutter_texture_new ();
-  isok = clutter_texture_set_from_rgb_data (CLUTTER_TEXTURE (texture),
-                                            gdk_pixbuf_get_pixels (pixbuf),
-                                            gdk_pixbuf_get_has_alpha (pixbuf),
-                                            gdk_pixbuf_get_width (pixbuf),
-                                            gdk_pixbuf_get_height (pixbuf),
-                                            gdk_pixbuf_get_rowstride (pixbuf),
-                                            gdk_pixbuf_get_n_channels (pixbuf),
-                                            0, &err);
-  if (!isok)
-    {
-      g_warning ("clutter_texture_set_from_rgb_data: %s", err->message);
-      g_object_unref (texture);
-damage_control: __attribute__((unused))
-      texture = NULL;
-    }
-
-  g_object_unref (pixbuf);
-  return texture;
-}
-
-/* Loads @fname, resizing and cropping it as necessary to fit
- * in a @aw x @ah rectangle.  Returns %NULL on error. */
-static ClutterActor *
-load_image (char const * fname, guint aw, guint ah)
-{
-  GError *err;
-  GdkPixbuf *pixbuf;
-  gint dx, dy;
-  gdouble dsx, dsy, scale;
-  guint vw, vh, sw, sh, dw, dh;
-  ClutterActor *final;
-  ClutterActor *texture;
-
-  /* On error the caller sure has better recovery plan than an
-   * empty rectangle.  (ie. showing the real application window). */
-  err = NULL;
-  if (!(pixbuf = gdk_pixbuf_new_from_file (fname, &err)))
-    {
-      g_warning ("%s: %s", fname, err->message);
-      return NULL;
-    }
-
-  /* @sw, @sh := size in pixels of the untransformed image. */
-  sw = gdk_pixbuf_get_width (pixbuf);
-  sh = gdk_pixbuf_get_height (pixbuf);
-
-  /*
-   * @vw and @wh tell how many pixels should the image have at most
-   * in horizontal and vertical dimensions.  If the image would have
-   * more we will scale it down before we create its #ClutterTexture.
-   * This is to reduce texture memory consumption.
-   */
-  vw = aw / 2;
-  vh = ah / 2;
-
-  /*
-   * Detemine if we need to and how much to scale @pixbuf.  If the image
-   * is larger than requested (@aw and @ah) then scale to the requested
-   * amount but do not scale more than @vw/@aw ie. what the memory saving
-   * would demand.  Instead crop it later.  If one direction needs more
-   * scaling than the other choose that factor.
-   */
-  dsx = dsy = 1;
-  if (sw > vw)
-    dsx = (gdouble)vw / MIN (aw, sw);
-  if (sh > vh)
-    dsy = (gdouble)vh / MIN (ah, sh);
-  scale = MIN (dsx, dsy);
-
-  /* If the image is too large (even if we scale it) crop the center.
-   * These are the final parameters to gdk_pixbuf_scale().
-   * @dw, @dh := the final pixel width and height. */
-  dx = dy = 0;
-  dw = sw * scale;
-  dh = sh * scale;
-
-  if (dw > vw)
-    {
-      dx = -(gint)(dw - vw) / 2;
-      dw = vw;
-    }
-
-  if (dh > vh)
-    {
-      dy = -(gint)(dh - vh) / 2;
-      dh = vh;
-    }
-
-  /* Crop and scale @pixbuf if we need to. */
-  if (scale < 1)
-    {
-      GdkPixbuf *tmp;
-
-      /* Make sure to allocate the new pixbuf with the same
-       * properties as the old one has, gdk_pixbuf_scale()
-       * may not like it otherwise. */
-      tmp = gdk_pixbuf_new (GDK_COLORSPACE_RGB,
-                            gdk_pixbuf_get_has_alpha (pixbuf),
-                            gdk_pixbuf_get_bits_per_sample (pixbuf),
-                            dw, dh);
-
-      gdk_pixbuf_scale (pixbuf, tmp, 0, 0,
-                        dw, dh, dx, dy, scale, scale,
-                        GDK_INTERP_BILINEAR);
-      g_object_unref (pixbuf);
-      pixbuf = tmp;
-    }
-
-  if (!(texture = pixbuf2texture (pixbuf)))
-    return NULL;
-
-  /* If @pixbuf is smaller than desired place it centered
-   * on a @vw x @vh size black background. */
-  if (dw < vw || dh < vh)
-    {
-      static const ClutterColor bgcolor = { 0x00, 0x00, 0x00, 0xFF };
-      ClutterActor *bg;
-
-      bg = clutter_rectangle_new_with_color (&bgcolor);
-      clutter_actor_set_size (bg, vw, vh);
-
-      if (dw < vw)
-        clutter_actor_set_x (texture, (vw - dw) / 2);
-      if (dh < vh)
-        clutter_actor_set_y (texture, (vh - dh) / 2);
-
-      final = clutter_group_new ();
-      clutter_container_add (CLUTTER_CONTAINER (final),
-                             bg, texture, NULL);
-    }
-  else
-    final = texture;
-
-  /* @final is @vw x @vh large, make it appear as if it @aw x @ah. */
-  clutter_actor_set_scale (final, (gdouble)aw/vw, (gdouble)ah/vh);
-
-  return final;
 }
 
 void 
@@ -2469,7 +2229,7 @@ hd_tn_thumbnail_claim_window (HdTnThumbnail *thumbnail)
    * TODO This may not be true anymore.
    */
   clutter_actor_reparent (priv->apwin, priv->windows);
-
+  
   if (priv->cemetery)
     {
       guint i;
@@ -2488,38 +2248,12 @@ hd_tn_thumbnail_claim_window (HdTnThumbnail *thumbnail)
                     (GFunc)clutter_actor_reparent,
                     priv->windows);
 
-  /* Load the video screenshot and place its actor in the hierarchy. */
-  if (hd_tn_thumbnail_need_load_video (thumbnail))
-    {
-      /* Make it appear as if .video were .apwin,
-       * having the same geometry. */
-      g_assert (!priv->video);
-      priv->video = load_image (priv->video_fname,
-                                hd_comp_mgr_get_current_screen_width (),
-                                hd_comp_mgr_get_current_screen_height ());
-      if (priv->video)
-        {
-          clutter_actor_set_name (priv->video, "video");
-          clutter_actor_set_position (priv->video,
-				      0, 0);
-
-          clutter_container_add_actor (CLUTTER_CONTAINER (thumbnail),
-                                       priv->video);
-        }
-    }
-
-  if (!priv->video)
-    /* Needn't bother with show_all() the contents of .windows,
-     * they are shown anyway because of reparent(). */
-    clutter_actor_show (priv->windows);
-  else
-    /* Only show @apthumb->video. */
-    clutter_actor_hide (priv->windows);
+  clutter_actor_show (priv->windows);
 
   /* Restore the opacity/visibility of the actors that have been faded out
    * while zooming, so we won't have trouble if we happen to to need to enter
    * the navigator directly. */
-  //clutter_actor_show (priv->titlebar);
+  clutter_actor_show (priv->titlebar);
   clutter_actor_set_opacity (priv->plate, 255);
   if (FALSE)//thumb_has_notification (apthumb))
     {

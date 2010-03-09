@@ -44,7 +44,11 @@ hd_gtk_icon_theme_load_icon (GtkIconTheme         *icon_theme,
       gdk_pixbuf_get_height (icon_pixbuf),
       gdk_pixbuf_get_rowstride (icon_pixbuf),
       4,
+#ifdef MAEMO_CHANGES
       CLUTTER_TEXTURE_FLAG_16_BIT,
+#else
+      0,
+#endif
       &tmp_error);
 
   g_object_unref (icon_pixbuf);

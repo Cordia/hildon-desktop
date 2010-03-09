@@ -485,6 +485,7 @@ load_background_idle (gpointer data)
     }
   else
     {
+#ifdef MAEMO_CHANGES
       GdkPixbuf        *pixbuf;
 
       /* Load image directly. We actually want to dither it on the fly to
@@ -544,11 +545,16 @@ load_background_idle (gpointer data)
               new_bg = clutter_texture_new();
               clutter_texture_set_from_rgb_data(CLUTTER_TEXTURE(new_bg),
                     (guchar*)out_pixels, FALSE,
-                    width, height, width*2, 2, CLUTTER_TEXTURE_FLAG_16_BIT, &error);
+                    width, height, width*2, 2, 
+		    CLUTTER_TEXTURE_FLAG_16_BIT,
+		    &error);
               g_free(out_pixels);
             }
           g_object_unref (pixbuf);
         }
+#else
+      new_bg = clutter_texture_new_from_file (cached_background_image_file, &error);
+#endif
     }
 
   if (!new_bg)

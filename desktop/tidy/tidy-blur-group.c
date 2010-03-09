@@ -163,7 +163,7 @@ struct _TidyBlurGroupPrivate
 G_DEFINE_TYPE (TidyBlurGroup,
                tidy_blur_group,
                CLUTTER_TYPE_GROUP);
-
+#ifdef MAEMO_CHANGES
 /* When the blur group's children are modified we need to
    re-paint to the source texture. When it is only us that
    has been modified child==NULL */
@@ -180,7 +180,7 @@ gboolean tidy_blur_group_notify_modified_real(ClutterActor          *actor,
     priv->source_changed = TRUE;
   return TRUE;
 }
-
+#endif
 static void tidy_blur_group_check_shader(TidyBlurGroup *group,
                                          ClutterShader **shader,
                                          const char* fragment_source,
@@ -257,15 +257,22 @@ tidy_blur_group_fallback_blur(TidyBlurGroup *group, int tex_width, int tex_heigh
   ClutterFixed diffx, diffy;
   diffx = CLUTTER_FLOAT_TO_FIXED(1.0f / tex_width);
   diffy = CLUTTER_FLOAT_TO_FIXED(1.0f / tex_height);
-
+#ifdef MAEMO_CHANGES
   cogl_blend_func(CGL_ONE, CGL_ZERO);
+#else
+  glBlendFunc (CGL_ONE, CGL_ZERO);
+#endif
   cogl_color (&col);
   cogl_texture_rectangle (tex,
                           0, 0,
                           CLUTTER_INT_TO_FIXED (tex_width),
                           CLUTTER_INT_TO_FIXED (tex_height),
                           -diffx, 0, CFX_ONE-diffx, CFX_ONE);
+#ifdef MAEMO_CHANGES
   cogl_blend_func(CGL_ONE, CGL_ONE);
+#else
+  glBlendFunc (CGL_ONE, CGL_ONE);
+#endif
   cogl_texture_rectangle (tex,
                             0, 0,
                             CLUTTER_INT_TO_FIXED (tex_width),
@@ -281,7 +288,11 @@ tidy_blur_group_fallback_blur(TidyBlurGroup *group, int tex_width, int tex_heigh
                             CLUTTER_INT_TO_FIXED (tex_width),
                             CLUTTER_INT_TO_FIXED (tex_height),
                             0, diffy, CFX_ONE, CFX_ONE+diffy);
+#ifdef MAEMO_CHANGES
   cogl_blend_func(CGL_SRC_ALPHA, CGL_ONE_MINUS_SRC_ALPHA);
+#else
+  glBlendFunc (CGL_SRC_ALPHA, CGL_ONE_MINUS_SRC_ALPHA);
+#endif
 }
 
 /* If priv->chequer, draw a chequer pattern over the screen */
@@ -487,7 +498,11 @@ tidy_blur_group_paint (ClutterActor *actor)
 
       if (priv->use_shader)
         {
+#ifdef MAEMO_CHANGES
           cogl_blend_func(CGL_ONE, CGL_ZERO);
+#else
+	  glBlendFunc (CGL_ONE, CGL_ZERO);
+#endif
           cogl_color (&white);
           cogl_texture_rectangle (priv->current_is_a ? priv->tex_a : priv->tex_b,
                                   0, 0,
@@ -496,7 +511,11 @@ tidy_blur_group_paint (ClutterActor *actor)
                                   0, 0,
                                   CFX_ONE,
                                   CFX_ONE);
+#ifdef MAEMO_CHANGES
           cogl_blend_func(CGL_SRC_ALPHA, CGL_ONE_MINUS_SRC_ALPHA);
+#else
+	  glBlendFunc (CGL_SRC_ALPHA, CGL_ONE_MINUS_SRC_ALPHA);
+#endif
         }
       else
         tidy_blur_group_fallback_blur(container, tex_width, tex_height);
@@ -728,10 +747,20 @@ tidy_blur_group_paint (ClutterActor *actor)
             v+=6;
           }
       /* render! */
+#ifdef MAEMO_CHANGES
       cogl_texture_triangles (priv->current_is_a ? priv->tex_a : priv->tex_b,
                               6*(VIGNETTE_TILES*VIGNETTE_TILES),
                               verts,
                               TRUE);
+#else
+      gint i;
+      gint n_vertices = 6*(VIGNETTE_TILES*VIGNETTE_TILES);
+      for (i = 0; i < n_vertices-2; i += 3)
+        cogl_texture_polygon ((priv->current_is_a) ? priv->tex_a : priv->tex_b,
+                              3,
+                              &verts[i],
+                              TRUE);
+#endif
     }
 
   if (rotate_90)
@@ -787,7 +816,9 @@ tidy_blur_group_class_init (TidyBlurGroupClass *klass)
   /* Provide implementations for ClutterActor vfuncs: */
   klass->overridden_paint = actor_class->paint;
   actor_class->paint = tidy_blur_group_paint;
+#ifdef MAEMO_CHANGES
   actor_class->notify_modified = tidy_blur_group_notify_modified_real;
+#endif
 }
 
 static void
