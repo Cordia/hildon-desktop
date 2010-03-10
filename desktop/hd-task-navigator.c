@@ -506,6 +506,8 @@ hd_task_navigator_init (HdTaskNavigator *navigator)
     clutter_timeline_new (ZOOM_EFFECT_DURATION);
 #endif  
 
+  clutter_timeline_set_delay (priv->zoom_timeline, 250);
+
   g_signal_connect_swapped (priv->zoom_timeline,
 			    "completed",
 			    G_CALLBACK (hd_task_navigator_timeline_end),
@@ -691,6 +693,11 @@ hd_task_navigator_real_zoom_in (HdTaskNavigator *navigator,
 
   priv->zoomed_actor = CLUTTER_ACTOR (priv->scroller);
 
+
+  hd_tn_thumbnail_crossfade_title (thumbnail,
+				   priv->zoom_timeline,
+				   0, 255);
+
   clutter_timeline_start (priv->zoom_timeline); 
 }
 
@@ -765,6 +772,10 @@ hd_task_navigator_real_zoom_out (HdTaskNavigator *navigator,
                            CLUTTER_ACTOR (priv->scroller));
 
   priv->zoomed_actor = CLUTTER_ACTOR (priv->scroller);
+
+  hd_tn_thumbnail_crossfade_title (thumbnail,
+				   priv->zoom_timeline,
+				   255, 0);
 
   clutter_timeline_start (priv->zoom_timeline); 
 }
@@ -1503,6 +1514,10 @@ struct _HdTnThumbnailPrivate
   ThumbnailType type;
 
   gboolean to_be_closed;
+
+  ClutterBehaviour *fade_title;
+  ClutterBehaviour *fade_bar;
+  ClutterAlpha	   *alpha;
   /*
    * -- @thwin:       The @Grid's thumbnail window and event responder.
    *                  Can be faded in/out if the thumbnail is a notification.
@@ -2144,6 +2159,9 @@ hd_tn_thumbnail_finalize (GObject *object)
 
   g_object_unref (priv->apwin);
 
+  g_object_unref (priv->fade_title);
+  g_object_unref (priv->fade_bar);
+
   G_OBJECT_CLASS (hd_tn_thumbnail_parent_class)->finalize (object); 
 }
  
@@ -2156,6 +2174,8 @@ hd_tn_thumbnail_init (HdTnThumbnail *thumbnail)
   priv->dialogs = NULL;
   priv->jail = NULL;
   priv->pressed = FALSE;
+
+  priv->alpha = NULL;
 
   priv->to_be_closed = FALSE;
 }
@@ -2555,4 +2575,57 @@ hd_tn_thumbnail_get_app_window (HdTnThumbnail *thumbnail)
     HD_TN_THUMBNAIL_GET_PRIVATE (thumbnail);
 
   return priv->apwin;
+}
+
+static void
+remove_xfade_behaviours (HdTnThumbnail *thumbnail)
+{
+  HdTnThumbnailPrivate *priv = 
+    HD_TN_THUMBNAIL_GET_PRIVATE (thumbnail);
+
+  clutter_behaviour_remove_all (priv->fade_title);
+  clutter_behaviour_remove_all (priv->fade_bar);
+}
+
+void 
+hd_tn_thumbnail_crossfade_title (HdTnThumbnail *thumbnail, 
+				 ClutterTimeline *timeline, 
+				 guint start, 
+				 guint end)
+{
+  HdTnThumbnailPrivate *priv = 
+    HD_TN_THUMBNAIL_GET_PRIVATE (thumbnail);
+
+  clutter_actor_set_opacity (priv->titlebar, start);
+  clutter_actor_set_opacity (priv->plate, end);
+
+  if (priv->alpha == NULL)
+    {
+      priv->alpha = clutter_alpha_new_full (timeline,
+					    CLUTTER_ALPHA_SINE_INC,
+					    NULL, NULL);
+
+      priv->fade_title = 
+        clutter_behaviour_opacity_new (priv->alpha, start, end);
+
+      priv->fade_bar = 
+        clutter_behaviour_opacity_new (priv->alpha, end, start);
+
+      g_signal_connect_swapped (timeline,
+				"completed",
+				G_CALLBACK (remove_xfade_behaviours),
+				thumbnail);
+    }
+  else
+    {
+      clutter_behaviour_opacity_set_bounds 
+        (CLUTTER_BEHAVIOUR_OPACITY (priv->fade_title), start, end);
+
+      clutter_behaviour_opacity_set_bounds 
+        (CLUTTER_BEHAVIOUR_OPACITY (priv->fade_bar), end, start);
+
+    }
+
+   clutter_behaviour_apply (priv->fade_title, priv->titlebar);
+   clutter_behaviour_apply (priv->fade_bar, priv->plate);
 }

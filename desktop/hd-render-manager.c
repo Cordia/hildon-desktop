@@ -1485,7 +1485,7 @@ hd_render_manager_get_front_group(void)
   return CLUTTER_CONTAINER (priv->front);
 }
 
-/* #ClutterEffectCompleteFunc for hd_task_navigator_zoom_out(). */
+/* #ClutterCallback for hd_task_navigator_zoom_out(). */
 static void 
 zoom_out_completed (ClutterActor *actor,
                     MBWMCompMgrClutterClient *cmgrcc)

@@ -171,6 +171,8 @@ void hd_tn_thumbnail_update_inners (HdTnThumbnail *thumbnail, gint title_size);
 
 ClutterActor *hd_tn_thumbnail_get_app_window (HdTnThumbnail *thumbnail);
 
+void hd_tn_thumbnail_crossfade_title (HdTnThumbnail *thumbnail, ClutterTimeline *timeline, guint start, guint end);
+
 G_END_DECLS
 
 #endif /* ! __HD_TASK_NAVIGATOR_H__ */
