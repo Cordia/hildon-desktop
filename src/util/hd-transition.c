@@ -1435,32 +1435,24 @@ patience (XClientMessageEvent *event, void *unused)
     { /* Grant @max:imal patience. */
       gint max;
 
-g_warning("PING");
       if (Orientation_change.timeout_id)
         {
           /* remaining := max(damage_timeout_max-elapsed, 0) */
           max  = hd_transition_get_int("rotate", "damage_timeout_max", 1000);
           max -= g_timer_elapsed(Orientation_change.timer, NULL) * 1000.0;
           if (max > 0)
-            {
-              Orientation_change.timeout_id->remaining = max;
-g_warning("NEW REMAINING: %d", max);
-            }
+            Orientation_change.timeout_id->remaining = max;
         }
       if (Orientation_change.phase <= WAIT_FOR_DAMAGES)
         Orientation_change.patience_requests++;
     }
   else
     { /* Get out of WAIT_FOR_DAMAGES as quickly as possible. */
-g_warning("PONG");
       if (Orientation_change.patience_requests)
         Orientation_change.patience_requests--;
       if (!Orientation_change.patience_requests
           && Orientation_change.timeout_id)
-        {
-          Orientation_change.timeout_id->remaining = 0;
-g_warning("NEW REMAINING: 0");
-        }
+        Orientation_change.timeout_id->remaining = 0;
     }
 }
 
@@ -1623,7 +1615,6 @@ trans_start_error:
             hd_util_root_window_configured(Orientation_change.wm);
 
             g_assert(!Orientation_change.timeout_id);
-g_warning("PATIENCE REQUESTED %d", Orientation_change.patience_requests);
             Orientation_change.timeout_id = hptimer_new(
                   Orientation_change.patience_requests
                     ? hd_transition_get_int("rotate", "damage_timeout_max",
