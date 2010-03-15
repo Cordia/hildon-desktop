@@ -1,8 +1,9 @@
-hildon-desktop (1:2.2.136-1~unreleased) unstable; urgency=low
+hildon-desktop (1:2.2.136-1) unstable; urgency=low
 
-  * foo
+  * Fixes: NB#146110 - Partial image is displayed in FSM while viewing images
+    sometimes
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 24 Feb 2010 13:09:46 +0200
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Mon, 15 Mar 2010 15:14:31 +0200
 
 hildon-desktop (1:2.2.135-1) unstable; urgency=low
 
