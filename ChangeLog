@@ -1,5 +1,13 @@
 2010-03-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Attempt to stack animas correctly.  If we fail to do so then when you
+	restart hd while imageviewer is running you'll get a nice black screen
+	in FSM because the background is stacked above the fullscreen image.
+	Do this by recognizing transiency, which was broken as well (when an
+	anima is parented somewhere libhildon makes it transient).
+
+2010-03-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#146110 Partial image is displayed in FSM while viewing images
 		  sometimes
 
