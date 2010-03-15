@@ -1,3 +1,19 @@
+2010-03-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#146110 Partial image is displayed in FSM while viewing images
+		  sometimes
+
+	Possibly we didn't honor the client's geometry request so the anima
+	was cropped.
+
+	* src/mb/hd-animation-actor.c (hd_animation_actor_request_geometry):
+	  Now always accept the requested geometry but make sure it's off
+	  the screen.
+	* src/mb/hd-animation-actor.c (hd_animation_actor_init):
+	  Don't allow the layout manager to move the client around.
+	  Also don't install useless buttonclick handlers for the decor.
+	  (If it had a decor to start with.)
+
 2010-03-02  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#158934 - Status area moving to down left corner

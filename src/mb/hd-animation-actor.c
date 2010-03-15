@@ -367,21 +367,11 @@ hd_animation_actor_init (MBWMObject *this, va_list vap)
   if (!wm)
       return 0;
 
-  /* Animation actors are not reactive and, therefore, are input-transparent.
-   * Since they are going to be moved around using clutter calls, X will know
-   * nothing of their repositioning. It will, therefore, not dispatch any
-   * exposure or visibility events for the windows covered by animation actors.
-   * To avoid all this, position the animation actors outside of the screen
-   * viewable area. */
-
-  geom.x = wm->xdpy_width;
-  geom.y = wm->xdpy_height;
+  geom.x = geom.y = 0;
   geom.width = win->geometry.width;
   geom.height = win->geometry.height;
 
   mb_wm_client_set_layout_hints (client,
-                                 LayoutPrefPositionFree|
-                                 LayoutPrefMovable|
                                  LayoutPrefVisible);
   hd_animation_actor_request_geometry (client,
 				       &geom,
@@ -403,18 +393,15 @@ hd_animation_actor_request_geometry (MBWindowManagerClient *client,
 	     new_geometry->height,
 	     flags);
 
-    if (!(flags & MBWMClientReqGeomForced))
-    {
-	/* Geometry that is not forced is checked for sanity.
-	 * For animation actors, the sanity criteria is that the
-	 * window is off-screen.
-	 */
-	MBWindowManager	*wm = client->wmref;
-
-	if (new_geometry->x < wm->xdpy_width ||
-	    new_geometry->y < wm->xdpy_height)
-	    return False; /* Geometry rejected */
-    }
+    /*
+     * Animation actors are not reactive and, therefore, are input-transparent.
+     * Since they are going to be moved around using clutter calls, X will know
+     * nothing of their repositioning. It will, therefore, not dispatch any
+     * exposure or visibility events for the windows covered by animation actors.
+     * To avoid all this, position the animation actors outside of the screen
+     * viewable area.
+     */
+    new_geometry->x = HD_COMP_MGR_LANDSCAPE_WIDTH;
 
     client->frame_geometry.x      = new_geometry->x;
     client->frame_geometry.y      = new_geometry->y;
