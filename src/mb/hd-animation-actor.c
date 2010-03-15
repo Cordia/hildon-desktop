@@ -363,6 +363,7 @@ hd_animation_actor_init (MBWMObject *this, va_list vap)
   MBWMClientWindow      *win = client->window;
   MBWindowManager	*wm = client->wmref;
   MBGeometry             geom;
+  MBWindowManagerClient *transparent;
 
   if (!wm)
       return 0;
@@ -376,6 +377,10 @@ hd_animation_actor_init (MBWMObject *this, va_list vap)
   hd_animation_actor_request_geometry (client,
 				       &geom,
 				       MBWMClientReqGeomForced);
+
+  if (win->xwin_transient_for != None
+      && (transparent = mb_wm_managed_client_from_xwindow (wm, win->xwin_transient_for)) != NULL)
+    mb_wm_client_add_transient(transparent, client);
 
   return 1;
 }
