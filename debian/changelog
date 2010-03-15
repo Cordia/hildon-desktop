@@ -1,10 +1,16 @@
+hildon-desktop (1:2.2.136-1) unstable; urgency=low
+
+  * Fixes: NB#146110 - Partial image is displayed in FSM while viewing images
+    sometimes
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Mon, 15 Mar 2010 15:14:31 +0200
+
 hildon-desktop (1:2.2.135-2) unstable; urgency=low
 
   Gordon:
   * Fixes: NB#158934 - Status area moving to down left corner
 
  -- Gordon Williams <gordon.williams@collabora.co.uk>  Wed,  3 Mar 2010 14:02:00 +0000
-
 hildon-desktop (1:2.2.135-1) unstable; urgency=low
 
   Gordon:

@@ -1,5 +1,9 @@
 2010-03-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Release 2.2.136-1.
+
+2010-03-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Attempt to stack animas correctly.  If we fail to do so then when you
 	restart hd while imageviewer is running you'll get a nice black screen
 	in FSM because the background is stacked above the fullscreen image.
