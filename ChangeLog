@@ -1,3 +1,34 @@
+2010-03-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Attempt to stack animas correctly.  If we fail to do so then when you
+	restart hd while imageviewer is running you'll get a nice black screen
+	in FSM because the background is stacked above the fullscreen image.
+	Do this by recognizing transiency, which was broken as well (when an
+	anima is parented somewhere libhildon makes it transient).
+
+2010-03-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#146110 Partial image is displayed in FSM while viewing images
+		  sometimes
+
+	Possibly we didn't honor the client's geometry request so the anima
+	was cropped.
+
+	* src/mb/hd-animation-actor.c (hd_animation_actor_request_geometry):
+	  Now always accept the requested geometry but make sure it's off
+	  the screen.
+	* src/mb/hd-animation-actor.c (hd_animation_actor_init):
+	  Don't allow the layout manager to move the client around.
+	  Also don't install useless buttonclick handlers for the decor.
+	  (If it had a decor to start with.)
+
+2010-03-02  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#158934 - Status area moving to down left corner
+	
+	* src/home/hd-render-manager.c: Don't restore back to HOME_PORTRAIT
+	  state when coming back from tklock, instead just go to HOME.
+
 2010-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Implement rotation synchronization between the wm and its clients.
