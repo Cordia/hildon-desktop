@@ -1,3 +1,13 @@
+2010-03-16  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	Fixes: NB#125674 - Background should be blank when device is locked 
+                           from Layout mode
+	Fixes: NB#145618 - Title seen over the appmenu in the blurred area
+	
+	* src/home/hd-render-manager.c (hd_render_manager_restack): Make sure
+	that blur_front with the title bar is placed above app windows but
+	below dialogs/menus.
+
 2010-03-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Release 2.2.136-1.

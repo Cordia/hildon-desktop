@@ -146,13 +146,14 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *
  * HDRM ---> home_blur         ---> home
  *       |                                         --> home_get_front (!STATE_HOME_FRONT)
- *       |                      --> apps (not app_top)
+ *       |                      --> apps/windows filling the screen (not app_top)
  *       |                      --> blur_front (STATE_BLUR_BUTTONS)
  *       |                                        ---> home_get_front (STATE_HOME_FRONT)
  *       |                                        ---> loading_image (STATE_LOADING)
  *       |                                         --> title_bar *       |
  *       |                                               ---> title_bar::foreground (!HDTB_VIS_FOREGROUND)
  *       |                                               ---> status_area
+ *       |                      --> windows not filling the screen (that aren't in not app_top)
  *       |
  *       --> blur_front (!STATE_BLUR_BUTTONS)
  *       |
@@ -160,7 +161,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
  *       |
  *       --> launcher
  *       |
- *       --> app_top           ---> dialogs
+ *       --> app_top           ---> dialogs/menus (that shouldn't be blurred)
  *       |
  *       --> front             ---> status_menu
  *                             ---> title_bar::foreground (HDTB_VIS_FOREGROUND)
@@ -1993,6 +1994,8 @@ void hd_render_manager_restack()
    * any that filled the screen then add the window that does. */
   {
     gint i, n_elements;
+    gboolean move_to_front = TRUE;
+    ClutterActor *highest_maximized = 0;
 
     n_elements = clutter_group_get_n_children(CLUTTER_GROUP(priv->home_blur));
     for (i=n_elements-1;i>=0;i--)
@@ -2017,33 +2020,52 @@ void hd_render_manager_restack()
             maximized = hd_comp_mgr_client_is_maximized (
                                         *((MBGeometry*)((void*)&geo)));
 
-            /* Maximized stuff should never be blurred (unless there
-             * is nothing else) */
             /* If we are in HOME_EDIT_DLG state, the background is always
              * blurred, and if something is maximised it MUST be a dialog
              * (or we would have left the state) - so we want it brought
-             * to app_top where it is NOT blurred. */
-            if ((!maximized) || (priv->state == HDRM_STATE_HOME_EDIT_DLG))
+             * to app_top where it is NOT blurred. This applies in the
+             * screen lock case where we want to unlock the dialog (125674) */
+            if ((move_to_front && !maximized) || (priv->state == HDRM_STATE_HOME_EDIT_DLG))
               {
                 clutter_actor_reparent(child, CLUTTER_ACTOR(priv->app_top));
                 clutter_actor_lower_bottom(child);
-		clutter_actor_show(child);
+		        clutter_actor_show(child);
               }
             /* If this is maximized, or in dialog's position, don't
-             * blur anything after */
-            if (maximized || (
-                geo.width == hd_comp_mgr_get_current_screen_width () &&
-                geo.y + geo.height == hd_comp_mgr_get_current_screen_height ()
-                ))
-              break;
-
+             * blur anything after. Note that even if we find a dialog
+             * we want to carry on going so we can set highest_maximised
+             * correctly. */
+            if (maximized)
+              {
+                highest_maximized = child;
+                break;
+              }
+            /* Check for dialog position */
+            if (geo.width == hd_comp_mgr_get_current_screen_width () &&
+                geo.y + geo.height == hd_comp_mgr_get_current_screen_height ())
+              {
+                move_to_front = FALSE;
+              }
           }
       }
-  }
 
-  if (clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) ==
-                               CLUTTER_ACTOR(priv->home_blur))
-    clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
+    /* Put blur_front in the correct place, assuming it is in home_blur.
+     * We want it above apps, but below anything non-fullscreen like
+     * the status menu.
+     */
+    if (clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) ==
+                                   CLUTTER_ACTOR(priv->home_blur))
+      {
+        /* clutter_actor_raise will raise *and* lower, contrary to the name.
+         * If we don't have anything maximised (which we should do really unless
+         * we have no apps open) just move to the top. */
+        if (highest_maximized)
+          clutter_actor_raise(CLUTTER_ACTOR(priv->blur_front),
+                              highest_maximized);
+        else
+          clutter_actor_raise_top(CLUTTER_ACTOR(priv->blur_front));
+      }
+  }
 
   /* We could have changed the order of the windows here, so update whether
    * we blur or not based on the order. */
