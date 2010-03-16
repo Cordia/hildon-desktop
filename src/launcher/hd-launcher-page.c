@@ -518,6 +518,11 @@ ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page)
   return tidy_adjustment_get_valuex( adjust );
 }
 
+ClutterActor *hd_launcher_page_get_scroller(HdLauncherPage *page)
+{
+  return page->priv->scroller;
+}
+
 void hd_launcher_page_set_drag_distance(HdLauncherPage *page, float d)
 {
   HdLauncherPagePrivate *priv;

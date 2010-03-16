@@ -473,6 +473,21 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = launcher->priv;
 
+  /* Send a mouse released event, because when we've put the editor window up
+   * the release event will go straight to that instead of to the scroller,
+   * and the scroller will think that the mouse is pressed until after the
+   * editor closes and we tap again. See NB#156831 */
+  if (priv->active_page) {
+    ClutterActor *scroll = hd_launcher_page_get_scroller(
+        HD_LAUNCHER_PAGE(priv->active_page));
+    ClutterButtonEvent event;
+    memset(&event, 0, sizeof(ClutterButtonEvent));
+    event.button = 1;
+    event.flags = CLUTTER_EVENT_FLAG_SYNTHETIC;
+
+    g_signal_emit_by_name (scroll, "button-release-event", &event, NULL);
+  }
+
   priv->editor = hd_launcher_editor_new ();
   gint x, y;
   gfloat x_align, y_align;
