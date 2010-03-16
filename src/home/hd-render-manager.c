@@ -907,6 +907,13 @@ void hd_render_manager_sync_clutter_before ()
   }
 
   hd_title_bar_set_state(priv->title_bar, btn_state);
+  /* Fix bug 141871, where if we come back to Home from home_edit, the
+   * icon won't be flashing */
+  if (btn_state & HDTB_VIS_BTN_SWITCHER)
+    {
+      if (hd_task_navigator_has_unseen_notifications())
+        hd_title_bar_set_switcher_pulse (priv->title_bar, TRUE);
+    }
   /* hd_render_manager_place_titlebar_elements calls hd_title_bar_update()
    * as well.
    * TODO: (gw) Do we *really* need to call this so often? Most likely there

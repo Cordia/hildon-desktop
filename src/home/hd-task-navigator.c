@@ -628,6 +628,8 @@ static ClutterActor *Navigator, *Scroller;
 static GList *Thumbnails, *Notifications;
 static guint NThumbnails;
 static const GtkRequisition *Thumbsize;
+/* Do we have notifications since we were last in task navigator? */
+static gboolean UnseenNotifications = FALSE;
 
 /*
  * Effect templates and their corresponding timelines.
@@ -1662,6 +1664,15 @@ gboolean
 hd_task_navigator_has_notifications (void)
 {
   return Notifications != NULL;
+}
+
+/* Tells whether we have any notification, either in the
+ * notification area or shown in the title area of some thumbnail,
+ * and we haven't been to task navigator since then. */
+gboolean
+hd_task_navigator_has_unseen_notifications (void)
+{
+    return UnseenNotifications && hd_task_navigator_has_notifications();
 }
 
 /* Returns whether we can and will show @win in the navigator.
@@ -3630,6 +3641,7 @@ add_nothumb (TNote * tnote)
 {
   Thumbnail *nothumb;
 
+  UnseenNotifications = TRUE;
   /* Create the %Thumbnail. */
   nothumb = g_new0 (Thumbnail, 1);
   nothumb->type = NOTIFICATION;
@@ -3879,6 +3891,9 @@ navigator_shown (ClutterActor * navigator, gpointer unused)
    * because we are responsible for showing them now. */
   for_each_appthumb (li, thumb)
     claim_win (thumb);
+
+  /* Because we're just about to show them */
+  UnseenNotifications = FALSE;
 }
 
 /* @Navigator's "hide" handler. */

@@ -32,6 +32,7 @@ gboolean hd_task_navigator_is_empty   (void);
 gboolean hd_task_navigator_is_crowded (void);
 gboolean hd_task_navigator_has_apps   (void);
 gboolean hd_task_navigator_has_notifications (void);
+gboolean hd_task_navigator_has_unseen_notifications (void);
 gboolean hd_task_navigator_has_window (HdTaskNavigator * self,
                                        ClutterActor * win);
 ClutterActor *hd_task_navigator_find_app_actor (HdTaskNavigator *self,
