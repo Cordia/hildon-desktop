@@ -1087,8 +1087,7 @@ static void hd_title_bar_set_title (HdTitleBar *bar,
       clutter_actor_set_position(CLUTTER_ACTOR(priv->title),
                                  x_start+title_margin,
                                  (HD_COMP_MGR_TOP_MARGIN-h)/2);
-      clutter_label_set_ellipsize(priv->title, PANGO_ELLIPSIZE_NONE);
-      clutter_actor_set_clip(CLUTTER_ACTOR(priv->title), 0, 0, w, h);
+      clutter_label_set_ellipsize(priv->title, PANGO_ELLIPSIZE_END);
       clutter_actor_show(CLUTTER_ACTOR(priv->title));
     }
   else

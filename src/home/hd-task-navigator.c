@@ -2181,11 +2181,10 @@ create_thwin (Thumbnail * thumb, ClutterActor * prison)
   thumb->title = clutter_label_new ();
   clutter_label_set_font_name (CLUTTER_LABEL (thumb->title), SmallSystemFont);
   clutter_label_set_use_markup(CLUTTER_LABEL(thumb->title), TRUE);
+  clutter_label_set_ellipsize(CLUTTER_LABEL(thumb->title), PANGO_ELLIPSIZE_END);
   clutter_actor_set_anchor_point_from_gravity (thumb->title, CLUTTER_GRAVITY_WEST);
   clutter_actor_set_position (thumb->title,
                               TITLE_LEFT_MARGIN, TITLE_HEIGHT / 2);
-  g_signal_connect (thumb->title, "notify::allocation",
-                    G_CALLBACK (clip_on_resize), NULL);
 
   /* .close, anchored at the top-right corner of the close graphics. */
   thumb->close = clutter_group_new ();

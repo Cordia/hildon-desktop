@@ -1,5 +1,13 @@
 2010-03-16  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#141729 - Right-to-left web page titles cutted on the wrong
+                           side
+
+	* src/home/hd-task-navigator.c
+	* src/home/hd-title-bar.c: Since our 'special' Maemo pango stopped 
+	  adding '...' when ellipsizing, we can now just use that rather 
+	  than clipping, and the problem is solved.
+
 	Fixes: NB#139757 - task launcher icon got stuck in pressed state
 
 	* src/launcher/hd-launcher-grid.c/h
