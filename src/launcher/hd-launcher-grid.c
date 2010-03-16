@@ -628,7 +628,7 @@ hd_launcher_grid_clear (HdLauncherGrid *grid)
 
 /* Reset the grid before it is shown */
 void
-hd_launcher_grid_reset(HdLauncherGrid *grid)
+hd_launcher_grid_reset(HdLauncherGrid *grid, gboolean hard)
 {
   HdLauncherGridPrivate *priv;
   GList *l;
@@ -642,7 +642,7 @@ hd_launcher_grid_reset(HdLauncherGrid *grid)
     {
       HdLauncherTile *tile = l->data;
 
-      hd_launcher_tile_reset(tile);
+      hd_launcher_tile_reset(tile, hard);
       l = l->next;
     }
 }

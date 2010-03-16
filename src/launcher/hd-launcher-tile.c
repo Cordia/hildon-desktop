@@ -503,7 +503,7 @@ hd_launcher_on_glow_frame(ClutterTimeline *timeline,
 }
 
 static void
-hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
+hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow, gboolean hard)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   ClutterColor glow_col = {0xFF, 0xFF, 0x7F, 0xFF};
@@ -516,6 +516,24 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow)
   if ((glow && priv->glow_amount==1) ||
       (!glow && priv->glow_amount==0))
     return;
+
+  /* hard means no animation */
+  if (hard)
+  {
+    priv->glow_amount = glow ? 1 : 0;
+    if (priv->icon_glow)
+      tidy_highlight_set_amount(priv->icon_glow,
+                                priv->glow_amount * priv->glow_radius);
+    else
+      return;
+
+    if (priv->glow_amount != 0)
+      clutter_actor_show(CLUTTER_ACTOR(priv->icon_glow));
+    else
+      clutter_actor_hide(CLUTTER_ACTOR(priv->icon_glow));
+
+    return;
+  }
 
   clutter_timeline_set_duration(priv->glow_timeline,
           hd_transition_get_int("launcher_glow",
@@ -553,7 +571,7 @@ _hd_launcher_tile_long_timeout (gpointer data)
   if (!priv->is_pressed)
     return FALSE;
 
-  hd_launcher_tile_reset (tile);
+  hd_launcher_tile_reset (tile, TRUE);
   g_signal_emit (tile, launcher_tile_signals[LONG_CLICKED], 0);
 
   return FALSE;
@@ -565,7 +583,7 @@ hd_launcher_tile_button_press (ClutterActor       *actor)
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (actor);
 
   /* Unglow everything else, but glow this tile */
-  hd_launcher_tile_set_glow(HD_LAUNCHER_TILE(actor), TRUE);
+  hd_launcher_tile_set_glow(HD_LAUNCHER_TILE(actor), TRUE, FALSE);
   /* Set the 'pressed' flag */
   priv->is_pressed = TRUE;
 
@@ -675,11 +693,11 @@ hd_launcher_tile_allocate (ClutterActor          *self,
 }
 
 /* Reset this tile to the state it should be in when first shown */
-void hd_launcher_tile_reset(HdLauncherTile *tile)
+void hd_launcher_tile_reset(HdLauncherTile *tile, gboolean hard)
 {
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   /* remove glow */
-  hd_launcher_tile_set_glow(tile, FALSE);
+  hd_launcher_tile_set_glow(tile, FALSE, hard);
   priv->is_pressed = FALSE;
   if (priv->press_timeout)
     {

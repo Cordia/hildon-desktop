@@ -183,7 +183,7 @@ motion_event_cb (TidyFingerScroll *scroll,
   /* If we dragged too far, deselect (and de-glow) */
   if (priv->drag_distance > HD_LAUNCHER_TILE_MAX_DRAG)
     {
-      hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid));
+      hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid), FALSE);
     }
 
   return FALSE;
@@ -364,16 +364,14 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
   /* if we were already playing, stop the animation */
   if (priv->transition)
     hd_launcher_page_transition_stop(page);
-  /* Reset all the tiles in the grid, so they don't have any blurring */
-  hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid));
-  hd_launcher_grid_transition_begin(HD_LAUNCHER_GRID(priv->grid), trans_type);
 
   priv->transition_type = trans_type;
   switch (priv->transition_type) {
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
     case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
     case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
-         clutter_actor_show(CLUTTER_ACTOR(page));
+         /* Reset all the tiles in the grid, so they don't have any blurring */
+         hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid), TRUE);
          clutter_actor_show(CLUTTER_ACTOR(page));
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
@@ -382,9 +380,13 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
     case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
     case HD_LAUNCHER_PAGE_TRANSITION_BACK:
+         /* Reset all the tiles in the grid, so they don't have any blurring */
+         hd_launcher_grid_reset(HD_LAUNCHER_GRID(priv->grid), FALSE);
          /* already shown */
          break;
   }
+
+  hd_launcher_grid_transition_begin(HD_LAUNCHER_GRID(priv->grid), trans_type);
 
   priv->transition = clutter_timeline_new_for_duration(
       hd_transition_get_int(

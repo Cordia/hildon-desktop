@@ -74,7 +74,7 @@ void          hd_launcher_grid_transition(HdLauncherGrid *grid,
                                           HdLauncherPage *page,
                                           HdLauncherPageTransition trans_type,
                                           float amount);
-void          hd_launcher_grid_reset(HdLauncherGrid *grid);
+void          hd_launcher_grid_reset(HdLauncherGrid *grid, gboolean hard);
 void          hd_launcher_grid_layout(HdLauncherGrid *grid);
 
 /* Fixed sizes */

@@ -74,7 +74,7 @@ void hd_launcher_tile_set_text      (HdLauncherTile *tile,
 ClutterActor *hd_launcher_tile_get_icon (HdLauncherTile *tile);
 ClutterActor *hd_launcher_tile_get_label (HdLauncherTile *tile);
 
-void hd_launcher_tile_reset(HdLauncherTile *tile);
+void hd_launcher_tile_reset(HdLauncherTile *tile, gboolean hard);
 
 /* Fixed size */
 #define HD_LAUNCHER_TILE_HEIGHT (96)
