@@ -1,5 +1,12 @@
 2010-03-16  Gordon Williams <gordon.williams@collabora.co.uk>
 
+	Fixes: NB#149221 - Status menu invisble property not handled properly 
+                           by desktop in certain scenarios
+
+	* src/home/hd-render-manager.c: Combine setting actor visibility and
+	  moving Status Area offscreen into one function, so SA is always
+	  moved offscreen when invisible.
+
 	Fixes: NB#156831 - 1st tap on the task launcher is not recognized after
                            going back from the edit view
 

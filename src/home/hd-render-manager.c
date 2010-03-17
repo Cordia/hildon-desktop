@@ -762,6 +762,53 @@ gboolean hd_render_manager_actor_is_visible(ClutterActor *actor)
   return TRUE;
 }
 
+/* Show or hide the status area - by moving it offscreen so it can't be clicked,
+ * as well as by hiding the actor itself. */
+static void hd_render_manager_update_status_area(gboolean has_fullscreen)
+{
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  MBWindowManagerClient *c = priv->status_area_client;
+
+  if (has_fullscreen || !STATE_SHOW_STATUS_AREA(priv->state))
+    {
+      VISIBILITY ("SA GO AWAY");
+      if (priv->status_area)
+        {
+          clutter_actor_hide(priv->status_area);
+        }
+
+      if (c && c->frame_geometry.y >= 0)
+        { /* Move SA out of the way. */
+          c->frame_geometry.y   = -c->frame_geometry.height;
+          c->window->geometry.y = -c->window->geometry.height;
+          mb_wm_client_geometry_mark_dirty(c);
+          /* Unlike below, there should be no need to re-allocate the
+           * title bar here, as if we have a fullscreen app, the title
+           * will be invisible anyway. */
+        }
+    }
+  else
+    {
+      VISIBILITY ("SA COME BACK");
+      if (priv->status_area)
+        {
+          clutter_actor_show(priv->status_area);
+          clutter_actor_raise_top(priv->status_area);
+        }
+
+      if (c && c->frame_geometry.y < 0)
+        { /* Restore the position of SA. */
+          c->frame_geometry.y = c->window->geometry.y = 0;
+          mb_wm_client_geometry_mark_dirty(c);
+          /* Now we have changed status area visibility, we must update
+           * the position of the title. Ideally we wouldn't call this so
+           * often, but for S3 this is least likely to cause regressions. */
+          hd_render_manager_place_titlebar_elements();
+        }
+    }
+}
+
+
 /* The syncing with clutter that is done before a transition */
 static
 void hd_render_manager_sync_clutter_before ()
@@ -854,16 +901,7 @@ void hd_render_manager_sync_clutter_before ()
   else
     clutter_actor_hide(priv->operator);
 
-  if (priv->status_area)
-    {
-      if (STATE_SHOW_STATUS_AREA(priv->state))
-        {
-          clutter_actor_show(priv->status_area);
-          clutter_actor_raise_top(priv->status_area);
-        }
-      else
-        clutter_actor_hide(priv->status_area);
-    }
+  hd_render_manager_update_status_area(FALSE);
 
   if (STATE_TOOLBAR_FOREGROUND(priv->state))
     btn_state |= HDTB_VIS_FOREGROUND;
@@ -2505,8 +2543,8 @@ void hd_render_manager_set_visibilities()
           hd_comp_mgr_get_current_screen_width (),
           hd_comp_mgr_get_current_screen_height ()};
   MBWindowManager *wm;
-  MBWindowManagerClient *c;
   gboolean has_fullscreen;
+  MBWindowManagerClient *c;
 
   priv = the_render_manager->priv;
 
@@ -2611,36 +2649,19 @@ void hd_render_manager_set_visibilities()
           & MBWMClientWindowEWMHStateFullscreen;
       }
 
-  /* If we have a fullscreen something hide the blur_front
-   * and move SA out of the way.  BTW blur_front is implcitly
-   * shown by clutter when reparented. */
-  c = priv->status_area_client;
+  /* If we have a fullscreen something hide the blur_front.
+   * hd_render_manager_update_status_area also moves SA out of the way.
+   * BTW blur_front is implcitly shown by clutter when reparented. */
   if (has_fullscreen)
-    { VISIBILITY ("SA GO AWAY");
+    {
       clutter_actor_hide(CLUTTER_ACTOR(priv->blur_front));
-      if (c && c->frame_geometry.y >= 0)
-        { /* Move SA out of the way. */
-          c->frame_geometry.y   = -c->frame_geometry.height;
-          c->window->geometry.y = -c->window->geometry.height;
-          mb_wm_client_geometry_mark_dirty(c);
-          /* Unlike below, there should be no need to re-allocate the
-           * title bar here, as if we have a fullscreen app, the title
-           * will be invisible anyway. */
-        }
     }
   else
-    { VISIBILITY ("SA COME BACK");
+    {
       clutter_actor_show(CLUTTER_ACTOR(priv->blur_front));
-      if (c && c->frame_geometry.y < 0)
-        { /* Restore the position of SA. */
-          c->frame_geometry.y = c->window->geometry.y = 0;
-          mb_wm_client_geometry_mark_dirty(c);
-          /* Now we have changed status area visibility, we must update
-           * the position of the title. Ideally we wouldn't call this so
-           * often, but for S3 this is least likely to cause regressions. */
-          hd_render_manager_place_titlebar_elements();
-        }
     }
+
+  hd_render_manager_update_status_area(has_fullscreen);
   hd_render_manager_set_input_viewport();
 }
 
