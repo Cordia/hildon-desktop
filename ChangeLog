@@ -1,3 +1,14 @@
+2010-03-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#157265 Phone application is not in forground when call is active
+
+	Revert c79f88831fbb6671305833e9070476591a3c584f (Enable to activate
+	status menu in portrait mode) because this is what they want as a
+	workaround.
+
+	* src/home/hd-render-manager.c (hd_render_manager_remove_input_blocker):
+	  Block the status area again in portrait.
+
 2010-03-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Release 2.2.136-1.
