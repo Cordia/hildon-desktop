@@ -1,6 +1,6 @@
 hildon-desktop (1:2.2.137-1) unstable; urgency=low
 
-  * Fixes: NB#157265 - Phone application is not in forground when call is active
+  * Fixes: NB#162056 - Disable status menu in portrait mode
 
  -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 24 Mar 2010 15:22:53 +0200
 
