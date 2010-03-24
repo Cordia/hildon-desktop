@@ -3052,7 +3052,8 @@ void hd_render_manager_remove_input_blocker() {
             * which could just have moved it. */
            if (priv->status_area &&
                hd_render_manager_actor_is_visible(priv->status_area) &&
-               ((STATE_ONE_OF (priv->state, HDRM_STATE_APP|HDRM_STATE_APP_PORTRAIT)
+               (STATE_IS_PORTRAIT (priv->state) ||
+                 (priv->state == HDRM_STATE_APP
                   /* FIXME: the following check does not work when there are
                    * two levels of dialogs */
                 && (priv->current_blur & (HDRM_BLUR_BACKGROUND|HDRM_BLUR_HOME))
