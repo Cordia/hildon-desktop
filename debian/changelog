@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.137-1) unstable; urgency=low
+
+  * Fixes: NB#157265 - Phone application is not in forground when call is active
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 24 Mar 2010 15:22:53 +0200
+
 hildon-desktop (1:2.2.136-1) unstable; urgency=low
 
   * Fixes: NB#146110 - Partial image is displayed in FSM while viewing images
