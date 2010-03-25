@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.137-2) unstable; urgency=low
+
+  * merge crack.157265
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Thu, 25 Mar 2010 13:14:14 +0200
+
 hildon-desktop (1:2.2.137-1) unstable; urgency=low
 
   * Fixes: NB#162056 - Disable status menu in portrait mode

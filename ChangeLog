@@ -1,3 +1,15 @@
+2010-03-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Release 2.2.137-2.
+
+2010-03-23  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	For NB#157265.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_may_be_portrait):
+	  Ignore override-redirected windows when deciding about
+	  portraitness.
+
 2010-03-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Release 2.2.137-1.
