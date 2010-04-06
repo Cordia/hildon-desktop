@@ -1338,15 +1338,16 @@ void hd_render_manager_set_state(HDRMStateEnum state)
               && hd_dbus_state_before_tklock != HDRM_STATE_LOADING
               && hd_dbus_state_before_tklock != HDRM_STATE_LOADING_SUBWIN)
             {
-              /* If we got a call and then locked right after, we can be
-               * in HDRM_STATE_HOME_PORTRAIT state, which is *meant* to
-               * be transitional. See bug 158934 */
-              if (hd_dbus_state_before_tklock == HDRM_STATE_HOME_PORTRAIT)
-                hd_dbus_state_before_tklock = HDRM_STATE_HOME;
-
-              if ((hd_dbus_state_before_tklock == HDRM_STATE_APP
-                  || hd_dbus_state_before_tklock == HDRM_STATE_APP_PORTRAIT)
-                  && hd_task_navigator_is_empty ())
+              if (hd_dbus_state_before_tklock == HDRM_STATE_HOME_PORTRAIT
+                  && !hd_comp_mgr_should_be_portrait (priv->comp_mgr))
+                {
+                  /* If we got a call and then locked right after, we can be
+                   * in HDRM_STATE_HOME_PORTRAIT state, which is *meant* to
+                   * be transitional. See bug 158934 */
+                  hd_dbus_state_before_tklock = HDRM_STATE_HOME;
+                }
+              else if (STATE_IS_APP(hd_dbus_state_before_tklock)
+                       && hd_task_navigator_is_empty ())
                 {
                   /* we can't switch to application if there's none in the
                    * switcher */

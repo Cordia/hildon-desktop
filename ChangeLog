@@ -1,3 +1,12 @@
+2010-04-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#162969 Call UI is broken if lock & unlock T&K lock during
+		  incoming call ringing in portrait view
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  Don't go to HOME AFTER_TKLOCK unconditionally if the previous
+	  state was HOME_PORTRAIT, but consider staying in that state.
+
 2010-03-17  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	Fixes: NB#149221 - Status menu invisble property not handled properly 
