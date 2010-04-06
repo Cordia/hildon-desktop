@@ -3303,6 +3303,9 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
       if (MB_WM_CLIENT_CLIENT_TYPE (c) & HdWmClientTypeHomeApplet)
         /* Make an exception for applets. */
         continue;
+      if (MB_WM_CLIENT_CLIENT_TYPE (c) & MBWMClientTypeOverride)
+        /* For the beloved systemui windows. */
+        continue;
       if (HD_IS_BANNER_NOTE (c) || HD_IS_INCOMING_EVENT_PREVIEW_NOTE (c))
         /* Assume it for now. */
         continue;
