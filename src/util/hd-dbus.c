@@ -25,6 +25,7 @@
 gboolean hd_dbus_display_is_off = FALSE;
 gboolean hd_dbus_tklock_on = FALSE;
 HDRMStateEnum hd_dbus_state_before_tklock = HDRM_STATE_UNDEFINED;
+gboolean hd_dbus_cunt = FALSE;
 
 static DBusConnection *connection, *sysbus_conn;
 
@@ -61,6 +62,7 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
 {
   HdCompMgr  * hmgr = data;
   extern MBWindowManager *hd_mb_wm;
+  static gboolean call_active;
 
   if (dbus_message_is_signal(msg, DSME_SIGNAL_INTERFACE,
 			     DSME_SHUTDOWN_SIGNAL_NAME))
@@ -91,6 +93,7 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
         {
           if (strcmp(mode, MCE_TK_LOCKED))
             {
+              hd_dbus_cunt = FALSE;
               if (hd_dbus_tklock_on)
                 {
                   hd_dbus_tklock_on = FALSE;
@@ -106,8 +109,17 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
             }
           else if (!hd_dbus_tklock_on)
             {
+              /*
+               * The order of the events is either
+               * call_state=ringing, tklock_ind=locked, call_state=active or
+               * call_state=ringing, call_state=active, tklock_ind=locked.
+               * Handle both cases.
+               */
               hd_dbus_state_before_tklock = hd_render_manager_get_state ();
               hd_dbus_tklock_on = TRUE;
+              hd_dbus_cunt = call_active
+                && (hd_render_manager_get_state()
+                    & (HDRM_STATE_HOME|HDRM_STATE_HOME_PORTRAIT));
             }
         }
     }
@@ -161,6 +173,19 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
               hd_comp_mgr_update_applets_on_current_desktop_property (hmgr);
             }
         }
+    }
+  else if (dbus_message_is_signal (msg, MCE_SIGNAL_IF, "sig_call_state_ind"))
+    {
+      const char *state;
+
+      /* Watch the call state.  If we got an active call tell hdrm to
+       * try keeping the call-ui in the foreground after tklock is closed. */
+      dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &state,
+                             DBUS_TYPE_INVALID);
+      call_active = !strcmp(state, "active");
+      hd_dbus_cunt = call_active && hd_dbus_tklock_on
+        && (hd_render_manager_get_state()
+            & (HDRM_STATE_HOME|HDRM_STATE_HOME_PORTRAIT));
     }
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -264,6 +289,10 @@ hd_dbus_init (HdCompMgr * hmgr)
                           "type='signal',path='" MCE_SIGNAL_PATH "',"
                           "interface='" MCE_SIGNAL_IF "',"
                           "member='" MCE_DISPLAY_SIG "'", NULL);
+      dbus_bus_add_match (sysbus_conn,
+                          "type='signal',path='" MCE_SIGNAL_PATH "',"
+                          "interface='" MCE_SIGNAL_IF "',"
+                          "member='" MCE_CALL_STATE_SIG "'", NULL);
 
       dbus_connection_add_filter (sysbus_conn,
                                   hd_dbus_system_bus_signal_handler,

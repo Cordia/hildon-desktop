@@ -1264,6 +1264,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
   extern gboolean hd_debug_mode_set;
   extern gboolean hd_dbus_tklock_on;
   extern HDRMStateEnum hd_dbus_state_before_tklock;
+  extern gboolean hd_dbus_cunt;
   HdRenderManagerPrivate *priv;
   MBWMCompMgr          *cmgr;
   MBWindowManager      *wm;
@@ -1581,6 +1582,22 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                                        ? HDRM_STATE_APP_PORTRAIT
                                        : HDRM_STATE_HOME_PORTRAIT);
           return;
+        }
+
+      if (hd_dbus_cunt && STATE_IS_APP (state))
+        {
+          /*
+           * Override @hd_dbus_state_before_tklock if tklock is on
+           * and call is active, to present the app (call-ui presumably)
+           * instead of the desktop after tklock is closed.  Do this
+           * after portrait-landscape state diversion above, so we
+           * will land in the correct orientation.
+           */
+          g_assert (hd_dbus_tklock_on);
+          g_assert (hd_dbus_state_before_tklock != HDRM_STATE_UNDEFINED);
+          hd_dbus_state_before_tklock = state;
+          hd_dbus_cunt = FALSE;
+          g_debug("call-ui, no transition after tklock");
         }
 
       hd_render_manager_sync_clutter_before();
