@@ -1,5 +1,17 @@
 2010-05-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Small cleanups.
+
+	* ChangeLog: remove old merge conflict marker
+	* src/util/hd-transition.c (hd_transition_popup, hd_transition_fade_and_rotate, hd_transition_fade_and_rotate):
+	  Give names to helper actors.
+	* src/tidy/tidy-util.c (tidy_util_cogl_push_offscreen_buffer, tidy_util_cogl_pop_offscreen_buffer):
+	  Cleaned up to be more readable and added more comments.
+	* src/tidy/tidy-util.c (tidy_util_preload_glyphs):
+	  Remove unused function.
+
+2010-05-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#165767 Calling screen UI is displayed in inverted view
 		  while changing screen mode
 

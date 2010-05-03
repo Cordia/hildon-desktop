@@ -959,6 +959,7 @@ hd_transition_popup(HdCompMgr                  *mgr,
 
   /* Add actor for the background when we pop a bit too far */
   data->particles[0] = g_object_ref(clutter_rectangle_new());
+  clutter_actor_set_name(data->particles[0], "popup background");
   clutter_container_add_actor(CLUTTER_CONTAINER(actor), data->particles[0]);
   hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL,
                               &col);
@@ -1392,6 +1393,7 @@ hd_transition_fade_and_rotate(gboolean first_part,
     data->angle *= -1;
   /* Add the actor we use to dim out the screen */
   data->particles[0] = g_object_ref(clutter_rectangle_new_with_color(&black));
+  clutter_actor_set_name(data->particles[0], "black rotation background");
   clutter_actor_set_size(data->particles[0],
       hd_comp_mgr_get_current_screen_width (),
       hd_comp_mgr_get_current_screen_height ());
@@ -1405,6 +1407,7 @@ hd_transition_fade_and_rotate(gboolean first_part,
        * portrait half of the animation. This is pretty nasty, but as the home
        * applets aren't repositioned they can sometimes be seen in the background.*/
        data->particles[1] = g_object_ref(clutter_rectangle_new_with_color(&black));
+       clutter_actor_set_name(data->particles[1], "other rotation background");
        clutter_actor_set_position(data->particles[1],
            HD_COMP_MGR_LANDSCAPE_HEIGHT, 0);
        clutter_actor_set_size(data->particles[1],

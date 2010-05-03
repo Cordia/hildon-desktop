@@ -1,42 +1,5 @@
 #include "tidy-util.h"
 
-/*  Hack to (mostly) fill glyph cache, useful on MBX.
- *
- *  FIXME: untested
-*/
-void
-tidy_util_preload_glyphs (char *font, ...)
-{
-  va_list args;
-
-  va_start (args, font);
-
-  while (font)
-    {
-      /* Hold on to your hat.. */
-      ClutterActor *foo;
-      ClutterColor  text_color = { 0xff, 0xff, 0xff, 0xff };
-
-      foo = clutter_label_new_full
-	                (font,
-			 "abcdefghijklmnopqrstuvwxyz"
-			 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-			 "1234567890&()*.,';:-_+=[]{}#@?><\"!`%\\|/ ",
-			 &text_color);
-      if (foo)
-	{
-	  clutter_actor_realize(foo);
-	  clutter_actor_paint(foo);
-	  g_object_unref (foo);
-	}
-
-      font = va_arg (args, char*);
-    }
-
-  va_end (args);
-}
-
-
 /* The code below is to handle stacks of Offscreen buffers - for example when
  * rendering to a tidy-blur-group *while* rendering to a tidy-cached-group.
  * It also deals with properly saving the scissor state, as pretty much all
@@ -56,44 +19,54 @@ typedef struct {
 /* We'd never be rendering to more that 4 buffers at once! most is 2.
  * Position 0 is used to store information about the Window (eg. scissor
  * box) */
-OffscreenStackEntry offscreen_buffer_stack[4];
-int offscreen_buffer_idx = 0;
+static OffscreenStackEntry offscreen_buffer_stack[4];
+static int offscreen_buffer_idx = 0;
 /* ------------------------------------------------  */
 
+/*
+ * Save the current scissor in @offscreen_buffer_stack[@offscreen_buffer_idx]
+ * (== @obe).  Save the new @fbo in @offscreen_buffer_stack[@offscreen_buffer_idx+1]
+ * (@obe+1) for the next tidy_util_cogl_push_offscreen_buffer().
+ * @offscreen_buffer_stack[0].fbo == %NULL by default, indicating
+ * %COGL_WINDOW_BUFFER.
+ *
+ * NOTE that the modelview matrix will be reset to identity, and will not
+ *      be saved if you're going from FBO to another FBO.
+ */
+void tidy_util_cogl_push_offscreen_buffer(CoglHandle fbo)
+{
+  g_assert(offscreen_buffer_idx+1 < G_N_ELEMENTS(offscreen_buffer_stack));
+  OffscreenStackEntry *obe = &offscreen_buffer_stack[offscreen_buffer_idx++];
 
-void tidy_util_cogl_push_offscreen_buffer(CoglHandle fbo) {
-  /* save state of scissoring */
-  offscreen_buffer_stack[offscreen_buffer_idx].scissor_enabled =
-      glIsEnabled (GL_SCISSOR_TEST);
-  glGetIntegerv (GL_SCISSOR_BOX,
-      offscreen_buffer_stack[offscreen_buffer_idx].scissor_box);
-  /* Save current FBO on top of stack */
-  offscreen_buffer_idx++;
-  offscreen_buffer_stack[offscreen_buffer_idx].fbo = fbo;
-  cogl_draw_buffer(COGL_OFFSCREEN_BUFFER, fbo);
+  if ((obe->scissor_enabled = glIsEnabled (GL_SCISSOR_TEST)))
+    glGetIntegerv (GL_SCISSOR_BOX, obe->scissor_box);
 
   /* Remove scissoring as we're rendering to a texture */
   glScissor (0, 0, 0, 0);
   glDisable (GL_SCISSOR_TEST);
+  cogl_draw_buffer (COGL_OFFSCREEN_BUFFER, fbo);
+
+  obe++;
+  obe->fbo = fbo;
 }
 
-void tidy_util_cogl_pop_offscreen_buffer() {
-  offscreen_buffer_idx--;
-  if (offscreen_buffer_idx > 0)
-    cogl_draw_buffer(COGL_OFFSCREEN_BUFFER,
-        offscreen_buffer_stack[offscreen_buffer_idx].fbo);
-  else
-    cogl_draw_buffer(COGL_WINDOW_BUFFER, 0);
+/* NOTE that the modelview matrix will NOT be saved nor restored
+ *      if you're switching back from FBO to another FBO. */
+void tidy_util_cogl_pop_offscreen_buffer(void)
+{
+  g_assert(offscreen_buffer_idx > 0);
+  OffscreenStackEntry *obe = &offscreen_buffer_stack[--offscreen_buffer_idx];
+
   /* Reinstate scissoring state that we saved previously */
-  if (offscreen_buffer_stack[offscreen_buffer_idx].scissor_enabled)
-    glEnable (GL_SCISSOR_TEST);
+  if (obe->scissor_enabled)
+    {
+      glEnable (GL_SCISSOR_TEST);
+      glScissor (obe->scissor_box[0], obe->scissor_box[1],
+                 obe->scissor_box[2], obe->scissor_box[3]);
+    }
   else
     glDisable (GL_SCISSOR_TEST);
-  glScissor (offscreen_buffer_stack[offscreen_buffer_idx].scissor_box[0],
-             offscreen_buffer_stack[offscreen_buffer_idx].scissor_box[1],
-             offscreen_buffer_stack[offscreen_buffer_idx].scissor_box[2],
-             offscreen_buffer_stack[offscreen_buffer_idx].scissor_box[3]);
 
-
+  cogl_draw_buffer (obe->fbo ? COGL_OFFSCREEN_BUFFER : COGL_WINDOW_BUFFER,
+                    obe->fbo);
 }
-

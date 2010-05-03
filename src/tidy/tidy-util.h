@@ -3,9 +3,6 @@
 
 #include <clutter/clutter.h>
 
-void
-tidy_util_preload_glyphs (char *font, ...);
-
 /* To handle the problem where we might be doing nested writes to
  * offscreen buffers */
 void tidy_util_cogl_push_offscreen_buffer(CoglHandle fbo);
