@@ -1,5 +1,27 @@
 2010-05-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#165344 AutoRotate does not start in Portrait mode
+	NB#158623 Not going back to portrait mode after closing a dialog
+		  that does not support portrait mode
+
+	MCE wasn't asked about the current orientation when we enabled the
+	accelerometer.  As a result HdAppMgr::portrait and HdCompMgr::pip_*
+	weren't set/reset even if they should have been.
+
+	* src/mb/hd-comp-mgr.h
+	* src/mb/hd-comp-mgr.c:
+	  hd_comp_mgr_set_portrait_if_possible(): removed, replaced with
+	    hd_comp_mgr_set_pip_flags()
+	  hd_comp_mgr_portrait_or_not_portrait(): made public
+	* src/launcher/hd-app-mgr.c:
+	  hd_app_mgr_update_portraitness(): use them
+	  hd_app_mgr_mce_activate_accel_if_needed():
+	    Reset HdAppMgr::portrait and HdCompMgr::pip_* if the accelerometer
+	    is deactivated.  Set HdCompMgr::pip_* if it's being activated,
+	    even if we're asked not to @update_portraitness.
+
+2010-05-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Small cleanups.
 
 	* ChangeLog: remove old merge conflict marker

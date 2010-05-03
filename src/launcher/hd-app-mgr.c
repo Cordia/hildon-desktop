@@ -1931,9 +1931,10 @@ hd_app_mgr_update_portraitness(HdAppMgr *self)
   if (!hmgr)
     /* We're in some initialization state. */
     return;
-  hd_comp_mgr_set_portrait_if_possible(hmgr,
+  hd_comp_mgr_set_pip_flags (hmgr,
       priv->accel_enabled,
       priv->portrait && priv->slide_closed);
+  hd_comp_mgr_portrait_or_not_portrait (MB_WM_COMP_MGR (hmgr), NULL);
 }
 
 static DBusHandlerResult
@@ -2058,24 +2059,40 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
     }
 
   dbus_message_set_auto_start (msg, TRUE);
-  dbus_message_set_no_reply (msg, TRUE);
-
-  if (!dbus_connection_send (conn, msg, NULL))
+  if (activate)
     {
-      g_warning ("%s: Couldn't send message.", __FUNCTION__);
+      DBusMessage *reply;
+
+      if ((reply = dbus_connection_send_with_reply_and_block (
+                                          conn, msg, -1, NULL)) != NULL)
+        {
+          priv->portrait = _hd_app_mgr_dbus_check_value (reply,
+                                              MCE_ORIENTATION_PORTRAIT);
+          dbus_message_unref (reply);
+        }
+      else
+        g_warning ("%s: Couldn't send message.", __FUNCTION__);
+      dbus_message_unref (msg);
     }
   else
-    dbus_connection_flush(conn);
+    {
+      dbus_message_set_no_reply (msg, TRUE);
 
-  dbus_message_unref (msg);
+      if (!dbus_connection_send (conn, msg, NULL))
+        g_warning ("%s: Couldn't send message.", __FUNCTION__);
+      dbus_message_unref (msg);
+      msg = NULL;
+      priv->portrait = FALSE;
+    }
 
-  g_debug ("%s: %s", __FUNCTION__,
-           activate? "enabled" : "disabled");
+  g_debug ("%s: %s", __FUNCTION__, activate ? "enabled" : "disabled");
   priv->accel_enabled = activate;
 
   if (update_portraitness)
     hd_app_mgr_update_portraitness(the_app_mgr);
-  return;
+  else
+    hd_comp_mgr_set_pip_flags (hd_comp_mgr_get (), priv->accel_enabled,
+                               priv->portrait && priv->slide_closed);
 }
 
 static void

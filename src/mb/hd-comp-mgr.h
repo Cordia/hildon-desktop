@@ -125,8 +125,13 @@ void hd_comp_mgr_kill_all_apps       (HdCompMgr *hmgr);
 void hd_comp_mgr_wakeup_client       (HdCompMgr       *hmgr,
 				      HdCompMgrClient *hclient);
 
+void hd_comp_mgr_set_pip_flags (HdCompMgr *hmgr,
+                                          gboolean enabled,
+                                          gboolean portrait);
 gboolean hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr);
 gboolean hd_comp_mgr_can_be_portrait (HdCompMgr *hmgr);
+void     hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr,
+                                               MBWindowManagerClient *c);
 gboolean hd_comp_mgr_client_supports_portrait (MBWindowManagerClient *mbwmc);
 
 Atom hd_comp_mgr_get_atom (HdCompMgr *hmgr, HdAtoms id);
@@ -208,9 +213,6 @@ void hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm,
                                             gboolean force);
 gboolean hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr);
 HdCompMgrClient * hd_comp_mgr_get_current_client (HdCompMgr *hmgr);
-void hd_comp_mgr_set_portrait_if_possible(HdCompMgr *hmgr,
-                                          gboolean enabled,
-                                          gboolean portrait);
 
 G_END_DECLS
 

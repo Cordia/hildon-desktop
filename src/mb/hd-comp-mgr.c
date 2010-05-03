@@ -139,9 +139,6 @@ HdRunningApp *hd_comp_mgr_client_get_app_key (HdCompMgrClient *client,
 
 static void hd_comp_mgr_check_do_not_disturb_flag (HdCompMgr *hmgr);
 
-static void hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr,
-                                                  MBWindowManagerClient *c);
-
 static gboolean
 hd_comp_mgr_client_prefers_compositing (MBWindowManagerClient *c);
 
@@ -3356,6 +3353,13 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
   return any_requests;
 }
 
+void hd_comp_mgr_set_pip_flags (HdCompMgr *hmgr,
+                                gboolean enabled, gboolean portrait)
+{
+  hmgr->priv->pip_enabled = enabled;
+  hmgr->priv->pip_portrait = portrait;
+}
+
 /* Does any visible client request portrait mode?
  * Are all of them concerned prepared for it? */
 gboolean
@@ -3377,8 +3381,9 @@ hd_comp_mgr_can_be_portrait (HdCompMgr *hmgr)
  * correctly.  @c is the client being mapped, if the context is appropriate,
  * otherwise NULL.
  */
-static void
-hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr, MBWindowManagerClient *c)
+void
+hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr,
+                                      MBWindowManagerClient *c)
 {
   HdCompMgrPrivate *priv = HD_COMP_MGR(mgr)->priv;
   /* I think this is a guard for cases when we do a
@@ -3699,11 +3704,3 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
 
   mb_wm_util_async_untrap_x_errors ();
 }
-
-void hd_comp_mgr_set_portrait_if_possible(HdCompMgr *hmgr, gboolean enabled, gboolean portrait)
-{
-  hmgr->priv->pip_enabled = enabled;
-  hmgr->priv->pip_portrait = portrait;
-  hd_comp_mgr_portrait_or_not_portrait(MB_WM_COMP_MGR(hmgr),0);
-}
-
