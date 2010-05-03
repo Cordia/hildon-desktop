@@ -134,8 +134,8 @@ tidy_cached_group_paint (ClutterActor *actor)
   /* Draw children into an offscreen buffer */
   if (priv->source_changed)
     {
-      tidy_util_cogl_push_offscreen_buffer(priv->fbo);
       cogl_push_matrix();
+      tidy_util_cogl_push_offscreen_buffer(priv->fbo);
       /* translate a bit to let bilinear filter smooth out intermediate pixels */
       cogl_translatex(CFX_ONE/2,CFX_ONE/2,0);
       if (rotate_90) {
@@ -151,8 +151,8 @@ tidy_cached_group_paint (ClutterActor *actor)
       cogl_color (&white);
       CLUTTER_ACTOR_CLASS (tidy_cached_group_parent_class)->paint(actor);
 
-      cogl_pop_matrix();
       tidy_util_cogl_pop_offscreen_buffer();
+      cogl_pop_matrix();
 
       priv->source_changed = FALSE;
     }

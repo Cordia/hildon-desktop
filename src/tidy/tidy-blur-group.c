@@ -474,8 +474,8 @@ tidy_blur_group_paint (ClutterActor *actor)
   /* Draw children into an offscreen buffer */
   if (priv->source_changed && priv->current_blur_step==0)
     {
-      tidy_util_cogl_push_offscreen_buffer(priv->fbo_a);
       cogl_push_matrix();
+      tidy_util_cogl_push_offscreen_buffer(priv->fbo_a);
 
       if (rotate_90) {
         cogl_scale(CFX_ONE*tex_width/height, CFX_ONE*tex_height/width);
@@ -497,8 +497,8 @@ tidy_blur_group_paint (ClutterActor *actor)
       TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
       recursive_set_texture_filter(actor, NULL);
 
-      cogl_pop_matrix();
       tidy_util_cogl_pop_offscreen_buffer();
+      cogl_pop_matrix();
 
       priv->source_changed = FALSE;
       priv->current_blur_step = 0;

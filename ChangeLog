@@ -1,3 +1,16 @@
+2010-05-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#165767 Calling screen UI is displayed in inverted view
+		  while changing screen mode
+
+	* src/tidy/tidy-blur-group.c (tidy_blur_group_paint)
+	* src/tidy/tidy-cached-group.c (tidy_cached_group_paint):
+	  The inversion was caused by a conflict between TidyCachedGroup
+	  and TidyBlurGroup, in particular because cogl_draw_buffer()
+	  does not save nor restore the ModelView matrix, but overrides
+	  it with the identify matrix if going from FBO to FBO.  So save
+	  and restore the matrix before/after switching buffers.
+
 2010-04-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Release 2.2.138-1.
@@ -135,7 +148,6 @@
 	* src/home/hd-render-manager.c: Don't restore back to HOME_PORTRAIT
 	  state when coming back from tklock, instead just go to HOME.
 
-<<<<<<< HEAD:ChangeLog
 2010-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Implement rotation synchronization between the wm and its clients.
