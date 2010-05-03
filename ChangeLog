@@ -1,3 +1,16 @@
+2010-05-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#165767 Calling screen UI is displayed in inverted view
+		  while changing screen mode
+
+	* src/tidy/tidy-blur-group.c (tidy_blur_group_paint)
+	* src/tidy/tidy-cached-group.c (tidy_cached_group_paint):
+	  The inversion was caused by a conflict between TidyCachedGroup
+	  and TidyBlurGroup, in particular because cogl_draw_buffer()
+	  does not save nor restore the ModelView matrix, but overrides
+	  it with the identify matrix if going from FBO to FBO.  So save
+	  and restore the matrix before/after switching buffers.
+
 2010-03-15  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Attempt to stack animas correctly.  If we fail to do so then when you
@@ -21,13 +34,6 @@
 	  Don't allow the layout manager to move the client around.
 	  Also don't install useless buttonclick handlers for the decor.
 	  (If it had a decor to start with.)
-
-2010-03-02  Gordon Williams <gordon.williams@collabora.co.uk>
-
-	Fixes: NB#158934 - Status area moving to down left corner
-	
-	* src/home/hd-render-manager.c: Don't restore back to HOME_PORTRAIT
-	  state when coming back from tklock, instead just go to HOME.
 
 2010-03-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
