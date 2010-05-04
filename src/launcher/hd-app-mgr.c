@@ -2063,6 +2063,7 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
     {
       DBusMessage *reply;
 
+      /* @reply will contain the current orientation */
       if ((reply = dbus_connection_send_with_reply_and_block (
                                           conn, msg, -1, NULL)) != NULL)
         {
@@ -2075,13 +2076,11 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
       dbus_message_unref (msg);
     }
   else
-    {
+    { /* Deactivate, expect no reply.  We can only deactivate in lscape. */
       dbus_message_set_no_reply (msg, TRUE);
-
       if (!dbus_connection_send (conn, msg, NULL))
         g_warning ("%s: Couldn't send message.", __FUNCTION__);
       dbus_message_unref (msg);
-      msg = NULL;
       priv->portrait = FALSE;
     }
 
