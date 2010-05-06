@@ -258,8 +258,6 @@
 	with and without loading screen so that we don't either go to a funny
 	state or wait for the loading screen timeout.
 
-=======
->>>>>>> for_2.2.137:ChangeLog
 2010-02-24  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 2.2.135-1
