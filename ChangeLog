@@ -1,3 +1,10 @@
+2010-05-06  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#162506 Power menu edges are truncated in a given scenario
+
+	* src/mb/hd-app-menu.c (hd_app_menu_request_geometry):
+	  Requestest a fixed-width, unnegotiable geometry for app menus.
+
 2010-05-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#165344 AutoRotate does not start in Portrait mode

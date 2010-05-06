@@ -28,6 +28,10 @@
 
 static void
 hd_app_menu_realize (MBWindowManagerClient *client);
+static Bool
+hd_app_menu_request_geometry (MBWindowManagerClient *client,
+                              MBGeometry            *new_geometry,
+                              MBWMClientReqGeomType  flags);
 
 static void
 hd_app_menu_class_init (MBWMObjectClass *klass)
@@ -39,6 +43,7 @@ hd_app_menu_class_init (MBWMObjectClass *klass)
   client = (MBWindowManagerClientClass *)klass;
 
   client->client_type  = HdWmClientTypeAppMenu;
+  client->geometry = hd_app_menu_request_geometry;
   client->realize  = hd_app_menu_realize;
 
 #if MBWM_WANT_DEBUG
@@ -125,3 +130,36 @@ hd_app_menu_realize (MBWindowManagerClient *client)
   menu->release_cb_id = hd_util_modal_blocker_realize (client, FALSE);
 }
 
+static Bool
+hd_app_menu_request_geometry (MBWindowManagerClient *client,
+                              MBGeometry            *new_geometry,
+                              MBWMClientReqGeomType  flags)
+{
+  MBWindowManager *wm = client->wmref;
+  int north = 0, south = 0, west = 0, east = 0;
+  MBGeometry wm_geometry, frame_geometry;
+
+  mb_wm_get_display_geometry (wm, &wm_geometry, True);
+  if (client->decor && !client->window->undecorated)
+      mb_wm_theme_get_decor_dimensions (wm->theme, client,
+                                        &north, &south, &west, &east);
+
+  /* Calculate the frame geometry, whose width is fixed,
+   * horizontal position is centered and aligned to the top. */
+  frame_geometry.y = 0;
+  frame_geometry.height = new_geometry->height + north + south;
+  frame_geometry.x = 1; /* one pixel border drawn by %HdDecor */
+  if (wm_geometry.width > wm_geometry.height)
+    frame_geometry.x += 56; /* the specified margin in landscape */
+  frame_geometry.width = wm_geometry.width - 2*frame_geometry.x;
+
+  /* Calculate window size from frame */
+  client->window->geometry.x      = frame_geometry.x + west;
+  client->window->geometry.y      = frame_geometry.y + north;
+  client->window->geometry.width  = frame_geometry.width - (west + east);
+  client->window->geometry.height = frame_geometry.height - (south + north);
+  client->frame_geometry          = frame_geometry;
+
+  mb_wm_client_geometry_mark_dirty (client);
+  return True; /* Geometry accepted */
+}
