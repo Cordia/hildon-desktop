@@ -1,3 +1,12 @@
+2010-05-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#165822 Calling UI is broken with changing modes
+
+	Patching up the inherently fucked AFTER_TKLOCK logic.
+
+	* src/home/hd-render-manager.c (hd_render_manager_set_state):
+	  Go to HOME_PORTRAIT instead of back to HOME if should_be_portrait.
+
 2010-05-07  Gordon Williams <gordon.williams@collabora.co.uk>
 
 	NB#147861 Viewfinder behind an alarm window shows up
