@@ -1333,25 +1333,31 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             }
 
           /* loading states are temporary and non-comp. we considered above */
-          if (hd_dbus_state_before_tklock != HDRM_STATE_NON_COMPOSITED
-              && hd_dbus_state_before_tklock != HDRM_STATE_NON_COMP_PORT
-              && hd_dbus_state_before_tklock != HDRM_STATE_LOADING
-              && hd_dbus_state_before_tklock != HDRM_STATE_LOADING_SUBWIN)
+          if (!(hd_dbus_state_before_tklock & (HDRM_STATE_NON_COMPOSITED|
+                                               HDRM_STATE_NON_COMP_PORT|
+                                               HDRM_STATE_LOADING|
+                                               HDRM_STATE_LOADING_SUBWIN)))
             {
-              if (hd_dbus_state_before_tklock == HDRM_STATE_HOME_PORTRAIT
-                  && !hd_comp_mgr_should_be_portrait (priv->comp_mgr))
+              if (STATE_IS_APP(hd_dbus_state_before_tklock)
+                  && hd_task_navigator_is_empty ())
                 {
-                  /* If we got a call and then locked right after, we can be
-                   * in HDRM_STATE_HOME_PORTRAIT state, which is *meant* to
-                   * be transitional. See bug 158934 */
+                  /* We can't switch to application if there's none
+                   * in the switcher. */
                   hd_dbus_state_before_tklock = HDRM_STATE_HOME;
                 }
-              else if (STATE_IS_APP(hd_dbus_state_before_tklock)
-                       && hd_task_navigator_is_empty ())
+              else if (hd_comp_mgr_should_be_portrait (priv->comp_mgr))
                 {
-                  /* we can't switch to application if there's none in the
-                   * switcher */
-                  hd_dbus_state_before_tklock = HDRM_STATE_HOME;
+                  if (hd_dbus_state_before_tklock == HDRM_STATE_HOME)
+                    /* tklock -> portrait dialog -> unlock */
+                    hd_dbus_state_before_tklock = HDRM_STATE_HOME_PORTRAIT;
+                }
+              else
+                { /* should not be in portrait */
+                  /* If we got a call and then locked right after,
+                   * we can be in HDRM_STATE_HOME_PORTRAIT state,
+                   * which is *meant* to be transitional.  NB#158934 */
+                  if (hd_dbus_state_before_tklock == HDRM_STATE_HOME_PORTRAIT)
+                    hd_dbus_state_before_tklock = HDRM_STATE_HOME;
                 }
 
               g_debug("%s: return to state %s before tklock\n", __func__,
