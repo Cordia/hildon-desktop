@@ -268,6 +268,8 @@ gboolean hd_render_manager_actor_is_visible(ClutterActor *actor);
 
 void hd_render_manager_set_visibilities(void);
 
+void hd_render_manager_update_blur_state(void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */

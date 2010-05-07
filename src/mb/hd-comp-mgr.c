@@ -129,6 +129,8 @@ struct HdCompMgrClientPrivate
 
   guint                 hibernation_key;
   gboolean              can_hibernate : 1;
+
+  gboolean              has_video_overlay;
 };
 
 extern gboolean hd_dbus_display_is_off;
@@ -324,6 +326,9 @@ hd_comp_mgr_client_init (MBWMObject *obj, va_list vap)
                            (gpointer)++windows);
     }
 
+  /* Initially get window overlay state */
+  client->priv->has_video_overlay = hd_util_client_has_video_overlay(wm_client);
+
   return 1;
 }
 
@@ -381,6 +386,14 @@ hd_comp_mgr_client_can_hibernate (HdCompMgrClient *hclient)
   HdCompMgrClientPrivate * priv = hclient->priv;
 
   return priv->can_hibernate;
+}
+
+gboolean
+hd_comp_mgr_client_has_video_overlay (HdCompMgrClient *hclient)
+{
+  HdCompMgrClientPrivate * priv = hclient->priv;
+
+  return priv->has_video_overlay;
 }
 
 HdRunningApp *
@@ -830,6 +843,19 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
         hd_task_navigator_notification_thread_changed (hd_task_navigator,
                                                        a, str);
       return False;
+    }
+
+  /* Process XVIDEO flag. If this changed then we'll want to look again at
+   * how we should blur. */
+  if (event->atom == hd_comp_mgr_get_atom (hmgr, HD_ATOM_OMAP_VIDEO_OVERLAY))
+    {
+      c = mb_wm_managed_client_from_xwindow (wm, event->window);
+
+      if (c && (cc = HD_COMP_MGR_CLIENT(c->cm_client)))
+        {
+          cc->priv->has_video_overlay = hd_util_client_has_video_overlay(c);
+          hd_render_manager_update_blur_state();
+        }
     }
 
   /* Process PORTRAIT flags */
