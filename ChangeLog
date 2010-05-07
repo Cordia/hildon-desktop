@@ -1,3 +1,22 @@
+2010-05-07  Gordon Williams <gordon.williams@collabora.co.uk>
+
+	NB#147861 Viewfinder behind an alarm window shows up
+		  after the notification preview is received
+
+	Check _ATOM_OMAP_VIDEO_OVERLAY dynamicall rather than only once
+	when the window is mapped.  Also increases performance a little.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed):
+	  Track changes to _ATOM_OMAP_VIDEO_OVERLAY and cache it in
+	  a private field.
+	* src/home/hd-render-manager.c (hd_render_manager_update_blur_state):
+	  Query the cached value rather than getting the current value
+	  of the property.
+	* src/home/hd-render-manager.h (hd_render_manager_update_blur_state):
+	  Made public.
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_client_property_changed):
+	  Ask the blur group to refresh when the property changes.
+
 2010-05-03  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#165344 AutoRotate does not start in Portrait mode

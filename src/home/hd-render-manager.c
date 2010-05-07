@@ -264,7 +264,6 @@ static
 gboolean hd_render_manager_should_ignore_cm_client(MBWMCompMgrClutterClient *cm_client);
 static
 gboolean hd_render_manager_should_ignore_actor(ClutterActor *actor);
-static void hd_render_manager_update_blur_state(void);
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------  RANGE      */
 /* ------------------------------------------------------------------------- */
@@ -2168,7 +2167,7 @@ void hd_render_manager_restack()
   hd_title_bar_update(priv->title_bar);
 }
 
-static void hd_render_manager_update_blur_state()
+void hd_render_manager_update_blur_state()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
   HDRMBlurEnum blur_flags;
@@ -2189,8 +2188,9 @@ static void hd_render_manager_update_blur_state()
 
       /* If we are already blurred for something, now check and see if
        * any window we are blurring has a video overlay */
-      if (blur) {
-        if (hd_util_client_has_video_overlay(c))
+      if (blur && c->cm_client) {
+        if (hd_comp_mgr_client_has_video_overlay(
+              HD_COMP_MGR_CLIENT(c->cm_client)))
           has_video_overlay = TRUE;
       }
 
