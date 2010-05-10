@@ -185,18 +185,21 @@ gboolean tidy_blur_group_notify_modified_real(ClutterActor          *actor,
 
 static void tidy_blur_group_check_shader(TidyBlurGroup *group,
                                          ClutterShader **shader,
-                                         const char* fragment_source,
-                                         const char* vertex_source)
+                                         const char *fragment_source,
+                                         const char *vertex_source)
 {
   TidyBlurGroupPrivate *priv = group->priv;
+
   if (priv->use_shader && !*shader)
    {
-     GError           *error = NULL;
-     char             *old_locale;
+     GError *error = NULL;
+     char   *old_locale;
+
 #if GLSL_LOCALE_FIX
-      old_locale = g_strdup( setlocale (LC_ALL, NULL) );
+      old_locale = g_strdup (setlocale (LC_ALL, NULL));
       setlocale (LC_NUMERIC, "C");
 #endif
+
       *shader = clutter_shader_new();
       if (fragment_source)
         clutter_shader_set_fragment_source (*shader, fragment_source, -1);
@@ -218,11 +221,63 @@ static void tidy_blur_group_check_shader(TidyBlurGroup *group,
    }
 }
 
-static void tidy_blur_group_check_shaders(TidyBlurGroup *group)
+/* Allocate @priv->fbo_[ab]. */
+static void
+tidy_blur_group_allocate_textures (TidyBlurGroup *self)
 {
-  TidyBlurGroupPrivate *priv = group->priv;
-  tidy_blur_group_check_shader(group, &priv->shader_blur, BLUR_FRAGMENT_SHADER, BLUR_VERTEX_SHADER);
-  tidy_blur_group_check_shader(group, &priv->shader_saturate, SATURATE_FRAGMENT_SHADER, 0);
+  TidyBlurGroupPrivate *priv = self->priv;
+  guint tex_width, tex_height;
+
+#ifdef __i386__
+  if (!cogl_features_available(COGL_FEATURE_OFFSCREEN))
+    /* Don't try to allocate FBOs. */
+    return;
+#endif
+
+#if RESIZE_TEXTURE
+  if (priv->fbo_a && priv->fbo_b)
+    /* Rotate in _paint() rather than resize. */
+    return;
+#endif
+
+  /* Free the textures. */
+  if (priv->fbo_a)
+    {
+      cogl_offscreen_unref(priv->fbo_a);
+      cogl_texture_unref(priv->tex_a);
+      priv->fbo_a = 0;
+      priv->tex_a = 0;
+    }
+  if (priv->fbo_b)
+    {
+      cogl_offscreen_unref(priv->fbo_b);
+      cogl_texture_unref(priv->tex_b);
+      priv->fbo_b = 0;
+      priv->tex_b = 0;
+    }
+
+  /* (Re)create the textures + offscreen buffers.  Downsample by 2.
+   * We can specify mipmapping here, but we don't need it. */
+  clutter_actor_get_size(CLUTTER_ACTOR(self), &tex_width, &tex_height);
+  tex_width  /= 2;
+  tex_height /= 2;
+
+  priv->tex_a = cogl_texture_new_with_size(
+            tex_width, tex_height, 0, FALSE /* mipmap */,
+            priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
+                              COGL_PIXEL_FORMAT_RGB_565);
+  cogl_texture_set_filters(priv->tex_a, CGL_NEAREST, CGL_NEAREST);
+  priv->fbo_a = cogl_offscreen_new_to_texture(priv->tex_a);
+
+  priv->tex_b = cogl_texture_new_with_size(
+            tex_width, tex_height, 0, FALSE /* mipmap */,
+            priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
+                              COGL_PIXEL_FORMAT_RGB_565);
+  cogl_texture_set_filters(priv->tex_b, CGL_NEAREST, CGL_NEAREST);
+  priv->fbo_b = cogl_offscreen_new_to_texture(priv->tex_b);
+
+  priv->current_blur_step = 0;
+  priv->source_changed = TRUE;
 }
 
 static gboolean
@@ -288,22 +343,13 @@ tidy_blur_group_fallback_blur(TidyBlurGroup *group, int tex_width, int tex_heigh
 
 /* If priv->chequer, draw a chequer pattern over the screen */
 static void
-tidy_blur_group_do_chequer(TidyBlurGroup *group)
+tidy_blur_group_do_chequer(TidyBlurGroup *group, guint width, guint height)
 {
-  gint            x_1, y_1, x_2, y_2;
-  gint            width, height;
-  ClutterColor    black = { 0x00, 0x00, 0x00, 0xFF };
-
+  static const ClutterColor black = { 0x00, 0x00, 0x00, 0xFF };
   TidyBlurGroupPrivate *priv = group->priv;
 
   if (!priv->chequer)
     return;
-
-  clutter_actor_get_allocation_coords (
-      CLUTTER_ACTOR(group), &x_1, &y_1, &x_2, &y_2);
-
-  width = x_2 - x_1;
-  height = y_2 - y_1;
 
   cogl_color (&black);
   cogl_texture_rectangle (priv->tex_chequer,
@@ -351,20 +397,21 @@ recursive_set_texture_filter(ClutterActor *actor, ClutterTextureQuality *filter)
 static void
 tidy_blur_group_paint (ClutterActor *actor)
 {
-  ClutterColor    white = { 0xff, 0xff, 0xff, 0xff };
-  ClutterColor    col = { 0xff, 0xff, 0xff, 0xff };
-  ClutterColor    bgcol = { 0x00, 0x00, 0x00, 0xff };
-  gint            x_1, y_1, x_2, y_2;
-  gint            steps_this_frame = 0;
-  CoglHandle      current_tex;
-  ClutterTextureQuality filter_linear = GL_LINEAR;
+  static const ClutterColor white = { 0xff, 0xff, 0xff, 0xff };
+  static const ClutterColor bgcol = { 0x00, 0x00, 0x00, 0xff };
+  static ClutterTextureQuality filter_linear = GL_LINEAR;
+  ClutterGroup *group         = CLUTTER_GROUP(actor);
+  TidyBlurGroup *container    = TIDY_BLUR_GROUP(group);
+  TidyBlurGroupPrivate *priv  = container->priv;
+  gint             steps_this_frame = 0;
+  CoglHandle       current_tex;
+  ClutterActorBox  box;
+  gint             width, height, tex_width, tex_height;
+  gboolean         rotate_90;
+  ClutterColor     col;
 
   if (!TIDY_IS_SANE_BLUR_GROUP(actor))
     return;
-
-  ClutterGroup *group = CLUTTER_GROUP(actor);
-  TidyBlurGroup *container = TIDY_BLUR_GROUP(group);
-  TidyBlurGroupPrivate *priv = container->priv;
 
   /* If we are rendering normally then shortcut all this, and
    just render directly without the texture */
@@ -375,95 +422,38 @@ tidy_blur_group_paint (ClutterActor *actor)
       priv->current_blur_step = 0;
       priv->source_changed = TRUE;
       /* render direct */
-      TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
-      tidy_blur_group_do_chequer(container);
+      CLUTTER_ACTOR_CLASS(tidy_blur_group_parent_class)->paint(actor);
+      tidy_blur_group_do_chequer(container, width, height);
       return;
     }
 
-  tidy_blur_group_check_shaders(container);
-
-  clutter_actor_get_allocation_coords (actor, &x_1, &y_1, &x_2, &y_2);
+  clutter_actor_get_allocation_box(actor, &box);
+  width  = CLUTTER_UNITS_TO_DEVICE(box.x2 - box.x1);
+  height = CLUTTER_UNITS_TO_DEVICE(box.y2 - box.y1);
 
 #ifdef __i386__
   if (!cogl_features_available(COGL_FEATURE_OFFSCREEN))
     { /* If we can't blur properly do something nicer instead :) */
       /* Otherwise crash... */
-      TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
+      CLUTTER_ACTOR_CLASS(tidy_blur_group_parent_class)->paint(actor);
       col.blue = priv->brightness * 255;
       col.red = col.green = priv->brightness * 127;
       col.alpha = (1-priv->saturation) * 255;
       cogl_color (&col);
-      cogl_rectangle (0, 0, x_2 - x_1, y_2 - y_1);
-      tidy_blur_group_do_chequer(container);
+      cogl_rectangle (0, 0, width, height);
+      tidy_blur_group_do_chequer(container, width, height);
       return;
     }
 #endif
 
-  int width = x_2 - x_1;
-  int height = y_2 - y_1;
-  int exp_width = width/2;
-  int exp_height = height/2;
-  int tex_width = 0;
-  int tex_height = 0;
-  gboolean rotate_90;
-
-  /* check sizes */
-  if (priv->tex_a)
-    {
-      tex_width = cogl_texture_get_width(priv->tex_a);
-      tex_height = cogl_texture_get_height(priv->tex_a);
-    }
-
-#if RESIZE_TEXTURE
-  /* free texture if the size is wrong */
-  if (tex_width!=exp_width || tex_height!=exp_height) {
-    if (priv->fbo_a)
-      {
-        cogl_offscreen_unref(priv->fbo_a);
-        cogl_texture_unref(priv->tex_a);
-        priv->fbo_a = 0;
-        priv->tex_a = 0;
-      }
-    if (priv->fbo_b)
-      {
-        cogl_offscreen_unref(priv->fbo_b);
-        cogl_texture_unref(priv->tex_b);
-        priv->fbo_b = 0;
-        priv->tex_b = 0;
-      }
-    priv->current_blur_step = 0;
-    priv->source_changed = TRUE;
-  }
-#endif // RESIZE_TEXTURE
-  /* create the texture + offscreen buffer if they didn't exist.
-   * We can specify mipmapping here, but we don't need it */
-  if (!priv->tex_a)
-    {
-      tex_width = exp_width;
-      tex_height = exp_height;
-
-      priv->tex_a = cogl_texture_new_with_size(
-                tex_width, tex_height, 0, FALSE /*mipmap*/,
-                priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
-                                  COGL_PIXEL_FORMAT_RGB_565);
-      cogl_texture_set_filters(priv->tex_a, CGL_NEAREST, CGL_NEAREST);
-      priv->fbo_a = cogl_offscreen_new_to_texture (priv->tex_a);
-    }
-  if (!priv->tex_b)
-    {
-      priv->tex_b = cogl_texture_new_with_size(
-                tex_width, tex_height, 0, 0,
-                priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
-                                  COGL_PIXEL_FORMAT_RGB_565);
-      cogl_texture_set_filters(priv->tex_b, CGL_NEAREST, CGL_NEAREST);
-      priv->fbo_b = cogl_offscreen_new_to_texture (priv->tex_b);
-    }
+  tex_width  = cogl_texture_get_width(priv->tex_a);
+  tex_height = cogl_texture_get_height(priv->tex_a);
 
   /* It may be that we have resized, but the texture has not.
    * If so, try and keep blurring 'nice' by rotating so that
    * we don't have a texture that is totally the wrong aspect ratio */
-  rotate_90 = (tex_width > tex_height) != (width > height);
   /* If rotation has changed, trigger a redraw */
+  rotate_90 = (tex_width > tex_height) != (width > height);
   if (priv->current_is_rotated != rotate_90)
     {
       priv->current_is_rotated = rotate_90;
@@ -494,7 +484,7 @@ tidy_blur_group_paint (ClutterActor *actor)
       /* Actually do the drawing of the children, but ensure that they are
        * all linear sampled so they are smoothly interpolated. Restore after */
       recursive_set_texture_filter(actor, &filter_linear);
-      TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
+      CLUTTER_ACTOR_CLASS(tidy_blur_group_parent_class)->paint(actor);
       recursive_set_texture_filter(actor, NULL);
 
       tidy_util_cogl_pop_offscreen_buffer();
@@ -593,7 +583,7 @@ tidy_blur_group_paint (ClutterActor *actor)
       cogl_clip_set(0, 0,
                     CLUTTER_INT_TO_FIXED(width),
                     CLUTTER_INT_TO_FIXED(height));
-      TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
+      CLUTTER_ACTOR_CLASS(tidy_blur_group_parent_class)->paint(actor);
       cogl_clip_unset();
 
       /* If we're zooming less than 1, we want to re-render everything
@@ -621,7 +611,7 @@ tidy_blur_group_paint (ClutterActor *actor)
                   cogl_clip_set(0, 0,
                                 CLUTTER_INT_TO_FIXED(width),
                                 CLUTTER_INT_TO_FIXED(height));
-                  TIDY_BLUR_GROUP_GET_CLASS(actor)->overridden_paint(actor);
+                  CLUTTER_ACTOR_CLASS(tidy_blur_group_parent_class)->paint(actor);
                   cogl_clip_unset();
                   cogl_pop_matrix();
                 }
@@ -635,7 +625,7 @@ tidy_blur_group_paint (ClutterActor *actor)
 
   if (col.alpha == 0)
     {
-      tidy_blur_group_do_chequer(container);
+      tidy_blur_group_do_chequer(container, width, height);
       return;
     }
 
@@ -789,7 +779,7 @@ tidy_blur_group_paint (ClutterActor *actor)
   if (priv->use_shader && priv->shader_saturate)
     clutter_shader_set_is_enabled (priv->shader_saturate, FALSE);
 
-  tidy_blur_group_do_chequer(container);
+  tidy_blur_group_do_chequer(container, width, height);
 }
 
 static void
@@ -832,7 +822,6 @@ tidy_blur_group_class_init (TidyBlurGroupClass *klass)
   gobject_class->dispose = tidy_blur_group_dispose;
 
   /* Provide implementations for ClutterActor vfuncs: */
-  klass->overridden_paint = actor_class->paint;
   if (!hd_transition_get_int("blur", "turbo", 0))
     actor_class->paint = tidy_blur_group_paint;
   actor_class->notify_modified = tidy_blur_group_notify_modified_real;
@@ -899,6 +888,14 @@ tidy_blur_group_init (TidyBlurGroup *self)
       COGL_PIXEL_FORMAT_A_8,
       CHEQUER_SIZE,
       dither_data);
+
+  tidy_blur_group_check_shader(self, &priv->shader_blur,
+                               BLUR_FRAGMENT_SHADER, BLUR_VERTEX_SHADER);
+  tidy_blur_group_check_shader(self, &priv->shader_saturate,
+                               SATURATE_FRAGMENT_SHADER, 0);
+
+  g_signal_connect(self, "notify::allocation",
+                   G_CALLBACK(tidy_blur_group_allocate_textures), NULL);
 }
 
 /*

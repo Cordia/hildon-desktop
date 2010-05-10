@@ -1,5 +1,17 @@
 2010-05-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Blur group optimizations.
+
+	* src/tidy/tidy-blur-group.h:
+	  Removed TidyBlurGroupClass::overridden_paint.
+	* src/tidy/tidy-blur-group.c:
+	  tidy_blur_group_init: upload the shaders when the object is created
+	  tidy_blur_group_allocate_textures: allocate the textures when our
+	    allocation changes
+	  tidy_blur_group_paint: do neither of these when we first paint
+
+2010-05-07  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#165822 Calling UI is broken with changing modes
 
 	Patching up the inherently fucked AFTER_TKLOCK logic.

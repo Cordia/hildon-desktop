@@ -30,8 +30,6 @@ struct _TidyBlurGroupClass
 {
   /*< private >*/
   ClutterGroupClass parent_class;
-
-  void (*overridden_paint)(ClutterActor *actor);
 };
 
 
