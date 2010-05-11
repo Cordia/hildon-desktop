@@ -364,31 +364,38 @@ tidy_blur_group_do_chequer(TidyBlurGroup *group, guint width, guint height)
 /* Recursively set texture filtering state on this actor and children, and
  * save the old state in the object. */
 static void
-recursive_set_texture_filter(ClutterActor *actor, ClutterTextureQuality *filter)
+recursive_set_linear_texture_filter(ClutterActor *actor, GArray *filters)
 {
   if (CLUTTER_IS_CONTAINER(actor))
     clutter_container_foreach(CLUTTER_CONTAINER(actor),
-                              (ClutterCallback)recursive_set_texture_filter,
-                              filter);
-  if (CLUTTER_IS_TEXTURE(actor))
+                   (ClutterCallback)recursive_set_linear_texture_filter,
+                   filters);
+  else if (CLUTTER_IS_TEXTURE(actor))
     {
       ClutterTexture *tex = CLUTTER_TEXTURE(actor);
-      if (filter)
-        {
-          /* get old quality and save it */
-          ClutterTextureQuality f = clutter_texture_get_filter_quality(tex);
-          g_object_set_data(G_OBJECT(tex), "OldFilterQuality", (void*)f);
-          /* Update quality */
-          clutter_texture_set_filter_quality(tex, *filter);
-        }
-      else
-        {
-          /* Set quality to what it was previously */
-          ClutterTextureQuality f =
-                  (ClutterTextureQuality)
-                      g_object_steal_data(G_OBJECT(tex), "OldFilterQuality");
-          clutter_texture_set_filter_quality(tex, f);
-        }
+      ClutterTextureQuality quality;
+
+      quality = clutter_texture_get_filter_quality(tex);
+      g_array_append_val(filters, quality);
+      clutter_texture_set_filter_quality(tex, GL_LINEAR);
+    }
+}
+
+/* Recursively set texture filtering state on this actor and children, and
+ * save the old state in the object. */
+static void
+recursive_reset_texture_filter(ClutterActor *actor,
+                               const ClutterTextureQuality **filtersp)
+{
+  if (CLUTTER_IS_CONTAINER(actor))
+    clutter_container_foreach(CLUTTER_CONTAINER(actor),
+                        (ClutterCallback)recursive_reset_texture_filter,
+                        filtersp);
+  else if (CLUTTER_IS_TEXTURE(actor))
+    {
+      clutter_texture_set_filter_quality(CLUTTER_TEXTURE(actor),
+                                         **filtersp);
+      (*filtersp)++;
     }
 }
 
@@ -399,16 +406,17 @@ tidy_blur_group_paint (ClutterActor *actor)
 {
   static const ClutterColor white = { 0xff, 0xff, 0xff, 0xff };
   static const ClutterColor bgcol = { 0x00, 0x00, 0x00, 0xff };
-  static ClutterTextureQuality filter_linear = GL_LINEAR;
   ClutterGroup *group         = CLUTTER_GROUP(actor);
   TidyBlurGroup *container    = TIDY_BLUR_GROUP(group);
   TidyBlurGroupPrivate *priv  = container->priv;
-  gint             steps_this_frame = 0;
-  CoglHandle       current_tex;
-  ClutterActorBox  box;
-  gint             width, height, tex_width, tex_height;
-  gboolean         rotate_90;
-  ClutterColor     col;
+  gint                         steps_this_frame = 0;
+  CoglHandle                   current_tex;
+  ClutterActorBox              box;
+  gint                         width, height, tex_width, tex_height;
+  gboolean                     rotate_90;
+  ClutterColor                 col;
+  GArray                      *filters;
+  const ClutterTextureQuality *filters_array;
 
   if (!TIDY_IS_SANE_BLUR_GROUP(actor))
     return;
@@ -482,10 +490,13 @@ tidy_blur_group_paint (ClutterActor *actor)
       cogl_paint_init(&bgcol);
       cogl_color (&white);
       /* Actually do the drawing of the children, but ensure that they are
-       * all linear sampled so they are smoothly interpolated. Restore after */
-      recursive_set_texture_filter(actor, &filter_linear);
+       * all linear sampled so they are smoothly interpolated. Restore after. */
+      filters = g_array_new(FALSE, FALSE, sizeof(ClutterTextureQuality));
+      recursive_set_linear_texture_filter(actor, filters);
       CLUTTER_ACTOR_CLASS(tidy_blur_group_parent_class)->paint(actor);
-      recursive_set_texture_filter(actor, NULL);
+      filters_array = (void *)filters->data;
+      recursive_reset_texture_filter(actor, &filters_array);
+      g_array_free(filters, TRUE);
 
       tidy_util_cogl_pop_offscreen_buffer();
       cogl_pop_matrix();

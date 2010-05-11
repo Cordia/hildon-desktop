@@ -1,5 +1,13 @@
 2010-05-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Small performance work in the blur group.
+
+	* src/tidy/tidy-blur-group.c (tidy_blur_group_paint):
+	  Don't store the previous texture filter quality in a dataset,
+	  but use a cheaper array instead.
+
+2010-05-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#157763 desktop menu stays open after leaving edit layout mode
 
 	We didn't consider menus to close.
