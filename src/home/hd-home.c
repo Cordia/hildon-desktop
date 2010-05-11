@@ -38,7 +38,7 @@
 #include "hd-render-manager.h"
 #include "hd-clutter-cache.h"
 #include "hd-theme.h"
-
+#include "hd-wm.h"
 #include "hd-launcher-app.h"
 
 #include <clutter/clutter.h>
@@ -2286,71 +2286,24 @@ hd_home_highlight_edge_indication (HdHome *home, gboolean left, gboolean right)
                                      right ? EDGE_INDICATION_OPACITY_WIDGET_OVER : EDGE_INDICATION_OPACITY_WIDGET_MOVING);
 }
 
-void
-hd_home_set_reactive (HdHome   *home,
-                      gboolean  reactive)
-{
-  g_return_if_fail (HD_IS_HOME (home));
-
-  hd_home_view_container_set_reactive (HD_HOME_VIEW_CONTAINER (home->priv->view_container),
-                                       reactive);
-}
-
-static gboolean
-is_status_menu_dialog (MBWindowManagerClient *c)
-{
-  XClassHint xwinhint;
-
-  if (XGetClassHint (c->window->wm->xdpy,
-                     c->window->xwindow,
-                     &xwinhint))
-    {
-      gboolean status_menu_dialog = FALSE;
-
-      if (xwinhint.res_name)
-        {
-          status_menu_dialog = strstr (xwinhint.res_name, "hildon-status-menu") != NULL;
-          XFree (xwinhint.res_name);
-        }
-
-      if (xwinhint.res_class)
-        XFree (xwinhint.res_class);
-
-      if (status_menu_dialog)
-        return TRUE;
-    }
-
-  return FALSE;
-}
-
 gboolean
 hd_is_hildon_home_dialog (MBWindowManagerClient  *c)
 {
-  if (MB_WM_CLIENT_CLIENT_TYPE(c) != MBWMClientTypeDialog)
+  if (!(MB_WM_CLIENT_CLIENT_TYPE(c)
+        & (MBWMClientTypeDialog|HdWmClientTypeAppMenu)))
+    return FALSE;
+  if (!c->window || !c->window->name
+      || strcmp(c->window->name, "hildon-home") != 0)
     return FALSE;
 
-  /*
-   * We do not consider any dialogs to be hildon-home dialogs over the stacking
-   * layer 0. This way we will not close anything important like the device lock
-   * dialog.
-   */
-  if (c->stacking_layer > 0)
+  /* Just as an extra safety precautionn do not consider any dialogs to be
+   * hildon-home dialogs over the stacking layer 0. This way we will not close
+   * anything important like the device lock dialog. */
+  if (MB_WM_CLIENT_CLIENT_TYPE(c) == MBWMClientTypeDialog
+      && c->stacking_layer > 0)
     return FALSE;
 
-  /*
-   * Do not close if it is a hildon-status-menu dialog like the flash sms window
-   */
-  if (is_status_menu_dialog (c))
-    return FALSE;
-
-  /* We can not close confirmation notes/dialogs like this */
-  if (HD_IS_CONFIRMATION_NOTE (c))
-    return FALSE;
-
-  if (!c->transient_for)
-    return TRUE;
-
-  return hd_is_hildon_home_dialog (c->transient_for);
+  return c->transient_for ? hd_is_hildon_home_dialog (c->transient_for) : TRUE;
 }
 
 /* Remove any hildon-home dialogs that are showing */
@@ -2362,21 +2315,17 @@ void hd_home_remove_dialogs(HdHome *home)
 
   if (!priv->comp_mgr)
     return;
-
-  wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
-  if (!wm)
+  if (!(wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm))
     return;
 
-  c = wm->stack_top;
-  while (c)
+  for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
     {
-      MBWindowManagerClient *next = c->stacked_below;
-      /* We have no real way of telling what a hildon-home dialog is, but they
-       * are all transient_for=NULL - and we are called when we leave
-       * home_edit_dlg mode, so they are all stacked above the desktop. */
+      /* Since we're leaving EDIT_DLG state all the interesting dialogs
+       * are stacked above the desktop. */
       if (hd_is_hildon_home_dialog(c))
         {
           MBWMList *l, *l_iter;
+
           /* close its transients first */
           l = mb_wm_client_get_transients (c);
           for (l_iter = l; l_iter; l_iter = l_iter->next)
@@ -2384,14 +2333,12 @@ void hd_home_remove_dialogs(HdHome *home)
               mb_wm_client_hide (MB_WM_CLIENT (l_iter->data));
               mb_wm_client_deliver_delete (MB_WM_CLIENT (l_iter->data));
             }
-          if (l) mb_wm_util_list_free (l);
+          if (l)
+            mb_wm_util_list_free (l);
 
           mb_wm_client_hide (c);
           mb_wm_client_deliver_delete (c);
         }
-      else if (MB_WM_CLIENT_CLIENT_TYPE(c) == MBWMClientTypeDesktop)
-        break;
-      c = next;
     }
 }
 

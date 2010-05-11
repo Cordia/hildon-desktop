@@ -93,8 +93,6 @@ void hd_home_hide_edit_button (HdHome *home);
 /* To be called from HdRenderManager on state change */
 void hd_home_update_layout (HdHome * home);
 
-void hd_home_set_reactive (HdHome   *home,
-                           gboolean  reactive);
 /* Remove any hildon-home dialogs that are showing */
 void hd_home_remove_dialogs(HdHome *home);
 
