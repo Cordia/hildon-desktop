@@ -2286,21 +2286,46 @@ hd_home_highlight_edge_indication (HdHome *home, gboolean left, gboolean right)
                                      right ? EDGE_INDICATION_OPACITY_WIDGET_OVER : EDGE_INDICATION_OPACITY_WIDGET_MOVING);
 }
 
+static gboolean
+is_status_menu_dialog (MBWindowManagerClient *c)
+{
+  XClassHint xwinhint;
+  gboolean status_menu_dialog = FALSE;
+
+  if (XGetClassHint (c->window->wm->xdpy, c->window->xwindow, &xwinhint))
+    {
+      if (xwinhint.res_name)
+        {
+          status_menu_dialog = !strcmp (xwinhint.res_name,
+                                        "hildon-status-menu");
+          XFree (xwinhint.res_name);
+        }
+
+      if (xwinhint.res_class)
+        XFree (xwinhint.res_class);
+    }
+
+  return status_menu_dialog;
+}
+
 gboolean
 hd_is_hildon_home_dialog (MBWindowManagerClient  *c)
 {
-  if (!(MB_WM_CLIENT_CLIENT_TYPE(c)
-        & (MBWMClientTypeDialog|HdWmClientTypeAppMenu)))
-    return FALSE;
-  if (!c->window || !c->window->name
-      || strcmp(c->window->name, "hildon-home") != 0)
+  if (MB_WM_CLIENT_CLIENT_TYPE(c) == HdWmClientTypeAppMenu
+      && !strcmp(c->window->name, "hildon-home"))
+    return TRUE;
+  if (MB_WM_CLIENT_CLIENT_TYPE(c) != MBWMClientTypeDialog)
     return FALSE;
 
-  /* Just as an extra safety precautionn do not consider any dialogs to be
+  /* Just as an extra safety precaution do not consider any dialogs to be
    * hildon-home dialogs over the stacking layer 0. This way we will not close
    * anything important like the device lock dialog. */
-  if (MB_WM_CLIENT_CLIENT_TYPE(c) == MBWMClientTypeDialog
-      && c->stacking_layer > 0)
+  if (c->stacking_layer > 0)
+    return FALSE;
+
+  /* Do not close if it is a hildon-status-menu dialog
+   * like the class 0 SMS window. */
+  if (is_status_menu_dialog (c))
     return FALSE;
 
   return c->transient_for ? hd_is_hildon_home_dialog (c->transient_for) : TRUE;

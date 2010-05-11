@@ -15,13 +15,10 @@
 	* src/home/hd-home.c (hd_home_set_reactive):
 	  Unused, removed.
 	* src/home/hd-home.c (hd_is_hildon_home_dialog):
-	  Rather than guessing, look at the window name to decide
-	  if something is hildon-home's.  Also consider AppMenu:s.
+	  Consider AppMenu:s too.
 	* src/home/hd-home.c (hd_home_remove_dialogs):
 	  No need to be careful with the $next pointer, the stacking
 	  is not modified when hiding clients or sending them delete.
-	* src/home/hd-home.c (is_status_menu_dialog):
-	  Become unused, removed.
 
 2010-05-10  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
