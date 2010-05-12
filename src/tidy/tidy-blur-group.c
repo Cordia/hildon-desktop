@@ -234,7 +234,7 @@ tidy_blur_group_allocate_textures (TidyBlurGroup *self)
     return;
 #endif
 
-#if RESIZE_TEXTURE
+#if !RESIZE_TEXTURE
   if (priv->fbo_a && priv->fbo_b)
     /* Rotate in _paint() rather than resize. */
     return;
