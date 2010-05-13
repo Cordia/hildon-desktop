@@ -92,6 +92,8 @@ hd_render_manager_state_get_type (void)
         { HDRM_STATE_LOADING,        "HDRM_STATE_LOADING",        "Loading" },
         { HDRM_STATE_LOADING_SUBWIN, "HDRM_STATE_LOADING_SUBWIN", "Loading Subwindow" },
         { HDRM_STATE_AFTER_TKLOCK, "HDRM_STATE_AFTER_TKLOCK", "After tklock" },
+        { HDRM_STATE_LAUNCHER_PORTRAIT,       "HDRM_STATE_LAUNCHER_PORTRAIT",
+          "Task launcher in portrait mode" },
         { 0, NULL, NULL }
       };
 
@@ -873,6 +875,7 @@ void hd_render_manager_sync_clutter_before ()
                  HDRM_SHOW_TASK_NAV;
         break;
       case HDRM_STATE_LAUNCHER:
+      case HDRM_STATE_LAUNCHER_PORTRAIT:
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         blur |=
             HDRM_BLUR_HOME |
@@ -1524,7 +1527,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                           cmgrcc);
                 }
             }
-          else if (oldstate != HDRM_STATE_LAUNCHER)
+          else if (!STATE_IS_LAUNCHER (oldstate))
             hd_task_navigator_scroll_back(priv->task_nav);
         }
       if (STATE_ONE_OF(state | oldstate, HDRM_STATE_TASK_NAV))
@@ -1532,13 +1535,50 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         hd_title_bar_set_switcher_pulse(priv->title_bar, FALSE);
 
       /* Enter/leave the launcher. */
-      if (state == HDRM_STATE_LAUNCHER)
+      if (STATE_IS_LAUNCHER (state))
         {
+          /* It can be here for two cases:
+           * 1) non-LAUNCHER state -> LAUNCHER one.
+           * 2) STATE_LAUNCHER -> STATE_LAUNCHER_PORTRAIT or vice-versa,
+           * ie an accellerometer event or
+           * hd_render_manager_set_state_portrait/unportrait */
+
+          /* first check if the LAUNCHER can rotate, or show it only in
+           * the current mode, which we trust be LANDSCAPE */
+          if (hd_app_mgr_launcher_can_rotate())
+            {
+              /* this value, if laucher cannot rotate, is to be ignored for
+               * the launcher rotation since it might be set by the HdAppMgr
+               * because of some other component needing the accellerometer */
+              gboolean app_mgr_is_portrait = hd_app_mgr_is_portrait();
+
+              /* check if a _PORTRAIT state has been requested but the device is
+               * in landscape mode or if a non-PORTRAIT requested and the device
+               * is in portrait. If so, the right state has to be set */
+              if (app_mgr_is_portrait && !STATE_IS_PORTRAIT (state))
+                priv->state = state = HDRM_STATE_LAUNCHER_PORTRAIT;
+              else if (!app_mgr_is_portrait && STATE_IS_PORTRAIT (state))
+                priv->state = state = HDRM_STATE_LAUNCHER;
+
+              hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
+              hd_launcher_update_orientation (STATE_IS_PORTRAIT (state));
+            }
+          else
+            {
+              /* if launcher cannot rotate, it should be only shown in
+               * landscape mode */
+              //g_assert (!STATE_IS_PORTRAIT (state));
+              /* TODO: is a good idea to force the screen in LS when not? I
+               * guess its a waste of time and resources */
+            }
+
           /* unfocus any applet */
           mb_wm_client_focus (cmgr->wm->desktop);
+
+          /* finally show, in any case, the launcher */
           hd_launcher_show();
         }
-      else if (oldstate == HDRM_STATE_LAUNCHER)
+      else if (STATE_IS_LAUNCHER (oldstate))
         hd_launcher_hide();
 
       if (state == HDRM_STATE_HOME_EDIT)
@@ -1689,6 +1729,8 @@ void hd_render_manager_set_state_portrait (void)
       hd_render_manager_set_state (HDRM_STATE_APP);
       hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
     }
+  else if (the_render_manager->priv->state == HDRM_STATE_LAUNCHER)
+    hd_render_manager_set_state (HDRM_STATE_LAUNCHER_PORTRAIT);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
 }
@@ -1705,6 +1747,8 @@ void hd_render_manager_set_state_unportrait (void)
       hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
       hd_render_manager_set_state (HDRM_STATE_APP);
     }
+  else if (the_render_manager->priv->state == HDRM_STATE_LAUNCHER_PORTRAIT)
+    hd_render_manager_set_state (HDRM_STATE_LAUNCHER);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME);
 }

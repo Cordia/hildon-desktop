@@ -93,6 +93,8 @@ hd_launcher_transition_app_start (HdLauncherApp *item);
 
 void hd_launcher_stop_loading_transition (void);
 
+void hd_launcher_update_orientation (gboolean portraited);
+
 /* left/right/top/bottom margin that is clicked on to go back */
 #define HD_LAUNCHER_LEFT_MARGIN (68) /* layout guide F */
 #define HD_LAUNCHER_RIGHT_MARGIN (68) /* layout guide F */

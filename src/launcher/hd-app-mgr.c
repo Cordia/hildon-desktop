@@ -125,6 +125,7 @@ struct _HdAppMgrPrivate
   gboolean display_on;
   gboolean slide_closed;
   gboolean disable_callui;
+  gboolean launcher_can_rotate;
   gboolean accel_enabled;
 };
 
@@ -420,6 +421,9 @@ hd_app_mgr_init (HdAppMgr *self)
       priv->disable_callui = gconf_client_get_bool (priv->gconf_client,
                                                     GCONF_DISABLE_CALLUI_KEY,
                                                     NULL);
+
+      priv->launcher_can_rotate = TRUE; /* TODO KA use GCONF! */
+
       /* We don't call
       hd_app_mgr_mce_activate_accel_if_needed ();
       here because hdrm is not ready yet. */
@@ -1565,7 +1569,7 @@ hd_app_mgr_hdrm_state_change (gpointer hdrm,
                               GParamSpec *pspec,
                               HdAppMgrPrivate *priv)
 {
-  gboolean launcher = hd_render_manager_get_state () == HDRM_STATE_LAUNCHER;
+  gboolean launcher = STATE_IS_LAUNCHER (hd_render_manager_get_state ());
   if (launcher != priv->prestarting_stopped)
     {
       priv->prestarting_stopped = launcher;
@@ -1832,6 +1836,21 @@ hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable)
   return TRUE;
 }
 
+/* hd_app_mgr_launcher_can_rotate:
+ *
+ * Check if the Task Launcher is configured to rotate in portrait mode when
+ * the device is rotated.
+ *
+ * returns: %TRUE if the launcher can rotate by configuration %FALSE otherwise
+ */
+gboolean
+hd_app_mgr_launcher_can_rotate (void)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+
+  return priv->launcher_can_rotate;
+}
+
 static gboolean
 _hd_app_mgr_should_show_callui ()
 {
@@ -1988,12 +2007,26 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                                   MCE_SIGNAL_IF,
                                   MCE_DEVICE_ORIENTATION_SIG))
         {
+          gboolean orientation_changed = (priv->portrait !=
+              _hd_app_mgr_dbus_check_value (msg, MCE_ORIENTATION_PORTRAIT));
+
           priv->portrait = _hd_app_mgr_dbus_check_value (msg,
                                            MCE_ORIENTATION_PORTRAIT);
-          if (priv->portrait)
-            hd_app_mgr_check_show_callui ();
 
-          hd_app_mgr_update_portraitness(self);
+          if (orientation_changed && hd_app_mgr_launcher_can_rotate () &&
+              STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
+            {
+              HDRMStateEnum state = (priv->portrait ?
+                  HDRM_STATE_LAUNCHER_PORTRAIT : HDRM_STATE_LAUNCHER);
+
+              hd_render_manager_set_state (state);
+            }
+          else
+            {
+              hd_app_mgr_check_show_callui ();
+
+              hd_app_mgr_update_portraitness(self);
+            }
         }
     }
 
@@ -2014,11 +2047,13 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (the_app_mgr);
   DBusConnection *conn = NULL;
   DBusMessage *msg = NULL;
+  HDRMStateEnum state = hd_render_manager_get_state();
 
-  gboolean activate = (!priv->disable_callui &&
-                       STATE_SHOW_CALLUI (hd_render_manager_get_state ())) ||
-                      (STATE_IS_APP(hd_render_manager_get_state ()) &&
-                       hd_comp_mgr_can_be_portrait(hd_comp_mgr_get()));
+  gboolean activate = ((!priv->disable_callui && STATE_SHOW_CALLUI (state)) ||
+      (hd_app_mgr_launcher_can_rotate () && STATE_IS_LAUNCHER (state)) ||
+      (STATE_IS_APP(state) &&
+       hd_comp_mgr_can_be_portrait (hd_comp_mgr_get())));
+
   if (priv->accel_enabled == activate)
     return;
 
@@ -2149,6 +2184,12 @@ _hd_app_mgr_request_app_pid_cb (DBusGProxy *proxy, guint pid,
   g_debug ("%s: Got pid %d for %s\n", __FUNCTION__,
            pid, hd_running_app_get_service (app));
   hd_running_app_set_pid (app, pid);
+}
+
+gboolean
+hd_app_mgr_is_portrait(void)
+{
+  return HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get())->portrait;
 }
 
 static void

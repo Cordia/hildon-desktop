@@ -1395,7 +1395,7 @@ static void
 hd_title_bar_top_right_clicked (HdTitleBar *bar)
 {
   /* For if we ever add the back button back into launcher */
-  if (hd_render_manager_get_state() == HDRM_STATE_LAUNCHER)
+  if (STATE_IS_LAUNCHER (hd_render_manager_get_state()))
     hd_launcher_back_button_clicked();
 
   g_signal_emit (bar, signals[CLICKED_TOP_RIGHT], 0);
