@@ -50,8 +50,6 @@ void tidy_blur_group_set_source_changed(ClutterActor *blur_group);
 void tidy_blur_group_hint_source_changed(ClutterActor *blur_group);
 void tidy_blur_group_stop_progressing(ClutterActor *blur_group);
 
-
 G_END_DECLS
-
 
 #endif /*TIDYBLUR_H_*/
