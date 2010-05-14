@@ -2341,6 +2341,12 @@ void hd_render_manager_update_blur_state()
           blur && has_video_overlay);
 }
 
+void hd_render_manager_pause_blur_animation()
+{
+  tidy_blur_group_stop_progressing(
+                    CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+}
+
 /* This is called when we are in the launcher subview so that we can blur and
  * darken the background even more */
 void hd_render_manager_set_launcher_subview(gboolean subview)
