@@ -421,6 +421,10 @@ tidy_blur_group_paint (ClutterActor *actor)
   if (!TIDY_IS_SANE_BLUR_GROUP(actor))
     return;
 
+  clutter_actor_get_allocation_box(actor, &box);
+  width  = CLUTTER_UNITS_TO_DEVICE(box.x2 - box.x1);
+  height = CLUTTER_UNITS_TO_DEVICE(box.y2 - box.y1);
+
   /* If we are rendering normally then shortcut all this, and
    just render directly without the texture */
   if (!tidy_blur_group_source_buffered(actor) ||
@@ -434,10 +438,6 @@ tidy_blur_group_paint (ClutterActor *actor)
       tidy_blur_group_do_chequer(container, width, height);
       return;
     }
-
-  clutter_actor_get_allocation_box(actor, &box);
-  width  = CLUTTER_UNITS_TO_DEVICE(box.x2 - box.x1);
-  height = CLUTTER_UNITS_TO_DEVICE(box.y2 - box.y1);
 
 #ifdef __i386__
   if (!cogl_features_available(COGL_FEATURE_OFFSCREEN))
