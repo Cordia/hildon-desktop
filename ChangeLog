@@ -1,3 +1,19 @@
+2010-05-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Fix rotated blur group contents when rotating from P->L while
+	the animation was still progressing.  This can be considered
+	part of 8fcb4c6a7f58c07d5ece4a6ec10b5f17a6b77681 (NB#165767).
+	Can be tested by setting blur::radius to 120.
+
+	* src/tidy/tidy-blur-group.c (tidy_blur_group_stop_progressing):
+	  New function to tell TidyBlurGroup not to attempt progressing
+	  the blur animation which doesn't play well with rotation.
+	* src/tidy/tidy-blur-group.c (tidy_blur_group_paint):
+	  Observe the new flag.
+	* src/util/hd-transition.c (hd_transition_rotating_fsm):
+	  And set it in phase 0, so the cached group will have
+	  sane contents.
+
 2010-05-11  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Small performance work in the blur group.
