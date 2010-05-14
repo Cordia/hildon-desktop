@@ -43,6 +43,7 @@
 #include "hd-title-bar.h"
 #include "hd-clutter-cache.h"
 #include "tidy/tidy-sub-texture.h"
+#include "tidy/tidy-blur-group.h"
 
 #include "hd-app.h"
 #include "hd-volume-profile.h"
@@ -1501,7 +1502,10 @@ hd_transition_rotating_fsm(void)
            * the wrong size. */
           hd_title_bar_update_now(HD_TITLE_BAR(hd_render_manager_get_title_bar()));
         /* Force redraw for screenshot *now*, before windows have a
-         * chance to change */
+         * chance to change.  Tell the render manager not to progress
+         * the animation, it will be reset anyway. */
+        tidy_blur_group_stop_progressing(
+                                CLUTTER_ACTOR(hd_render_manager_get()));
         clutter_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
         /* Start rotate transition */
         hd_util_set_rotating_property(Orientation_change.wm, TRUE);

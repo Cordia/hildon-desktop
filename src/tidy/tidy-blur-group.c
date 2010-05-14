@@ -151,6 +151,9 @@ struct _TidyBlurGroupPrivate
 
   /* if anything changed we need to recalculate preblur */
   gboolean source_changed;
+
+  /* don't progress the animation for one clutter_actor_paint() */
+  gboolean skip_progress;
 };
 
 /**
@@ -508,6 +511,9 @@ tidy_blur_group_paint (ClutterActor *actor)
       //g_debug("Rendered buffer");
       steps_this_frame++;
     }
+  else if (priv->skip_progress)
+    /* Progressing the animation doesn't play well with rotation. */
+    goto skip_progress;
 
   while (priv->current_blur_step < priv->blur_step &&
          steps_this_frame<MAX_STEPS_PER_FRAME)
@@ -554,6 +560,9 @@ tidy_blur_group_paint (ClutterActor *actor)
        * need to re-create it */
       priv->source_changed = TRUE;
     }
+
+skip_progress:
+  priv->skip_progress = FALSE;
 
   /* If we're still not blurred enough, ask to be rendered again... */
   if (priv->current_blur_step != priv->blur_step)
@@ -1137,6 +1146,16 @@ void tidy_blur_group_hint_source_changed(ClutterActor *blur_group)
   priv->source_changed = TRUE;
 }
 
+void tidy_blur_group_stop_progressing(ClutterActor *blur_group)
+{
+  TidyBlurGroupPrivate *priv;
+
+  if (!TIDY_IS_SANE_BLUR_GROUP(blur_group))
+    return;
+
+  priv = TIDY_BLUR_GROUP(blur_group)->priv;
+  priv->skip_progress = TRUE;
+}
 
 /**
  * tidy_blur_group_source_buffered:
