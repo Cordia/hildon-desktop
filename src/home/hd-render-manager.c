@@ -2998,7 +2998,8 @@ void hd_render_manager_remove_input_blocker() {
            /* Now look at what buttons we have showing, and add each visible button X
             * to the X input viewport. */
            /* LEFT button */
-           if (hd_title_bar_get_state(priv->title_bar) & HDTB_VIS_BTN_LEFT_MASK)
+           if ((hd_title_bar_get_state(priv->title_bar) & HDTB_VIS_BTN_LEFT_MASK)
+               && hd_render_manager_actor_is_visible(CLUTTER_ACTOR(priv->title_bar)))
              {
                GdkRectangle rect = {0,0,
                    hd_title_bar_get_button_width(priv->title_bar),

@@ -1,5 +1,14 @@
 2010-05-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#164472 Chess Game Castle immovable in PR1.2
+
+	Small regression introduced with 9973690dfd324db1dc0d9d819dce9375e6c11658.
+
+	* src/home/hd-render-manager.c (hd_render_manager_remove_input_blocker):
+	  Check the HdTitleBar visibility too, not just the button state.
+
+2010-05-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#159865 Unable to open SMS/chat notification if received
 		  when FKB is opened
 
