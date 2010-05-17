@@ -158,11 +158,9 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                   /* Stop redraws from anything. We do this on the stage
                    * because Rotation does it on HDRM, and we don't want to
                    * conflict. */
-#if 1
                   clutter_actor_hide(
                       CLUTTER_ACTOR(hd_render_manager_get()));
                   clutter_actor_set_allow_redraw(stage, FALSE);
-#endif
                   hd_dbus_display_is_off = TRUE;
                   /* Hiding before set_allow_redraw will queue a redraw,
                    * which will draw a black screen (because hdrm is hidden).
