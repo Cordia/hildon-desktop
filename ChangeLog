@@ -1,3 +1,14 @@
+2010-05-17  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#159865 Unable to open SMS/chat notification if received
+		  when FKB is opened
+
+	FKB has become non-fullscreen recently.
+
+	* src/mb/hd-wm.c:
+	  hd_wm_is_fullscreen_vkb: renamed
+	  hd_wm_is_fkb: recognize non-fullscreen but maximized dialogs
+
 2010-05-14  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Fix rotated blur group contents when rotating from P->L while

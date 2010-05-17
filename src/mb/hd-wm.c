@@ -493,17 +493,19 @@ hd_wm_current_app_is (MBWindowManager *wm, Window xid)
 }
 
 static gboolean
-hd_wm_is_fullscreen_vkb (MBWindowManagerClient *client)
+hd_wm_is_fkb (MBWindowManagerClient *client)
 {
   MBWindowManager *wm = client->wmref;
-  const char *name = mb_wm_client_get_name (client);
-  if (name && strcmp("hildon-input-method", name) == 0 &&
-      client->window->geometry.height >= wm->xdpy_height &&
-      client->window->geometry.width >= wm->xdpy_width &&
-      client->window->geometry.x <= 0 &&
-      client->window->geometry.y <= 0)
-    return TRUE;
-  return FALSE;
+
+  /* NOTE Probably it will need to be updated for p-mode fkb. */
+  return MB_WM_CLIENT_CLIENT_TYPE (client) == MBWMClientTypeDialog
+    && client->window->geometry.height
+        >= (wm->xdpy_height-HD_COMP_MGR_TOP_MARGIN)
+    && client->window->geometry.width >= wm->xdpy_width
+    && client->window->geometry.x == 0
+    && client->window->geometry.y <= HD_COMP_MGR_TOP_MARGIN
+    && client->window->name
+    && !strcmp(client->window->name, "hildon-input-method");
 }
 
 /*
@@ -526,7 +528,7 @@ hd_wm_close_modal_blockers (const MBWindowManager *wm)
           if (!(c_type == MBWMClientTypeMenu ||
                 c_type == HdWmClientTypeAppMenu ||
                 c_type == HdWmClientTypeStatusMenu)
-              && !hd_wm_is_fullscreen_vkb (client)) 
+              && !hd_wm_is_fkb (client)) 
             /* a real blocker that cannot be deleted */
 	    return FALSE;
 	}
