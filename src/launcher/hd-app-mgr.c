@@ -2036,6 +2036,7 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
+
 /* Activate the accelerometer when
  * - The user has activated rotate-to-callui.
  * - HDRM is in a state that shows callui.
@@ -2049,8 +2050,16 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
   DBusMessage *msg = NULL;
   HDRMStateEnum state = hd_render_manager_get_state();
 
+  /* conditions for which the accellerometer will be activated:
+   * 1) CallUI is fired by the rotation (enabled by configuration) and we are
+   *    in a state which allows this transistion
+   * 2) Launcher rotation is enabled (by conf) and we are in a state allowing
+   *    this transition (HOME or LAUNCHER itself)
+   * 3) an application supporting portraitness with all condition for rotating
+   *    being all right */
   gboolean activate = ((!priv->disable_callui && STATE_SHOW_CALLUI (state)) ||
-      (hd_app_mgr_launcher_can_rotate () && STATE_IS_LAUNCHER (state)) ||
+      (hd_app_mgr_launcher_can_rotate () &&
+       (STATE_IS_LAUNCHER (state) || STATE_IS_HOME (state)))  ||
       (STATE_IS_APP(state) &&
        hd_comp_mgr_can_be_portrait (hd_comp_mgr_get())));
 
