@@ -114,6 +114,9 @@ typedef enum
 #define STATE_IS_LAUNCHER(s) \
     STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_LAUNCHER_PORTRAIT)
 
+#define STATE_IS_HOME(s) \
+    STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT)
+
 /* Can we switch to portrait mode? */
 #define STATE_IS_PORTRAIT_CAPABLE(s) \
   (STATE_ONE_OF((s), \
