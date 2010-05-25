@@ -84,6 +84,8 @@ struct _HdLauncherPrivate
 
   GtkWidget *editor;
   gboolean editor_done;
+
+  gboolean portraited;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -300,6 +302,8 @@ void
 hd_launcher_update_orientation (gboolean portraited)
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+
+  priv->portraited = portraited;
 
   g_datalist_foreach (&priv->pages,
       _hd_launcher_update_orientation_cb, GBOOLEAN_TO_POINTER (portraited));
@@ -520,6 +524,11 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
 {
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = launcher->priv;
+
+  /* when portraited do not show the editor */
+  if (priv->portraited)
+    return;
+
 
   /* Send a mouse released event, because when we've put the editor window up
    * the release event will go straight to that instead of to the scroller,
