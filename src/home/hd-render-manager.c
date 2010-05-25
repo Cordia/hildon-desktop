@@ -859,7 +859,7 @@ void hd_render_manager_sync_clutter_before ()
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         /* Fixed NB#140723 - Task Launcher background should not un-blur
          *                   and un-dim when launching new app */
-        if (priv->previous_state==HDRM_STATE_LAUNCHER)
+        if (STATE_IS_LAUNCHER (priv->previous_state))
           blur |= HDRM_BLUR_HOME;
         break;
       case HDRM_STATE_APP:
@@ -1563,14 +1563,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
               hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
               hd_launcher_update_orientation (STATE_IS_PORTRAIT (state));
             }
-          else
-            {
-              /* if launcher cannot rotate, it should be only shown in
-               * landscape mode */
-              //g_assert (!STATE_IS_PORTRAIT (state));
-              /* TODO: is a good idea to force the screen in LS when not? I
-               * guess its a waste of time and resources */
-            }
 
           /* unfocus any applet */
           mb_wm_client_focus (cmgr->wm->desktop);
@@ -1579,7 +1571,22 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           hd_launcher_show();
         }
       else if (STATE_IS_LAUNCHER (oldstate))
-        hd_launcher_hide();
+        {
+          hd_launcher_hide();
+
+          if (STATE_IS_HOME (state))
+            hd_comp_mgr_sync_stacking (HD_COMP_MGR (priv->comp_mgr));
+
+          hd_comp_mgr_portrait_or_not_portrait (
+              MB_WM_COMP_MGR (priv->comp_mgr), NULL);
+/*
+          if (STATE_IS_PORTRAIT (oldstate))
+            {
+              if (STATE_IS_PORTRAIT_CAPABLE (state))
+                hd_render_manager_set_state_portrait ();
+            }
+ */
+        }
 
       if (state == HDRM_STATE_HOME_EDIT)
         /* unfocus any applet */
