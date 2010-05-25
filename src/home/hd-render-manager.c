@@ -1595,19 +1595,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       else if (STATE_IS_LAUNCHER (oldstate))
         {
           hd_launcher_hide();
-
-          if (STATE_IS_HOME (state))
-            hd_comp_mgr_sync_stacking (HD_COMP_MGR (priv->comp_mgr));
-
-          hd_comp_mgr_portrait_or_not_portrait (
-              MB_WM_COMP_MGR (priv->comp_mgr), NULL);
-/*
-          if (STATE_IS_PORTRAIT (oldstate))
-            {
-              if (STATE_IS_PORTRAIT_CAPABLE (state))
-                hd_render_manager_set_state_portrait ();
-            }
- */
         }
 
       if (state == HDRM_STATE_HOME_EDIT)
