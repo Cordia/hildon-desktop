@@ -1435,7 +1435,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                 goto_tasw_now   = TRUE;
             }
 
-          /* Switch to tasw when we've really exited portarit mode. */
+          /* Switch to tasw when we've really exited portrait mode. */
           hd_transition_rotate_screen_and_change_state (goto_tasw_later
                           ? HDRM_STATE_TASK_NAV : HDRM_STATE_UNDEFINED);
 
@@ -1446,14 +1446,36 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                * you have a sysmodal and hit CTRL-Backspace (we go to HOME),
                * but whatever.  Try to stick with portrait if we were there
                * and hope that we will recover if we eventually shouldn't.
-               * This is to avoid a visible rountrip to p->l->p if we should.
+               * This is to avoid a visible roundtrip to p->l->p if we should.
                */
-              state = priv->state =
-                goto_tasw_later && (oldstate & (HDRM_STATE_APP_PORTRAIT|HDRM_STATE_NON_COMP_PORT))
-                  ? HDRM_STATE_APP
-                  : STATE_IS_PORTRAIT (oldstate)
-                    ? HDRM_STATE_HOME_PORTRAIT
-                    : HDRM_STATE_HOME;
+
+              if (goto_tasw_later && STATE_ONE_OF (oldstate,
+                    (HDRM_STATE_APP_PORTRAIT | HDRM_STATE_NON_COMP_PORT)))
+                {
+                  state = priv->state = HDRM_STATE_APP;
+                }
+              else
+                {
+                  HdRunningAppState next_home_orientation;
+
+                  /* keep current orientation for next HOME transition */
+                  next_home_orientation = (STATE_IS_PORTRAIT (oldstate) ?
+                     HDRM_STATE_HOME_PORTRAIT : HDRM_STATE_HOME);
+
+                  /* unless it's from LAUNCHER_POTRAIT, then go directly in LS.
+                   * this is safe/good behaviour until HOME in portrait mode
+                   * will be fully implemented and not only a temporary state.
+                   * This fixes a transition from LAUNCHER_POTRAIT to
+                   * HOME_PORTRAIT where HOME was showed in potrait mode when
+                   * actually it does not support it (ie very ugly result),
+                   * forcing HOME in landscape */
+                  next_home_orientation =
+                    (HDRM_STATE_LAUNCHER_PORTRAIT == oldstate ?
+                      HDRM_STATE_HOME : next_home_orientation);
+
+                  state = priv->state = next_home_orientation;
+                }
+
               g_debug("you must have meant STATE %s -> STATE %s",
                       hd_render_manager_state_str(oldstate),
                       hd_render_manager_state_str(state));
