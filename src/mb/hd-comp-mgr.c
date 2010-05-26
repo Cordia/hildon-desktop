@@ -3394,18 +3394,45 @@ void hd_comp_mgr_set_pip_flags (HdCompMgr *hmgr,
 }
 
 /* Does any visible client request portrait mode?
- * Are all of them concerned prepared for it? */
+ * Are all of them concerned prepared for it?
+ * Also, is HDRM state LAUNCHER/LAUNCHER_PORTRAIT and environment (conf and
+ * device orientation) allows launcher in portrait mode? */
 gboolean
 hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
 {
-  return hd_comp_mgr_may_be_portrait(hmgr, FALSE);
+  /* LAUNCHER can be portraited but does not handle the normal XProperties so
+   * we need to check it explicitely */
+  if (STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
+    {
+      if (hd_app_mgr_launcher_can_rotate () && hd_app_mgr_is_portrait ())
+        return TRUE;
+      else
+        return FALSE;
+    }
+  else
+    {
+      /* compute it normally if not in LAUNCHER */
+      return hd_comp_mgr_may_be_portrait(hmgr, FALSE);
+    }
 }
 
-/* Are all clients concerned prepared for portrait mode? */
+/* Are all clients concerned prepared for portrait mode?
+ * In case of HDRM in any LAUNCHER state: can it rotate (by conf)? */
 gboolean
 hd_comp_mgr_can_be_portrait (HdCompMgr *hmgr)
 {
-  return hd_comp_mgr_may_be_portrait(hmgr, TRUE);
+  if (STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
+    {
+      if (hd_app_mgr_launcher_can_rotate ())
+        return TRUE;
+      else
+        return FALSE;
+    }
+  else
+    {
+      /* compute it normally if not in LAUNCHER */
+      return hd_comp_mgr_may_be_portrait(hmgr, TRUE);
+    }
 }
 
 /*
