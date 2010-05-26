@@ -2346,7 +2346,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * menus is general when not in APP state because they are not
        * added to the switcher.  This can be considered a shortcoming. */
       if (STATE_NEED_WHOLE_SCREEN_INPUT(hd_render_manager_get_state()))
-        hd_render_manager_set_state(HDRM_STATE_HOME);
+        {
+          if (hd_app_mgr_is_portrait ())
+            hd_render_manager_set_state(HDRM_STATE_HOME_PORTRAIT);
+          else
+            hd_render_manager_set_state(HDRM_STATE_HOME);
+        }
       return;
     }
   else if (ctype == MBWMClientTypeNote)
