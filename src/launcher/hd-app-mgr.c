@@ -2013,10 +2013,14 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
           priv->portrait = _hd_app_mgr_dbus_check_value (msg,
                                            MCE_ORIENTATION_PORTRAIT);
 
+          /* CallUI shouldn't appear when in LAUNCHER AND TL can rotate, but
+           * should appear when TL cannot rotate. */
           if (orientation_changed && hd_app_mgr_launcher_can_rotate () &&
               STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
             {
-              HDRMStateEnum state = (priv->portrait ?
+              /* we can go to portrait only if device's portraited and the HKB
+               * slide is closed. */
+              HDRMStateEnum state = (priv->portrait && priv->slide_closed ?
                   HDRM_STATE_LAUNCHER_PORTRAIT : HDRM_STATE_LAUNCHER);
 
               hd_render_manager_set_state (state);
@@ -2059,7 +2063,7 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
    *    being all right */
   gboolean activate = ((!priv->disable_callui && STATE_SHOW_CALLUI (state)) ||
       (hd_app_mgr_launcher_can_rotate () &&
-       (STATE_IS_LAUNCHER (state) || STATE_IS_HOME (state)))  ||
+       (STATE_IS_LAUNCHER (state) || STATE_IS_HOME (state))) ||
       (STATE_IS_APP(state) &&
        hd_comp_mgr_can_be_portrait (hd_comp_mgr_get())));
 
@@ -2161,7 +2165,28 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
     {
       priv->slide_closed = !value;
 
-      hd_app_mgr_update_portraitness(self);
+      /* If in LAUNCHER_PORTRAIT with the slide/hkb open, turn it into
+       * landscape mode
+       * If in LAUNCHER with closed slide and device's oriented portrait go to
+       * LAUNCHER_PORTRAIT.
+       * Under any other case just update the portraitness */
+      if (!priv->slide_closed &&
+          hd_render_manager_get_state () == HDRM_STATE_LAUNCHER_PORTRAIT)
+        {
+          /* manually setting the HDAppMgr is a bit of kludge, since it's
+           * supposed to reflect the accellerometer status, but it's needed or
+           * the status change won't work since HDRM will rely on the HdAppMgr
+           * declared orientation to actually change state */
+          gboolean portrait = priv->portrait;
+          priv->portrait = FALSE;
+          hd_render_manager_set_state (HDRM_STATE_LAUNCHER);
+          priv->portrait = portrait;
+        }
+      else if (priv->slide_closed && priv->portrait &&
+          hd_render_manager_get_state () == HDRM_STATE_LAUNCHER)
+        hd_render_manager_set_state (HDRM_STATE_LAUNCHER_PORTRAIT);
+      else
+        hd_app_mgr_update_portraitness(self);
     }
 
   if (!g_strcmp0 (gconf_entry_get_key (entry),
