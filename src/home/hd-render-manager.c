@@ -1582,8 +1582,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
               else if (!app_mgr_is_portrait && STATE_IS_PORTRAIT (state))
                 priv->state = state = HDRM_STATE_LAUNCHER;
 
-              hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
-              hd_launcher_update_orientation (STATE_IS_PORTRAIT (state));
+              /* after fixing @priv->state real value, check if we are
+               * actually transitioning to the same state */
+              if (oldstate != state)
+                {
+                  hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
+                  hd_launcher_update_orientation (STATE_IS_PORTRAIT (state));
+                }
             }
 
           /* unfocus any applet */
