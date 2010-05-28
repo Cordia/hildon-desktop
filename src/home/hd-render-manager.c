@@ -1466,7 +1466,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                    * this is safe/good behaviour until HOME in portrait mode
                    * will be fully implemented and not only a temporary state.
                    * This fixes a transition from LAUNCHER_POTRAIT to
-                   * HOME_PORTRAIT where HOME was showed in potrait mode when
+                   * HOME_PORTRAIT where HOME was showed in portrait mode when
                    * actually it does not support it (ie very ugly result),
                    * forcing HOME in landscape */
                   next_home_orientation =
@@ -1574,16 +1574,26 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                * because of some other component needing the accellerometer */
               gboolean app_mgr_is_portrait = hd_app_mgr_is_portrait();
 
-              /* check if a _PORTRAIT state has been requested but the device is
-               * in landscape mode or if a non-PORTRAIT requested and the device
-               * is in portrait. If so, the right state has to be set */
-              if (app_mgr_is_portrait && !STATE_IS_PORTRAIT (state))
+              /* back-compatibility check for _set_state(LAUNCHER) when
+               * actually should be LAUNCHER_PORTRAIT
+               * it also does some additional checks before setting the
+               * 'right' state in @priv. */
+              if (app_mgr_is_portrait && !STATE_IS_PORTRAIT (state) &&
+                  !hd_app_mgr_slide_is_open ())
                 priv->state = state = HDRM_STATE_LAUNCHER_PORTRAIT;
               else if (!app_mgr_is_portrait && STATE_IS_PORTRAIT (state))
                 priv->state = state = HDRM_STATE_LAUNCHER;
 
+              g_debug("%s: you probably meant STATE %s -> STATE %s",
+                      G_STRFUNC,
+                      hd_render_manager_state_str(oldstate),
+                      hd_render_manager_state_str(state));
+
               /* after fixing @priv->state real value, check if we are
-               * actually transitioning to the same state */
+               * actually transitioning to the same state. It should not be
+               * needed but in some corner cases it avoids the launcher to
+               * show a transition as it were "appearing" again, while
+               * actually it was already showing */
               if (oldstate != state)
                 {
                   hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
