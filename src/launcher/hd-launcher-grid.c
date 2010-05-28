@@ -528,7 +528,7 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
         if (hd_launcher_grid_is_portrait (grid))
           {
             clutter_actor_set_position(blocker,
-                HD_LAUNCHER_TOP_MARGIN,
+                HD_LAUNCHER_BOTTOM_MARGIN,
                 cur_height + HD_LAUNCHER_TILE_HEIGHT);
             clutter_actor_set_size(blocker,
                 HD_LAUNCHER_GRID_WIDTH_PORTRAIT -
