@@ -282,7 +282,7 @@ _hd_launcher_update_orientation_cb (GQuark key_id,
 
   /* resize the scroller as well */
   scroller = hd_launcher_page_get_scroller (page);
-  if (hd_app_mgr_is_portrait())
+  if (portraited)
     clutter_actor_set_size (scroller, HD_LAUNCHER_PAGE_HEIGHT,
         HD_LAUNCHER_PAGE_WIDTH);
   else
