@@ -125,7 +125,7 @@ struct _HdAppMgrPrivate
   gboolean display_on;
   gboolean slide_closed;
   gboolean disable_callui;
-  gboolean launcher_can_rotate;
+  gboolean ui_can_rotate;
   gboolean accel_enabled;
 };
 
@@ -439,7 +439,7 @@ hd_app_mgr_init (HdAppMgr *self)
                                hd_app_mgr_gconf_value_changed,
                                (gpointer) self,
                                NULL, NULL);
-      priv->launcher_can_rotate = gconf_client_get_bool (priv->gconf_client,
+      priv->ui_can_rotate = gconf_client_get_bool (priv->gconf_client,
                                                     GCONF_UI_CAN_ROTATE_KEY,
                                                     NULL);
 
@@ -1861,7 +1861,7 @@ hd_app_mgr_slide_is_open (void)
 }
 
 
-/* hd_app_mgr_launcher_can_rotate:
+/* hd_app_mgr_ui_can_rotate:
  *
  * Check if the Task Launcher is configured to rotate in portrait mode when
  * the device is rotated.
@@ -1869,11 +1869,11 @@ hd_app_mgr_slide_is_open (void)
  * returns: %TRUE if the launcher can rotate by configuration %FALSE otherwise
  */
 gboolean
-hd_app_mgr_launcher_can_rotate (void)
+hd_app_mgr_ui_can_rotate (void)
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
 
-  return priv->launcher_can_rotate;
+  return priv->ui_can_rotate;
 }
 
 static gboolean
@@ -2040,7 +2040,7 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
 
           /* CallUI shouldn't appear when in LAUNCHER AND TL can rotate, but
            * should appear when TL cannot rotate. */
-          if (orientation_changed && hd_app_mgr_launcher_can_rotate () &&
+          if (orientation_changed && hd_app_mgr_ui_can_rotate () &&
               STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
             {
               /* we can go to portrait only if device's portraited and the HKB
@@ -2087,7 +2087,7 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
    * 3) an application supporting portraitness with all condition for rotating
    *    being all right */
   gboolean activate = ((!priv->disable_callui && STATE_SHOW_CALLUI (state)) ||
-      (hd_app_mgr_launcher_can_rotate () &&
+      (hd_app_mgr_ui_can_rotate () &&
        (STATE_IS_LAUNCHER (state) || STATE_IS_HOME (state))) ||
       (STATE_IS_APP(state) &&
        hd_comp_mgr_can_be_portrait (hd_comp_mgr_get())));
@@ -2225,7 +2225,7 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
   else if (!g_strcmp0 (gconf_entry_get_key (entry),
                   GCONF_UI_CAN_ROTATE_KEY))
     {
-      priv->launcher_can_rotate = value;
+      priv->ui_can_rotate = value;
 
       /* Check if h-d needs to track the orientation. */
       hd_app_mgr_mce_activate_accel_if_needed (TRUE);

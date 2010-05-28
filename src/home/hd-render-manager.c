@@ -1590,7 +1590,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
           /* first check if the LAUNCHER can rotate, or show it only in
            * the current mode, which we trust be LANDSCAPE */
-          if (hd_app_mgr_launcher_can_rotate())
+          if (hd_app_mgr_ui_can_rotate())
             {
               /* this value, if laucher cannot rotate, is to be ignored for
                * the launcher rotation since it might be set by the HdAppMgr

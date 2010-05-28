@@ -3404,7 +3404,7 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
    * we need to check it explicitely */
   if (STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
     {
-      if (hd_app_mgr_launcher_can_rotate () && hd_app_mgr_is_portrait ())
+      if (hd_app_mgr_ui_can_rotate () && hd_app_mgr_is_portrait ())
         return TRUE;
       else
         return FALSE;
@@ -3423,7 +3423,7 @@ hd_comp_mgr_can_be_portrait (HdCompMgr *hmgr)
 {
   if (STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
     {
-      if (hd_app_mgr_launcher_can_rotate ())
+      if (hd_app_mgr_ui_can_rotate ())
         return TRUE;
       else
         return FALSE;

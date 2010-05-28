@@ -77,7 +77,6 @@ void          hd_launcher_grid_transition(HdLauncherGrid *grid,
 void          hd_launcher_grid_reset(HdLauncherGrid *grid, gboolean hard);
 void          hd_launcher_grid_layout(HdLauncherGrid *grid);
 void          hd_launcher_grid_relayout (HdLauncherGrid *grid);
-gboolean      hd_launcher_grid_is_portrait (HdLauncherGrid *self);
 void          hd_launcher_grid_set_portrait (HdLauncherGrid *self,
                                           gboolean portraited);
 

@@ -118,6 +118,7 @@ static gboolean _hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
                                         ClutterButtonEvent *event,
                                         gpointer *data);
 
+static gboolean      hd_launcher_grid_is_portrait (HdLauncherGrid *self);
 #define HD_LAUNCHER_GRID_MAX_COLUMNS_LANDSCAPE 5
 #define HD_LAUNCHER_GRID_MAX_COLUMNS_PORTRAIT 3
 
@@ -671,7 +672,7 @@ hd_launcher_grid_class_init (HdLauncherGridClass *klass)
                                     "vadjustment");
 }
 
-gboolean
+static gboolean
 hd_launcher_grid_is_portrait (HdLauncherGrid *grid)
 {
   HdLauncherGridPrivate *priv;

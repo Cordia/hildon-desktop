@@ -105,7 +105,7 @@ void hd_app_mgr_mce_activate_accel_if_needed(gboolean update_portraitness);
 
 gboolean hd_app_mgr_is_portrait(void);
 gboolean hd_app_mgr_slide_is_open (void);
-gboolean hd_app_mgr_launcher_can_rotate (void);
+gboolean hd_app_mgr_ui_can_rotate (void);
 
 G_END_DECLS
 

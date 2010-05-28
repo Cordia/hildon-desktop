@@ -198,7 +198,7 @@ typedef enum
 #define STATE_SHOW_CALLUI(s) \
   ((STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT | \
                  HDRM_STATE_TASK_NAV)) || \
-                (!hd_app_mgr_launcher_can_rotate () && STATE_IS_LAUNCHER (s)))
+                (!hd_app_mgr_ui_can_rotate () && STATE_IS_LAUNCHER (s)))
 
 GType hd_render_manager_state_get_type (void) G_GNUC_CONST;
 GType hd_render_manager_get_type       (void) G_GNUC_CONST;
