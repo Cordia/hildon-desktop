@@ -898,7 +898,14 @@ void hd_render_manager_sync_clutter_before ()
   if (STATE_IS_PORTRAIT(priv->state))
     btn_state |= HDTB_VIS_SMALL_BUTTONS;
 
-  if (STATE_SHOW_OPERATOR(priv->state))
+  /* When transitioning out of a LAUNCHER_PORTRAIT state, we need to show
+   * the operator after the rotation to HOME is finished, or it will show up the
+   * operator name in the upper-right corner at the rotation beginning. We
+   * don't want it, so we check it in %hd_render_manager_sync_clutter_before()
+   * and update the operator actor at %hd_render_manager_sync_clutter_after()
+   * when needed */
+  if (STATE_SHOW_OPERATOR(priv->state) &&
+      (priv->previous_state != HDRM_STATE_LAUNCHER_PORTRAIT))
     clutter_actor_show(priv->operator);
   else
     clutter_actor_hide(priv->operator);
@@ -1005,6 +1012,16 @@ static
 void hd_render_manager_sync_clutter_after ()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  /* When transitioning out of a LAUNCHER_PORTRAIT state, we need to show the
+   * operator after the rotation to HOME is finished, or it will show up the
+   * operator name in the upper-right corner at the rotation beginning. We
+   * don't want it, so we check it in %hd_render_manager_sync_clutter_before()
+   * and update the operator actor at %hd_render_manager_sync_clutter_after()
+   * when needed */
+  if (STATE_SHOW_OPERATOR(priv->state) &&
+      (priv->previous_state == HDRM_STATE_LAUNCHER_PORTRAIT))
+    clutter_actor_show (priv->operator);
 
   if (STATE_BLUR_BUTTONS(priv->state) &&
       clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) !=
