@@ -205,8 +205,9 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define CALLUI_PORTRAIT_TIMEOUT  1
 #define GCONF_SLIDE_OPEN_DIR     "/system/osso/af"
 #define GCONF_SLIDE_OPEN_KEY     "/system/osso/af/slide-open"
-#define GCONF_DISABLE_CALLUI_DIR "/apps/osso/hildon-desktop"
+#define GCONF_OSSO_HILDON_DESKTOP_DIR "/apps/osso/hildon-desktop"
 #define GCONF_DISABLE_CALLUI_KEY "/apps/osso/hildon-desktop/disable_phone_gesture"
+#define GCONF_UI_CAN_ROTATE_KEY "/apps/osso/hildon-desktop/ui_can_rotate"
 
 /* Forward declarations */
 static void hd_app_mgr_dispose (GObject *gobject);
@@ -418,21 +419,30 @@ hd_app_mgr_init (HdAppMgr *self)
                                hd_app_mgr_gconf_value_changed,
                                (gpointer) self,
                                NULL, NULL);
-      priv->disable_callui = gconf_client_get_bool (priv->gconf_client,
-                                                    GCONF_DISABLE_CALLUI_KEY,
-                                                    NULL);
-
-      priv->launcher_can_rotate = TRUE; /* TODO KA use GCONF! */
 
       /* We don't call
       hd_app_mgr_mce_activate_accel_if_needed ();
       here because hdrm is not ready yet. */
-      gconf_client_add_dir (priv->gconf_client, GCONF_DISABLE_CALLUI_DIR,
+      gconf_client_add_dir (priv->gconf_client, GCONF_OSSO_HILDON_DESKTOP_DIR,
                             GCONF_CLIENT_PRELOAD_NONE, NULL);
+
       gconf_client_notify_add (priv->gconf_client, GCONF_DISABLE_CALLUI_KEY,
                                hd_app_mgr_gconf_value_changed,
                                (gpointer) self,
                                NULL, NULL);
+      priv->disable_callui = gconf_client_get_bool (priv->gconf_client,
+                                                    GCONF_DISABLE_CALLUI_KEY,
+                                                    NULL);
+
+
+      gconf_client_notify_add (priv->gconf_client, GCONF_UI_CAN_ROTATE_KEY,
+                               hd_app_mgr_gconf_value_changed,
+                               (gpointer) self,
+                               NULL, NULL);
+      priv->launcher_can_rotate = gconf_client_get_bool (priv->gconf_client,
+                                                    GCONF_UI_CAN_ROTATE_KEY,
+                                                    NULL);
+
     }
 
   /* Start memory limits. */
@@ -2208,6 +2218,14 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
                   GCONF_DISABLE_CALLUI_KEY))
     {
       priv->disable_callui = value;
+
+      /* Check if h-d needs to track the orientation. */
+      hd_app_mgr_mce_activate_accel_if_needed (TRUE);
+    }
+  else if (!g_strcmp0 (gconf_entry_get_key (entry),
+                  GCONF_UI_CAN_ROTATE_KEY))
+    {
+      priv->launcher_can_rotate = value;
 
       /* Check if h-d needs to track the orientation. */
       hd_app_mgr_mce_activate_accel_if_needed (TRUE);

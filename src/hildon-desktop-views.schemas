@@ -54,5 +54,15 @@
         <short>Call UI D-Bus interface for desktop live search.</short>
       </locale>
     </schema>
+    <schema>
+      <key>/schemas/apps/osso/hildon-desktop/ui_can_rotate</key>
+      <applyto>/apps/osso/hildon-desktop/ui_can_rotate</applyto>
+      <owner>hildon-desktop</owner>
+      <type>bool</type>
+      <default>true</default>
+      <locale name="C">
+        <short>Enable rotation from/to portrait mode for Task Launcher and Navigator.</short>
+      </locale>
+    </schema>
   </schemalist>
 </gconfschemafile>

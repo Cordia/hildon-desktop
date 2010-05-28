@@ -1623,6 +1623,12 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                   hd_launcher_update_orientation (STATE_IS_PORTRAIT (state));
                 }
             }
+          else
+            {
+              /* UI rotation disabled, ensure the laucher in landscape mode
+               * state */
+              hd_launcher_update_orientation (FALSE);
+            }
 
           /* unfocus any applet */
           mb_wm_client_focus (cmgr->wm->desktop);
