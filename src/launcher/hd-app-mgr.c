@@ -1836,6 +1836,21 @@ hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable)
   return TRUE;
 }
 
+/* hd_app_mgr_slide_is_open():
+ *
+ * Check if the Device slide keyboard (also known as hardware keyboard or HKB) is open.
+ *
+ * returns: %TRUE if the slide keyboard is open, %FALSE otherwise
+ */
+gboolean
+hd_app_mgr_slide_is_open (void)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+
+  return !priv->slide_closed;
+}
+
+
 /* hd_app_mgr_launcher_can_rotate:
  *
  * Check if the Task Launcher is configured to rotate in portrait mode when
