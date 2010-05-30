@@ -1589,12 +1589,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
            * hd_render_manager_set_state_portrait/unportrait */
 
           /* first check if the LAUNCHER can rotate, or show it only in
-           * the current mode, which we trust be LANDSCAPE */
+           * LANDSCAPE */
           if (hd_app_mgr_ui_can_rotate())
             {
-              /* this value, if laucher cannot rotate, is to be ignored for
-               * the launcher rotation since it might be set by the HdAppMgr
-               * because of some other component needing the accellerometer */
               gboolean app_mgr_is_portrait = hd_app_mgr_is_portrait();
 
               /* back-compatibility check for _set_state(LAUNCHER) when
@@ -1606,11 +1603,6 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                 priv->state = state = HDRM_STATE_LAUNCHER_PORTRAIT;
               else if (!app_mgr_is_portrait && STATE_IS_PORTRAIT (state))
                 priv->state = state = HDRM_STATE_LAUNCHER;
-
-              g_debug("%s: you probably meant STATE %s -> STATE %s",
-                      G_STRFUNC,
-                      hd_render_manager_state_str(oldstate),
-                      hd_render_manager_state_str(state));
 
               /* after fixing @priv->state real value, check if we are
                * actually transitioning to the same state. It should not be

@@ -71,13 +71,9 @@ struct _HdLauncherGridPrivate
    * on the empty rows of pixels between the icons */
   GList *blockers;
 
-  /* horizontal and vertical are relative to the device's current orientation,
-   * no need to swap them during device rotations */
   guint h_spacing;
   guint v_spacing;
 
-  /* horizontal and vertical are relative to the current device's orientation,
-   * no need to swap them after a device orientation change */
   TidyAdjustment *h_adjustment;
   TidyAdjustment *v_adjustment;
 
@@ -420,11 +416,15 @@ _hd_launcher_grid_count_children_and_rows (HdLauncherGrid *grid,
 
 /**
  * Allocates a number of tiles in a row, starting at cur_y.
- * Returns the remaining children (ie still to allocate).
+ * Returns the remaining children list (ie still to allocate).
  *
- * @spacing is the icon spacing, already updated depending on the orientation.
+ * @grid: the HdLauncherGrid instance
+ * @l: list of tiles still to be inserted in the layout
  * @remaining is a memory address containing a pointer to the number of
  * children still to insert into the grid.
+ * @cur_y: the current y position of the grid, from where to begin placing
+ * tiles
+ * @h_spacing is the icon horizonal spacing.
  */
 static GList *
 _hd_launcher_grid_layout_row   (HdLauncherGrid *grid,
@@ -478,7 +478,10 @@ _hd_launcher_grid_layout_row   (HdLauncherGrid *grid,
  * the TL is/will be visible.
  *
  * To change the grid orientation one has to call
- * #hd_launcher_grid_set_portrait() before re-layouting.
+ * %hd_launcher_grid_set_portrait() before re-layouting.
+
+ * The screen orientation should be set with the orietation matching
+ * %hd_launcher_grid_is_portrait() before calling %hd_launcher_grid_layout().
  */
 void hd_launcher_grid_layout (HdLauncherGrid *grid)
 {
