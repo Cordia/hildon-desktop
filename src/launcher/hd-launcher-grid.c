@@ -731,9 +731,8 @@ hd_launcher_grid_init (HdLauncherGrid *launcher)
 
   launcher->priv = priv = HD_LAUNCHER_GRID_GET_PRIVATE (launcher);
 
-  /* set grid's orientation and h/v_spacing values */
-  hd_launcher_grid_set_portrait (launcher,
-      hd_launcher_grid_is_portrait (launcher) );
+  /* set grid's orientation and h/v_spacing values to landscape by default */
+  hd_launcher_grid_set_portrait (launcher, FALSE);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (launcher), FALSE);
 
