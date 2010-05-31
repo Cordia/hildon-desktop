@@ -55,8 +55,15 @@
 #include <hildon/hildon-banner.h>
 
 #define I_(str) (g_intern_static_string ((str)))
+
+/* macros not defined in current hildon's glib, use the glib ones if possible
+ */
+#ifndef GBOOLEAN_TO_POINTER
 #define GBOOLEAN_TO_POINTER(i) (GINT_TO_POINTER ((i) ? 2 : 1))
+#endif
+#ifndef GPOINTER_TO_BOOLEAN
 #define GPOINTER_TO_BOOLEAN(i) ((gboolean) ((GPOINTER_TO_INT(i) == 2) ? TRUE : FALSE))
+#endif
 
 
 
