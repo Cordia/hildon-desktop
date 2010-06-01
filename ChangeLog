@@ -1,3 +1,12 @@
+2010-06-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	When tiles were added to the launcher while it was scrolled
+	the top margin disappeared.
+
+	* src/launcher/hd-launcher-grid.c (hd_launcher_grid_layout):
+	  Since the tiles were vertically displaced by the amount of
+	  scrolling, don't adjust the position by it.
+
 2010-05-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Release 2.2.139-1.

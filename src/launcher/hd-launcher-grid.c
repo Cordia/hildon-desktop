@@ -434,11 +434,6 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
 
   cur_height = HD_LAUNCHER_PAGE_YMARGIN;
 
-  /* This actually does the scrolling, instead of us using
-   * cogl_translate like we did previously, which kills software
-   * selection mode */
-  cur_height -= tidy_adjustment_get_value(priv->v_adjustment);
-
   l = priv->tiles;
   while (l) {
     /* Allocate all icons on this row */
