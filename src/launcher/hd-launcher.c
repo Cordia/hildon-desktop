@@ -310,6 +310,10 @@ hd_launcher_update_orientation (gboolean portraited)
 {
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
 
+  /* no changes, don't waste any time updating */
+  if (priv->portraited == portraited)
+    return;
+
   priv->portraited = portraited;
 
   g_datalist_foreach (&priv->pages,
