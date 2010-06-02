@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.139-2) unstable; urgency=low
+
+  * new release
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 02 Jun 2010 17:53:38 +0300
+
 hildon-desktop (1:2.2.139-1) unstable; urgency=low
 
   * Fixes: NB#162675 - desktop recompilation with G_DISABLE_CAST_CHECKS
