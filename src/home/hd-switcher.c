@@ -137,6 +137,8 @@ static void hd_switcher_app_crashed (HdSwitcher *switcher,
 static void hd_switcher_insufficient_memory(HdSwitcher *switcher,
                                             gboolean waking_up,
                                             gpointer data);
+static void
+hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher);
 
 G_DEFINE_TYPE (HdSwitcher, hd_switcher, G_TYPE_OBJECT);
 
@@ -475,18 +477,12 @@ hd_switcher_launcher_cat_hidden (HdLauncher *launcher,
  * because it's specced only for when relaunching. And we can't do it when
  * we zoom in, because hd-wm pulls us out of the task navigator abruptly */
 static void
-hd_switcher_relaunched_app_callback(HdSwitcherRelaunchAppData *data)
+hd_switcher_relaunched_app_callback(ClutterActor *actor,
+                                    HdSwitcherRelaunchAppData *data)
 {
-  HdSwitcherPrivate *priv = HD_SWITCHER (data->switcher)->priv;
-
+  hd_switcher_zoom_in_complete(data->actor, data->switcher);
   hd_app_mgr_relaunch_set_top(data->app);
-
-  g_signal_handlers_disconnect_by_func(
-      priv->task_nav,
-      G_CALLBACK(hd_switcher_relaunched_app_callback),
-      data);
-
-  g_free(data);
+  g_slice_free1(sizeof(*data), data);
 }
 
 /* called back after the transition to TASK_NAV has finished, and
@@ -495,6 +491,11 @@ static void
 hd_switcher_relaunch_app_callback(HdSwitcherRelaunchAppData *data)
 {
   HdSwitcherPrivate *priv = HD_SWITCHER (data->switcher)->priv;
+
+  g_signal_handlers_disconnect_by_func(
+      hd_render_manager_get(),
+      G_CALLBACK(hd_switcher_relaunch_app_callback),
+      data);
 
   /*
    * This is supposed to be called when a launcher->switcher blur transition
@@ -505,17 +506,10 @@ hd_switcher_relaunch_app_callback(HdSwitcherRelaunchAppData *data)
    */
   if (hd_render_manager_get_state () == HDRM_STATE_TASK_NAV)
     {
-      g_signal_connect_swapped(priv->task_nav, "zoom-in-complete",
-              G_CALLBACK(hd_switcher_relaunched_app_callback),
-              data);
-
-      hd_switcher_item_selected (data->switcher, data->actor);
+      hd_task_navigator_zoom_in (priv->task_nav, data->actor,
+                  (ClutterEffectCompleteFunc)hd_switcher_relaunched_app_callback,
+                  data);
     }
-
-  g_signal_handlers_disconnect_by_func(
-      hd_render_manager_get(),
-      G_CALLBACK(hd_switcher_relaunch_app_callback),
-      data);
 }
 
 static void
@@ -550,11 +544,10 @@ hd_switcher_relaunch_app (HdSwitcher *switcher,
       return;
     }
 
-  cb_data = g_malloc0(sizeof(HdSwitcherRelaunchAppData));
+  cb_data = g_slice_alloc(sizeof(*cb_data));
   cb_data->app = app;
   cb_data->actor = actor;
   cb_data->switcher = switcher;
-
   g_signal_connect_swapped(hd_render_manager_get(), "transition-complete",
         G_CALLBACK(hd_switcher_relaunch_app_callback),
         cb_data);
