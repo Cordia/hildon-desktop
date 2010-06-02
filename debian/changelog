@@ -1,6 +1,5 @@
 hildon-desktop (1:2.2.139-1) unstable; urgency=low
 
-  * Fixes: NB#147861 - Viewfinder behind an alarm window shows up after the notification preview is received
   * Fixes: NB#162675 - desktop recompilation with G_DISABLE_CAST_CHECKS
 
  -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Tue, 25 May 2010 18:11:01 +0300
