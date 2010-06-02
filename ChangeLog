@@ -1,5 +1,9 @@
 2010-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Release 2.2.139-2.
+
+2010-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#171766 camera behaving abnormally under certain scenarios
 
 	There was a race: hd-switcher wanted something to execute when
