@@ -1,3 +1,16 @@
+2010-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#171766 camera behaving abnormally under certain scenarios
+
+	There was a race: hd-switcher wanted something to execute when
+	tasw has zoomed in, but it didn't because it was just zooming
+	out, so the signal handler to top the application was called
+	when the user zoomed in manually instead.
+
+	* src/home/hd-switcher.c:
+	  Do everything in the hd_task_navigator_zoom_in() callback,
+	  as that is guaranteed to be called.
+
 2010-06-01  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	When tiles were added to the launcher while it was scrolled
