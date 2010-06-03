@@ -2088,7 +2088,8 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
    *    being all right */
   gboolean activate = ((!priv->disable_callui && STATE_SHOW_CALLUI (state)) ||
       (hd_app_mgr_ui_can_rotate () &&
-       (STATE_IS_LAUNCHER (state) || STATE_IS_HOME (state))) ||
+       (STATE_IS_LAUNCHER (state) || STATE_IS_HOME (state) ||
+        (state == HDRM_STATE_TASK_NAV))) ||
       (STATE_IS_APP(state) &&
        hd_comp_mgr_can_be_portrait (hd_comp_mgr_get())));
 
