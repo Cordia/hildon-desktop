@@ -267,7 +267,7 @@ static void hd_app_mgr_gconf_value_changed (GConfClient *client,
                                             GConfEntry *entry,
                                             gpointer user_data);
 static gboolean hd_app_mgr_show_callui_cb (gpointer data);
-static void hd_app_mgr_check_show_callui (void);
+static gboolean hd_app_mgr_check_show_callui (void);
 
 static void     hd_app_mgr_request_app_pid (HdRunningApp *app);
 static gboolean hd_app_mgr_loading_timeout (HdRunningApp *app);
@@ -1913,7 +1913,7 @@ hd_app_mgr_show_callui_cb (gpointer data)
  * - Display on.
  * - Slide closed.
  */
-static void
+static gboolean
 hd_app_mgr_check_show_callui (void)
 {
   if (_hd_app_mgr_should_show_callui ())
@@ -1921,7 +1921,9 @@ hd_app_mgr_check_show_callui (void)
       g_timeout_add_seconds(CALLUI_PORTRAIT_TIMEOUT,
                             (GSourceFunc) hd_app_mgr_show_callui_cb,
                             NULL);
+      return TRUE;
     }
+  return FALSE;
 }
 
 static gboolean
@@ -2032,15 +2034,16 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                                   MCE_SIGNAL_IF,
                                   MCE_DEVICE_ORIENTATION_SIG))
         {
-          gboolean orientation_changed = (priv->portrait !=
-              _hd_app_mgr_dbus_check_value (msg, MCE_ORIENTATION_PORTRAIT));
-
           priv->portrait = _hd_app_mgr_dbus_check_value (msg,
                                            MCE_ORIENTATION_PORTRAIT);
 
           /* CallUI shouldn't appear when in LAUNCHER AND TL can rotate, but
            * should appear when TL cannot rotate. */
-          if (orientation_changed && hd_app_mgr_ui_can_rotate () &&
+          if (hd_app_mgr_check_show_callui ())
+            {
+              hd_app_mgr_update_portraitness(self);
+            }
+          else if (hd_app_mgr_ui_can_rotate () &&
               STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
             {
               /* we can go to portrait only if device's portraited and the HKB
@@ -2049,12 +2052,6 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                   HDRM_STATE_LAUNCHER_PORTRAIT : HDRM_STATE_LAUNCHER);
 
               hd_render_manager_set_state (state);
-            }
-          else
-            {
-              hd_app_mgr_check_show_callui ();
-
-              hd_app_mgr_update_portraitness(self);
             }
         }
     }
