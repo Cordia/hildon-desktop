@@ -6,9 +6,9 @@ hildon-desktop (1:2.2.140-1~unreleased) unstable; urgency=low
 
 hildon-desktop (1:2.2.139-2) unstable; urgency=low
 
-  * new release
+  * Fixes: NB#165822 Calling UI is broken with changing modes
 
- -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 02 Jun 2010 17:53:38 +0300
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Mon, 07 Jun 2010 19:10:50 +0300
 
 hildon-desktop (1:2.2.139-1) unstable; urgency=low
 
