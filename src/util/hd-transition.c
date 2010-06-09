@@ -897,7 +897,10 @@ hd_transition_completed (ClutterTimeline* timeline, HDEffectData *data)
    * must be safe (knock-knock-knock) to re-evaluate visibilities. */
   if (data->fixup_visibilities && --Transitions_running == 0
       && STATE_IS_APP(hd_render_manager_get_state()))
-    hd_render_manager_set_visibilities();
+    {
+      hd_render_manager_set_visibilities();
+      hd_comp_mgr_portrait_or_not_portrait(MB_WM_COMP_MGR(hmgr), NULL);
+    }
 
   g_free (data);
 
