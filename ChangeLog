@@ -1,3 +1,17 @@
+2010-06-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#173242 portrait properties of upper windows ignored
+		  when a stack of windows are mapped
+
+	lp_forecast() guessed the right thing then set_visibilities()
+	determined that the bottom of the stack is still visible
+	(albeit soon to disappear) so it overrode the decision
+	and forced landscape.
+
+	* src/util/hd-transition.c (hd_transition_completed):
+	  Rerun hd_comp_mgr_portrait_or_not_portrait() after the
+	  last transition.
+
 2010-06-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	Release 2.2.139-2.
