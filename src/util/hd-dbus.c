@@ -105,6 +105,8 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                   if (hd_dbus_state_before_tklock != HDRM_STATE_UNDEFINED)
                     /* possibly go back to the state before tklock */
                     hd_render_manager_set_state (HDRM_STATE_AFTER_TKLOCK);
+                  else
+                    hd_app_mgr_mce_activate_accel_if_needed (FALSE);
                 }
             }
           else if (!hd_dbus_tklock_on)
@@ -120,6 +122,7 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
               hd_dbus_cunt = call_active
                 && (hd_render_manager_get_state()
                     & (HDRM_STATE_HOME|HDRM_STATE_HOME_PORTRAIT));
+              hd_app_mgr_mce_activate_accel_if_needed (FALSE);
             }
         }
     }
@@ -151,6 +154,7 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                       hd_title_bar_set_switcher_pulse (tb, FALSE);
                       hd_title_bar_set_switcher_pulse (tb, TRUE);
                     }
+                  hd_app_mgr_check_show_callui ();
                 }
               else if (strcmp (str, "off") == 0)
                 {
