@@ -122,7 +122,6 @@ struct _HdAppMgrPrivate
   GConfClient *gconf_client;
   gboolean portrait;
   gboolean unlocked;
-  gboolean display_on;
   gboolean slide_closed;
   gboolean disable_callui;
   gboolean accel_enabled;
@@ -265,7 +264,6 @@ static void hd_app_mgr_gconf_value_changed (GConfClient *client,
                                             GConfEntry *entry,
                                             gpointer user_data);
 static gboolean hd_app_mgr_show_callui_cb (gpointer data);
-static void hd_app_mgr_check_show_callui (void);
 
 static void     hd_app_mgr_request_app_pid (HdRunningApp *app);
 static gboolean hd_app_mgr_loading_timeout (HdRunningApp *app);
@@ -404,7 +402,6 @@ hd_app_mgr_init (HdAppMgr *self)
 
   /* NOTE: Can we assume this when we start up? */
   priv->unlocked = TRUE;
-  priv->display_on = TRUE;
   priv->gconf_client = gconf_client_get_default ();
   if (priv->gconf_client)
     {
@@ -1837,11 +1834,13 @@ _hd_app_mgr_should_show_callui ()
 {
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
   extern MBWindowManager *hd_mb_wm;
+  extern gboolean hd_dbus_display_is_off;
 
   if (STATE_SHOW_CALLUI (hd_render_manager_get_state ()) &&
+      priv->accel_enabled &&
       priv->portrait &&
       priv->unlocked &&
-      priv->display_on &&
+      !hd_dbus_display_is_off &&
       priv->slide_closed &&
       !priv->disable_callui &&
       !hd_wm_has_modal_blockers (hd_mb_wm))
@@ -1869,7 +1868,7 @@ hd_app_mgr_show_callui_cb (gpointer data)
  * - Display on.
  * - Slide closed.
  */
-static void
+void
 hd_app_mgr_check_show_callui (void)
 {
   if (_hd_app_mgr_should_show_callui ())
@@ -1978,13 +1977,6 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
                                            MCE_DEVICE_UNLOCKED);
         }
       else if (dbus_message_is_signal (msg,
-                                       MCE_SIGNAL_IF,
-                                       MCE_DISPLAY_SIG))
-        {
-          priv->display_on = _hd_app_mgr_dbus_check_value (msg,
-                                           MCE_DISPLAY_ON_STRING);
-        }
-      else if (dbus_message_is_signal (msg,
                                   MCE_SIGNAL_IF,
                                   MCE_DEVICE_ORIENTATION_SIG))
         {
@@ -2011,14 +2003,17 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
 void
 hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
 {
+  extern gboolean hd_dbus_tklock_on;
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (the_app_mgr);
   DBusConnection *conn = NULL;
   DBusMessage *msg = NULL;
+  gboolean activate = !hd_dbus_tklock_on;
 
-  gboolean activate = (!priv->disable_callui &&
-                       STATE_SHOW_CALLUI (hd_render_manager_get_state ())) ||
-                      (STATE_IS_APP(hd_render_manager_get_state ()) &&
-                       hd_comp_mgr_can_be_portrait(hd_comp_mgr_get()));
+  if (activate)
+    activate = (!priv->disable_callui
+                && STATE_SHOW_CALLUI (hd_render_manager_get_state ()))
+      || (STATE_IS_APP(hd_render_manager_get_state ())
+          && hd_comp_mgr_can_be_portrait(hd_comp_mgr_get()));
   if (priv->accel_enabled == activate)
     return;
 

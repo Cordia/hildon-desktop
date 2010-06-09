@@ -1,5 +1,23 @@
 2010-06-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#173240 Holding phone in portrait orientation doesn't launch
+		  call-ui after unlock
+
+	hd_app_mgr_check_show_callui() after unlock
+
+	* src/launcher/hd-app-mgr.c:
+	  * _HdAppMgrPrivate: remove @display_on,
+	     use @hd_dbus_display_is_off instead
+	  * _hd_app_mgr_should_show_callui: also check for @accel_enabled
+	  * hd_app_mgr_check_show_callui: made public for hd-dbus.c
+	  * hd_app_mgr_mce_activate_accel_if_needed: check @hd_dbus_tklock_on,
+	    and disable the accelerometer if it's on
+	* src/util/hd-dbus.c (hd_dbus_system_bus_signal_handler):
+	  * hd_app_mgr_mce_activate_accel_if_needed() when tklock changes
+	  * hd_app_mgr_check_show_callui() when display is on
+
+2010-06-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#173242 portrait properties of upper windows ignored
 		  when a stack of windows are mapped
 
