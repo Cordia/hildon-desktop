@@ -1,3 +1,9 @@
+2010-06-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/main.c (main):
+	  Call hildon_gtk_init() rather than pure gtk_init() to get
+	  correct localization of stock Yes/No strings.
+
 2010-06-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#173240 Holding phone in portrait orientation doesn't launch

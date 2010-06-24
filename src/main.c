@@ -25,23 +25,22 @@
 #include <config.h>
 #endif
 
+#include <time.h>
+#include <signal.h>
+#include <sys/time.h>
+
 #include <matchbox/mb-wm-config.h>
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#include <time.h>
-
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
+#include <hildon/hildon-main.h>
 #include <clutter/clutter-main.h>
 #include <clutter/clutter-stage.h>
 #include <clutter/x11/clutter-x11.h>
 #include <clutter/clutter-container.h>
 #include <libgnomevfs/gnome-vfs.h>
-#include <signal.h>
 #include <gdk-pixbuf-xlib/gdk-pixbuf-xlib.h>
 
 #include "hildon-desktop.h"
@@ -562,7 +561,7 @@ main (int argc, char **argv)
   mb_wm_theme_set_custom_client_type_func (theme_client_type_func, NULL);
   mb_wm_theme_set_custom_button_type_func (theme_button_type_func, NULL);
 
-  gtk_init (&argc, &argv);
+  hildon_gtk_init (&argc, &argv);
   /* Initialise the async error handler. Do it after gtk is inited, or gtk
    * will grab the handler for itself */
   mb_wm_util_async_x_error_init();
