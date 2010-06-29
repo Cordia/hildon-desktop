@@ -2873,8 +2873,10 @@ hd_comp_mgr_unmap_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
               MB_WM_CLIENT_CLIENT_TYPE(above)!=MBWMClientTypeOverride &&
               MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeHomeApplet &&
               MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeStatusArea &&
+              MB_WM_CLIENT_CLIENT_TYPE(above)!=HdWmClientTypeAnimationActor &&
               !HD_IS_BANNER_NOTE (above))
           {
+            g_debug ("spoiler=%p", above);
             grab_spoil = TRUE;
             break;
           }
