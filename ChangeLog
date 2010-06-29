@@ -1,3 +1,15 @@
+2010-06-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#165009 Device not responding if Done button is tapped in layout mode
+
+	Test case: enter edit mode, open the menu, and close it.
+	If image-viewer was running (has been prestarted) and its
+	animas were stacked high enough we didn't return to edit mode.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_unmap_notify):
+	  In EDIT_DLG state, when a dialog is closed don't consider
+	  animas spoiling pointer grabs -- they can't.
+
 2010-06-24  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/main.c (main):
