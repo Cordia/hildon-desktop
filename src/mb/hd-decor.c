@@ -62,23 +62,10 @@ hd_decor_destroy (MBWMObject *obj)
       g_object_unref(decor->progress_timeline);
       decor->progress_timeline = 0;
     }
-  /* Unref actors rather than destroying - as we still
-   * want them inside the window we put them in... */
-  if (decor->progress_texture)
-    {
-      g_object_unref(decor->progress_texture);
-      decor->progress_texture = 0;
-    }
-  if (decor->title_bar_actor)
-    {
-      g_object_unref(decor->title_bar_actor);
-      decor->title_bar_actor = 0;
-    }
-  if (decor->title_actor)
-    {
-      g_object_unref(decor->title_actor);
-      decor->title_actor = 0;
-    }
+  /* we still want them inside the window we put them in */
+  decor->progress_texture = 0;
+  decor->title_bar_actor = 0;
+  decor->title_actor = 0;
 }
 
 static int
@@ -199,6 +186,8 @@ hd_decor_get_actor(HdDecor   *decor)
 static void
 hd_decor_remove_actors(HdDecor   *decor)
 {
+  ClutterActor      *actor = hd_decor_get_actor(decor);
+
   if (decor->progress_timeline)
     {
       clutter_timeline_stop(decor->progress_timeline);
@@ -207,17 +196,20 @@ hd_decor_remove_actors(HdDecor   *decor)
     }
   if (decor->progress_texture)
     {
-      clutter_actor_destroy(CLUTTER_ACTOR(decor->progress_texture));
+      clutter_container_remove_actor(CLUTTER_CONTAINER(actor),
+                                     decor->progress_texture);
       decor->progress_texture = 0;
     }
   if (decor->title_bar_actor)
     {
-      clutter_actor_destroy(decor->title_bar_actor);
+      clutter_container_remove_actor(CLUTTER_CONTAINER(actor),
+                                     decor->title_bar_actor);
       decor->title_bar_actor = 0;
     }
   if (decor->title_actor)
     {
-      clutter_actor_destroy(decor->title_actor);
+      clutter_container_remove_actor(CLUTTER_CONTAINER(actor),
+                                     decor->title_actor);
       decor->title_actor = 0;
     }
 }
@@ -254,15 +246,13 @@ hd_decor_create_actors(HdDecor *decor)
   if (c->image_filename)
     {
       ClutterGeometry geo = {d->x, d->y, d->width, d->height};
-      decor->title_bar_actor = g_object_ref_sink(
-          hd_clutter_cache_get_sub_texture_for_area(c->image_filename,
-              TRUE, &geo, &area));
+      decor->title_bar_actor = hd_clutter_cache_get_sub_texture_for_area(
+                                  c->image_filename, TRUE, &geo, &area);
     }
   else
     {
-      decor->title_bar_actor = g_object_ref_sink(
-          hd_clutter_cache_get_texture_for_area(HD_THEME_IMG_DIALOG_BAR,
-              TRUE, &area));
+      decor->title_bar_actor = hd_clutter_cache_get_texture_for_area(
+                                  HD_THEME_IMG_DIALOG_BAR, TRUE, &area);
     }
   /* If clients don't have a frame, the actor will be positioned according to
    * the normal window - so we need to correct for this. */
@@ -303,7 +293,7 @@ hd_decor_create_actors(HdDecor *decor)
         if (client->window->name_has_markup)
           clutter_label_set_use_markup(bar_title, TRUE);
 
-        decor->title_actor = CLUTTER_ACTOR(g_object_ref_sink(bar_title));
+        decor->title_actor = CLUTTER_ACTOR(bar_title);
         clutter_container_add_actor(CLUTTER_CONTAINER(actor),
                                     decor->title_actor);
 
@@ -345,11 +335,8 @@ hd_decor_create_actors(HdDecor *decor)
       ClutterGeometry progress_geo =
         {0, 0, HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE};
       gint x = 0;
-      decor->progress_texture = g_object_ref_sink(
-                                   hd_clutter_cache_get_sub_texture(
-                                                      HD_THEME_IMG_PROGRESS,
-                                                      TRUE,
-                                                      &progress_geo));
+      decor->progress_texture = hd_clutter_cache_get_sub_texture(
+                            HD_THEME_IMG_PROGRESS, TRUE, &progress_geo);
       if (decor->title_actor)
         {
           x = clutter_actor_get_x(CLUTTER_ACTOR(decor->title_actor)) +
