@@ -1,3 +1,10 @@
+2010-07-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#162343 Possible memory leak in hildon-desktop
+
+	* src/mb/hd-decor.c (hd_decor_remove_actors):
+	  Don't leak them.
+
 2010-06-29  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#165009 Device not responding if Done button is tapped in layout mode
