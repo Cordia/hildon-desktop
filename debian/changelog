@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.140-1) unstable; urgency=low
+
+  * Fixes: NB#162343 Possible memory leak in hildon-desktop
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 07 Jul 2010 15:28:12 +0300
+
 hildon-desktop (1:2.2.139-2) unstable; urgency=low
 
   * Fixes: NB#165822 Calling UI is broken with changing modes
