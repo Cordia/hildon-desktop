@@ -1,6 +1,7 @@
 hildon-desktop (1:2.2.140-1) unstable; urgency=low
 
-  * Fixes: NB#162343 Possible memory leak in hildon-desktop
+  * Fixes: NB#162343 - Possible memory leak in hildon-desktop
+  * Fixes: NB#165009 - Device not responding if Done button is tapped in layout mode
 
  -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 07 Jul 2010 15:28:12 +0300
 
