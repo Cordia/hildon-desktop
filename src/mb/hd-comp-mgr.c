@@ -2069,6 +2069,25 @@ hd_comp_mgr_handle_stackable (MBWindowManagerClient *client,
   g_assert (!app->leader || (app->leader && app->stack_index >= 0));
 }
 
+static void
+create_stampfile (void)
+{
+  static gboolean done = FALSE;
+  int fd;
+
+  if (G_LIKELY (done))
+    return;
+
+  mkdir (STAMP_DIR, 0755);
+  if ((fd = creat (STAMP_FILE, 0644)) >= 0)
+    {
+      close (fd);
+      done = TRUE;
+    }
+  else
+    g_critical ("couldn't create %s: %m", STAMP_FILE);
+}
+
 extern gboolean hd_dbus_tklock_on;
 
 static void
@@ -2083,28 +2102,12 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
   HdCompMgrClient          * hclient_h;
   guint                      hkey;
   MBWMClientType             ctype;
-  static gboolean            first_time = TRUE;
   MBWindowManagerClient    * transient_for;
 
   g_debug ("%s: 0x%lx '%s'\n", __FUNCTION__,
            c && c->window ? c->window->xwindow : 0,
            mb_wm_client_get_name (c));
-
-  if (G_UNLIKELY (first_time == TRUE))
-    {
-      int fd = creat (STAMP_FILE, 0644);
-
-      if (fd >= 0)
-        {
-          close (fd);
-        }
-      else
-        {
-          g_debug ("failed to create stamp file " STAMP_FILE);
-        }
-
-      first_time = FALSE;
-    }
+  create_stampfile();
 
   /* Log the time this window was mapped */
   gettimeofday(&priv->last_map_time, NULL);

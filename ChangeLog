@@ -1,3 +1,9 @@
+2010-08-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
+	  Create STAMP_DIR when creating STAMP_FILE, and try again
+	  if failed.
+
 2010-07-05  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#162343 Possible memory leak in hildon-desktop
