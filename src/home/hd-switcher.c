@@ -548,13 +548,20 @@ hd_switcher_relaunch_app (HdSwitcher *switcher,
   cb_data->app = app;
   cb_data->actor = actor;
   cb_data->switcher = switcher;
-  g_signal_connect_swapped(hd_render_manager_get(), "transition-complete",
-        G_CALLBACK(hd_switcher_relaunch_app_callback),
-        cb_data);
 
   /* Go to the task switcher view. After this is done, we'll do
    * our zoom in on the app view the callback above */
-  hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+  if (hd_render_manager_get_state () != HDRM_STATE_TASK_NAV)
+    {
+      g_signal_connect_swapped(hd_render_manager_get(), "transition-complete",
+            G_CALLBACK(hd_switcher_relaunch_app_callback),
+            cb_data);
+      hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+    }
+  else /* We're already in tasw. */
+    hd_task_navigator_zoom_in (priv->task_nav, actor,
+         (ClutterEffectCompleteFunc)hd_switcher_relaunched_app_callback,
+         cb_data);
 }
 
 /*

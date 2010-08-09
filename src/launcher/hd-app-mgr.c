@@ -833,7 +833,8 @@ hd_app_mgr_activate (HdRunningApp *app)
       timer = TRUE;
       break;
     case HD_APP_STATE_SHOWN:
-      result = hd_app_mgr_relaunch (app);
+      result = !STATE_IS_APP (hd_render_manager_get_state ()) || app != hd_comp_mgr_client_get_app (hd_comp_mgr_get_current_client (hd_comp_mgr_get ()))
+        ? hd_app_mgr_relaunch (app) : LAUNCH_OK;
       break;
     case HD_APP_STATE_HIBERNATED:
       result = hd_app_mgr_wakeup (app);

@@ -1,3 +1,14 @@
+2010-08-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#184265 Front camera gets disabled automatically on tapping
+		  a missed call notification during a video call
+
+	* src/launcher/hd-app-mgr.c (hd_app_mgr_activate):
+	  Don't relaunch if the current application is the requested one.
+	* src/home/hd-switcher.c (hd_switcher_relaunch_app):
+	  Don't postpone zooming in if already in tasw.
+
+
 2010-08-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
