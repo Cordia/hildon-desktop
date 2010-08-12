@@ -2078,6 +2078,11 @@ create_stampfile (void)
   if (G_LIKELY (done))
     return;
 
+#ifdef __i386__
+  /* Fail silently if STAMP_DIR doesn't exist. */
+  close (fd = creat (STAMP_FILE, 0644));
+  done = TRUE;
+#else /* __arm__ */
   mkdir (STAMP_DIR, 0755);
   if ((fd = creat (STAMP_FILE, 0644)) >= 0)
     {
@@ -2086,6 +2091,7 @@ create_stampfile (void)
     }
   else
     g_critical ("couldn't create %s: %m", STAMP_FILE);
+#endif /* __arm__ */
 }
 
 extern gboolean hd_dbus_tklock_on;

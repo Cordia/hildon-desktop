@@ -1,3 +1,8 @@
+2010-08-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	* src/mb/hd-comp-mgr.c (create_stampfile):
+	  Don't insist on it in scratchbox.
+
 2010-08-09  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	NB#184265 Front camera gets disabled automatically on tapping
