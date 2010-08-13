@@ -1,5 +1,16 @@
 2010-08-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	NB#183086 Unpainted areas after exiting window stacks
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
+	  Don't go to compositing state unconditionally if an MBWMClientTypeApp
+	  is mapped, but consider its preference and don't leave the state
+	  if it doesn't prefer composition.  This is safe even for stackables
+	  because the stacking layer has been read and it's observed by
+	  hd_comp_mgr_is_non_composited().
+
+2010-08-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Clean up the non-compositing code with equivalent transformations.
 
 	* src/home/hd-render-manager.h (STATE_IS_NON_COMP):

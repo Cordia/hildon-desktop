@@ -2107,10 +2107,8 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
    */
   if (!HD_IS_INCOMING_EVENT_NOTE(c))
     {
-      /* we don't know yet if it is stackable or not, so assume compositing
-       * in case of an application */
-      if (ctype == MBWMClientTypeApp
-          || hd_comp_mgr_client_prefers_compositing (c))
+      /* start compositing if the client prefers that */
+      if (hd_comp_mgr_client_prefers_compositing (c))
         {
           /* TODO: should check that this client really is above the
            * non-composited client */
