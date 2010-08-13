@@ -1,3 +1,12 @@
+2010-08-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	Remove some dead code.
+
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_portrait_forecast):
+	  Taken over by lp_forecast().
+	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
+	  Debug prints.
+
 2010-08-12  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c (create_stampfile):

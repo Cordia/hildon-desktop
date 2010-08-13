@@ -893,83 +893,6 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   return False;
 }
 
-#if 0
-/* %MBWindowManagerSignalPortraitForecast callback */
-static Bool
-hd_comp_mgr_portrait_forecast (MBWindowManager *wm)
-{
-  gboolean activate;
-  MBWindowManagerClient *c;
-
-  /*
-   * Be very conservative about commencing a transition, try to err on
-   * the safe side, otherwise we may confuse the HDRM state.  This means
-   * if we're moving -> activate because there's no guarantee the transition
-   * will change orientation in the end.  If we're actually staying in
-   * portrait there's nothing to worry about and we can safely activate.
-   * Otherwise (we stay in landscape) check the window stack and see if
-   * any dialogs don't agree with rotation.  This is important if it is
-   * an application which is forecast here because dialogs are in front
-   * of apps.
-   */
-  activate = hd_transition_is_rotating () || hd_comp_mgr_is_portrait ();
-  if (!activate)
-    {
-      for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
-        {
-          if (!mb_wm_client_is_map_confirmed (c))
-            {
-              if (c->window->portrait_requested > 1)
-                /* Forceful client, surrender. */
-                break;
-              else
-                continue;
-            }
-
-          if (c->portrait_supported)
-            /* Agrees. */
-            continue;
-
-          if (c->transient_for)
-            /* Doesn't matter. */
-            continue;
-
-          if ((MB_WM_CLIENT_CLIENT_TYPE (c) & MBWMClientTypeDialog)
-              || HD_IS_INFO_NOTE (c) || HD_IS_CONFIRMATION_NOTE (c))
-            { /* Dealbreaker. */
-              activate = 1;
-              break;
-            }
-        }
-    }
-
-  if (!activate)
-    /* libmatchbox believes we'd rotate soon, so let's do it beforehand. */
-    hd_transition_rotate_screen (wm, TRUE);
-
-  /* See who caused us the pain? */
-  for (c = wm->stack_top; c; c = c->stacked_below)
-    if (!mb_wm_client_is_map_confirmed (c) && c->window->portrait_requested > 0)
-      {
-        if (activate)
-          {
-            /* Needn't distract from normal operation. */
-            mb_wm_activate_client (wm, c);
-
-            /* There might be similar clients further down the stack,
-             * but we can activate only one at a time. */
-            break;
-          }
-        else
-          /* Bastard hack part 1: hide it until the screen is reconfigured,
-           * then libmatchbox will activate it. */
-          mb_wm_client_hide (c);
-      }
-
-  return False;
-}
-#endif
-
 static void
 hd_comp_mgr_turn_on (MBWMCompMgr *mgr)
 {
@@ -2716,24 +2639,6 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
        * stack index (if any). */
       mb_wm_client_theme_change (c);
     }
-
-#if 0
-  /* print the stack */
-  if (app->leader)
-    {
-      GList *l;
-
-      g_printerr ("  leader %p (%lx), index %d\n", app->leader,
-                  MB_WM_CLIENT(app->leader)->window->xwindow,
-                  app->leader->stack_index);
-      for (l = app->leader->followers; l; l = l->next)
-       {
-         g_printerr ("  follower %p (%lx), index %d\n", l->data,
-                     MB_WM_CLIENT(l->data)->window->xwindow,
-                     HD_APP(l->data)->stack_index);
-       }
-    }
-#endif
 }
 
 static MBWindowManagerClient *
