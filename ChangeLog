@@ -1,5 +1,11 @@
 2010-08-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	This is the end, there won't be any more "upstream" development.
+	hildon-desktop and friends are truely free now, do whatever you
+	want with them.
+
+2010-08-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#183086 Unpainted areas after exiting window stacks
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_map_notify):
