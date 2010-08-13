@@ -105,6 +105,9 @@ typedef enum
 #define STATE_NEED_TASK_NAV(s) \
   STATE_ONE_OF((s), HDRM_STATE_TASK_NAV)
 
+#define STATE_IS_NON_COMP(s) \
+  STATE_ONE_OF((s), HDRM_STATE_NON_COMPOSITED | HDRM_STATE_NON_COMP_PORT)
+
 #define STATE_IS_APP(s) \
   STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT | \
 		    HDRM_STATE_NON_COMPOSITED | HDRM_STATE_NON_COMP_PORT)
@@ -212,6 +215,7 @@ HDRMStateEnum hd_render_manager_get_state(void);
 HDRMStateEnum hd_render_manager_get_previous_state(void);
 void hd_render_manager_set_state_portrait (void);
 void hd_render_manager_set_state_unportrait (void);
+void hd_render_manager_switch_to_composited_state (void);
 gboolean hd_render_manager_is_changing_state(void);
 const char *hd_render_manager_get_state_str(void);
 gboolean hd_render_manager_in_transition(void);

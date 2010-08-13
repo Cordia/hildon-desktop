@@ -968,8 +968,7 @@ void hd_render_manager_sync_clutter_before ()
    * think it's visible (to make it non-clickable). A fullscreen app->home
    * transition tends to leave the status area off the screen. NB#112996 */
   if (STATE_IS_APP(priv->state) != STATE_IS_APP(priv->previous_state) ||
-      priv->previous_state == HDRM_STATE_NON_COMPOSITED ||
-      priv->previous_state == HDRM_STATE_NON_COMP_PORT)
+      STATE_IS_NON_COMP (priv->previous_state))
     hd_render_manager_set_visibilities();
 
   /* Now look at what buttons we have showing, and add each visible button X
@@ -1303,8 +1302,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if (hd_dbus_state_before_tklock != HDRM_STATE_UNDEFINED
           && state != hd_dbus_state_before_tklock && !hd_dbus_tklock_on)
         {
-          if (hd_dbus_state_before_tklock == HDRM_STATE_NON_COMPOSITED
-              || hd_dbus_state_before_tklock == HDRM_STATE_NON_COMP_PORT)
+          if (STATE_IS_NON_COMP (hd_dbus_state_before_tklock))
             {
               /* non-composited mode was the state before tklock: make a new
                * policy check to ensure that we can still use that */
@@ -1394,16 +1392,14 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           /* redirect and track damage again */
           for (c = wm->stack_top; c; c = c->stacked_below)
             {
-              if (c->cm_client &&
-                  mb_wm_comp_mgr_clutter_client_is_unredirected (c->cm_client))
-                {
-                  mb_wm_comp_mgr_clutter_set_client_redirection (c->cm_client,
-                                                                 TRUE);
-                }
+              if (!c->cm_client)
+                continue;
 
-              if (c->cm_client)
-                mb_wm_comp_mgr_clutter_client_track_damage (
-                        MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client), True);
+              if (mb_wm_comp_mgr_clutter_client_is_unredirected (c->cm_client))
+                mb_wm_comp_mgr_clutter_set_client_redirection (c->cm_client,
+                                                               TRUE);
+              mb_wm_comp_mgr_clutter_client_track_damage (
+                    MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client), True);
             }
 
           /* this is needed, otherwise task switcher background can remain
@@ -1664,11 +1660,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
               clutter_timeline_get_current_frame(priv->timeline_blur), NULL);
         }
 
-      if (state == HDRM_STATE_NON_COMPOSITED ||
-          state == HDRM_STATE_NON_COMP_PORT)
+      if (STATE_IS_NON_COMP (state))
         {
 	  hd_comp_mgr_reset_overlay_shape (HD_COMP_MGR (priv->comp_mgr));
-
           hd_comp_mgr_unredirect_topmost_client (wm, FALSE);
 	}
     }
@@ -1707,6 +1701,15 @@ void hd_render_manager_set_state_unportrait (void)
     }
   else
     hd_render_manager_set_state (HDRM_STATE_HOME);
+}
+
+/* Switch from NON_COMPOSITED => APP or NON_COMP_PORT => APP_PORTRAIT. */
+void hd_render_manager_switch_to_composited_state (void)
+{
+  if (the_render_manager->priv->state == HDRM_STATE_NON_COMPOSITED)
+    hd_render_manager_set_state (HDRM_STATE_APP);
+  else if (the_render_manager->priv->state == HDRM_STATE_NON_COMP_PORT)
+    hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
 }
 
 /* Returns whether set_state() is in progress. */
@@ -2370,9 +2373,7 @@ hd_render_manager_is_visible(GList *blockers,
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  if (priv->state == HDRM_STATE_NON_COMPOSITED ||
-      priv->state == HDRM_STATE_NON_COMP_PORT ||
-      !hd_render_manager_clip_geo(&rect))
+  if (STATE_IS_NON_COMP (priv->state) || !hd_render_manager_clip_geo(&rect))
     return FALSE;
 
   /* clip for every block */
@@ -2579,8 +2580,7 @@ void hd_render_manager_set_visibilities()
   priv = the_render_manager->priv;
 
   /* shortcut for non-composited mode */
-  if (priv->state == HDRM_STATE_NON_COMPOSITED ||
-      priv->state == HDRM_STATE_NON_COMP_PORT)
+  if (STATE_IS_NON_COMP (priv->state))
     {
       hd_render_manager_set_input_viewport();
       return;
@@ -2711,8 +2711,7 @@ gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c)
   MBWMCompMgrClutterClient *cc;
   HdRenderManagerPrivate *priv = the_render_manager->priv;
 
-  if (priv->state == HDRM_STATE_NON_COMPOSITED ||
-      priv->state == HDRM_STATE_NON_COMP_PORT)
+  if (STATE_IS_NON_COMP (priv->state))
     return FALSE;
   if (!(cc = MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client)))
     return FALSE;
@@ -2903,8 +2902,7 @@ void hd_render_manager_remove_input_blocker() {
    XSelectInput (xdpy, win, FocusChangeMask | ExposureMask
                  | PropertyChangeMask | ButtonPressMask | ButtonReleaseMask
                  | KeyPressMask | KeyReleaseMask | PointerMotionMask);
-   if (hd_render_manager_get_state () != HDRM_STATE_NON_COMPOSITED &&
-       hd_render_manager_get_state () != HDRM_STATE_NON_COMP_PORT)
+   if (STATE_IS_NON_COMP (hd_render_manager_get_state ()))
      /* nobody knows what this actually is, let alone why shouldn't be
       * reset in non-composited mode */
      XFixesSetWindowShapeRegion (xdpy, win, ShapeBounding, 0, 0, None);

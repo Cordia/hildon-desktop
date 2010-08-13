@@ -1,5 +1,23 @@
 2010-08-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Clean up the non-compositing code with equivalent transformations.
+
+	* src/home/hd-render-manager.h (STATE_IS_NON_COMP):
+	  Added.
+	* src/home/hd-render-manager.c:
+	  Added hd_render_manager_switch_to_composited_state().
+	  Use STATE_IS_NON_COMP().
+	* src/mb/hd-comp-mgr.canager.c:
+	  Use them.
+	* src/mb/hd-comp-mgr.canager.c:
+	  Use them.
+	* src/mb/hd-comp-mgr.canager.c (hd_comp_mgr_unredirect_topmost_client):
+	  Removed some dead code.
+	* src/mb/hd-comp-mgr.canager.c (hd_comp_mgr_client_looks_better_composited):
+	  Removed as unnecessary.  Reworked hd_comp_mgr_client_prefers_compositing().
+
+2010-08-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	Remove some dead code.
 
 	* src/mb/hd-comp-mgr.c (hd_comp_mgr_portrait_forecast):
