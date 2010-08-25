@@ -20,14 +20,18 @@
  * Written by: Chris Lord <chris@openedhand.com>
  */
 
+#include <math.h>
+
+#include <clutter/clutter.h>
+
 #include "tidy-finger-scroll.h"
 #include "tidy-enum-types.h"
 #include "tidy-marshal.h"
 #include "tidy-scroll-bar.h"
 #include "tidy-scrollable.h"
 #include "tidy-scroll-view.h"
-#include <clutter/clutter.h>
-#include <math.h>
+
+#include "util/hd-transition.h"
 
 #define TIDY_FINGER_SCROLL_INITIAL_SCROLLBAR_DELAY (2000)
 #define TIDY_FINGER_SCROLL_FADE_SCROLLBAR_IN_TIME (250)
@@ -896,8 +900,10 @@ tidy_finger_scroll_init (TidyFingerScroll *self)
   priv->motion_buffer = g_array_sized_new (FALSE, TRUE,
                                            sizeof (TidyFingerScrollMotion), 3);
   g_array_set_size (priv->motion_buffer, 3);
-  priv->decel_rate = CLUTTER_FLOAT_TO_FIXED(0.90f);
-  priv->bouncing_decel_rate = CLUTTER_FLOAT_TO_FIXED (0.7f);
+  priv->decel_rate = CLUTTER_FLOAT_TO_FIXED (
+       hd_transition_get_double("launcher", "deceleration_rate", 0.90));
+  priv->bouncing_decel_rate = CLUTTER_FLOAT_TO_FIXED (
+       hd_transition_get_double("launcher", "strong_deceleration_rate", 0.7));
 
   /*
    * @bounce_back_speed_rate :=

@@ -1,5 +1,15 @@
 2010-08-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
+	Make TidyFingerScroll::decel_rate and ::boucing_decel_rate
+	startup-time configurable.
+
+	* src/tidy/tidy-finger-scroll.c (tidy_finger_scroll_init):
+	  Read from transition.ini
+	* data/transition.ini:
+	  Add exmaple.
+
+2010-08-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
 	NB#171828 hildon-desktop in busy loop - battery empty in 8 hours
 
 	If the launcher wasn't scrollable because of the few icons the
