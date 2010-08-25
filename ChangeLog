@@ -1,3 +1,16 @@
+2010-08-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
+
+	NB#171828 hildon-desktop in busy loop - battery empty in 8 hours
+
+	If the launcher wasn't scrollable because of the few icons the
+	rubberband effect never finished because because by the time the
+	velocity dropped low enough the other boundary accelerated it
+	again in the opposite direction, making the page effectively
+	bouncing invisibly.
+
+	* src/tidy/tidy-finger-scroll.c (advance_value):
+	  Snap to the edge of the danger zones if we're near and slow enough.
+
 2010-08-13  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	This is the end, there won't be any more "upstream" development.

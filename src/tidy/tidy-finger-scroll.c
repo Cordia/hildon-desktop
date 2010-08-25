@@ -407,8 +407,9 @@ get_next_delta (TidyFingerScroll *scroll,
 
 /* Advances *@valuep by @diff and returns how much it actually advanced. */
 static ClutterFixed
-advance_value (ClutterFixed lowest, ClutterFixed *valuep, ClutterFixed diff,
-               ClutterFixed highest)
+advance_value (ClutterFixed lowest, ClutterFixed lower,
+               ClutterFixed *valuep, ClutterFixed diff,
+               ClutterFixed upper, ClutterFixed highest)
 {
   static const gboolean likeable = FALSE;
 
@@ -416,12 +417,22 @@ advance_value (ClutterFixed lowest, ClutterFixed *valuep, ClutterFixed diff,
   if (!likeable)
     {
       if (*valuep < lowest)
-        {
+        { /* Bounce back from the top. */
           diff -= *valuep - lowest;
           *valuep = lowest;
         }
+      else if (*valuep < lower && 0 < diff && diff < CFX_ONE)
+        { /* Leaving the top danger zone, snap it to the boundary. */
+          diff = 0;
+          *valuep = lower;
+        }
+      else if (*valuep > upper && -CFX_ONE < diff && diff < 0)
+        { /* Same for the bottom danger zone. */
+          diff = 0;
+          *valuep = upper;
+        }
       else if (*valuep > highest)
-        {
+        { /* Bounce back from the bottom. */
           diff -= *valuep - highest;
           *valuep = highest;
         }
@@ -468,10 +479,12 @@ deceleration_new_frame_cb (ClutterTimeline *timeline,
   for (; priv->deceleration_timeline_lastframe < frame_num;
        priv->deceleration_timeline_lastframe++)
     {
-      priv->dx = advance_value (hlowest, &hvalue, priv->dx, hhighest);
+      priv->dx = advance_value (
+                  hlowest, hlower, &hvalue, priv->dx, hupper, hhighest);
       priv->dx = get_next_delta (scroll,
                    hlowest, hlower, hvalue, priv->dx, hupper, hhighest);
-      priv->dy = advance_value (vlowest, &vvalue, priv->dy, vhighest);
+      priv->dy = advance_value (
+                  vlowest, vlower, &vvalue, priv->dy, vupper, vhighest);
       priv->dy = get_next_delta (scroll,
                    vlowest, vlower, vvalue, priv->dy, vupper, vhighest);
     }
@@ -484,7 +497,7 @@ deceleration_new_frame_cb (ClutterTimeline *timeline,
       && -CFX_ONE < priv->dy && priv->dy < CFX_ONE
       && hlower <= hvalue && hvalue <= hupper
       && -CFX_ONE < priv->dx && priv->dx < CFX_ONE)
-    /* Not in danger zone and nor moving. */
+    /* Not in danger zone and not moving. */
     deceleration_completed_cb (timeline, scroll);
   else if (clutter_timeline_get_n_frames (timeline) < frame_num+60)
     /* Extend our lifetime. */
