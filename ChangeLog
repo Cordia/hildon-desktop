@@ -1,6 +1,6 @@
 2010-08-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
-	Make TidyFingerScroll::decel_rate and ::boucing_decel_rate
+	Make TidyFingerScroll::decel_rate and ::bouncing_decel_rate
 	startup-time configurable.
 
 	* src/tidy/tidy-finger-scroll.c (tidy_finger_scroll_init):
@@ -79,7 +79,6 @@
 	  Don't relaunch if the current application is the requested one.
 	* src/home/hd-switcher.c (hd_switcher_relaunch_app):
 	  Don't postpone zooming in if already in tasw.
-
 
 2010-08-02  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
