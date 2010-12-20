@@ -901,7 +901,7 @@ tidy_finger_scroll_init (TidyFingerScroll *self)
                                            sizeof (TidyFingerScrollMotion), 3);
   g_array_set_size (priv->motion_buffer, 3);
   priv->decel_rate = CLUTTER_FLOAT_TO_FIXED (
-       hd_transition_get_double("launcher", "deceleration_rate", 0.90));
+       hd_transition_get_double("launcher", "deceleration_rate", 0.99));
   priv->bouncing_decel_rate = CLUTTER_FLOAT_TO_FIXED (
        hd_transition_get_double("launcher", "strong_deceleration_rate", 0.7));
 
