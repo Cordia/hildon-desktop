@@ -3085,10 +3085,15 @@ void hd_render_manager_remove_input_blocker() {
            /* Block status area?  If so refer to the client geometry,
             * because we might be right after a place_titlebar_elements()
             * which could just have moved it. */
-           if (priv->status_area &&
+           /* Who wants to block the status menu? 
+            * Unblock it! ~ MohammadAG*/
+           /*if (priv->status_area &&
                hd_render_manager_actor_is_visible(priv->status_area) &&
                (STATE_IS_PORTRAIT (priv->state) ||
-                 (priv->state == HDRM_STATE_APP
+                 (priv->state == HDRM_STATE_APP*/
+           if (priv->status_area &&
+               hd_render_manager_actor_is_visible(priv->status_area) &&
+               ((STATE_ONE_OF (priv->state, HDRM_STATE_APP|HDRM_STATE_APP_PORTRAIT)
                   /* FIXME: the following check does not work when there are
                    * two levels of dialogs */
                 && (priv->current_blur & (HDRM_BLUR_BACKGROUND|HDRM_BLUR_HOME))

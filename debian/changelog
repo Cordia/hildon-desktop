@@ -1,4 +1,10 @@
-hildon-desktop (1:2.2.141-2) maverick; urgency=low
+hildon-desktop (1:2.2.141-3) unstable; urgency=low
+
+  * Added portrait mode support for the status menu
+
+ -- Mohammad Abu-Garbeyyeh <mohammad@mohammad-i5laptop>  Mon, 20 Dec 2010 03:36:22 +0200
+
+hildon-desktop (1:2.2.141-2) unstable; urgency=low
 
   * Applied Matan's patches
 
