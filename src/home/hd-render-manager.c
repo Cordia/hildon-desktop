@@ -1279,6 +1279,12 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             hd_render_manager_state_str(priv->state),
             hd_render_manager_state_str(state));
 
+  if(conf_disable_edit) {
+	  if ((state==HDRM_STATE_HOME_EDIT)||(state==HDRM_STATE_HOME_EDIT)) {
+		  state=priv->state;
+	  }
+  }
+
   if (!cmgr)
   {
     g_warning("%s: HdCompMgr not defined", __FUNCTION__);
@@ -3173,3 +3179,11 @@ void hd_render_manager_remove_input_blocker() {
    /* Set the new viewport */
    hd_render_manager_set_compositor_input_viewport(region);
  }
+
+
+HdHome *
+hd_render_manager_get_home (void)
+{
+  return the_render_manager->priv->home;
+}
+

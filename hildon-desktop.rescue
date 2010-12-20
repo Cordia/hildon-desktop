@@ -1,0 +1,10 @@
+#!/bin/sh
+
+if [ -f /usr/bin/hildon-desktop.launch.orig ] ; then
+ mv /usr/bin/hildon-dekstop.launch.orig /usr/bin/hildon-desktop.launch
+ exit 0
+fi
+
+if [ -f /usr/bin/hildon-desktop.launch1 ] ; then
+ mv /usr/bin/hildon-dekstop.launch1 /usr/bin/hildon-desktop.launch
+fi

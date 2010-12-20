@@ -33,6 +33,7 @@ makebuilddir/hildon-desktop::
 
 binary-install/hildon-desktop::
 	dh_maemolauncher
+	cp src/hildon-desktop-keys.schemas debian/hildon-desktop/usr/share/gconf/schemas/
 	dh_installxsession -u 'post 20'
 	dh_installxsession --init-script='hildon-desktop-wait' -u 'post 21'
 

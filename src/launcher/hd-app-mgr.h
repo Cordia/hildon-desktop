@@ -104,6 +104,18 @@ gboolean hd_app_mgr_execute (const gchar *exec, GPid *pid, gboolean auto_reap);
 void hd_app_mgr_check_show_callui(void);
 void hd_app_mgr_mce_activate_accel_if_needed(gboolean update_portraitness);
 
+extern gboolean conf_enable_ctrl_backspace;
+extern gboolean conf_enable_preset_shift_ctrl;
+extern gboolean conf_enable_dbus_shift_ctrl;
+extern gboolean conf_enable_home_contacts_phone;
+extern gboolean conf_enable_launcher_navigator_accel;
+extern gboolean conf_enable_dbus_launcher_navigator;
+extern gboolean conf_default_launcher_positions;
+extern gboolean conf_dbus_shortcuts_use_fn;
+extern gboolean conf_dbus_ctrl_shortcuts;
+extern gint conf_ctrl_backspace_in_tasknav;
+extern gboolean conf_disable_edit;
+
 G_END_DECLS
 
 #endif /* __HD_APP_MGR_H__ */

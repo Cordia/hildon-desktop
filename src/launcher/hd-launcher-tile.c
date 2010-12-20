@@ -705,3 +705,9 @@ void hd_launcher_tile_reset(HdLauncherTile *tile, gboolean hard)
       priv->press_timeout = 0;
     }
 }
+
+void hd_launcher_tile_activate(ClutterActor       *actor)
+{
+	hd_launcher_tile_button_press(actor);
+	hd_launcher_tile_button_release(actor);
+}

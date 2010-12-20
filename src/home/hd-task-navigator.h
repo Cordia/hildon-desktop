@@ -77,5 +77,9 @@ void hd_task_navigator_add_notification    (HdTaskNavigator *self,
                                             HdNote *hdnote);
 void hd_task_navigator_remove_notification (HdTaskNavigator *self,
                                             HdNote *hdnote);
+void hd_task_navigator_activate(int x, int y, int close);
+
+void hd_task_navigator_sort_thumbs(void);
+void hd_task_navigator_rotate_thumbs(void);
 
 #endif /* ! __HD_TASK_NAVIGATOR_H__ */

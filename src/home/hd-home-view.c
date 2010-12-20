@@ -56,7 +56,7 @@
 #define GCONF_KEY_MODIFIED "/apps/osso/hildon-desktop/applets/%s/modified"
 #define GCONF_KEY_VIEW     "/apps/osso/hildon-desktop/applets/%s/view"
 
-#define MAX_VIEWS 4
+#define MAX_VIEWS 9
 
 /* Maximal pixel movement for a tap (before it is a move) */
 #define MAX_TAP_DISTANCE 20

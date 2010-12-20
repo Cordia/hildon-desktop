@@ -47,6 +47,7 @@
 #include "hd-wm.h"
 #include "hd-theme.h"
 #include "hd-util.h"
+#include "hd-dbus.h"
 #include "hd-volume-profile.h"
 #include "launcher/hd-app-mgr.h"
 #include "home/hd-render-manager.h"
@@ -63,6 +64,7 @@ enum {
   KEY_ACTION_XTERMINAL,
   KEY_ACTION_TOGGLE_PORTRAITABLE,
   KEY_ACTION_ROTATE,
+  KEY_ACTION_SEND_DBUS,
 };
 
 #ifdef MBWM_DEB_VERSION
@@ -248,8 +250,38 @@ key_binding_func (MBWindowManager   *wm,
     {
     case KEY_ACTION_TOGGLE_SWITCHER:
       /* don't go to the switcher if we are showing a system-modal */
+      if (hd_render_manager_get_state () == HDRM_STATE_TASK_NAV ) {
+          switch(conf_ctrl_backspace_in_tasknav) {
+              case 1:
+                  hd_render_manager_set_state (HDRM_STATE_HOME);
+                  break;
+              case 2:
+                  hd_render_manager_set_state (HDRM_STATE_LAUNCHER);
+                  break;
+              case 3:
+                  hd_task_navigator_activate(-2, -2, 0);
+                  break;
+              case 4:
+                  hd_task_navigator_activate(-1, -2, 0);
+                  break;
+              case 5:
+                  in_alt_tab = TRUE;
+                  hd_task_navigator_rotate_thumbs();
+                  break;
+  
+              case 0:
+              default:
+                  break;
+          }
+      } else { 
       if (!hd_wm_has_modal_blockers (hd_mb_wm))
         hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+            if(conf_ctrl_backspace_in_tasknav==5) { 
+                in_alt_tab = TRUE;
+                    hd_task_navigator_sort_thumbs();
+                hd_task_navigator_rotate_thumbs();
+            }
+      }
       break;
     case KEY_ACTION_TOGGLE_NON_COMP_MODE:
       /* printf(" ### KEY_ACTION_TOGGLE_NON_COMP_MODE ###\n"); */
@@ -287,6 +319,19 @@ key_binding_func (MBWindowManager   *wm,
         hd_transition_rotate_screen (wm, !hd_comp_mgr_is_portrait());
         break;
     }
+}
+static void
+key_binding_func_key (MBWindowManager   *wm,
+		  MBWMKeyBinding    *binding,
+		  void              *userdata)
+{
+  int action;
+  char s[32];
+
+  action = (int)(userdata);
+  sprintf(s,"%i",action);
+
+  hd_dbus_send_event (s);
 }
 
 static ClutterX11FilterReturn
@@ -532,6 +577,7 @@ main (int argc, char **argv)
   Display * dpy = NULL;
   MBWindowManager *wm;
   HdAppMgr *app_mgr;
+  char keys1[32], c; 
 
   signal (SIGUSR1, dump_debug_info_sighand);
   signal (SIGHUP,  relaunch);
@@ -612,11 +658,14 @@ main (int argc, char **argv)
   mb_wm_init (wm);
   g_assert (mb_wm_comp_mgr_enabled (wm->comp_mgr));
 
+  if(conf_enable_ctrl_backspace) {
   mb_wm_keys_binding_add_with_spec (wm,
 				    "<ctrl>BackSpace",
 				    key_binding_func,
 				    NULL,
 				    (void*)KEY_ACTION_TOGGLE_SWITCHER);
+  }
+  if(conf_enable_preset_shift_ctrl) {
   mb_wm_keys_binding_add_with_spec (wm,
 				    "<shift><ctrl>x",
 				    key_binding_func,
@@ -642,6 +691,85 @@ main (int argc, char **argv)
                                       key_binding_func,
                                       NULL,
                                       (void*)KEY_ACTION_ROTATE);
+  }
+
+  if(conf_enable_dbus_shift_ctrl) {
+      if(conf_dbus_shortcuts_use_fn) {
+          mb_wm_keys_binding_add_with_spec (wm,
+                           "<ctrl><mod5>Space",
+                           key_binding_func_key,
+                           NULL,
+                           (void*)(192+32));
+          mb_wm_keys_binding_add_with_spec (wm,
+                           "<ctrl><mod5>comma",
+                           key_binding_func_key,
+                           NULL,
+                           (void*)(192+33));
+          mb_wm_keys_binding_add_with_spec (wm,
+                           "<ctrl><mod5>period",
+                           key_binding_func_key,
+                           NULL,
+                           (void*)(192+34));
+      } else {
+          mb_wm_keys_binding_add_with_spec (wm,
+                           "<shift><ctrl>Space",
+                           key_binding_func_key,
+                           NULL,
+                           (void*)(192+32));
+          mb_wm_keys_binding_add_with_spec (wm,
+                           "<shift><ctrl>comma",
+                           key_binding_func_key,
+                           NULL,
+                           (void*)(192+33));
+          mb_wm_keys_binding_add_with_spec (wm,
+                           "<shift><ctrl>period",
+                           key_binding_func_key,
+                           NULL,
+                           (void*)(192+34));
+      }
+	  if(conf_dbus_ctrl_shortcuts) {
+		  mb_wm_keys_binding_add_with_spec (wm,
+							"<ctrl>F7",
+							key_binding_func_key,
+							NULL,
+							(void*)247);
+		  mb_wm_keys_binding_add_with_spec (wm,
+							"<ctrl>F8",
+							key_binding_func_key,
+							NULL,
+							(void*)248);
+		  mb_wm_keys_binding_add_with_spec (wm,
+						   "<ctrl>Space",
+						   key_binding_func_key,
+						   NULL,
+						   (void*)(192+36));
+		  mb_wm_keys_binding_add_with_spec (wm,
+						   "<ctrl>comma",
+						   key_binding_func_key,
+						   NULL,
+						   (void*)(192+37));
+		  mb_wm_keys_binding_add_with_spec (wm,
+						   "<ctrl>period",
+						   key_binding_func_key,
+						   NULL,
+						   (void*)(192+38));
+	  }
+
+	  if(conf_dbus_shortcuts_use_fn) {
+		  strcpy(keys1,"<ctrl><mod5>a");
+	  } else {
+		  strcpy(keys1,"<shift><ctrl>a");
+	  }
+	  for(c='a';c<='z';c++) if(!conf_enable_preset_shift_ctrl || conf_dbus_shortcuts_use_fn || ((c!='n') && (c!='p') && (c!='x') && (c!='h'))){
+		  keys1[strlen(keys1)-1]=c;
+		  mb_wm_keys_binding_add_with_spec (wm,
+						keys1,
+						key_binding_func_key,
+						NULL,
+						(void*)(192+c-'a'+1));
+	  }
+  }
+
 
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 

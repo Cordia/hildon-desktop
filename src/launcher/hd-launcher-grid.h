@@ -77,6 +77,8 @@ void          hd_launcher_grid_transition(HdLauncherGrid *grid,
 void          hd_launcher_grid_reset(HdLauncherGrid *grid, gboolean hard);
 void          hd_launcher_grid_layout(HdLauncherGrid *grid);
 
+void hd_launcher_grid_activate(ClutterActor *actor, int p);
+
 /* Fixed sizes */
 #define HD_LAUNCHER_GRID_MIN_HEIGHT \
                 (HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN)
