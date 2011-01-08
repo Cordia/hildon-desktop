@@ -16,5 +16,5 @@ gboolean hd_dbus_launch_service (DBusConnection *connection,
 				 const gchar    *interface,
 				 const gchar    *method,
 				 const gchar    *launch_param);
-void hd_dbus_send_event (char *value);
+
 #endif

@@ -103,8 +103,6 @@ void hd_home_unregister_applet (HdHome       *home,
                                 ClutterActor *applet);
 void hd_home_set_live_background (HdHome *home, MBWindowManagerClient *client);
 
-extern gboolean in_alt_tab;
-
 G_END_DECLS
 
 #endif

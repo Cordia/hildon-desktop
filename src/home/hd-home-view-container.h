@@ -23,7 +23,6 @@
 #define __HD_HOME_VIEW_CONTAINER_H__
 
 #include <clutter/clutter.h>
-#include "hd-home.h"
 #include "hd-comp-mgr.h"
 
 G_BEGIN_DECLS
@@ -85,8 +84,6 @@ hd_home_view_container_set_live_bg (HdHomeViewContainer *container,
                                     MBWindowManagerClient *client);
 MBWindowManagerClient *
 hd_home_view_container_get_live_bg (HdHomeViewContainer *container);
-
-HdHomeViewContainer *hd_home_get_view_container(HdHome *home);
 
 G_END_DECLS
 

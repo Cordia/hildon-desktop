@@ -84,8 +84,6 @@ float hd_launcher_page_get_drag_distance(HdLauncherPage *page);
 const char *hd_launcher_page_get_transition_string(
                                          HdLauncherPageTransition trans_type);
 
-void hd_launcher_page_activate(ClutterActor *actor, int p);
-
 /* Fixed sizes.
  * FIXME: These should come from getting the screen size
  */

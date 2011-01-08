@@ -21,7 +21,7 @@ hildon_desktop_CFLAGS = -std=c99 -fgnu89-inline $(MAEMO_LAUNCHER_CFLAGS)
 
 schemadir = ${datadir}/gconf/schemas
 schema_DATA = \ 
-	hildon-desktop-views.schemas hildon-desktop-keys.schemas
+	hildon-desktop-views.schemas
 
 cuddir = ${sysconfdir}/osso-cud-scripts
 cud_SCRIPTS = \

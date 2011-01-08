@@ -47,7 +47,6 @@
 #include "hd-launcher.h"
 #include "hd-launcher-tree.h"
 #include "home/hd-render-manager.h"
-#include "home/hd-home-view-container.h"
 #include "hd-transition.h"
 #include "hd-wm.h"
 
@@ -206,21 +205,6 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define GCONF_SLIDE_OPEN_KEY     "/system/osso/af/slide-open"
 #define GCONF_DISABLE_CALLUI_DIR "/apps/osso/hildon-desktop"
 #define GCONF_DISABLE_CALLUI_KEY "/apps/osso/hildon-desktop/disable_phone_gesture"
-#define GCONF_KEY_ACTIONS_DIR "/apps/osso/hildon-desktop/key-actions"
-#define GCONF_VIEWS_CURRENT_DIR "/apps/osso/hildon-desktop/views"
-#define GCONF_VIEWS_CURRENT_KEY "/apps/osso/hildon-desktop/views/current"
-
-gboolean conf_enable_ctrl_backspace;
-gboolean conf_enable_preset_shift_ctrl;
-gboolean conf_enable_dbus_shift_ctrl;
-gboolean conf_enable_home_contacts_phone;
-gboolean conf_enable_launcher_navigator_accel;
-gboolean conf_enable_dbus_launcher_navigator;
-gboolean conf_default_launcher_positions;
-gboolean conf_dbus_shortcuts_use_fn;
-gboolean conf_dbus_ctrl_shortcuts;
-gint conf_ctrl_backspace_in_tasknav; 
-gboolean conf_disable_edit;
 
 /* Forward declarations */
 static void hd_app_mgr_dispose (GObject *gobject);
@@ -442,40 +426,6 @@ hd_app_mgr_init (HdAppMgr *self)
                                hd_app_mgr_gconf_value_changed,
                                (gpointer) self,
                                NULL, NULL);
-      gconf_client_notify_add (priv->gconf_client, GCONF_KEY_ACTIONS_DIR,
-                               hd_app_mgr_gconf_value_changed,
-                               (gpointer) self,
-                               NULL, NULL);
-      gconf_client_add_dir (priv->gconf_client, GCONF_VIEWS_CURRENT_DIR,
-                            GCONF_CLIENT_PRELOAD_NONE, NULL);
-      gconf_client_notify_add (priv->gconf_client, GCONF_VIEWS_CURRENT_KEY,
-                               hd_app_mgr_gconf_value_changed,
-                               (gpointer) self,
-                               NULL, NULL);
-      if(gconf_client_dir_exists(priv->gconf_client, GCONF_KEY_ACTIONS_DIR, NULL)) {
-	      conf_enable_ctrl_backspace = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/ctrl_backspace", NULL);
-	      conf_enable_preset_shift_ctrl = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/preset_shift_ctrl", NULL);
-	      conf_enable_dbus_shift_ctrl = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/dbus_shift_ctrl", NULL);
-	      conf_enable_home_contacts_phone = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/home_contacts_phone", NULL);
-	      conf_enable_launcher_navigator_accel = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/launcher_navigator_accel", NULL);
-	      conf_enable_dbus_launcher_navigator = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/dbus_launcher_navigator", NULL);
-	      conf_default_launcher_positions = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/default_launcher_positions", NULL);
-	      conf_ctrl_backspace_in_tasknav = gconf_client_get_int(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/ctrl_backspace_in_tasknav", NULL);
-	      conf_dbus_shortcuts_use_fn = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/dbus_shortcuts_use_fn", NULL);
-	      conf_dbus_ctrl_shortcuts = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/dbus_ctrl_shortcuts", NULL);
-	      conf_disable_edit = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/disable_edit", NULL);
-      }
     }
 
   /* Start memory limits. */
@@ -2159,44 +2109,12 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
     value = gconf_value_get_bool (gvalue);
 
   if (!g_strcmp0 (gconf_entry_get_key (entry),
-                  GCONF_VIEWS_CURRENT_KEY)) {
-      HdHome * home =  hd_render_manager_get_home();
-
-      if(hd_home_view_container_get_current_view(hd_home_get_view_container(home)) != gconf_value_get_int(gvalue)-1)
-      	hd_home_view_container_set_current_view(hd_home_get_view_container(home), gconf_value_get_int(gvalue)-1);
-  }
-
-  if (!g_strcmp0 (gconf_entry_get_key (entry),
                   GCONF_SLIDE_OPEN_KEY))
     {
       priv->slide_closed = !value;
 
       hd_app_mgr_update_portraitness(self);
     }
-      if(gconf_client_dir_exists(priv->gconf_client, GCONF_KEY_ACTIONS_DIR, NULL)) {
-	      conf_enable_ctrl_backspace = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/ctrl_backspace", NULL);
-//	      conf_enable_preset_shift_ctrl = gconf_client_get_bool(priv->gconf_client, 
-//			      GCONF_KEY_ACTIONS_DIR "/preset_shift_ctrl", NULL);
-//	      conf_enable_dbus_shift_ctrl = gconf_client_get_bool(priv->gconf_client, 
-//			      GCONF_KEY_ACTIONS_DIR "/dbus_shift_ctrl", NULL);
-	      conf_enable_home_contacts_phone = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/home_contacts_phone", NULL);
-	      conf_enable_launcher_navigator_accel = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/launcher_navigator_accel", NULL);
-	      conf_enable_dbus_launcher_navigator = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/dbus_launcher_navigator", NULL);
-	      conf_default_launcher_positions = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/default_launcher_positions", NULL);
-	      conf_ctrl_backspace_in_tasknav = gconf_client_get_int(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/ctrl_backspace_in_tasknav", NULL);
-	      conf_dbus_shortcuts_use_fn = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/dbus_shortcuts_use_fn", NULL);
-	      conf_dbus_ctrl_shortcuts = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/dbus_ctrl_shortcuts", NULL);
-	      conf_disable_edit = gconf_client_get_bool(priv->gconf_client, 
-			      GCONF_KEY_ACTIONS_DIR "/disable_edit", NULL);
-      }
 
   if (!g_strcmp0 (gconf_entry_get_key (entry),
                   GCONF_DISABLE_CALLUI_KEY))

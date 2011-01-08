@@ -5,7 +5,6 @@
 #include "hd-title-bar.h"
 #include "hd-render-manager.h"
 #include "hd-volume-profile.h"
-#include "hd-task-navigator.h"
 
 #include <glib.h>
 #include <mce/dbus-names.h>
@@ -53,102 +52,6 @@ hd_dbus_signal_handler (DBusConnection *conn, DBusMessage *msg, void *data)
         hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
       return DBUS_HANDLER_RESULT_HANDLED;
     }
-  else if (dbus_message_is_signal(msg,
-                                  TASKNAV_SIGNAL_INTERFACE,
-                                  "set_state"))
-    {
-      DBusMessageIter args;
-      int sigvalue;
- 
-      if ((dbus_message_iter_init(msg, &args)) && 
-          (DBUS_TYPE_INT32 == dbus_message_iter_get_arg_type(&args))) {
-        dbus_message_iter_get_basic(&args, &sigvalue);
-	switch(sigvalue) {
-	  case HDRM_STATE_HOME :
-          case HDRM_STATE_HOME_PORTRAIT:
-          case HDRM_STATE_APP:
-          case HDRM_STATE_APP_PORTRAIT:
-          case HDRM_STATE_TASK_NAV:
-          case HDRM_STATE_LAUNCHER:
-          case HDRM_STATE_NON_COMPOSITED:
-          case HDRM_STATE_NON_COMP_PORT:
-            hd_render_manager_set_state (sigvalue);
-            break;
-        }
-        return DBUS_HANDLER_RESULT_HANDLED;
-      }
-    }
-  else if (dbus_message_is_signal(msg,
-                                  TASKNAV_SIGNAL_INTERFACE,
-                                  "activate_window"))
-    {
-      DBusMessageIter args;
-      int sigvalue;
- 
-      if ((dbus_message_iter_init(msg, &args)) && 
-          (DBUS_TYPE_INT32 == dbus_message_iter_get_arg_type(&args))) {
-        dbus_message_iter_get_basic(&args, &sigvalue);
-	hd_task_navigator_activate(sigvalue, -1, 0);
-        return DBUS_HANDLER_RESULT_HANDLED;
-      }
-    }
-  else if (dbus_message_is_signal(msg,
-                                  TASKNAV_SIGNAL_INTERFACE,
-                                  "close_window"))
-    {
-      DBusMessageIter args;
-      int sigvalue;
- 
-      if ((dbus_message_iter_init(msg, &args)) && 
-          (DBUS_TYPE_INT32 == dbus_message_iter_get_arg_type(&args))) {
-        dbus_message_iter_get_basic(&args, &sigvalue);
-	hd_task_navigator_activate(sigvalue, -1, 1);
-        return DBUS_HANDLER_RESULT_HANDLED;
-      }
-    }
-  else if (dbus_message_is_signal(msg,
-                                  TASKNAV_SIGNAL_INTERFACE,
-                                  "activate_window_time"))
-    {
-      DBusMessageIter args;
-      int sigvalue;
- 
-      if ((dbus_message_iter_init(msg, &args)) && 
-          (DBUS_TYPE_INT32 == dbus_message_iter_get_arg_type(&args))) {
-        dbus_message_iter_get_basic(&args, &sigvalue);
-	hd_task_navigator_activate(sigvalue, -2, 0);
-        return DBUS_HANDLER_RESULT_HANDLED;
-      }
-    }
-  else if (dbus_message_is_signal(msg,
-                                  TASKNAV_SIGNAL_INTERFACE,
-                                  "close_window_time"))
-    {
-      DBusMessageIter args;
-      int sigvalue;
- 
-      if ((dbus_message_iter_init(msg, &args)) && 
-          (DBUS_TYPE_INT32 == dbus_message_iter_get_arg_type(&args))) {
-        dbus_message_iter_get_basic(&args, &sigvalue);
-	hd_task_navigator_activate(sigvalue, -2, 1);
-        return DBUS_HANDLER_RESULT_HANDLED;
-      }
-    }
-  else if (dbus_message_is_signal(msg, TASKNAV_SIGNAL_INTERFACE, "launcher_activate"))
-    {
-	    DBusMessageIter args;
-	    int sigvalue;
-
-	    if ((dbus_message_iter_init(msg, &args)) && 
-			    (DBUS_TYPE_INT32 == dbus_message_iter_get_arg_type(&args))) {
-		    dbus_message_iter_get_basic(&args, &sigvalue);
-		    hd_launcher_activate(sigvalue);
-		    return DBUS_HANDLER_RESULT_HANDLED;
-	    }
-    }
-
-
-
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
@@ -344,37 +247,6 @@ hd_dbus_disable_display_blanking (gboolean setting)
       g_source_remove (timeout_f);
       timeout_f = 0;
     }
-}
-
-void hd_dbus_send_event (char *value)
-{
-  DBusMessage *msg;
-  dbus_bool_t b;
-  DBusMessageIter args;
-
-  if (sysbus_conn == NULL) {
-    g_warning ("%s: no D-Bus system bus connection", __func__);
-    return;
-  }
-  msg = dbus_message_new_signal("/com/nokia/hildon_desktop", "com.nokia.hildon_desktop", "KeyEvent");
-  if (msg == NULL) {
-    g_warning ("%s: could not create message", __func__);
-    return;
-  }
-
-  dbus_message_iter_init_append(msg, &args);
-  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &value)) { 
-    g_warning("Out Of Memory!"); 
-    return;
-  }
-
-  b = dbus_connection_send(sysbus_conn, msg, NULL);
-  if (!b) {
-    g_warning ("%s: dbus_connection_send() failed", __func__);
-  } else {
-    dbus_connection_flush(sysbus_conn);
-  }
-  dbus_message_unref(msg);
 }
 
 DBusConnection *

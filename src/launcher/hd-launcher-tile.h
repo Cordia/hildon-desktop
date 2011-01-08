@@ -76,8 +76,6 @@ ClutterActor *hd_launcher_tile_get_label (HdLauncherTile *tile);
 
 void hd_launcher_tile_reset(HdLauncherTile *tile, gboolean hard);
 
-void hd_launcher_tile_activate(ClutterActor       *actor);
-
 /* Fixed size */
 #define HD_LAUNCHER_TILE_HEIGHT (96)
 #define HD_LAUNCHER_TILE_WIDTH  (142)

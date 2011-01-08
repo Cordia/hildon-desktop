@@ -116,9 +116,6 @@ static gboolean hd_launcher_captured_event_cb (HdLauncher *launcher,
 static gboolean hd_launcher_background_clicked (HdLauncher *self,
                                                 ClutterButtonEvent *event,
                                                 gpointer *data);
-static gboolean hd_launcher_key_pressed (HdLauncher *self,
-                                                ClutterButtonEvent *event,
-                                                gpointer *data);
 static void hd_launcher_populate_tree_starting (HdLauncherTree *tree,
                                                 gpointer data);
 static void hd_launcher_populate_tree_finished (HdLauncherTree *tree,
@@ -222,8 +219,6 @@ static void hd_launcher_constructed (GObject *gobject)
                     G_CALLBACK(hd_launcher_captured_event_cb), 0);
   g_signal_connect (self, "button-release-event",
                     G_CALLBACK(hd_launcher_background_clicked), 0);
-  g_signal_connect (self, "key-pressed-event",
-                    G_CALLBACK(hd_launcher_key_pressed), 0);
 
   /* App launch transition */
   priv->launch_image = 0;
@@ -1106,27 +1101,3 @@ hd_launcher_background_clicked (HdLauncher *self,
 
   return TRUE;
 }
-
-static gboolean
-hd_launcher_key_pressed (HdLauncher *self,
-                                ClutterButtonEvent *event,
-                                gpointer *data)
-{
-//  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-
-  hd_launcher_back_button_clicked();
-
-  return TRUE;
-}
-
-void 
-hd_launcher_activate(int p) {
-	HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
-	if (hd_render_manager_get_state () != HDRM_STATE_LAUNCHER) return;
-	if(p==-1) {
-		hd_launcher_back_button_clicked();
-		return;
-	}
-	hd_launcher_page_activate(priv->active_page, p);
-}
-

@@ -443,7 +443,6 @@ typedef struct
    *                  or in the application's they belong to.
    */
   TNote               *tnote;
-  time_t last_activated;
 } Thumbnail; /* }}} */
 /* Thumbnail data structures }}} */
 
@@ -2832,7 +2831,7 @@ actor_to_client_window (ClutterActor * win, const HdCompMgrClient **hcmgrcp)
 
 /* Called when a %Thumbnail.thwin is clicked. */
 static gboolean
-appthumb_clicked (Thumbnail * apthumb)
+appthumb_clicked (const Thumbnail * apthumb)
 {
   if (hd_render_manager_get_state () != HDRM_STATE_TASK_NAV)
     /* Bloke clicked a home applet while exiting the switcher,
@@ -2853,7 +2852,6 @@ appthumb_clicked (Thumbnail * apthumb)
   else
     g_signal_emit_by_name (Navigator, "thumbnail-clicked", apthumb->apwin);
 
-  apthumb->last_activated = time(NULL);
   return TRUE;
 }
 
@@ -2944,7 +2942,6 @@ create_appthumb (ClutterActor * apwin)
   apthumb = g_new0 (Thumbnail, 1);
   apthumb->type = APPLICATION;
 
-  apthumb->last_activated = time(NULL);
   /* We're just in a MapNotify, it shouldn't happen.
    * mb_wm_object_signal_connect() will take reference
    * of apthumb->win. */
@@ -4186,82 +4183,5 @@ hd_task_navigator_new (void)
 }
 /* %HdTaskNavigator }}} */
 
-static int hd_thumb_compare (gconstpointer a, gconstpointer b)
-{
-	Thumbnail *t=(Thumbnail *)a;
-	Thumbnail *s=(Thumbnail *)b;
-	if ( (thumb_has_notification(t) || thumb_is_notification(t)) &&
-	     !(thumb_has_notification(s) || thumb_is_notification(s))) return 1;
-	if ( (thumb_has_notification(s) || thumb_is_notification(s)) &&
-	     !(thumb_has_notification(t) || thumb_is_notification(t))) return -1;
-	return s->last_activated - t->last_activated;
-}	
-
-static int hd_thumb_compare2 (gconstpointer a, gconstpointer b)
-{
-       	Thumbnail *t=(Thumbnail *)a;
-       	Thumbnail *s=(Thumbnail *)b;
-       	return t->last_activated - s->last_activated;
-}
-
-void hd_task_navigator_rotate_thumbs(void) {
-	GList *s, *t;
-	s=Thumbnails;
-	Thumbnails=g_list_remove_link(Thumbnails,s);
-	t=Thumbnails;
-	while(t && !thumb_has_notification((Thumbnail *)(t->data)) && 
-		   !thumb_is_notification((Thumbnail *)(t->data)))t=g_list_next(t);
-	if(t) {
-		Thumbnails=g_list_insert_before(Thumbnails, t, s->data);
-		g_list_free(s);
-	} else {
-		Thumbnails=g_list_concat(Thumbnails,s);
-	}
-        layout (NULL, FALSE);
-}
-void hd_task_navigator_sort_thumbs(void) {
-	GList *s, *t;
-	s=g_list_sort(g_list_copy(Thumbnails), hd_thumb_compare);
-	t=Thumbnails;
-	Thumbnails=s;
-//	Thumbnails=g_list_reverse(Thumbnails);
-	g_list_free(t);
-        layout (NULL, FALSE);
-}
-
-void hd_task_navigator_activate(int x, int y, int close) {
-	Layout lout;
-	int n;
-	GList *t;
-	if (y==-2) {
-		GList *s;
-		if(x<0)x+=NThumbnails;
-		s=g_list_sort(g_list_copy(Thumbnails), hd_thumb_compare2);
-		t=g_list_nth(s,x);
-		if(t) {
-			if(close) appthumb_close_clicked((Thumbnail *)t->data); else 
-			  if (hd_task_navigator_is_active ()) appthumb_clicked((Thumbnail *)t->data);
-		}
-		g_list_free(s);
-		return ;
-	} else 
-	if (y==-1) {
-		n=x;
-	} else {
-		calc_layout(&lout);
-		if(lout.cells_per_row<=x) return ;
-		n=y*lout.cells_per_row+x;
-	}
-	if(n>=NThumbnails) return ;
-	t=Thumbnails;
-	while((n>0) && t) {
-		t=t->next;
-		n--;
-	}
-	if(t && !n ) {
-		if(close) appthumb_close_clicked((Thumbnail *)t->data); else 
-		  if (hd_task_navigator_is_active ()) appthumb_clicked((Thumbnail *)t->data);
-	}
-}
 /* vim: set foldmethod=marker: */
 /* End of hd-task-navigator.c */
