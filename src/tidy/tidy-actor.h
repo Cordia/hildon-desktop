@@ -21,7 +21,7 @@
 #ifndef __TIDY_ACTOR_H__
 #define __TIDY_ACTOR_H__
 
-#include <clutter/clutter-actor.h>
+#include <clutter/clutter.h>
 #include <tidy/tidy-types.h>
 
 G_BEGIN_DECLS

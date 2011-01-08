@@ -2,9 +2,9 @@
 #define __TIDY_STYLE_H__
 
 #include <glib-object.h>
-#include <clutter/clutter-actor.h>
-#include <clutter/clutter-alpha.h>
-#include <clutter/clutter-timeline.h>
+#include <clutter/clutter.h>
+#include <clutter/clutter.h>
+#include <clutter/clutter.h>
 
 G_BEGIN_DECLS
 

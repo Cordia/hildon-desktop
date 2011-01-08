@@ -24,7 +24,7 @@
 #define __TIDY_ADJUSTMENT_H__
 
 #include <glib-object.h>
-#include <clutter/clutter-fixed.h>
+#include <clutter/clutter.h>
 
 G_BEGIN_DECLS
 

@@ -28,7 +28,7 @@
 #include <glib-object.h>
 #include <X11/Xlib.h>
 
-#include <clutter/clutter-group.h>
+#include <clutter/clutter.h>
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-wm-client.h>
 

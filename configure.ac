@@ -73,7 +73,7 @@ fi
 
 # do we want a11y support?
 AC_ARG_ENABLE(a11y,
-             [  --enable-a11y   Enable Accessibility (requires cail) [default=no]],
+             [  --enable-a11y   Enable Accessibility (requires cally) [default=no]],
              [ac_cv_enable_a11y=$enableval],[ac_cv_enable_a11y=no])
 
 AC_MSG_CHECKING([whether to enable a11y])
@@ -83,12 +83,12 @@ if test "$ac_cv_enable_a11y" = yes; then
        ac_cv_enable_a11y=no
        if test "x$PKG_CONFIG" != "xno"; then
          echo "ac_cv_enable_a11y: Have pkg-config: $PKG_CONFIG"
-         if $PKG_CONFIG --exists cail; then
-           echo "ac_cv_enable_a11y: pkg-config says cail exists"
+         if $PKG_CONFIG --exists cally-1.0; then
+           echo "ac_cv_enable_a11y: pkg-config says cally-1.0 exists"
            ac_cv_enable_a11y=yes ;
            echo "ac_cv_enable_a11y: Turned on."
          else
-           echo "ac_cv_enable_a11y: $PKG_CONFIG --exists cail failed"
+           echo "ac_cv_enable_a11y: $PKG_CONFIG --exists cally-1.0 failed"
          fi
        else
          echo "ac_cv_enable_a11y: Do not have pkg-config: $PKG_CONFIG"
@@ -96,7 +96,7 @@ if test "$ac_cv_enable_a11y" = yes; then
 fi
 if test "$ac_cv_enable_a11y" = yes; then
        AC_MSG_RESULT(yes)
-       PKG_CHECK_MODULES(HDA, cail)
+       PKG_CHECK_MODULES(HDA, cally-1.0)
        AC_SUBST(HDA_LIBS)
        AC_SUBST(HDA_CFLAGS)
        A11Y_DIR="a11y"
@@ -116,49 +116,49 @@ if test "$ac_cv_enable_static_mb2" = yes; then
         PKG_CHECK_MODULES([MB2], [libmatchbox2-0.1])
         MB2_STATIC_LIB=/usr/lib/libmatchbox2-0.1.a
 
-        PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
+        PKG_CHECK_MODULES(HD, [clutter-1.0 dnl
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
-		       dbus-1 dnl
-		       x11 dnl
-		       xcomposite dnl
-		       xfixes dnl
-		       xrandr dnl
-		       gtk+-2.0 dnl
-		       gconf-2.0 dnl
-		       hildon-1 dnl
-		       libhildondesktop-1 dnl
-		       libcanberra dnl
-		       gnome-vfs-2.0 dnl
-		       libgnome-menu dnl
-		       gdk-pixbuf-xlib-2.0 dnl
+                       dbus-1 dnl
+                       x11 dnl
+                       xcomposite dnl
+                       xfixes dnl
+                       xrandr dnl
+                       gtk+-2.0 dnl
+                       gconf-2.0 dnl
+                       hildon-1 dnl
+                       libhildondesktop-1 dnl
+                       libcanberra dnl
+                       gnome-vfs-2.0 dnl
+                       libgnome-menu dnl
+                       gdk-pixbuf-xlib-2.0 dnl
                        pangoxft dnl
                        xft dnl
-                       profile dnl
-                       mce])
+                       dnl MAEGO_DISABLED dsme
+                       ])
 else
         MB2_CFLAGS=''
         MB2_STATIC_LIB=''
-        PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
+        PKG_CHECK_MODULES(HD, [clutter-1.0 dnl
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
-		       dbus-1 dnl
-		       x11 dnl
-		       xcomposite dnl
-		       xfixes dnl
-		       xrandr dnl
-		       gtk+-2.0 dnl
-		       gconf-2.0 dnl
-		       hildon-1 dnl
-		       libhildondesktop-1 dnl
-		       libcanberra dnl
-		       gnome-vfs-2.0 dnl
-		       libgnome-menu dnl
-		       gdk-pixbuf-xlib-2.0 dnl
+                       dbus-1 dnl
+                       x11 dnl
+                       xcomposite dnl
+                       xfixes dnl
+                       xrandr dnl
+                       gtk+-2.0 dnl
+                       gconf-2.0 dnl
+                       hildon-1 dnl
+                       libhildondesktop-1 dnl
+                       libcanberra dnl
+                       gnome-vfs-2.0 dnl
+                       libgnome-menu dnl
+                       gdk-pixbuf-xlib-2.0 dnl
                        xft dnl
                        libmatchbox2-0.1 dnl
-                       profile dnl
-                       mce])
+                       dnl MAEGO_DISABLED dsme
+                       ])
 fi
 
 HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util -I$(top_srcdir)/src/a11y'

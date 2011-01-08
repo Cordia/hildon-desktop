@@ -32,7 +32,7 @@
 #ifndef __HD_LAUNCHER_GRID_H__
 #define __HD_LAUNCHER_GRID_H__
 
-#include <clutter/clutter-actor.h>
+#include <clutter/clutter.h>
 #include "hd-launcher-tile.h"
 #include "hd-launcher-page.h"
 

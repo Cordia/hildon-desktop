@@ -28,7 +28,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#include <clutter/clutter-group.h>
+#include <clutter/clutter.h>
 
 #include "mb/hd-note.h"
 

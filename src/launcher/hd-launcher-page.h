@@ -28,7 +28,7 @@
 #ifndef __HD_LAUNCHER_PAGE_H__
 #define __HD_LAUNCHER_PAGE_H__
 
-#include <clutter/clutter-actor.h>
+#include <clutter/clutter.h>
 #include "hd-launcher-tile.h"
 
 G_BEGIN_DECLS

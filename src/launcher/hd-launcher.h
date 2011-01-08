@@ -32,7 +32,7 @@
 #define __HD_LAUNCHER_H__
 
 #include <glib-object.h>
-#include <clutter/clutter-actor.h>
+#include <clutter/clutter.h>
 
 #include "hd-app-mgr.h"
 #include "hd-launcher-app.h"

@@ -1,8 +1,7 @@
 #ifndef TIDYCACHEDGROUP_H_
 #define TIDYCACHEDGROUP_H_
 
-#include <clutter/clutter-group.h>
-#include <clutter/clutter-types.h>
+#include <clutter/clutter.h>
 
 G_BEGIN_DECLS
 

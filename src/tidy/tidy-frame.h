@@ -23,7 +23,7 @@
 #ifndef __TIDY_FRAME_H__
 #define __TIDY_FRAME_H__
 
-#include <clutter/clutter-actor.h>
+#include <clutter/clutter.h>
 #include <tidy/tidy-actor.h>
 
 G_BEGIN_DECLS

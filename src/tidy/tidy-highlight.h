@@ -26,8 +26,8 @@
 #ifndef _HAVE_TIDY_HIGHLIGHT_H
 #define _HAVE_TIDY_HIGHLIGHT_H
 
-#include <clutter/clutter-actor.h>
-#include <clutter/clutter-texture.h>
+#include <clutter/clutter.h>
+#include <clutter/clutter.h>
 
 G_BEGIN_DECLS
 
