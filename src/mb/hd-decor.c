@@ -271,27 +271,29 @@ hd_decor_create_actors(HdDecor *decor)
     {
       const char* title = mb_wm_client_get_name (client);
       if (title && strlen(title)) {
-        ClutterLabel *bar_title;
+        ClutterText *bar_title;
         ClutterColor default_color = { 0xFF, 0xFF, 0xFF, 0xFF };
+        CoglColor fg_color;
         char font_name[512];
-        guint w = 0, h = 0;
+        gfloat w = 0, h = 0;
         int screen_width_avail = hd_comp_mgr_get_current_screen_width ();
         if (is_waiting)
           screen_width_avail -= HD_THEME_IMG_PROGRESS_SIZE+
                                 HD_TITLE_BAR_PROGRESS_MARGIN;
 
         hd_gtk_style_get_fg_color(HD_GTK_BUTTON_SINGLETON,
-                                  GTK_STATE_NORMAL, &default_color);
+                                  GTK_STATE_NORMAL, &fg_color);
+        hd_cogl_color_to_clutter_color(&fg_color, &default_color);
 
         /* TODO: handle it so that _NET_WM_NAME has pure UTF-8 and no markup,
          * and _HILDON_WM_NAME has UTF-8 + Pango markup. If _HILDON_WM_NAME
          * is there, it is used, otherwise use the traditional properties. */
-        bar_title = CLUTTER_LABEL(clutter_label_new());
-        clutter_label_set_color(bar_title, &default_color);
+        bar_title = CLUTTER_TEXT(clutter_text_new());
+        clutter_text_set_color(bar_title, &default_color);
 
         /* set Pango markup only if the string is XML fragment */
         if (client->window->name_has_markup)
-          clutter_label_set_use_markup(bar_title, TRUE);
+          clutter_text_set_use_markup(bar_title, TRUE);
 
         decor->title_actor = CLUTTER_ACTOR(bar_title);
         clutter_container_add_actor(CLUTTER_CONTAINER(actor),
@@ -301,14 +303,14 @@ hd_decor_create_actors(HdDecor *decor)
                   d->font_family ? d->font_family : "Sans",
                   d->font_size ? d->font_size : 18,
                   d->font_units == MBWMXmlFontUnitsPoints ? "" : "px");
-        clutter_label_set_font_name(bar_title, font_name);
-        clutter_label_set_text(bar_title, title);
+        clutter_text_set_font_name(bar_title, font_name);
+        clutter_text_set_text(bar_title, title);
 
         clutter_actor_get_size(CLUTTER_ACTOR(bar_title), &w, &h);
         /* if it's too big, make sure we crop it */
         if (w > screen_width_avail)
           {
-            clutter_label_set_ellipsize(bar_title, PANGO_ELLIPSIZE_NONE);
+            clutter_text_set_ellipsize(bar_title, PANGO_ELLIPSIZE_NONE);
             clutter_actor_set_width(CLUTTER_ACTOR(bar_title),
                                     screen_width_avail);
             clutter_actor_set_clip(CLUTTER_ACTOR(bar_title),
@@ -352,8 +354,8 @@ hd_decor_create_actors(HdDecor *decor)
           HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE);
       /* Get the timeline and set it running */
       decor->progress_timeline = g_object_ref(
-          clutter_timeline_new(HD_THEME_IMG_PROGRESS_FRAMES,
-                               HD_THEME_IMG_PROGRESS_FPS));
+          clutter_timeline_new(HD_THEME_IMG_PROGRESS_FRAMES * 1000
+                               / HD_THEME_IMG_PROGRESS_FPS));
       clutter_timeline_set_loop(decor->progress_timeline, TRUE);
       g_signal_connect (decor->progress_timeline, "new-frame",
                         G_CALLBACK (on_decor_progress_timeline_new_frame),

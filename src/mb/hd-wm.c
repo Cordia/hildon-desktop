@@ -38,8 +38,7 @@
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/client-types/mb-wm-client-desktop.h>
 
-#include <clutter/clutter-main.h>
-#include <clutter/x11/clutter-x11.h>
+#include <clutter/clutter.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
@@ -525,9 +524,9 @@ hd_wm_close_modal_blockers (const MBWindowManager *wm)
       if (hd_util_client_has_modal_blocker (client))
         {
 	  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
-          if (!(c_type == MBWMClientTypeMenu ||
-                c_type == HdWmClientTypeAppMenu ||
-                c_type == HdWmClientTypeStatusMenu)
+          if (!(c_type == (MBWMClientType) MBWMClientTypeMenu ||
+                c_type == (MBWMClientType) HdWmClientTypeAppMenu ||
+                c_type == (MBWMClientType) HdWmClientTypeStatusMenu)
               && !hd_wm_is_fkb (client)) 
             /* a real blocker that cannot be deleted */
 	    return FALSE;

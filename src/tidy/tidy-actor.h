@@ -77,11 +77,11 @@ void       tidy_actor_get_alignment  (TidyActor         *actor,
                                       gdouble           *x_align,
                                       gdouble           *y_align);
 void       tidy_actor_set_alignmentx (TidyActor         *actor,
-                                      ClutterFixed       x_align,
-                                      ClutterFixed       y_align);
+                                      CoglFixed       x_align,
+                                      CoglFixed       y_align);
 void       tidy_actor_get_alignmentx (TidyActor         *actor,
-                                      ClutterFixed      *x_align,
-                                      ClutterFixed      *y_align);
+                                      CoglFixed      *x_align,
+                                      CoglFixed      *y_align);
 
 G_END_DECLS
 

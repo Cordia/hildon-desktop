@@ -100,7 +100,7 @@ typedef struct
    *
    * These variables are used as a means of communication between
    * hsg_scroll_viewport() and hsg_tick():
-   * @manual_scroll_from: #ClutterFixed pixel number of the starting
+   * @manual_scroll_from: #CoglFixed pixel number of the starting
    *                      point of manual scrolling.
    * @manual_scroll_to:   Likewise for the destination pixel.
    * @on_manual_scroll_complete, @on_manual_scroll_complete_param:
@@ -117,10 +117,12 @@ typedef struct
   gboolean                  can_scroll;
   TidyAdjustment           *adjustment;
   ClutterTimeline          *manual_scroll_timeline;
-  ClutterFixed              manual_scroll_from, manual_scroll_to;
+  CoglFixed              manual_scroll_from, manual_scroll_to;
+#ifdef MAEGO_DISABLED
   ClutterEffectCompleteFunc on_manual_scroll_complete;
+#endif
   gpointer                  on_manual_scroll_complete_param;
-  ClutterFixed              new_upper;
+  CoglFixed              new_upper;
 } HdScrollableGroupDirectionInfo;
 
 typedef struct
@@ -202,7 +204,7 @@ hd_scrollable_group_parent_changed (ClutterActor * actor,
                                     ClutterActor * unused)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (actor);
-  ClutterFixed width, height;
+  gfloat width, height;
   ClutterActor *parent;
 
   /*
@@ -216,10 +218,7 @@ hd_scrollable_group_parent_changed (ClutterActor * actor,
   width = height = 0;
   parent = clutter_actor_get_parent(actor);
   if (parent)
-    clutter_actor_get_size (parent,
-                            (guint *)&width, (guint *)&height);
-  width  = CLUTTER_INT_TO_FIXED (width);
-  height = CLUTTER_INT_TO_FIXED (height);
+    clutter_actor_get_size (parent, &width, &height);
   tidy_adjustment_set_valuesx (priv->horizontal.adjustment,
                                0, 0, width, 1, 1, width);
   tidy_adjustment_set_valuesx (priv->vertical.adjustment,
@@ -252,7 +251,7 @@ hd_scrollable_group_tick (ClutterTimeline * timeline, guint current,
 {
   guint max;
 
-  max = clutter_timeline_get_n_frames (timeline);
+  max = clutter_timeline_get_duration (timeline);
   if (current < max)
     {
       gdouble t, diff;
@@ -273,19 +272,21 @@ hd_scrollable_group_tick (ClutterTimeline * timeline, guint current,
        * 0..t_now.
        */
       t = (gdouble) current / max;
-      diff = CLUTTER_FIXED_TO_INT (
+      diff = COGL_FIXED_TO_INT (
           dir->manual_scroll_to - dir->manual_scroll_from);
       diff *= (1 - cos (t * M_PI)) / 2.0;
       tidy_adjustment_set_valuex (dir->adjustment,
                                   dir->manual_scroll_from +
-                                    CLUTTER_FLOAT_TO_FIXED (diff));
+                                    COGL_FIXED_FROM_FLOAT (diff));
     }
   else
     { /* Make sure we land at @manual_scroll_to at the end. */
       tidy_adjustment_set_valuex (dir->adjustment, dir->manual_scroll_to);
+#ifdef MAEGO_DISABLED
       if (dir->on_manual_scroll_complete)
         dir->on_manual_scroll_complete (CLUTTER_ACTOR (dir->self),
                                         dir->on_manual_scroll_complete_param);
+#endif
     }
 
   return TRUE;
@@ -323,7 +324,7 @@ guint
 hd_scrollable_group_get_viewport_x (HdScrollableGroup * self)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
-  return CLUTTER_FIXED_TO_INT (
+  return COGL_FIXED_TO_INT (
       tidy_adjustment_get_valuex (priv->horizontal.adjustment));
 }
 
@@ -333,7 +334,7 @@ guint
 hd_scrollable_group_get_viewport_y (HdScrollableGroup * self)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
-  return CLUTTER_FIXED_TO_INT (
+  return COGL_FIXED_TO_INT (
       tidy_adjustment_get_valuex (priv->vertical.adjustment));
 }
 
@@ -343,7 +344,7 @@ hd_scrollable_group_set_viewport_x (HdScrollableGroup * self, guint x)
 { /* tidy_adjustment_set_valuex() takes care of proper clamping. */
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
   tidy_adjustment_set_valuex (priv->horizontal.adjustment,
-                              CLUTTER_INT_TO_FIXED (x));
+                              COGL_FIXED_FROM_INT (x));
 }
 
 /* Move the viewport vertically. */
@@ -352,7 +353,7 @@ hd_scrollable_group_set_viewport_y (HdScrollableGroup * self, guint y)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
   tidy_adjustment_set_valuex (priv->vertical.adjustment,
-                              CLUTTER_INT_TO_FIXED (y));
+                              COGL_FIXED_FROM_INT (y));
 }
 
 /*
@@ -363,6 +364,7 @@ hd_scrollable_group_set_viewport_y (HdScrollableGroup * self, guint y)
  * TODO Once scrolling is in progress for a direction you should not attempt
  *      to scroll in the same direction until the first one completes.
  */
+#ifdef MAEGO_DISABLED
 void
 hd_scrollable_group_scroll_viewport (HdScrollableGroup * self,
                                      HdScrollableGroupDirection which,
@@ -372,8 +374,8 @@ hd_scrollable_group_scroll_viewport (HdScrollableGroup * self,
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
   HdScrollableGroupDirectionInfo *dir;
-  guint fps, pps;
-  ClutterFixed upper, page;
+  guint duration;
+  CoglFixed upper, page;
 
   /* We could use #TidyAdjustment's interpolation function
    * but we don't because that one does a simple linear
@@ -389,8 +391,8 @@ hd_scrollable_group_scroll_viewport (HdScrollableGroup * self,
   tidy_adjustment_get_valuesx (dir->adjustment, &dir->manual_scroll_from,
                                NULL, &upper, NULL, NULL, &page);
   dir->manual_scroll_to = is_relative
-      ? dir->manual_scroll_from + CLUTTER_INT_TO_FIXED (diff)
-      :                           CLUTTER_INT_TO_FIXED (diff);
+      ? dir->manual_scroll_from + COGL_FIXED_FROM_INT (diff)
+      :                           COGL_FIXED_FROM_INT (diff);
   if (dir->manual_scroll_to > upper - page)
     /* Confine the destination within the bounds. */
     dir->manual_scroll_to = upper - page;
@@ -407,15 +409,14 @@ hd_scrollable_group_scroll_viewport (HdScrollableGroup * self,
   /* Calculate the number of frames of the scolling effect.
    * This is a linear function of the pixels we need to move by. */
   if (!is_relative)
-    diff = CLUTTER_FIXED_TO_INT (
+    diff = COGL_FIXED_TO_INT (
         dir->manual_scroll_to - dir->manual_scroll_from);
   if (diff < 0)
     diff = -diff;
-  fps = clutter_timeline_get_speed (dir->manual_scroll_timeline);
-  pps = MANUAL_SCROLL_PPS;
-  clutter_timeline_set_n_frames (dir->manual_scroll_timeline,
+  duration = diff * 1000 / MANUAL_SCROLL_PPS;
+  clutter_timeline_set_duration (dir->manual_scroll_timeline,
                                  /* Needs to last for one frame at least. */
-                                 diff * fps > pps ? diff * fps / pps : 1);
+                                 duration > 1000/60 ? duration : 1000/60);
 
   dir->on_manual_scroll_complete = fun;
   dir->on_manual_scroll_complete_param = funparam;
@@ -435,7 +436,7 @@ static void
 hd_scrollable_group_set_new_upper (HdScrollableGroup * self,
                                    HdScrollableGroupDirectionInfo * dir)
 {
-  ClutterFixed current, lower, stepinc, pageinc, pagesize;
+  CoglFixed current, lower, stepinc, pageinc, pagesize;
 
   tidy_adjustment_get_valuesx (dir->adjustment,
                                &current, &lower, NULL, &stepinc, &pageinc,
@@ -444,6 +445,7 @@ hd_scrollable_group_set_new_upper (HdScrollableGroup * self,
                                dir->new_upper, stepinc, pageinc, pagesize);
   dir->can_scroll = dir->new_upper > pagesize;
 }
+#endif
 
 /* Tells us just how large the scrollable area is in a direction. */
 void
@@ -453,31 +455,35 @@ hd_scrollable_group_set_real_estate (HdScrollableGroup * self,
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
   HdScrollableGroupDirectionInfo *dir;
-  ClutterFixed current, lower, stepinc, pageinc, pagesize;
+  CoglFixed current, lower, stepinc, pageinc, pagesize;
 
   dir = which == HD_SCROLLABLE_GROUP_HORIZONTAL
     ? &priv->horizontal : &priv->vertical;
   tidy_adjustment_get_valuesx (dir->adjustment, &current, &lower, NULL,
                                &stepinc, &pageinc, &pagesize);
-  upper = CLUTTER_INT_TO_FIXED (upper);
+  upper = COGL_FIXED_FROM_INT (upper);
 
   if (upper < pagesize)
     { /* Invariant #1 violated, align with the top. */
       dir->new_upper = pagesize;
+#ifdef MAEGO_DISABLED
       hd_scrollable_group_scroll_viewport (self, which, FALSE, 0,
                                            (ClutterEffectCompleteFunc)
                                            hd_scrollable_group_set_new_upper,
                                            dir);
+#endif
       return;
     }
   else if (upper < current + pagesize)
     { /* Invariant #2 violated, align with the bottom. */
       dir->new_upper = upper;
+#ifdef MAEGO_DISABLED
       hd_scrollable_group_scroll_viewport (self, which, FALSE,
-                                           CLUTTER_FIXED_TO_INT (upper - pagesize),
+                                           COGL_FIXED_TO_INT (upper - pagesize),
                                            (ClutterEffectCompleteFunc)
                                            hd_scrollable_group_set_new_upper,
                                            dir);
+#endif
       return;
     }
 
@@ -579,8 +585,7 @@ setup_direction (HdScrollableGroup * self,
                             G_CALLBACK (hd_scrollable_group_adjval_changed),
                             self);
 
-  dir->manual_scroll_timeline = clutter_timeline_new (1,
-                                     clutter_get_default_frame_rate ());
+  dir->manual_scroll_timeline = clutter_timeline_new (1000);
   g_signal_connect (dir->manual_scroll_timeline, "new-frame",
                     G_CALLBACK (hd_scrollable_group_tick), dir);
 }

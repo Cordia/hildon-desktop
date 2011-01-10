@@ -48,4 +48,8 @@ HdKeyFrameList *hd_key_frame_list_create(const char *keys);
 void hd_key_frame_list_free(HdKeyFrameList *k);
 float hd_key_frame_interpolate(HdKeyFrameList *k, float x);
 
+/* Color representation translations */
+void hd_cogl_color_to_clutter_color(CoglColor *cogl_color,
+                                    ClutterColor *clutter_color);
+
 #endif

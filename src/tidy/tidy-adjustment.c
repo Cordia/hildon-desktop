@@ -25,8 +25,7 @@
 #endif
 
 #include <glib-object.h>
-#include <clutter/clutter-fixed.h>
-#include <clutter/clutter-timeline.h>
+#include <clutter/clutter.h>
 
 #include "tidy-adjustment.h"
 #include "tidy-marshal.h"
@@ -38,19 +37,19 @@ G_DEFINE_TYPE (TidyAdjustment, tidy_adjustment, G_TYPE_OBJECT)
 
 struct _TidyAdjustmentPrivate
 {
-  ClutterFixed lower;
-  ClutterFixed upper;
-  ClutterFixed value;
-  ClutterFixed step_increment;
-  ClutterFixed page_increment;
-  ClutterFixed page_size;
-  ClutterFixed skirt_p, skirt;
+  CoglFixed lower;
+  CoglFixed upper;
+  CoglFixed value;
+  CoglFixed step_increment;
+  CoglFixed page_increment;
+  CoglFixed page_size;
+  CoglFixed skirt_p, skirt;
 
   /* For interpolation */
   ClutterTimeline *interpolation;
-  ClutterFixed     dx;
-  ClutterFixed     old_position;
-  ClutterFixed     new_position;
+  CoglFixed     dx;
+  CoglFixed     old_position;
+  CoglFixed     new_position;
 };
 
 enum
@@ -96,27 +95,27 @@ tidy_adjustment_get_property (GObject    *object,
   switch (prop_id)
     {
     case PROP_LOWER:
-      g_value_set_double (value, CLUTTER_FIXED_TO_DOUBLE (priv->lower));
+      g_value_set_double (value, COGL_FIXED_TO_FLOAT (priv->lower));
       break;
 
     case PROP_UPPER:
-      g_value_set_double (value, CLUTTER_FIXED_TO_DOUBLE (priv->upper));
+      g_value_set_double (value, COGL_FIXED_TO_FLOAT (priv->upper));
       break;
 
     case PROP_VALUE:
-      g_value_set_double (value, CLUTTER_FIXED_TO_DOUBLE (priv->value));
+      g_value_set_double (value, COGL_FIXED_TO_FLOAT (priv->value));
       break;
 
     case PROP_STEP_INC:
-      g_value_set_double (value, CLUTTER_FIXED_TO_DOUBLE (priv->step_increment));
+      g_value_set_double (value, COGL_FIXED_TO_FLOAT (priv->step_increment));
       break;
 
     case PROP_PAGE_INC:
-      g_value_set_double (value, CLUTTER_FIXED_TO_DOUBLE (priv->page_increment));
+      g_value_set_double (value, COGL_FIXED_TO_FLOAT (priv->page_increment));
       break;
 
     case PROP_PAGE_SIZE:
-      g_value_set_double (value, CLUTTER_FIXED_TO_DOUBLE (priv->page_size));
+      g_value_set_double (value, COGL_FIXED_TO_FLOAT (priv->page_size));
       break;
 
     default:
@@ -287,12 +286,12 @@ tidy_adjustment_new (gdouble value,
 }
 
 TidyAdjustment *
-tidy_adjustment_newx (ClutterFixed value,
-                      ClutterFixed lower,
-                      ClutterFixed upper,
-                      ClutterFixed step_increment,
-                      ClutterFixed page_increment,
-                      ClutterFixed page_size)
+tidy_adjustment_newx (CoglFixed value,
+                      CoglFixed lower,
+                      CoglFixed upper,
+                      CoglFixed step_increment,
+                      CoglFixed page_increment,
+                      CoglFixed page_size)
 {
   TidyAdjustment *retval;
   TidyAdjustmentPrivate *priv;
@@ -310,7 +309,7 @@ tidy_adjustment_newx (ClutterFixed value,
   return retval;
 }
 
-ClutterFixed
+CoglFixed
 tidy_adjustment_get_valuex (TidyAdjustment *adjustment)
 {
   TidyAdjustmentPrivate *priv;
@@ -333,12 +332,12 @@ tidy_adjustment_get_value (TidyAdjustment *adjustment)
 {
   g_return_val_if_fail (TIDY_IS_ADJUSTMENT (adjustment), 0.0);
 
-  return CLUTTER_FIXED_TO_FLOAT (adjustment->priv->value);
+  return COGL_FIXED_TO_FLOAT (adjustment->priv->value);
 }
 
 void
 tidy_adjustment_set_valuex (TidyAdjustment *adjustment,
-                            ClutterFixed    value)
+                            CoglFixed    value)
 {
   TidyAdjustmentPrivate *priv;
   
@@ -363,13 +362,13 @@ void
 tidy_adjustment_set_value (TidyAdjustment *adjustment,
                            gdouble         value)
 {
-  tidy_adjustment_set_valuex (adjustment, CLUTTER_FLOAT_TO_FIXED (value));
+  tidy_adjustment_set_valuex (adjustment, COGL_FIXED_FROM_FLOAT (value));
 }
 
 void
 tidy_adjustment_clamp_pagex (TidyAdjustment *adjustment,
-                             ClutterFixed    lower,
-                             ClutterFixed    upper)
+                             CoglFixed    lower,
+                             CoglFixed    upper)
 {
   gboolean changed;
   TidyAdjustmentPrivate *priv;
@@ -409,8 +408,8 @@ tidy_adjustment_clamp_page (TidyAdjustment *adjustment,
                             gdouble         upper)
 {
   tidy_adjustment_clamp_pagex (adjustment,
-                               CLUTTER_FLOAT_TO_FIXED (lower),
-                               CLUTTER_FLOAT_TO_FIXED (upper));
+                               COGL_FIXED_FROM_FLOAT (lower),
+                               COGL_FIXED_FROM_FLOAT (upper));
 }
 
 static void
@@ -418,7 +417,7 @@ tidy_adjustment_set_lower (TidyAdjustment *adjustment,
                            gdouble         lower)
 {
   TidyAdjustmentPrivate *priv = adjustment->priv;
-  ClutterFixed value = CLUTTER_FLOAT_TO_FIXED (lower);
+  CoglFixed value = COGL_FIXED_FROM_FLOAT (lower);
   
   if (priv->lower != value)
     {
@@ -437,7 +436,7 @@ tidy_adjustment_set_upper (TidyAdjustment *adjustment,
                            gdouble         upper)
 {
   TidyAdjustmentPrivate *priv = adjustment->priv;
-  ClutterFixed value = CLUTTER_FLOAT_TO_FIXED (upper);
+  CoglFixed value = COGL_FIXED_FROM_FLOAT (upper);
   
   if (priv->upper != value)
     {
@@ -456,7 +455,7 @@ tidy_adjustment_set_step_increment (TidyAdjustment *adjustment,
                                     gdouble         step)
 {
   TidyAdjustmentPrivate *priv = adjustment->priv;
-  ClutterFixed value = CLUTTER_FLOAT_TO_FIXED (step);
+  CoglFixed value = COGL_FIXED_FROM_FLOAT (step);
   
   if (priv->step_increment != value)
     {
@@ -473,7 +472,7 @@ tidy_adjustment_set_page_increment (TidyAdjustment *adjustment,
                                     gdouble        page)
 {
   TidyAdjustmentPrivate *priv = adjustment->priv;
-  ClutterFixed value = CLUTTER_FLOAT_TO_FIXED (page);
+  CoglFixed value = COGL_FIXED_FROM_FLOAT (page);
 
   if (priv->page_increment != value)
     {
@@ -490,7 +489,7 @@ tidy_adjustment_set_page_size (TidyAdjustment *adjustment,
                                gdouble         size)
 {
   TidyAdjustmentPrivate *priv = adjustment->priv;
-  ClutterFixed value = CLUTTER_FLOAT_TO_FIXED (size);
+  CoglFixed value = COGL_FIXED_FROM_FLOAT (size);
 
   if (priv->page_size != value)
     {
@@ -506,12 +505,12 @@ tidy_adjustment_set_page_size (TidyAdjustment *adjustment,
 
 void
 tidy_adjustment_set_valuesx (TidyAdjustment *adjustment,
-                             ClutterFixed    value,
-                             ClutterFixed    lower,
-                             ClutterFixed    upper,
-                             ClutterFixed    step_increment,
-                             ClutterFixed    page_increment,
-                             ClutterFixed    page_size)
+                             CoglFixed    value,
+                             CoglFixed    lower,
+                             CoglFixed    upper,
+                             CoglFixed    step_increment,
+                             CoglFixed    page_increment,
+                             CoglFixed    page_size)
 {
   TidyAdjustmentPrivate *priv;
   gboolean emit_changed = FALSE;
@@ -584,22 +583,22 @@ tidy_adjustment_set_values (TidyAdjustment *adjustment,
                             gdouble         page_size)
 {
   tidy_adjustment_set_valuesx (adjustment,
-                               CLUTTER_FLOAT_TO_FIXED (value),
-                               CLUTTER_FLOAT_TO_FIXED (lower),
-                               CLUTTER_FLOAT_TO_FIXED (upper),
-                               CLUTTER_FLOAT_TO_FIXED (step_increment),
-                               CLUTTER_FLOAT_TO_FIXED (page_increment),
-                               CLUTTER_FLOAT_TO_FIXED (page_size));
+                               COGL_FIXED_FROM_FLOAT (value),
+                               COGL_FIXED_FROM_FLOAT (lower),
+                               COGL_FIXED_FROM_FLOAT (upper),
+                               COGL_FIXED_FROM_FLOAT (step_increment),
+                               COGL_FIXED_FROM_FLOAT (page_increment),
+                               COGL_FIXED_FROM_FLOAT (page_size));
 }
 
 void
 tidy_adjustment_get_valuesx (TidyAdjustment *adjustment,
-                             ClutterFixed   *value,
-                             ClutterFixed   *lower,
-                             ClutterFixed   *upper,
-                             ClutterFixed   *step_increment,
-                             ClutterFixed   *page_increment,
-                             ClutterFixed   *page_size)
+                             CoglFixed   *value,
+                             CoglFixed   *lower,
+                             CoglFixed   *upper,
+                             CoglFixed   *step_increment,
+                             CoglFixed   *page_increment,
+                             CoglFixed   *page_size)
 {
   TidyAdjustmentPrivate *priv;
   
@@ -642,29 +641,29 @@ tidy_adjustment_get_values (TidyAdjustment *adjustment,
   priv = adjustment->priv;
   
   if (lower)
-    *lower = CLUTTER_FIXED_TO_DOUBLE (priv->lower);
+    *lower = COGL_FIXED_TO_FLOAT (priv->lower);
 
   if (upper)
-    *upper = CLUTTER_FIXED_TO_DOUBLE (priv->upper);
+    *upper = COGL_FIXED_TO_FLOAT (priv->upper);
 
   if (value)
-    *value = CLUTTER_FIXED_TO_DOUBLE (tidy_adjustment_get_valuex (adjustment));
+    *value = COGL_FIXED_TO_FLOAT (tidy_adjustment_get_valuex (adjustment));
 
   if (step_increment)
-    *step_increment = CLUTTER_FIXED_TO_DOUBLE (priv->step_increment);
+    *step_increment = COGL_FIXED_TO_FLOAT (priv->step_increment);
 
   if (page_increment)
-    *page_increment = CLUTTER_FIXED_TO_DOUBLE (priv->page_increment);
+    *page_increment = COGL_FIXED_TO_FLOAT (priv->page_increment);
 
   if (page_size)
-    *page_size = CLUTTER_FIXED_TO_DOUBLE (priv->page_size);
+    *page_size = COGL_FIXED_TO_FLOAT (priv->page_size);
 }
 
 /* Returns the hard bounds of the value of @adjustment. */
 void
 tidy_adjustment_get_skirtx (TidyAdjustment *adjustment,
-                            ClutterFixed   *lowest,
-                            ClutterFixed   *highest)
+                            CoglFixed   *lowest,
+                            CoglFixed   *highest)
 {
   TidyAdjustmentPrivate *priv = adjustment->priv;
 
@@ -679,12 +678,12 @@ tidy_adjustment_get_skirtx (TidyAdjustment *adjustment,
  * not enforced to allow for temporary overshooting. */
 void
 tidy_adjustment_set_skirtx (TidyAdjustment *adjustment,
-                            ClutterFixed    skirt_p)
+                            CoglFixed    skirt_p)
 {
   TidyAdjustmentPrivate *priv = adjustment->priv;
 
   priv->skirt_p = skirt_p;
-  priv->skirt = clutter_qmulx (priv->page_size, skirt_p);
+  priv->skirt = COGL_FIXED_MUL (priv->page_size, skirt_p);
 }
 
 static void
@@ -697,7 +696,7 @@ interpolation_new_frame_cb (ClutterTimeline *timeline,
   priv->interpolation = NULL;
   tidy_adjustment_set_valuex (adjustment,
                               priv->old_position +
-                              clutter_qmulx (CLUTTER_INT_TO_FIXED (frame_num),
+                              COGL_FIXED_MUL (COGL_FIXED_FROM_INT (frame_num),
                                              priv->dx));
   priv->interpolation = timeline;
 }
@@ -717,7 +716,7 @@ interpolation_completed_cb (ClutterTimeline *timeline,
 
 void
 tidy_adjustment_interpolatex (TidyAdjustment *adjustment,
-                              ClutterFixed    value,
+                              CoglFixed    value,
                               guint           n_frames,
                               guint           fps)
 {
@@ -734,9 +733,9 @@ tidy_adjustment_interpolatex (TidyAdjustment *adjustment,
   priv->old_position = priv->value;
   priv->new_position = value;
   
-  priv->dx = clutter_qdivx (priv->new_position - priv->old_position,
-                            CLUTTER_INT_TO_FIXED (n_frames));
-  priv->interpolation = clutter_timeline_new (n_frames, fps);
+  priv->dx = COGL_FIXED_DIV (priv->new_position - priv->old_position,
+                            COGL_FIXED_FROM_INT (n_frames));
+  priv->interpolation = clutter_timeline_new (n_frames * 1000 / fps);
   
   g_signal_connect (priv->interpolation,
                     "new-frame",
@@ -757,7 +756,7 @@ tidy_adjustment_interpolate (TidyAdjustment *adjustment,
                               guint          fps)
 {
   tidy_adjustment_interpolatex (adjustment,
-                                CLUTTER_FLOAT_TO_FIXED (value),
+                                COGL_FIXED_FROM_FLOAT (value),
                                 n_frames,
                                 fps);
 }

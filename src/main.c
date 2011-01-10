@@ -37,10 +37,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #include <hildon/hildon-main.h>
-#include <clutter/clutter-main.h>
-#include <clutter/clutter-stage.h>
-#include <clutter/x11/clutter-x11.h>
-#include <clutter/clutter-container.h>
+#include <clutter/clutter.h>
 #include <gdk-pixbuf-xlib/gdk-pixbuf-xlib.h>
 
 #include "hildon-desktop.h"
@@ -237,11 +234,11 @@ toggle_portraitable(MBWindowManager   *wm)
 static void
 key_binding_func (MBWindowManager   *wm,
 		  MBWMKeyBinding    *binding,
-		  void              *userdata)
+		  gpointer           userdata)
 {
-  int action;
+  gint action;
 
-  action = (int)(userdata);
+  action = GPOINTER_TO_INT(userdata);
 
   switch (action)
     {
@@ -570,7 +567,7 @@ main (int argc, char **argv)
   clutter_init (&argc, &argv);
   /* Disable mipmapping of text, as it is seldom scaled down and this
    * saves us memory/bandwidth/update speed */
-  clutter_set_use_mipmapped_text(FALSE);
+  clutter_set_font_flags(0);
   /* Use software-based selection, which is much faster on SGX than rendering
    * with 'GL and reading back */
 #ifdef MAEMO_CHANGES
@@ -607,27 +604,27 @@ main (int argc, char **argv)
 				    "<ctrl>BackSpace",
 				    key_binding_func,
 				    NULL,
-				    (void*)KEY_ACTION_TOGGLE_SWITCHER);
+				    GINT_TO_POINTER(KEY_ACTION_TOGGLE_SWITCHER));
   mb_wm_keys_binding_add_with_spec (wm,
 				    "<shift><ctrl>n",
 				    key_binding_func,
 				    NULL,
-				    (void*)KEY_ACTION_TOGGLE_NON_COMP_MODE);
+				    GINT_TO_POINTER(KEY_ACTION_TOGGLE_NON_COMP_MODE));
   mb_wm_keys_binding_add_with_spec (wm,
 				    "<shift><ctrl>p",
 				    key_binding_func,
 				    NULL,
-				    (void*)KEY_ACTION_TAKE_SCREENSHOT);
+				    GINT_TO_POINTER(KEY_ACTION_TAKE_SCREENSHOT));
   mb_wm_keys_binding_add_with_spec (wm,
                                       "<shift><ctrl>r",
                                       key_binding_func,
                                       NULL,
-                                      (void*)KEY_ACTION_TOGGLE_PORTRAITABLE);
+                                      GINT_TO_POINTER(KEY_ACTION_TOGGLE_PORTRAITABLE));
   mb_wm_keys_binding_add_with_spec (wm, /* mod5 == Fn */
                                       "<shift><ctrl><mod5>l",
                                       key_binding_func,
                                       NULL,
-                                      (void*)KEY_ACTION_ROTATE);
+                                      GINT_TO_POINTER(KEY_ACTION_ROTATE));
 
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 

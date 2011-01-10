@@ -49,36 +49,36 @@ void hd_gtk_style_init (void);
 
 void hd_gtk_style_get_fg_color (HDGtkWidgetSingleton  widget_id,
 				GtkStateType          state,
-				ClutterColor         *color);
+				CoglColor            *color);
 
 void hd_gtk_style_get_bg_color (HDGtkWidgetSingleton   widget_id,
 				GtkStateType	       state,
-				ClutterColor	      *color);
+				CoglColor	          *color);
 
 void hd_gtk_style_get_light_color (HDGtkWidgetSingleton  widget_id,
 				   GtkStateType		 state,
-				   ClutterColor		*color);
+				   CoglColor		*color);
 
 void hd_gtk_style_get_dark_color (HDGtkWidgetSingleton	 widget_id,
 				  GtkStateType		 state,
-				  ClutterColor		*color);
+				  CoglColor		    *color);
 
 void hd_gtk_style_get_mid_color (HDGtkWidgetSingleton  widget_id,
 				 GtkStateType	       state,
-				 ClutterColor	      *color);
+				 CoglColor	          *color);
 
 void hd_gtk_style_get_text_color (HDGtkWidgetSingleton   widget_id,
 				  GtkStateType		 state,
-				  ClutterColor		*color);
+				  CoglColor		    *color);
 
 void hd_gtk_style_get_base_color (HDGtkWidgetSingleton	 widget,
 				  GtkStateType		 state,
-				  ClutterColor		*color);
+				  CoglColor		    *color);
 
 char *hd_gtk_style_get_font_string (HDGtkWidgetSingleton  widget_id);
 
 void
-hd_gtk_style_resolve_logical_color (ClutterColor * color,
+hd_gtk_style_resolve_logical_color (CoglColor * color,
                                     const gchar * logical_name);
 
 gchar *

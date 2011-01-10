@@ -311,7 +311,7 @@
 	* ChangeLog: remove old merge conflict marker
 	* src/util/hd-transition.c (hd_transition_popup, hd_transition_fade_and_rotate, hd_transition_fade_and_rotate):
 	  Give names to helper actors.
-	* src/tidy/tidy-util.c (tidy_util_cogl_push_offscreen_buffer, tidy_util_cogl_pop_offscreen_buffer):
+	* src/tidy/tidy-util.c (cogl_push_framebuffer, cogl_pop_framebuffer):
 	  Cleaned up to be more readable and added more comments.
 	* src/tidy/tidy-util.c (tidy_util_preload_glyphs):
 	  Remove unused function.
@@ -1840,7 +1840,7 @@
 2009-11-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/launcher/hd-launcher-page.c (hd_launcher_page_transition):
-	"g_object_ref(clutter_timeline_new_for_duration" means refcount of 2,
+	"g_object_ref(clutter_timeline_new" means refcount of 2,
 	don't do it.
 
 2009-11-13  Gordon Williams <gordon.williams@collabora.co.uk>
@@ -5903,7 +5903,7 @@
 
 2009-06-04  Gordon Williams <gordon.williams@collabora.co.uk>
 
-	* src/home/hd-home-view-container.c: Moved away from using ClutterUnit
+	* src/home/hd-home-view-container.c: Moved away from using CoglFixed
 	  (this is removed in Clutter > 0.9), and added code to handle easing
 	  on home view panning.
 
@@ -7340,7 +7340,7 @@
 	Release 2.2.40
 
 	* src/home/hd-title-bar.c (hd_title_bar_init): Do not call
-	clutter_label_set_use_markup until we know about the title text.
+	clutter_text_set_use_markup until we know about the title text.
 	(hd_title_bar_set_window): Use Pango markup only if the text has that.
 	* src/mb/hd-decor.c (hd_decor_create_actors): Use Pango markup only if
 	the text has that. Fixes: NB#108303
@@ -11982,7 +11982,7 @@
 2008-11-25  Adam Endrodi  <adam.endrodi@blumsoft.eu>
 
 	* src/mb/hd-comp-mgr.c:
-	  dump_clutter_actor_tree(): if the actor to dump is a ClutterLabel
+	  dump_clutter_actor_tree(): if the actor to dump is a ClutterText
 	  and it doesn't have a name otherwise print the label text as name.
 	* src/home/hd-home.c
 	* src/home/hd-task-navigator.c:

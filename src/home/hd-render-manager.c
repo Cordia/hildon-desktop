@@ -310,7 +310,9 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   /* Task switcher widget: anchor it at the centre so it is zoomed in
    * the middle when blurred. */
   priv->task_nav = task_nav;
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->task_nav), FALSE);
+#endif
   clutter_actor_set_position(CLUTTER_ACTOR(priv->task_nav), 0, 0);
   clutter_actor_set_size (CLUTTER_ACTOR(priv->task_nav),
                           HD_COMP_MGR_LANDSCAPE_WIDTH,
@@ -441,7 +443,9 @@ hd_render_manager_init (HdRenderManager *self)
   priv->home_blur = TIDY_BLUR_GROUP(tidy_blur_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->home_blur),
                          "HdRenderManager:home_blur");
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->home_blur), FALSE);
+#endif
   tidy_blur_group_set_use_alpha(CLUTTER_ACTOR(priv->home_blur), FALSE);
   tidy_blur_group_set_use_mirror(CLUTTER_ACTOR(priv->home_blur), TRUE);
   g_signal_connect_swapped(stage, "notify::allocation",
@@ -454,7 +458,9 @@ hd_render_manager_init (HdRenderManager *self)
                          "HdRenderManager:app_top");
   g_signal_connect_swapped(stage, "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->app_top);
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->app_top), FALSE);
+#endif
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->app_top));
 
@@ -463,7 +469,9 @@ hd_render_manager_init (HdRenderManager *self)
                          "HdRenderManager:front");
   g_signal_connect_swapped(stage, "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->front);
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->front), FALSE);
+#endif
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
                               CLUTTER_ACTOR(priv->front));
 
@@ -472,7 +480,9 @@ hd_render_manager_init (HdRenderManager *self)
                          "HdRenderManager:blur_front");
   g_signal_connect_swapped(stage, "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->blur_front);
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->blur_front), FALSE);
+#endif
   g_object_set(priv->blur_front, "show_on_set_parent", FALSE, NULL);
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->home_blur),
                               CLUTTER_ACTOR(priv->blur_front));
@@ -487,7 +497,7 @@ hd_render_manager_init (HdRenderManager *self)
   range_set(&priv->applets_opacity, 0);
   range_set(&priv->applets_zoom, 1);
 
-  priv->timeline_blur = clutter_timeline_new_for_duration(250);
+  priv->timeline_blur = clutter_timeline_new(250);
   g_signal_connect (priv->timeline_blur, "new-frame",
                     G_CALLBACK (on_timeline_blur_new_frame), self);
   g_signal_connect (priv->timeline_blur, "completed",
@@ -514,7 +524,7 @@ stage_allocation_changed(ClutterActor *actor, GParamSpec *unused,
 
 static void
 on_timeline_blur_new_frame(ClutterTimeline *timeline,
-                           gint frame_num, gpointer data)
+                           gint msecs, gpointer data)
 {
   HdRenderManagerPrivate *priv;
   float amt;
@@ -523,7 +533,7 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
 
   priv = the_render_manager->priv;
 
-  amt = frame_num / (float)clutter_timeline_get_n_frames(timeline);
+  amt = (float)msecs / (float)clutter_timeline_get_duration(timeline);
 
   range_interpolate(&priv->home_radius, amt);
   range_interpolate(&priv->home_zoom, amt);
@@ -1024,10 +1034,10 @@ void hd_render_manager_stop_transition()
 
   if (priv->timeline_playing)
     {
-      guint frames;
+      guint duration;
       clutter_timeline_stop(priv->timeline_blur);
-      frames = clutter_timeline_get_n_frames(priv->timeline_blur);
-      on_timeline_blur_new_frame(priv->timeline_blur, frames, the_render_manager);
+      duration = clutter_timeline_get_duration(priv->timeline_blur);
+      on_timeline_blur_new_frame(priv->timeline_blur, duration, the_render_manager);
       on_timeline_blur_completed(priv->timeline_blur, the_render_manager);
     }
 
@@ -1232,12 +1242,14 @@ ClutterContainer *hd_render_manager_get_front_group(void)
   return CLUTTER_CONTAINER(priv->front);
 }
 
+#ifdef MAEGO_DISABLED
 /* #ClutterEffectCompleteFunc for hd_task_navigator_zoom_out(). */
 static void zoom_out_completed(ClutterActor *actor,
                                MBWMCompMgrClutterClient *cmgrcc)
 {
   mb_wm_object_unref(MB_WM_OBJECT(cmgrcc));
 }
+#endif
 
 /* like mb_wm_get_visible_main_client but don't return clients that have
  * the SkipTaskbar flag */
@@ -1513,11 +1525,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                    * task nav takes only the frontmost - NB#120171) */
                   hd_transition_stop(priv->comp_mgr, mbwmc);
 
+#ifdef MAEGO_DISABLED
                   /* Make sure @cmgrcc stays around as long as needed. */
                   mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
                   hd_task_navigator_zoom_out(priv->task_nav, actor,
                           (ClutterEffectCompleteFunc)zoom_out_completed,
                           cmgrcc);
+#endif
                 }
             }
           else if (oldstate != HDRM_STATE_LAUNCHER)
@@ -1657,7 +1671,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           range_set(&priv->home_saturation, priv->home_saturation.b);
           range_set(&priv->home_radius, priv->home_radius.b);
           on_timeline_blur_new_frame(priv->timeline_blur,
-              clutter_timeline_get_current_frame(priv->timeline_blur), NULL);
+              clutter_timeline_get_elapsed_time(priv->timeline_blur), NULL);
         }
 
       if (STATE_IS_NON_COMP (state))
@@ -2040,7 +2054,7 @@ void hd_render_manager_restack()
                      clutter_actor_raise_top(actor);
                      if (live_bg_actor && c->desktop == curr_view
                          && MB_WM_CLIENT_CLIENT_TYPE (c)
-                                             == HdWmClientTypeHomeApplet)
+                                             == (MBWMClientType)HdWmClientTypeHomeApplet)
                        clutter_actor_raise_top (live_bg_actor);
                     }
 #if STACKING_DEBUG

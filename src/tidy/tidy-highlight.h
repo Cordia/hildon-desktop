@@ -74,7 +74,7 @@ GType          tidy_highlight_get_type           (void) G_GNUC_CONST;
 
 TidyHighlight *tidy_highlight_new                (ClutterTexture      *texture);
 void           tidy_highlight_set_amount(TidyHighlight *sub, float amount);
-void           tidy_highlight_set_color (TidyHighlight *sub, ClutterColor *col);
+void           tidy_highlight_set_color (TidyHighlight *sub, CoglColor *col);
 
 G_END_DECLS
 

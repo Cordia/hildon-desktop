@@ -21,7 +21,7 @@
  *
  */
 
-#include <cail/cail.h>
+#include <cally/cally.h>
 
 #include "tidy/tidy-sub-texture.h"
 

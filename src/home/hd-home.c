@@ -42,8 +42,6 @@
 #include "hd-launcher-app.h"
 
 #include <clutter/clutter.h>
-#include <clutter/x11/clutter-x11.h>
-#include <clutter/clutter-texture.h>
 
 #include <matchbox/core/mb-wm.h>
 
@@ -120,9 +118,6 @@ typedef enum
 struct _HdHomePrivate
 {
   MBWMCompMgrClutter    *comp_mgr;
-
-  ClutterEffectTemplate *show_edit_button_template;
-  ClutterEffectTemplate *hide_edit_button_template;
 
   ClutterActor          *edit_group; /* An overlay group for edit mode */
   /* TODO: Edit button should probably be handled by HdTitleBar */
@@ -399,7 +394,7 @@ hd_home_desktop_do_motion (HdHome *home,
       mb_wm_client_focus (MB_WM_COMP_MGR (priv->comp_mgr)->wm->desktop);
       hd_home_view_container_set_offset (
                       HD_HOME_VIEW_CONTAINER (priv->view_container),
-                      CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_x));
+                      COGL_FIXED_FROM_INT (priv->cumulative_x));
     }
 
   priv->last_x = x;
@@ -1273,13 +1268,6 @@ hd_home_init (HdHome *self)
   priv->initial_y = -1;
   priv->last_move_time = g_timer_new();
 
-  priv->show_edit_button_template =
-          clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
-                                                    CLUTTER_ALPHA_SINE_INC);
-  priv->hide_edit_button_template =
-          clutter_effect_template_new_for_duration (HDH_EDIT_BUTTON_DURATION,
-                                                    CLUTTER_ALPHA_SINE_INC);
-
   /* Listen to gconf notifications */
   gconf_client = gconf_client_get_default ();
   gconf_client_add_dir (gconf_client,
@@ -1754,7 +1742,7 @@ hd_home_applet_press (ClutterActor       *applet,
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
 
-  g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, event->x, event->y);
+  g_debug ("%s. (x, y) = (%f, %f)", __FUNCTION__, event->x, event->y);
 
   /*
    * We always emit a button press event to animate it on the screen. Later we
@@ -1881,7 +1869,7 @@ hd_home_applet_release (ClutterActor       *applet,
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
 
-  g_debug ("%s. (x, y) = (%d, %d)", __FUNCTION__, event->x, event->y);
+  g_debug ("%s. (x, y) = (%f, %f)", __FUNCTION__, event->x, event->y);
 
   do_home_applet_motion (home, applet, event->x, event->y);
   do_applet_release (home, applet, event);
@@ -2071,8 +2059,7 @@ static void
 hd_home_show_edit_button (HdHome *home)
 {
   HdHomePrivate   *priv = home->priv;
-  guint            button_width, button_height;
-  ClutterTimeline *timeline;
+  gfloat            button_width, button_height;
   gint             x;
 
   if (hd_render_manager_actor_is_visible(priv->edit_button))
@@ -2097,16 +2084,14 @@ hd_home_show_edit_button (HdHome *home)
 
   /*g_debug ("moving edit button from %d, %d to %d, 0", x, -button_height, x);*/
 
-  timeline = clutter_effect_move (priv->show_edit_button_template,
-                                  CLUTTER_ACTOR (priv->edit_button),
-                                  x, 0,
-                                  NULL,
-                                  NULL);
+  clutter_actor_animate (CLUTTER_ACTOR (priv->edit_button),
+                         CLUTTER_EASE_OUT_SINE,
+                         HDH_EDIT_BUTTON_DURATION,
+                         "x", x,
+                         NULL);
 
   priv->edit_button_cb =
     g_timeout_add (HDH_EDIT_BUTTON_TIMEOUT, hd_home_edit_button_timeout, home);
-
-  clutter_timeline_start (timeline);
 }
 
 static void
@@ -2124,10 +2109,10 @@ hd_home_edit_button_move_completed (ClutterActor *actor, gpointer data)
 void
 hd_home_hide_edit_button (HdHome *home)
 {
-  HdHomePrivate   *priv = home->priv;
-  guint            button_width, button_height;
-  ClutterTimeline *timeline;
-  gint             x;
+  HdHomePrivate    *priv = home->priv;
+  gfloat            button_width, button_height;
+  ClutterAnimation *animation;
+  gint              x;
 
   if (!hd_render_manager_actor_is_visible(priv->edit_button))
     return;
@@ -2143,13 +2128,16 @@ hd_home_hide_edit_button (HdHome *home)
 
   x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
 
-  timeline = clutter_effect_move (priv->hide_edit_button_template,
-                                  CLUTTER_ACTOR (priv->edit_button),
-                                  x, -button_height,
-                                  (ClutterEffectCompleteFunc) hd_home_edit_button_move_completed,
-                                  home);
-
-  clutter_timeline_start (timeline);
+  animation = clutter_actor_animate (CLUTTER_ACTOR (priv->edit_button),
+                                     CLUTTER_EASE_OUT_SINE,
+                                     HDH_EDIT_BUTTON_DURATION,
+                                     "x", x,
+                                     "y", -button_height,
+                                     NULL);
+  g_signal_connect_swapped (animation,
+                            "completed",
+                            G_CALLBACK (hd_home_edit_button_move_completed),
+                            home);
 }
 
 ClutterActor*
@@ -2314,7 +2302,7 @@ is_status_menu_dialog (MBWindowManagerClient *c)
 gboolean
 hd_is_hildon_home_dialog (MBWindowManagerClient  *c)
 {
-  if (MB_WM_CLIENT_CLIENT_TYPE(c) == HdWmClientTypeAppMenu
+  if (MB_WM_CLIENT_CLIENT_TYPE(c) == (MBWMClientType)HdWmClientTypeAppMenu
       && !strcmp(c->window->name, "hildon-home"))
     return TRUE;
   if (MB_WM_CLIENT_CLIENT_TYPE(c) != MBWMClientTypeDialog)
@@ -2375,15 +2363,16 @@ void
 hd_home_theme_changed (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
-  ClutterColor col;
+  CoglColor    col;
+  ClutterColor cl_col;
 
   /* Get color from theme */
   hd_gtk_style_resolve_logical_color(&col, HD_EDGE_INDICATION_COLOR);
-
+  hd_cogl_color_to_clutter_color(&col, &cl_col);
   clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_left),
-                               &col);
+                               &cl_col);
   clutter_rectangle_set_color (CLUTTER_RECTANGLE (priv->edge_indication_right),
-                               &col);
+                               &cl_col);
 }
 
 void

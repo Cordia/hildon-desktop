@@ -121,10 +121,10 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
           default: clutter_axis = CLUTTER_Z_AXIS;
       }
 
-      clutter_actor_set_rotationx (actor,
-                                   clutter_axis,
-                                   degrees,
-                                   x, y, z);
+      clutter_actor_set_rotation (actor,
+                                  clutter_axis,
+                                  degrees,
+                                  x, y, z);
   }
   else if (xev->message_type == scale_atom)
   {
@@ -133,7 +133,7 @@ hd_animation_actor_client_message (XClientMessageEvent *xev, void *userdata)
 
       CM_DEBUG ("AnimationActor %p: scale(x_scale=%u, y_scale=%u)\n",
 	       self, x_scale, y_scale);
-      clutter_actor_set_scalex (actor, x_scale, y_scale);
+      clutter_actor_set_scale (actor, x_scale, y_scale);
   }
   else if (xev->message_type == anchor_atom)
   {

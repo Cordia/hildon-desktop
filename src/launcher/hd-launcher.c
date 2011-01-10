@@ -223,11 +223,11 @@ static void hd_launcher_constructed (GObject *gobject)
   /* App launch transition */
   priv->launch_image = 0;
   priv->launch_transition = g_object_ref (
-                                clutter_timeline_new_for_duration (400));
+                                clutter_timeline_new (400));
   g_signal_connect (priv->launch_transition, "new-frame",
                     G_CALLBACK (hd_launcher_transition_new_frame), gobject);
-  priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
-  priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
+  priv->launch_position.x = COGL_FIXED_FROM_INT(HD_LAUNCHER_PAGE_WIDTH) / 2;
+  priv->launch_position.y = COGL_FIXED_FROM_INT(HD_LAUNCHER_PAGE_HEIGHT) / 2;
   priv->launch_position.z = 0;
 }
 
@@ -489,13 +489,13 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
   }
 
   priv->editor = hd_launcher_editor_new ();
-  gint x, y;
+  gfloat x, y;
   gfloat x_align, y_align;
 
   clutter_actor_get_transformed_position (CLUTTER_ACTOR (tile), &x, &y);
-  x_align = (gfloat)(x + (HD_LAUNCHER_TILE_WIDTH / 2))
+  x_align = (x + ((gfloat)HD_LAUNCHER_TILE_WIDTH / 2)) 
                     / HD_LAUNCHER_PAGE_WIDTH;
-  y_align = (gfloat)(y + (HD_LAUNCHER_TILE_WIDTH / 2))
+  y_align = (y + ((gfloat)HD_LAUNCHER_TILE_WIDTH / 2))
                     / HD_LAUNCHER_PAGE_HEIGHT;
 
   g_signal_connect (priv->editor, "destroy",
@@ -839,7 +839,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
                   __FUNCTION__, loading_image, hd_launcher_app_get_exec(item));
       else
         {
-          guint w,h;
+          gfloat w,h;
           ClutterGeometry region = {0, 0, 0, 0};
           clutter_actor_get_size(app_image, &w, &h);
 
@@ -869,11 +869,13 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   /* if not, create a rectangle with the background colour from the theme */
   if (!app_image)
     {
-      ClutterColor col;
+      CoglColor col;
+      ClutterColor cl_col;
       hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON,
                                 GTK_STATE_NORMAL,
                                 &col);
-      app_image = clutter_rectangle_new_with_color(&col);
+      hd_cogl_color_to_clutter_color(&col, &cl_col);
+      app_image = clutter_rectangle_new_with_color(&cl_col);
     }
 
   clutter_actor_set_size(app_image,
@@ -886,14 +888,14 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
    * the user last pressed */
   if (hd_util_get_cursor_position(&cursor_x, &cursor_y))
     {
-      priv->launch_position.x = CLUTTER_INT_TO_FIXED(cursor_x);
-      priv->launch_position.y = CLUTTER_INT_TO_FIXED(cursor_y);
+      priv->launch_position.x = COGL_FIXED_FROM_INT(cursor_x);
+      priv->launch_position.y = COGL_FIXED_FROM_INT(cursor_y);
     }
   else
     {
       /* default pos to centre of the screen */
-      priv->launch_position.x = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_WIDTH) / 2;
-      priv->launch_position.y = CLUTTER_INT_TO_FIXED(HD_LAUNCHER_PAGE_HEIGHT) / 2;
+      priv->launch_position.x = COGL_FIXED_FROM_INT(HD_LAUNCHER_PAGE_WIDTH) / 2;
+      priv->launch_position.y = COGL_FIXED_FROM_INT(HD_LAUNCHER_PAGE_HEIGHT) / 2;
     }
 
   /* If a launcher tile was clicked, expand the image from the centre of the
@@ -904,25 +906,25 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
       ClutterActor *parent;
       HdLauncherTile *tile = HD_LAUNCHER_TILE (priv->launch_tile);
       ClutterActor *icon;
-      clutter_actor_get_positionu(CLUTTER_ACTOR(tile),
+      clutter_actor_get_position(CLUTTER_ACTOR(tile),
                 &priv->launch_position.x,
                 &priv->launch_position.y);
       icon = hd_launcher_tile_get_icon(tile);
       if (icon)
         {
           ClutterVertex offs, size;
-          clutter_actor_get_positionu(icon,
+          clutter_actor_get_position(icon,
                 &offs.x,
                 &offs.y);
-          clutter_actor_get_sizeu(icon, &size.x, &size.y);
+          clutter_actor_get_size(icon, &size.x, &size.y);
           priv->launch_position.x += offs.x + size.x/2;
           priv->launch_position.y += offs.y + size.y/2;
         }
       /* add the X and Y offsets from all parents */
       parent = clutter_actor_get_parent(CLUTTER_ACTOR(tile));
       while (parent && !CLUTTER_IS_STAGE(parent)) {
-        ClutterFixed x,y;
-        clutter_actor_get_positionu(parent, &x, &y);
+        gfloat x,y;
+        clutter_actor_get_position(parent, &x, &y);
         priv->launch_position.x += x;
         priv->launch_position.y += y;
         parent = clutter_actor_get_parent(parent);
@@ -1008,19 +1010,19 @@ void hd_launcher_window_created(void)
 
 static void
 hd_launcher_transition_new_frame(ClutterTimeline *timeline,
-                          gint frame_num, gpointer data)
+                          gint msecs, gpointer data)
 {
   HdLauncher *page = HD_LAUNCHER(data);
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (page);
-  gint frames;
+  guint duration;
   float amt, zoom;
-  ClutterFixed mx,my;
+  CoglFixed mx,my;
 
   if (!HD_IS_LAUNCHER(data))
     return;
 
-  frames = clutter_timeline_get_n_frames(timeline);
-  amt = frame_num / (float)frames;
+  duration = clutter_timeline_get_duration(timeline);
+  amt = (float)msecs / (float)duration;
 
   zoom = 0.05 + hd_transition_ease_out(amt) * 0.95f;
 
@@ -1028,11 +1030,11 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
     return;
 
   /* mid-position of actor */
-  mx = CLUTTER_FLOAT_TO_FIXED(//width*0.5f*(1-zoom) +
-                CLUTTER_FIXED_TO_FLOAT(priv->launch_position.x)*(1-zoom)/zoom);
-  my = CLUTTER_FLOAT_TO_FIXED(//height*0.5f*(1-zoom) +
-                CLUTTER_FIXED_TO_FLOAT(priv->launch_position.y)*(1-zoom)/zoom);
-  clutter_actor_set_anchor_pointu(priv->launch_image, -mx, -my);
+  mx = COGL_FIXED_FROM_FLOAT(//width*0.5f*(1-zoom) +
+                COGL_FIXED_TO_FLOAT(priv->launch_position.x)*(1-zoom)/zoom);
+  my = COGL_FIXED_FROM_FLOAT(//height*0.5f*(1-zoom) +
+                COGL_FIXED_TO_FLOAT(priv->launch_position.y)*(1-zoom)/zoom);
+  clutter_actor_set_anchor_point(priv->launch_image, -mx, -my);
   clutter_actor_set_scale(priv->launch_image, zoom, zoom);
 }
 

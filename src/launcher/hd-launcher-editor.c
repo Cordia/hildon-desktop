@@ -398,8 +398,12 @@ hd_launcher_editor_init (HdLauncherEditor *editor)
                                                      G_TYPE_STRING);
 
   /* and the icon view. */
+#ifdef MAEMO_CHANGES
   priv->icon_view = hildon_gtk_icon_view_new_with_model (HILDON_UI_MODE_EDIT,
                                                          priv->model);
+#else
+  priv->icon_view = gtk_icon_view_new_with_model (priv->model);
+#endif
 
   renderer = gtk_cell_renderer_pixbuf_new ();
   g_object_set (G_OBJECT (renderer),

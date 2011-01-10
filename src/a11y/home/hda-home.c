@@ -61,7 +61,7 @@
  *
  */
 
-#include <cail/cail-actor.h>
+#include <cally/cally.h>
 
 #include "home/hd-home.h"
 #include "home/hd-home-view-container.h"
@@ -82,16 +82,16 @@ hda_home_initialize                             (AtkObject *obj,
                                                  gpointer   data);
 /* AtkAction -> new actions */
 static ClutterActor*
-_hda_home_get_home_container                    (CailActor *cail_actor);
+_hda_home_get_home_container                    (CallyActor *cail_actor);
 
 static void
-_hda_home_next_home_action                      (CailActor *cail_actor);
+_hda_home_next_home_action                      (CallyActor *cail_actor);
 
 static void
-_hda_home_previous_home_action                  (CailActor *cail_actor);
+_hda_home_previous_home_action                  (CallyActor *cail_actor);
 
 
-G_DEFINE_TYPE (HdaHome, hda_home, CAIL_TYPE_ACTOR);
+G_DEFINE_TYPE (HdaHome, hda_home, CALLY_TYPE_ACTOR);
 
 static void
 hda_home_class_init                             (HdaHomeClass *klass)
@@ -106,14 +106,14 @@ hda_home_class_init                             (HdaHomeClass *klass)
 static void
 hda_home_init                                   (HdaHome *home)
 {
-  CailActor *cail_actor = NULL;
+  CallyActor *cail_actor = NULL;
 
   /* Adding extra actions */
-  cail_actor = CAIL_ACTOR (home);
-  cail_actor_add_action (cail_actor, "next-home", NULL, NULL,
+  cail_actor = CALLY_ACTOR (home);
+  cally_actor_add_action (cail_actor, "next-home", NULL, NULL,
                          _hda_home_next_home_action);
 
-  cail_actor_add_action (cail_actor, "previous-home", NULL, NULL,
+  cally_actor_add_action (cail_actor, "previous-home", NULL, NULL,
                          _hda_home_previous_home_action);
 }
 
@@ -144,16 +144,16 @@ hda_home_initialize                             (AtkObject   *obj,
 }
 
 
-/* AtkAction -> using CailActor adding actions approach */
+/* AtkAction -> using CallyActor adding actions approach */
 static ClutterActor*
-_hda_home_get_home_container                    (CailActor *cail_actor)
+_hda_home_get_home_container                    (CallyActor *cail_actor)
 {
   HdaHome      *self      = NULL;
   ClutterActor *home      = NULL;
   ClutterActor *stage     = NULL;
   ClutterActor *container = NULL;
 
-  g_return_if_fail (HDA_IS_HOME (cail_actor));
+  g_return_val_if_fail (HDA_IS_HOME (cail_actor), NULL);
 
   self = HDA_HOME (cail_actor);
   home = CLUTTER_ACTOR (atk_gobject_accessible_get_object (ATK_GOBJECT_ACCESSIBLE (self)));
@@ -168,7 +168,7 @@ _hda_home_get_home_container                    (CailActor *cail_actor)
 }
 
 static void
-_hda_home_next_home_action                      (CailActor *cail_actor)
+_hda_home_next_home_action                      (CallyActor *cail_actor)
 {
   ClutterActor *container = NULL;
 
@@ -182,7 +182,7 @@ _hda_home_next_home_action                      (CailActor *cail_actor)
 }
 
 static void
-_hda_home_previous_home_action                  (CailActor *cail_actor)
+_hda_home_previous_home_action                  (CallyActor *cail_actor)
 {
   ClutterActor *container = NULL;
 

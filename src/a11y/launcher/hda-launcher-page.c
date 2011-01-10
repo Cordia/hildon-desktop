@@ -30,7 +30,7 @@
  * In particular it exposes the #HdLauncherGrid object inside.
  */
 
-#include <cail/cail-actor.h>
+#include <cally/cally.h>
 
 #include "launcher/hd-launcher-page.h"
 #include "hda-launcher-page.h"
@@ -59,7 +59,7 @@ hda_launcher_page_ref_child                     (AtkObject *obj,
 static G_CONST_RETURN gchar *
 hda_launcher_page_get_name                      (AtkObject *obj);
 
-G_DEFINE_TYPE (HdaLauncherPage, hda_launcher_page,  CAIL_TYPE_ACTOR)
+G_DEFINE_TYPE (HdaLauncherPage, hda_launcher_page,  CALLY_TYPE_ACTOR)
 
 static void
 hda_launcher_page_class_init                            (HdaLauncherPageClass *klass)

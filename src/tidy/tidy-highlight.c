@@ -7,7 +7,7 @@
 #endif
 
 #include "tidy-highlight.h"
-#include <clutter/clutter-actor.h>
+#include <clutter/clutter.h>
 
 #include "cogl/cogl.h"
 
@@ -68,14 +68,14 @@ struct _TidyHighlightPrivate
   ClutterShader       *shader;
 
   float                amount;
-  ClutterColor         color;
+  CoglColor            color;
 };
 
 static void
 tidy_highlight_get_preferred_width (ClutterActor *self,
-                                           ClutterUnit   for_height,
-                                           ClutterUnit  *min_width_p,
-                                           ClutterUnit  *natural_width_p)
+                                         gfloat   for_height,
+                                         gfloat  *min_width_p,
+                                         gfloat  *natural_width_p)
 {
   TidyHighlightPrivate *priv = TIDY_HIGHLIGHT(self)->priv;
   ClutterActor *parent_texture;
@@ -107,9 +107,9 @@ tidy_highlight_get_preferred_width (ClutterActor *self,
 
 static void
 tidy_highlight_get_preferred_height (ClutterActor *self,
-                                            ClutterUnit   for_width,
-                                            ClutterUnit  *min_height_p,
-                                            ClutterUnit  *natural_height_p)
+                                          gfloat   for_width,
+                                          gfloat  *min_height_p,
+                                          gfloat  *natural_height_p)
 {
   TidyHighlightPrivate *priv = TIDY_HIGHLIGHT (self)->priv;
   ClutterActor *parent_texture;
@@ -144,11 +144,11 @@ tidy_highlight_paint (ClutterActor *self)
 {
   TidyHighlightPrivate  *priv;
   ClutterActor                *parent_texture;
-  gint                         x_1, y_1, x_2, y_2;
-  ClutterColor                 col = { 0xff, 0xff, 0xff, 0xff };
+  ClutterActorBox              box;
+  CoglColor                    col = { 1.0f, 1.0f, 1.0f, 1.0f };
   CoglHandle                   cogl_texture;
-  guint                        tex_width, tex_height;
-  ClutterFixed                 overlapx, overlapy;
+  gfloat                       tex_width, tex_height;
+  gfloat                       overlapx, overlapy;
   CoglTextureVertex            verts[4];
 
   priv = TIDY_HIGHLIGHT (self)->priv;
@@ -165,10 +165,12 @@ tidy_highlight_paint (ClutterActor *self)
     clutter_actor_realize (parent_texture);
 
   col = priv->color;
-  col.alpha = col.alpha * clutter_actor_get_paint_opacity (self) / 256;
-  cogl_color (&col);
+  cogl_color_set_alpha_float(&col,
+                             cogl_color_get_alpha_float(&col)
+                             * clutter_actor_get_paint_opacity (self));
+  cogl_set_source_color (&col);
 
-  clutter_actor_get_allocation_coords (self, &x_1, &y_1, &x_2, &y_2);
+  clutter_actor_get_allocation_box (self, &box);
 
   cogl_texture = clutter_texture_get_cogl_texture (priv->parent_texture);
 
@@ -180,11 +182,17 @@ tidy_highlight_paint (ClutterActor *self)
 
   if (priv->shader)
     {
+      gfloat blurf;
+      GValue blurv;
+      g_value_init (&blurv, CLUTTER_TYPE_SHADER_FLOAT);
+      
       clutter_shader_set_is_enabled (priv->shader, TRUE);
-      clutter_shader_set_uniform_1f (priv->shader, "blurx",
-                                     priv->amount / tex_width);
-      clutter_shader_set_uniform_1f (priv->shader, "blury",
-                                     priv->amount / tex_height);
+      blurf = priv->amount / tex_width;
+      clutter_value_set_shader_float (&blurv, 1, &blurf);
+      clutter_shader_set_uniform (priv->shader, "blurx", &blurv);
+      blurf = priv->amount / tex_height;
+      clutter_value_set_shader_float (&blurv, 1, &blurf);
+      clutter_shader_set_uniform (priv->shader, "blury", &blurv);
     }
 
 
@@ -192,34 +200,33 @@ tidy_highlight_paint (ClutterActor *self)
    * our edges outside those of the texture. We have to do this with
    * cogl_texture_polygon not cogl_rectangle, because clutter thinks
    * that we want to repeat rectangles and messes everything up */
-  overlapx = CLUTTER_FLOAT_TO_FIXED(
-      ((x_2 - x_1) - tex_width) / (float)(tex_width*2));
-  overlapy = CLUTTER_FLOAT_TO_FIXED(
-      ((y_2 - y_1) - tex_height) / (float)(tex_height*2));
+  overlapx = ((box.x2 - box.x1) - tex_width) / (float)(tex_width*2);
+  overlapy = ((box.y2 - box.y1) - tex_height) / (float)(tex_height*2);
 
-  verts[0].x = 0;
-  verts[0].y = 0;
-  verts[0].z = 0;
+  verts[0].x = 0.0f;
+  verts[0].y = 0.0f;
+  verts[0].z = 0.0f;
   verts[0].tx = -overlapx;
   verts[0].ty = -overlapy;
-  verts[1].x = CLUTTER_INT_TO_FIXED (x_2 - x_1);
-  verts[1].y = 0;
-  verts[1].z = 0;
-  verts[1].tx = CFX_ONE+overlapx;
+  verts[1].x = box.x2 - box.x1;
+  verts[1].y = 0.0f;
+  verts[1].z = 0.0f;
+  verts[1].tx = 1.0f+overlapx;
   verts[1].ty = -overlapy;
-  verts[2].x = CLUTTER_INT_TO_FIXED (x_2 - x_1);
-  verts[2].y = CLUTTER_INT_TO_FIXED (y_2 - y_1);
-  verts[2].z = 0;
-  verts[2].tx = CFX_ONE+overlapx;
-  verts[2].ty = CFX_ONE+overlapy;
-  verts[3].x = 0;
-  verts[3].y = CLUTTER_INT_TO_FIXED (y_2 - y_1);
-  verts[3].z = 0;
+  verts[2].x = box.x2 - box.x1;
+  verts[2].y = box.y2 - box.y1;
+  verts[2].z = 0.0f;
+  verts[2].tx = 1.0f+overlapx;
+  verts[2].ty = 1.0f+overlapy;
+  verts[3].x = 0.0f;
+  verts[3].y = box.y2 - box.y1;
+  verts[3].z = 0.0f;
   verts[3].tx = -overlapx;
-  verts[3].ty = CFX_ONE+overlapy;
+  verts[3].ty = 1.0f+overlapy;
 
   /* Parent paint translated us into position */
-  cogl_texture_polygon (cogl_texture, 4, verts, FALSE);
+  cogl_set_source_texture (cogl_texture);
+  cogl_polygon (verts, 4, FALSE);
 
   if (priv->shader)
     clutter_shader_set_is_enabled (priv->shader, FALSE);
@@ -359,7 +366,7 @@ static void
 tidy_highlight_init (TidyHighlight *self)
 {
   TidyHighlightPrivate *priv;
-  ClutterColor     white = {0xFF, 0xFF, 0xFF, 0xFF};
+  CoglColor     white = {1.0f, 1.0f, 1.0f, 1.0f};
 
   self->priv = priv = CLUTTER_HIGHLIGHT_GET_PRIVATE (self);
   priv->parent_texture = NULL;
@@ -429,7 +436,7 @@ void tidy_highlight_set_amount (TidyHighlight *sub,
 }
 
 void tidy_highlight_set_color (TidyHighlight *sub,
-                               ClutterColor *col)
+                               CoglColor     *col)
 {
   g_return_if_fail (TIDY_IS_HIGHLIGHT (sub));
 

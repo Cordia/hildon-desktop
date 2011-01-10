@@ -114,7 +114,7 @@ fi
 
 if test "$ac_cv_enable_static_mb2" = yes; then
         PKG_CHECK_MODULES([MB2], [libmatchbox2-0.1])
-        MB2_STATIC_LIB=/usr/lib/libmatchbox2-0.1.a
+        MB2_STATIC_LIB='$(libdir)/libmatchbox2-0.1.a'
 
         PKG_CHECK_MODULES(HD, [clutter-1.0 dnl
                        glib-2.0 >= 2.12 dnl

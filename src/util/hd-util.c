@@ -112,8 +112,7 @@ hd_util_modal_blocker_release_handler (XButtonEvent    *xev,
                                MB_WM_COMP_MGR_CLUTTER_CLIENT(c->cm_client));
       if (actor)
         {
-          int x, y;
-          unsigned int h, w;
+          gfloat x, y, h, w;
 
           w = h = x = y = 0;
           clutter_actor_get_size (actor, &w, &h);
@@ -216,9 +215,9 @@ hd_util_client_has_modal_blocker (MBWindowManagerClient *c)
   return
       ((c_type == MBWMClientTypeDialog) ||
        (c_type == MBWMClientTypeMenu) ||
-       (c_type == HdWmClientTypeAppMenu) ||
-       (c_type == HdWmClientTypeStatusMenu) ||
-       (c_type == MBWMClientTypeNote &&
+       (c_type == (MBWMClientType) HdWmClientTypeAppMenu) ||
+       (c_type == (MBWMClientType) HdWmClientTypeStatusMenu) ||
+       (c_type == (MBWMClientType) MBWMClientTypeNote &&
         HD_NOTE (c)->note_type != HdNoteTypeIncomingEventPreview &&
         HD_NOTE (c)->note_type != HdNoteTypeIncomingEvent &&
         HD_NOTE (c)->note_type != HdNoteTypeBanner)) &&
@@ -584,7 +583,7 @@ hd_util_get_actor_bounds(ClutterActor *actor, ClutterGeometry *geo, gboolean *is
     }
   else
     {
-      guint w,h;
+      gfloat w,h;
       clutter_actor_get_size(actor, &w, &h);
       x = 0;
       y = 0;
@@ -594,24 +593,24 @@ hd_util_get_actor_bounds(ClutterActor *actor, ClutterGeometry *geo, gboolean *is
 
   while (it && it != stage)
     {
-      ClutterFixed px,py;
+      gfloat px,py;
       gdouble scalex, scaley;
-      ClutterUnit anchorx, anchory;
+      gfloat anchorx, anchory;
 
       /* Big safety check here - don't attempt to work out bounds if anything
        * is rotated, as we'll probably get it wrong. */
       clutter_actor_get_scale(it, &scalex, &scaley);
-      clutter_actor_get_anchor_pointu(it, &anchorx, &anchory);
-      if (clutter_actor_get_rotationu(it, CLUTTER_X_AXIS, 0, 0, 0)!=0 ||
-          clutter_actor_get_rotationu(it, CLUTTER_Y_AXIS, 0, 0, 0)!=0 ||
-          clutter_actor_get_rotationu(it, CLUTTER_Z_AXIS, 0, 0, 0)!=0)
+      clutter_actor_get_anchor_point(it, &anchorx, &anchory);
+      if (clutter_actor_get_rotation(it, CLUTTER_X_AXIS, 0, 0, 0)!=0 ||
+          clutter_actor_get_rotation(it, CLUTTER_Y_AXIS, 0, 0, 0)!=0 ||
+          clutter_actor_get_rotation(it, CLUTTER_Z_AXIS, 0, 0, 0)!=0)
         valid = FALSE;
 
-      clutter_actor_get_positionu(it, &px, &py);
-      x = ((x - CLUTTER_FIXED_TO_DOUBLE(anchorx))*scalex)
-          + CLUTTER_FIXED_TO_DOUBLE(px);
-      y = ((y - CLUTTER_FIXED_TO_DOUBLE(anchory))*scaley)
-          + CLUTTER_FIXED_TO_DOUBLE(py);
+      clutter_actor_get_position(it, &px, &py);
+      x = ((x - COGL_FIXED_TO_FLOAT(anchorx))*scalex)
+          + COGL_FIXED_TO_FLOAT(px);
+      y = ((y - COGL_FIXED_TO_FLOAT(anchory))*scaley)
+          + COGL_FIXED_TO_FLOAT(py);
       width *= scalex;
       height *= scaley;
 
@@ -653,6 +652,7 @@ hd_util_partial_redraw_if_possible(ClutterActor *actor, ClutterGeometry *bounds)
 
   valid = hd_util_get_actor_bounds(actor, &area, &visible);
   if (!visible) return;
+#ifdef MAEMO_CHANGES
   if (valid)
     {
       /* Queue a redraw, but without updating the whole area */
@@ -660,6 +660,7 @@ hd_util_partial_redraw_if_possible(ClutterActor *actor, ClutterGeometry *bounds)
       clutter_actor_queue_redraw_damage(stage);
     }
   else
+#endif
     {
       clutter_actor_queue_redraw(stage);
     }
@@ -795,3 +796,14 @@ float hd_key_frame_interpolate(HdKeyFrameList *k, float x)
     }
   return k->keyframes[idx]*(1-n) + k->keyframes[idx+1]*n;
 }
+
+/* Convert CoglColor representation to ClutterColor */
+void hd_cogl_color_to_clutter_color(CoglColor *cogl_color,
+                                    ClutterColor *clutter_color)
+{
+    clutter_color->red   = cogl_color_get_red  (cogl_color) * 255;
+    clutter_color->green = cogl_color_get_green(cogl_color) * 255;
+    clutter_color->blue  = cogl_color_get_blue (cogl_color) * 255;
+    clutter_color->alpha = cogl_color_get_alpha(cogl_color) * 255;
+}
+

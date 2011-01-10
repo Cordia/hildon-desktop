@@ -66,20 +66,20 @@ hd_gtk_style_init (void)
 }
 
 static void
-hd_gtk_style_to_clutter_color(ClutterColor          *dst,
-                              const GdkColor        *src)
+hd_gtk_style_to_clutter_color(CoglColor          *dst,
+                              const GdkColor     *src)
 {
-  dst->red   = CLAMP (((src->red   / 65535.0) * 255), 0, 255);
-  dst->green = CLAMP (((src->green / 65535.0) * 255), 0, 255);
-  dst->blue  = CLAMP (((src->blue  / 65535.0) * 255), 0, 255);
-  dst->alpha = 255;
+  cogl_color_set_red   (dst, CLAMP ((src->red   / 65535.0), 0.0f, 1.0f));
+  cogl_color_set_green (dst, CLAMP ((src->green / 65535.0), 0.0f, 1.0f));
+  cogl_color_set_blue  (dst, CLAMP ((src->blue  / 65535.0), 0.0f, 1.0f));
+  cogl_color_set_alpha (dst, 1.0f);
 }
 
 static void
 hd_gtk_style_get_color_component (HDGtkWidgetSingleton   widget_id,
 				  GtkRcFlags             component,
 				  GtkStateType           state,
-				  ClutterColor          *color)
+				  CoglColor             *color)
 {
   GtkWidget *widget;
   GtkStyle *style;
@@ -96,7 +96,7 @@ hd_gtk_style_get_color_component (HDGtkWidgetSingleton   widget_id,
     return;
   }
 
-  switch (component)
+  switch ((int)component)
     {
     case HD_GTK_STYLE_FG:
       gtk_color = style->fg[state];
@@ -137,7 +137,7 @@ hd_gtk_style_get_color_component (HDGtkWidgetSingleton   widget_id,
 void
 hd_gtk_style_get_fg_color (HDGtkWidgetSingleton  widget_id,
 			   GtkStateType          state,
-			   ClutterColor         *color)
+			   CoglColor            *color)
 {
   g_return_if_fail (color != NULL);
 
@@ -147,7 +147,7 @@ hd_gtk_style_get_fg_color (HDGtkWidgetSingleton  widget_id,
 void
 hd_gtk_style_get_bg_color (HDGtkWidgetSingleton  widget_id,
 			   GtkStateType		 state,
-			   ClutterColor		*color)
+			   CoglColor		*color)
 {
   g_return_if_fail (color != NULL);
 
@@ -157,7 +157,7 @@ hd_gtk_style_get_bg_color (HDGtkWidgetSingleton  widget_id,
 void
 hd_gtk_style_get_light_color (HDGtkWidgetSingleton   widget_id,
 			      GtkStateType	     state,
-			      ClutterColor	    *color)
+			      CoglColor	        *color)
 {
   g_return_if_fail (color != NULL);
 
@@ -168,7 +168,7 @@ hd_gtk_style_get_light_color (HDGtkWidgetSingleton   widget_id,
 void
 hd_gtk_style_get_dark_color (HDGtkWidgetSingleton  widget_id,
 			     GtkStateType	   state,
-			     ClutterColor	  *color)
+			     CoglColor	  *color)
 {
   g_return_if_fail (color != NULL);
 
@@ -179,7 +179,7 @@ hd_gtk_style_get_dark_color (HDGtkWidgetSingleton  widget_id,
 void
 hd_gtk_style_get_mid_color (HDGtkWidgetSingleton   widget_id,
 			    GtkStateType	   state,
-			    ClutterColor	  *color)
+			    CoglColor	  *color)
 {
   g_return_if_fail (color != NULL);
 
@@ -190,7 +190,7 @@ hd_gtk_style_get_mid_color (HDGtkWidgetSingleton   widget_id,
 void
 hd_gtk_style_get_text_color (HDGtkWidgetSingleton  widget_id,
 			     GtkStateType	   state,
-			     ClutterColor	  *color)
+			     CoglColor	  *color)
 {
   g_return_if_fail (color != NULL);
 
@@ -200,7 +200,7 @@ hd_gtk_style_get_text_color (HDGtkWidgetSingleton  widget_id,
 void
 hd_gtk_style_get_base_color (HDGtkWidgetSingleton  widget_id,
 			     GtkStateType	   state,
-			     ClutterColor	  *color)
+			     CoglColor	  *color)
 {
   g_return_if_fail (color != NULL);
 
@@ -215,7 +215,7 @@ hd_gtk_style_get_base_color (HDGtkWidgetSingleton  widget_id,
  * Gets a string representation of the font description held within
  * the GtkStyle of the specified widget. The string is suitable
  * for passing to pango_font_description_from_string and thus
- * clutter_label_new_full.
+ * clutter_text_new_full.
  *
  * Return value: a new string that must be freed with g_free().
  */
@@ -235,9 +235,9 @@ hd_gtk_style_get_font_string (HDGtkWidgetSingleton  widget_id)
 }
 
 /* Fonts and colors {{{ */
-/* Resolves a logical color name to a #ClutterColor. */
+/* Resolves a logical color name to a #CoglColor. */
 void
-hd_gtk_style_resolve_logical_color (ClutterColor * color,
+hd_gtk_style_resolve_logical_color (CoglColor * color,
                                     const gchar * logical_name)
 {
   GtkStyle *style;
@@ -256,7 +256,7 @@ hd_gtk_style_resolve_logical_color (ClutterColor * color,
 }
 
 /* Returns a font descrition string for a logical font name you can use
- * to create #ClutterLabel:s.  The returned string is yours. */
+ * to create #ClutterText:s.  The returned string is yours. */
 gchar *
 hd_gtk_style_resolve_logical_font (const gchar * logical_name)
 {

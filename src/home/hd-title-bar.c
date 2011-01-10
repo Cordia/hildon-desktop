@@ -172,7 +172,7 @@ struct _HdTitleBarPrivate
 
   /* Stretched image for the title background */
   ClutterActor          *title_bg;
-  ClutterLabel          *title;
+  ClutterText          *title;
   /* The title to be used when in HDRM_STATE_LOADING */
   gchar                 *loading_title;
   /* Pulsing animation for switcher */
@@ -251,7 +251,8 @@ static void
 hd_title_bar_init (HdTitleBar *bar)
 {
   ClutterActor *actor = CLUTTER_ACTOR(bar);
-  ClutterColor title_color;
+  CoglColor title_color;
+  ClutterColor cl_title_color;
   ClutterGeometry title_bg_size = {0,0,112,56}; /* size of theme image */
   gchar *font_name;
   HdTitleBarPrivate *priv = bar->priv = HD_TITLE_BAR_GET_PRIVATE(bar);
@@ -259,21 +260,26 @@ hd_title_bar_init (HdTitleBar *bar)
 
   priv->state = HDTB_VIS_NONE;
 
+#ifdef MAEMO_CHANGES
   /* Explicitly enable maemo-specific visibility detection to cut down
    * spurious paints */
   clutter_actor_set_visibility_detect(actor, TRUE);
+#endif
   clutter_actor_set_position(actor, 0, 0);
   clutter_actor_set_size(actor,
          hd_comp_mgr_get_current_screen_width (), HD_COMP_MGR_TOP_MARGIN);
   clutter_actor_set_name(CLUTTER_ACTOR(actor), "HdTitleBar");
 
   hd_gtk_style_resolve_logical_color(&title_color, "TitleTextColor");
+  hd_cogl_color_to_clutter_color(&title_color, &cl_title_color);
   font_name = hd_gtk_style_resolve_logical_font(HD_TITLE_BAR_TITLE_FONT);
 
   priv->foreground = CLUTTER_GROUP(clutter_group_new());
+#ifdef MAEMO_CHANGES
   /* Explicitly enable maemo-specific visibility detection to cut down
    * spurious paints */
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->foreground), TRUE);
+#endif
   clutter_actor_set_name(CLUTTER_ACTOR(priv->foreground),
       "HdTitleBar::foreground");
   clutter_container_add_actor(CLUTTER_CONTAINER(bar),
@@ -300,13 +306,13 @@ hd_title_bar_init (HdTitleBar *bar)
       else
         {
           ClutterActor *label;
-          guint w, h;
+          gfloat w, h;
 
-          label = clutter_label_new_full(
+          label = clutter_text_new_full(
                       font_name,
                       dgettext (BTN_LABELS[2 * i], BTN_LABELS[2 * i + 1]),
-                      &title_color);
-          clutter_label_set_use_markup(CLUTTER_LABEL(label), TRUE);
+                      &cl_title_color);
+          clutter_text_set_use_markup(CLUTTER_TEXT(label), TRUE);
 
           priv->buttons[i] = clutter_group_new();
           clutter_container_add_actor (CLUTTER_CONTAINER(priv->buttons[i]), label);
@@ -320,10 +326,12 @@ hd_title_bar_init (HdTitleBar *bar)
                                       (HD_COMP_MGR_TOP_MARGIN - h) / 2);
         }
 
+#ifdef MAEMO_CHANGES
       /* Explicitly enable maemo-specific visibility detection to cut down
        * spurious paints */
       clutter_actor_set_visibility_detect(
           CLUTTER_ACTOR(priv->buttons[i]), TRUE);
+#endif
 
       /* The position of left-aligned buttons is (0, 0) by default,
        * and right aligned ones will be placed on the initial
@@ -359,12 +367,14 @@ hd_title_bar_init (HdTitleBar *bar)
   hd_title_bar_add_right_signals(bar, priv->buttons[BTN_DONE]);
 
   /* Create the title */
-  priv->title = CLUTTER_LABEL(clutter_label_new());
+  priv->title = CLUTTER_TEXT(clutter_text_new());
+#ifdef MAEMO_CHANGES
   /* Explicitly enable maemo-specific visibility detection to cut down
    * spurious paints */
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->title), TRUE);
-  clutter_label_set_color(priv->title, &title_color);
-  /* do not call clutter_label_set_use_markup() until we know whether
+#endif
+  clutter_text_set_color(priv->title, &cl_title_color);
+  /* do not call clutter_text_set_use_markup() until we know whether
    * or not the text has markup */
   clutter_container_add_actor(CLUTTER_CONTAINER(bar), CLUTTER_ACTOR(priv->title));
   clutter_actor_hide(CLUTTER_ACTOR(priv->title));
@@ -374,7 +384,7 @@ hd_title_bar_init (HdTitleBar *bar)
 
   /* Create timeline animation */
   priv->switcher_timeline =
-    clutter_timeline_new_for_duration(HD_TITLE_BAR_SWITCHER_PULSE_DURATION
+    clutter_timeline_new(HD_TITLE_BAR_SWITCHER_PULSE_DURATION
                                       * HD_TITLE_BAR_SWITCHER_PULSE_NPULSES);
   g_signal_connect (priv->switcher_timeline, "new-frame",
                         G_CALLBACK (on_switcher_timeline_new_frame), bar);
@@ -389,14 +399,16 @@ hd_title_bar_init (HdTitleBar *bar)
                                                     &progress_geo);
     clutter_container_add_actor(CLUTTER_CONTAINER(bar),
                                 priv->progress_texture);
+#ifdef MAEMO_CHANGES
     clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->progress_texture),
                                         TRUE);
+#endif
     clutter_actor_set_size(priv->progress_texture,
                 HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE);
     clutter_actor_hide(priv->progress_texture);
     /* Create the timeline for animation */
     priv->progress_timeline = g_object_ref(
-        clutter_timeline_new(HD_THEME_IMG_PROGRESS_FRAMES,
+        clutter_timeline_new(HD_THEME_IMG_PROGRESS_FRAMES * 1000 /
                              HD_THEME_IMG_PROGRESS_FPS));
     clutter_timeline_set_loop(priv->progress_timeline, TRUE);
     g_signal_connect (priv->progress_timeline, "new-frame",
@@ -1003,7 +1015,7 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
       MBWMDecorButton * button = l->data;
       if (button->type == MBWMDecorButtonClose)
         state |= HDTB_VIS_BTN_CLOSE;
-      if (button->type == HdHomeThemeButtonBack)
+      if (button->type == (MBWMDecorButtonType)HdHomeThemeButtonBack)
         state |= HDTB_VIS_BTN_BACK;
 
       pressed |= button->state != MBWMDecorButtonStateInactive;
@@ -1027,7 +1039,7 @@ static gint hd_title_bar_get_end_of_title(HdTitleBar *bar,
   PangoRectangle logical_rect = { 0, };
   PangoLayout *layout;
 
-  layout = clutter_label_get_layout (priv->title);
+  layout = clutter_text_get_layout (priv->title);
   pango_layout_get_extents (layout, NULL, &logical_rect);
 
   x = clutter_actor_get_x(CLUTTER_ACTOR(priv->title)) +
@@ -1074,11 +1086,11 @@ static void hd_title_bar_set_title (HdTitleBar *bar,
         x_start += clutter_actor_get_width(status_area);
 
       font_name = hd_gtk_style_resolve_logical_font(HD_TITLE_BAR_TITLE_FONT);
-      clutter_label_set_font_name(priv->title, font_name);
+      clutter_text_set_font_name(priv->title, font_name);
       g_free(font_name);
-      clutter_label_set_text(priv->title, title);
+      clutter_text_set_text(priv->title, title);
 
-      clutter_label_set_use_markup(priv->title, has_markup);
+      clutter_text_set_use_markup(priv->title, has_markup);
 
       h = clutter_actor_get_height(CLUTTER_ACTOR(priv->title));
       w = x_end - (x_start + title_margin);
@@ -1087,7 +1099,7 @@ static void hd_title_bar_set_title (HdTitleBar *bar,
       clutter_actor_set_position(CLUTTER_ACTOR(priv->title),
                                  x_start+title_margin,
                                  (HD_COMP_MGR_TOP_MARGIN-h)/2);
-      clutter_label_set_ellipsize(priv->title, PANGO_ELLIPSIZE_END);
+      clutter_text_set_ellipsize(priv->title, PANGO_ELLIPSIZE_END);
       clutter_actor_show(CLUTTER_ACTOR(priv->title));
     }
   else
@@ -1280,7 +1292,7 @@ hd_title_bar_set_switcher_pulse(HdTitleBar *bar, gboolean pulse)
         /* Continue the previous animation and skip the first
          * breathe-in pulse. */
         clutter_timeline_advance(priv->switcher_timeline,
-            clutter_timeline_get_n_frames(priv->switcher_timeline)
+            clutter_timeline_get_duration(priv->switcher_timeline)
             / HD_TITLE_BAR_SWITCHER_PULSE_NPULSES);
       else
         /* Make sure set_state() leaves is highlighted. */
@@ -1343,10 +1355,12 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
       return;
     }
 
+#ifdef MAEMO_CHANGES
   /* Only get this to fire a redraw if it is visible... fixes bug 113278.
      (and now only update the actual area using
       hd_util_partial_redraw_if_possible...) */
   clutter_actor_set_allow_redraw(CLUTTER_ACTOR(bar), FALSE);
+#endif
 
   amt =  (float)clutter_timeline_get_progress(timeline)
               * HD_TITLE_BAR_SWITCHER_PULSE_NPULSES / 2;
@@ -1357,7 +1371,9 @@ on_switcher_timeline_new_frame(ClutterTimeline *timeline,
     }
 
   hd_util_partial_redraw_if_possible(priv->buttons[BTN_SWITCHER_HIGHLIGHT], 0);
+#ifdef MAEMO_CHANGES
   clutter_actor_set_allow_redraw(CLUTTER_ACTOR(bar), TRUE);
+#endif
 }
 
 /* Realign all right-aligned buttons when the screen size changes. */

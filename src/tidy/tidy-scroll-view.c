@@ -146,9 +146,9 @@ tidy_scroll_view_pick (ClutterActor *actor, const ClutterColor *color)
 
 static void
 tidy_scroll_view_get_preferred_width (ClutterActor *actor,
-                                      ClutterUnit   for_height,
-                                      ClutterUnit  *min_width_p,
-                                      ClutterUnit  *natural_width_p)
+                                      gfloat        for_height,
+                                      gfloat       *min_width_p,
+                                      gfloat       *natural_width_p)
 {
   TidyPadding padding;
   guint xthickness;
@@ -172,14 +172,14 @@ tidy_scroll_view_get_preferred_width (ClutterActor *actor,
   /* Add space for the scroll-bar if we can determine it will be necessary */
   if ((for_height >= 0) && natural_width_p)
     {
-      ClutterUnit natural_height;
+      gfloat natural_height;
 
       clutter_actor_get_preferred_height (priv->child,
-                                          -CLUTTER_UNITS_FROM_FIXED (CFX_ONE),
+                                          -COGL_FIXED_1,
                                           NULL,
                                           &natural_height);
       if (for_height < natural_height)
-        *natural_width_p += CLUTTER_UNITS_FROM_INT (xthickness);
+        *natural_width_p += COGL_FIXED_FROM_INT (xthickness);
     }
 
   /* Add space for padding */
@@ -192,9 +192,9 @@ tidy_scroll_view_get_preferred_width (ClutterActor *actor,
 
 static void
 tidy_scroll_view_get_preferred_height (ClutterActor *actor,
-                                       ClutterUnit   for_width,
-                                       ClutterUnit  *min_height_p,
-                                       ClutterUnit  *natural_height_p)
+                                       gfloat        for_width,
+                                       gfloat       *min_height_p,
+                                       gfloat       *natural_height_p)
 {
   TidyPadding padding;
   guint ythickness;
@@ -218,14 +218,14 @@ tidy_scroll_view_get_preferred_height (ClutterActor *actor,
   /* Add space for the scroll-bar if we can determine it will be necessary */
   if ((for_width >= 0) && natural_height_p)
     {
-      ClutterUnit natural_width;
+      gfloat natural_width;
 
       clutter_actor_get_preferred_width (priv->child,
-                                         -CLUTTER_UNITS_FROM_FIXED (CFX_ONE),
+                                         -COGL_FIXED_1,
                                          NULL,
                                          &natural_width);
       if (for_width < natural_width)
-        *natural_height_p += CLUTTER_UNITS_FROM_INT (ythickness);
+        *natural_height_p += COGL_FIXED_FROM_INT (ythickness);
     }
 
   /* Add space for padding */
@@ -237,20 +237,20 @@ tidy_scroll_view_get_preferred_height (ClutterActor *actor,
 }
 
 static void
-tidy_scroll_view_allocate (ClutterActor          *actor,
-                           const ClutterActorBox *box,
-                           gboolean               absolute_origin_changed)
+tidy_scroll_view_allocate (ClutterActor           *actor,
+                           const ClutterActorBox  *box,
+                           ClutterAllocationFlags  flags)
 {
   TidyPadding padding;
   ClutterActorBox child_box;
   guint xthickness, ythickness;
-  ClutterUnit xthicknessu, ythicknessu;
+  CoglFixed xthicknessu, ythicknessu;
 
   TidyScrollViewPrivate *priv = TIDY_SCROLL_VIEW (actor)->priv;
 
   /* Chain up */
   CLUTTER_ACTOR_CLASS (tidy_scroll_view_parent_class)->
-    allocate (actor, box, absolute_origin_changed);
+    allocate (actor, box, flags);
 
   tidy_actor_get_padding (TIDY_ACTOR (actor), &padding);
 
@@ -259,9 +259,9 @@ tidy_scroll_view_allocate (ClutterActor          *actor,
                      "ythickness", &ythickness,
                      NULL);
   xthicknessu = CLUTTER_ACTOR_IS_VISIBLE (priv->vscroll) ?
-    CLUTTER_UNITS_FROM_INT (xthickness) : 0;
+    COGL_FIXED_FROM_INT (xthickness) : 0;
   ythicknessu = CLUTTER_ACTOR_IS_VISIBLE (priv->hscroll) ?
-    CLUTTER_UNITS_FROM_INT (ythickness) : 0;
+    COGL_FIXED_FROM_INT (ythickness) : 0;
 
   /* Vertical scrollbar */
   child_box.x1 = box->x2 - box->x1 - padding.right;
@@ -270,9 +270,7 @@ tidy_scroll_view_allocate (ClutterActor          *actor,
   child_box.y1 = padding.top;
   child_box.y2 = MIN(xthicknessu, box->x2 - box->x1) + padding.top;
 
-  clutter_actor_allocate (priv->vscroll,
-                          &child_box,
-                          absolute_origin_changed);
+  clutter_actor_allocate (priv->vscroll, &child_box, flags);
 
   /* Horizontal scrollbar */
   child_box.x1 = padding.left;
@@ -280,9 +278,7 @@ tidy_scroll_view_allocate (ClutterActor          *actor,
   child_box.y1 = MAX(0, box->y2 - box->y1 - ythicknessu) - padding.bottom;
   child_box.y2 = box->y2 - box->y1 - padding.bottom;
 
-  clutter_actor_allocate (priv->hscroll,
-                          &child_box,
-                          absolute_origin_changed);
+  clutter_actor_allocate (priv->hscroll, &child_box, flags);
 
   /* Child */
   child_box.x1 = 0;
@@ -301,7 +297,7 @@ tidy_scroll_view_allocate (ClutterActor          *actor,
 
   if (priv->child)
     {
-      clutter_actor_allocate (priv->child, &child_box, absolute_origin_changed);
+      clutter_actor_allocate (priv->child, &child_box, flags);
       /*clutter_actor_set_clipu (priv->child,
                                child_box.x1,
                                child_box.y1,
@@ -385,7 +381,7 @@ child_adjustment_changed_cb (TidyAdjustment *adjustment,
                              ClutterActor   *bar)
 {
   TidyScrollView *scroll;
-  ClutterFixed lower, upper, page_size;
+  CoglFixed lower, upper, page_size;
 
   scroll = TIDY_SCROLL_VIEW (clutter_actor_get_parent (bar));
 
@@ -456,7 +452,7 @@ child_vadjustment_notify_cb (GObject *gobject,
 static void
 tidy_scroll_view_init (TidyScrollView *self)
 {
-  static const TidyPadding padding = { .right = CLUTTER_UNITS_FROM_INT (8) };
+  static const TidyPadding padding = { .right = COGL_FIXED_FROM_INT (8) };
   TidyScrollViewPrivate *priv = self->priv = SCROLL_VIEW_PRIVATE (self);
   GValue transparent = { 0 };
 

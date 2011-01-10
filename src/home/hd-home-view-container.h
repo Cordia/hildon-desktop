@@ -65,7 +65,7 @@ gboolean         hd_home_view_container_get_active         (HdHomeViewContainer 
                                                             guint                view_id);
 
 void             hd_home_view_container_set_offset         (HdHomeViewContainer *container,
-                                                            ClutterUnit          offset);
+                                                            CoglFixed          offset);
 
 ClutterActor    *hd_home_view_container_get_previous_view  (HdHomeViewContainer *container);
 ClutterActor    *hd_home_view_container_get_next_view      (HdHomeViewContainer *container);

@@ -64,7 +64,9 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
 {
   HdCompMgr  * hmgr = data;
   extern MBWindowManager *hd_mb_wm;
+#ifdef HAVE_DSME
   static gboolean call_active;
+#endif
 
   if (dbus_message_is_signal(msg, DSME_SIGNAL_INTERFACE,
 			     DSME_SHUTDOWN_SIGNAL_NAME))
@@ -146,7 +148,9 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                   /* Allow redraws again... */
                   clutter_actor_show(
                       CLUTTER_ACTOR(hd_render_manager_get()));
+#ifdef MAEMO_CHANGES
                   clutter_actor_set_allow_redraw(stage, TRUE);
+#endif
                   /* make a blocking redraw to draw any new window (such as
                    * the "swipe to unlock") first, otherwise just a black
                    * screen will be visible (see below) */
@@ -168,7 +172,9 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
                    * conflict. */
                   clutter_actor_hide(
                       CLUTTER_ACTOR(hd_render_manager_get()));
+#ifdef MAEMO_CHANGES
                   clutter_actor_set_allow_redraw(stage, FALSE);
+#endif
                   hd_dbus_display_is_off = TRUE;
                   /* Hiding before set_allow_redraw will queue a redraw,
                    * which will draw a black screen (because hdrm is hidden).
@@ -235,12 +241,15 @@ display_timeout_f (gpointer unused)
   hd_dbus_prevent_display_blanking ();
   return TRUE;
 }
+#endif
 
 /* keeps the display lit by sending periodical messages to MCE's D-Bus
  * interface */
 void
 hd_dbus_disable_display_blanking (gboolean setting)
 {
+#ifdef HAVE_DSME
+/* TODO Convert MCE to DSME */
   static guint timeout_f = 0;
 
   if (setting)
@@ -254,8 +263,8 @@ hd_dbus_disable_display_blanking (gboolean setting)
       g_source_remove (timeout_f);
       timeout_f = 0;
     }
-}
 #endif
+}
 
 DBusConnection *
 hd_dbus_init (HdCompMgr * hmgr)

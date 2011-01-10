@@ -77,24 +77,24 @@ TidyAdjustment *tidy_adjustment_new          (gdouble         value,
                                               gdouble         step_increment,
                                               gdouble         page_increment,
                                               gdouble         page_size);
-TidyAdjustment *tidy_adjustment_newx         (ClutterFixed    value,
-                                              ClutterFixed    lower,
-                                              ClutterFixed    upper,
-                                              ClutterFixed    step_increment,
-                                              ClutterFixed    page_increment,
-                                              ClutterFixed    page_size);
+TidyAdjustment *tidy_adjustment_newx         (CoglFixed    value,
+                                              CoglFixed    lower,
+                                              CoglFixed    upper,
+                                              CoglFixed    step_increment,
+                                              CoglFixed    page_increment,
+                                              CoglFixed    page_size);
 gdouble         tidy_adjustment_get_value    (TidyAdjustment *adjustment);
-ClutterFixed    tidy_adjustment_get_valuex   (TidyAdjustment *adjustment);
+CoglFixed    tidy_adjustment_get_valuex   (TidyAdjustment *adjustment);
 void            tidy_adjustment_set_value    (TidyAdjustment *adjustment,
                                               gdouble         value);
 void            tidy_adjustment_set_valuex   (TidyAdjustment *adjustment,
-                                              ClutterFixed    value);
+                                              CoglFixed    value);
 void            tidy_adjustment_clamp_page   (TidyAdjustment *adjustment,
                                               gdouble         lower,
                                               gdouble         upper);
 void            tidy_adjustment_clamp_pagex  (TidyAdjustment *adjustment,
-                                              ClutterFixed    lower,
-                                              ClutterFixed    upper);
+                                              CoglFixed    lower,
+                                              CoglFixed    upper);
 void            tidy_adjustment_set_values   (TidyAdjustment *adjustment,
                                               gdouble         value,
                                               gdouble         lower,
@@ -103,12 +103,12 @@ void            tidy_adjustment_set_values   (TidyAdjustment *adjustment,
                                               gdouble         page_increment,
                                               gdouble         page_size);
 void            tidy_adjustment_set_valuesx  (TidyAdjustment *adjustment,
-                                              ClutterFixed    value,
-                                              ClutterFixed    lower,
-                                              ClutterFixed    upper,
-                                              ClutterFixed    step_increment,
-                                              ClutterFixed    page_increment,
-                                              ClutterFixed    page_size);
+                                              CoglFixed    value,
+                                              CoglFixed    lower,
+                                              CoglFixed    upper,
+                                              CoglFixed    step_increment,
+                                              CoglFixed    page_increment,
+                                              CoglFixed    page_size);
 void            tidy_adjustment_get_values   (TidyAdjustment *adjustment,
                                               gdouble        *value,
                                               gdouble        *lower,
@@ -117,26 +117,26 @@ void            tidy_adjustment_get_values   (TidyAdjustment *adjustment,
                                               gdouble        *page_increment,
                                               gdouble        *page_size);
 void            tidy_adjustment_get_valuesx  (TidyAdjustment *adjustment,
-                                              ClutterFixed   *value,
-                                              ClutterFixed   *lower,
-                                              ClutterFixed   *upper,
-                                              ClutterFixed   *step_increment,
-                                              ClutterFixed   *page_increment,
-                                              ClutterFixed   *page_size);
+                                              CoglFixed   *value,
+                                              CoglFixed   *lower,
+                                              CoglFixed   *upper,
+                                              CoglFixed   *step_increment,
+                                              CoglFixed   *page_increment,
+                                              CoglFixed   *page_size);
 void
 tidy_adjustment_get_skirtx                   (TidyAdjustment *adjustment,
-                                              ClutterFixed   *lowest,
-                                              ClutterFixed   *highest);
+                                              CoglFixed   *lowest,
+                                              CoglFixed   *highest);
 void
 tidy_adjustment_set_skirtx                   (TidyAdjustment *adjustment,
-                                              ClutterFixed    skirt_p);
+                                              CoglFixed    skirt_p);
 
 void            tidy_adjustment_interpolate  (TidyAdjustment *adjustment,
                                               gdouble         value,
                                               guint           n_frames,
                                               guint           fps);
 void            tidy_adjustment_interpolatex (TidyAdjustment *adjustment,
-                                              ClutterFixed    value,
+                                              CoglFixed    value,
                                               guint           n_frames,
                                               guint           fps);
 

@@ -22,13 +22,13 @@
  *     .background              #ClutterCloneTexture  or apps w/notifs
  *     .separator               #ClutterCloneTexture
  *     .icon                    #ClutterTexture
- *     .count, .time, .message  #ClutterLabel
+ *     .count, .time, .message  #ClutterText
  *   .plate                     #ClutterGroup
  *     .frame.all               #ClutterGroup         applications
  *       .frame.nw, .nm, .ne    #ClutterCloneTexture  applications
  *       .frame.mw,      .mw    #ClutterCloneTexture  applications
  *       .frame.sw, .sm, .sw    #ClutterCloneTexture  applications
- *     .title                   #ClutterLabel
+ *     .title                   #ClutterText
  *     .close                   #ClutterGroup
  *       .icon_app, .icon_notif #ClutterCloneTexture
  *
@@ -455,8 +455,8 @@ typedef struct
  */
 typedef struct
 {
-  void (*move)  (ClutterActor *actor, gint x, gint y);
-  void (*resize)(ClutterActor *actor, gint w, gint h);
+  void (*move)  (ClutterActor *actor, gfloat x, gfloat y);
+  void (*resize)(ClutterActor *actor, gfloat w, gfloat h);
   void (*scale) (ClutterActor *actor, gdouble sx, gdouble sy);
 } Flyops;
 
@@ -557,7 +557,7 @@ typedef struct
   /* @fun(@actor, @funparam) is what is called eventually.
    * @fun is not %NULL, @actor is g_object_ref()ed.
    * @handler_id identifies the signal handler. */
-  ClutterEffectCompleteFunc    fun;
+  GCallback                    fun;
   ClutterActor                *actor;
   gpointer                     funparam;
   gulong                       handler_id;
@@ -594,8 +594,8 @@ static const Flyops Fly_at_once =
 };
 
 /* ...now with animation. */
-static void check_and_move (ClutterActor *, gint, gint);
-static void check_and_resize (ClutterActor *, gint, gint);
+static void check_and_move (ClutterActor *, gfloat, gfloat);
+static void check_and_resize (ClutterActor *, gfloat, gfloat);
 static void check_and_scale (ClutterActor *, gdouble, gdouble);
 static const Flyops Fly_smoothly =
 {
@@ -662,7 +662,9 @@ static gboolean UnseenNotifications = FALSE;
  * -- @Zoom_effect: For zooming in and out of application windows.
  */
 static ClutterTimeline *Fly_effect_timeline, *Zoom_effect_timeline;
-static ClutterEffectTemplate *Fly_effect, *Zoom_effect;
+#ifdef MAEGO_DISABLED
+static ClutterAnimation *Fly_effect, *Zoom_effect;
+#endif
 
 /*
  * The list of currently running effects created with new_effect().
@@ -675,8 +677,10 @@ static GPtrArray *Effects;
 
 /* gtkrc articles */
 static const gchar *LargeSystemFont, *SystemFont, *SmallSystemFont;
-static ClutterColor DefaultTextColor;
-static ClutterColor NotificationTextColor, NotificationSecondaryTextColor;
+static CoglColor DefaultTextColor;
+static CoglColor NotificationTextColor, NotificationSecondaryTextColor;
+static ClutterColor cl_DefaultTextColor;
+static ClutterColor cl_NotificationTextColor, cl_NotificationSecondaryTextColor;
 /* Private variables }}} */
 
 /* Program code */
@@ -870,7 +874,7 @@ get_icon (const gchar * iname, guint isize)
   static GHashTable *cache;
   ClutterActor *icon;
   gchar *ikey;
-  guint w, h;
+  gfloat w, h;
 
   if (!iname)
     goto out;
@@ -900,7 +904,7 @@ get_icon (const gchar * iname, guint isize)
   /* Icon found.  Set its anchor such that if @icon's real size differs
    * from the requested @isize then @icon would look as if centered on
    * an @isize large area. */
-  icon = clutter_clone_texture_new (CLUTTER_TEXTURE (icon));
+  icon = clutter_clone_new (icon);
   clutter_actor_set_name (icon, iname);
   clutter_actor_get_size (icon, &w, &h);
   clutter_actor_move_anchor_point (icon,
@@ -928,7 +932,7 @@ animation_in_progress (ClutterTimeline * timeline)
 static void
 stop_animation (ClutterTimeline * timeline)
 {
-  guint nframes;
+  guint duration;
 
   /*
    * Fake "new-frame" and "complete" signals, clutter_timeline_advance()
@@ -938,9 +942,9 @@ stop_animation (ClutterTimeline * timeline)
    * but we need the rewind afterwards.
    */
   clutter_timeline_pause (timeline);
-  nframes = clutter_timeline_get_n_frames (timeline);
-  clutter_timeline_advance (timeline, nframes);
-  g_signal_emit_by_name (timeline, "new-frame", NULL, nframes);
+  duration = clutter_timeline_get_duration (timeline);
+  clutter_timeline_advance (timeline, duration);
+  g_signal_emit_by_name (timeline, "new-frame", duration, NULL);
   g_signal_emit_by_name (timeline, "completed", NULL);
   clutter_timeline_rewind (timeline);
 }
@@ -1113,7 +1117,7 @@ call_effect_closure (ClutterTimeline * timeline,
                      EffectCompleteClosure *closure)
 {
   g_signal_handler_disconnect (timeline, closure->handler_id);
-  closure->fun (closure->actor, closure->funparam);
+  ((void (*) (ClutterActor *, gpointer))(closure->fun)) (closure->actor, closure->funparam);
   g_object_unref (closure->actor);
   g_slice_free (EffectCompleteClosure, closure);
 }
@@ -1122,7 +1126,7 @@ call_effect_closure (ClutterTimeline * timeline,
  * @timeline is "completed".  Otherwise NOP. */
 static void
 add_effect_closure (ClutterTimeline * timeline,
-                    ClutterEffectCompleteFunc fun,
+                    GCallback fun,
                     ClutterActor * actor, gpointer funparam)
 {
   EffectCompleteClosure *closure;
@@ -1207,13 +1211,13 @@ effect (ClutterActor * actor, ptype final1, ptype final2)           \
     clutter_set_fun (actor, final1, final2);                        \
 }
 
-DEFINE_RMS_EFFECT(move, gint,
+DEFINE_RMS_EFFECT(move, gfloat,
                   clutter_actor_get_position, clutter_actor_set_position);
 static void
-check_and_move (ClutterActor * actor, gint xpos_new, gint ypos_new)
+check_and_move (ClutterActor * actor, gfloat xpos_new, gfloat ypos_new)
 {
   EffectClosure *closure;
-  gint xpos_now, ypos_now;
+  gfloat xpos_now, ypos_now;
 
   clutter_actor_get_position (actor, &xpos_now, &ypos_now);
   if (xpos_now != xpos_new || ypos_now != ypos_new)
@@ -1225,14 +1229,14 @@ check_and_move (ClutterActor * actor, gint xpos_new, gint ypos_new)
 /* On the gadget (or maybe in general if we're accelerated) we can't
  * resize continously because it blocks all effects and doesn't come
  * about anyway.  It's so even if we don't clip_on_resize(). */
-#ifdef __i386__
-DEFINE_RMS_EFFECT(resize, guint,
+#if defined(__i386__) || defined(__x86_64__)
+DEFINE_RMS_EFFECT(resize, gfloat,
                   clutter_actor_get_size, clutter_actor_set_size);
 static void
-check_and_resize (ClutterActor * actor, gint width_new, gint height_new)
+check_and_resize (ClutterActor * actor, gfloat width_new, gfloat height_new)
 {
   EffectClosure *closure;
-  guint width_now, height_now;
+  gfloat width_now, height_now;
 
   clutter_actor_get_size (actor, &width_now, &height_now);
   if (width_now != width_new || height_now != height_new)
@@ -1384,7 +1388,7 @@ fade_for_duration (guint msecs, ClutterActor * actor, guint opacity,
   EffectClosure *closure;
   ClutterTimeline *timeline;
 
-  timeline = clutter_timeline_new_for_duration (msecs);
+  timeline = clutter_timeline_new (msecs);
   closure = fade (timeline, actor, opacity, finally, another_actor);
   g_object_unref (timeline);
   return closure;
@@ -1488,7 +1492,7 @@ static void
 turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
 {
   guint i;
-  gint centerx, centery;
+  gfloat centerx, centery;
   EffectClosure *closure;
 
   closure = new_effect (timeline, thwin,
@@ -1530,8 +1534,8 @@ turnoff_effect (ClutterTimeline * timeline, ClutterActor * thwin)
 }
 /* Boom effect }}} */
 
-/* %ClutterLabel utilities {{{ */
-/* Utility function to set up or change a #ClutterLabel. */
+/* %ClutterText utilities {{{ */
+/* Utility function to set up or change a #ClutterText. */
 static ClutterActor *
 set_label_text_and_color (ClutterActor * label, const char * newtext,
                           const ClutterColor * color)
@@ -1539,22 +1543,22 @@ set_label_text_and_color (ClutterActor * label, const char * newtext,
   const gchar *text;
 
   /* Only change the text if it's different from the current one.
-   * Setting a #ClutterLabel's text causes relayout. */
+   * Setting a #ClutterText's text causes relayout. */
   if (color)
-    clutter_label_set_color (CLUTTER_LABEL (label), color);
-  if (newtext && (!(text = clutter_label_get_text (CLUTTER_LABEL (label)))
+    clutter_text_set_color (CLUTTER_TEXT (label), color);
+  if (newtext && (!(text = clutter_text_get_text (CLUTTER_TEXT (label)))
                   || strcmp (newtext, text)))
-    clutter_label_set_text (CLUTTER_LABEL (label), newtext);
+    clutter_text_set_text (CLUTTER_TEXT (label), newtext);
   return label;
 }
 
-/* Query or set the line spacing of a #ClutterLabel if it's wrapping.
+/* Query or set the line spacing of a #ClutterText if it's wrapping.
  * For some reason this attribute is lost after you've changed the
  * label's size so it needs to be restored. */
 #define get_label_line_spacing(label) \
-  pango_layout_get_spacing (clutter_label_get_layout (CLUTTER_LABEL (label)))
+  pango_layout_get_spacing (clutter_text_get_layout (CLUTTER_TEXT (label)))
 #define set_label_line_spacing(label, spacing) \
-  pango_layout_set_spacing (clutter_label_get_layout (CLUTTER_LABEL (label)), \
+  pango_layout_set_spacing (clutter_text_get_layout (CLUTTER_TEXT (label)), \
                             spacing)
 
 /* Returns pango's idea about the @label's height.
@@ -1565,7 +1569,7 @@ get_real_label_height (ClutterActor * label)
 {
   gint height;
 
-  pango_layout_get_pixel_size(clutter_label_get_layout(CLUTTER_LABEL(label)),
+  pango_layout_get_pixel_size(clutter_text_get_layout(CLUTTER_TEXT(label)),
                               NULL, &height);
   return height;
 }
@@ -1577,7 +1581,7 @@ get_nlines_of_label (ClutterActor * label)
   guint i;
   const gchar *text;
 
-  text = clutter_label_get_text (CLUTTER_LABEL (label));
+  text = clutter_text_get_text (CLUTTER_TEXT (label));
   for (i = 1; *text; text++)
     if (*text == '\n')
       i++;
@@ -1590,19 +1594,19 @@ preserve_linespacing (ClutterActor * actor, gpointer unused, gpointer spc)
 {
   set_label_line_spacing (actor, GPOINTER_TO_INT (spc));
 }
-/* %ClutterLabel:s }}} */
+/* %ClutterText:s }}} */
 
 /* Allocation callbacks {{{ */
 /* #ClutterActor::notify::allocation callback to clip @actor to its size
- * whenever it changes.  Used to clip ClutterLabel:s to their allocated
+ * whenever it changes.  Used to clip ClutterText:s to their allocated
  * size. */
 static void
 clip_on_resize (ClutterActor * actor)
 {
-  ClutterUnit width, height;
+  gfloat width, height;
 
-  clutter_actor_get_sizeu (actor, &width, &height);
-  clutter_actor_set_clipu (actor, 0, 0, width, height);
+  clutter_actor_get_size (actor, &width, &height);
+  clutter_actor_set_clip (actor, 0, 0, width, height);
 }
 
 /* Once you've specified an anchor point by gravity clutter forgets about it
@@ -1618,11 +1622,13 @@ reanchor_on_resize (ClutterActor * actor, gpointer unused, gpointer grv)
 /* %ClutterEffectCompleteFunc:s {{{ */
 /* #ClutterEffectCompleteFunc to hide @other when the effect is complete.
  * Used when @actor fades in in the top of @other. */
+#ifdef MAEGO_DISABLED
 static void
 hide_when_complete (ClutterActor * actor, ClutterActor * other)
 {
   clutter_actor_hide (other);
 }
+#endif
 
 /* Hide @actor and only show it after the flying animation finished.
  * Used when a new thing is created but you need to move other things
@@ -1632,7 +1638,7 @@ show_when_complete (ClutterActor * actor)
 {
   clutter_actor_hide (actor);
   add_effect_closure (Fly_effect_timeline,
-                      (ClutterEffectCompleteFunc)clutter_actor_show,
+                      G_CALLBACK(clutter_actor_show),
                       actor, NULL);
 }
 
@@ -1829,7 +1835,7 @@ calc_layout (Layout * lout)
 static void
 layout_thumb_frame (const Thumbnail * thumb, const Flyops * ops)
 {
-  guint wt, ht, wb, hb;
+  gfloat wt, ht, wb, hb;
 
   /* This is quite boring. */
   clutter_actor_get_size(thumb->frame.nw, &wt, &ht);
@@ -1867,11 +1873,11 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
   TNote *tnote;
   gboolean reload_icon;
   guint isize, msgdiv, maxmsg;
-  gint x = 0, y = 0;
-  guint width, height;
-  guint xicon, ycount, xmsg;
-  guint worig = 0, horig = 0, wmax, hmax;
-  guint htime, hleft, hleftforme;
+  gfloat x = 0, y = 0;
+  gfloat width, height;
+  gfloat xicon, ycount, xmsg;
+  gfloat worig = 0, horig = 0, wmax, hmax;
+  gfloat htime, hleft, hleftforme;
 
   tnote = thumb->tnote;
   if (!ops)
@@ -1928,7 +1934,7 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
 
   /* Size and locate the notwin's guts. */
   /* .icon, .count: separated by a margin and centered together. */
-  clutter_label_set_font_name (CLUTTER_LABEL (tnote->count),
+  clutter_text_set_font_name (CLUTTER_TEXT (tnote->count),
                    THUMBSIZE_IS (large) ? LargeSystemFont : SystemFont);
   clutter_actor_get_size (tnote->count, &width, &height);
   xicon  = (wmax - (isize + NOTE_ICON_GAP + width)) / 2;
@@ -1939,7 +1945,7 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
    * See its natural (unwrapped) size then determine the height. */
   if (FLY (ops, smoothly))
     clutter_actor_get_size (tnote->time, &worig, &horig);
-  clutter_label_set_font_name (CLUTTER_LABEL (tnote->time),
+  clutter_text_set_font_name (CLUTTER_TEXT (tnote->time),
                    THUMBSIZE_IS (large) ? SystemFont : SmallSystemFont);
   clutter_actor_set_size (tnote->time, -1, -1);
   clutter_actor_get_size (tnote->time, &width, &htime);
@@ -1951,7 +1957,7 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
     }
   if (hleft < htime)
     { /* We must have lost linespacing or we have a 3-line-ling text. */
-      g_critical ("$time too high (%u > %u", htime, hleft);
+      g_critical ("$time too high (%f > %f", htime, hleft);
       hleft = 0;
     }
   else
@@ -1987,7 +1993,7 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
         }
 
       /* Check the line count and restrict to @maxmsg. */
-      lout = clutter_label_get_layout(CLUTTER_LABEL(tnote->message));
+      lout = clutter_text_get_layout(CLUTTER_TEXT(tnote->message));
       if (pango_layout_get_line_count (lout) > maxmsg)
         {
           PangoRectangle r;
@@ -2160,7 +2166,7 @@ layout (ClutterActor * newborn, gboolean newborn_is_notification)
     {
       show_when_complete (newborn);
       if (newborn_is_notification)
-        add_effect_closure (Fly_effect_timeline, fade_in_when_complete,
+        add_effect_closure (Fly_effect_timeline, G_CALLBACK(fade_in_when_complete),
                             newborn, GINT_TO_POINTER (NOTIFADE_IN_DURATION));
     }
 }
@@ -2203,8 +2209,8 @@ reset_thumb_title (Thumbnail * thumb)
   g_assert (thumb->title != NULL);
   set_label_text_and_color (thumb->title, new_title,
                             thumb_has_notification (thumb)
-                              ? &NotificationTextColor : &DefaultTextColor);
-  clutter_label_set_use_markup (CLUTTER_LABEL(thumb->title), use_markup);
+                              ? &cl_NotificationTextColor : &cl_DefaultTextColor);
+  clutter_text_set_use_markup (CLUTTER_TEXT(thumb->title), use_markup);
 }
 
 /* Creates @thumb->thwin.  The exact position of the inner actors is decided
@@ -2214,10 +2220,10 @@ static void
 create_thwin (Thumbnail * thumb, ClutterActor * prison)
 {
   /* .title */
-  thumb->title = clutter_label_new ();
-  clutter_label_set_font_name (CLUTTER_LABEL (thumb->title), SmallSystemFont);
-  clutter_label_set_use_markup(CLUTTER_LABEL(thumb->title), TRUE);
-  clutter_label_set_ellipsize(CLUTTER_LABEL(thumb->title), PANGO_ELLIPSIZE_END);
+  thumb->title = clutter_text_new ();
+  clutter_text_set_font_name (CLUTTER_TEXT (thumb->title), SmallSystemFont);
+  clutter_text_set_use_markup(CLUTTER_TEXT(thumb->title), TRUE);
+  clutter_text_set_ellipsize(CLUTTER_TEXT(thumb->title), PANGO_ELLIPSIZE_END);
   clutter_actor_set_anchor_point_from_gravity (thumb->title, CLUTTER_GRAVITY_WEST);
   clutter_actor_set_position (thumb->title,
                               TITLE_LEFT_MARGIN, TITLE_HEIGHT / 2);
@@ -2488,7 +2494,7 @@ adopt_notification (Thumbnail * apthumb, TNote * tnote)
       ClutterTimeline *timeline;
 
       /* Fade in @notwin and the decoration. */
-      timeline = clutter_timeline_new_for_duration (NOTIFADE_IN_DURATION);
+      timeline = clutter_timeline_new (NOTIFADE_IN_DURATION);
       clutter_actor_set_opacity (tnote->notwin, 0);
       fade (timeline, tnote->notwin, 255, FINALLY_HIDE, apthumb->prison);
       fade (timeline, apthumb->frame.all, 0, FINALLY_HIDE, apthumb->frame.all);
@@ -2537,7 +2543,7 @@ orphan_notification (Thumbnail * apthumb, gboolean animate)
 
       /* If @animate fade out @notwin, otherwise just the decoration.
        * Couple with the fly effect so they will be synchronized. */
-      timeline = clutter_timeline_new_for_duration (NOTIFADE_OUT_DURATION);
+      timeline = clutter_timeline_new (NOTIFADE_OUT_DURATION);
       if (animate)
         fade (timeline, tnote->notwin, 0, FINALLY_REMOVE, apthumb->thwin);
       fade (timeline, apthumb->frame.all, 255, FINALLY_REST, NULL);
@@ -2634,7 +2640,7 @@ find_dialog (guint * idxp, ClutterActor * dialog, gboolean for_removal)
  * coordinates and scaling are given in switcher view.
  */
 static void
-zoom_fun (gint * xposp, gint * yposp,
+zoom_fun (gfloat * xposp, gfloat * yposp,
           gdouble * xscalep, gdouble * yscalep)
 {
   _setWindowGeometry();
@@ -2651,7 +2657,7 @@ zoom_fun (gint * xposp, gint * yposp,
 static void
 zoom_in (const Thumbnail * apthumb)
 {
-  gint xpos, ypos;
+  gfloat xpos, ypos;
   gdouble xscale, yscale;
 
   /* @xpos, @ypos := .prison's absolute coordinates. */
@@ -2697,7 +2703,7 @@ zoom_in_complete (ClutterActor * navigator, const Thumbnail * apthumb)
  */
 void
 hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
-                           ClutterEffectCompleteFunc fun, gpointer funparam)
+                           GCallback fun, gpointer funparam)
 { g_debug (__FUNCTION__);
   const Thumbnail *apthumb;
 
@@ -2716,8 +2722,10 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
   /* Crossfade .plate with .titlebar. */
   clutter_actor_show (apthumb->titlebar);
   clutter_actor_set_opacity (apthumb->titlebar, 0);
+#ifdef MAEGO_DISABLED
   clutter_effect_fade (Zoom_effect, apthumb->titlebar, 255, NULL, NULL);
   clutter_effect_fade (Zoom_effect, apthumb->plate,      0, NULL, NULL);
+#endif
 
   /* Fade out our notification smoothly if we have one. */
   if (thumb_has_notification (apthumb))
@@ -2746,15 +2754,15 @@ hd_task_navigator_zoom_in (HdTaskNavigator * self, ClutterActor * win,
 
   /* Clean up, exit and call @fun when then animation is finished. */
   add_effect_closure (Zoom_effect_timeline,
-                      (ClutterEffectCompleteFunc)zoom_in_complete,
+                      G_CALLBACK(zoom_in_complete),
                       CLUTTER_ACTOR (self), (Thumbnail *)apthumb);
   add_effect_closure (Zoom_effect_timeline,
-                      (ClutterEffectCompleteFunc)fun, win, funparam);
+                      G_CALLBACK(fun), win, funparam);
   return;
 
 damage_control:
   if (fun != NULL)
-    fun (win, funparam);
+    ((void (*)(ClutterActor *, gpointer))fun) (win, funparam);
 }
 
 /* Show the navigator and zoom out of @win into it.  @win must have previously
@@ -2762,11 +2770,11 @@ damage_control:
  * effect completes. */
 void
 hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
-                            ClutterEffectCompleteFunc fun, gpointer funparam)
+                            GCallback fun, gpointer funparam)
 { g_debug (__FUNCTION__);
   const Thumbnail *apthumb;
   gdouble xscale, yscale;
-  gint yarea, xpos, ypos;
+  gfloat yarea, xpos, ypos;
 
   /* Our "show" callback will grab the butts of @win. */
   clutter_actor_show (Navigator);
@@ -2800,19 +2808,25 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
   zoom_fun (&xpos, &ypos, &xscale, &yscale);
   clutter_actor_set_scale     (Scroller, xscale,  yscale);
   clutter_actor_set_position  (Scroller, xpos,    ypos);
+#ifdef MAEGO_DISABLED
   clutter_effect_scale (Zoom_effect, Scroller, 1, 1, NULL, NULL);
   clutter_effect_move  (Zoom_effect, Scroller, 0, 0, NULL, NULL);
+#endif
 
   /* Crossfade .plate with .titlebar.  (Earlier i said "It's okay to leave
    * .titlebar shown but transparent." but i can't recall why.  Anyway,
    * let's hide it afterwards.) */
   clutter_actor_show (apthumb->titlebar);
   clutter_actor_set_opacity (apthumb->titlebar, 255);
+#ifdef MAEGO_DISABLED
   clutter_effect_fade (Zoom_effect, apthumb->titlebar,   0,
-                       (ClutterEffectCompleteFunc)hide_when_complete,
+                       G_CALLBACK(hide_when_complete),
                        apthumb->titlebar);
+#endif
   clutter_actor_set_opacity (apthumb->plate,      0);
+#ifdef MAEGO_DISABLED
   clutter_effect_fade (Zoom_effect, apthumb->plate,    255, NULL, NULL);
+#endif
 
   /* Fade in .notwin smoothly. */
   if (thumb_has_notification (apthumb))
@@ -2828,7 +2842,7 @@ hd_task_navigator_zoom_out (HdTaskNavigator * self, ClutterActor * win,
 
 damage_control:
   if (fun != NULL)
-    fun (win, funparam);
+    ((void (*)(ClutterActor *, gpointer))fun) (win, funparam);
 }
 /* Zooming }}} */
 
@@ -3089,7 +3103,7 @@ static void
 remove_window_later (ClutterActor * win, EffectCompleteClosure * closure)
 {
   hd_task_navigator_remove_window (HD_TASK_NAVIGATOR (Navigator), win,
-                                   closure->fun, closure->funparam);
+                                   G_CALLBACK(closure->fun), closure->funparam);
   g_slice_free (EffectCompleteClosure, closure);
 }
 
@@ -3103,7 +3117,7 @@ remove_window_later (ClutterActor * win, EffectCompleteClosure * closure)
 void
 hd_task_navigator_remove_window (HdTaskNavigator * self,
                                  ClutterActor * win,
-                                 ClutterEffectCompleteFunc fun,
+                                 GCallback fun,
                                  gpointer funparam)
 { g_debug (__FUNCTION__);
   GList *li;
@@ -3119,7 +3133,7 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
       closure->fun = fun;
       closure->funparam = funparam;
       add_effect_closure (Zoom_effect_timeline,
-                          (ClutterEffectCompleteFunc)remove_window_later,
+                          G_CALLBACK(remove_window_later),
                           win, closure);
       return;
     }
@@ -3171,10 +3185,10 @@ hd_task_navigator_remove_window (HdTaskNavigator * self,
       clutter_actor_raise_top (apthumb->thwin);
       turnoff_effect (Fly_effect_timeline, apthumb->thwin);
       add_effect_closure (Fly_effect_timeline,
-                          (ClutterEffectCompleteFunc)appthumb_turned_off_1,
+                          G_CALLBACK(appthumb_turned_off_1),
                           apthumb->thwin, apthumb);
       add_effect_closure (Fly_effect_timeline,
-                          (ClutterEffectCompleteFunc)appthumb_turned_off_2,
+                          G_CALLBACK(appthumb_turned_off_2),
                           apthumb->thwin, cmgrcc);
     }
   else
@@ -3194,7 +3208,7 @@ damage_control:
     add_effect_closure (Fly_effect_timeline,
                         fun, CLUTTER_ACTOR (self), funparam);
   else if (fun)
-    fun (CLUTTER_ACTOR (self), funparam);
+    ((void (*)(ClutterActor *, gpointer))fun) (CLUTTER_ACTOR (self), funparam);
 
   /* Sync the Tasks button. */
   hd_render_manager_update();
@@ -3510,7 +3524,7 @@ tnote_changed (HdNote * hdnote, int unused1, TNote * tnote)
       break;
   g_assert (thumb != NULL);
 
-  is_more = numstrcmp (clutter_label_get_text (CLUTTER_LABEL (tnote->count)),
+  is_more = numstrcmp (clutter_text_get_text (CLUTTER_TEXT (tnote->count)),
                        hd_note_get_count (tnote->hdnote)) < 0;
   set_label_text_and_color (tnote->time,
                             hd_note_get_time (tnote->hdnote),
@@ -3570,17 +3584,17 @@ create_tnote (HdNote * hdnote)
 
   /* Inners */
   /* .count */
-  tnote->count = set_label_text_and_color (clutter_label_new (),
+  tnote->count = set_label_text_and_color (clutter_text_new (),
                                       hd_note_get_count (tnote->hdnote),
-                                      &NotificationTextColor);
+                                      &cl_NotificationTextColor);
 
   /* .time */
-  tnote->time = set_label_text_and_color (clutter_label_new (),
+  tnote->time = set_label_text_and_color (clutter_text_new (),
                                        hd_note_get_time (tnote->hdnote),
-                                       &NotificationSecondaryTextColor);
-  clutter_label_set_line_wrap (CLUTTER_LABEL (tnote->time), TRUE);
-  clutter_label_set_alignment (CLUTTER_LABEL(tnote->time),
-                               PANGO_ALIGN_CENTER);
+                                       &cl_NotificationSecondaryTextColor);
+  clutter_text_set_line_wrap (CLUTTER_TEXT (tnote->time), TRUE);
+  clutter_text_set_line_alignment (CLUTTER_TEXT(tnote->time),
+                                    PANGO_ALIGN_CENTER);
   set_label_line_spacing (tnote->time, NOTE_TIME_LINESPACING);
   g_signal_connect (tnote->time, "notify::allocation",
                     G_CALLBACK (reanchor_on_resize),
@@ -3591,14 +3605,14 @@ create_tnote (HdNote * hdnote)
                       GINT_TO_POINTER (NOTE_TIME_LINESPACING));
 
   /* .message */
-  tnote->message = set_label_text_and_color (clutter_label_new (),
+  tnote->message = set_label_text_and_color (clutter_text_new (),
                                     hd_note_get_message (tnote->hdnote),
-                                    &NotificationTextColor);
-  clutter_label_set_font_name (CLUTTER_LABEL (tnote->message),
+                                    &cl_NotificationTextColor);
+  clutter_text_set_font_name (CLUTTER_TEXT (tnote->message),
                                SmallSystemFont);
-  clutter_label_set_line_wrap (CLUTTER_LABEL (tnote->message), TRUE);
-  clutter_label_set_alignment (CLUTTER_LABEL(tnote->message),
-                               PANGO_ALIGN_CENTER);
+  clutter_text_set_line_wrap (CLUTTER_TEXT (tnote->message), TRUE);
+  clutter_text_set_line_alignment (CLUTTER_TEXT(tnote->message),
+                                    PANGO_ALIGN_CENTER);
   g_signal_connect (tnote->message, "notify::allocation",
                     G_CALLBACK (clip_on_resize), NULL);
 
@@ -4077,6 +4091,7 @@ unclip (ClutterActor * actor, GParamSpec * prop, gpointer unused)
 }
 /* Callbacks }}} */
 
+#ifdef MAEGO_DISABLED
 /* Creates an effect template for @duration and also returns its timeline.
  * The timeline is usually needed to hook onto its "completed" signal. */
 static ClutterEffectTemplate *
@@ -4091,13 +4106,14 @@ new_animation (ClutterTimeline ** timelinep, guint duration)
    * otherwise it would have to be clutter_timeline_start()ed for every
    * animation to get its signals.
    */
-  *timelinep = clutter_timeline_new_for_duration (duration);
+  *timelinep = clutter_timeline_new (duration);
   effect = clutter_effect_template_new (*timelinep,
                               CLUTTER_ALPHA_SMOOTHSTEP_INC);
   clutter_effect_template_set_timeline_clone (effect, FALSE);
 
   return effect;
 }
+#endif
 
 /* The object we create is initially hidden. */
 static void
@@ -4118,7 +4134,9 @@ hd_task_navigator_init (HdTaskNavigator * self)
   Scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
   clutter_actor_set_name (Scroller, "Scroller");
   clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(Scroller, FALSE);
+#endif
   clutter_container_add_actor (CLUTTER_CONTAINER (Navigator), Scroller);
   g_signal_connect (Scroller, "captured-event",
                     G_CALLBACK (scroller_touched), NULL);
@@ -4132,7 +4150,9 @@ hd_task_navigator_init (HdTaskNavigator * self)
   Grid = HD_SCROLLABLE_GROUP (hd_scrollable_group_new ());
   clutter_actor_set_name (CLUTTER_ACTOR (Grid), "Grid");
   clutter_actor_set_reactive (CLUTTER_ACTOR (Grid), TRUE);
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR (Grid), FALSE);
+#endif
   g_signal_connect (Grid, "notify::has-clip", G_CALLBACK (unclip), NULL);
   g_signal_connect_after (Grid, "captured-event",
                           G_CALLBACK (grid_touched), NULL);
@@ -4141,9 +4161,11 @@ hd_task_navigator_init (HdTaskNavigator * self)
   clutter_container_add_actor (CLUTTER_CONTAINER (Scroller),
                                CLUTTER_ACTOR (Grid));
 
+#ifdef MAEGO_DISABLED
   /* Effect timelines */
   Fly_effect  = new_animation (&Fly_effect_timeline,  FLY_EFFECT_DURATION);
   Zoom_effect = new_animation (&Zoom_effect_timeline, ZOOM_EFFECT_DURATION);
+#endif
 
   /* Master pieces */
   LargeSystemFont = hd_gtk_style_resolve_logical_font ("LargeSystemFont");
@@ -4155,6 +4177,11 @@ hd_task_navigator_init (HdTaskNavigator * self)
                                       "NotificationTextColor");
   hd_gtk_style_resolve_logical_color (&NotificationSecondaryTextColor,
                                       "NotificationSecondaryTextColor");
+  hd_cogl_color_to_clutter_color(&DefaultTextColor, &cl_DefaultTextColor);
+  hd_cogl_color_to_clutter_color(&NotificationTextColor,
+                                 &cl_NotificationTextColor);
+  hd_cogl_color_to_clutter_color(&NotificationSecondaryTextColor,
+                                 &cl_NotificationSecondaryTextColor);
 
   /* We don't have anything to show yet, so let's hide. */
   clutter_actor_hide (Navigator);

@@ -8,7 +8,7 @@
 #endif
 
 #include "tidy-mem-texture.h"
-#include <clutter/clutter-actor.h>
+#include <clutter/clutter.h>
 
 #include <string.h>
 #include "cogl/cogl.h"
@@ -57,10 +57,10 @@ struct _TidyMemTexturePrivate
 #endif
 
   /* Offset of the memory texture in this actor */
-  ClutterFixed offset_x;
-  ClutterFixed offset_y;
-  ClutterFixed scale_x;
-  ClutterFixed scale_y;
+  gfloat offset_x;
+  gfloat offset_y;
+  gfloat scale_x;
+  gfloat scale_y;
 
   GList *tiles; /* of TidyMemTextureTile */
 };
@@ -75,10 +75,10 @@ tidy_mem_texture_update_modified(TidyMemTexture *texture,
 static void
 tidy_mem_texture_tile_coords(TidyMemTexture *texture,
                              TidyMemTextureTile *tile,
-                             ClutterFixed *x1,
-                             ClutterFixed *y1,
-                             ClutterFixed *x2,
-                             ClutterFixed *y2);
+                             gfloat *x1,
+                             gfloat *y1,
+                             gfloat *x2,
+                             gfloat *y2);
 static gboolean
 tidy_mem_texture_tile_visible(TidyMemTexture *texture,
                               TidyMemTextureTile *tile,
@@ -90,10 +90,10 @@ tidy_mem_texture_paint (ClutterActor *self)
 {
   TidyMemTexture              *texture = TIDY_MEM_TEXTURE(self);
   TidyMemTexturePrivate       *priv;
-  gint                         x_1, y_1, x_2, y_2;
-  ClutterColor                 col = { 0xff, 0xff, 0xff, 0xff };
+  ClutterActorBox              box;
+  CoglColor                    col = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-  gint                        width, height;
+  gfloat                       width, height;
   GList                       *tiles;
 
   priv = TIDY_MEM_TEXTURE (self)->priv;
@@ -101,12 +101,12 @@ tidy_mem_texture_paint (ClutterActor *self)
   /* parent texture may have been hidden, there for need to make sure its
    * realised with resources available.
   */
-  col.alpha = clutter_actor_get_paint_opacity (self);
-  cogl_color (&col);
+  cogl_color_set_alpha_float(&col, clutter_actor_get_paint_opacity (self));
+  cogl_set_source_color (&col);
 
-  clutter_actor_get_allocation_coords (self, &x_1, &y_1, &x_2, &y_2);
-  width = x_2 - x_1;
-  height = y_2 - y_1;
+  clutter_actor_get_allocation_box (self, &box);
+  width = box.x2 - box.x1;
+  height = box.y2 - box.y1;
 
   /* changetextures before we start our rendering pass */
   for (tiles = priv->tiles; tiles; tiles = tiles->next)
@@ -125,11 +125,11 @@ tidy_mem_texture_paint (ClutterActor *self)
       TidyMemTextureTile *tile = tiles->data;
       if (tidy_mem_texture_tile_visible(texture, tile, width, height))
         {
-          ClutterFixed x1,y1,x2,y2;
+          gfloat x1,y1,x2,y2;
           tidy_mem_texture_tile_coords(texture, tile, &x1, &y1, &x2, &y2);
-          cogl_texture_rectangle (tile->texture,
-                                  x1, y1, x2, y2,
-                                  0, 0, CFX_ONE, CFX_ONE);
+          cogl_set_source_texture (tile->texture);
+          cogl_rectangle_with_texture_coords (x1, y1, x2, y2,
+                                              0.0f, 0.0f, 1.0f, 1.0f);
         }
     }
 }
@@ -181,8 +181,8 @@ tidy_mem_texture_init (TidyMemTexture *self)
   priv->texture_format = 0;
   priv->offset_x = 0;
   priv->offset_y = 0;
-  priv->scale_x = CFX_ONE;
-  priv->scale_y = CFX_ONE;
+  priv->scale_x = COGL_FIXED_1;
+  priv->scale_y = COGL_FIXED_1;
 
   priv->tiles = 0;
 }
@@ -218,7 +218,7 @@ tidy_mem_texture_free_data(TidyMemTexture *texture)
   while (priv->tiles)
     {
       TidyMemTextureTile *tile = priv->tiles->data;
-      cogl_texture_unref(tile->texture);
+      cogl_handle_unref(tile->texture);
       g_free(tile);
       priv->tiles = priv->tiles->next;
     }
@@ -237,25 +237,17 @@ tidy_mem_texture_free_data(TidyMemTexture *texture)
 static void
 tidy_mem_texture_tile_coords(TidyMemTexture *texture,
                              TidyMemTextureTile *tile,
-                             ClutterFixed *x1,
-                             ClutterFixed *y1,
-                             ClutterFixed *x2,
-                             ClutterFixed *y2)
+                             gfloat *x1,
+                             gfloat *y1,
+                             gfloat *x2,
+                             gfloat *y2)
 {
   TidyMemTexturePrivate *priv = texture->priv;
 
-  *x1 = CFX_QMUL(
-          priv->offset_x+CLUTTER_INT_TO_FIXED(tile->pos.x),
-          priv->scale_x);
-  *y1 = CFX_QMUL(
-          priv->offset_y+CLUTTER_INT_TO_FIXED(tile->pos.y),
-          priv->scale_y);
-  *x2 = CFX_QMUL(
-          priv->offset_x+CLUTTER_INT_TO_FIXED(tile->pos.x+tile->pos.width),
-          priv->scale_x);
-  *y2 = CFX_QMUL(
-          priv->offset_y+CLUTTER_INT_TO_FIXED(tile->pos.y+tile->pos.height),
-          priv->scale_y);
+  *x1 = (priv->offset_x + tile->pos.x) * priv->scale_x;
+  *y1 = (priv->offset_y + tile->pos.y) * priv->scale_y;
+  *x2 = (priv->offset_x + tile->pos.x + tile->pos.width) * priv->scale_x;
+  *y2 = (priv->offset_y + tile->pos.y + tile->pos.height) * priv->scale_y;
 }
 
 static gboolean
@@ -263,11 +255,11 @@ tidy_mem_texture_tile_visible(TidyMemTexture *texture,
                               TidyMemTextureTile *tile,
                               gint width, gint height)
 {
-  ClutterFixed x1, y1, x2, y2;
+  gfloat x1, y1, x2, y2;
   tidy_mem_texture_tile_coords(texture, tile, &x1, &y1, &x2, &y2);
   return (x2 >= 0 && y2 >= 0 &&
-          x1 <= CLUTTER_INT_TO_FIXED(width) &&
-          y1 <= CLUTTER_INT_TO_FIXED(height));
+          x1 <= COGL_FIXED_FROM_INT(width) &&
+          y1 <= COGL_FIXED_FROM_INT(height));
 }
 
 /* Copies the pixels into a buffer with the correct row stride so
@@ -383,8 +375,8 @@ void tidy_mem_texture_set_data(TidyMemTexture *texture,
               tile->pos.height = priv->texture_height - tile->pos.y;
             /* alloc texture */
             tile->texture = cogl_texture_new_with_size(
-                tile->pos.width, tile->pos.height, -1 /* no waste */,
-                FALSE, priv->texture_format);
+                tile->pos.width, tile->pos.height, COGL_TEXTURE_NO_AUTO_MIPMAP,
+                priv->texture_format);
             /* set whole area to be modified */
             tile->modified.x = 0;
             tile->modified.y = 0;
@@ -408,7 +400,7 @@ void tidy_mem_texture_damage(TidyMemTexture *texture,
 {
   TidyMemTexturePrivate *priv;
   GList *tiles;
-  guint actor_width, actor_height;
+  gfloat actor_width, actor_height;
   gboolean redraw = FALSE;
 
   if (!TIDY_IS_MEM_TEXTURE(texture))
@@ -477,7 +469,7 @@ void tidy_mem_texture_damage(TidyMemTexture *texture,
 }
 
 void tidy_mem_texture_set_offset(TidyMemTexture *texture,
-                                 ClutterFixed x, ClutterFixed y)
+                                 CoglFixed x, CoglFixed y)
 {
   TidyMemTexturePrivate *priv;
   if (!TIDY_IS_MEM_TEXTURE(texture))
@@ -494,8 +486,8 @@ void tidy_mem_texture_set_offset(TidyMemTexture *texture,
 }
 
 void tidy_mem_texture_set_scale(TidyMemTexture *texture,
-                                ClutterFixed scale_x,
-                                ClutterFixed scale_y)
+                                CoglFixed scale_x,
+                                CoglFixed scale_y)
 {
   TidyMemTexturePrivate *priv;
   if (!TIDY_IS_MEM_TEXTURE(texture))

@@ -42,11 +42,11 @@ void hd_task_navigator_scroll_back (HdTaskNavigator *self);
 
 void hd_task_navigator_zoom_in   (HdTaskNavigator *self,
                                   ClutterActor *win,
-                                  ClutterEffectCompleteFunc fun,
+                                  GCallback fun,
                                   gpointer funparam);
 void hd_task_navigator_zoom_out  (HdTaskNavigator *self,
                                   ClutterActor *win,
-                                  ClutterEffectCompleteFunc fun,
+                                  GCallback fun,
                                   gpointer funparam);
 
 void hd_task_navigator_transition_done  (HdTaskNavigator *self);
@@ -55,7 +55,7 @@ void hd_task_navigator_add_window       (HdTaskNavigator *self,
                                          ClutterActor *win);
 void hd_task_navigator_remove_window    (HdTaskNavigator *self,
                                          ClutterActor *win,
-                                         ClutterEffectCompleteFunc fun,
+                                         GCallback fun,
                                          gpointer funparam);
 
 void hd_task_navigator_hibernate_window (HdTaskNavigator *self,

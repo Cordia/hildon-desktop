@@ -24,7 +24,7 @@
 #define                                         __HDA_LAUNCHER_GRID_H__
 
 #include                                        <atk/atk.h>
-#include                                        "cail/cail-actor.h"
+#include                                        <cally/cally.h>
 
 G_BEGIN_DECLS
 
@@ -51,12 +51,12 @@ typedef struct                                  _HdaLauncherGridClass   HdaLaunc
 
 struct                                          _HdaLauncherGrid
 {
-  CailActor parent;
+  CallyActor parent;
 };
 
 struct                                          _HdaLauncherGridClass
 {
-  CailActorClass parent_class;
+  CallyActorClass parent_class;
 };
 
 

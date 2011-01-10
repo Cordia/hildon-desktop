@@ -21,7 +21,7 @@
  *
  */
 
-#include <cail/cail.h>
+#include <cally/cally.h>
 
 #include "launcher/hd-launcher-page.h"
 #include "launcher/hd-launcher-grid.h"

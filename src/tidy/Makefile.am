@@ -40,7 +40,6 @@ source_h = \
 	$(top_srcdir)/src/tidy/tidy-style.h 		\
 	$(top_srcdir)/src/tidy/tidy-sub-texture.h 	\
 	$(top_srcdir)/src/tidy/tidy-types.h 		\
-	$(top_srcdir)/src/tidy/tidy-util.h 		\
 	$(NULL)
 
 source_h_private = \
@@ -63,7 +62,6 @@ source_c = \
 	tidy-stylable.c \
 	tidy-style.c \
 	tidy-sub-texture.c \
-	tidy-util.c \
 	$(NULL)
 
 tidy-marshal.h: stamp-tidy-marshal.h

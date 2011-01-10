@@ -8,8 +8,7 @@
 #include <glib-object.h>
 #include <gobject/gvaluecollector.h>
 
-#include <clutter/clutter-behaviour.h>
-#include <clutter/clutter-color.h>
+#include <clutter/clutter.h>
 
 #include "tidy-style.h"
 #include "tidy-marshal.h"
@@ -605,9 +604,9 @@ tidy_style_construct_effect (TidyStyle   *style,
       return NULL;
     }
 
-  timeline = clutter_timeline_new_for_duration (effect->duration);
+  timeline = clutter_timeline_new (effect->duration);
 
-  alpha = clutter_alpha_new_full (timeline, effect->alpha_func, NULL, NULL);
+  alpha = clutter_alpha_new_with_func (timeline, effect->alpha_func, NULL, NULL);
   g_object_unref (timeline);
 
   behaviour = g_object_newv (effect->behaviour_type,

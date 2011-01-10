@@ -29,7 +29,7 @@
  * #HdaLauncherTile implements the required ATK interfaces of #HdLauncherTile
  */
 
-#include <cail/cail-actor.h>
+#include <cally/cally.h>
 
 #include "launcher/hd-launcher-tile.h"
 #include "hda-launcher-tile.h"
@@ -53,7 +53,7 @@ hda_launcher_tile_get_name                      (AtkObject *obj);
 static G_CONST_RETURN gchar *
 hda_launcher_tile_get_description               (AtkObject *obj);
 
-G_DEFINE_TYPE (HdaLauncherTile, hda_launcher_tile,  CAIL_TYPE_ACTOR)
+G_DEFINE_TYPE (HdaLauncherTile, hda_launcher_tile,  CALLY_TYPE_ACTOR)
 
 static void
 hda_launcher_tile_class_init                            (HdaLauncherTileClass *klass)

@@ -76,7 +76,7 @@ void hd_launcher_page_add_tile (HdLauncherPage *page, HdLauncherTile* tile);
 void hd_launcher_page_transition(HdLauncherPage *page,
                                  HdLauncherPageTransition trans_type);
 void hd_launcher_page_transition_stop(HdLauncherPage *page);
-ClutterFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page);
+CoglFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page);
 ClutterActor *hd_launcher_page_get_scroller(HdLauncherPage *page);
 void hd_launcher_page_set_drag_distance(HdLauncherPage *page, float d);
 float hd_launcher_page_get_drag_distance(HdLauncherPage *page);

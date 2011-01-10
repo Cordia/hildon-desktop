@@ -140,8 +140,8 @@ hd_remote_texture_client_message (XClientMessageEvent *xev, void *userdata)
   }
   else if (xev->message_type == offset_atom)
     {
-        ClutterFixed x = (ClutterFixed) xev->data.l[0];
-        ClutterFixed y = (ClutterFixed) xev->data.l[1];
+        CoglFixed x = (CoglFixed) xev->data.l[0];
+        CoglFixed y = (CoglFixed) xev->data.l[1];
 
         CM_DEBUG ("RemoteTexture %p: position(x=%d, y=%d)\n",
                   self, x, y);
@@ -150,8 +150,8 @@ hd_remote_texture_client_message (XClientMessageEvent *xev, void *userdata)
 
   else if (xev->message_type == scale_atom)
   {
-      ClutterFixed x_scale = (ClutterFixed) xev->data.l[0];
-      ClutterFixed y_scale = (ClutterFixed) xev->data.l[1];
+      CoglFixed x_scale = (CoglFixed) xev->data.l[0];
+      CoglFixed y_scale = (CoglFixed) xev->data.l[1];
 
       CM_DEBUG ("RemoteTexture %p: scale(x_scale=%u, y_scale=%u)\n",
 	       self, x_scale, y_scale);

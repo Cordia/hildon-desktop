@@ -334,7 +334,7 @@ hd_transition_timeline_new(const gchar *transition,
 {
   const char *key =
     event==MBWMCompMgrClientEventMap ?"duration_in":"duration_out";
-  return clutter_timeline_new_for_duration (
+  return clutter_timeline_new (
       hd_transition_get_int(transition, key, default_length) );
 }
 
@@ -421,8 +421,8 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
     }
   status_pos = status_low*(1-overshoot) + status_high*overshoot;
 
-  clutter_actor_set_anchor_pointu(actor, 0,
-      CLUTTER_INT_TO_FIXED(geo.y) - CLUTTER_FLOAT_TO_FIXED(status_pos));
+  clutter_actor_set_anchor_point(actor, 0,
+      COGL_FIXED_FROM_INT(geo.y) - COGL_FIXED_FROM_FLOAT(status_pos));
   clutter_actor_set_opacity(actor, (int)(255*amt));
 
   /* use a slither of filler to fill in the gap where the menu
@@ -433,21 +433,21 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
       clutter_actor_show(filler);
       if (pop_top)
         {
-          clutter_actor_set_positionu(filler,
-                    CLUTTER_INT_TO_FIXED(0),
-                    CLUTTER_FLOAT_TO_FIXED(status_high-status_pos));
-          clutter_actor_set_sizeu(filler,
-                    CLUTTER_INT_TO_FIXED(geo.width),
-                    CLUTTER_FLOAT_TO_FIXED(status_pos-status_high));
+          clutter_actor_set_position(filler,
+                    COGL_FIXED_FROM_INT(0),
+                    COGL_FIXED_FROM_FLOAT(status_high-status_pos));
+          clutter_actor_set_size(filler,
+                    COGL_FIXED_FROM_INT(geo.width),
+                    COGL_FIXED_FROM_FLOAT(status_pos-status_high));
         }
       else if (pop_bottom)
         {
-          clutter_actor_set_positionu(filler,
-                    CLUTTER_INT_TO_FIXED(0),
-                    CLUTTER_INT_TO_FIXED(geo.height));
-          clutter_actor_set_sizeu(filler,
-                    CLUTTER_INT_TO_FIXED(geo.width),
-                    CLUTTER_FLOAT_TO_FIXED(status_high-status_pos));
+          clutter_actor_set_position(filler,
+                    COGL_FIXED_FROM_INT(0),
+                    COGL_FIXED_FROM_INT(geo.height));
+          clutter_actor_set_size(filler,
+                    COGL_FIXED_FROM_INT(geo.width),
+                    COGL_FIXED_FROM_FLOAT(status_high-status_pos));
         }
     }
   else
@@ -556,9 +556,9 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
         clutter_actor_set_scale(data->particles[i],
                 particle_scale, particle_scale);
 
-        clutter_actor_set_positionu(data->particles[i],
-                CLUTTER_FLOAT_TO_FIXED(centrex + sin(ang) * radius),
-                CLUTTER_FLOAT_TO_FIXED(centrey + cos(ang) * radius));
+        clutter_actor_set_position(data->particles[i],
+                COGL_FIXED_FROM_FLOAT(centrex + sin(ang) * radius),
+                COGL_FIXED_FROM_FLOAT(centrey + cos(ang) * radius));
       }
     else
       if (data->particles[i])
@@ -579,12 +579,12 @@ bezier(float t, float p0, float p1, float p2, float p3)
 
 static void
 on_notification_timeline_new_frame(ClutterTimeline *timeline,
-                                   gint frame_num, HDEffectData *data)
+                                   gint msecs, HDEffectData *data)
 {
-  float now;
+  gfloat now;
   ClutterActor *actor;
-  guint width, height;
-  gint tbw, px, py;
+  gfloat width, height;
+  gfloat tbw, px, py;
 
   actor = data->cclient_actor;
   if (!CLUTTER_IS_ACTOR(actor) || hd_dbus_display_is_off)
@@ -594,7 +594,7 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
                         HD_TITLE_BAR(hd_render_manager_get_title_bar()));
   clutter_actor_get_size(actor, &width, &height);
   clutter_actor_get_position(actor, &px, &py);
-  now = frame_num / (float)clutter_timeline_get_n_frames(timeline);
+  now = (float)msecs / (float)clutter_timeline_get_duration(timeline);
 
   if (hd_comp_mgr_is_portrait()
       && hd_transition_get_int("notification", "is_cool", 0))
@@ -624,10 +624,10 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
       /* Set the position to @curve(@now). */
       now = hd_transition_smooth_ramp(now);
       curve = data->event == MBWMCompMgrClientEventUnmap ? cpout : cpin;
-      clutter_actor_set_anchor_pointu(actor,
-               CLUTTER_FLOAT_TO_FIXED(-bezier(now,
+      clutter_actor_set_anchor_point(actor,
+               COGL_FIXED_FROM_FLOAT(-bezier(now,
                         curve[0].x, curve[1].x, curve[2].x, curve[3].x)),
-               CLUTTER_FLOAT_TO_FIXED(-bezier(now,
+               COGL_FIXED_FROM_FLOAT(-bezier(now,
                         curve[0].y, curve[1].y, curve[2].y, curve[3].y)));
 
       /* We should restore the opacity and scaling of @actor in case
@@ -701,18 +701,18 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
        * (get_position()) still matters, and it is LEFT_BIN_WIDTH. */
       clutter_actor_set_opacity(actor, (int)(255*amt));
       clutter_actor_set_scale(actor, scale, scale);
-      clutter_actor_set_anchor_pointu(actor,
-               CLUTTER_FLOAT_TO_FIXED( -corner_x / scale ),
-               CLUTTER_FLOAT_TO_FIXED( -corner_y / scale ));
+      clutter_actor_set_anchor_point(actor,
+               COGL_FIXED_FROM_FLOAT( -corner_x / scale ),
+               COGL_FIXED_FROM_FLOAT( -corner_y / scale ));
     }
 }
 
 static void
 on_subview_timeline_new_frame(ClutterTimeline *timeline,
-                              gint frame_num, HDEffectData *data)
+                              gint msecs, HDEffectData *data)
 {
   float amt;
-  gint n_frames;
+  guint duration;
   ClutterActor *subview_actor = 0, *main_actor = 0;
 
   if (data->cclient)
@@ -720,8 +720,8 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
   if (data->cclient2)
     main_actor = data->cclient2_actor;
 
-  n_frames = clutter_timeline_get_n_frames(timeline);
-  amt = frame_num / (float)n_frames;
+  duration = clutter_timeline_get_duration(timeline);
+  amt = (float)msecs / (float)duration;
   amt = hd_transition_smooth_ramp( amt );
   if (data->event == MBWMCompMgrClientEventUnmap)
     amt = 1-amt;
@@ -731,18 +731,18 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
     corner_x = (1-amt) * hd_comp_mgr_get_current_screen_width();
     if (subview_actor)
       {
-        clutter_actor_set_anchor_pointu(subview_actor,
-           CLUTTER_FLOAT_TO_FIXED( -corner_x ),
-           CLUTTER_FLOAT_TO_FIXED( 0 ) );
+        clutter_actor_set_anchor_point(subview_actor,
+           COGL_FIXED_FROM_FLOAT( -corner_x ),
+           COGL_FIXED_FROM_FLOAT( 0 ) );
         /* we have to show this actor, because it'll get hidden by the
          * render manager visibility test if not. */
         clutter_actor_show(subview_actor);
       }
     if (main_actor)
       {
-        clutter_actor_set_anchor_pointu(main_actor,
-           CLUTTER_FLOAT_TO_FIXED( -(corner_x - hd_comp_mgr_get_current_screen_width()) ),
-           CLUTTER_FLOAT_TO_FIXED( 0 ) );
+        clutter_actor_set_anchor_point(main_actor,
+           COGL_FIXED_FROM_FLOAT( -(corner_x - hd_comp_mgr_get_current_screen_width()) ),
+           COGL_FIXED_FROM_FLOAT( 0 ) );
         /* we have to show this actor, because it'll get hidden by the
          * render manager visibility test if not. */
         clutter_actor_show(main_actor);
@@ -750,17 +750,17 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
   }
 
   /* if we're at the last frame, return our actors to the correct places) */
-  if (frame_num == n_frames)
+  if (msecs >= duration)
     {
       if (subview_actor)
         {
-          clutter_actor_set_anchor_pointu(subview_actor, 0, 0);
+          clutter_actor_set_anchor_point(subview_actor, 0, 0);
           if (data->event == MBWMCompMgrClientEventUnmap)
             clutter_actor_hide(subview_actor);
         }
       if (main_actor)
         {
-          clutter_actor_set_anchor_pointu(main_actor, 0, 0);
+          clutter_actor_set_anchor_point(main_actor, 0, 0);
           /* hide the correct actor - as we overrode the visibility test in hdrm */
           if (data->event == MBWMCompMgrClientEventMap)
             clutter_actor_hide(main_actor);
@@ -770,14 +770,14 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
 
 static void
 on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
-                                    gint frame_num, HDEffectData *data)
+                                    gint msecs, HDEffectData *data)
 {
   float amt, dim_amt, angle;
-  gint n_frames;
+  guint duration;
   ClutterActor *actor;
 
-  n_frames = clutter_timeline_get_n_frames(timeline);
-  amt = frame_num / (float)n_frames;
+  duration = clutter_timeline_get_duration(timeline);
+  amt = (float)msecs / (float)duration;
   // we want to ease in, but speed up as we go - X^3 does this nicely
   amt = amt*amt;
   if (data->event == MBWMCompMgrClientEventUnmap)
@@ -793,10 +793,10 @@ on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
   actor = CLUTTER_ACTOR(hd_render_manager_get());
   clutter_actor_set_rotation(actor,
       hd_comp_mgr_is_portrait () ? CLUTTER_Y_AXIS : CLUTTER_X_AXIS,
-      frame_num < n_frames ? angle : 0,
+      msecs < duration ? angle : 0,
       hd_comp_mgr_get_current_screen_width()/2,
       hd_comp_mgr_get_current_screen_height()/2, 0);
-  clutter_actor_set_depthu(actor, -CLUTTER_FLOAT_TO_FIXED(amt*150));
+  clutter_actor_set_depth(actor, -COGL_FIXED_FROM_FLOAT(amt*150));
   /* use this actor to dim out the screen */
   clutter_actor_raise_top(data->particles[0]);
   clutter_actor_set_opacity(data->particles[0], (int)(dim_amt*255));
@@ -812,7 +812,7 @@ static void
 on_screen_size_changed (ClutterActor *stage, GParamSpec *unused,
                         HDEffectData *data)
 {
-  guint scrw, scrh;
+  gfloat scrw, scrh;
   ClutterActor *actor;
 
   /* Rotate @actor back to the mode it is layed out for.
@@ -916,7 +916,8 @@ hd_transition_popup(HdCompMgr                  *mgr,
   ClutterActor             * actor;
   HDEffectData             * data;
   ClutterGeometry            geo;
-  ClutterColor col;
+  CoglColor    col;
+  ClutterColor cl_col;
 
   cclient = MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client);
   actor = mb_wm_comp_mgr_clutter_client_get_actor (cclient);
@@ -963,10 +964,9 @@ hd_transition_popup(HdCompMgr                  *mgr,
   data->particles[0] = g_object_ref(clutter_rectangle_new());
   clutter_actor_set_name(data->particles[0], "popup background");
   clutter_container_add_actor(CLUTTER_CONTAINER(actor), data->particles[0]);
-  hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL,
-                              &col);
-  clutter_rectangle_set_color(CLUTTER_RECTANGLE(data->particles[0]),
-                              &col);
+  hd_gtk_style_get_bg_color(HD_GTK_BUTTON_SINGLETON, GTK_STATE_NORMAL, &col);
+  hd_cogl_color_to_clutter_color(&col, &cl_col);
+  clutter_rectangle_set_color(CLUTTER_RECTANGLE(data->particles[0]), &cl_col);
 
   /* first call to stop flicker */
   on_popup_timeline_new_frame(data->timeline, 0, data);
@@ -1026,29 +1026,29 @@ hd_transition_fade(HdCompMgr                  *mgr,
 void
 hd_transition_fade_out_loading_screen(ClutterActor *loading_image)
 {
-    gint duration, fade_delay;
+    gint duration_out, fade_delay;
     HDEffectData             * data;
 
-    duration = hd_transition_get_int("launcher_launch", "duration_out", 250);
-    /* If duration is <=0 we just return as the loading screen is already
+    duration_out = hd_transition_get_int("launcher_launch", "duration_out", 250);
+    /* If duration_out is <=0 we just return as the loading screen is already
      * removed */
-    if (duration<=0)
+    if (duration_out<=0)
       return;
 
     data = g_new0 (HDEffectData, 1);
     data->event = MBWMCompMgrClientEventUnmap;
     data->cclient_actor = g_object_ref ( loading_image );
     data->hmgr = 0;
-    data->timeline = clutter_timeline_new_for_duration ( duration );
+    data->timeline = clutter_timeline_new ( duration_out );
     data->final_alpha = 1;
     /* the delay before we start to fade out. We implement this by setting
      * the final_alpha value to something *past* opaque */
     fade_delay = hd_transition_get_int("launcher_launch", "delay", 150);
     if (fade_delay>0)
       {
-        gint duration = clutter_timeline_get_duration(data->timeline);
+        guint duration = clutter_timeline_get_duration(data->timeline);
         if (fade_delay < duration) {
-          data->final_alpha = 1 + fade_delay/(float)(duration-fade_delay);
+          data->final_alpha = 1.0f + (float)fade_delay/(float)(duration-fade_delay);
           // safety in case strange values get put in
           if (data->final_alpha>10)
             data->final_alpha = 10;
@@ -1121,7 +1121,7 @@ hd_transition_close_app (HdCompMgr                  *mgr,
   data->cclient = mb_wm_object_ref (MB_WM_OBJECT (cclient));
   data->cclient_actor = g_object_ref (actor);
   data->hmgr = HD_COMP_MGR (mgr);
-  data->timeline = clutter_timeline_new_for_duration (
+  data->timeline = clutter_timeline_new (
                     hd_transition_get_int("app_close", "duration", 500));
   g_signal_connect (data->timeline, "new-frame",
                     G_CALLBACK (on_close_timeline_new_frame), data);
@@ -1253,7 +1253,7 @@ hd_transition_subview(HdCompMgr                  *mgr,
           /* Replace the effect's subview with ours. */
           /* Release @cclient and @cclient_actor. */
           clutter_actor_hide (data->cclient_actor);
-          clutter_actor_set_anchor_pointu (data->cclient_actor, 0, 0);
+          clutter_actor_set_anchor_point (data->cclient_actor, 0, 0);
           g_object_unref (data->cclient_actor);
           HD_COMP_MGR_CLIENT (data->cclient)->effect = NULL;
           mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient,
@@ -1284,7 +1284,7 @@ hd_transition_subview(HdCompMgr                  *mgr,
           /* Replace the effect's mainview with ours. */
           /* Release @cclient2 and @cclient2_actor. */
           clutter_actor_hide (data->cclient2_actor);
-          clutter_actor_set_anchor_pointu (data->cclient2_actor, 0, 0);
+          clutter_actor_set_anchor_point (data->cclient2_actor, 0, 0);
           g_object_unref (o = data->cclient2_actor);
           HD_COMP_MGR_CLIENT (data->cclient2)->effect = NULL;
           mb_wm_comp_mgr_clutter_client_unset_flags (data->cclient2,
@@ -1355,11 +1355,11 @@ hd_transition_stop(HdCompMgr                  *mgr,
 
   if ((data = HD_COMP_MGR_CLIENT (cclient)->effect))
     {
-      gint n_frames = clutter_timeline_get_n_frames(data->timeline);
+      guint duration = clutter_timeline_get_duration(data->timeline);
       clutter_timeline_stop(data->timeline);
       /* Make sure we update to the final state for this transition */
       g_signal_emit_by_name (data->timeline, "new-frame",
-                             n_frames, NULL);
+                             duration, NULL);
       /* Call end-of-transition handler */
       hd_transition_completed(data->timeline, data);
     }
@@ -1580,8 +1580,10 @@ hd_transition_rotating_fsm(void)
              * so we explicitly call clutter to redraw *right now*. Note that
              * we don't do this on the stage, because it might conflict with
              * hd_dbus_system_bus_signal_handler */
+#ifdef MAEMO_CHANGES
             clutter_actor_set_allow_redraw(
                 CLUTTER_ACTOR(hd_render_manager_get()), FALSE);
+#endif
             clutter_actor_hide(CLUTTER_ACTOR(hd_render_manager_get()));
             clutter_redraw(CLUTTER_STAGE(clutter_stage_get_default()));
 
@@ -1646,8 +1648,10 @@ trans_start_error:
               { /* Fade back in */
                 /* Undo the redraw stopping that happened in FADE_OUT */
                 Orientation_change.phase = FADE_IN;
+#ifdef MAEMO_CHANGES
                 clutter_actor_set_allow_redraw(
                                 CLUTTER_ACTOR(hd_render_manager_get()), TRUE);
+#endif
                 clutter_actor_show(CLUTTER_ACTOR(hd_render_manager_get()));
                 hd_transition_fade_and_rotate(
                         FALSE, Orientation_change.direction == GOTO_PORTRAIT,
@@ -1685,7 +1689,7 @@ trans_start_error:
           actor = CLUTTER_ACTOR(hd_render_manager_get());
           clutter_actor_set_rotation(actor, CLUTTER_X_AXIS, 0, 0, 0, 0);
           clutter_actor_set_rotation(actor, CLUTTER_Y_AXIS, 0, 0, 0, 0);
-          clutter_actor_set_depthu(actor, 0);
+          clutter_actor_set_depth(actor, 0);
 
           Orientation_change.phase = IDLE;
           if (Orientation_change.direction != Orientation_change.new_direction)

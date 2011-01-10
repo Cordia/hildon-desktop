@@ -179,8 +179,8 @@ layer_new (GSList *applets)
 
   for (a = applets; a; a = a->next)
     {
-      gint x, y;
-      guint width, height;
+      gfloat x, y;
+      gfloat width, height;
       rect_t r;
 
       clutter_actor_get_position (CLUTTER_ACTOR (a->data), &x, &y);
@@ -258,7 +258,7 @@ hd_home_view_layout_arrange_applet (HdHomeViewLayout *layout,
                                     ClutterActor     *new_applet)
 {
   HdHomeViewLayoutPrivate *priv = layout->priv;
-  guint width, height;
+  gfloat width, height;
   rect_t r;
   layer_t *l;
 

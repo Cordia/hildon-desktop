@@ -86,10 +86,10 @@ struct _HdHomeViewPrivate
 
   GHashTable               *applets;
 
-  gint                      applet_motion_start_x;
-  gint                      applet_motion_start_y;
-  gint                      applet_motion_start_position_x;
-  gint                      applet_motion_start_position_y;
+  gfloat                    applet_motion_start_x;
+  gfloat                    applet_motion_start_y;
+  gfloat                    applet_motion_start_position_x;
+  gfloat                    applet_motion_start_position_y;
 
   gboolean                  applet_motion_tap : 1;
 
@@ -159,9 +159,9 @@ static void                  applet_data_free (HdHomeViewAppletData *data);
 G_DEFINE_TYPE (HdHomeView, hd_home_view, CLUTTER_TYPE_GROUP);
 
 static void
-hd_home_view_allocate (ClutterActor          *actor,
-                       const ClutterActorBox *box,
-                       gboolean               absolute_origin_changed)
+hd_home_view_allocate (ClutterActor           *actor,
+                       const ClutterActorBox  *box,
+                       ClutterAllocationFlags  flags)
 {
 #if 0
   FIXME unused remove
@@ -169,13 +169,13 @@ hd_home_view_allocate (ClutterActor          *actor,
   HdHomeViewPrivate *priv = view->priv;
 
   /* We've resized, refresh the background image to fit the new size */
-  if ((CLUTTER_UNITS_TO_INT (box->x2 - box->x1) != priv->bg_image_dest_width) ||
-      (CLUTTER_UNITS_TO_INT (box->y2 - box->y1) != priv->bg_image_dest_height))
+  if ((COGL_FIXED_TO_INT (box->x2 - box->x1) != priv->bg_image_dest_width) ||
+      (COGL_FIXED_TO_INT (box->y2 - box->y1) != priv->bg_image_dest_height))
     hd_home_view_refresh_bg (view,
                              priv->background_image_file);
 #endif
 
-  CLUTTER_ACTOR_CLASS (hd_home_view_parent_class)->allocate (actor, box, absolute_origin_changed);
+  CLUTTER_ACTOR_CLASS (hd_home_view_parent_class)->allocate (actor, box, flags);
 }
 
 static void
@@ -255,7 +255,7 @@ static gboolean hd_home_view_hidden(HdHomeView *view) {
 static gboolean
 is_button_press_in_gesture_start_area (ClutterEvent *event)
 {
-  g_debug ("%s. (%d, %d)",
+  g_debug ("%s. (%f, %f)",
            __FUNCTION__,
            event->button.x, event->button.y);
 
@@ -271,7 +271,7 @@ pan_gesture_motion (ClutterActor *actor,
 {
   HdHomeViewPrivate *priv = view->priv;
 
-  g_debug ("%s. (%d, %d)",
+  g_debug ("%s. (%f, %f)",
            __FUNCTION__,
            event->motion.x, event->motion.y);
 
@@ -319,7 +319,7 @@ pressed_on_view (ClutterActor *actor,
 {
   HdHomeViewPrivate *priv = view->priv;
 
-  g_debug ("%s. (%d, %d)",
+  g_debug ("%s. (%f, %f)",
            __FUNCTION__,
            event->button.x, event->button.y);
 
@@ -351,7 +351,9 @@ hd_home_view_constructed (GObject *object)
 
   priv->background_container = clutter_group_new ();
   clutter_actor_set_name (priv->background_container, "HdHomeView::background-container");
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(priv->background_container, FALSE);
+#endif
   clutter_actor_set_position (priv->background_container, 0, 0);
   clutter_actor_set_size (priv->background_container,
                           HD_COMP_MGR_LANDSCAPE_WIDTH,
@@ -363,7 +365,9 @@ hd_home_view_constructed (GObject *object)
 
   priv->applets_container = clutter_group_new ();
   clutter_actor_set_name (priv->applets_container, "HdHomeView::applets-container");
+#ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(priv->applets_container, FALSE);
+#endif
   clutter_actor_set_position (priv->applets_container, 0, 0);
   clutter_actor_set_size (priv->applets_container,
                           HD_COMP_MGR_LANDSCAPE_WIDTH,
@@ -402,9 +406,11 @@ hd_home_view_init (HdHomeView *self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, HD_TYPE_HOME_VIEW, HdHomeViewPrivate);
 
   clutter_actor_set_name(CLUTTER_ACTOR(self), "HdHomeView");
+#ifdef MAEMO_CHANGES
   /* Explicitly enable maemo-specific visibility detection to cut down
    * spurious paints */
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(self), TRUE);
+#endif
 
   self->priv->gconf_client = gconf_client_get_default ();
 
@@ -808,7 +814,7 @@ hd_home_view_applet_motion (ClutterActor       *applet,
 {
   HdHomeViewPrivate *priv = view->priv;
   gint x, y;
-  guint w, h;
+  gfloat w, h;
 
   /* Check if it is still a tap or already a move */
   if (priv->applet_motion_tap)
@@ -1631,7 +1637,7 @@ static void
 hd_home_view_rotate_background(ClutterActor *actor, GParamSpec *unused,
                                ClutterActor *stage)
 {
-  guint w, h;
+  gfloat w, h;
 
   clutter_actor_get_size (stage, &w, &h);
   if (w < h)

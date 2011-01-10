@@ -70,7 +70,7 @@ struct _HdHomeViewContainerPrivate
   /* animation */
   ClutterTimeline *timeline;
   int timeline_offset;
-  guint frames;
+  guint duration;
   gboolean animation_overshoot;
 
   /* GConf */
@@ -605,29 +605,29 @@ hd_home_view_container_get_property (GObject    *self,
 }
 
 static void
-hd_home_view_container_allocate (ClutterActor          *self,
-                                 const ClutterActorBox *box,
-                                 gboolean               absolute_origin_changed)
+hd_home_view_container_allocate (ClutterActor           *self,
+                                 const ClutterActorBox  *box,
+                                 ClutterAllocationFlags  flags)
 {
   HdHomeViewContainer *container = HD_HOME_VIEW_CONTAINER (self);
   HdHomeViewContainerPrivate *priv = container->priv;
-  ClutterUnit width, height;
+  CoglFixed width, height;
   guint i;
   ClutterActorBox child_box = { 0, };
-  ClutterUnit offset = 0;
+  CoglFixed offset = 0;
 
   /* Chain up */
   CLUTTER_ACTOR_CLASS (hd_home_view_container_parent_class)->allocate (self,
                                                                        box,
-                                                                       absolute_origin_changed);
+                                                                       flags);
 
   width = box->x2 - box->x1;
   height = box->y2 - box->y1;
 
   if (priv->previous_view != priv->current_view
       && priv->next_view != priv->current_view)
-    offset = CLUTTER_UNITS_FROM_INT(priv->offset) +
-             CLUTTER_UNITS_FROM_INT(priv->offset_anim);
+    offset = COGL_FIXED_FROM_INT(priv->offset) +
+             COGL_FIXED_FROM_INT(priv->offset_anim);
 
   for (i = 0; i < MAX_HOME_VIEWS; i++)
     {
@@ -655,7 +655,7 @@ hd_home_view_container_allocate (ClutterActor          *self,
           child_box.x2 += offset;
         }
 
-      clutter_actor_allocate (priv->views[i], &child_box, absolute_origin_changed);
+      clutter_actor_allocate (priv->views[i], &child_box, flags);
 
       /* Make sure offscreen views are hidden. Views positioned offscreen
        * wouldn't be seen anyway, but they introduce extra overheads in
@@ -847,7 +847,7 @@ hd_home_view_container_get_active (HdHomeViewContainer *container,
 
 void
 hd_home_view_container_set_offset (HdHomeViewContainer *container,
-                                   ClutterUnit          offset)
+                                   CoglFixed          offset)
 {
   HdHomeViewContainerPrivate *priv;
 
@@ -855,19 +855,19 @@ hd_home_view_container_set_offset (HdHomeViewContainer *container,
 
   priv = container->priv;
 
-  priv->offset = CLUTTER_UNITS_TO_INT(offset);
+  priv->offset = COGL_FIXED_TO_INT(offset);
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
 }
 
 static void
 scroll_back_new_frame_cb (ClutterTimeline     *timeline,
-                          gint                 frame_num,
+                          gint                 msecs,
                           HdHomeViewContainer *container)
 {
   HdHomeViewContainerPrivate *priv = container->priv;
 
-  float amt = frame_num / (float)priv->frames;
+  float amt = (float)msecs / (float)priv->duration;
   amt = hd_transition_ease_out(amt);
   /* If we overshoot, go negative for the first part of the transition */
   if (priv->animation_overshoot)
@@ -907,7 +907,7 @@ void
 hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocity)
 {
   HdHomeViewContainerPrivate *priv;
-  guint width;
+  gfloat width;
   gint offset;
 
   g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
@@ -946,17 +946,17 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocit
   /* we use 1570, because it's roughly 1000 * PI/2 - this keeps the initial speed
    * the same as the drag velocity given in the argument (because the ease_out
    * function in scroll_back_new_frame_cb uses sin, and sin(x)==x near 0) */
-  priv->timeline = clutter_timeline_new_for_duration
+  priv->timeline = clutter_timeline_new
                         (ABS (offset) * 1570 / velocity);
 
-  priv->frames = clutter_timeline_get_n_frames (priv->timeline);
+  priv->duration = clutter_timeline_get_duration (priv->timeline);
   priv->timeline_offset = offset;
   /* We reset this and use a separate offset (offset_anim) for animation so
    * the user can still pan while we're animating */
   priv->offset = 0;
 
   g_debug ("frames: %u, offset: %d",
-           priv->frames, priv->timeline_offset);
+           priv->duration, priv->timeline_offset);
 
   g_signal_connect (priv->timeline, "new-frame",
                     G_CALLBACK (scroll_back_new_frame_cb), container);
@@ -972,7 +972,7 @@ void
 hd_home_view_container_scroll_to_previous (HdHomeViewContainer *container, gint velocity)
 {
   HdHomeViewContainerPrivate *priv;
-  guint width;
+  gfloat width;
 
   g_return_if_fail (HD_IS_HOME_VIEW_CONTAINER (container));
 
@@ -991,7 +991,7 @@ ClutterTimeline *
 hd_home_view_container_scroll_to_next (HdHomeViewContainer *container, gint velocity)
 {
   HdHomeViewContainerPrivate *priv;
-  guint width;
+  gfloat width;
 
   g_return_val_if_fail (HD_IS_HOME_VIEW_CONTAINER (container), NULL);
 

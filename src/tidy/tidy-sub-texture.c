@@ -8,7 +8,7 @@
 #endif
 
 #include "tidy-sub-texture.h"
-#include <clutter/clutter-actor.h>
+#include <clutter/clutter.h>
 
 #include "cogl/cogl.h"
 
@@ -34,9 +34,9 @@ struct _TidySubTexturePrivate
 
 static void
 tidy_sub_texture_get_preferred_width (ClutterActor *self,
-                                           ClutterUnit   for_height,
-                                           ClutterUnit  *min_width_p,
-                                           ClutterUnit  *natural_width_p)
+                                            gfloat  for_height,
+                                            gfloat *min_width_p,
+                                            gfloat *natural_width_p)
 {
   TidySubTexturePrivate *priv = TIDY_SUB_TEXTURE (self)->priv;
   ClutterActor *parent_texture;
@@ -68,9 +68,9 @@ tidy_sub_texture_get_preferred_width (ClutterActor *self,
 
 static void
 tidy_sub_texture_get_preferred_height (ClutterActor *self,
-                                            ClutterUnit   for_width,
-                                            ClutterUnit  *min_height_p,
-                                            ClutterUnit  *natural_height_p)
+                                            gfloat   for_width,
+                                            gfloat  *min_height_p,
+                                            gfloat  *natural_height_p)
 {
   TidySubTexturePrivate *priv = TIDY_SUB_TEXTURE (self)->priv;
   ClutterActor *parent_texture;
@@ -105,11 +105,12 @@ tidy_sub_texture_paint (ClutterActor *self)
 {
   TidySubTexturePrivate  *priv;
   ClutterActor                *parent_texture;
-  gint                         x_1, y_1, x_2, y_2, width, height;
-  ClutterColor                 col = { 0xff, 0xff, 0xff, 0xff };
+  ClutterActorBox              box;
+  gfloat                       width, height;
+  CoglColor                    col = { 1.0f, 1.0f, 1.0f, 1.0f };
   CoglHandle                   cogl_texture;
-  ClutterFixed                 t_x, t_y, t_w, t_h;
-  guint                        tex_width, tex_height;
+  gfloat                       t_x, t_y, t_w, t_h;
+  gfloat                       tex_width, tex_height;
   ClutterGeometry              region;
 
   priv = TIDY_SUB_TEXTURE (self)->priv;
@@ -125,12 +126,12 @@ tidy_sub_texture_paint (ClutterActor *self)
   if (!CLUTTER_ACTOR_IS_REALIZED (parent_texture))
     clutter_actor_realize (parent_texture);
 
-  col.alpha = clutter_actor_get_paint_opacity (self);
-  cogl_color (&col);
+  cogl_color_set_alpha_float(&col, clutter_actor_get_paint_opacity (self));
+  cogl_set_source_color (&col);
 
-  clutter_actor_get_allocation_coords (self, &x_1, &y_1, &x_2, &y_2);
-  width = x_2 - x_1;
-  height = y_2 - y_1;
+  clutter_actor_get_allocation_box (self, &box);
+  width = box.x2 - box.x1;
+  height = box.y2 - box.y1;
 
   cogl_texture = clutter_texture_get_cogl_texture (priv->parent_texture);
 
@@ -150,20 +151,19 @@ tidy_sub_texture_paint (ClutterActor *self)
       region.height = tex_height;
     }
 
-  t_x = CLUTTER_FLOAT_TO_FIXED(region.x / (float)tex_width);
-  t_y = CLUTTER_FLOAT_TO_FIXED(region.y / (float)tex_height);
-  t_w = CLUTTER_FLOAT_TO_FIXED(region.width / (float)tex_width);
-  t_h = CLUTTER_FLOAT_TO_FIXED(region.height / (float)tex_height);
+  t_x = region.x / tex_width;
+  t_y = region.y / tex_height;
+  t_w = region.width / tex_width;
+  t_h = region.height / tex_height;
 
   /* Parent paint translated us into position, so we just
    * paint at 0,0 */
   if (!priv->tiled)
     {
       // normal draw if not tiled...
-      cogl_texture_rectangle (cogl_texture, 0, 0,
-                              CLUTTER_INT_TO_FIXED (width),
-                              CLUTTER_INT_TO_FIXED (height),
-                              t_x, t_y, t_x+t_w, t_y+t_h);
+      cogl_set_source_texture (cogl_texture);
+      cogl_rectangle_with_texture_coords (0.0f, 0.0f, width, height,
+                                          t_x, t_y, t_x+t_w, t_y+t_h);
     }
   else
     {
@@ -197,25 +197,25 @@ tidy_sub_texture_paint (ClutterActor *self)
                 if (y+h > height)
                   h = height-y;
 
-                rect[0].x = CLUTTER_INT_TO_FIXED(x);
-                rect[0].y = CLUTTER_INT_TO_FIXED(y);
+                rect[0].x = COGL_FIXED_FROM_INT(x);
+                rect[0].y = COGL_FIXED_FROM_INT(y);
                 rect[0].z = 0;
                 rect[0].tx = t_x;
                 rect[0].ty = t_y;
-                rect[1].x = CLUTTER_INT_TO_FIXED(x+w);
-                rect[1].y = CLUTTER_INT_TO_FIXED(y);
+                rect[1].x = COGL_FIXED_FROM_INT(x+w);
+                rect[1].y = COGL_FIXED_FROM_INT(y);
                 rect[1].z = 0;
                 rect[1].tx = t_x+(t_w*w/region.width);
                 rect[1].ty = t_y;
-                rect[2].x = CLUTTER_INT_TO_FIXED(x+w);
-                rect[2].y = CLUTTER_INT_TO_FIXED(y+h);
+                rect[2].x = COGL_FIXED_FROM_INT(x+w);
+                rect[2].y = COGL_FIXED_FROM_INT(y+h);
                 rect[2].z = 0;
                 rect[2].tx = t_x+(t_w*w/region.width);
                 rect[2].ty = t_y+(t_h*h/region.height);
                 rect[3] = rect[0];
                 rect[4] = rect[2];
-                rect[5].x = CLUTTER_INT_TO_FIXED(x);
-                rect[5].y = CLUTTER_INT_TO_FIXED(y+h);
+                rect[5].x = COGL_FIXED_FROM_INT(x);
+                rect[5].y = COGL_FIXED_FROM_INT(y+h);
                 rect[5].z = 0;
                 rect[5].tx = t_x;
                 rect[5].ty = t_y+(t_h*h/region.height);
@@ -231,14 +231,12 @@ tidy_sub_texture_paint (ClutterActor *self)
                                   verts,
                                   FALSE);
 #else
-	  gint i;
-	  gint n_vertices = 6*c;
-  
-	  for (i = 0; i < n_vertices-2; i += 3)
-    	     cogl_texture_polygon (cogl_texture,
-             	             	   3,
-                          	   &verts[i],
-                          	   FALSE);
+          gint i;
+          gint n_vertices = 6*c;
+
+          cogl_set_source_texture (cogl_texture);
+          for (i = 0; i < n_vertices-2; i += 3)
+            cogl_polygon (&verts[i], 3, FALSE);
 #endif
           g_free(verts);
         }

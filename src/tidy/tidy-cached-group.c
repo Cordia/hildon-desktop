@@ -5,14 +5,12 @@
  * children after they have been destroyed. */
 
 #include "tidy-cached-group.h"
-#include "tidy-util.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <clutter/clutter-container.h>
-
+#include <clutter/clutter.h>
 #include <cogl/cogl.h>
 
 #include <string.h>
@@ -47,11 +45,11 @@ G_DEFINE_TYPE (TidyCachedGroup,
 static void
 tidy_cached_group_paint (ClutterActor *actor)
 {
-  ClutterColor    white = { 0xff, 0xff, 0xff, 0xff };
-  ClutterColor    bgcol = { 0x00, 0x00, 0x00, 0xff };
-  ClutterColor    col = { 0xff, 0xff, 0xff, 0xff };
-  gint            x_1, y_1, x_2, y_2;
+  CoglColor       white = { 1.0f, 1.0f, 1.0f, 1.0f };
+  CoglColor       bgcol = { 0.0f, 0.0f, 0.0f, 1.0f };
+  CoglColor       col = { 1.0f, 1.0f, 1.0f, 1.0f };
   gboolean        rotate_90;
+  ClutterActorBox box;
 
   if (!TIDY_IS_CACHED_GROUP(actor))
     return;
@@ -60,9 +58,9 @@ tidy_cached_group_paint (ClutterActor *actor)
   TidyCachedGroup *container = TIDY_CACHED_GROUP(group);
   TidyCachedGroupPrivate *priv = container->priv;
 
-  clutter_actor_get_allocation_coords (actor, &x_1, &y_1, &x_2, &y_2);
-  int width = x_2 - x_1;
-  int height = y_2 - y_1;
+  clutter_actor_get_allocation_box (actor, &box);
+  gfloat width = box.x2 - box.x1;
+  gfloat height = box.y2 - box.y1;
 
   /* If we are rendering normally, or for some reason the size has been
    * set so small we couldn't create a texture then shortcut all this, and
@@ -75,7 +73,7 @@ tidy_cached_group_paint (ClutterActor *actor)
       return;
     }
 
-#ifdef __i386__
+#if defined(__i386__) || defined(__x86_64__)
   if (!cogl_features_available(COGL_FEATURE_OFFSCREEN))
     { /* If we can't render offscreen properly, just render normally. */
       CLUTTER_ACTOR_CLASS (tidy_cached_group_parent_class)->paint(actor);
@@ -85,8 +83,8 @@ tidy_cached_group_paint (ClutterActor *actor)
 
   int exp_width = width/priv->downsample;
   int exp_height = height/priv->downsample;
-  int tex_width = 0;
-  int tex_height = 0;
+  gfloat tex_width = 0.0f;
+  gfloat tex_height = 0.0f;
 
   /* check sizes */
   if (priv->tex)
@@ -99,8 +97,8 @@ tidy_cached_group_paint (ClutterActor *actor)
   if (tex_width!=exp_width || tex_height!=exp_height) {
     if (priv->fbo)
       {
-        cogl_offscreen_unref(priv->fbo);
-        cogl_texture_unref(priv->tex);
+        cogl_handle_unref(priv->fbo);
+        cogl_handle_unref(priv->tex);
         priv->fbo = 0;
         priv->tex = 0;
       }
@@ -114,10 +112,10 @@ tidy_cached_group_paint (ClutterActor *actor)
       tex_height = exp_height;
 
       priv->tex = cogl_texture_new_with_size(
-                tex_width, tex_height, 0, FALSE /*mipmap*/,
+                tex_width, tex_height, COGL_TEXTURE_NO_AUTO_MIPMAP,
                 priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
                                   COGL_PIXEL_FORMAT_RGB_565);
-      cogl_texture_set_filters(priv->tex, CGL_NEAREST, CGL_NEAREST);
+      clutter_texture_set_filter_quality(priv->tex, CLUTTER_TEXTURE_QUALITY_LOW);
       priv->fbo = cogl_offscreen_new_to_texture (priv->tex);
     }
   /* It may be that we have resized, but the texture has not.
@@ -135,60 +133,58 @@ tidy_cached_group_paint (ClutterActor *actor)
   if (priv->source_changed)
     {
       cogl_push_matrix();
-      tidy_util_cogl_push_offscreen_buffer(priv->fbo);
+      cogl_push_framebuffer(priv->fbo);
       /* translate a bit to let bilinear filter smooth out intermediate pixels */
-      cogl_translatex(CFX_ONE/2,CFX_ONE/2,0);
+      cogl_translate(0.5f,0.5f,0.0f);
       if (rotate_90) {
-        cogl_scale(CFX_ONE*tex_width/height, CFX_ONE*tex_height/width);
-        cogl_translatex(CFX_ONE*height/2, CFX_ONE*width/2, 0);
+        cogl_scale(tex_width/height, tex_height/width, 1.0f);
+        cogl_translate(height/2, width/2, 0.0f);
         cogl_rotate(90, 0, 0, 1);
-        cogl_translatex(-CFX_ONE*width/2, -CFX_ONE*height/2, 0);
+        cogl_translate(-width/2, -height/2, 0.0f);
       } else {
-        cogl_scale(CFX_ONE*tex_width/width, CFX_ONE*tex_height/height);
+        cogl_scale(tex_width/width, tex_height/height, 1.0f);
       }
 
-      cogl_paint_init(&bgcol);
-      cogl_color (&white);
+      cogl_clear(&bgcol, COGL_BUFFER_BIT_COLOR);
+      cogl_set_source_color (&white);
       CLUTTER_ACTOR_CLASS (tidy_cached_group_parent_class)->paint(actor);
 
-      tidy_util_cogl_pop_offscreen_buffer();
+      cogl_pop_framebuffer();
       cogl_pop_matrix();
 
       priv->source_changed = FALSE;
     }
 
   /* Render what we've blurred to the screen */
-  col.alpha = clutter_actor_get_paint_opacity (actor);
+  cogl_color_set_alpha_float (&col, clutter_actor_get_paint_opacity (actor));
 
   /* if cache_amount isn't 1, we merge the two images by rendering the
    * real one first, then rendering the other one after... */
   if (priv->cache_amount < 0.99)
     {
-      cogl_color (&white);
+      cogl_set_source_color (&white);
       /* And we must render ourselves properly so we can render
        * the blur over the top */
       cogl_push_matrix();
       CLUTTER_ACTOR_CLASS (tidy_cached_group_parent_class)->paint(actor);
       cogl_pop_matrix();
-      col.alpha = (int)(priv->cache_amount*255);
+      cogl_color_set_alpha_float (&col, priv->cache_amount);
     }
 
   /* Now we render the image we have... */
-  cogl_color (&col);
+  cogl_set_source_color (&col);
 
   if (rotate_90)
     {
       cogl_push_matrix();
-      cogl_translatex(CFX_ONE*width/2, CFX_ONE*height/2, 0);
+      cogl_translate(width/2, height/2, 0.0f);
       cogl_rotate(90, 0, 0, 1);
-      cogl_scale(-CFX_ONE*height/width, -CFX_ONE*width/height);
-      cogl_translatex(-CFX_ONE*width/2, -CFX_ONE*height/2, 0);
+      cogl_scale(-height/width, -width/height, 1.0f);
+      cogl_translate(-width/2, -height/2, 0.0f);
     }
-  cogl_texture_rectangle (priv->tex,
-                          0, 0,
-                          CLUTTER_INT_TO_FIXED (width),
-                          CLUTTER_INT_TO_FIXED (height),
-                          0, 0, CFX_ONE, CFX_ONE);
+  cogl_set_source_texture (priv->tex);
+  cogl_rectangle_with_texture_coords (0, 0, width, height,
+                                      0, 0, 1, 1);
   if (rotate_90)
     {
       cogl_pop_matrix();
@@ -203,8 +199,8 @@ tidy_cached_group_dispose (GObject *gobject)
 
   if (priv->fbo)
     {
-      cogl_offscreen_unref(priv->fbo);
-      cogl_texture_unref(priv->tex);
+      cogl_handle_unref(priv->fbo);
+      cogl_handle_unref(priv->tex);
       priv->fbo = 0;
       priv->tex = 0;
     }

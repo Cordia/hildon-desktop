@@ -24,7 +24,7 @@
 #define                                         __HDA_LAUNCHER_TILE_H__
 
 #include                                        <atk/atk.h>
-#include                                        "cail/cail-actor.h"
+#include                                        <cally/cally.h>
 
 G_BEGIN_DECLS
 
@@ -51,12 +51,12 @@ typedef struct                                  _HdaLauncherTileClass   HdaLaunc
 
 struct                                          _HdaLauncherTile
 {
-  CailActor parent;
+  CallyActor parent;
 };
 
 struct                                          _HdaLauncherTileClass
 {
-  CailActorClass parent_class;
+  CallyActorClass parent_class;
 };
 
 

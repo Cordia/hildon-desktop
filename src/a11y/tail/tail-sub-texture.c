@@ -29,8 +29,7 @@
  * #TailSubTexture implements the required ATK interfaces of #TidySubTexture
  */
 
-#include <cail/cail-actor.h>
-#include <cail/cail-texture.h>
+#include <cally/cally.h>
 
 #include "tidy/tidy-sub-texture.h"
 #include "tail-sub-texture.h"
@@ -53,7 +52,7 @@ tail_sub_texture_initialize                     (AtkObject *obj,
 static G_CONST_RETURN gchar *
 tail_sub_texture_get_description                (AtkObject *obj);
 
-G_DEFINE_TYPE (TailSubTexture, tail_sub_texture,  CAIL_TYPE_ACTOR)
+G_DEFINE_TYPE (TailSubTexture, tail_sub_texture,  CALLY_TYPE_ACTOR)
 
 static void
 tail_sub_texture_class_init                     (TailSubTextureClass *klass)
@@ -95,7 +94,7 @@ tail_sub_texture_initialize                     (AtkObject   *obj,
 {
   guint         signal_id  = 0;
   gulong        handler_id = 0;
-  CailActor    *self       = NULL;
+  CallyActor    *self       = NULL;
   ClutterActor *actor      = NULL;
 
   ATK_OBJECT_CLASS (tail_sub_texture_parent_class)->initialize (obj, data);
@@ -111,7 +110,7 @@ tail_sub_texture_initialize                     (AtkObject   *obj,
    * FIXME: based on the assumption that the signal handler since the clutter
    * actor creation.
    */
-  self = CAIL_ACTOR (obj);
+  self = CALLY_ACTOR (obj);
   actor = CLUTTER_ACTOR (atk_gobject_accessible_get_object (ATK_GOBJECT_ACCESSIBLE (self)));
 
   signal_id  = g_signal_lookup ("button-release-event", CLUTTER_TYPE_ACTOR);
@@ -133,7 +132,7 @@ tail_sub_texture_get_description                (AtkObject *obj)
 {
   G_CONST_RETURN gchar *description = NULL;
 
-  g_return_val_if_fail (CAIL_IS_TEXTURE (obj), NULL);
+  g_return_val_if_fail (CALLY_IS_TEXTURE (obj), NULL);
 
   description = ATK_OBJECT_CLASS (tail_sub_texture_parent_class)->get_description (obj);
   if (description == NULL)
