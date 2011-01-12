@@ -611,10 +611,10 @@ hd_home_view_container_allocate (ClutterActor           *self,
 {
   HdHomeViewContainer *container = HD_HOME_VIEW_CONTAINER (self);
   HdHomeViewContainerPrivate *priv = container->priv;
-  CoglFixed width, height;
+  gfloat width, height;
   guint i;
   ClutterActorBox child_box = { 0, };
-  CoglFixed offset = 0;
+  gfloat offset = 0;
 
   /* Chain up */
   CLUTTER_ACTOR_CLASS (hd_home_view_container_parent_class)->allocate (self,
@@ -626,8 +626,7 @@ hd_home_view_container_allocate (ClutterActor           *self,
 
   if (priv->previous_view != priv->current_view
       && priv->next_view != priv->current_view)
-    offset = COGL_FIXED_FROM_INT(priv->offset) +
-             COGL_FIXED_FROM_INT(priv->offset_anim);
+    offset = priv->offset + priv->offset_anim;
 
   for (i = 0; i < MAX_HOME_VIEWS; i++)
     {
@@ -847,7 +846,7 @@ hd_home_view_container_get_active (HdHomeViewContainer *container,
 
 void
 hd_home_view_container_set_offset (HdHomeViewContainer *container,
-                                   CoglFixed          offset)
+                                   gfloat               offset)
 {
   HdHomeViewContainerPrivate *priv;
 
@@ -855,7 +854,7 @@ hd_home_view_container_set_offset (HdHomeViewContainer *container,
 
   priv = container->priv;
 
-  priv->offset = COGL_FIXED_TO_INT(offset);
+  priv->offset = offset;
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
 }

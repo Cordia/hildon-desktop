@@ -226,8 +226,8 @@ static void hd_launcher_constructed (GObject *gobject)
                                 clutter_timeline_new (400));
   g_signal_connect (priv->launch_transition, "new-frame",
                     G_CALLBACK (hd_launcher_transition_new_frame), gobject);
-  priv->launch_position.x = COGL_FIXED_FROM_INT(HD_LAUNCHER_PAGE_WIDTH) / 2;
-  priv->launch_position.y = COGL_FIXED_FROM_INT(HD_LAUNCHER_PAGE_HEIGHT) / 2;
+  priv->launch_position.x = HD_LAUNCHER_PAGE_WIDTH / 2;
+  priv->launch_position.y = HD_LAUNCHER_PAGE_HEIGHT / 2;
   priv->launch_position.z = 0;
 }
 
@@ -888,14 +888,14 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
    * the user last pressed */
   if (hd_util_get_cursor_position(&cursor_x, &cursor_y))
     {
-      priv->launch_position.x = COGL_FIXED_FROM_INT(cursor_x);
-      priv->launch_position.y = COGL_FIXED_FROM_INT(cursor_y);
+      priv->launch_position.x = cursor_x;
+      priv->launch_position.y = cursor_y;
     }
   else
     {
       /* default pos to centre of the screen */
-      priv->launch_position.x = COGL_FIXED_FROM_INT(HD_LAUNCHER_PAGE_WIDTH) / 2;
-      priv->launch_position.y = COGL_FIXED_FROM_INT(HD_LAUNCHER_PAGE_HEIGHT) / 2;
+      priv->launch_position.x = HD_LAUNCHER_PAGE_WIDTH / 2;
+      priv->launch_position.y = HD_LAUNCHER_PAGE_HEIGHT / 2;
     }
 
   /* If a launcher tile was clicked, expand the image from the centre of the
@@ -1016,7 +1016,7 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (page);
   guint duration;
   float amt, zoom;
-  CoglFixed mx,my;
+  gfloat mx,my;
 
   if (!HD_IS_LAUNCHER(data))
     return;
@@ -1030,10 +1030,10 @@ hd_launcher_transition_new_frame(ClutterTimeline *timeline,
     return;
 
   /* mid-position of actor */
-  mx = COGL_FIXED_FROM_FLOAT(//width*0.5f*(1-zoom) +
-                COGL_FIXED_TO_FLOAT(priv->launch_position.x)*(1-zoom)/zoom);
-  my = COGL_FIXED_FROM_FLOAT(//height*0.5f*(1-zoom) +
-                COGL_FIXED_TO_FLOAT(priv->launch_position.y)*(1-zoom)/zoom);
+  mx = //width*0.5f*(1-zoom) +
+       priv->launch_position.x * (1-zoom) / zoom;
+  my = //height*0.5f*(1-zoom) +
+       priv->launch_position.y * (1-zoom) / zoom;
   clutter_actor_set_anchor_point(priv->launch_image, -mx, -my);
   clutter_actor_set_scale(priv->launch_image, zoom, zoom);
 }

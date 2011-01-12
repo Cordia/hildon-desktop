@@ -197,25 +197,25 @@ tidy_sub_texture_paint (ClutterActor *self)
                 if (y+h > height)
                   h = height-y;
 
-                rect[0].x = COGL_FIXED_FROM_INT(x);
-                rect[0].y = COGL_FIXED_FROM_INT(y);
+                rect[0].x = x;
+                rect[0].y = y;
                 rect[0].z = 0;
                 rect[0].tx = t_x;
                 rect[0].ty = t_y;
-                rect[1].x = COGL_FIXED_FROM_INT(x+w);
-                rect[1].y = COGL_FIXED_FROM_INT(y);
+                rect[1].x = x+w;
+                rect[1].y = y;
                 rect[1].z = 0;
                 rect[1].tx = t_x+(t_w*w/region.width);
                 rect[1].ty = t_y;
-                rect[2].x = COGL_FIXED_FROM_INT(x+w);
-                rect[2].y = COGL_FIXED_FROM_INT(y+h);
+                rect[2].x = x+w;
+                rect[2].y = y+h;
                 rect[2].z = 0;
                 rect[2].tx = t_x+(t_w*w/region.width);
                 rect[2].ty = t_y+(t_h*h/region.height);
                 rect[3] = rect[0];
                 rect[4] = rect[2];
-                rect[5].x = COGL_FIXED_FROM_INT(x);
-                rect[5].y = COGL_FIXED_FROM_INT(y+h);
+                rect[5].x = x;
+                rect[5].y = y+h;
                 rect[5].z = 0;
                 rect[5].tx = t_x;
                 rect[5].ty = t_y+(t_h*h/region.height);

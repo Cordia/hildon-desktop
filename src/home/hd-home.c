@@ -394,7 +394,7 @@ hd_home_desktop_do_motion (HdHome *home,
       mb_wm_client_focus (MB_WM_COMP_MGR (priv->comp_mgr)->wm->desktop);
       hd_home_view_container_set_offset (
                       HD_HOME_VIEW_CONTAINER (priv->view_container),
-                      COGL_FIXED_FROM_INT (priv->cumulative_x));
+                      priv->cumulative_x);
     }
 
   priv->last_x = x;

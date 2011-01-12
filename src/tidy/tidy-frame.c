@@ -151,13 +151,13 @@ tidy_frame_allocate (ClutterActor           *actor,
   if (priv->child)
     {
       TidyPadding padding = { 0, };
-      CoglFixed x_align, y_align;
-      CoglFixed available_width, available_height;
+      gfloat x_align, y_align;
+      gfloat available_width, available_height;
       gfloat child_width, child_height;
       ClutterActorBox child_box = { 0, };
 
       tidy_actor_get_padding (TIDY_ACTOR (actor), &padding);
-      tidy_actor_get_alignmentx (TIDY_ACTOR (actor), &x_align, &y_align);
+      tidy_actor_get_alignment (TIDY_ACTOR (actor), &x_align, &y_align);
 
       available_width  = box->x2 - box->x1
                        - padding.left

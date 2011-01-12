@@ -316,18 +316,18 @@ tidy_blur_group_fallback_blur(TidyBlurGroup *group, int tex_width, int tex_heigh
   diffx = 1.0f / tex_width;
   diffy = 1.0f / tex_height;
 #ifdef MAEMO_CHANGES
-  cogl_blend_func(COGL_FIXED_1, 0);
+  cogl_blend_func(1.0f, 0);
 #else
-  glBlendFunc (COGL_FIXED_1, 0);
+  glBlendFunc (1.0f, 0);
 #endif
   cogl_set_source_color (&col);
   cogl_set_source_texture (tex);
   cogl_rectangle_with_texture_coords (0.0f, 0.0f, tex_width, tex_height,
                                       -diffx, 0.0f, 1.0f-diffx, 1.0f);
 #ifdef MAEMO_CHANGES
-  cogl_blend_func(COGL_FIXED_1, COGL_FIXED_1);
+  cogl_blend_func(1.0f, 1.0f);
 #else
-  glBlendFunc (COGL_FIXED_1, COGL_FIXED_1);
+  glBlendFunc (1.0f, 1.0f);
 #endif
   cogl_rectangle_with_texture_coords (0.0f, 0.0f, tex_width, tex_height,
                                       0.0f, diffy, 1.0f+diffx, 1.0f);
@@ -537,9 +537,9 @@ tidy_blur_group_paint (ClutterActor *actor)
       if (priv->use_shader)
         {
 #ifdef MAEMO_CHANGES
-          cogl_blend_func(COGL_FIXED_1, 0);
+          cogl_blend_func(1.0f, 0);
 #else
-          glBlendFunc (COGL_FIXED_1, 0);
+          glBlendFunc (1.0f, 0);
 #endif
           cogl_set_source_color (&white);
           cogl_set_source_texture (priv->current_is_a
@@ -723,17 +723,17 @@ skip_progress:
             v->x = mx+(zx*(fx*2-VIGNETTE_TILES)/(VIGNETTE_TILES-2));
             v->y = my+(zy*(fy*2-VIGNETTE_TILES)/(VIGNETTE_TILES-2));
             v->z = 0;
-            v->tx = (fx-1) * COGL_FIXED_1 / (VIGNETTE_TILES-2);
-            v->ty = (fy-1) * COGL_FIXED_1 / (VIGNETTE_TILES-2);
+            v->tx = (fx-1) * 1.0f / (VIGNETTE_TILES-2);
+            v->ty = (fy-1) * 1.0f / (VIGNETTE_TILES-2);
             /* mirror edges */
             if (v->tx < 0)
               v->tx = -v->tx;
-            if (v->tx > COGL_FIXED_1)
-              v->tx = COGL_FIXED_1*2 - v->tx;
+            if (v->tx > 1.0f)
+              v->tx = 1.0f*2 - v->tx;
             if (v->ty < 0)
               v->ty = -v->ty;
-            if (v->ty > COGL_FIXED_1)
-              v->ty = COGL_FIXED_1*2 - v->ty;
+            if (v->ty > 1.0f)
+              v->ty = 1.0f*2 - v->ty;
             /* Colour value...
              * 'edge' is the distance from the edge (almost) - it is whichever
              * is the smallest out of the distances to all 4 edges. */

@@ -12,10 +12,10 @@ typedef struct _TidyPadding             TidyPadding;
 
 struct _TidyPadding
 {
-  CoglFixed top;
-  CoglFixed right;
-  CoglFixed bottom;
-  CoglFixed left;
+  gfloat top;
+  gfloat right;
+  gfloat bottom;
+  gfloat left;
 };
 
 GType tidy_padding_get_type (void) G_GNUC_CONST;

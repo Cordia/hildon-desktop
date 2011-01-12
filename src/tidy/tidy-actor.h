@@ -63,25 +63,19 @@ struct _TidyActorClass
   ClutterActorClass parent_class;
 };
 
-GType      tidy_actor_get_type       (void) G_GNUC_CONST;
+GType      tidy_actor_get_type      (void) G_GNUC_CONST;
 
-void       tidy_actor_set_padding    (TidyActor         *actor,
-                                      const TidyPadding *padding);
-void       tidy_actor_get_padding    (TidyActor         *actor,
-                                      TidyPadding       *padding);
+void       tidy_actor_set_padding   (TidyActor         *actor,
+                                     const TidyPadding *padding);
+void       tidy_actor_get_padding   (TidyActor         *actor,
+                                     TidyPadding       *padding);
 
-void       tidy_actor_set_alignment  (TidyActor         *actor,
-                                      gdouble            x_align,
-                                      gdouble            y_align);
-void       tidy_actor_get_alignment  (TidyActor         *actor,
-                                      gdouble           *x_align,
-                                      gdouble           *y_align);
-void       tidy_actor_set_alignmentx (TidyActor         *actor,
-                                      CoglFixed       x_align,
-                                      CoglFixed       y_align);
-void       tidy_actor_get_alignmentx (TidyActor         *actor,
-                                      CoglFixed      *x_align,
-                                      CoglFixed      *y_align);
+void       tidy_actor_set_alignment (TidyActor         *actor,
+                                     gfloat             x_align,
+                                     gfloat             y_align);
+void       tidy_actor_get_alignment (TidyActor         *actor,
+                                     gfloat            *x_align,
+                                     gfloat            *y_align);
 
 G_END_DECLS
 

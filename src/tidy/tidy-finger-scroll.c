@@ -59,7 +59,7 @@ struct _TidyFingerScrollPrivate
   /* @move tells whether TIDY_FINGER_SCROLL_DRAG_TRASHOLD has been exceeded.
    * @first_x and @first_y are the coordinates of the first touch. */
   gboolean               move;
-  CoglFixed              first_x, first_y;
+  gfloat                 first_x, first_y;
 
   GArray                *motion_buffer;
   guint                  last_motion;
@@ -67,11 +67,11 @@ struct _TidyFingerScrollPrivate
   /* Variables for storing acceleration information for kinetic mode */
   ClutterTimeline       *deceleration_timeline;
   guint                  deceleration_timeline_finish;
-  CoglFixed              dx;
-  CoglFixed              dy;
-  CoglFixed              decel_rate;
-  CoglFixed              bouncing_decel_rate;
-  CoglFixed              bounce_back_speed_rate;
+  gfloat                 dx;
+  gfloat                 dy;
+  gfloat                 decel_rate;
+  gfloat                 bouncing_decel_rate;
+  gfloat                 bounce_back_speed_rate;
 
   /* Variables to fade in/out scroll-bars */
   ClutterAnimation      *hscroll_animation;
@@ -204,7 +204,7 @@ motion_event_cb (ClutterActor *actor,
 
       if (child)
         {
-          CoglFixed dx, dy;
+          gfloat dx, dy;
           TidyAdjustment *hadjust, *vadjust;
 
           tidy_scrollable_get_adjustments (TIDY_SCROLLABLE (child),
@@ -214,26 +214,25 @@ motion_event_cb (ClutterActor *actor,
           motion = &g_array_index (priv->motion_buffer,
                                    TidyFingerScrollMotion, priv->last_motion);
           dx = motion->x - x +
-               tidy_adjustment_get_valuex (hadjust);
+               tidy_adjustment_get_value (hadjust);
           dy = motion->y - y +
-               tidy_adjustment_get_valuex (vadjust);
+               tidy_adjustment_get_value (vadjust);
 
           /* Has the drag treshold been reached? */
           if (!priv->move)
             {
-                CoglFixed d1 = x - priv->first_x;
-                CoglFixed d2 = y - priv->first_y;
-                priv->move = COGL_FIXED_MUL (d1, d1) + COGL_FIXED_MUL (d2, d2)
-                  >= COGL_FIXED_FROM_INT (TIDY_FINGER_SCROLL_DRAG_TRASHOLD
-                                           * TIDY_FINGER_SCROLL_DRAG_TRASHOLD);
+                gfloat d1 = x - priv->first_x;
+                gfloat d2 = y - priv->first_y;
+                priv->move = d1 * d1 + d2 * d2
+                  >= TIDY_FINGER_SCROLL_DRAG_TRASHOLD * TIDY_FINGER_SCROLL_DRAG_TRASHOLD;
             }
 
           /* If not, do everything as if it had (we already did) except
            * for adjusting @child's position. */
           if (priv->move)
             {
-              tidy_adjustment_set_valuex (hadjust, dx);
-              tidy_adjustment_set_valuex (vadjust, dy);
+              tidy_adjustment_set_value (hadjust, dx);
+              tidy_adjustment_set_value (vadjust, dy);
               clutter_actor_queue_redraw( actor );
             }
         }
@@ -333,41 +332,41 @@ deceleration_completed_cb (ClutterTimeline *timeline,
  * We return the initial bouncing speed, which is based on how
  * far we are in the danger zone (the distance from lower/upper).
  */
-static CoglFixed
+static gfloat
 get_next_delta (TidyFingerScroll *scroll,
-                CoglFixed lowest, CoglFixed lower,
-                CoglFixed value, CoglFixed prevdiff,
-                CoglFixed upper, CoglFixed highest)
+                gfloat lowest, gfloat lower,
+                gfloat value, gfloat prevdiff,
+                gfloat upper, gfloat highest)
 {
   TidyFingerScrollPrivate *priv = scroll->priv;
-  CoglFixed decel_rate, nextdiff;
+  gfloat decel_rate, nextdiff;
   gboolean in_upper_danger_zone, in_lower_danger_zone;
 
   in_lower_danger_zone = value < lower;
   in_upper_danger_zone = value > upper;
   decel_rate = in_lower_danger_zone || in_upper_danger_zone
     ? priv->bouncing_decel_rate : priv->decel_rate;
-  nextdiff = COGL_FIXED_MUL (prevdiff, decel_rate);
+  nextdiff = prevdiff * decel_rate;
   if (prevdiff && decel_rate && prevdiff == nextdiff)
     /* Arithmetic underflow. */
-    nextdiff = prevdiff < 0 ? -COGL_FIXED_1 : COGL_FIXED_1;
+    nextdiff = prevdiff < 0 ? -1.0f : 1.0f;
 
   if (in_lower_danger_zone)
     {
-      if (value+nextdiff <= lowest || (-COGL_FIXED_1 < nextdiff && nextdiff <= 0))
+      if (value+nextdiff <= lowest || (-1.0f < nextdiff && nextdiff <= 0))
         {
-          nextdiff = COGL_FIXED_MUL(lower-value, priv->bounce_back_speed_rate);
+          nextdiff = (lower-value) * priv->bounce_back_speed_rate;
           if (!nextdiff)
-            nextdiff = COGL_FIXED_1;
+            nextdiff = 1.0f;
         }
     }
   else if (in_upper_danger_zone)
     {
-      if (value+nextdiff >= highest || (0 <= nextdiff && nextdiff < COGL_FIXED_1))
+      if (value+nextdiff >= highest || (0 <= nextdiff && nextdiff < 1.0f))
         {
-          nextdiff = COGL_FIXED_MUL(upper-value, priv->bounce_back_speed_rate);
+          nextdiff = (upper-value) * priv->bounce_back_speed_rate;
           if (!nextdiff)
-            nextdiff = -COGL_FIXED_1;
+            nextdiff = -1.0f;
         }
     }
 
@@ -375,10 +374,10 @@ get_next_delta (TidyFingerScroll *scroll,
 }
 
 /* Advances *@valuep by @diff and returns how much it actually advanced. */
-static CoglFixed
-advance_value (CoglFixed lowest, CoglFixed lower,
-               CoglFixed *valuep, CoglFixed diff,
-               CoglFixed upper, CoglFixed highest)
+static gfloat
+advance_value (gfloat lowest, gfloat lower,
+               gfloat *valuep, gfloat diff,
+               gfloat upper, gfloat highest)
 {
   static const gboolean likeable = FALSE;
 
@@ -390,12 +389,12 @@ advance_value (CoglFixed lowest, CoglFixed lower,
           diff -= *valuep - lowest;
           *valuep = lowest;
         }
-      else if (*valuep < lower && 0 < diff && diff < COGL_FIXED_1)
+      else if (*valuep < lower && 0 < diff && diff < 1.0f)
         { /* Leaving the top danger zone, snap it to the boundary. */
           diff = 0;
           *valuep = lower;
         }
-      else if (*valuep > upper && -COGL_FIXED_1 < diff && diff < 0)
+      else if (*valuep > upper && -1.0f < diff && diff < 0)
         { /* Same for the bottom danger zone. */
           diff = 0;
           *valuep = upper;
@@ -425,22 +424,22 @@ deceleration_new_frame_cb (ClutterTimeline *timeline,
   TidyFingerScrollPrivate *priv = scroll->priv;
   ClutterActor *child;
   TidyAdjustment *hadjust, *vadjust;
-  CoglFixed hvalue, hlowest, hlower, hpage, hupper, hhighest;
-  CoglFixed vvalue, vlowest, vlower, vpage, vupper, vhighest;
+  gfloat hvalue, hlowest, hlower, hpage, hupper, hhighest;
+  gfloat vvalue, vlowest, vlower, vpage, vupper, vhighest;
 
   if (!(child = tidy_scroll_view_get_child (TIDY_SCROLL_VIEW(scroll))))
     return;
   tidy_scrollable_get_adjustments (TIDY_SCROLLABLE (child),
                                    &hadjust, &vadjust);
 
-  tidy_adjustment_get_skirtx (hadjust, &hlowest, &hhighest);
-  tidy_adjustment_get_valuesx (hadjust, &hvalue, &hlower, &hupper,
-                               NULL, NULL, &hpage);
+  tidy_adjustment_get_skirt (hadjust, &hlowest, &hhighest);
+  tidy_adjustment_get_values (hadjust, &hvalue, &hlower, &hupper,
+                              NULL, NULL, &hpage);
   hupper -= hpage;
 
-  tidy_adjustment_get_skirtx (vadjust, &vlowest, &vhighest);
-  tidy_adjustment_get_valuesx (vadjust, &vvalue, &vlower, &vupper,
-                               NULL, NULL, &vpage);
+  tidy_adjustment_get_skirt (vadjust, &vlowest, &vhighest);
+  tidy_adjustment_get_values (vadjust, &vvalue, &vlower, &vupper,
+                              NULL, NULL, &vpage);
   vupper -= vpage;
 
   /* We need to keep track of how many frames were skipped so we can
@@ -457,15 +456,15 @@ deceleration_new_frame_cb (ClutterTimeline *timeline,
       priv->dy = get_next_delta (scroll,
                    vlowest, vlower, vvalue, priv->dy, vupper, vhighest);
     }
-  tidy_adjustment_set_valuex (hadjust, hvalue);
-  tidy_adjustment_set_valuex (vadjust, vvalue);
+  tidy_adjustment_set_value (hadjust, hvalue);
+  tidy_adjustment_set_value (vadjust, vvalue);
 
   /* Stop the timeline if we don't move anymore,
    * or extend it if we're running out of frames. */
   if (   vlower <= vvalue && vvalue <= vupper
-      && -COGL_FIXED_1 < priv->dy && priv->dy < COGL_FIXED_1
+      && -1.0f < priv->dy && priv->dy < 1.0f
       && hlower <= hvalue && hvalue <= hupper
-      && -COGL_FIXED_1 < priv->dx && priv->dx < COGL_FIXED_1)
+      && -1.0f < priv->dx && priv->dx < 1.0f)
     /* Not in danger zone and not moving. */
     deceleration_completed_cb (timeline, scroll);
   else if (clutter_timeline_get_duration (timeline) < msecs+60)
@@ -492,23 +491,23 @@ deceleration_new_frame_cb (ClutterTimeline *timeline,
  * in half a second.  Similarly for the bottom of the widget.  Otherwise
  * the @diff is returned as is.
  */
-static CoglFixed
+static gfloat
 initial_speed (TidyFingerScroll *scroll, TidyAdjustment *adjust,
-               CoglFixed diff)
+               gfloat diff)
 {
   TidyFingerScrollPrivate *priv = scroll->priv;
-  CoglFixed lower, value, upper, page;
+  gfloat lower, value, upper, page;
 
-  tidy_adjustment_get_valuesx (adjust, &value, &lower, &upper,
-                               NULL, NULL, &page);
+  tidy_adjustment_get_values (adjust, &value, &lower, &upper,
+                              NULL, NULL, &page);
   upper -= page;
 
   if (diff > 0 && value < lower
-      && value + COGL_FIXED_MUL (diff, 1-priv->bouncing_decel_rate) < lower)
-    return COGL_FIXED_MUL(lower-value, priv->bounce_back_speed_rate);
+      && value + diff * (1-priv->bouncing_decel_rate) < lower)
+    return (lower-value) * priv->bounce_back_speed_rate;
   else if (diff < 0 && value > upper
-      && value + COGL_FIXED_MUL (diff, 1-priv->bouncing_decel_rate) > upper)
-    return COGL_FIXED_MUL(upper-value, priv->bounce_back_speed_rate);
+      && value + diff * (1-priv->bouncing_decel_rate) > upper)
+    return (upper-value) * priv->bounce_back_speed_rate;
   else
     return diff;
 }
@@ -543,7 +542,7 @@ button_release_event_cb (ClutterActor *actor,
                                                event->x, event->y,
                                                &x, &y))
         {
-          CoglFixed frac, x_origin, y_origin;
+          gfloat frac, x_origin, y_origin;
           GTimeVal release_time, motion_time;
           TidyAdjustment *hadjust, *vadjust;
           glong time_diff;
@@ -570,10 +569,8 @@ button_release_event_cb (ClutterActor *actor,
               motion_time.tv_sec += motion->time.tv_sec;
               motion_time.tv_usec += motion->time.tv_usec;
             }
-          x_origin = COGL_FIXED_DIV (x_origin,
-                           COGL_FIXED_FROM_INT (priv->last_motion));
-          y_origin = COGL_FIXED_DIV (y_origin,
-                           COGL_FIXED_FROM_INT (priv->last_motion));
+          x_origin = x_origin / priv->last_motion;
+          y_origin = y_origin / priv->last_motion;
           motion_time.tv_sec /= priv->last_motion;
           motion_time.tv_usec /= priv->last_motion;
 
@@ -584,12 +581,11 @@ button_release_event_cb (ClutterActor *actor,
                         (G_USEC_PER_SEC - motion_time.tv_usec);
 
           /* Work out the fraction of 1/60th of a second that has elapsed */
-          frac = COGL_FIXED_DIV (COGL_FIXED_FROM_FLOAT (time_diff/1000.0),
-                                COGL_FIXED_FROM_FLOAT (1000.0/60.0));
+          frac = (time_diff/1000.0) / (1000.0/60.0);
 
           /* See how many units to move in 1/60th of a second */
-          priv->dx = COGL_FIXED_DIV (x_origin - x, frac);
-          priv->dy = COGL_FIXED_DIV (y_origin - y, frac);
+          priv->dx = (x_origin - x) / frac;
+          priv->dy = (y_origin - y) / frac;
 
           /* Get adjustments to do step-increment snapping */
           tidy_scrollable_get_adjustments (TIDY_SCROLLABLE (child),
@@ -600,12 +596,10 @@ button_release_event_cb (ClutterActor *actor,
           priv->dx = initial_speed (scroll, hadjust, priv->dx);
           priv->dy = initial_speed (scroll, vadjust, priv->dy);
 
-          if (ABS(COGL_FIXED_TO_INT(priv->dx)) > 1 ||
-              ABS(COGL_FIXED_TO_INT(priv->dy)) > 1)
+          if (ABS(priv->dx) > 1 ||
+              ABS(priv->dy) > 1)
             {
-              gdouble value, lower, step_increment, d, a, x, y, n;
-
-              /* TODO: Convert this all to fixed point? */
+              gfloat value, lower, step_increment, d, a, x, y, n;
 
               /* We want n, where x / y^n < z,
                * x = Distance to move per frame
@@ -618,8 +612,8 @@ button_release_event_cb (ClutterActor *actor,
                * As z = 1, this will cause stops to be slightly abrupt -
                * add a constant 15 frames to compensate.
                */
-              x = COGL_FIXED_TO_FLOAT (MAX(ABS(priv->dx), ABS(priv->dy)));
-              y = COGL_FIXED_TO_FLOAT (priv->decel_rate);
+              x = MAX(ABS(priv->dx), ABS(priv->dy));
+              y = priv->decel_rate;
               n = logf (x) * logf (y) + 15.0;
 
               /* Now we have n, adjust dx/dy so that we finish on a step
@@ -646,44 +640,44 @@ button_release_event_cb (ClutterActor *actor,
               a = (1.0 - pow (y, n + 1)) / (1.0 - y);
 
               /* Solving for dx */
-              d = a * COGL_FIXED_TO_FLOAT (priv->dx);
+              d = a * priv->dx;
               tidy_adjustment_get_values (hadjust, &value, &lower, NULL,
                                           &step_increment, NULL, NULL);
               d = ((rint (((value + d) - lower) / step_increment) *
                     step_increment) + lower) - value;
-              priv->dx = COGL_FIXED_FROM_FLOAT (d / a);
+              priv->dx = d / a;
 
               /* Solving for dy */
-              d = a * COGL_FIXED_TO_FLOAT (priv->dy);
+              d = a * priv->dy;
               tidy_adjustment_get_values (vadjust, &value, &lower, NULL,
                                           &step_increment, NULL, NULL);
               d = ((rint (((value + d) - lower) / step_increment) *
                     step_increment) + lower) - value;
-              priv->dy = COGL_FIXED_FROM_FLOAT (d / a);
+              priv->dy = d / a;
 
               priv->deceleration_timeline = clutter_timeline_new ((gint)(n / 60/*fps*/ * 1000/*msec*/));
             }
           else
             {
-              gdouble value, lower, step_increment, d, a, y;
+              gfloat value, lower, step_increment, d, a, y;
 
               /* Start a short effects timeline to snap to the nearest step
                * boundary (see equations above)
                */
-              y = COGL_FIXED_TO_FLOAT (priv->decel_rate);
+              y = priv->decel_rate;
               a = (1.0 - pow (y, 4 + 1)) / (1.0 - y);
 
               tidy_adjustment_get_values (hadjust, &value, &lower, NULL,
                                           &step_increment, NULL, NULL);
               d = ((rint ((value - lower) / step_increment) *
                     step_increment) + lower) - value;
-              priv->dx = COGL_FIXED_FROM_FLOAT (d / a);
+              priv->dx = d / a;
 
               tidy_adjustment_get_values (vadjust, &value, &lower, NULL,
                                           &step_increment, NULL, NULL);
               d = ((rint ((value - lower) / step_increment) *
                     step_increment) + lower) - value;
-              priv->dy = COGL_FIXED_FROM_FLOAT (d / a);
+              priv->dy = d / a;
 
               priv->deceleration_timeline = clutter_timeline_new (4 * 1000 / 60);
             }
@@ -849,16 +843,16 @@ tidy_finger_scroll_init (TidyFingerScroll *self)
 {
   ClutterActor *scrollbar;
   TidyFingerScrollPrivate *priv = self->priv = FINGER_SCROLL_PRIVATE (self);
-  CoglFixed qn;
+  gfloat qn;
   guint i;
 
   priv->motion_buffer = g_array_sized_new (FALSE, TRUE,
                                            sizeof (TidyFingerScrollMotion), 3);
   g_array_set_size (priv->motion_buffer, 3);
-  priv->decel_rate = COGL_FIXED_FROM_FLOAT (
-       hd_transition_get_double("launcher", "deceleration_rate", 0.99));
-  priv->bouncing_decel_rate = COGL_FIXED_FROM_FLOAT (
-       hd_transition_get_double("launcher", "strong_deceleration_rate", 0.7));
+  priv->decel_rate =
+       hd_transition_get_double("launcher", "deceleration_rate", 0.99);
+  priv->bouncing_decel_rate =
+       hd_transition_get_double("launcher", "strong_deceleration_rate", 0.7);
 
   /*
    * @bounce_back_speed_rate :=
@@ -874,12 +868,11 @@ tidy_finger_scroll_init (TidyFingerScroll *self)
    *    * (1-@bouncing_decel_rate^@nframes)/(1-@bouncing_decel_rate)
    *  solved for @initial_speed.)
    */
-  qn = COGL_FIXED_1;
+  qn = 1.0f;
   for (i = (clutter_get_default_frame_rate ()) / 2; i > 0; i--)
-    qn = COGL_FIXED_MUL(qn, priv->bouncing_decel_rate);
-  priv->bounce_back_speed_rate = COGL_FIXED_DIV (
-                                    COGL_FIXED_1 - priv->bouncing_decel_rate,
-                                    COGL_FIXED_1 - qn);
+    qn = qn * priv->bouncing_decel_rate;
+  priv->bounce_back_speed_rate = (1.0f - priv->bouncing_decel_rate)
+                               / (1.0f - qn);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
 

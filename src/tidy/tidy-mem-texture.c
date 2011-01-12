@@ -181,8 +181,8 @@ tidy_mem_texture_init (TidyMemTexture *self)
   priv->texture_format = 0;
   priv->offset_x = 0;
   priv->offset_y = 0;
-  priv->scale_x = COGL_FIXED_1;
-  priv->scale_y = COGL_FIXED_1;
+  priv->scale_x = 1.0f;
+  priv->scale_y = 1.0f;
 
   priv->tiles = 0;
 }
@@ -258,8 +258,8 @@ tidy_mem_texture_tile_visible(TidyMemTexture *texture,
   gfloat x1, y1, x2, y2;
   tidy_mem_texture_tile_coords(texture, tile, &x1, &y1, &x2, &y2);
   return (x2 >= 0 && y2 >= 0 &&
-          x1 <= COGL_FIXED_FROM_INT(width) &&
-          y1 <= COGL_FIXED_FROM_INT(height));
+          x1 <= width &&
+          y1 <= height);
 }
 
 /* Copies the pixels into a buffer with the correct row stride so
@@ -469,7 +469,7 @@ void tidy_mem_texture_damage(TidyMemTexture *texture,
 }
 
 void tidy_mem_texture_set_offset(TidyMemTexture *texture,
-                                 CoglFixed x, CoglFixed y)
+                                 gfloat x, gfloat y)
 {
   TidyMemTexturePrivate *priv;
   if (!TIDY_IS_MEM_TEXTURE(texture))
@@ -486,8 +486,8 @@ void tidy_mem_texture_set_offset(TidyMemTexture *texture,
 }
 
 void tidy_mem_texture_set_scale(TidyMemTexture *texture,
-                                CoglFixed scale_x,
-                                CoglFixed scale_y)
+                                gfloat          scale_x,
+                                gfloat          scale_y)
 {
   TidyMemTexturePrivate *priv;
   if (!TIDY_IS_MEM_TEXTURE(texture))

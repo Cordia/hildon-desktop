@@ -74,8 +74,8 @@ struct _TidyActorPrivate
 
   TidyPadding padding;
 
-  CoglFixed x_align;
-  CoglFixed y_align;
+  gfloat x_align;
+  gfloat y_align;
 };
 
 static void
@@ -93,13 +93,11 @@ tidy_actor_set_property (GObject      *gobject,
       break;
 
     case PROP_X_ALIGN:
-      actor->priv->x_align =
-        COGL_FIXED_TO_FLOAT (g_value_get_double (value));
+      actor->priv->x_align = g_value_get_float (value);
       break;
 
     case PROP_Y_ALIGN:
-      actor->priv->y_align =
-        COGL_FIXED_TO_FLOAT (g_value_get_double (value));
+      actor->priv->y_align = g_value_get_float (value);
       break;
 
     case PROP_STYLE:
@@ -134,11 +132,11 @@ tidy_actor_get_property (GObject    *gobject,
       break;
 
     case PROP_X_ALIGN:
-      g_value_set_double (value, COGL_FIXED_TO_FLOAT (priv->x_align));
+      g_value_set_double (value, priv->x_align);
       break;
 
     case PROP_Y_ALIGN:
-      g_value_set_double (value, COGL_FIXED_TO_FLOAT (priv->y_align));
+      g_value_set_double (value, priv->y_align);
       break;
 
     case PROP_STYLE:
@@ -304,7 +302,7 @@ tidy_actor_init (TidyActor *actor)
   priv->padding.right = priv->padding.left = 0;
 
   /* middle align */
-  priv->x_align = priv->y_align = COGL_FIXED_FROM_FLOAT (0.5);
+  priv->x_align = priv->y_align = 0.5f;
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (actor), TRUE);
 }
@@ -359,8 +357,8 @@ tidy_actor_get_padding (TidyActor   *actor,
  */
 void
 tidy_actor_set_alignment (TidyActor *actor,
-                          gdouble    x_align,
-                          gdouble    y_align)
+                          gfloat     x_align,
+                          gfloat     y_align)
 {
   TidyActorPrivate *priv;
 
@@ -374,10 +372,10 @@ tidy_actor_set_alignment (TidyActor *actor,
   x_align = CLAMP (x_align, 0.0, 1.0);
   y_align = CLAMP (y_align, 0.0, 1.0);
 
-  priv->x_align = COGL_FIXED_FROM_FLOAT (x_align);
+  priv->x_align = x_align;
   g_object_notify (G_OBJECT (actor), "x-align");
   
-  priv->y_align = COGL_FIXED_FROM_FLOAT (y_align);
+  priv->y_align = y_align;
   g_object_notify (G_OBJECT (actor), "y-align");
 
   if (CLUTTER_ACTOR_IS_VISIBLE (actor))
@@ -400,86 +398,8 @@ tidy_actor_set_alignment (TidyActor *actor,
  */
 void
 tidy_actor_get_alignment (TidyActor *actor,
-                          gdouble   *x_align,
-                          gdouble   *y_align)
-{
-  TidyActorPrivate *priv;
-
-  g_return_if_fail (TIDY_IS_ACTOR (actor));
-
-  priv = actor->priv;
-
-  if (x_align)
-    *x_align = COGL_FIXED_TO_FLOAT (priv->x_align);
-
-  if (y_align)
-    *y_align = COGL_FIXED_TO_FLOAT (priv->y_align);
-}
-
-/**
- * tidy_actor_set_alignmentx:
- * @actor: a #TidyActor
- * @x_align: relative alignment on the X axis
- * @y_align: relative alignment on the Y axis
- *
- * Fixed point version of tidy_actor_set_alignment().
- *
- * Sets the alignment, relative to the @actor's width and height, of
- * the internal children.
- */
-void
-tidy_actor_set_alignmentx (TidyActor    *actor,
-                           CoglFixed  x_align,
-                           CoglFixed  y_align)
-{
-  TidyActorPrivate *priv;
-
-  g_return_if_fail (TIDY_IS_ACTOR (actor));
-
-  g_object_ref (actor);
-  g_object_freeze_notify (G_OBJECT (actor));
-
-  priv = actor->priv;
-
-  x_align = CLAMP (x_align, 0, COGL_FIXED_1);
-  y_align = CLAMP (y_align, 0, COGL_FIXED_1);
-
-  if (priv->x_align != x_align)
-    {
-      priv->x_align = x_align;
-      g_object_notify (G_OBJECT (actor), "x-align");
-    }
-
-  if (priv->y_align != y_align)
-    {
-      priv->y_align = y_align;
-      g_object_notify (G_OBJECT (actor), "y-align");
-    }
-
-  if (CLUTTER_ACTOR_IS_VISIBLE (actor))
-    clutter_actor_queue_redraw (CLUTTER_ACTOR (actor));
-
-  g_object_thaw_notify (G_OBJECT (actor));
-  g_object_unref (actor);
-}
-
-/**
- * tidy_actor_get_alignmentx:
- * @actor: a #TidyActor
- * @x_align: return location for the relative alignment on the X axis,
- *   or %NULL
- * @y_align: return location for the relative alignment on the Y axis,
- *   or %NULL
- *
- * Fixed point version of tidy_actor_get_alignment().
- *
- * Retrieves the alignment, relative to the @actor's width and height, of
- * the internal children.
- */
-void
-tidy_actor_get_alignmentx (TidyActor    *actor,
-                           CoglFixed *x_align,
-                           CoglFixed *y_align)
+                          gfloat    *x_align,
+                          gfloat    *y_align)
 {
   TidyActorPrivate *priv;
 

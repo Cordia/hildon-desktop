@@ -442,9 +442,8 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
 
   label_height = HD_LAUNCHER_TILE_HEIGHT - (64 + HILDON_MARGIN_HALF);
 
-  clutter_actor_get_preferred_width (priv->label,
-    COGL_FIXED_FROM_INT(label_height),
-                              NULL, &label_width);
+  clutter_actor_get_preferred_width (priv->label, label_height,
+                                     NULL, &label_width);
   label_width_px = MIN (label_width, HD_LAUNCHER_TILE_WIDTH);
 
   clutter_actor_set_size(priv->label, label_width_px, label_height);

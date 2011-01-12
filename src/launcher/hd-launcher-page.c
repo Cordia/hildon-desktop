@@ -502,7 +502,7 @@ hd_launcher_page_transition_end(ClutterTimeline *timeline,
   }
 }
 
-CoglFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page)
+gfloat hd_launcher_page_get_scroll_y(HdLauncherPage *page)
 {
   HdLauncherPagePrivate *priv;
   ClutterActor *bar;
@@ -515,7 +515,7 @@ CoglFixed hd_launcher_page_get_scroll_y(HdLauncherPage *page)
 
   bar = tidy_scroll_view_get_vscroll_bar (TIDY_SCROLL_VIEW(priv->scroller));
   adjust = tidy_scroll_bar_get_adjustment (TIDY_SCROLL_BAR(bar));
-  return tidy_adjustment_get_valuex( adjust );
+  return tidy_adjustment_get_value (adjust);
 }
 
 ClutterActor *hd_launcher_page_get_scroller(HdLauncherPage *page)

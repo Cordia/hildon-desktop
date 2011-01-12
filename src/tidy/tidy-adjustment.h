@@ -71,74 +71,40 @@ struct _TidyAdjustmentClass
 
 GType tidy_adjustment_get_type (void) G_GNUC_CONST;
 
-TidyAdjustment *tidy_adjustment_new          (gdouble         value,
-                                              gdouble         lower,
-                                              gdouble         upper,
-                                              gdouble         step_increment,
-                                              gdouble         page_increment,
-                                              gdouble         page_size);
-TidyAdjustment *tidy_adjustment_newx         (CoglFixed    value,
-                                              CoglFixed    lower,
-                                              CoglFixed    upper,
-                                              CoglFixed    step_increment,
-                                              CoglFixed    page_increment,
-                                              CoglFixed    page_size);
-gdouble         tidy_adjustment_get_value    (TidyAdjustment *adjustment);
-CoglFixed    tidy_adjustment_get_valuex   (TidyAdjustment *adjustment);
+TidyAdjustment *tidy_adjustment_new          (gfloat          value,
+                                              gfloat          lower,
+                                              gfloat          upper,
+                                              gfloat          step_increment,
+                                              gfloat          page_increment,
+                                              gfloat          page_size);
+gfloat          tidy_adjustment_get_value    (TidyAdjustment *adjustment);
 void            tidy_adjustment_set_value    (TidyAdjustment *adjustment,
-                                              gdouble         value);
-void            tidy_adjustment_set_valuex   (TidyAdjustment *adjustment,
-                                              CoglFixed    value);
+                                              gfloat          value);
 void            tidy_adjustment_clamp_page   (TidyAdjustment *adjustment,
-                                              gdouble         lower,
-                                              gdouble         upper);
-void            tidy_adjustment_clamp_pagex  (TidyAdjustment *adjustment,
-                                              CoglFixed    lower,
-                                              CoglFixed    upper);
+                                              gfloat          lower,
+                                              gfloat          upper);
 void            tidy_adjustment_set_values   (TidyAdjustment *adjustment,
-                                              gdouble         value,
-                                              gdouble         lower,
-                                              gdouble         upper,
-                                              gdouble         step_increment,
-                                              gdouble         page_increment,
-                                              gdouble         page_size);
-void            tidy_adjustment_set_valuesx  (TidyAdjustment *adjustment,
-                                              CoglFixed    value,
-                                              CoglFixed    lower,
-                                              CoglFixed    upper,
-                                              CoglFixed    step_increment,
-                                              CoglFixed    page_increment,
-                                              CoglFixed    page_size);
+                                              gfloat          value,
+                                              gfloat          lower,
+                                              gfloat          upper,
+                                              gfloat          step_increment,
+                                              gfloat          page_increment,
+                                              gfloat          page_size);
 void            tidy_adjustment_get_values   (TidyAdjustment *adjustment,
-                                              gdouble        *value,
-                                              gdouble        *lower,
-                                              gdouble        *upper,
-                                              gdouble        *step_increment,
-                                              gdouble        *page_increment,
-                                              gdouble        *page_size);
-void            tidy_adjustment_get_valuesx  (TidyAdjustment *adjustment,
-                                              CoglFixed   *value,
-                                              CoglFixed   *lower,
-                                              CoglFixed   *upper,
-                                              CoglFixed   *step_increment,
-                                              CoglFixed   *page_increment,
-                                              CoglFixed   *page_size);
-void
-tidy_adjustment_get_skirtx                   (TidyAdjustment *adjustment,
-                                              CoglFixed   *lowest,
-                                              CoglFixed   *highest);
-void
-tidy_adjustment_set_skirtx                   (TidyAdjustment *adjustment,
-                                              CoglFixed    skirt_p);
-
-void            tidy_adjustment_interpolate  (TidyAdjustment *adjustment,
-                                              gdouble         value,
-                                              guint           n_frames,
-                                              guint           fps);
-void            tidy_adjustment_interpolatex (TidyAdjustment *adjustment,
-                                              CoglFixed    value,
-                                              guint           n_frames,
-                                              guint           fps);
+                                              gfloat         *value,
+                                              gfloat         *lower,
+                                              gfloat         *upper,
+                                              gfloat         *step_increment,
+                                              gfloat         *page_increment,
+                                              gfloat         *page_size);
+void             tidy_adjustment_get_skirt   (TidyAdjustment *adjustment,
+                                              gfloat         *lowest,
+                                              gfloat         *highest);
+void             tidy_adjustment_set_skirt   (TidyAdjustment *adjustment,
+                                              gfloat          skirt_p);
+void           tidy_adjustment_interpolate   (TidyAdjustment *adjustment,
+                                              gfloat          value,
+                                              guint           duration);
 
 G_END_DECLS
 

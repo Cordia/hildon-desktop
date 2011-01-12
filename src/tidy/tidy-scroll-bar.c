@@ -213,19 +213,19 @@ tidy_scroll_bar_allocate (ClutterActor           *actor,
 
   if (priv->adjustment)
     {
-      CoglFixed real_width, real_height, min_sizeu, max_sizeu;
-      CoglFixed lower, upper, page_size, size, increment;
+      gfloat real_width, real_height;
+      gfloat lower, upper, page_size, size, increment;
       ClutterActorBox child_box;
       guint min_size, max_size;
       TidyPadding padding;
 
-      tidy_adjustment_get_valuesx (priv->adjustment,
-                                   NULL,
-                                   &lower,
-                                   &upper,
-                                   NULL,
-                                   NULL,
-                                   &page_size);
+      tidy_adjustment_get_values (priv->adjustment,
+                                  NULL,
+                                  &lower,
+                                  &upper,
+                                  NULL,
+                                  NULL,
+                                  &page_size);
 
       tidy_actor_get_padding (TIDY_ACTOR (actor), &padding);
 
@@ -233,24 +233,22 @@ tidy_scroll_bar_allocate (ClutterActor           *actor,
       real_height = box->y2 - box->y1 - padding.top - padding.bottom;
 
       if (upper == lower)
-        increment = COGL_FIXED_1;
+        increment = 1.0f;
       else
-        increment = COGL_FIXED_DIV (page_size, upper - lower);
+        increment = page_size * (upper - lower);
       
-      size = COGL_FIXED_MUL (real_width, increment);
+      size = real_width / increment;
       if (size > real_width) size = real_width;
 
       tidy_stylable_get (TIDY_STYLABLE (actor),
                          "min-size", &min_size,
                          "max-size", &max_size,
                          NULL);
-      min_sizeu = COGL_FIXED_FROM_INT (min_size);
-      max_sizeu = COGL_FIXED_FROM_INT (max_size);
 
       clutter_actor_get_position (priv->handle, &child_box.x1, &child_box.y1);
       child_box.x2 = child_box.x1 +
-                      MIN (max_sizeu,
-                           MAX (min_sizeu, size));
+                      MIN (max_size,
+                           MAX (min_size, size));
       child_box.y2 = child_box.y1 + real_height;
       
       clutter_actor_allocate (priv->handle,
@@ -393,7 +391,7 @@ tidy_stylable_iface_init (TidyStylableIface *iface)
 static void
 move_slider (TidyScrollBar *bar, gfloat x, gfloat y, gboolean interpolate)
 {
-  CoglFixed position, lower, upper, page_size;
+  gfloat position, lower, upper, page_size;
   gfloat ux, width;
   
   TidyScrollBarPrivate *priv = bar->priv;
@@ -415,13 +413,13 @@ move_slider (TidyScrollBar *bar, gfloat x, gfloat y, gboolean interpolate)
   ux -= priv->x_origin;
   ux = CLAMP (ux, 0, width);
 
-  tidy_adjustment_get_valuesx (priv->adjustment,
-                               NULL,
-                               &lower,
-                               &upper,
-                               NULL,
-                               NULL,
-                               &page_size);
+  tidy_adjustment_get_values (priv->adjustment,
+                              NULL,
+                              &lower,
+                              &upper,
+                              NULL,
+                              NULL,
+                              &page_size);
 
   position = (ux / width) * (upper - lower - page_size) + lower;
   
@@ -432,15 +430,15 @@ move_slider (TidyScrollBar *bar, gfloat x, gfloat y, gboolean interpolate)
       guint fps = clutter_get_default_frame_rate ();
       guint n_frames = fps / mfreq;
       
-      tidy_adjustment_interpolatex (priv->adjustment,
-                                    position,
-                                    n_frames,
-                                    fps);
+      tidy_adjustment_interpolate (priv->adjustment,
+                                   position,
+                                   n_frames,
+                                   fps);
       return;
     }
 #endif
   
-  tidy_adjustment_set_valuex (priv->adjustment, position);
+  tidy_adjustment_set_value (priv->adjustment, position);
 }
 
 static gboolean
@@ -526,18 +524,18 @@ tidy_scroll_bar_refresh (TidyScrollBar *bar)
 {
   ClutterActor *actor = CLUTTER_ACTOR (bar);
   TidyScrollBarPrivate *priv = bar->priv;
-  CoglFixed width, button_width;
-  CoglFixed lower, upper, value, page_size;
-  CoglFixed x, position;
+  gfloat width, button_width;
+  gfloat lower, upper, value, page_size;
+  gfloat x, position;
   
   /* Work out scroll handle size */
-  tidy_adjustment_get_valuesx (priv->adjustment,
-                               &value,
-                               &lower,
-                               &upper,
-                               NULL,
-                               NULL,
-                               &page_size);
+  tidy_adjustment_get_values (priv->adjustment,
+                              &value,
+                              &lower,
+                              &upper,
+                              NULL,
+                              NULL,
+                              &page_size);
 
   if (upper - page_size <= lower)
     {
@@ -549,10 +547,10 @@ tidy_scroll_bar_refresh (TidyScrollBar *bar)
   width = clutter_actor_get_width (actor);
   button_width = clutter_actor_get_width (priv->handle);
 
-  position = COGL_FIXED_DIV (value - lower, upper - lower - page_size);
+  position = (value - lower) / (upper - lower - page_size);
 
   /* Set padding on trough */
-  x = COGL_FIXED_MUL (position, width - button_width);
+  x = position * (width - button_width);
   clutter_actor_set_position (CLUTTER_ACTOR (priv->handle), x, 0);
   
   clutter_actor_queue_redraw (actor);

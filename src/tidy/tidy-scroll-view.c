@@ -175,11 +175,11 @@ tidy_scroll_view_get_preferred_width (ClutterActor *actor,
       gfloat natural_height;
 
       clutter_actor_get_preferred_height (priv->child,
-                                          -COGL_FIXED_1,
+                                          -1.0f,
                                           NULL,
                                           &natural_height);
       if (for_height < natural_height)
-        *natural_width_p += COGL_FIXED_FROM_INT (xthickness);
+        *natural_width_p += xthickness;
     }
 
   /* Add space for padding */
@@ -221,11 +221,11 @@ tidy_scroll_view_get_preferred_height (ClutterActor *actor,
       gfloat natural_width;
 
       clutter_actor_get_preferred_width (priv->child,
-                                         -COGL_FIXED_1,
+                                         -1.0f,
                                          NULL,
                                          &natural_width);
       if (for_width < natural_width)
-        *natural_height_p += COGL_FIXED_FROM_INT (ythickness);
+        *natural_height_p += ythickness;
     }
 
   /* Add space for padding */
@@ -244,7 +244,7 @@ tidy_scroll_view_allocate (ClutterActor           *actor,
   TidyPadding padding;
   ClutterActorBox child_box;
   guint xthickness, ythickness;
-  CoglFixed xthicknessu, ythicknessu;
+  gfloat xthicknessu, ythicknessu;
 
   TidyScrollViewPrivate *priv = TIDY_SCROLL_VIEW (actor)->priv;
 
@@ -259,9 +259,9 @@ tidy_scroll_view_allocate (ClutterActor           *actor,
                      "ythickness", &ythickness,
                      NULL);
   xthicknessu = CLUTTER_ACTOR_IS_VISIBLE (priv->vscroll) ?
-    COGL_FIXED_FROM_INT (xthickness) : 0;
+    xthickness : 0;
   ythicknessu = CLUTTER_ACTOR_IS_VISIBLE (priv->hscroll) ?
-    COGL_FIXED_FROM_INT (ythickness) : 0;
+    ythickness : 0;
 
   /* Vertical scrollbar */
   child_box.x1 = box->x2 - box->x1 - padding.right;
@@ -381,13 +381,13 @@ child_adjustment_changed_cb (TidyAdjustment *adjustment,
                              ClutterActor   *bar)
 {
   TidyScrollView *scroll;
-  CoglFixed lower, upper, page_size;
+  gfloat lower, upper, page_size;
 
   scroll = TIDY_SCROLL_VIEW (clutter_actor_get_parent (bar));
 
   /* Determine if this scroll-bar should be visible */
-  tidy_adjustment_get_valuesx (adjustment, NULL, &lower, &upper,
-                               NULL, NULL, &page_size);
+  tidy_adjustment_get_values (adjustment, NULL, &lower, &upper,
+                              NULL, NULL, &page_size);
   if ((upper - lower) > page_size)
     clutter_actor_show (bar);
   else
@@ -452,7 +452,7 @@ child_vadjustment_notify_cb (GObject *gobject,
 static void
 tidy_scroll_view_init (TidyScrollView *self)
 {
-  static const TidyPadding padding = { .right = COGL_FIXED_FROM_INT (8) };
+  static const TidyPadding padding = { .right = 8 };
   TidyScrollViewPrivate *priv = self->priv = SCROLL_VIEW_PRIVATE (self);
   GValue transparent = { 0 };
 

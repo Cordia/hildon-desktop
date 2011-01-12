@@ -421,8 +421,7 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
     }
   status_pos = status_low*(1-overshoot) + status_high*overshoot;
 
-  clutter_actor_set_anchor_point(actor, 0,
-      COGL_FIXED_FROM_INT(geo.y) - COGL_FIXED_FROM_FLOAT(status_pos));
+  clutter_actor_set_anchor_point(actor, 0, geo.y - status_pos);
   clutter_actor_set_opacity(actor, (int)(255*amt));
 
   /* use a slither of filler to fill in the gap where the menu
@@ -434,20 +433,20 @@ on_popup_timeline_new_frame(ClutterTimeline *timeline,
       if (pop_top)
         {
           clutter_actor_set_position(filler,
-                    COGL_FIXED_FROM_INT(0),
-                    COGL_FIXED_FROM_FLOAT(status_high-status_pos));
+                                     0,
+                                     status_high-status_pos);
           clutter_actor_set_size(filler,
-                    COGL_FIXED_FROM_INT(geo.width),
-                    COGL_FIXED_FROM_FLOAT(status_pos-status_high));
+                                 geo.width,
+                                 status_pos-status_high);
         }
       else if (pop_bottom)
         {
           clutter_actor_set_position(filler,
-                    COGL_FIXED_FROM_INT(0),
-                    COGL_FIXED_FROM_INT(geo.height));
+                                     0,
+                                     geo.height);
           clutter_actor_set_size(filler,
-                    COGL_FIXED_FROM_INT(geo.width),
-                    COGL_FIXED_FROM_FLOAT(status_high-status_pos));
+                                 geo.width,
+                                 status_high-status_pos);
         }
     }
   else
@@ -557,8 +556,8 @@ on_close_timeline_new_frame(ClutterTimeline *timeline,
                 particle_scale, particle_scale);
 
         clutter_actor_set_position(data->particles[i],
-                COGL_FIXED_FROM_FLOAT(centrex + sin(ang) * radius),
-                COGL_FIXED_FROM_FLOAT(centrey + cos(ang) * radius));
+                                   centrex + sin(ang) * radius,
+                                   centrey + cos(ang) * radius);
       }
     else
       if (data->particles[i])
@@ -625,10 +624,8 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
       now = hd_transition_smooth_ramp(now);
       curve = data->event == MBWMCompMgrClientEventUnmap ? cpout : cpin;
       clutter_actor_set_anchor_point(actor,
-               COGL_FIXED_FROM_FLOAT(-bezier(now,
-                        curve[0].x, curve[1].x, curve[2].x, curve[3].x)),
-               COGL_FIXED_FROM_FLOAT(-bezier(now,
-                        curve[0].y, curve[1].y, curve[2].y, curve[3].y)));
+               -bezier(now, curve[0].x, curve[1].x, curve[2].x, curve[3].x),
+               -bezier(now, curve[0].y, curve[1].y, curve[2].y, curve[3].y));
 
       /* We should restore the opacity and scaling of @actor in case
        * we were switched orientation during the transition somehow
@@ -702,8 +699,8 @@ on_notification_timeline_new_frame(ClutterTimeline *timeline,
       clutter_actor_set_opacity(actor, (int)(255*amt));
       clutter_actor_set_scale(actor, scale, scale);
       clutter_actor_set_anchor_point(actor,
-               COGL_FIXED_FROM_FLOAT( -corner_x / scale ),
-               COGL_FIXED_FROM_FLOAT( -corner_y / scale ));
+                                     -corner_x / scale ,
+                                     -corner_y / scale );
     }
 }
 
@@ -732,8 +729,7 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
     if (subview_actor)
       {
         clutter_actor_set_anchor_point(subview_actor,
-           COGL_FIXED_FROM_FLOAT( -corner_x ),
-           COGL_FIXED_FROM_FLOAT( 0 ) );
+                                       -corner_x, 0);
         /* we have to show this actor, because it'll get hidden by the
          * render manager visibility test if not. */
         clutter_actor_show(subview_actor);
@@ -741,8 +737,7 @@ on_subview_timeline_new_frame(ClutterTimeline *timeline,
     if (main_actor)
       {
         clutter_actor_set_anchor_point(main_actor,
-           COGL_FIXED_FROM_FLOAT( -(corner_x - hd_comp_mgr_get_current_screen_width()) ),
-           COGL_FIXED_FROM_FLOAT( 0 ) );
+           -(corner_x - hd_comp_mgr_get_current_screen_width()), 0);
         /* we have to show this actor, because it'll get hidden by the
          * render manager visibility test if not. */
         clutter_actor_show(main_actor);
@@ -796,7 +791,7 @@ on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
       msecs < duration ? angle : 0,
       hd_comp_mgr_get_current_screen_width()/2,
       hd_comp_mgr_get_current_screen_height()/2, 0);
-  clutter_actor_set_depth(actor, -COGL_FIXED_FROM_FLOAT(amt*150));
+  clutter_actor_set_depth(actor, -amt*150);
   /* use this actor to dim out the screen */
   clutter_actor_raise_top(data->particles[0]);
   clutter_actor_set_opacity(data->particles[0], (int)(dim_amt*255));

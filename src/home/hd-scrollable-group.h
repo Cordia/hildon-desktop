@@ -31,13 +31,11 @@ guint hd_scrollable_group_get_viewport_y (HdScrollableGroup * self);
 void hd_scrollable_group_set_viewport_x (HdScrollableGroup * self, guint x);
 void hd_scrollable_group_set_viewport_y (HdScrollableGroup * self, guint y);
 
-#ifdef MAEGO_DISABLED
 void hd_scrollable_group_scroll_viewport (HdScrollableGroup * self,
                                           HdScrollableGroupDirection which,
                                           gboolean is_relative, gint diff,
-                                          ClutterEffectCompleteFunc fun,
+                                          GCallback fun,
                                           gpointer funparam);
-#endif
 void hd_scrollable_group_set_real_estate (HdScrollableGroup * self,
                                           HdScrollableGroupDirection which,
                                           guint cval);

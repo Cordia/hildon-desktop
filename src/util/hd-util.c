@@ -607,10 +607,8 @@ hd_util_get_actor_bounds(ClutterActor *actor, ClutterGeometry *geo, gboolean *is
         valid = FALSE;
 
       clutter_actor_get_position(it, &px, &py);
-      x = ((x - COGL_FIXED_TO_FLOAT(anchorx))*scalex)
-          + COGL_FIXED_TO_FLOAT(px);
-      y = ((y - COGL_FIXED_TO_FLOAT(anchory))*scaley)
-          + COGL_FIXED_TO_FLOAT(py);
+      x = (x - anchorx) * scalex + px;
+      y = (y - anchory) * scaley + py;
       width *= scalex;
       height *= scaley;
 
