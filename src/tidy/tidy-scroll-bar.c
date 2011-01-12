@@ -423,20 +423,13 @@ move_slider (TidyScrollBar *bar, gfloat x, gfloat y, gboolean interpolate)
 
   position = (ux / width) * (upper - lower - page_size) + lower;
   
-#ifdef MAEGO_DISABLED
   if (interpolate)
     {
-      guint mfreq = clutter_get_motion_events_frequency ();
-      guint fps = clutter_get_default_frame_rate ();
-      guint n_frames = fps / mfreq;
-      
       tidy_adjustment_interpolate (priv->adjustment,
                                    position,
-                                   n_frames,
-                                   fps);
+                                   1000);
       return;
     }
-#endif
   
   tidy_adjustment_set_value (priv->adjustment, position);
 }

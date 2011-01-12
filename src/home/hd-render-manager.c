@@ -1242,14 +1242,11 @@ ClutterContainer *hd_render_manager_get_front_group(void)
   return CLUTTER_CONTAINER(priv->front);
 }
 
-#ifdef MAEGO_DISABLED
 /* #ClutterEffectCompleteFunc for hd_task_navigator_zoom_out(). */
-static void zoom_out_completed(ClutterActor *actor,
-                               MBWMCompMgrClutterClient *cmgrcc)
+static void zoom_out_completed(MBWMCompMgrClutterClient *cmgrcc)
 {
   mb_wm_object_unref(MB_WM_OBJECT(cmgrcc));
 }
-#endif
 
 /* like mb_wm_get_visible_main_client but don't return clients that have
  * the SkipTaskbar flag */
@@ -1525,13 +1522,11 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                    * task nav takes only the frontmost - NB#120171) */
                   hd_transition_stop(priv->comp_mgr, mbwmc);
 
-#ifdef MAEGO_DISABLED
                   /* Make sure @cmgrcc stays around as long as needed. */
                   mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
                   hd_task_navigator_zoom_out(priv->task_nav, actor,
-                          (ClutterEffectCompleteFunc)zoom_out_completed,
+                          G_CALLBACK(zoom_out_completed),
                           cmgrcc);
-#endif
                 }
             }
           else if (oldstate != HDRM_STATE_LAUNCHER)

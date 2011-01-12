@@ -104,7 +104,7 @@ void             tidy_adjustment_set_skirt   (TidyAdjustment *adjustment,
                                               gfloat          skirt_p);
 void           tidy_adjustment_interpolate   (TidyAdjustment *adjustment,
                                               gfloat          value,
-                                              guint           duration);
+                                              guint           msecs);
 
 G_END_DECLS
 

@@ -609,13 +609,13 @@ interpolation_completed_cb (ClutterTimeline *timeline,
 void
 tidy_adjustment_interpolate (TidyAdjustment *adjustment,
                              gfloat          value,
-                             guint           duration)
+                             guint           msecs)
 {
   TidyAdjustmentPrivate *priv = adjustment->priv;
 
   stop_interpolation (adjustment);
   
-  if (duration <= 1)
+  if (msecs <= 1)
     {
       tidy_adjustment_set_value (adjustment, value);
       return;
@@ -624,8 +624,8 @@ tidy_adjustment_interpolate (TidyAdjustment *adjustment,
   priv->old_position = priv->value;
   priv->new_position = value;
   
-  priv->dx = (priv->new_position - priv->old_position) / duration;
-  priv->interpolation = clutter_timeline_new (duration);
+  priv->dx = (priv->new_position - priv->old_position) / msecs;
+  priv->interpolation = clutter_timeline_new (msecs);
   
   g_signal_connect (priv->interpolation,
                     "new-frame",
