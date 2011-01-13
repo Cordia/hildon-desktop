@@ -115,7 +115,9 @@ tidy_cached_group_paint (ClutterActor *actor)
                 tex_width, tex_height, COGL_TEXTURE_NO_AUTO_MIPMAP,
                 priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
                                   COGL_PIXEL_FORMAT_RGB_565);
-      clutter_texture_set_filter_quality(priv->tex, CLUTTER_TEXTURE_QUALITY_LOW);
+#ifdef MAEGO_DISABLED
+	  clutter_texture_set_filter_quality(priv->tex, CLUTTER_TEXTURE_QUALITY_LOW);
+#endif
       priv->fbo = cogl_offscreen_new_to_texture (priv->tex);
     }
   /* It may be that we have resized, but the texture has not.

@@ -2059,7 +2059,7 @@ static void
 hd_home_show_edit_button (HdHome *home)
 {
   HdHomePrivate   *priv = home->priv;
-  gfloat            button_width, button_height;
+  gfloat           button_width, button_height;
   gint             x;
 
   if (hd_render_manager_actor_is_visible(priv->edit_button))
@@ -2069,25 +2069,21 @@ hd_home_show_edit_button (HdHome *home)
 
   x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
 
-  clutter_actor_set_position (priv->edit_button,
-                              x,
-                              0);
+  clutter_actor_set_position (priv->edit_button, x, 0);
   /* we must set the final position first so that the X input
    * area can be set properly by HDRM */
   clutter_actor_show(priv->edit_button);
   hd_render_manager_set_input_viewport();
 
 
-  clutter_actor_set_position (priv->edit_button,
-                              x,
-                              -button_height);
+  clutter_actor_set_position (priv->edit_button, x, -button_height);
 
-  /*g_debug ("moving edit button from %d, %d to %d, 0", x, -button_height, x);*/
+  g_debug ("moving edit button from %d, %f to %d, 0", x, -button_height, x);
 
-  clutter_actor_animate (CLUTTER_ACTOR (priv->edit_button),
+  clutter_actor_animate (priv->edit_button,
                          CLUTTER_EASE_OUT_SINE,
                          HDH_EDIT_BUTTON_DURATION,
-                         "x", x,
+                         "y", 0,
                          NULL);
 
   priv->edit_button_cb =

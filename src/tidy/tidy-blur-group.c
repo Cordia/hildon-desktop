@@ -267,14 +267,18 @@ tidy_blur_group_allocate_textures (TidyBlurGroup *self)
             tex_width, tex_height, COGL_TEXTURE_NO_AUTO_MIPMAP,
             priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
                               COGL_PIXEL_FORMAT_RGB_565);
+#ifdef MAEGO_DISABLED
   clutter_texture_set_filter_quality(priv->tex_a, CLUTTER_TEXTURE_QUALITY_LOW);
+#endif
   priv->fbo_a = cogl_offscreen_new_to_texture(priv->tex_a);
 
   priv->tex_b = cogl_texture_new_with_size(
             tex_width, tex_height, COGL_TEXTURE_NO_AUTO_MIPMAP,
             priv->use_alpha ? COGL_PIXEL_FORMAT_RGBA_8888 :
                               COGL_PIXEL_FORMAT_RGB_565);
+#ifdef MAEGO_DISABLED
   clutter_texture_set_filter_quality(priv->tex_b, CLUTTER_TEXTURE_QUALITY_LOW);
+#endif
   priv->fbo_b = cogl_offscreen_new_to_texture(priv->tex_b);
 
   priv->current_blur_step = 0;
@@ -376,7 +380,7 @@ recursive_set_linear_texture_filter(ClutterActor *actor, GArray *filters)
       quality = clutter_texture_get_filter_quality(tex);
       g_array_append_val(filters, quality);
       clutter_texture_set_filter_quality(tex, GL_LINEAR);
-    }
+	}
 }
 
 /* Recursively set texture filtering state on this actor and children, and
@@ -393,7 +397,7 @@ recursive_reset_texture_filter(ClutterActor *actor,
     {
       clutter_texture_set_filter_quality(CLUTTER_TEXTURE(actor),
                                          **filtersp);
-      (*filtersp)++;
+	  (*filtersp)++;
     }
 }
 
@@ -676,7 +680,9 @@ skip_progress:
   /* Set the blur texture to linear interpolation - so we draw it smoothly
    * Onto the screen */
   current_tex = priv->current_is_a ? priv->tex_a : priv->tex_b;
+#ifdef MAEGO_DISABLED
   clutter_texture_set_filter_quality(current_tex, CLUTTER_TEXTURE_QUALITY_MEDIUM);
+#endif
 
   if ((priv->zoom >= 1) || !priv->use_mirror)
     {
@@ -800,7 +806,9 @@ skip_progress:
     }
 
   /* Reset the filters on the current texture ready for normal blurring */
+#ifdef MAEGO_DISABLED
   clutter_texture_set_filter_quality(current_tex, CLUTTER_TEXTURE_QUALITY_LOW);
+#endif
 
   if (rotate_90)
     {
