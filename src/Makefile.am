@@ -1,4 +1,4 @@
-SUBDIRS = mb tidy util launcher home $(A11Y_DIR)
+SUBDIRS = mb util launcher home $(A11Y_DIR)
 
 INCLUDES = @HD_INCS@ $(MB2_CFLAGS) $(HD_CFLAGS) -D_XOPEN_SOURCE=500
 

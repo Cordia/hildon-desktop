@@ -175,7 +175,6 @@ src/Makefile
 src/mb/Makefile
 src/home/Makefile
 src/launcher/Makefile
-src/tidy/Makefile
 src/util/Makefile
 src/a11y/Makefile
 src/a11y/launcher/Makefile
