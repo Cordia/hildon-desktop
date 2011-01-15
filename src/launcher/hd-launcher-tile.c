@@ -35,7 +35,6 @@
 #include <hildon/hildon-defines.h>
 
 #include "hd-gtk-style.h"
-#include "tidy/tidy-highlight.h"
 #include "hd-transition.h"
 
 #define I_(str) (g_intern_static_string ((str)))
@@ -59,7 +58,11 @@ struct _HdLauncherTilePrivate
 
   ClutterActor *icon;
   ClutterActor *label;
+#ifdef MAEGO_DISABLED
   TidyHighlight *icon_glow;
+#else
+  ClutterActor *icon_glow;
+#endif
   ClutterTimeline *glow_timeline;
 
   ClutterActor *click_area;
@@ -388,7 +391,7 @@ hd_launcher_tile_set_icon_name (HdLauncherTile *tile,
     /* free the old one */
     clutter_actor_destroy (CLUTTER_ACTOR (priv->icon_glow));
 
-  priv->icon_glow = tidy_highlight_new(CLUTTER_TEXTURE(priv->icon));
+  priv->icon_glow = clutter_clone_new(priv->icon);
   clutter_actor_set_size (CLUTTER_ACTOR(priv->icon_glow),
         HD_LAUNCHER_TILE_GLOW_SIZE,
         HD_LAUNCHER_TILE_GLOW_SIZE);
@@ -490,10 +493,12 @@ hd_launcher_on_glow_frame(ClutterTimeline *timeline,
 
   priv->glow_amount = (float)msecs /
                       (float)clutter_timeline_get_duration(timeline);
+#ifdef MAEGO_DISABLED
   if (priv->icon_glow)
     tidy_highlight_set_amount(priv->icon_glow,
                               priv->glow_amount * priv->glow_radius);
   else
+#endif
     return;
 
   if (priv->glow_amount != 0)
@@ -521,10 +526,12 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow, gboolean hard)
   if (hard)
   {
     priv->glow_amount = glow ? 1 : 0;
+#ifdef MAEGO_DISABLED
     if (priv->icon_glow)
       tidy_highlight_set_amount(priv->icon_glow,
                                 priv->glow_amount * priv->glow_radius);
     else
+#endif
       return;
 
     if (priv->glow_amount != 0)
@@ -555,8 +562,10 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow, gboolean hard)
   cogl_color_set_alpha_float(&glow_col,
                              cogl_color_get_alpha_float(&glow_col)
                              * glow_brightness);
+#ifdef MAEGO_DISABLED
   if (priv->icon_glow)
     tidy_highlight_set_color(priv->icon_glow, &glow_col);
+#endif
   /* load our glow radius */
   priv->glow_radius = hd_transition_get_double("launcher_glow", "radius", 8);
 

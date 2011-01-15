@@ -37,7 +37,6 @@
 #include "hd-transition.h"
 
 #include "hildon-desktop.h"
-#include "../tidy/tidy-sub-texture.h"
 
 #include <clutter/clutter.h>
 #include <clutter/x11/clutter-x11.h>
@@ -81,7 +80,6 @@ struct _HdHomeViewPrivate
   ClutterActor             *applets_container;
 
   ClutterActor             *background;
-  TidySubTexture           *background_sub;
   MBWindowManagerClient    *live_bg;
 
   GHashTable               *applets;
@@ -450,7 +448,6 @@ set_background_common (HdHomeView *hview, ClutterActor *new_bg)
 {
   HdHomeViewPrivate *priv = hview->priv;
   ClutterActor *actor = CLUTTER_ACTOR (hview);
-  TidySubTexture *new_bg_sub = 0;
   ClutterColor clr = BACKGROUND_COLOR;
 
   if (!new_bg)
@@ -478,6 +475,7 @@ set_background_common (HdHomeView *hview, ClutterActor *new_bg)
       if (bg_width != actual_width ||
           bg_height != actual_height)
         {
+#ifdef MAEGO_DISABLED
           ClutterGeometry region;
           region.x = 0;
           region.y = 0;
@@ -489,6 +487,9 @@ set_background_common (HdHomeView *hview, ClutterActor *new_bg)
           clutter_actor_set_size(CLUTTER_ACTOR(new_bg_sub), bg_width, bg_height);
           clutter_actor_hide(new_bg);
           clutter_actor_show(CLUTTER_ACTOR(new_bg_sub));
+#else
+          clutter_actor_set_clip (new_bg, 0, 0, bg_width, bg_height);
+#endif
         }
     }
 
@@ -498,15 +499,19 @@ set_background_common (HdHomeView *hview, ClutterActor *new_bg)
   clutter_container_add_actor (
               CLUTTER_CONTAINER (priv->background_container),
               new_bg);
+#ifdef MAEGO_DISABLED
   if (new_bg_sub)
     clutter_container_add_actor (
                 CLUTTER_CONTAINER (priv->background_container),
                 CLUTTER_ACTOR(new_bg_sub));
+#endif
 
   /* Remove the old background (color or image) and the subtexture
    * that may have been used to make it smaller */
+#ifdef MAEGO_DISABLED
   if (priv->background_sub)
       clutter_actor_destroy (CLUTTER_ACTOR(priv->background_sub));
+#endif
   if (priv->background)
     clutter_actor_destroy (priv->background);
 
@@ -515,7 +520,9 @@ set_background_common (HdHomeView *hview, ClutterActor *new_bg)
     hd_render_manager_blurred_changed();
 
   priv->background = new_bg;
+#ifdef MAEGO_DISABLED
   priv->background_sub = new_bg_sub;
+#endif
 }
 
 static gboolean

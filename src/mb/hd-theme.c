@@ -29,7 +29,6 @@
 #include "hd-clutter-cache.h"
 #include "hd-render-manager.h"
 #include "hd-gtk-style.h"
-#include "tidy/tidy-style.h"
 #include "hd-home.h"
 #include "hd-transition.h"
 
@@ -37,19 +36,20 @@
 #include <matchbox/theme-engines/mb-wm-theme-xml.h>
 #include <X11/Xft/Xft.h>
 #include <gtk/gtk.h>
+#include <mx/mx.h>
 
 #define BACK_BUTTON_TIMEOUT 2000
 
 static MBWMDecor * hd_theme_create_decor (MBWMTheme             *theme,
-					  MBWindowManagerClient *client,
-					  MBWMDecorType          type);
+                                          MBWindowManagerClient *client,
+                                          MBWMDecorType          type);
 
 static void
 hd_theme_simple_get_button_size (MBWMTheme             *theme,
-				 MBWMDecor             *decor,
-				 MBWMDecorButtonType    type,
-				 int                   *width,
-				 int                   *height);
+                                 MBWMDecor             *decor,
+                                 MBWMDecorButtonType    type,
+                                 int                   *width,
+                                 int                   *height);
 
 static void
 hd_theme_paint_decor (MBWMTheme *theme, MBWMDecor *decor);
@@ -83,9 +83,11 @@ hd_theme_destroy (MBWMObject *obj)
 static int
 hd_theme_init (MBWMObject *obj, va_list vap)
 {
-  TidyStyle *style;
+  MxStyle *style;
+#ifdef MAEGO_DISABLED
   CoglColor col;
   GValue value;
+#endif
   extern MBWindowManager *hd_mb_wm;
 
   hd_clutter_cache_theme_changed();
@@ -93,9 +95,10 @@ hd_theme_init (MBWMObject *obj, va_list vap)
    * reload it just in case. */
   hd_transition_set_file_changed();
 
-  /* Update tidy-style (for scrollbars) */
-  style = tidy_style_get_default();
+  /* Update mx-style (for scrollbars) */
+  style = mx_style_get_default();
 
+#ifdef MAEGO_DISABLED
   memset(&value, 0, sizeof(GValue));
   g_value_init(&value, CLUTTER_TYPE_COLOR);
 
@@ -108,6 +111,7 @@ hd_theme_init (MBWMObject *obj, va_list vap)
   tidy_style_set_property(style, TIDY_BACKGROUND_COLOR, &value);
 
   g_value_unset (&value);
+#endif
 
   /* Update home theme */
   if (hd_mb_wm && hd_mb_wm->comp_mgr)
@@ -129,11 +133,11 @@ hd_theme_class_type ()
   if (UNLIKELY(type == 0))
     {
       static MBWMObjectClassInfo info = {
-	sizeof (HdThemeClass),
-	sizeof (HdTheme),
-	hd_theme_init,
-	hd_theme_destroy,
-	hd_theme_class_init
+        sizeof (HdThemeClass),
+        sizeof (HdTheme),
+        hd_theme_init,
+        hd_theme_destroy,
+        hd_theme_class_init
       };
 
       type = mb_wm_object_register_class (&info, MB_WM_TYPE_THEME, 0);
@@ -217,8 +221,8 @@ back_button_data_destroy (MBWMDecorButton *button, void *data)
 
 static void
 back_button_press_handler (MBWindowManager   *wm,
-			   MBWMDecorButton   *button,
-			   void              *userdata)
+                           MBWMDecorButton   *button,
+                           void              *userdata)
 {
   BackButtonData *bd = userdata;
 
@@ -234,7 +238,7 @@ back_button_press_handler (MBWindowManager   *wm,
 
   bd->timeout_id =
     g_timeout_add_full (G_PRIORITY_HIGH_IDLE,
-			BACK_BUTTON_TIMEOUT, back_button_timeout, bd, NULL);
+                        BACK_BUTTON_TIMEOUT, back_button_timeout, bd, NULL);
 
   bd->timeout_handled = FALSE;
 }
@@ -245,8 +249,8 @@ back_button_press_handler (MBWindowManager   *wm,
  */
 static void
 back_button_release_handler (MBWindowManager   *wm,
-			     MBWMDecorButton   *button,
-			     void              *userdata)
+                             MBWMDecorButton   *button,
+                             void              *userdata)
 {
   BackButtonData        *bd = userdata;
   MBWindowManagerClient *c;
@@ -285,16 +289,16 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
       MBWMList * l = d->buttons;
 
       while (l)
-	{
-	  MBWMXmlButton * b = l->data;
+        {
+          MBWMXmlButton * b = l->data;
 
-	  /* Back button only for group followers */
-	  if (b->type == (MBWMDecorButtonType) HdHomeThemeButtonBack && stack_i > 0
-	      && app && app->leader != app)
-	    {
-	      BackButtonData *bd;
+          /* Back button only for group followers */
+          if (b->type == (MBWMDecorButtonType) HdHomeThemeButtonBack && stack_i > 0
+              && app && app->leader != app)
+            {
+              BackButtonData *bd;
 
-	      button = hd_decor_button_new(wm,
+              button = hd_decor_button_new(wm,
                                            b->type,
                                            b->packing,
                                            decor,
@@ -302,70 +306,70 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
                                            back_button_release_handler,
                                            0);
 
-	      bd = g_new0 (BackButtonData, 1);
-	      bd->button = MB_WM_DECOR_BUTTON(button);
+              bd = g_new0 (BackButtonData, 1);
+              bd->button = MB_WM_DECOR_BUTTON(button);
 
-	      mb_wm_decor_button_set_user_data (MB_WM_DECOR_BUTTON(button), bd,
-						back_button_data_destroy);
-	    }
-	  /* No close button for group followers */
-	  else if (b->type == MBWMDecorButtonClose &&
-		   (stack_i < 0 || app->leader == app))
-	    {
-	      button = hd_decor_button_new(wm,
+              mb_wm_decor_button_set_user_data (MB_WM_DECOR_BUTTON(button), bd,
+                                                back_button_data_destroy);
+            }
+          /* No close button for group followers */
+          else if (b->type == MBWMDecorButtonClose &&
+                   (stack_i < 0 || app->leader == app))
+            {
+              button = hd_decor_button_new(wm,
                                            b->type,
                                            b->packing,
                                            decor,
                                            0,0,
                                            0);
-	    }
-	  else if (b->type != (MBWMDecorButtonType) HdHomeThemeButtonBack &&
-	           b->type != MBWMDecorButtonClose)
-	    {
+            }
+          else if (b->type != (MBWMDecorButtonType) HdHomeThemeButtonBack &&
+                   b->type != MBWMDecorButtonClose)
+            {
               /* do not install press/release handler */
-	      button = hd_decor_button_new(wm,
+              button = hd_decor_button_new(wm,
                                            b->type,
                                            b->packing,
                                            decor,
                                            0,0,
                                            MB_WM_DECOR_BUTTON_NOHANDLERS);
-	    }
-	  else
-	    {
-	      button = NULL;
-	    }
+            }
+          else
+            {
+              button = NULL;
+            }
 
-	  /*
-	   * Consider throwing an error here
-	   * if the button has w/h of 0x0
-	   */
+          /*
+           * Consider throwing an error here
+           * if the button has w/h of 0x0
+           */
 
-	  if (button)
-	    {
-	      mb_wm_decor_button_show (MB_WM_DECOR_BUTTON (button));
-	      mb_wm_object_unref (MB_WM_OBJECT (button));
-	    }
+          if (button)
+            {
+              mb_wm_decor_button_show (MB_WM_DECOR_BUTTON (button));
+              mb_wm_object_unref (MB_WM_OBJECT (button));
+            }
 
-	  l = l->next;
-	}
+          l = l->next;
+        }
     }
   else if (!d)
     {
       if (stack_i < 0 || (app && app->leader == app))
-	{
+        {
           /* non-stackable or stack leader */
-	  button = hd_decor_button_new(wm,
+          button = hd_decor_button_new(wm,
                                        MBWMDecorButtonClose,
                                        MBWMDecorButtonPackEnd,
                                        decor,
                                        0,0,
                                        0);
-	}
+        }
       else  /* stack secondary */
-	{
-	  BackButtonData *bd;
+        {
+          BackButtonData *bd;
 
-	  button = hd_decor_button_new(wm,
+          button = hd_decor_button_new(wm,
                                        HdHomeThemeButtonBack,
                                        MBWMDecorButtonPackEnd,
                                        decor,
@@ -373,11 +377,11 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
                                        back_button_release_handler,
                                        0);
 
-	  bd = g_new0 (BackButtonData, 1);
+          bd = g_new0 (BackButtonData, 1);
 
-	  mb_wm_decor_button_set_user_data (MB_WM_DECOR_BUTTON(button), bd,
-					    back_button_data_destroy);
-	}
+          mb_wm_decor_button_set_user_data (MB_WM_DECOR_BUTTON(button), bd,
+                                            back_button_data_destroy);
+        }
 
       mb_wm_decor_button_show (MB_WM_DECOR_BUTTON (button));
       mb_wm_object_unref (MB_WM_OBJECT (button));
@@ -386,8 +390,8 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 
 static MBWMDecor *
 hd_theme_create_decor (MBWMTheme             *theme,
-		       MBWindowManagerClient *client,
-		       MBWMDecorType          type)
+                       MBWindowManagerClient *client,
+                       MBWMDecorType          type)
 {
   MBWMClientType   c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
   HdDecor         *decor = NULL;
@@ -404,44 +408,44 @@ hd_theme_create_decor (MBWMTheme             *theme,
       d = mb_wm_xml_decor_find_by_type (c->decors, type);
 
       if (d)
-	{
-	  decor = hd_decor_new (wm, type);
+        {
+          decor = hd_decor_new (wm, type);
 
-	  mb_wm_decor_attach (MB_WM_DECOR(decor), client);
-	  construct_buttons (theme, decor, d);
-	}
+          mb_wm_decor_attach (MB_WM_DECOR(decor), client);
+          construct_buttons (theme, decor, d);
+        }
     }
 
   if (!decor)
     {
       switch (c_type)
-	{
-	case MBWMClientTypeApp:
-	  switch (type)
-	    {
-	    case MBWMDecorTypeNorth:
-	      decor = hd_decor_new (wm, type);
-	      mb_wm_decor_attach (MB_WM_DECOR(decor), client);
-	      construct_buttons (theme, decor, NULL);
-	      break;
-	    default:
-	      decor = hd_decor_new (wm, type);
-	      mb_wm_decor_attach (MB_WM_DECOR(decor), client);
-	    }
-	  break;
+        {
+        case MBWMClientTypeApp:
+          switch (type)
+            {
+            case MBWMDecorTypeNorth:
+              decor = hd_decor_new (wm, type);
+              mb_wm_decor_attach (MB_WM_DECOR(decor), client);
+              construct_buttons (theme, decor, NULL);
+              break;
+            default:
+              decor = hd_decor_new (wm, type);
+              mb_wm_decor_attach (MB_WM_DECOR(decor), client);
+            }
+          break;
 
-	case MBWMClientTypeDialog:
-	  decor = hd_decor_new (wm, type);
-	  mb_wm_decor_attach (MB_WM_DECOR(decor), client);
-	  break;
+        case MBWMClientTypeDialog:
+          decor = hd_decor_new (wm, type);
+          mb_wm_decor_attach (MB_WM_DECOR(decor), client);
+          break;
 
-	case MBWMClientTypePanel:
-	case MBWMClientTypeDesktop:
-	case MBWMClientTypeInput:
-	default:
-	  decor = hd_decor_new (wm, type);
-	  mb_wm_decor_attach (MB_WM_DECOR(decor), client);
-	}
+        case MBWMClientTypePanel:
+        case MBWMClientTypeDesktop:
+        case MBWMClientTypeInput:
+        default:
+          decor = hd_decor_new (wm, type);
+          mb_wm_decor_attach (MB_WM_DECOR(decor), client);
+        }
     }
 
   return MB_WM_DECOR(decor);
@@ -480,11 +484,11 @@ hd_theme_simple_class_type ()
   if (UNLIKELY(type == 0))
     {
       static MBWMObjectClassInfo info = {
-	sizeof (HdThemeSimpleClass),
-	sizeof (HdThemeSimple),
-	hd_theme_simple_init,
-	hd_theme_simple_destroy,
-	hd_theme_simple_class_init
+        sizeof (HdThemeSimpleClass),
+        sizeof (HdThemeSimple),
+        hd_theme_simple_init,
+        hd_theme_simple_destroy,
+        hd_theme_simple_class_init
       };
 
       type = mb_wm_object_register_class (&info, MB_WM_TYPE_THEME, 0);
@@ -515,38 +519,38 @@ hd_theme_alloc_func (int theme_type, ...)
   while (prop)
     {
       switch (prop)
-	{
-	case MBWMObjectPropWm:
-	  wm = va_arg (vap, MBWindowManager *);
-	  break;
-	case MBWMObjectPropThemePath:
-	  path = va_arg (vap, char *);
-	  break;
-	case MBWMObjectPropThemeImg:
-	  img = va_arg (vap, char *);
-	  break;
-	case MBWMObjectPropThemeXmlClients:
-	  xml_clients = va_arg (vap, MBWMList *);
-	  break;
-	case MBWMObjectPropThemeColorLowlight:
-	  clr_lowlight = va_arg (vap, MBWMColor *);
-	  break;
-	case MBWMObjectPropThemeColorShadow:
-	  clr_shadow = va_arg (vap, MBWMColor *);
-	  break;
-	case MBWMObjectPropThemeShadowType:
-	  shadow_type = va_arg (vap, MBWMCompMgrShadowType);
-	  break;
-	case MBWMObjectPropThemeCompositing:
-	  compositing = va_arg (vap, Bool);
-	  break;
-	case MBWMObjectPropThemeShaped:
-	  shaped = va_arg (vap, Bool);
-	  break;
+        {
+        case MBWMObjectPropWm:
+          wm = va_arg (vap, MBWindowManager *);
+          break;
+        case MBWMObjectPropThemePath:
+          path = va_arg (vap, char *);
+          break;
+        case MBWMObjectPropThemeImg:
+          img = va_arg (vap, char *);
+          break;
+        case MBWMObjectPropThemeXmlClients:
+          xml_clients = va_arg (vap, MBWMList *);
+          break;
+        case MBWMObjectPropThemeColorLowlight:
+          clr_lowlight = va_arg (vap, MBWMColor *);
+          break;
+        case MBWMObjectPropThemeColorShadow:
+          clr_shadow = va_arg (vap, MBWMColor *);
+          break;
+        case MBWMObjectPropThemeShadowType:
+          shadow_type = va_arg (vap, MBWMCompMgrShadowType);
+          break;
+        case MBWMObjectPropThemeCompositing:
+          compositing = va_arg (vap, Bool);
+          break;
+        case MBWMObjectPropThemeShaped:
+          shaped = va_arg (vap, Bool);
+          break;
 
-	default:
-	  MBWMO_PROP_EAT (vap, prop);
-	}
+        default:
+          MBWMO_PROP_EAT (vap, prop);
+        }
 
       prop = va_arg(vap, MBWMObjectProp);
     }
@@ -559,30 +563,30 @@ hd_theme_alloc_func (int theme_type, ...)
   if (theme_type != HD_TYPE_THEME)
     {
       theme = MB_WM_THEME (mb_wm_object_new (HD_TYPE_THEME_SIMPLE,
-			   MBWMObjectPropWm,                  wm,
-			   MBWMObjectPropThemePath,           path,
-			   MBWMObjectPropThemeImg,            img,
-			   MBWMObjectPropThemeXmlClients,     xml_clients,
-			   MBWMObjectPropThemeColorLowlight,  clr_lowlight,
-			   MBWMObjectPropThemeColorShadow,    clr_shadow,
-			   MBWMObjectPropThemeShadowType,     shadow_type,
-			   MBWMObjectPropThemeCompositing,    compositing,
-			   MBWMObjectPropThemeShaped,         shaped,
-			   NULL));
+                           MBWMObjectPropWm,                  wm,
+                           MBWMObjectPropThemePath,           path,
+                           MBWMObjectPropThemeImg,            img,
+                           MBWMObjectPropThemeXmlClients,     xml_clients,
+                           MBWMObjectPropThemeColorLowlight,  clr_lowlight,
+                           MBWMObjectPropThemeColorShadow,    clr_shadow,
+                           MBWMObjectPropThemeShadowType,     shadow_type,
+                           MBWMObjectPropThemeCompositing,    compositing,
+                           MBWMObjectPropThemeShaped,         shaped,
+                           NULL));
     }
   else
     {
       theme = MB_WM_THEME (mb_wm_object_new (HD_TYPE_THEME,
-			   MBWMObjectPropWm,                  wm,
-			   MBWMObjectPropThemePath,           path,
-			   MBWMObjectPropThemeImg,            img,
-			   MBWMObjectPropThemeXmlClients,     xml_clients,
-			   MBWMObjectPropThemeColorLowlight,  clr_lowlight,
-			   MBWMObjectPropThemeColorShadow,    clr_shadow,
-			   MBWMObjectPropThemeShadowType,     shadow_type,
-			   MBWMObjectPropThemeCompositing,    compositing,
-			   MBWMObjectPropThemeShaped,         shaped,
-			   NULL));
+                           MBWMObjectPropWm,                  wm,
+                           MBWMObjectPropThemePath,           path,
+                           MBWMObjectPropThemeImg,            img,
+                           MBWMObjectPropThemeXmlClients,     xml_clients,
+                           MBWMObjectPropThemeColorLowlight,  clr_lowlight,
+                           MBWMObjectPropThemeColorShadow,    clr_shadow,
+                           MBWMObjectPropThemeShadowType,     shadow_type,
+                           MBWMObjectPropThemeCompositing,    compositing,
+                           MBWMObjectPropThemeShaped,         shaped,
+                           NULL));
     }
 
   return theme;
@@ -590,10 +594,10 @@ hd_theme_alloc_func (int theme_type, ...)
 
 static void
 hd_theme_simple_get_button_size (MBWMTheme             *theme,
-				 MBWMDecor             *decor,
-				 MBWMDecorButtonType    type,
-				 int                   *width,
-				 int                   *height)
+                                 MBWMDecor             *decor,
+                                 MBWMDecorButtonType    type,
+                                 int                   *width,
+                                 int                   *height)
 {
   MBWindowManagerClient * client = decor->parent_client;
   MBWMClientType  c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
@@ -606,24 +610,24 @@ hd_theme_simple_get_button_size (MBWMTheme             *theme,
   if (type >= (MBWMDecorButtonType) HdHomeThemeButtonBack)
     {
       if ((c = mb_wm_xml_client_find_by_type (theme->xml_clients, c_type)) &&
-	  (d = mb_wm_xml_decor_find_by_type (c->decors, decor->type)))
-	{
-	  MBWMXmlButton * b = mb_wm_xml_button_find_by_type (d->buttons, type);
+          (d = mb_wm_xml_decor_find_by_type (c->decors, decor->type)))
+        {
+          MBWMXmlButton * b = mb_wm_xml_button_find_by_type (d->buttons, type);
 
-	  if (!b)
-	    b = mb_wm_xml_button_find_by_type (d->buttons,
-					       MBWMDecorButtonClose);
-	  if (b)
-	    {
-	      if (width)
-		*width = b->width;
+          if (!b)
+            b = mb_wm_xml_button_find_by_type (d->buttons,
+                                               MBWMDecorButtonClose);
+          if (b)
+            {
+              if (width)
+                *width = b->width;
 
-	      if (height)
-		*height = b->height;
+              if (height)
+                *height = b->height;
 
-	      return;
-	    }
-	}
+              return;
+            }
+        }
     }
   else
     {
@@ -632,7 +636,7 @@ hd_theme_simple_get_button_size (MBWMTheme             *theme,
       parent_klass = MB_WM_THEME_CLASS (MB_WM_OBJECT_GET_PARENT_CLASS (theme));
 
       if (parent_klass->button_size)
-	parent_klass->button_size (theme, decor, type, width, height);
+        parent_klass->button_size (theme, decor, type, width, height);
 
       /* Make the close/back button narrower in portrait. */
       if (width && type == MBWMDecorButtonClose

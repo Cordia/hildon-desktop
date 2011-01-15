@@ -29,10 +29,7 @@
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
-#include <tidy/tidy-finger-scroll.h>
-#include <tidy/tidy-scroll-view.h>
-#include <tidy/tidy-scroll-bar.h>
-#include <tidy/tidy-adjustment.h>
+#include <mx/mx.h>
 #include <math.h>
 
 #include "hd-transition.h"
@@ -138,7 +135,7 @@ hd_launcher_page_init (HdLauncherPage *page)
 }
 
 static gboolean
-captured_event_cb (TidyFingerScroll *scroll,
+captured_event_cb (MxScrollView *scroll,
                  ClutterEvent *event,
                  HdLauncherPage *page)
 {
@@ -160,7 +157,7 @@ captured_event_cb (TidyFingerScroll *scroll,
 }
 
 static gboolean
-motion_event_cb (TidyFingerScroll *scroll,
+motion_event_cb (MxScrollView *scroll,
                  ClutterMotionEvent *event,
                  HdLauncherPage *page)
 {
@@ -224,7 +221,8 @@ hd_launcher_page_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (page), priv->empty_label);
   g_free (font_string);
 
-  priv->scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
+  priv->scroller = mx_scroll_view_new ();
+  mx_scroll_view_set_enable_gestures (MX_SCROLL_VIEW(priv->scroller), TRUE);
   clutter_container_add_actor (CLUTTER_CONTAINER (page),
                                priv->scroller);
   clutter_actor_set_size(priv->scroller, HD_LAUNCHER_PAGE_WIDTH,
@@ -376,7 +374,9 @@ void hd_launcher_page_transition(HdLauncherPage *page, HdLauncherPageTransition 
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_SUB:
+#ifdef MAEGO_DISABLED
          tidy_finger_scroll_hide_scrollbars_now (priv->scroller);
+#endif
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
     case HD_LAUNCHER_PAGE_TRANSITION_LAUNCH:
     case HD_LAUNCHER_PAGE_TRANSITION_BACK:
@@ -483,11 +483,13 @@ hd_launcher_page_transition_end(ClutterTimeline *timeline,
     case HD_LAUNCHER_PAGE_TRANSITION_IN:
     case HD_LAUNCHER_PAGE_TRANSITION_IN_SUB:
     case HD_LAUNCHER_PAGE_TRANSITION_FORWARD:
+#ifdef MAEGO_DISABLED
          /* already shown */
          /* make the scrollbars appear and then fade out (they won't be shown
           * if the scrollable area is less than the screen size). We do it here
           * so the user has time to see the fade. */
          tidy_finger_scroll_show_scrollbars(priv->scroller);
+#endif
          break;
     case HD_LAUNCHER_PAGE_TRANSITION_OUT:
     case HD_LAUNCHER_PAGE_TRANSITION_OUT_BACK:
@@ -505,17 +507,16 @@ hd_launcher_page_transition_end(ClutterTimeline *timeline,
 gfloat hd_launcher_page_get_scroll_y(HdLauncherPage *page)
 {
   HdLauncherPagePrivate *priv;
-  ClutterActor *bar;
-  TidyAdjustment *adjust;
+  MxAdjustment *adjusth, *adjustv;
 
   if (!HD_IS_LAUNCHER_PAGE(page))
     return 0;
 
   priv = HD_LAUNCHER_PAGE_GET_PRIVATE (page);
 
-  bar = tidy_scroll_view_get_vscroll_bar (TIDY_SCROLL_VIEW(priv->scroller));
-  adjust = tidy_scroll_bar_get_adjustment (TIDY_SCROLL_BAR(bar));
-  return tidy_adjustment_get_value (adjust);
+  mx_scrollable_get_adjustments(MX_SCROLLABLE(priv->scroller),
+                                &adjusth, &adjustv);
+  return mx_adjustment_get_value (adjustv);
 }
 
 ClutterActor *hd_launcher_page_get_scroller(HdLauncherPage *page)

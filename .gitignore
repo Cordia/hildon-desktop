@@ -33,3 +33,4 @@ tests/test-hung-process
 tests/test-launcher
 tests/test-portrait
 tests/test-signals
+src/home/hd-home-glue.h

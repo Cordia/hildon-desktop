@@ -25,7 +25,7 @@
 /*
  * A HdLauncherGrid is a ClutterActor that displays a grid of
  * HdLauncherItems. It implements the interfaces ClutterContainer and
- * TidyScrollable.
+ * MxScrollable.
  *
  */
 

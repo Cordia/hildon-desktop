@@ -7,7 +7,7 @@
  *
  * Actor hierarchy:
  * @Navigator                   #ClutterGroup
- *   @Scroller                  #TidyFingerScroll
+ *   @Scroller                  #MxScrollView
  *     @Grid                    #HdScrollableGroup
  *       @Thumbnails            #ClutterGroup:s
  *
@@ -46,7 +46,7 @@
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <clutter/clutter.h>
-#include <tidy/tidy-finger-scroll.h>
+#include <mx/mx.h>
 
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
@@ -3911,8 +3911,10 @@ clicked_widget (const ClutterButtonEvent * event)
 void
 hd_task_navigator_transition_done(HdTaskNavigator *self)
 {
-  /* Flash the scrollbar.  %TidyFingerScroll will do the right thing. */
+#ifdef MAEGO_DISABLED
+  /* Flash the scrollbar.  %MxScrollView will do the right thing. */
   tidy_finger_scroll_show_scrollbars (Scroller);
+#endif
 }
 
 /* Callbacks {{{ */
@@ -4000,7 +4002,7 @@ navigator_hidden (ClutterActor * navigator, gpointer unused)
  *
  * If these conditions remain unmet this handler prevents the propagation
  * of the button-release-event.  This does not interfere with scrolling
- * (%TidyFingerScroll grabs the pointer when it needs it) but would break
+ * (%MxScrollView grabs the pointer when it needs it) but would break
  * things if, for example, some widget wanted to have a highlighted state.
  */
 static gboolean
@@ -4131,7 +4133,8 @@ hd_task_navigator_init (HdTaskNavigator * self)
 
   /* Actor hierarchy */
   /* Turn off visibility detection for @Scroller to it won't be clipped by it. */
-  Scroller = tidy_finger_scroll_new (TIDY_FINGER_SCROLL_MODE_KINETIC);
+  Scroller = mx_scroll_view_new ();
+  mx_scroll_view_set_enable_gestures (MX_SCROLL_VIEW(Scroller), TRUE);
   clutter_actor_set_name (Scroller, "Scroller");
   clutter_actor_set_size (Scroller, SCREEN_WIDTH, SCREEN_HEIGHT);
 #ifdef MAEMO_CHANGES

@@ -1,9 +1,9 @@
 /*
- * hd-scrollable-group.c -- #ClutterGroup + #TidyScrollable
+ * hd-scrollable-group.c -- #ClutterGroup + #MxScrollable
  *
  * Synopsis: {{{
  *
- * parent = tidy_finger_scroll_new();
+ * parent = mx_scroll_view_new();
  * clutter_actor_set_size(parent, width, height);
  *
  * // The parent must have been sized and the area canned be reparented.
@@ -56,8 +56,7 @@
 #include <string.h>
 
 #include <clutter/clutter.h>
-#include <tidy/tidy-scrollable.h>
-#include <tidy/tidy-adjustment.h>
+#include <mx/mx.h>
 
 #include "hd-scrollable-group.h"
 
@@ -90,7 +89,7 @@ typedef struct
    *
    * @last_position:      Position of the viewport before we began scrolling.
    * @adjustment:         The #TinyAdjustments we manage and listen to
-   *                      and driven by our parent #TidyFingerScroll.
+   *                      and driven by our parent #MxScrollView.
    * @can_scroll:         Are we scrollable in this direction?  ie. is
    *                      our real estate greater than our viewport?
    *
@@ -115,9 +114,9 @@ typedef struct
   HdScrollableGroup         *self;
   gint                      last_position;
   gboolean                  can_scroll;
-  TidyAdjustment           *adjustment;
+  MxAdjustment             *adjustment;
   ClutterTimeline          *manual_scroll_timeline;
-  gfloat                    manual_scroll_from, manual_scroll_to;
+  gdouble                   manual_scroll_from, manual_scroll_to;
   GCallback                 on_manual_scroll_complete;
   gpointer                  on_manual_scroll_complete_param;
   gfloat                    new_upper;
@@ -165,11 +164,11 @@ hd_scrollable_group_set_property (GObject * obj, guint prop_id,
 }
 /* #GObject overrides }}} */
 
-/* #TidyScrollable implementation {{{ */
+/* #MxScrollable implementation {{{ */
 static void
-hd_scrollable_group_get_adjustments (TidyScrollable * scrable,
-                                     TidyAdjustment ** hadjp,
-                                     TidyAdjustment ** vadjp)
+hd_scrollable_group_get_adjustments (MxScrollable * scrable,
+                                     MxAdjustment ** hadjp,
+                                     MxAdjustment ** vadjp)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (scrable);
 
@@ -187,16 +186,16 @@ hd_scrollable_group_get_adjustments (TidyScrollable * scrable,
 static void
 hd_scrollable_group_adjval_changed (HdScrollableGroup * self,
                                     GParamSpec * pspec,
-                                    TidyAdjustment * adj)
+                                    MxAdjustment * adj)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
 
   clutter_actor_set_anchor_point(CLUTTER_ACTOR (self),
-       tidy_adjustment_get_value(priv->horizontal.adjustment),
-       tidy_adjustment_get_value(priv->vertical.adjustment));
+       mx_adjustment_get_value(priv->horizontal.adjustment),
+       mx_adjustment_get_value(priv->vertical.adjustment));
 }
 
-/* We're adopted by a #TidyScrollView. */
+/* We're adopted by a #MxScrollView. */
 static void
 hd_scrollable_group_parent_changed (ClutterActor * actor,
                                     ClutterActor * unused)
@@ -206,9 +205,9 @@ hd_scrollable_group_parent_changed (ClutterActor * actor,
   ClutterActor *parent;
 
   /*
-   * Set up our #TidyAdjustment:s according to our parent's size.
-   * Since we're scrolling in the parent (a kind of #TidyScrollView)
-   * its size is a page for the #TidyAdjustment:s.  Also set the
+   * Set up our #MxAdjustment:s according to our parent's size.
+   * Since we're scrolling in the parent (a kind of #MxScrollView)
+   * its size is a page for the #MxAdjustment:s.  Also set the
    * "upper" bounds for pick() to work.  If we didn't and the user
    * doesn't set our real estate either we would not receive any
    * pointer events.
@@ -217,9 +216,9 @@ hd_scrollable_group_parent_changed (ClutterActor * actor,
   parent = clutter_actor_get_parent(actor);
   if (parent)
     clutter_actor_get_size (parent, &width, &height);
-  tidy_adjustment_set_values (priv->horizontal.adjustment,
+  mx_adjustment_set_values (priv->horizontal.adjustment,
                               0, 0, width, 1, 1, width);
-  tidy_adjustment_set_values (priv->vertical.adjustment,
+  mx_adjustment_set_values (priv->vertical.adjustment,
                               0, 0, height, 1, 1, height);
 }
 
@@ -272,12 +271,12 @@ hd_scrollable_group_tick (ClutterTimeline * timeline, guint current,
       t = (gdouble) current / max;
       diff = dir->manual_scroll_to - dir->manual_scroll_from;
       diff *= (1 - cos (t * M_PI)) / 2.0;
-      tidy_adjustment_set_value (dir->adjustment,
+      mx_adjustment_set_value (dir->adjustment,
                                  dir->manual_scroll_from + diff);
     }
   else
     { /* Make sure we land at @manual_scroll_to at the end. */
-      tidy_adjustment_set_value (dir->adjustment, dir->manual_scroll_to);
+      mx_adjustment_set_value (dir->adjustment, dir->manual_scroll_to);
 #ifdef MAEGO_DISABLED
       if (dir->on_manual_scroll_complete)
         dir->on_manual_scroll_complete (CLUTTER_ACTOR (dir->self),
@@ -320,7 +319,7 @@ guint
 hd_scrollable_group_get_viewport_x (HdScrollableGroup * self)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
-  return tidy_adjustment_get_value (priv->horizontal.adjustment);
+  return mx_adjustment_get_value (priv->horizontal.adjustment);
 }
 
 /* Returns in pixels how far the top of the estate is from the top of
@@ -329,15 +328,15 @@ guint
 hd_scrollable_group_get_viewport_y (HdScrollableGroup * self)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
-  return tidy_adjustment_get_value (priv->vertical.adjustment);
+  return mx_adjustment_get_value (priv->vertical.adjustment);
 }
 
 /* Move the viewport horizontally. */
 void
 hd_scrollable_group_set_viewport_x (HdScrollableGroup * self, guint x)
-{ /* tidy_adjustment_set_valuex() takes care of proper clamping. */
+{ /* mx_adjustment_set_valuex() takes care of proper clamping. */
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
-  tidy_adjustment_set_value (priv->horizontal.adjustment, x);
+  mx_adjustment_set_value (priv->horizontal.adjustment, x);
 }
 
 /* Move the viewport vertically. */
@@ -345,7 +344,7 @@ void
 hd_scrollable_group_set_viewport_y (HdScrollableGroup * self, guint y)
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
-  tidy_adjustment_set_value (priv->vertical.adjustment, y);
+  mx_adjustment_set_value (priv->vertical.adjustment, y);
 }
 
 /*
@@ -366,9 +365,9 @@ hd_scrollable_group_scroll_viewport (HdScrollableGroup * self,
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
   HdScrollableGroupDirectionInfo *dir;
   guint duration;
-  gfloat upper, page;
+  gdouble upper, page;
 
-  /* We could use #TidyAdjustment's interpolation function
+  /* We could use #MxAdjustment's interpolation function
    * but we don't because that one does a simple linear
    * interpolation while we want something fancier. */
   dir = which == HD_SCROLLABLE_GROUP_HORIZONTAL
@@ -379,7 +378,7 @@ hd_scrollable_group_scroll_viewport (HdScrollableGroup * self,
     goto shortcut;
 
   /* Get the starting and ending point. */
-  tidy_adjustment_get_values (dir->adjustment, &dir->manual_scroll_from,
+  mx_adjustment_get_values (dir->adjustment, &dir->manual_scroll_from,
                               NULL, &upper, NULL, NULL, &page);
   dir->manual_scroll_to = is_relative
       ? dir->manual_scroll_from + diff
@@ -393,7 +392,7 @@ hd_scrollable_group_scroll_viewport (HdScrollableGroup * self,
   /* Don't animate if we're not visible in the first place. */
   if (!CLUTTER_ACTOR_IS_VISIBLE (self))
     {
-      tidy_adjustment_set_value (dir->adjustment, dir->manual_scroll_to);
+      mx_adjustment_set_value (dir->adjustment, dir->manual_scroll_to);
       goto shortcut;
     }
 
@@ -426,12 +425,12 @@ static void
 hd_scrollable_group_set_new_upper (HdScrollableGroup * self,
                                    HdScrollableGroupDirectionInfo * dir)
 {
-  gfloat current, lower, stepinc, pageinc, pagesize;
+  gdouble current, lower, stepinc, pageinc, pagesize;
 
-  tidy_adjustment_get_values (dir->adjustment,
+  mx_adjustment_get_values (dir->adjustment,
                               &current, &lower, NULL, &stepinc, &pageinc,
                               &pagesize);
-  tidy_adjustment_set_values (dir->adjustment, current, lower,
+  mx_adjustment_set_values (dir->adjustment, current, lower,
                               dir->new_upper, stepinc, pageinc, pagesize);
   dir->can_scroll = dir->new_upper > pagesize;
 }
@@ -444,11 +443,11 @@ hd_scrollable_group_set_real_estate (HdScrollableGroup * self,
 {
   HdScrollableGroupPrivate *priv = HD_SCROLLABLE_GROUP_GET_PRIVATE (self);
   HdScrollableGroupDirectionInfo *dir;
-  gfloat current, lower, stepinc, pageinc, pagesize;
+  gdouble current, lower, stepinc, pageinc, pagesize;
 
   dir = which == HD_SCROLLABLE_GROUP_HORIZONTAL
     ? &priv->horizontal : &priv->vertical;
-  tidy_adjustment_get_values (dir->adjustment, &current, &lower, NULL,
+  mx_adjustment_get_values (dir->adjustment, &current, &lower, NULL,
                               &stepinc, &pageinc, &pagesize);
 
   if (upper < pagesize)
@@ -471,11 +470,12 @@ hd_scrollable_group_set_real_estate (HdScrollableGroup * self,
       return;
     }
 
-  tidy_adjustment_set_values (dir->adjustment, current, lower, upper,
+  mx_adjustment_set_values (dir->adjustment, current, lower, upper,
                               stepinc, pageinc, pagesize);
   dir->can_scroll = upper > pagesize;
 }
 
+#ifdef MAEGO_DISABLED
 /* ClutterActor::hide signal of one of the scrollbars
  * for tidy_scroll_view_show_scrollbar(). */
 static gboolean
@@ -486,7 +486,7 @@ scrollbar_shown (ClutterActor * sbar, gpointer unused)
 }
 
 /*
- * Unless @enable:d, prevents #TidyScrollView from showing one of
+ * Unless @enable:d, prevents #MxScrollView from showing one of
  * the scrollbars even if it's scrolling.  @enable:ing it reverts
  * the request.
  *
@@ -495,7 +495,7 @@ scrollbar_shown (ClutterActor * sbar, gpointer unused)
  *      always show the scrollbar by setting it reactive.
  */
 void
-tidy_scroll_view_show_scrollbar (TidyScrollView * self,
+tidy_scroll_view_show_scrollbar (MxScrollView * self,
                                  HdScrollableGroupDirection which,
                                  gboolean enable)
 {
@@ -515,6 +515,7 @@ tidy_scroll_view_show_scrollbar (TidyScrollView * self,
   else
     clutter_actor_show (sbar);
 }
+#endif
 /* Interface functions }}} */
 
 /* Constructors {{{ */
@@ -538,7 +539,7 @@ hd_scrollable_group_class_init (HdScrollableGroupClass * klass)
   actor_class->parent_set           = hd_scrollable_group_parent_changed;
   actor_class->captured_event       = hd_scrollable_group_touched;
 
-  /* Provided for the sake of #TidyScrollable. */
+  /* Provided for the sake of #MxScrollable. */
   g_object_class_override_property (G_OBJECT_CLASS (klass),
                                     HD_SCROLLABLE_GROUP_HORIZONTAL,
                                     "hadjustment");
@@ -549,9 +550,9 @@ hd_scrollable_group_class_init (HdScrollableGroupClass * klass)
   g_type_class_add_private (klass, sizeof (HdScrollableGroupPrivate));
 }
 
-/* #TidyScrollable interface initialization. */
+/* #MxScrollable interface initialization. */
 static void
-hd_scrollable_group_iface_init (TidyScrollableInterface * iface)
+hd_scrollable_group_iface_init (MxScrollableIface * iface)
 {
   iface->get_adjustments = hd_scrollable_group_get_adjustments;
 }
@@ -564,7 +565,7 @@ setup_direction (HdScrollableGroup * self,
 
   /* All numeric values are dummy, they are set up properly later.
    * For now we only allocate the resources. */
-  dir->adjustment = tidy_adjustment_new (0, 0, 0, 1, 1, 0);
+  dir->adjustment = mx_adjustment_new_with_values (0, 0, 0, 1, 1, 0);
   g_signal_connect_swapped (dir->adjustment, "notify::value",
                             G_CALLBACK (hd_scrollable_group_adjval_changed),
                             self);
@@ -588,7 +589,7 @@ hd_scrollable_group_init (HdScrollableGroup * self)
 
 G_DEFINE_TYPE_WITH_CODE (HdScrollableGroup, hd_scrollable_group,
                          CLUTTER_TYPE_GROUP,
-                         G_IMPLEMENT_INTERFACE (TIDY_TYPE_SCROLLABLE,
+                         G_IMPLEMENT_INTERFACE (MX_TYPE_SCROLLABLE,
                                        hd_scrollable_group_iface_init));
 /* Constructors }}} */
 

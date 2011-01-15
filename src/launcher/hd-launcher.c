@@ -35,7 +35,7 @@
 #include <dbus/dbus-glib.h>
 
 #include <clutter/clutter.h>
-#include <tidy/tidy-finger-scroll.h>
+#include <mx/mx.h>
 
 #include "hildon-desktop.h"
 #include "hd-launcher-grid.h"
@@ -50,7 +50,6 @@
 #include "hd-title-bar.h"
 #include "hd-transition.h"
 #include "hd-util.h"
-#include "tidy/tidy-sub-texture.h"
 
 #include <hildon/hildon-banner.h>
 
@@ -850,6 +849,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
           if (w > region.width ||
               h > region.height)
             {
+#ifdef MAEGO_DISABLED
               /* It may be that we get a bigger texture than we need
                * (because PVR texture compression has to use 2^n width
                * and height). In this case we want to crop off the
@@ -863,6 +863,10 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
                                       region.width, region.height);
                clutter_actor_hide(app_image);
                app_image = CLUTTER_ACTOR(sub);
+#else
+               clutter_actor_set_clip (app_image, 0, 0,
+                                                  region.width, region.height);
+#endif
             }
         }
     }

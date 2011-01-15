@@ -21,6 +21,7 @@
  *
  */
 
+#ifdef MAEGO_DISABLED
 #include "hd-remote-texture.h"
 #include "hd-comp-mgr.h"
 #include "hd-wm.h"
@@ -510,4 +511,4 @@ hd_remote_texture_set_shm(HdRemoteTexture *tex, key_t key,
       tex->shm_bpp);
 }
 
-
+#endif

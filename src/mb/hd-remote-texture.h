@@ -21,6 +21,7 @@
  *
  */
 
+#define _HAVE_HD_REMOTE_TEXTURE_H
 #ifndef _HAVE_HD_REMOTE_TEXTURE_H
 #define _HAVE_HD_REMOTE_TEXTURE_H
 

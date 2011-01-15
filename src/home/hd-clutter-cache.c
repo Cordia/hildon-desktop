@@ -25,8 +25,6 @@
  * times - for instance theme textures.
  */
 
-#include "tidy/tidy-sub-texture.h"
-
 #include "hd-clutter-cache.h"
 #include "hd-render-manager.h"
 
@@ -197,64 +195,20 @@ hd_clutter_cache_get_texture(const char *filename, gboolean from_theme)
   return texture;
 }
 
-ClutterActor *
-hd_clutter_cache_get_sub_texture(const char *filename,
-                                 gboolean from_theme,
-                                 ClutterGeometry *geo)
-{
-  ClutterActor *texture;
-  TidySubTexture *tex;
-  HdClutterCache *cache = hd_get_clutter_cache();
-  if (!cache)
-    return 0;
-
-  texture = hd_clutter_cache_get_real_texture(filename, from_theme);
-  if (!texture)
-    {
-      texture = hd_clutter_cache_get_broken_texture();
-      clutter_actor_set_name(texture, filename);
-      clutter_actor_set_size(texture, geo->width, geo->height);
-      return texture;
-    }
-
-  tex = tidy_sub_texture_new(CLUTTER_TEXTURE(texture));
-  tidy_sub_texture_set_region(tex, geo);
-  clutter_actor_set_name(CLUTTER_ACTOR(tex), filename);
-  clutter_actor_set_position(CLUTTER_ACTOR(tex), 0, 0);
-  clutter_actor_set_size(CLUTTER_ACTOR(tex), geo->width, geo->height);
-
-  return CLUTTER_ACTOR(tex);
-}
-
 /* like hd_clutter_cache_get_texture, but divides up the texture
  * and repositions it so it extends to fill the given area */
 ClutterActor *
 hd_clutter_cache_get_texture_for_area(const char *filename,
-                                          gboolean from_theme,
-                                          ClutterGeometry *area)
-{
-  ClutterGeometry geo = {0,0,0,0};
-  return hd_clutter_cache_get_sub_texture_for_area(
-      filename,
-      from_theme,
-      &geo,
-      area);
-}
-
-/* like hd_clutter_cache_get_sub_texture, but divides up the texture
- * and repositions it so it extends to fill the given area */
-ClutterActor *
-hd_clutter_cache_get_sub_texture_for_area(const char *filename,
-                                          gboolean from_theme,
-                                          ClutterGeometry *geo_,
-                                          ClutterGeometry *area)
+                                      gboolean from_theme,
+                                      ClutterGeometry *area)
 {
   gboolean extend_x, extend_y;
   gint low_x, low_y, high_x, high_y;
   ClutterTexture *texture = 0;
   ClutterGroup *group = 0;
-  ClutterGeometry geo = *geo_;
+  ClutterGeometry geo;
   gint x,y;
+  gfloat gw, gh;
 
   texture = CLUTTER_TEXTURE(hd_clutter_cache_get_real_texture(filename,
                                                               from_theme));
@@ -267,15 +221,11 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
       return actor;
     }
 
-  if (geo.width==0 || geo.height==0)
-    {
-      gfloat gw, gh;
-      clutter_actor_get_size(CLUTTER_ACTOR(texture), &gw, &gh);
-      geo.x = 0;
-      geo.y = 0;
-      geo.width = gw;
-      geo.height = gh;
-    }
+  clutter_actor_get_size(CLUTTER_ACTOR(texture), &gw, &gh);
+  geo.x = 0;
+  geo.y = 0;
+  geo.width = gw;
+  geo.height = gh;
 
   extend_x = area->width > geo.width;
   extend_y = area->height > geo.height;
@@ -285,7 +235,12 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
     {
       /* ignore the contents of 'texture' as it will be in our cache */
       ClutterActor *actor =
-          hd_clutter_cache_get_sub_texture(filename, from_theme, &geo);
+          hd_clutter_cache_get_texture(filename, from_theme);
+      clutter_texture_get_base_size (CLUTTER_TEXTURE(actor), &x, &y);
+      if (x > geo.width || y > geo.height)
+        {
+          clutter_actor_set_clip (actor, 0, 0, geo.width, geo.height);
+        }
       clutter_actor_set_position(actor, area->x, area->y);
       return actor;
     }
@@ -316,7 +271,7 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
   for (y=0;y<3;y++)
     for (x=0;x<3;x++)
       {
-        TidySubTexture *tex;
+        ClutterActor *tex;
         ClutterGeometry geot, pos;
         if (x==0)
           {
@@ -363,15 +318,15 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
 
         if (geot.width>0 && geot.height>0)
           {
-            tex = tidy_sub_texture_new(texture);
-            tidy_sub_texture_set_region(tex, &geot);
+            tex = clutter_texture_new_from_actor(CLUTTER_ACTOR(texture));
+            clutter_actor_set_clip(CLUTTER_ACTOR(tex),
+                                   geot.x, geot.y,
+                                   geot.width, geot.height);
             if (x==1 || y==1)
-              tidy_sub_texture_set_tiled(tex, TRUE);
-            clutter_actor_set_position(CLUTTER_ACTOR(tex), pos.x, pos.y);
-            clutter_actor_set_size(CLUTTER_ACTOR(tex), pos.width, pos.height);
-            clutter_container_add_actor(
-                      CLUTTER_CONTAINER(group),
-                      CLUTTER_ACTOR(tex));
+              clutter_texture_set_repeat(CLUTTER_TEXTURE(tex), x, y);
+            clutter_actor_set_position(tex, pos.x, pos.y);
+            clutter_actor_set_size(tex, pos.width, pos.height);
+            clutter_container_add_actor(CLUTTER_CONTAINER(group), tex);
           }
       }
 

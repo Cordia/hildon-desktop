@@ -34,9 +34,7 @@
 #include <cogl/cogl.h>
 #include <clutter/clutter.h>
 
-#include <tidy/tidy-adjustment.h>
-#include <tidy/tidy-interval.h>
-#include <tidy/tidy-scrollable.h>
+#include <mx/mx.h>
 
 #include <math.h>
 
@@ -74,8 +72,8 @@ struct _HdLauncherGridPrivate
   guint h_spacing;
   guint v_spacing;
 
-  TidyAdjustment *h_adjustment;
-  TidyAdjustment *v_adjustment;
+  MxAdjustment *h_adjustment;
+  MxAdjustment *v_adjustment;
 
   /* How far the transition will move the icons */
   gint transition_depth;
@@ -104,7 +102,7 @@ enum
 static guint task_signals[LAST_SIGNAL] = {};
 */
 
-static void tidy_scrollable_iface_init   (TidyScrollableInterface *iface);
+static void mx_scrollable_iface_init   (MxScrollableIface *iface);
 
 static gboolean _hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
                                         ClutterButtonEvent *event,
@@ -115,8 +113,8 @@ static gboolean _hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
 G_DEFINE_TYPE_WITH_CODE (HdLauncherGrid,
                          hd_launcher_grid,
                          CLUTTER_TYPE_GROUP,
-                         G_IMPLEMENT_INTERFACE (TIDY_TYPE_SCROLLABLE,
-                                                tidy_scrollable_iface_init));
+                         G_IMPLEMENT_INTERFACE (MX_TYPE_SCROLLABLE,
+                                                mx_scrollable_iface_init));
 
 static inline void
 hd_launcher_grid_refresh_h_adjustment (HdLauncherGrid *grid)
@@ -143,8 +141,8 @@ hd_launcher_grid_refresh_h_adjustment (HdLauncherGrid *grid)
   else
     page_width = MIN (width, clip_width - clip_x);
 
-  tidy_adjustment_set_values (priv->h_adjustment,
-                              tidy_adjustment_get_value (priv->h_adjustment),
+  mx_adjustment_set_values (priv->h_adjustment,
+                              mx_adjustment_get_value (priv->h_adjustment),
                               0,
                               width,
                               1.0f,
@@ -175,18 +173,18 @@ hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
     {
       /* Padding at the bottom. */
       height += HD_LAUNCHER_BOTTOM_MARGIN - HD_LAUNCHER_GRID_ROW_SPACING;
-      tidy_adjustment_set_skirt (priv->v_adjustment, 0.25f);
+      mx_adjustment_set_elastic (priv->v_adjustment, TRUE);
     }
   else
-    tidy_adjustment_set_skirt (priv->v_adjustment, 0);
+    mx_adjustment_set_elastic (priv->v_adjustment, FALSE);
 
   if (clip_height == 0)
     page_height = MIN (height, HD_COMP_MGR_LANDSCAPE_HEIGHT);
   else
     page_height = MIN (height, clip_height - clip_y);
 
-  tidy_adjustment_set_values (priv->v_adjustment,
-                               tidy_adjustment_get_value (priv->v_adjustment),
+  mx_adjustment_set_values (priv->v_adjustment,
+                               mx_adjustment_get_value (priv->v_adjustment),
                                0,
                                height,
                                1.0f,
@@ -199,7 +197,7 @@ hd_launcher_grid_reset_v_adjustment (HdLauncherGrid *grid)
 {
   HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID_GET_PRIVATE (grid);
 
-  tidy_adjustment_set_value (priv->v_adjustment, 0);
+  mx_adjustment_set_value (priv->v_adjustment, 0);
 }
 
 static void
@@ -212,13 +210,13 @@ adjustment_value_notify (GObject    *gobject,
 
   clutter_actor_set_anchor_point(grid,
                              0,
-                             tidy_adjustment_get_value(priv->v_adjustment));
+                             mx_adjustment_get_value(priv->v_adjustment));
 }
 
 static void
-hd_launcher_grid_set_adjustments (TidyScrollable *scrollable,
-                                  TidyAdjustment *h_adj,
-                                  TidyAdjustment *v_adj)
+hd_launcher_grid_set_adjustments (MxScrollable *scrollable,
+                                  MxAdjustment *h_adj,
+                                  MxAdjustment *v_adj)
 {
   HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (scrollable)->priv;
 
@@ -264,9 +262,9 @@ hd_launcher_grid_set_adjustments (TidyScrollable *scrollable,
 }
 
 static void
-hd_launcher_grid_get_adjustments (TidyScrollable  *scrollable,
-                                  TidyAdjustment **h_adj,
-                                  TidyAdjustment **v_adj)
+hd_launcher_grid_get_adjustments (MxScrollable  *scrollable,
+                                  MxAdjustment **h_adj,
+                                  MxAdjustment **v_adj)
 {
   HdLauncherGridPrivate *priv = HD_LAUNCHER_GRID (scrollable)->priv;
 
@@ -276,9 +274,9 @@ hd_launcher_grid_get_adjustments (TidyScrollable  *scrollable,
         *h_adj = priv->h_adjustment;
       else
         {
-          TidyAdjustment *adjustment;
+          MxAdjustment *adjustment;
 
-          adjustment = tidy_adjustment_new (0, 0, 0, 0, 0, 0);
+          adjustment = mx_adjustment_new_with_values (0, 0, 0, 0, 0, 0);
           hd_launcher_grid_set_adjustments (scrollable,
                                             adjustment,
                                             priv->v_adjustment);
@@ -295,9 +293,9 @@ hd_launcher_grid_get_adjustments (TidyScrollable  *scrollable,
         *v_adj = priv->v_adjustment;
       else
         {
-          TidyAdjustment *adjustment;
+          MxAdjustment *adjustment;
 
-          adjustment = tidy_adjustment_new (0, 0, 0, 0, 0, 0);
+          adjustment = mx_adjustment_new_with_values (0, 0, 0, 0, 0, 0);
           hd_launcher_grid_set_adjustments (scrollable,
                                             priv->h_adjustment,
                                             adjustment);
@@ -310,7 +308,7 @@ hd_launcher_grid_get_adjustments (TidyScrollable  *scrollable,
 }
 
 static void
-tidy_scrollable_iface_init (TidyScrollableInterface *iface)
+mx_scrollable_iface_init (MxScrollableIface *iface)
 {
   iface->set_adjustments = hd_launcher_grid_set_adjustments;
   iface->get_adjustments = hd_launcher_grid_get_adjustments;
@@ -498,13 +496,13 @@ hd_launcher_grid_set_property (GObject      *gobject,
   switch (prop_id)
     {
     case PROP_H_ADJUSTMENT:
-      hd_launcher_grid_set_adjustments (TIDY_SCROLLABLE (gobject),
+      hd_launcher_grid_set_adjustments (MX_SCROLLABLE (gobject),
                                         g_value_get_object (value),
                                         priv->v_adjustment);
       break;
 
     case PROP_V_ADJUSTMENT:
-      hd_launcher_grid_set_adjustments (TIDY_SCROLLABLE (gobject),
+      hd_launcher_grid_set_adjustments (MX_SCROLLABLE (gobject),
                                         priv->h_adjustment,
                                         g_value_get_object (value));
       break;
@@ -525,9 +523,9 @@ hd_launcher_grid_get_property (GObject    *gobject,
     {
     case PROP_H_ADJUSTMENT:
       {
-        TidyAdjustment *adjustment = NULL;
+        MxAdjustment *adjustment = NULL;
 
-        hd_launcher_grid_get_adjustments (TIDY_SCROLLABLE (gobject),
+        hd_launcher_grid_get_adjustments (MX_SCROLLABLE (gobject),
                                           &adjustment,
                                           NULL);
         g_value_set_object (value, adjustment);
@@ -536,9 +534,9 @@ hd_launcher_grid_get_property (GObject    *gobject,
 
     case PROP_V_ADJUSTMENT:
       {
-        TidyAdjustment *adjustment = NULL;
+        MxAdjustment *adjustment = NULL;
 
-        hd_launcher_grid_get_adjustments (TIDY_SCROLLABLE (gobject),
+        hd_launcher_grid_get_adjustments (MX_SCROLLABLE (gobject),
                                           NULL,
                                           &adjustment);
         g_value_set_object (value, adjustment);
@@ -676,10 +674,10 @@ hd_launcher_grid_transition_begin(HdLauncherGrid *grid,
 
       /* Reset adjustments so the view is always back to 0,0 */
       if (priv->h_adjustment)
-        tidy_adjustment_set_value (priv->h_adjustment, 0);
+        mx_adjustment_set_value (priv->h_adjustment, 0);
 
       if (priv->v_adjustment)
-        tidy_adjustment_set_value (priv->v_adjustment, 0);
+        mx_adjustment_set_value (priv->v_adjustment, 0);
     }
 }
 

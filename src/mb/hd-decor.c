@@ -245,9 +245,10 @@ hd_decor_create_actors(HdDecor *decor)
 
   if (c->image_filename)
     {
-      ClutterGeometry geo = {d->x, d->y, d->width, d->height};
-      decor->title_bar_actor = hd_clutter_cache_get_sub_texture_for_area(
-                                  c->image_filename, TRUE, &geo, &area);
+      decor->title_bar_actor = hd_clutter_cache_get_texture_for_area(
+                                  c->image_filename, TRUE, &area);
+      clutter_actor_set_clip (CLUTTER_ACTOR(c->image_filename),
+                              d->x, d->y, d->width, d->height);
     }
   else
     {
@@ -334,11 +335,13 @@ hd_decor_create_actors(HdDecor *decor)
     {
       /* Get the actor we're going to rotate and put it on the right-hand
        * side of the window*/
-      ClutterGeometry progress_geo =
-        {0, 0, HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE};
       gint x = 0;
-      decor->progress_texture = hd_clutter_cache_get_sub_texture(
-                            HD_THEME_IMG_PROGRESS, TRUE, &progress_geo);
+      decor->progress_texture = hd_clutter_cache_get_texture(
+                            HD_THEME_IMG_PROGRESS, TRUE);
+      clutter_actor_set_clip (decor->progress_texture,
+                              0, 0,
+                              HD_THEME_IMG_PROGRESS_SIZE,
+                              HD_THEME_IMG_PROGRESS_SIZE);
       if (decor->title_actor)
         {
           x = clutter_actor_get_x(CLUTTER_ACTOR(decor->title_actor)) +
