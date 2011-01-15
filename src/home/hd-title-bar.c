@@ -25,8 +25,6 @@
  * of the screen - currently just top-left buttons (which have to animate)
  */
 
-#include "tidy/tidy-sub-texture.h"
-
 #include "hd-title-bar.h"
 #include "hd-clutter-cache.h"
 #include "mb/hd-app.h"
@@ -286,10 +284,16 @@ hd_title_bar_init (HdTitleBar *bar)
       CLUTTER_ACTOR(priv->foreground));
 
   /* Title background */
-  priv->title_bg = hd_clutter_cache_get_sub_texture(
-      HD_THEME_IMG_TITLE_BAR, TRUE, &title_bg_size);
+  priv->title_bg = hd_clutter_cache_get_texture (HD_THEME_IMG_TITLE_BAR, TRUE);
+  clutter_actor_set_clip (priv->title_bg,
+                          title_bg_size.x, title_bg_size.y,
+                          title_bg_size.width, title_bg_size. height);
+#ifdef MAEGO_DISABLED
   if (TIDY_IS_SUB_TEXTURE(priv->title_bg))
     tidy_sub_texture_set_tiled(TIDY_SUB_TEXTURE(priv->title_bg), TRUE);
+#else
+  /* TODO clutter_texture_set_repeat () ? */
+#endif
   clutter_container_add_actor(CLUTTER_CONTAINER(bar),
       CLUTTER_ACTOR(priv->title_bg));
 
@@ -391,12 +395,13 @@ hd_title_bar_init (HdTitleBar *bar)
 
   /* Create progress indicator */
   {
-    ClutterGeometry progress_geo =
-        {0, 0, HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE};
-    priv->progress_texture = hd_clutter_cache_get_sub_texture(
+    priv->progress_texture = hd_clutter_cache_get_texture(
                                                     HD_THEME_IMG_PROGRESS,
-                                                    TRUE,
-                                                    &progress_geo);
+                                                    TRUE);
+    clutter_actor_set_clip (priv->progress_texture,
+                            0, 0,
+                            HD_THEME_IMG_PROGRESS_SIZE,
+                            HD_THEME_IMG_PROGRESS_SIZE);
     clutter_container_add_actor(CLUTTER_CONTAINER(bar),
                                 priv->progress_texture);
 #ifdef MAEMO_CHANGES

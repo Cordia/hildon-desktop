@@ -117,6 +117,7 @@ if test "$ac_cv_enable_static_mb2" = yes; then
         MB2_STATIC_LIB='$(libdir)/libmatchbox2-0.1.a'
 
         PKG_CHECK_MODULES(HD, [clutter-1.0 dnl
+                       mx-1.0 >= 0.99.0 dnl
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
                        dbus-1 dnl
@@ -139,6 +140,7 @@ else
         MB2_CFLAGS=''
         MB2_STATIC_LIB=''
         PKG_CHECK_MODULES(HD, [clutter-1.0 dnl
+                       mx-1.0 >= 0.99.0 dnl
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
                        dbus-1 dnl
@@ -179,7 +181,6 @@ src/util/Makefile
 src/a11y/Makefile
 src/a11y/launcher/Makefile
 src/a11y/home/Makefile
-src/a11y/tail/Makefile
 data/Makefile
 data/menu/Makefile
 data/applications/Makefile

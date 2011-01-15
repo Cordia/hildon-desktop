@@ -25,7 +25,6 @@
 
 #include "launcher/hda-launcher.h"
 #include "home/hda-home-init.h"
-#include "tail/tail.h"
 
 void
 hda_accessibility_module_init                   (void);
@@ -50,7 +49,6 @@ hda_accessibility_module_init(void)
   /* init individual libraries  */
   hda_launcher_accessibility_init ();
   hda_home_accessibility_init ();
-  tail_accessibility_init ();
 
   g_message ("Hildon Desktop Accessibility Module initialized");
 }

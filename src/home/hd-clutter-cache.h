@@ -65,6 +65,7 @@ hd_clutter_cache_get_texture(
     const char *filename,
     gboolean from_theme);
 
+#ifdef MAEGO_DISABLED
 /* Create a smaller texture from a master texture, supply the geometry
  * in the master texture to use for this texture.
  * This is created specially and is not owned by the cache */
@@ -73,6 +74,7 @@ hd_clutter_cache_get_sub_texture(
     const char *filename,
     gboolean from_theme,
     ClutterGeometry *geo);
+#endif
 
 /* like hd_clutter_cache_get_texture, but divides up the texture
  * and repositions it so it extends to fill the given area */
@@ -81,6 +83,7 @@ hd_clutter_cache_get_texture_for_area(const char *filename,
                                           gboolean from_theme,
                                           ClutterGeometry *area);
 
+#ifdef MAEGO_DISABLED
 /* like hd_clutter_cache_get_sub_texture, but divides up the texture
  * and repositions it so it extends to fill the given area.
  * This is created specially and is not owned by the cache. */
@@ -89,5 +92,6 @@ hd_clutter_cache_get_sub_texture_for_area(const char *filename,
                                           gboolean from_theme,
                                           ClutterGeometry *geo,
                                           ClutterGeometry *area);
+#endif
 
 #endif

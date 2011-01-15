@@ -32,8 +32,6 @@
 #include <clutter/x11/clutter-x11.h>
 #include <X11/extensions/shape.h>
 
-#include "tidy/tidy-blur-group.h"
-
 #include "hd-comp-mgr.h"
 #include "hd-home.h"
 #include "hd-switcher.h"
@@ -104,7 +102,7 @@ hd_render_manager_state_get_type (void)
 
 /* ------------------------------------------------------------------------- */
 
-G_DEFINE_TYPE (HdRenderManager, hd_render_manager, TIDY_TYPE_CACHED_GROUP);
+G_DEFINE_TYPE (HdRenderManager, hd_render_manager, CLUTTER_TYPE_GROUP);
 #define HD_RENDER_MANAGER_GET_PRIVATE(obj) \
                 (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
                 HD_TYPE_RENDER_MANAGER, HdRenderManagerPrivate))
@@ -183,7 +181,7 @@ struct _HdRenderManagerPrivate {
   gboolean      has_input_blocker;
   guint         has_input_blocker_timeout;
 
-  TidyBlurGroup *home_blur;
+  ClutterGroup  *home_blur;
   ClutterGroup  *app_top;
   ClutterGroup  *front;
   ClutterGroup  *blur_front;
@@ -440,14 +438,14 @@ hd_render_manager_init (HdRenderManager *self)
   priv->previous_state = HDRM_STATE_UNDEFINED;
   priv->current_blur = HDRM_BLUR_NONE;
 
-  priv->home_blur = TIDY_BLUR_GROUP(tidy_blur_group_new());
+  priv->home_blur = CLUTTER_GROUP(clutter_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->home_blur),
                          "HdRenderManager:home_blur");
 #ifdef MAEMO_CHANGES
   clutter_actor_set_visibility_detect(CLUTTER_ACTOR(priv->home_blur), FALSE);
-#endif
   tidy_blur_group_set_use_alpha(CLUTTER_ACTOR(priv->home_blur), FALSE);
   tidy_blur_group_set_use_mirror(CLUTTER_ACTOR(priv->home_blur), TRUE);
+#endif
   g_signal_connect_swapped(stage, "notify::allocation",
                            G_CALLBACK(stage_allocation_changed), priv->home_blur);
   clutter_container_add_actor(CLUTTER_CONTAINER(self),
@@ -544,6 +542,7 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
   range_interpolate(&priv->applets_opacity, amt);
   range_interpolate(&priv->applets_zoom, amt);
 
+#ifdef MAEGO_DISABLED
   tidy_blur_group_set_blur      (CLUTTER_ACTOR(priv->home_blur),
                                  priv->home_radius.current);
   tidy_blur_group_set_saturation(CLUTTER_ACTOR(priv->home_blur),
@@ -552,6 +551,7 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
                                  priv->home_brightness.current);
   tidy_blur_group_set_zoom(CLUTTER_ACTOR(priv->home_blur),
                                  priv->home_zoom.current);
+#endif
 
   task_opacity = priv->task_nav_opacity.current*255;
   clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav), task_opacity);
@@ -637,6 +637,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 
   priv->current_blur = blur;
 
+#ifdef MAEGO_DISABLED
   /* If we were going to transition to not blurring but didn't get there,
    * make sure we set blur=0 anyway in order to *force* the blurring to
    * recalculate. The first call to on_timeline_blur_new_frame will set
@@ -645,6 +646,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
       priv->home_radius.current != 0)
     tidy_blur_group_set_blur(
       CLUTTER_ACTOR(the_render_manager->priv->home_blur), 0);
+#endif
 
   range_next(&priv->home_radius, 0);
   range_next(&priv->home_saturation, 1);
@@ -2348,17 +2350,21 @@ void hd_render_manager_update_blur_state()
 
   hd_title_bar_set_state(priv->title_bar, title_flags);
 
+#ifdef MAEGO_DISABLED
   /* If we have a video overlay, blurring sods it all up. Instead just
    * apply a chequer pattern to do our dimming */
   tidy_blur_group_set_chequer(
           CLUTTER_ACTOR(priv->home_blur),
           blur && has_video_overlay);
+#endif
 }
 
 void hd_render_manager_pause_blur_animation()
 {
+#ifdef MAEGO_DISABLED
   tidy_blur_group_stop_progressing(
                     CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+#endif
 }
 
 /* This is called when we are in the launcher subview so that we can blur and
@@ -2806,6 +2812,7 @@ void hd_render_manager_blurred_changed()
   if (STATE_IS_LOADING(priv->state))
     force_not = TRUE;
 
+#ifdef MAEGO_DISABLED
   /* If we're in the middle of a transition to somewhere where we won't
    * blur, just 'hint' that we have damage (we'll recalculate next time
    * we blur). */
@@ -2815,6 +2822,7 @@ void hd_render_manager_blurred_changed()
   else
     tidy_blur_group_hint_source_changed(
           CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+#endif
 }
 
 void

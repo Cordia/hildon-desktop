@@ -51,9 +51,6 @@
 
 #include <clutter/clutter.h>
 
-
-#include "../tidy/tidy-blur-group.h"
-
 #include <dbus/dbus-glib-bindings.h>
 #ifdef HAVE_DSME
 /* TODO Convert MCE to DSME */
@@ -1428,6 +1425,7 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
     {
       if (!CLUTTER_ACTOR_IS_VISIBLE(parent))
         return;
+#ifdef MAEGO_DISABLED
       /* if we're a child of a blur group, tell it that it has changed */
       if (TIDY_IS_BLUR_GROUP(parent))
         {
@@ -1441,6 +1439,7 @@ hd_comp_mgr_texture_update_area(HdCompMgr *hmgr,
           if (tidy_blur_group_source_buffered(parent))
             blur_update = TRUE;
         }
+#endif
       parent = clutter_actor_get_parent(parent);
     }
 

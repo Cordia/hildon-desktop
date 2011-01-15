@@ -222,12 +222,14 @@ hd_wm_client_new (MBWindowManager *wm, MBWMClientWindow *win)
       g_debug ("### is animation actor ###");
       return hd_animation_actor_new (wm, win);
     }
+#ifdef MAEGO_DISABLED
   else if (win->net_type == hd_comp_mgr_get_atom (hmgr,
                           HD_ATOM_HILDON_WM_WINDOW_TYPE_REMOTE_TEXTURE))
     {
       g_debug ("### is remote texture ###");
       return hd_remote_texture_new (wm, win);
     }
+#endif
   else
     {
       /* All of hildon-desktop relies on %MBWMClientTypeApp:s being

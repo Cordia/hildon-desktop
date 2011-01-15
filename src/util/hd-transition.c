@@ -42,7 +42,6 @@
 #include "hd-theme.h"
 #include "hd-title-bar.h"
 #include "hd-clutter-cache.h"
-#include "tidy/tidy-sub-texture.h"
 
 #include "hd-app.h"
 #include "hd-util.h"
@@ -350,19 +349,16 @@ on_decor_progress_timeline_new_frame(ClutterTimeline *timeline,
                                      gint frame_num,
                                      ClutterActor *progress_texture)
 {
-  if (!hd_dbus_display_is_off && TIDY_IS_SUB_TEXTURE(progress_texture) &&
+  if (!hd_dbus_display_is_off && CLUTTER_IS_TEXTURE(progress_texture) &&
       hd_render_manager_actor_is_visible(progress_texture))
     {
       /* The progress animation is a series of frames packed
        * into a texture - like a film strip
        */
-      ClutterGeometry progress_region =
-         {HD_THEME_IMG_PROGRESS_SIZE*frame_num, 0,
-          HD_THEME_IMG_PROGRESS_SIZE, HD_THEME_IMG_PROGRESS_SIZE };
-
-      tidy_sub_texture_set_region(
-          TIDY_SUB_TEXTURE(progress_texture),
-          &progress_region);
+      clutter_actor_set_clip (progress_texture,
+                              HD_THEME_IMG_PROGRESS_SIZE*frame_num, 0,
+                              HD_THEME_IMG_PROGRESS_SIZE,
+                              HD_THEME_IMG_PROGRESS_SIZE);
 
       /* We just queue damage with an area like we do for windows.
        * Otherwise we end up updating the whole screen for this.
@@ -1471,12 +1467,14 @@ hd_transition_rotating_fsm(void)
       case IDLE:
         Orientation_change.phase = TRANS_START;
         Orientation_change.direction = Orientation_change.new_direction;
+#ifdef MAEGO_DISABLED
         /* Take a screenshot of the screen as we currently are... */
         tidy_cached_group_changed(CLUTTER_ACTOR(hd_render_manager_get()));
         tidy_cached_group_set_render_cache(
           CLUTTER_ACTOR(hd_render_manager_get()), 1);
         tidy_cached_group_set_downsampling_factor(
           CLUTTER_ACTOR(hd_render_manager_get()), 1);
+#endif
         /* Stop displaying the loading screenshot, which was displayed
          * as a small square just over the icon when launching phone.
          * However, leave it alone if it's already there fully grown. */
@@ -1540,12 +1538,14 @@ hd_transition_rotating_fsm(void)
         /* remove our flag to bodge layout - because we'll rotate properly
          * soon anyway */
         Orientation_change.wm->flags &= ~MBWindowManagerFlagLayoutRotated;
+#ifdef MAEGO_DISABLED
         /* Don't show our screenshot background any more */
         tidy_cached_group_changed(CLUTTER_ACTOR(hd_render_manager_get()));
         tidy_cached_group_set_render_cache(
                                   CLUTTER_ACTOR(hd_render_manager_get()), 0);
         tidy_cached_group_set_downsampling_factor(
                                   CLUTTER_ACTOR(hd_render_manager_get()), 0);
+#endif
 
         state = Orientation_change.goto_state;
         change_state = Orientation_change.new_direction == GOTO_PORTRAIT
@@ -1668,6 +1668,7 @@ trans_start_error:
           }
         break;
       case RECOVER:
+#ifdef MAEGO_DISABLED
         /* Thaw the blur group.  Only from the TRANS_START error path can we
          * get here. */
         tidy_cached_group_changed(CLUTTER_ACTOR(hd_render_manager_get()));
@@ -1675,6 +1676,7 @@ trans_start_error:
                                   CLUTTER_ACTOR(hd_render_manager_get()), 0);
         tidy_cached_group_set_downsampling_factor(
                                   CLUTTER_ACTOR(hd_render_manager_get()), 0);
+#endif
         /* Fall through */
       case FADE_IN:
         {

@@ -2,7 +2,7 @@
 #define __HD_SCROLLABLE_GROUP_H__
 
 #include <clutter/clutter.h>
-#include <tidy/tidy-scroll-view.h>
+#include <mx/mx.h>
 
 #define HD_TYPE_SCROLLABLE_GROUP  hd_scrollable_group_get_type()
 #define HD_SCROLLABLE_GROUP(obj)                        \
@@ -40,8 +40,8 @@ void hd_scrollable_group_set_real_estate (HdScrollableGroup * self,
                                           HdScrollableGroupDirection which,
                                           guint cval);
 
-/* Utility function that really belongs to #TidyScrollView. */
-void tidy_scroll_view_show_scrollbar (TidyScrollView * self,
+/* Utility function that really belongs to #MxScrollView. */
+void tidy_scroll_view_show_scrollbar (MxScrollView * self,
                                       HdScrollableGroupDirection which,
                                       gboolean enable);
 

@@ -963,7 +963,6 @@ hd_home_create_edit_button (void)
 {
   ClutterActor *edit_button;
   ClutterActor *bg_left, *bg_center, *bg_right, *icon;
-  ClutterGeometry geom = { 0, };
 
   edit_button = clutter_group_new ();
 
@@ -973,9 +972,11 @@ hd_home_create_edit_button (void)
   icon = hd_clutter_cache_get_texture (HD_THEME_IMG_EDIT_ICON, TRUE);
 
   /* Cut out the half of the texture */
-  geom.width = clutter_actor_get_width (icon) / 4;
-  geom.height = clutter_actor_get_height (icon);
-  bg_center = hd_clutter_cache_get_sub_texture (HD_THEME_IMG_LEFT_ATTACHED, TRUE, &geom);
+  bg_center = hd_clutter_cache_get_texture (HD_THEME_IMG_LEFT_ATTACHED, TRUE);
+  clutter_actor_set_clip (bg_center,
+                          0, 0,
+                          clutter_actor_get_width (icon) / 4,
+                          clutter_actor_get_height (icon));
 
   /* Add textures to edit button */
   clutter_container_add (CLUTTER_CONTAINER (edit_button),
