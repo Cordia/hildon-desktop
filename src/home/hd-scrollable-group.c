@@ -539,14 +539,6 @@ hd_scrollable_group_class_init (HdScrollableGroupClass * klass)
   actor_class->parent_set           = hd_scrollable_group_parent_changed;
   actor_class->captured_event       = hd_scrollable_group_touched;
 
-  /* Provided for the sake of #MxScrollable. */
-  g_object_class_override_property (G_OBJECT_CLASS (klass),
-                                    HD_SCROLLABLE_GROUP_HORIZONTAL,
-                                    "hadjustment");
-  g_object_class_override_property (G_OBJECT_CLASS (klass),
-                                    HD_SCROLLABLE_GROUP_VERTICAL,
-                                    "vadjustment");
-
   g_type_class_add_private (klass, sizeof (HdScrollableGroupPrivate));
 }
 
