@@ -32,6 +32,8 @@
 #include <matchbox/core/mb-wm.h>
 #include <matchbox/core/mb-wm-client.h>
 
+#define MAX_HOME_VIEWS 9
+
 G_BEGIN_DECLS
 
 #define HD_TYPE_HOME_VIEW            (hd_home_view_get_type ())

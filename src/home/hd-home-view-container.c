@@ -40,8 +40,6 @@
 #include <math.h>
 #include <X11/Xproto.h>
 
-#define MAX_HOME_VIEWS 9
-
 #define HD_GCONF_DIR_VIEWS         "/apps/osso/hildon-desktop/views"
 #define HD_GCONF_KEY_VIEWS_ACTIVE  HD_GCONF_DIR_VIEWS "/active"
 #define HD_GCONF_KEY_VIEWS_CURRENT HD_GCONF_DIR_VIEWS "/current"
