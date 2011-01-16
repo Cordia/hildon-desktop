@@ -559,14 +559,6 @@ hd_launcher_grid_class_init (HdLauncherGridClass *klass)
   gobject_class->set_property = hd_launcher_grid_set_property;
   gobject_class->get_property = hd_launcher_grid_get_property;
   gobject_class->dispose = hd_launcher_grid_dispose;
-
-  g_object_class_override_property (gobject_class,
-                                    PROP_H_ADJUSTMENT,
-                                    "hadjustment");
-
-  g_object_class_override_property (gobject_class,
-                                    PROP_V_ADJUSTMENT,
-                                    "vadjustment");
 }
 
 static void
