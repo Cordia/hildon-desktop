@@ -510,7 +510,7 @@ set_background_common (HdHomeView *hview, ClutterActor *new_bg)
   if (priv->background_sub)
       clutter_actor_destroy (CLUTTER_ACTOR(priv->background_sub));
 #endif
-  if (priv->background)
+  if (priv->background && CLUTTER_IS_TEXTURE(priv->background))
     clutter_actor_destroy (priv->background);
 
   /* Only update blur if we're currently active */
