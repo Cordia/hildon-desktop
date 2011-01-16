@@ -391,7 +391,9 @@ reload_texture_cb (ClutterActor *child,
   g_free(filename);
 }
 
-void hd_clutter_cache_theme_changed(void) {
+void
+hd_clutter_cache_theme_changed(void)
+{
   /* If there is no clutter cache yet then we definitely
    * don't care about reloading stuff */
   if (!the_clutter_cache)
