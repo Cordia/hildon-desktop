@@ -56,8 +56,6 @@
 #define GCONF_KEY_MODIFIED "/apps/osso/hildon-desktop/applets/%s/modified"
 #define GCONF_KEY_VIEW     "/apps/osso/hildon-desktop/applets/%s/view"
 
-#define MAX_VIEWS 4
-
 /* Maximal pixel movement for a tap (before it is a move) */
 #define MAX_TAP_DISTANCE 20
 
@@ -212,7 +210,7 @@ hd_home_view_class_init (HdHomeViewClass *klass)
   pspec = g_param_spec_int ("id",
 			    "id",
 			    "Numerical id for this view",
-			    0, MAX_VIEWS - 1,
+			    0, MAX_HOME_VIEWS - 1,
 			    0,
 			    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
 
