@@ -2185,7 +2185,7 @@ void hd_render_manager_restack()
           if (clutter_actor_get_name(actor))
             g_debug("PREVIOUS %s", clutter_actor_get_name(actor));
           else
-            g_debug("PREVIOUS 0x%8X", (unsigned int)actor);
+            g_debug("PREVIOUS 0x%8X", GPOINTER_TO_INT(actor));
         }
         for (i=0;i<n_elements;i++)
           {
@@ -2196,7 +2196,7 @@ void hd_render_manager_restack()
                 if (clutter_actor_get_name(actor))
                   g_debug("CURRENT %s", clutter_actor_get_name(actor));
                 else
-                  g_debug("CURRENT 0x%8X", (unsigned int)actor);
+                  g_debug("CURRENT 0x%8X", GPOINTER_TO_INT(actor));
               }
           }
     }
