@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.141-4) unstable; urgency=low
+
+  * Register key-schemas to gconf, otherwise keyboard shortcuts are lost.
+
+ -- Mohammad Abu-Garbeyyeh <mohammad@mohammad-i5laptop>  Wed, 19 Jan 2011 20:05:03 +0200
+
 hildon-desktop (1:2.2.141-3) unstable; urgency=low
 
   * Added portrait mode support for the status menu
