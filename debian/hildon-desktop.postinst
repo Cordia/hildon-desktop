@@ -4,6 +4,7 @@ case "$1" in
     configure)
 
       gconf-schemas --register hildon-desktop-views.schemas
+      gconf-schemas --register hildon-desktop-keys.schemas
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
