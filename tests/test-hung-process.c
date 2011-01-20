@@ -37,6 +37,7 @@ timeout_cb (gpointer data)
 {
   for (;;)
     ;
+  return TRUE;
 }
 
 int
