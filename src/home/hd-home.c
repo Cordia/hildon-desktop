@@ -969,16 +969,13 @@ hd_home_create_edit_button (void)
   /* Load textures */
   bg_left = hd_clutter_cache_get_texture (HD_THEME_IMG_BUTTON_LEFT_HALF, TRUE);
   bg_right = hd_clutter_cache_get_texture (HD_THEME_IMG_BUTTON_RIGHT_HALF, TRUE);
-  bg_center = hd_clutter_cache_get_texture (HD_THEME_IMG_LEFT_ATTACHED, TRUE);
   icon = hd_clutter_cache_get_texture (HD_THEME_IMG_EDIT_ICON, TRUE);
 
-#ifdef MAEGO_DISABLED
   /* Cut out the half of the texture */
-  clutter_actor_set_clip (bg_center,
-                          0, 0,
+  bg_center = hd_clutter_cache_get_texture (HD_THEME_IMG_LEFT_ATTACHED, TRUE);
+  clutter_actor_set_size (bg_center,
                           clutter_actor_get_width (icon) / 4,
                           clutter_actor_get_height (icon));
-#endif
 
   /* Add textures to edit button */
   clutter_container_add (CLUTTER_CONTAINER (edit_button),

@@ -864,8 +864,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
                clutter_actor_hide(app_image);
                app_image = CLUTTER_ACTOR(sub);
 #else
-               clutter_actor_set_clip (app_image, 0, 0,
-                                                  region.width, region.height);
+               clutter_actor_set_size (app_image, region.width, region.height);
 #endif
             }
         }

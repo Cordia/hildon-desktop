@@ -456,8 +456,7 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
   clutter_container_add_actor (CLUTTER_CONTAINER(tile), priv->label);
 
   if (label_width > HD_LAUNCHER_TILE_WIDTH)
-    clutter_actor_set_clip (priv->label, 0, 0,
-                  HD_LAUNCHER_TILE_WIDTH, label_height);
+    clutter_actor_set_size (priv->label, HD_LAUNCHER_TILE_WIDTH, label_height);
 }
 
 static void

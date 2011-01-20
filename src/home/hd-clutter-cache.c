@@ -239,7 +239,7 @@ hd_clutter_cache_get_texture_for_area(const char *filename,
       clutter_texture_get_base_size (CLUTTER_TEXTURE(actor), &x, &y);
       if (x > geo.width || y > geo.height)
         {
-          clutter_actor_set_clip (actor, 0, 0, geo.width, geo.height);
+          clutter_actor_set_size (actor, geo.width, geo.height);
         }
       clutter_actor_set_position(actor, area->x, area->y);
       return actor;
