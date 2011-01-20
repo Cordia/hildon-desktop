@@ -969,14 +969,16 @@ hd_home_create_edit_button (void)
   /* Load textures */
   bg_left = hd_clutter_cache_get_texture (HD_THEME_IMG_BUTTON_LEFT_HALF, TRUE);
   bg_right = hd_clutter_cache_get_texture (HD_THEME_IMG_BUTTON_RIGHT_HALF, TRUE);
+  bg_center = hd_clutter_cache_get_texture (HD_THEME_IMG_LEFT_ATTACHED, TRUE);
   icon = hd_clutter_cache_get_texture (HD_THEME_IMG_EDIT_ICON, TRUE);
 
+#ifdef MAEGO_DISABLED
   /* Cut out the half of the texture */
-  bg_center = hd_clutter_cache_get_texture (HD_THEME_IMG_LEFT_ATTACHED, TRUE);
   clutter_actor_set_clip (bg_center,
                           0, 0,
                           clutter_actor_get_width (icon) / 4,
                           clutter_actor_get_height (icon));
+#endif
 
   /* Add textures to edit button */
   clutter_container_add (CLUTTER_CONTAINER (edit_button),
@@ -2084,7 +2086,7 @@ hd_home_show_edit_button (HdHome *home)
   clutter_actor_animate (priv->edit_button,
                          CLUTTER_EASE_OUT_SINE,
                          HDH_EDIT_BUTTON_DURATION,
-                         "y", 0,
+                         "y", 0.0f,
                          NULL);
 
   priv->edit_button_cb =
@@ -2092,7 +2094,7 @@ hd_home_show_edit_button (HdHome *home)
 }
 
 static void
-hd_home_edit_button_move_completed (ClutterActor *actor, gpointer data)
+hd_home_edit_button_move_completed (gpointer data)
 {
   HdHome *home = HD_HOME(data);
   HdHomePrivate   *priv = home->priv;
@@ -2125,10 +2127,9 @@ hd_home_hide_edit_button (HdHome *home)
 
   x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
 
-  animation = clutter_actor_animate (CLUTTER_ACTOR (priv->edit_button),
+  animation = clutter_actor_animate (priv->edit_button,
                                      CLUTTER_EASE_OUT_SINE,
                                      HDH_EDIT_BUTTON_DURATION,
-                                     "x", x,
                                      "y", -button_height,
                                      NULL);
   g_signal_connect_swapped (animation,
