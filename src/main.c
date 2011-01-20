@@ -515,6 +515,50 @@ static void hd_fpu_set_mode(OSSO_FPU_MODE mode)
 #endif /* if __arm__ */
 }
 
+/* HD is responsible for pulling events off the X queue, so Clutter
+ * doesn't need (and shouldn't) run its normal event source which polls
+ * the X fd, but we do have to deal with dispatching events that accumulate
+ * in the clutter queue. This happens, for example, when clutter generate
+ * enter/leave events on mouse motion - several events are queued in the
+ * clutter queue but only one dispatched. It could also happen because of
+ * explicit calls to clutter_event_put(). We add a very simple custom
+ * event loop source which is simply responsible for pulling events off
+ * of the queue and dispatching them before we block for new events.
+ */
+
+static gboolean 
+event_prepare (GSource    *source,
+               gint       *timeout_)
+{
+  *timeout_ = -1;
+
+  return clutter_events_pending ();
+}
+
+static gboolean 
+event_check (GSource *source)
+{
+  return clutter_events_pending ();
+}
+
+static gboolean
+event_dispatch (GSource    *source,
+                GSourceFunc callback,
+                gpointer    user_data)
+{
+  ClutterEvent *event = clutter_event_get ();
+  if (event)
+    clutter_do_event (event);
+
+  return TRUE;
+}
+
+static GSourceFuncs event_funcs = {
+  event_prepare,
+  event_check,
+  event_dispatch
+};
+
 int
 main (int argc, char **argv)
 {
@@ -564,7 +608,13 @@ main (int argc, char **argv)
    * For example it breaks the SubStructureRedirect mechanism, and
    * assumptions about the number of benign UnmapNotifies the window
    * manager will see when reparenting "client" windows. */
-  clutter_init (&argc, &argv);
+
+  if (CLUTTER_INIT_SUCCESS == clutter_init (&argc, &argv))
+    {
+      GSource *source = g_source_new (&event_funcs, sizeof (GSource));
+      g_source_attach (source, NULL);
+      g_source_unref (source);
+    }
   /* Disable mipmapping of text, as it is seldom scaled down and this
    * saves us memory/bandwidth/update speed */
   clutter_set_font_flags(0);
