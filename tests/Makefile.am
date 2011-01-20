@@ -9,8 +9,8 @@ test_hung_process_CFLAGS = `pkg-config --cflags gtk+-2.0`
 test_hung_process_LDFLAGS = `pkg-config --libs gtk+-2.0`
 
 test_app_launch_SOURCES = test-app-launch.c
-test_app_launch_CFLAGS = `pkg-config --cflags gtk+-2.0 dbus-glib-1 libhildonmime`
-test_app_launch_LDFLAGS = `pkg-config --libs gtk+-2.0 dbus-glib-1 libhildonmime`
+test_app_launch_CFLAGS = `pkg-config --cflags gtk+-2.0 dbus-glib-1`
+test_app_launch_LDFLAGS = `pkg-config --libs gtk+-2.0 dbus-glib-1`
 
 test_applet_SOURCES = test-applet.c
 test_applet_CFLAGS = `pkg-config --cflags gtk+-2.0`

@@ -23,7 +23,6 @@
 
 #include <gtk/gtk.h>
 #include <dbus/dbus-glib.h>
-#include <hildon-uri.h>
 
 static void
 launch_app(const gchar *app)
@@ -96,7 +95,7 @@ static void
 new_window_mail (GtkButton *button)
 {
   launch_app("");
-  hildon_uri_open("mailto:foo@bar.com", NULL, NULL);
+  //hildon_uri_open("mailto:foo@bar.com", NULL, NULL);
 }
 
 int
