@@ -398,8 +398,7 @@ hd_title_bar_init (HdTitleBar *bar)
     priv->progress_texture = hd_clutter_cache_get_texture(
                                                     HD_THEME_IMG_PROGRESS,
                                                     TRUE);
-    clutter_actor_set_clip (priv->progress_texture,
-                            0, 0,
+    clutter_actor_set_size (priv->progress_texture,
                             HD_THEME_IMG_PROGRESS_SIZE,
                             HD_THEME_IMG_PROGRESS_SIZE);
     clutter_container_add_actor(CLUTTER_CONTAINER(bar),

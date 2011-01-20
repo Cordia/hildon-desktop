@@ -486,7 +486,7 @@ set_background_common (HdHomeView *hview, ClutterActor *new_bg)
           clutter_actor_hide(new_bg);
           clutter_actor_show(CLUTTER_ACTOR(new_bg_sub));
 #else
-          clutter_actor_set_clip (new_bg, 0, 0, bg_width, bg_height);
+          clutter_actor_set_size (new_bg, bg_width, bg_height);
 #endif
         }
     }
