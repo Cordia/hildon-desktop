@@ -92,8 +92,8 @@
 #define LONG_PRESS_DUR 1
 
 /* for debugging dragging of home view backgrounds */
-#define DRAG_DEBUG(...)
-//#define DRAG_DEBUG g_debug
+//#define DRAG_DEBUG(...)
+#define DRAG_DEBUG g_debug
 
 enum
 {
@@ -1926,7 +1926,7 @@ hd_home_applet_motion (ClutterActor       *applet,
 		       ClutterMotionEvent *event,
 		       HdHome             *home)
 {
-  DRAG_DEBUG("%s. (x, y) = (%d, %d)", __FUNCTION__, event->x, event->y);
+  DRAG_DEBUG("%s. (x, y) = (%f, %f)", __FUNCTION__, event->x, event->y);
 
   if (!(event->modifier_state &
 	(CLUTTER_BUTTON1_MASK | CLUTTER_BUTTON2_MASK | CLUTTER_BUTTON2_MASK)))
