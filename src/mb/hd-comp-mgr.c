@@ -502,6 +502,9 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   DBusGConnection      *system_connection;
 #endif
   extern MBWindowManager *hd_mb_wm;
+  ClutterDeviceManager *manager;
+  ClutterInputDevice   *device;
+  ClutterEvent         *event;
 
   priv = hmgr->priv = g_new0 (HdCompMgrPrivate, 1);
 
@@ -514,6 +517,16 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   hd_gtk_style_init ();
 
   stage = clutter_stage_get_default ();
+
+  /* Workaround missing EnterNotify event on window creation */
+  manager = clutter_device_manager_get_default ();
+  device = clutter_device_manager_get_core_device (manager,
+                                                   CLUTTER_POINTER_DEVICE);
+  event = clutter_event_new (CLUTTER_MOTION);
+  event->motion.flags = CLUTTER_EVENT_FLAG_SYNTHETIC;
+  event->motion.stage = CLUTTER_STAGE(stage);
+  clutter_input_device_update_from_event (device, event, TRUE);
+  clutter_event_free (event);
 
   /*
    * Create the home group before the switcher, so the switcher can
