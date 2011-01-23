@@ -444,19 +444,19 @@ hd_home_desktop_do_release (HdHome *home)
         {
           if (priv->cumulative_x > 0)
             {
-              hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
               DRAG_DEBUG("drag to_previous, vel=%d", priv->velocity_x);
+              hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
             }
           else
             {
-              hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
               DRAG_DEBUG("drag to_next, vel=%d", priv->velocity_x);
+              hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
             }
         }
       else
         {
-          hd_home_view_container_scroll_back (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
           DRAG_DEBUG("drag scroll_back, vel=%d", priv->velocity_x);
+          hd_home_view_container_scroll_back (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
         }
     }
   else if (!priv->long_press && hd_render_manager_get_state() == HDRM_STATE_HOME &&
