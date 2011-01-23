@@ -379,7 +379,7 @@ hd_home_desktop_do_motion (HdHome *home,
 
   drag_item = g_malloc(sizeof(HdHomeDrag));
   drag_item->period = g_timer_elapsed(priv->last_move_time, NULL);
-  g_timer_reset(priv->last_move_time);
+  g_timer_start(priv->last_move_time);
 
   if(!STATE_IS_PORTRAIT(hd_render_manager_get_state ())
         || !priv->vertical_scrolling )
@@ -703,7 +703,7 @@ hd_home_desktop_do_press (HdHome *home,
   priv->last_y = y;
   priv->cumulative_y = 0;
   priv->velocity_y = 0;
-  g_timer_reset(priv->last_move_time);
+  g_timer_start(priv->last_move_time);
   /* Make sure drag history is clear */
   g_list_foreach(priv->drag_list, (GFunc)g_free, 0);
   g_list_free(priv->drag_list);
