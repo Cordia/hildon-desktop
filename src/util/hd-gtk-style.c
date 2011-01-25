@@ -21,11 +21,12 @@
  *
  */
 
-#include <hd-gtk-style.h>
-
+#include <cogl/cogl.h>
 #include <clutter/clutter.h>
 #include <gtk/gtk.h>
 #include <string.h>
+
+#include "hd-gtk-style.h"
 
 enum {
   HD_GTK_STYLE_FG,
@@ -69,10 +70,11 @@ static void
 hd_gtk_style_to_clutter_color(CoglColor          *dst,
                               const GdkColor     *src)
 {
-  cogl_color_set_red   (dst, CLAMP ((src->red   / 65535.0), 0.0f, 1.0f));
-  cogl_color_set_green (dst, CLAMP ((src->green / 65535.0), 0.0f, 1.0f));
-  cogl_color_set_blue  (dst, CLAMP ((src->blue  / 65535.0), 0.0f, 1.0f));
-  cogl_color_set_alpha (dst, 1.0f);
+  cogl_color_set_from_4f (dst,
+                          CLAMP ((src->red   / 65535.0), 0.0f, 1.0f),
+                          CLAMP ((src->green / 65535.0), 0.0f, 1.0f),
+                          CLAMP ((src->blue  / 65535.0), 0.0f, 1.0f),
+                          1.0f);
 }
 
 static void

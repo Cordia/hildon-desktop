@@ -121,6 +121,7 @@ if test "$ac_cv_enable_static_mb2" = yes; then
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
                        dbus-1 dnl
+                       dbus-glib-1 dnl
                        x11 dnl
                        xcomposite dnl
                        xfixes dnl
@@ -144,6 +145,7 @@ else
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
                        dbus-1 dnl
+                       dbus-glib-1 dnl
                        x11 dnl
                        xcomposite dnl
                        xfixes dnl
@@ -161,6 +163,7 @@ else
                        ])
 fi
 
+
 HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util -I$(top_srcdir)/src/a11y'
 
 # only CFLAGS are needed from MB2 since we are statically linking
@@ -168,6 +171,11 @@ AC_SUBST(MB2_CFLAGS)
 AC_SUBST(MB2_STATIC_LIB)
 
 AC_SUBST(HD_LIBS)
+
+if test "$ac_cv_enable_static_mb2" = yes; then
+        HD_LIBS+='-lexpat'
+fi
+
 AC_SUBST(HD_CFLAGS)
 AC_SUBST(HD_INCS)
 
@@ -181,7 +189,6 @@ src/util/Makefile
 src/a11y/Makefile
 src/a11y/launcher/Makefile
 src/a11y/home/Makefile
-src/a11y/tail/Makefile
 data/Makefile
 data/menu/Makefile
 data/applications/Makefile
