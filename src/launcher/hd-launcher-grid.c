@@ -32,6 +32,7 @@
 
 #include <cogl/cogl.h>
 #include <clutter/clutter.h>
+#include <hildon/hildon-defines.h>
 
 #include <tidy/tidy-adjustment.h>
 #include <tidy/tidy-interval.h>

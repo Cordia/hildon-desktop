@@ -4,20 +4,21 @@ GLIB_GENMARSHAL = `pkg-config --variable=glib_genmarshal glib-2.0`
 GLIB_MKENUMS = `pkg-config --variable=glib_mkenums glib-2.0`
 
 INCLUDES = \
-        -I$(top_srcdir)                 \
+	-I$(top_srcdir)                 \
 	-I$(top_srcdir)/src/		\
-        -DPREFIX=\""$(prefix)"\"        \
-        -DLIBDIR=\""$(libdir)"\"        \
-        -DG_DISABLE_DEPRECATED          \
-        -DG_LOG_DOMAIN=\"Tidy\"         \
+	-DPREFIX=\""$(prefix)"\"        \
+	-DLIBDIR=\""$(libdir)"\"        \
+	-DG_DISABLE_DEPRECATED          \
+	-DG_LOG_DOMAIN=\"Tidy\"         \
+	$(HD_INCS)			\
 	$(HD_CFLAGS)			\
 	$(MB2_CFLAGS)			\
-        $(NULL)
+	$(NULL)
 BUILT_SOURCES = \
-        tidy-enum-types.h       \
-        tidy-enum-types.c       \
-        tidy-marshal.h          \
-        tidy-marshal.c
+	tidy-enum-types.h       \
+	tidy-enum-types.c       \
+	tidy-marshal.h          \
+	tidy-marshal.c
 
 STAMP_FILES = stamp-tidy-marshal.h stamp-tidy-enum-types.h
 

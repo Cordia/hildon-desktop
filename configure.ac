@@ -15,6 +15,8 @@ AC_HEADER_STDC
 
 AC_HEADER_STDBOOL
 
+AC_CONFIG_SUBDIRS([clutter_0_8 libmatchbox2])
+
 AC_CHECK_HEADERS([ftw.h],
                  AC_DEFINE([HAVE_FTW_H], 1,
                            [Define to 1 if ftw.h is available]))
@@ -48,17 +50,6 @@ ALL_LINGUAS="en_GB"
 AC_SUBST(ALL_LINGUAS)
 AM_GLIB_GNU_GETTEXT
 AC_DEFINE(GETTEXT_PACKAGE, ["maemo-af-desktop"], [Localisation domain])
-
-# check if MB2 should be linked statically
-AC_ARG_ENABLE(static_mb2,
-             [  --enable-static-mb2  Link to MB2 statically [default=no]],
-             [ac_cv_enable_static_mb2=$enableval],[ac_cv_enable_static_mb2=no])
-AC_MSG_CHECKING([whether to statically link Matchbox2])
-if test "$ac_cv_enable_static_mb2" = yes; then
-       AC_MSG_RESULT(yes)
-else
-       AC_MSG_RESULT(no)
-fi
 
 # Use maemo-launcher?
 AC_ARG_ENABLE(maemo-launcher,
@@ -112,54 +103,31 @@ fi
 # Dependencies checks
 #+++++++++++++++++++++
 
-if test "$ac_cv_enable_static_mb2" = yes; then
-        PKG_CHECK_MODULES([MB2], [libmatchbox2-0.1])
-        MB2_STATIC_LIB=/usr/lib/libmatchbox2-0.1.a
-
-        PKG_CHECK_MODULES(HD, [clutter-1.0 dnl
-                       glib-2.0 >= 2.12 dnl
-                       gthread-2.0 dnl
-                       dbus-1 dnl
-                       x11 dnl
-                       xcomposite dnl
-                       xfixes dnl
-                       xrandr dnl
-                       gtk+-2.0 dnl
-                       gconf-2.0 dnl
-                       hildon-1 dnl
-                       libhildondesktop-1 dnl
-                       libcanberra dnl
-                       libgnome-menu dnl
-                       gdk-pixbuf-xlib-2.0 dnl
-                       pangoxft dnl
-                       xft dnl
-                       dnl MAEGO_DISABLED dsme dnl TODO HAVE_DSME Convert MCE to DSME
-                       ])
-else
-        MB2_CFLAGS=''
-        MB2_STATIC_LIB=''
-        PKG_CHECK_MODULES(HD, [clutter-1.0 dnl
-                       glib-2.0 >= 2.12 dnl
-                       gthread-2.0 dnl
-                       dbus-1 dnl
-                       x11 dnl
-                       xcomposite dnl
-                       xfixes dnl
-                       xrandr dnl
-                       gtk+-2.0 dnl
-                       gconf-2.0 dnl
-                       hildon-1 dnl
-                       libhildondesktop-1 dnl
-                       libcanberra dnl
-                       libgnome-menu dnl
-                       gdk-pixbuf-xlib-2.0 dnl
-                       xft dnl
-                       libmatchbox2-0.1 dnl
-                       dnl MAEGO_DISABLED dsme dnl TODO HAVE_DSME Convert MCE to DSME
-                       ])
-fi
+MB2_CFLAGS=''
+MB2_STATIC_LIB=''
+PKG_CHECK_MODULES(HD, [
+               glib-2.0 >= 2.12 dnl
+               gthread-2.0 dnl
+               dbus-1 dnl
+               x11 dnl
+               xcomposite dnl
+               xfixes dnl
+               xrandr dnl
+               gtk+-2.0 dnl
+               gconf-2.0 dnl
+               hildon-1 dnl
+               libhildondesktop-1 dnl
+               libcanberra dnl
+               libgnome-menu dnl
+               gdk-pixbuf-xlib-2.0 dnl
+			   pangoxft dnl
+               xft dnl
+               dnl MAEGO_DISABLED dsme dnl TODO HAVE_DSME Convert MCE to DSME
+               ])
 
 HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util -I$(top_srcdir)/src/a11y'
+HD_INCS+=' -I$(top_srcdir)/clutter_0_8 -I$(top_srcdir)/clutter_0_8/clutter -I$(top_srcdir)/libmatchbox2'
+AC_DEFINE(MAEMO_CHANGES, 1, [Use Maemo specific features])
 
 # only CFLAGS are needed from MB2 since we are statically linking
 AC_SUBST(MB2_CFLAGS)

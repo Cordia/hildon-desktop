@@ -1,0 +1,6 @@
+[submodule "libmatchbox2"]
+	path = libmatchbox2
+	url = git://gitorious.org/cordia/libmatchbox2.git
+[submodule "clutter_0_8"]
+	path = clutter_0_8
+	url = git://gitorious.org/fremantle-hildon-desktop/clutter_0_8.git

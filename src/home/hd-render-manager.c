@@ -2040,7 +2040,7 @@ void hd_render_manager_restack()
                      clutter_actor_raise_top(actor);
                      if (live_bg_actor && c->desktop == curr_view
                          && MB_WM_CLIENT_CLIENT_TYPE (c)
-                                             == HdWmClientTypeHomeApplet)
+                                             == (MBWMClientType) HdWmClientTypeHomeApplet)
                        clutter_actor_raise_top (live_bg_actor);
                     }
 #if STACKING_DEBUG

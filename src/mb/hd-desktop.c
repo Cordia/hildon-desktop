@@ -41,7 +41,7 @@ static MBWMStackLayerType
 hd_desktop_stacking_layer (MBWindowManagerClient *client);
 
 static void
-hd_desktop_stack (MBWindowManagerClient *client, int flags);
+hd_desktop_stack (MBWindowManagerClient *client, intptr_t flags);
 
 static void
 hd_desktop_class_init (MBWMObjectClass *klass)
@@ -170,7 +170,7 @@ hd_desktop_realize (MBWindowManagerClient *client)
 
 static void
 hd_desktop_stack (MBWindowManagerClient *client,
-		  int                    flags)
+		  intptr_t                    flags)
 {
   /* Stack to highest/lowest possible position in stack */
   HdCompMgr *hmgr = HD_COMP_MGR (client->wmref->comp_mgr);

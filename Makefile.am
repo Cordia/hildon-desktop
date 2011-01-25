@@ -1,4 +1,4 @@
-SUBDIRS = src data
+SUBDIRS = clutter_0_8 libmatchbox2 src data
 
 MAINTAINERCLEANFILES = aclocal.m4 compile config.guess config.sub configure depcomp install-sh ltmain.sh Makefile.in missing
 

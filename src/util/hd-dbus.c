@@ -64,7 +64,9 @@ hd_dbus_system_bus_signal_handler (DBusConnection *conn,
 {
   HdCompMgr  * hmgr = data;
   extern MBWindowManager *hd_mb_wm;
+#ifdef HAVE_DSME
   static gboolean call_active;
+#endif
 
   if (dbus_message_is_signal(msg, DSME_SIGNAL_INTERFACE,
 			     DSME_SHUTDOWN_SIGNAL_NAME))

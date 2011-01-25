@@ -2314,7 +2314,7 @@ is_status_menu_dialog (MBWindowManagerClient *c)
 gboolean
 hd_is_hildon_home_dialog (MBWindowManagerClient  *c)
 {
-  if (MB_WM_CLIENT_CLIENT_TYPE(c) == HdWmClientTypeAppMenu
+  if (MB_WM_CLIENT_CLIENT_TYPE(c) == (MBWMClientType) HdWmClientTypeAppMenu
       && !strcmp(c->window->name, "hildon-home"))
     return TRUE;
   if (MB_WM_CLIENT_CLIENT_TYPE(c) != MBWMClientTypeDialog)

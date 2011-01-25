@@ -32,6 +32,7 @@
 #include <glib-object.h>
 #include <clutter/clutter.h>
 #include <stdlib.h>
+#include <hildon/hildon-defines.h>
 
 #include "hd-gtk-style.h"
 #include "tidy/tidy-highlight.h"

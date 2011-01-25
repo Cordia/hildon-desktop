@@ -96,7 +96,7 @@ hd_gtk_style_get_color_component (HDGtkWidgetSingleton   widget_id,
     return;
   }
 
-  switch (component)
+  switch ((int)component)
     {
     case HD_GTK_STYLE_FG:
       gtk_color = style->fg[state];
