@@ -116,8 +116,8 @@ if test "$ac_cv_enable_static_mb2" = yes; then
         PKG_CHECK_MODULES([MB2], [libmatchbox2-0.1])
         MB2_STATIC_LIB='$(libdir)/libmatchbox2-0.1.a'
 
-        PKG_CHECK_MODULES(HD, [clutter-1.0 dnl
-                       mx-1.0 >= 0.99.0 dnl
+        PKG_CHECK_MODULES(HD, [clutter-1.0 < 1.5 dnl 1.5.x is broken
+                       mx-1.0 <= 1.1.2 dnl 1.1.3+ requires clutter 1.5
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
                        dbus-1 dnl
@@ -139,8 +139,8 @@ if test "$ac_cv_enable_static_mb2" = yes; then
 else
         MB2_CFLAGS=''
         MB2_STATIC_LIB=''
-        PKG_CHECK_MODULES(HD, [clutter-1.0 dnl
-                       mx-1.0 >= 0.99.0 dnl
+        PKG_CHECK_MODULES(HD, [clutter-1.0 < 1.5 dnl 1.5.x is broken
+                       mx-1.0 <= 1.1.2 dnl 1.1.3+ requires clutter 1.5
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
                        dbus-1 dnl
