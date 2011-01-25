@@ -563,6 +563,7 @@ hd_launcher_tile_set_glow(HdLauncherTile *tile, gboolean glow, gboolean hard)
                           cogl_color_get_green_float (&glow_col),
                           cogl_color_get_blue_float (&glow_col),
                           cogl_color_get_alpha_float(&glow_col) * glow_brightness);
+
 #ifdef MAEGO_DISABLED
   if (priv->icon_glow)
     tidy_highlight_set_color(priv->icon_glow, &glow_col);
