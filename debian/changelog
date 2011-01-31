@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.141-5) unstable; urgency=low
+
+  * Bumped version number.
+
+ -- Mohammad Abu-Garbeyyeh <mohammad@mohammad-i5laptop>  Mon, 31 Jan 2011 14:05:15 +0200
+
 hildon-desktop (1:2.2.141-4) unstable; urgency=low
 
   * Register key-schemas to gconf, otherwise keyboard shortcuts are lost.
