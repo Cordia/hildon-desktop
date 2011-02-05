@@ -5,9 +5,8 @@
 
   <Name>Main</Name>
 
-  <!-- Search only in the hildon directory. -->
-  <AppDir>/usr/share/applications/hildon</AppDir>
-  <DirectoryDir>/usr/share/applications/hildon</DirectoryDir>
+  <DefaultAppDirs/>
+  <DefaultDirectoryDirs/>
 
   <Include>
     <All/>

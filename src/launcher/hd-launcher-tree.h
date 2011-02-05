@@ -83,8 +83,8 @@ void hd_launcher_tree_ensure_user_menu (void);
   "<Menu>\n" \
   "\t<Name>Main</Name>\n" \
   "\t<MergeFile type=\"parent\">/etc/xdg/menus/hildon.menu</MergeFile>\n" \
-  "\t<AppDir>%s/applications/hildon</AppDir>\n" \
-  "\t<DirectoryDir>%s/applications/hildon</DirectoryDir>\n\n"
+  "\t<AppDir>%s/applications</AppDir>\n" \
+  "\t<DirectoryDir>%s/applications</DirectoryDir>\n\n"
 #define HD_LAUNCHER_MENU_END \
   "\t<MergeDir>%s/menus/hildon</MergeDir>\n\n" \
   "</Menu>\n"
