@@ -103,7 +103,14 @@
  * except gaps between thumbnails (naturally) and and enlarged close
  * button reaction area.  1-2 thumbnails are LARGE, 3-6 are MEDIUM
  * and the rest are SMALL.
+ *
+ * SINGLE = Bigger task switcher (see thp_tweaks), single column layout
+ * TWOCOL = Bigger task switcher (see thp_tweaks), two-column layout
  */
+#define THUMB_SINGLE_WIDTH        600
+#define THUMB_SINGLE_HEIGHT       373
+#define THUMB_TWOCOL_WIDTH        344
+#define THUMB_TWOCOL_HEIGHT       214
 #define THUMB_LARGE_WIDTH         344
 #define THUMB_LARGE_HEIGHT        214
 #define THUMB_MEDIUM_WIDTH        224
@@ -203,6 +210,15 @@
   ((apthumb)->dialogs && (apthumb)->dialogs->len > 0)
 
 #define THUMBSIZE_IS(what)            (Thumbsize == &Thumbsizes.what)
+
+/**
+ * The Bigger task switcher (see thp_tweaks) assumes that both the single
+ * and two-column thumb sizes are treated as large by the rest of the code
+ */
+#define THUMBSIZE_IS_LARGE            (Thumbsize == &Thumbsizes.large || \
+                                       Thumbsize == &Thumbsizes.single || \
+                                       Thumbsize == &Thumbsizes.twocol)
+
 #define FLY(ops, how)                 ((ops) == &Fly_##how)
 /* Macros }}} */
 
@@ -568,8 +584,13 @@ typedef struct
 
 /* Private constantsa {{{ */
 /* Possible thumbnail sizes. */
-static const struct { GtkRequisition small, medium, large; } Thumbsizes =
+static const struct
 {
+    GtkRequisition small, medium, large, single, twocol;
+} Thumbsizes =
+{
+  .single = { THUMB_SINGLE_WIDTH, THUMB_SINGLE_HEIGHT },
+  .twocol = { THUMB_TWOCOL_WIDTH, THUMB_TWOCOL_HEIGHT },
   .large  = { THUMB_LARGE_WIDTH,  THUMB_LARGE_HEIGHT  },
   .medium = { THUMB_MEDIUM_WIDTH, THUMB_MEDIUM_HEIGHT },
   .small  = { THUMB_SMALL_WIDTH,  THUMB_SMALL_HEIGHT  },
@@ -1755,28 +1776,49 @@ static void
 calc_layout (Layout * lout)
 {
   guint nrows_per_page;
+  int tweak_taskswitcher = hd_transition_get_int("thp_tweaks",
+                                                 "taskswitcher", 0);
 
   /* Figure out how many thumbnails to squeeze into one row
    * (not the last one, which may be different) and the maximum
    * number of fully visible rows at a time. */
-  if (NThumbnails <= 3)
+
+  if (tweak_taskswitcher == 1)
     {
-      lout->thumbsize = NThumbnails <= 2
-        ? &Thumbsizes.large : &Thumbsizes.medium;
-      lout->cells_per_row = NThumbnails;
+      /* Single-column "big" layout */
+      lout->thumbsize = &Thumbsizes.single;
+      lout->cells_per_row = 1;
       nrows_per_page = 1;
     }
-  else if (NThumbnails <= 6)
+  else if (tweak_taskswitcher == 2)
     {
-      lout->thumbsize = &Thumbsizes.medium;
-      lout->cells_per_row = 3;
-      nrows_per_page = 2;
+      /* Two-column layout */
+      lout->thumbsize = &Thumbsizes.twocol;
+      lout->cells_per_row = NThumbnails < 2 ? 1 : 2;
+      nrows_per_page = NThumbnails <= 2 ? 1 : 2;
     }
   else
     {
-      lout->thumbsize = &Thumbsizes.small;
-      lout->cells_per_row = 4;
-      nrows_per_page = NThumbnails <= 8 ? 2 : 3;
+      /* The original Maemo 5 layout method */
+      if (NThumbnails <= 3)
+        {
+          lout->thumbsize = NThumbnails <= 2
+            ? &Thumbsizes.large : &Thumbsizes.medium;
+          lout->cells_per_row = NThumbnails;
+          nrows_per_page = 1;
+        }
+      else if (NThumbnails <= 6)
+        {
+          lout->thumbsize = &Thumbsizes.medium;
+          lout->cells_per_row = 3;
+          nrows_per_page = 2;
+        }
+      else
+        {
+          lout->thumbsize = &Thumbsizes.small;
+          lout->cells_per_row = 4;
+          nrows_per_page = NThumbnails <= 8 ? 2 : 3;
+        }
     }
 
   /*
@@ -1862,7 +1904,7 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
   hleft = hmax - NOTE_BOTTOM_MARGIN;
 
   /* Determine the icon size and the gap between .time and .message. */
-  if (THUMBSIZE_IS (large))
+  if (THUMBSIZE_IS_LARGE)
     {
       isize  = ICON_FINGER;
       msgdiv = MARGIN_DEFAULT;
@@ -1907,7 +1949,7 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
   /* Size and locate the notwin's guts. */
   /* .icon, .count: separated by a margin and centered together. */
   clutter_label_set_font_name (CLUTTER_LABEL (tnote->count),
-                   THUMBSIZE_IS (large) ? LargeSystemFont : SystemFont);
+                   THUMBSIZE_IS_LARGE ? LargeSystemFont : SystemFont);
   clutter_actor_get_size (tnote->count, &width, &height);
   xicon  = (wmax - (isize + NOTE_ICON_GAP + width)) / 2;
   ycount = (isize-height) / 2;
@@ -1918,7 +1960,7 @@ layout_notwin (Thumbnail * thumb, const GtkRequisition * oldthsize,
   if (FLY (ops, smoothly))
     clutter_actor_get_size (tnote->time, &worig, &horig);
   clutter_label_set_font_name (CLUTTER_LABEL (tnote->time),
-                   THUMBSIZE_IS (large) ? SystemFont : SmallSystemFont);
+                   THUMBSIZE_IS_LARGE ? SystemFont : SmallSystemFont);
   clutter_actor_set_size (tnote->time, -1, -1);
   clutter_actor_get_size (tnote->time, &width, &htime);
   if (width > wmax)
@@ -3503,7 +3545,7 @@ tnote_changed (HdNote * hdnote, int unused1, TNote * tnote)
         { /* Ignore further errors. */
           clutter_container_remove_actor (CLUTTER_CONTAINER (tnote->notwin),
                                           tnote->icon);
-          tnote->icon = get_icon (iname, THUMBSIZE_IS (large)
+          tnote->icon = get_icon (iname, THUMBSIZE_IS_LARGE
                                   ? ICON_FINGER : ICON_STYLUS);
           clutter_container_add_actor (CLUTTER_CONTAINER (tnote->notwin),
                                        tnote->icon);
