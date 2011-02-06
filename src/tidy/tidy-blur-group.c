@@ -69,6 +69,18 @@ const char *BLUR_FRAGMENT_SHADER =
 "       texture2D (tex, vec2(tex_coord.x, tex_coord.y)) * 0.5; \n"
 "  gl_FragColor = color;\n"
 "}\n";
+/* This is the same as above, but we don't mix in other pixels' data */
+const char *BLUR_FRAGMENT_SHADER_BLURLESS =
+"precision lowp float;\n"
+"varying mediump vec2  tex_coord;\n"
+"varying mediump vec2  tex_coord_a;\n"
+"varying mediump vec2  tex_coord_b;\n"
+"uniform lowp sampler2D tex;\n"
+"void main () {\n"
+"  lowp vec4 color = \n"
+"       texture2D (tex, vec2(tex_coord.x, tex_coord.y)); \n"
+"  gl_FragColor = color;\n"
+"}\n";
 const char *BLUR_VERTEX_SHADER =
   "/* Per vertex attributes */\n"
     "attribute vec4     vertex_attrib;\n"
@@ -115,6 +127,7 @@ const char *SATURATE_FRAGMENT_SHADER =
 "}\n";
 #else
 const char *BLUR_FRAGMENT_SHADER = "";
+const char *BLUR_FRAGMENT_SHADER_BLURLESS = "";
 const char *BLUR_VERTEX_SHADER = "";
 const char *SATURATE_FRAGMENT_SHADER = "";
 #endif /* HAS_GLES */
@@ -154,6 +167,9 @@ struct _TidyBlurGroupPrivate
 
   /* don't progress the animation for one clutter_actor_paint() */
   gboolean skip_progress;
+
+  /* is the 'blurless desaturation' tweak enabled? */
+  gboolean tweaks_blurless;
 };
 
 /**
@@ -262,8 +278,14 @@ tidy_blur_group_allocate_textures (TidyBlurGroup *self)
   /* (Re)create the textures + offscreen buffers.  Downsample by 2.
    * We can specify mipmapping here, but we don't need it. */
   clutter_actor_get_size(CLUTTER_ACTOR(self), &tex_width, &tex_height);
-  tex_width  /= 2;
-  tex_height /= 2;
+
+  /* if we want blurless desaturation, don't downsample (downsampling
+   * makes the image look a bit blurry even with blurring disabled) */
+  if (!priv->tweaks_blurless)
+    {
+      tex_width  /= 2;
+      tex_height /= 2;
+    }
 
   priv->tex_a = cogl_texture_new_with_size(
             tex_width, tex_height, 0, FALSE /* mipmap */,
@@ -524,11 +546,18 @@ tidy_blur_group_paint (ClutterActor *actor)
 
       if (priv->use_shader && priv->shader_blur)
         {
-          clutter_shader_set_is_enabled (priv->shader_blur, TRUE);
-          clutter_shader_set_uniform_1f (priv->shader_blur, "blurx",
-                                         1.0f / tex_width);
-          clutter_shader_set_uniform_1f (priv->shader_blur, "blury",
-                                         1.0f / tex_height);
+          if (priv->tweaks_blurless)
+            {
+              clutter_shader_set_is_enabled (priv->shader_blur, FALSE);
+            }
+          else
+            {
+              clutter_shader_set_is_enabled (priv->shader_blur, TRUE);
+              clutter_shader_set_uniform_1f (priv->shader_blur, "blurx",
+                                             1.0f / tex_width);
+              clutter_shader_set_uniform_1f (priv->shader_blur, "blury",
+                                             1.0f / tex_height);
+            }
         }
 
       if (priv->use_shader)
@@ -654,8 +683,17 @@ skip_progress:
   if (priv->use_shader && priv->shader_saturate)
     {
       clutter_shader_set_is_enabled (priv->shader_saturate, TRUE);
-      clutter_shader_set_uniform_1f (priv->shader_saturate, "saturation",
-                                     priv->saturation);
+
+      if (priv->tweaks_blurless)
+        {
+          clutter_shader_set_uniform_1f (priv->shader_saturate, "saturation",
+                                         0);
+        }
+      else
+        {
+          clutter_shader_set_uniform_1f (priv->shader_saturate, "saturation",
+                                         priv->saturation);
+        }
     }
 
   cogl_color (&col);
@@ -866,6 +904,7 @@ tidy_blur_group_init (TidyBlurGroup *self)
   priv->use_alpha = TRUE;
   priv->use_mirror = FALSE;
   priv->source_changed = TRUE;
+  priv->tweaks_blurless = hd_transition_get_int("thp_tweaks", "blurless", 0);
 
 #if CLUTTER_COGL_HAS_GLES
   priv->use_shader = cogl_features_available(COGL_FEATURE_SHADERS_GLSL);
@@ -909,8 +948,17 @@ tidy_blur_group_init (TidyBlurGroup *self)
       CHEQUER_SIZE,
       dither_data);
 
-  tidy_blur_group_check_shader(self, &priv->shader_blur,
-                               BLUR_FRAGMENT_SHADER, BLUR_VERTEX_SHADER);
+  if (priv->tweaks_blurless)
+    {
+      tidy_blur_group_check_shader(self, &priv->shader_blur,
+                                   BLUR_FRAGMENT_SHADER_BLURLESS, BLUR_VERTEX_SHADER);
+    }
+  else
+    {
+      tidy_blur_group_check_shader(self, &priv->shader_blur,
+                                   BLUR_FRAGMENT_SHADER, BLUR_VERTEX_SHADER);
+    }
+
   tidy_blur_group_check_shader(self, &priv->shader_saturate,
                                SATURATE_FRAGMENT_SHADER, 0);
 
