@@ -46,10 +46,6 @@
 
 #define HD_LAUNCHER_TILE_GET_PRIVATE(obj)       (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HD_TYPE_LAUNCHER_TILE, HdLauncherTilePrivate))
 
-#define HD_LAUNCHER_TILE_FONT "Nokia Sans 15"
-/* We don't use a font from the theme here because apparently there are none the
- * size we want, and we don't want to add another logical font to gtkrc. */
-
 #define HD_LAUNCHER_TILE_LONG_PRESS_DUR (1000)
 
 struct _HdLauncherTilePrivate
@@ -408,6 +404,7 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
   HdLauncherTilePrivate *priv = HD_LAUNCHER_TILE_GET_PRIVATE (tile);
   ClutterUnit label_width;
   guint label_height, label_width_px;
+  gchar *tile_font = NULL;
 
   if (!text)
     return;
@@ -424,7 +421,10 @@ hd_launcher_tile_set_text (HdLauncherTile *tile,
       clutter_actor_destroy (priv->label);
     }
 
-  priv->label = clutter_label_new_full (HD_LAUNCHER_TILE_FONT, priv->text, &text_color);
+  tile_font = hd_transition_get_string("task_nav", "tile_font", "Nokia Sans 15");
+
+  priv->label = clutter_label_new_full (tile_font, priv->text, &text_color);
+  g_free (tile_font);
   clutter_actor_set_name(priv->label, "HdLauncherTile::label");
 
   /* FIXME: This is a huge work-around because clutter/pango do not
