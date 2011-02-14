@@ -1,3 +1,15 @@
+hildon-desktop (1:2.2.142-7) unstable; urgency=low
+
+  * Applied thp's patches to configure font in application launcher.
+
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Mon, 14 Feb 2011 03:12:10 +0200
+
+hildon-desktop (1:2.2.142-6) unstable; urgency=low
+
+  * Applied thp's configurable patches (Desaturation and task manager).
+
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Sun,  6 Feb 2011 21:32:57 +0200
+
 hildon-desktop (1:2.2.142-5) unstable; urgency=low
 
   * Bumped version number to *142*.
