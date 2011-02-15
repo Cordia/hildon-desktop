@@ -793,10 +793,14 @@ on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
 
   actor = CLUTTER_ACTOR(hd_render_manager_get());
   clutter_actor_set_rotation(actor,
-      hd_comp_mgr_is_portrait () ? CLUTTER_Z_AXIS : CLUTTER_Z_AXIS,
+      hd_comp_mgr_is_portrait () ? CLUTTER_Y_AXIS : CLUTTER_X_AXIS,
       frame_num < n_frames ? angle : 0,
       hd_comp_mgr_get_current_screen_width()/2,
       hd_comp_mgr_get_current_screen_height()/2, 0);
+  clutter_actor_set_depthu(actor, -CLUTTER_FLOAT_TO_FIXED(amt*150));
+  /* use this actor to dim out the screen */
+  clutter_actor_raise_top(data->particles[0]);
+  clutter_actor_set_opacity(data->particles[0], (int)(dim_amt*255));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1390,6 +1394,33 @@ hd_transition_fade_and_rotate(gboolean first_part,
    * go back to landscape as it looks better */
   if (first_part == goto_portrait)
     data->angle *= -1;
+  /* Add the actor we use to dim out the screen */
+  data->particles[0] = g_object_ref(clutter_rectangle_new_with_color(&black));
+  clutter_actor_set_name(data->particles[0], "black rotation background");
+  clutter_actor_set_size(data->particles[0],
+      hd_comp_mgr_get_current_screen_width (),
+      hd_comp_mgr_get_current_screen_height ());
+  clutter_container_add_actor(
+            CLUTTER_CONTAINER(clutter_stage_get_default()),
+            data->particles[0]);
+  clutter_actor_show(data->particles[0]);
+  if (!goto_portrait && first_part)
+    {
+      /* Add the actor we use to mask out the landscape part of the screen in the
+       * portrait half of the animation. This is pretty nasty, but as the home
+       * applets aren't repositioned they can sometimes be seen in the background.*/
+       data->particles[1] = g_object_ref(clutter_rectangle_new_with_color(&black));
+       clutter_actor_set_name(data->particles[1], "other rotation background");
+       clutter_actor_set_position(data->particles[1],
+           HD_COMP_MGR_LANDSCAPE_HEIGHT, 0);
+       clutter_actor_set_size(data->particles[1],
+           HD_COMP_MGR_LANDSCAPE_WIDTH-HD_COMP_MGR_LANDSCAPE_HEIGHT,
+           HD_COMP_MGR_LANDSCAPE_HEIGHT);
+       clutter_container_add_actor(
+                 CLUTTER_CONTAINER(hd_render_manager_get()),
+                 data->particles[1]);
+       clutter_actor_show(data->particles[1]);
+    }
 
   /* stop flicker by calling the first frame directly */
   on_rotate_screen_timeline_new_frame(data->timeline, 0, data);
@@ -1653,7 +1684,8 @@ trans_start_error:
 
           /* Reset values in case for some reason the timeline failed to do it */
           actor = CLUTTER_ACTOR(hd_render_manager_get());
-          clutter_actor_set_rotation(actor, CLUTTER_Z_AXIS, 0, 0, 0, 0);
+          clutter_actor_set_rotation(actor, CLUTTER_X_AXIS, 0, 0, 0, 0);
+          clutter_actor_set_rotation(actor, CLUTTER_Y_AXIS, 0, 0, 0, 0);
           clutter_actor_set_depthu(actor, 0);
 
           Orientation_change.phase = IDLE;
