@@ -1371,7 +1371,7 @@ hd_transition_fade_and_rotate(gboolean first_part,
                               GCallback finished_callback,
                               gpointer finished_callback_data)
 {
-  ClutterColor black = {0x00, 0x00, 0x00, 0xFF};
+  //ClutterColor black = {0x00, 0x00, 0x00, 0xFF};
   HDEffectData *data = g_new0 (HDEffectData, 1);
   data->event = first_part ? MBWMCompMgrClientEventMap :
                              MBWMCompMgrClientEventUnmap;
