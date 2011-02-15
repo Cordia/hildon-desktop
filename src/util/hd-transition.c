@@ -775,6 +775,7 @@ on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
 {
   float amt, dim_amt, angle;
   gint n_frames;
+  gint use_zaxis = hd_transition_get_int ("thp_tweaks", "zaxisrotation", 0);
   ClutterActor *actor;
 
   n_frames = clutter_timeline_get_n_frames(timeline);
@@ -792,15 +793,19 @@ on_rotate_screen_timeline_new_frame(ClutterTimeline *timeline,
   angle = data->angle * amt;
 
   actor = CLUTTER_ACTOR(hd_render_manager_get());
-  clutter_actor_set_rotation(actor,
-      hd_comp_mgr_is_portrait () ? CLUTTER_Y_AXIS : CLUTTER_X_AXIS,
+  clutter_actor_set_rotation(actor, use_zaxis ? CLUTTER_Z_AXIS :
+      (hd_comp_mgr_is_portrait () ? CLUTTER_Y_AXIS : CLUTTER_X_AXIS),
       frame_num < n_frames ? angle : 0,
       hd_comp_mgr_get_current_screen_width()/2,
       hd_comp_mgr_get_current_screen_height()/2, 0);
-  clutter_actor_set_depthu(actor, -CLUTTER_FLOAT_TO_FIXED(amt*150));
-  /* use this actor to dim out the screen */
-  clutter_actor_raise_top(data->particles[0]);
-  clutter_actor_set_opacity(data->particles[0], (int)(dim_amt*255));
+
+  if (!use_zaxis)
+    {
+      clutter_actor_set_depthu(actor, -CLUTTER_FLOAT_TO_FIXED(amt*150));
+      /* use this actor to dim out the screen */
+      clutter_actor_raise_top(data->particles[0]);
+      clutter_actor_set_opacity(data->particles[0], (int)(dim_amt*255));
+    }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1376,6 +1381,7 @@ hd_transition_fade_and_rotate(gboolean first_part,
                               gpointer finished_callback_data)
 {
   ClutterColor black = {0x00, 0x00, 0x00, 0xFF};
+  gint use_zaxis = hd_transition_get_int ("thp_tweaks", "zaxisrotation", 0);
   HDEffectData *data = g_new0 (HDEffectData, 1);
   data->event = first_part ? MBWMCompMgrClientEventMap :
                              MBWMCompMgrClientEventUnmap;
@@ -1394,17 +1400,22 @@ hd_transition_fade_and_rotate(gboolean first_part,
    * go back to landscape as it looks better */
   if (first_part == goto_portrait)
     data->angle *= -1;
-  /* Add the actor we use to dim out the screen */
-  data->particles[0] = g_object_ref(clutter_rectangle_new_with_color(&black));
-  clutter_actor_set_name(data->particles[0], "black rotation background");
-  clutter_actor_set_size(data->particles[0],
-      hd_comp_mgr_get_current_screen_width (),
-      hd_comp_mgr_get_current_screen_height ());
-  clutter_container_add_actor(
-            CLUTTER_CONTAINER(clutter_stage_get_default()),
-            data->particles[0]);
-  clutter_actor_show(data->particles[0]);
-  if (!goto_portrait && first_part)
+
+  if (!use_zaxis)
+    {
+      /* Add the actor we use to dim out the screen */
+      data->particles[0] = g_object_ref(clutter_rectangle_new_with_color(&black));
+      clutter_actor_set_name(data->particles[0], "black rotation background");
+      clutter_actor_set_size(data->particles[0],
+          hd_comp_mgr_get_current_screen_width (),
+          hd_comp_mgr_get_current_screen_height ());
+      clutter_container_add_actor(
+                CLUTTER_CONTAINER(clutter_stage_get_default()),
+                data->particles[0]);
+      clutter_actor_show(data->particles[0]);
+    }
+
+  if (!goto_portrait && first_part && !use_zaxis)
     {
       /* Add the actor we use to mask out the landscape part of the screen in the
        * portrait half of the animation. This is pretty nasty, but as the home
@@ -1684,6 +1695,9 @@ trans_start_error:
 
           /* Reset values in case for some reason the timeline failed to do it */
           actor = CLUTTER_ACTOR(hd_render_manager_get());
+          /* Reset all the values, just in case someone messed with zaxisrotation
+           * while a transition took place. Unlikely, but better safe than sorry. */
+          clutter_actor_set_rotation(actor, CLUTTER_Z_AXIS, 0, 0, 0, 0);
           clutter_actor_set_rotation(actor, CLUTTER_X_AXIS, 0, 0, 0, 0);
           clutter_actor_set_rotation(actor, CLUTTER_Y_AXIS, 0, 0, 0, 0);
           clutter_actor_set_depthu(actor, 0);
