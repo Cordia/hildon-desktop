@@ -1070,7 +1070,8 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
         continue;
 
       mb_wm_client_update_portrait_flags (c, portrait_freshness_counter);
-      if (!c->portrait_supported)
+      if (!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
+              && !c->portrait_supported)
         {
           hd_transition_rotate_screen (wm, FALSE);
           break;
@@ -3209,14 +3210,16 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
       /* Get @portrait_supported/requested updated. */
       mb_wm_client_update_portrait_flags (c, portrait_freshness_counter);
       PORTRAIT ("SUPPORT IS %d", c->portrait_supported);
-      if (!c->portrait_supported)
+      if (!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
+              && !c->portrait_supported)
         return FALSE;
       any_supports  = TRUE;
       any_requests |= c->portrait_requested != 0;
       if (!c->portrait_requested && !c->portrait_requested_inherited)
         { /* Client explicity !REQUESTED portrait, obey. */
           PORTRAIT ("PROHIBITED");
-          return FALSE;
+          if (!hd_transition_get_int("thp_tweaks", "forcerotation", 0))
+              return FALSE;
         }
 
       /*
@@ -3317,7 +3320,9 @@ hd_comp_mgr_client_supports_portrait (MBWindowManagerClient *mbwmc)
 {
   /* Don't mess with hd_comp_mgr_should_be_portrait()'s @counter. */
   mb_wm_client_update_portrait_flags (mbwmc, G_MAXUINT);
-  return mbwmc->portrait_supported;
+
+  return hd_transition_get_int("thp_tweaks", "forcerotation", 0) ?
+      TRUE : mbwmc->portrait_supported;
 }
 
 static void
