@@ -92,6 +92,8 @@ hd_render_manager_state_get_type (void)
         { HDRM_STATE_LOADING,        "HDRM_STATE_LOADING",        "Loading" },
         { HDRM_STATE_LOADING_SUBWIN, "HDRM_STATE_LOADING_SUBWIN", "Loading Subwindow" },
         { HDRM_STATE_AFTER_TKLOCK, "HDRM_STATE_AFTER_TKLOCK", "After tklock" },
+        { HDRM_STATE_LAUNCHER_PORTRAIT,       "HDRM_STATE_LAUNCHER_PORTRAIT",
+          "Task launcher in portrait mode" },
         { 0, NULL, NULL }
       };
 
@@ -857,7 +859,7 @@ void hd_render_manager_sync_clutter_before ()
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         /* Fixed NB#140723 - Task Launcher background should not un-blur
          *                   and un-dim when launching new app */
-        if (priv->previous_state==HDRM_STATE_LAUNCHER)
+        if (STATE_IS_LAUNCHER (priv->previous_state))
           blur |= HDRM_BLUR_HOME;
         break;
       case HDRM_STATE_APP:
@@ -873,6 +875,7 @@ void hd_render_manager_sync_clutter_before ()
                  HDRM_SHOW_TASK_NAV;
         break;
       case HDRM_STATE_LAUNCHER:
+      case HDRM_STATE_LAUNCHER_PORTRAIT:
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         blur |=
             HDRM_BLUR_HOME |
@@ -895,7 +898,14 @@ void hd_render_manager_sync_clutter_before ()
   if (STATE_IS_PORTRAIT(priv->state))
     btn_state |= HDTB_VIS_SMALL_BUTTONS;
 
-  if (STATE_SHOW_OPERATOR(priv->state))
+  /* When transitioning out of a LAUNCHER_PORTRAIT state, we need to show
+   * the operator after the rotation to HOME is finished, or it will show up the
+   * operator name in the upper-right corner at the rotation beginning. We
+   * don't want it, so we check it in %hd_render_manager_sync_clutter_before()
+   * and update the operator actor at %hd_render_manager_sync_clutter_after()
+   * when needed */
+  if (STATE_SHOW_OPERATOR(priv->state) &&
+      (priv->previous_state != HDRM_STATE_LAUNCHER_PORTRAIT))
     clutter_actor_show(priv->operator);
   else
     clutter_actor_hide(priv->operator);
@@ -1001,6 +1011,16 @@ static
 void hd_render_manager_sync_clutter_after ()
 {
   HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  /* When transitioning out of a LAUNCHER_PORTRAIT state, we need to show the
+   * operator after the rotation to HOME is finished, or it will show up the
+   * operator name in the upper-right corner at the rotation beginning. We
+   * don't want it, so we check it in %hd_render_manager_sync_clutter_before()
+   * and update the operator actor at %hd_render_manager_sync_clutter_after()
+   * when needed */
+  if (STATE_SHOW_OPERATOR(priv->state) &&
+      (priv->previous_state == HDRM_STATE_LAUNCHER_PORTRAIT))
+    clutter_actor_show (priv->operator);
 
   if (STATE_BLUR_BUTTONS(priv->state) &&
       clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) !=
@@ -1434,7 +1454,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                 goto_tasw_now   = TRUE;
             }
 
-          /* Switch to tasw when we've really exited portarit mode. */
+          /* Switch to tasw when we've really exited portrait mode. */
           hd_transition_rotate_screen_and_change_state (goto_tasw_later
                           ? HDRM_STATE_TASK_NAV : HDRM_STATE_UNDEFINED);
 
@@ -1445,14 +1465,42 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                * you have a sysmodal and hit CTRL-Backspace (we go to HOME),
                * but whatever.  Try to stick with portrait if we were there
                * and hope that we will recover if we eventually shouldn't.
-               * This is to avoid a visible rountrip to p->l->p if we should.
+               * This is to avoid a visible roundtrip to p->l->p if we should.
                */
-              state = priv->state =
-                goto_tasw_later && (oldstate & (HDRM_STATE_APP_PORTRAIT|HDRM_STATE_NON_COMP_PORT))
-                  ? HDRM_STATE_APP
-                  : STATE_IS_PORTRAIT (oldstate)
-                    ? HDRM_STATE_HOME_PORTRAIT
-                    : HDRM_STATE_HOME;
+
+              if (goto_tasw_later && STATE_ONE_OF (oldstate,
+                    (HDRM_STATE_APP_PORTRAIT | HDRM_STATE_NON_COMP_PORT)))
+                {
+                  state = priv->state = HDRM_STATE_APP;
+                }
+              else
+                {
+                  /* Keep current orientation for next HOME transition ... */
+                  HdRunningAppState next_home_state =
+                    (STATE_IS_PORTRAIT (oldstate) ?
+                      HDRM_STATE_HOME_PORTRAIT : HDRM_STATE_HOME);
+
+
+                  /* ... unless it's from LAUNCHER_POTRAIT, in which case go
+                   * directly to landscaped HOME.
+                   *
+                   * This is valid until HOME in portrait mode will be fully
+                   * implemented (not only a temporary state).
+                   *
+                   * Fixes a transition from LAUNCHER_POTRAIT to HOME_PORTRAIT
+                   * where HOME was showed in portrait mode when actually it
+                   * does not support it (ie very ugly result), forcing HOME
+                   * in landscape */
+                  if (oldstate != HDRM_STATE_LAUNCHER_PORTRAIT)
+                    next_home_state = HDRM_STATE_HOME;
+
+                  next_home_state =
+                    (HDRM_STATE_LAUNCHER_PORTRAIT == oldstate ?
+                      HDRM_STATE_HOME : next_home_state);
+
+                  state = priv->state = next_home_state;
+                }
+
               g_debug("you must have meant STATE %s -> STATE %s",
                       hd_render_manager_state_str(oldstate),
                       hd_render_manager_state_str(state));
@@ -1526,7 +1574,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                           cmgrcc);
                 }
             }
-          else if (oldstate != HDRM_STATE_LAUNCHER)
+          else if (!STATE_IS_LAUNCHER (oldstate))
             hd_task_navigator_scroll_back(priv->task_nav);
         }
       if (STATE_ONE_OF(state | oldstate, HDRM_STATE_TASK_NAV))
@@ -1534,14 +1582,58 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         hd_title_bar_set_switcher_pulse(priv->title_bar, FALSE);
 
       /* Enter/leave the launcher. */
-      if (state == HDRM_STATE_LAUNCHER)
+      if (STATE_IS_LAUNCHER (state))
         {
+          /* It can be here for two cases:
+           * 1) non-LAUNCHER state -> LAUNCHER one.
+           * 2) STATE_LAUNCHER -> STATE_LAUNCHER_PORTRAIT or vice-versa,
+           * ie an accellerometer event or
+           * hd_render_manager_set_state_portrait/unportrait */
+
+          /* first check if the LAUNCHER can rotate, or show it only in
+           * LANDSCAPE */
+          if (hd_app_mgr_ui_can_rotate())
+            {
+              gboolean app_mgr_is_portrait = hd_app_mgr_is_portrait();
+
+              /* back-compatibility check for _set_state(LAUNCHER) when
+               * actually should be LAUNCHER_PORTRAIT
+               * it also does some additional checks before setting the
+               * 'right' state in @priv. */
+              if (app_mgr_is_portrait && !STATE_IS_PORTRAIT (state) &&
+                  !hd_app_mgr_slide_is_open ())
+                priv->state = state = HDRM_STATE_LAUNCHER_PORTRAIT;
+              else if (!app_mgr_is_portrait && STATE_IS_PORTRAIT (state))
+                priv->state = state = HDRM_STATE_LAUNCHER;
+
+              /* after fixing @priv->state real value, check if we are
+               * actually transitioning to the same state. It should not be
+               * needed but in some corner cases it avoids the launcher to
+               * show a transition as it were "appearing" again, while
+               * actually it was already showing */
+              if (oldstate != state)
+                {
+                  hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
+                  hd_launcher_update_orientation (STATE_IS_PORTRAIT (state));
+                }
+            }
+          else
+            {
+              /* UI rotation disabled, ensure the laucher in landscape mode
+               * state */
+              hd_launcher_update_orientation (FALSE);
+            }
+
           /* unfocus any applet */
           mb_wm_client_focus (cmgr->wm->desktop);
+
+          /* finally show, in any case, the launcher */
           hd_launcher_show();
         }
-      else if (oldstate == HDRM_STATE_LAUNCHER)
-        hd_launcher_hide();
+      else if (STATE_IS_LAUNCHER (oldstate))
+        {
+          hd_launcher_hide();
+        }
 
       if (state == HDRM_STATE_HOME_EDIT)
         /* unfocus any applet */
@@ -1689,6 +1781,8 @@ void hd_render_manager_set_state_portrait (void)
       hd_render_manager_set_state (HDRM_STATE_APP);
       hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
     }
+  else if (the_render_manager->priv->state == HDRM_STATE_LAUNCHER)
+    hd_render_manager_set_state (HDRM_STATE_LAUNCHER_PORTRAIT);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
 }
@@ -1705,6 +1799,8 @@ void hd_render_manager_set_state_unportrait (void)
       hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
       hd_render_manager_set_state (HDRM_STATE_APP);
     }
+  else if (the_render_manager->priv->state == HDRM_STATE_LAUNCHER_PORTRAIT)
+    hd_render_manager_set_state (HDRM_STATE_LAUNCHER);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME);
 }

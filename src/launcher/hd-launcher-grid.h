@@ -76,15 +76,25 @@ void          hd_launcher_grid_transition(HdLauncherGrid *grid,
                                           float amount);
 void          hd_launcher_grid_reset(HdLauncherGrid *grid, gboolean hard);
 void          hd_launcher_grid_layout(HdLauncherGrid *grid);
+void          hd_launcher_grid_relayout (HdLauncherGrid *grid);
+void          hd_launcher_grid_set_portrait (HdLauncherGrid *self,
+                                          gboolean portraited);
+
 
 void hd_launcher_grid_activate(ClutterActor *actor, int p);
 
 /* Fixed sizes */
-#define HD_LAUNCHER_GRID_MIN_HEIGHT \
+#define HD_LAUNCHER_GRID_ICON_MARGIN_LANDSCAPE (HILDON_MARGIN_DEFAULT)
+#define HD_LAUNCHER_GRID_ICON_MARGIN_PORTRAIT (HILDON_MARGIN_DEFAULT/3)
+#define HD_LAUNCHER_GRID_MIN_HEIGHT_LANDSCAPE \
                 (HD_LAUNCHER_PAGE_HEIGHT - HD_LAUNCHER_PAGE_YMARGIN)
-#define HD_LAUNCHER_GRID_WIDTH  (HD_LAUNCHER_PAGE_WIDTH)
+#define HD_LAUNCHER_GRID_MIN_HEIGHT_PORTRAIT \
+                (HD_LAUNCHER_PAGE_WIDTH - HD_LAUNCHER_PAGE_YMARGIN)
+#define HD_LAUNCHER_GRID_WIDTH_LANDSCAPE  (HD_LAUNCHER_PAGE_WIDTH)
+#define HD_LAUNCHER_GRID_WIDTH_PORTRAIT  (HD_LAUNCHER_PAGE_HEIGHT)
 
-#define HD_LAUNCHER_GRID_ROW_SPACING 40
+#define HD_LAUNCHER_GRID_ROW_SPACING_LANDSCAPE 40
+#define HD_LAUNCHER_GRID_ROW_SPACING_PORTRAIT 50
 
 G_END_DECLS
 

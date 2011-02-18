@@ -56,6 +56,17 @@
 
 #define I_(str) (g_intern_static_string ((str)))
 
+/* macros not defined in current hildon's glib, use the glib ones if possible
+ */
+#ifndef GBOOLEAN_TO_POINTER
+#define GBOOLEAN_TO_POINTER(i) (GINT_TO_POINTER ((i) ? 2 : 1))
+#endif
+#ifndef GPOINTER_TO_BOOLEAN
+#define GPOINTER_TO_BOOLEAN(i) ((gboolean) ((GPOINTER_TO_INT(i) == 2) ? TRUE : FALSE))
+#endif
+
+
+
 typedef struct
 {
   GList *items;
@@ -80,6 +91,8 @@ struct _HdLauncherPrivate
 
   GtkWidget *editor;
   gboolean editor_done;
+
+  gboolean portraited;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -262,6 +275,56 @@ _hd_launcher_hide_page (GQuark key_id, gpointer data, gpointer user_data)
   clutter_actor_hide (CLUTTER_ACTOR(page));
 }
 
+static void
+_hd_launcher_update_orientation_cb (GQuark key_id,
+    gpointer data,
+    gpointer user_data)
+{
+  HdLauncherPage *page = HD_LAUNCHER_PAGE (data);
+  HdLauncherGrid *grid;
+  ClutterActor *scroller;
+  gboolean portraited = GPOINTER_TO_BOOLEAN (user_data);
+
+  g_assert (HD_IS_LAUNCHER_PAGE (page));
+
+  grid = HD_LAUNCHER_GRID (hd_launcher_page_get_grid (page));
+  /* actual layout update for the grid, reordering and resizing tiles */
+  hd_launcher_grid_set_portrait (grid, portraited);
+  hd_launcher_grid_layout (grid);
+
+  /* resize the scroller as well */
+  scroller = hd_launcher_page_get_scroller (page);
+  if (portraited)
+    clutter_actor_set_size (scroller, HD_LAUNCHER_PAGE_HEIGHT,
+        HD_LAUNCHER_PAGE_WIDTH);
+  else
+    clutter_actor_set_size (scroller, HD_LAUNCHER_PAGE_WIDTH,
+        HD_LAUNCHER_PAGE_HEIGHT);
+}
+
+/* hd_launcher_update_orientation:
+ *
+ * update the the launcher's page orientation. It should be called when
+ * passing from landscape to portrait orientation, or vice versa.
+ *
+ * Specifically, it will reorder the grid's tiles and the scroller according
+ * to the orientation given by the HdAppMgr.
+ */
+void
+hd_launcher_update_orientation (gboolean portraited)
+{
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+
+  /* no changes, don't waste any time updating */
+  if (priv->portraited == portraited)
+    return;
+
+  priv->portraited = portraited;
+
+  g_datalist_foreach (&priv->pages,
+      _hd_launcher_update_orientation_cb, GBOOLEAN_TO_POINTER (portraited));
+}
+
 void
 hd_launcher_show (void)
 {
@@ -337,7 +400,7 @@ hd_launcher_back_button_clicked ()
   ClutterActor *top_page = g_datalist_get_data (&priv->pages,
                                                 HD_LAUNCHER_ITEM_TOP_CATEGORY);
 
-  if (hd_render_manager_get_state() != HDRM_STATE_LAUNCHER)
+  if (!STATE_IS_LAUNCHER (hd_render_manager_get_state()))
     return FALSE;
 
   if (priv->active_page == top_page)
@@ -478,6 +541,11 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = launcher->priv;
 
+  /* when portraited do not show the editor */
+  if (priv->portraited)
+    return;
+
+
   /* Send a mouse released event, because when we've put the editor window up
    * the release event will go straight to that instead of to the scroller,
    * and the scroller will think that the mouse is pressed until after the
@@ -538,7 +606,7 @@ hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
 {
   HdLauncher *launcher = HD_LAUNCHER (data);
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
-  if (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER)
+  if (STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
     {
       hd_render_manager_set_state (HDRM_STATE_HOME);
     }
@@ -718,7 +786,7 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
   /* if after traversal starts, the user switches to LAUNCHER,
    * we can get empty launcher (the old page) that gets stuck on
    * the screen until the user opens the power menu */
-  if (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER)
+  if (STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
     {
       hd_render_manager_set_state (HDRM_STATE_HOME);
     }

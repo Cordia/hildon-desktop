@@ -101,7 +101,7 @@ void hd_app_mgr_set_render_manager (GObject *rendermgr);
 
 gboolean hd_app_mgr_execute (const gchar *exec, GPid *pid, gboolean auto_reap);
 
-void hd_app_mgr_check_show_callui(void);
+gboolean hd_app_mgr_check_show_callui(void);
 void hd_app_mgr_mce_activate_accel_if_needed(gboolean update_portraitness);
 
 extern gboolean conf_enable_ctrl_backspace;
@@ -115,6 +115,9 @@ extern gboolean conf_dbus_shortcuts_use_fn;
 extern gboolean conf_dbus_ctrl_shortcuts;
 extern gint conf_ctrl_backspace_in_tasknav;
 extern gboolean conf_disable_edit;
+gboolean hd_app_mgr_is_portrait(void);
+gboolean hd_app_mgr_slide_is_open (void);
+gboolean hd_app_mgr_ui_can_rotate (void);
 
 G_END_DECLS
 

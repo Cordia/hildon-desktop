@@ -85,6 +85,10 @@ struct _HdLauncherGridPrivate
   HdKeyFrameList *transition_keyframes; // ramp for tile movement
   HdKeyFrameList *transition_keyframes_label; // ramp for label alpha values
   HdKeyFrameList *transition_keyframes_icon; // ramp for icon alpha values
+
+  /* an internal status indicating how to relayout the grid (which usually is
+   * the same of the real device orientation, but may not be in sync with it) */
+  gboolean is_portrait;
 };
 
 enum
@@ -110,7 +114,15 @@ static gboolean _hd_launcher_grid_blocker_release_cb (ClutterActor *actor,
                                         ClutterButtonEvent *event,
                                         gpointer *data);
 
-#define HD_LAUNCHER_GRID_MAX_COLUMNS 5
+static gboolean      hd_launcher_grid_is_portrait (HdLauncherGrid *self);
+#define HD_LAUNCHER_GRID_MAX_COLUMNS_LANDSCAPE 5
+#define HD_LAUNCHER_GRID_MAX_COLUMNS_PORTRAIT 3
+
+#define HD_LAUNCHER_GRID_LEFT_DISMISSAL_AREA_LANDSCAPE (HD_LAUNCHER_LEFT_MARGIN)
+#define HD_LAUNCHER_GRID_RIGHT_DISMISSAL_AREA_LANDSCAPE (HD_LAUNCHER_RIGHT_MARGIN)
+#define HD_LAUNCHER_GRID_LEFT_DISMISSAL_AREA_PORTRAIT (64)
+#define HD_LAUNCHER_GRID_RIGHT_DISMISSAL_AREA_PORTRAIT (64)
+
 
 G_DEFINE_TYPE_WITH_CODE (HdLauncherGrid,
                          hd_launcher_grid,
@@ -157,26 +169,34 @@ static inline void
 hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
 {
   HdLauncherGridPrivate *priv = grid->priv;
-  ClutterFixed height;
+  ClutterFixed grid_height;
   ClutterUnit clip_y, clip_height;
   ClutterUnit page_height;
-  height = 0;
+  grid_height = 0;
   clip_y = 0;
   clip_height = 0;
   page_height = 0;
+  guint screen_height = (hd_launcher_grid_is_portrait (grid) ?
+      HD_COMP_MGR_PORTRAIT_HEIGHT : HD_COMP_MGR_LANDSCAPE_HEIGHT);
 
   if (!priv->v_adjustment)
     return;
 
-  clutter_actor_get_sizeu (CLUTTER_ACTOR (grid), NULL, &height);
+  clutter_actor_get_sizeu (CLUTTER_ACTOR (grid), NULL, &grid_height);
   clutter_actor_get_clipu (CLUTTER_ACTOR (grid),
                            NULL, &clip_y,
                            NULL, &clip_height);
-  if (height >= CLUTTER_UNITS_FROM_INT (HD_COMP_MGR_LANDSCAPE_HEIGHT))
+  if (grid_height >= CLUTTER_UNITS_FROM_INT (screen_height))
     {
       /* Padding at the bottom. */
-      height += CLUTTER_UNITS_FROM_INT (HD_LAUNCHER_BOTTOM_MARGIN
-                                      - HD_LAUNCHER_GRID_ROW_SPACING);
+      if (hd_launcher_grid_is_portrait (grid))
+        /* right margin is the bottom margin when in portrait */
+        grid_height += CLUTTER_UNITS_FROM_INT (HD_LAUNCHER_RIGHT_MARGIN
+            - HD_LAUNCHER_GRID_ROW_SPACING_PORTRAIT);
+      else
+        grid_height += CLUTTER_UNITS_FROM_INT (HD_LAUNCHER_BOTTOM_MARGIN
+            - HD_LAUNCHER_GRID_ROW_SPACING_LANDSCAPE);
+
       tidy_adjustment_set_skirtx (priv->v_adjustment,
                      clutter_qdivx (CFX_ONE, CLUTTER_INT_TO_FIXED (4)));
     }
@@ -184,16 +204,17 @@ hd_launcher_grid_refresh_v_adjustment (HdLauncherGrid *grid)
     tidy_adjustment_set_skirtx (priv->v_adjustment, 0);
 
   if (clip_height == 0)
-    page_height = MIN (CLUTTER_UNITS_TO_FIXED (height),
-                       CLUTTER_UNITS_TO_FIXED (CLUTTER_UNITS_FROM_DEVICE (HD_COMP_MGR_LANDSCAPE_HEIGHT)));
+    page_height = MIN (CLUTTER_UNITS_TO_FIXED (grid_height),
+                       CLUTTER_UNITS_TO_FIXED (
+                         CLUTTER_UNITS_FROM_DEVICE (screen_height)));
   else
-    page_height = MIN (CLUTTER_UNITS_TO_FIXED (height),
+    page_height = MIN (CLUTTER_UNITS_TO_FIXED (grid_height),
                        CLUTTER_UNITS_TO_FIXED (clip_height - clip_y));
 
   tidy_adjustment_set_valuesx (priv->v_adjustment,
                                tidy_adjustment_get_valuex (priv->v_adjustment),
                                0,
-                               height,
+                               grid_height,
                                CFX_ONE,
                                CFX_ONE * 20,
                                page_height);
@@ -378,29 +399,62 @@ _hd_launcher_grid_count_children_and_rows (HdLauncherGrid *grid,
     }
 
   if (*children > 0)
-    *rows = (*children / HD_LAUNCHER_GRID_MAX_COLUMNS) +
-            (*children % HD_LAUNCHER_GRID_MAX_COLUMNS? 1 : 0);
+    {
+      if (hd_launcher_grid_is_portrait (grid))
+        *rows = (*children / HD_LAUNCHER_GRID_MAX_COLUMNS_PORTRAIT) +
+          (*children % HD_LAUNCHER_GRID_MAX_COLUMNS_PORTRAIT ? 1 : 0);
+      else
+        *rows = (*children / HD_LAUNCHER_GRID_MAX_COLUMNS_LANDSCAPE) +
+          (*children % HD_LAUNCHER_GRID_MAX_COLUMNS_LANDSCAPE ? 1 : 0);
+    }
   else
-    *rows = 0;
+    {
+      *rows = 0;
+    }
 }
 
 
 /**
  * Allocates a number of tiles in a row, starting at cur_y.
- * Returns the number of children allocated.
+ * Returns the remaining children list (ie still to allocate).
+ *
+ * @grid: the HdLauncherGrid instance
+ * @l: list of tiles still to be inserted in the layout
+ * @remaining is a memory address containing a pointer to the number of
+ * children still to insert into the grid.
+ * @cur_y: the current y position of the grid, from where to begin placing
+ * tiles
+ * @h_spacing is the icon horizonal spacing.
  */
 static GList *
-_hd_launcher_grid_layout_row   (GList *l,
+_hd_launcher_grid_layout_row   (HdLauncherGrid *grid,
+                                GList *l,
                                 guint *remaining,
                                 guint cur_y,
                                 guint h_spacing)
 {
   ClutterActor *child;
-  guint allocated = MIN (HD_LAUNCHER_GRID_MAX_COLUMNS, *remaining);
+  guint allocated;
+  guint cur_x;
+
   /* Figure out the starting X position needed to centre the icons */
-  guint icons_width = HD_LAUNCHER_TILE_WIDTH * HD_LAUNCHER_GRID_MAX_COLUMNS +
-                      h_spacing * (HD_LAUNCHER_GRID_MAX_COLUMNS-1);
-  guint cur_x = (HD_LAUNCHER_PAGE_WIDTH - icons_width) / 2;
+  if (hd_launcher_grid_is_portrait (grid))
+    {
+      guint icons_width = HD_LAUNCHER_TILE_WIDTH * HD_LAUNCHER_GRID_MAX_COLUMNS_PORTRAIT +
+        h_spacing * (HD_LAUNCHER_GRID_MAX_COLUMNS_PORTRAIT-1);
+
+      cur_x = (HD_LAUNCHER_PAGE_HEIGHT - icons_width) / 2;
+      allocated = MIN (HD_LAUNCHER_GRID_MAX_COLUMNS_PORTRAIT, *remaining);
+    }
+  else
+    {
+      guint icons_width = HD_LAUNCHER_TILE_WIDTH * HD_LAUNCHER_GRID_MAX_COLUMNS_LANDSCAPE +
+        h_spacing * (HD_LAUNCHER_GRID_MAX_COLUMNS_LANDSCAPE-1);
+
+      cur_x = (HD_LAUNCHER_PAGE_WIDTH - icons_width) / 2;
+      allocated = MIN (HD_LAUNCHER_GRID_MAX_COLUMNS_LANDSCAPE, *remaining);
+    }
+
   /* for each icon in the row... */
   for (int i = 0; i < allocated; i++)
     {
@@ -415,6 +469,20 @@ _hd_launcher_grid_layout_row   (GList *l,
   return l;
 }
 
+/* hd_launcher_grid_layout:
+ * @grid: launcher's grid
+ *
+ * (re-)layouts @grid according to its internal orientation state and tiles.
+ *
+ * This method should be called everytime a screen orientation changes and
+ * the TL is/will be visible.
+ *
+ * To change the grid orientation one has to call
+ * %hd_launcher_grid_set_portrait() before re-layouting.
+
+ * The screen orientation should be set with the orietation matching
+ * %hd_launcher_grid_is_portrait() before calling %hd_launcher_grid_layout().
+ */
 void hd_launcher_grid_layout (HdLauncherGrid *grid)
 {
   HdLauncherGridPrivate *priv = grid->priv;
@@ -432,12 +500,15 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
   _hd_launcher_grid_count_children_and_rows (grid,
       &n_visible_launchers, &n_rows);
 
-  cur_height = HD_LAUNCHER_PAGE_YMARGIN;
+  if (hd_launcher_grid_is_portrait (grid))
+    cur_height = HD_LAUNCHER_PAGE_XMARGIN;
+  else
+    cur_height = HD_LAUNCHER_PAGE_YMARGIN;
 
   l = priv->tiles;
   while (l) {
     /* Allocate all icons on this row */
-    l = _hd_launcher_grid_layout_row(l, &n_visible_launchers,
+    l = _hd_launcher_grid_layout_row(grid, l, &n_visible_launchers,
                                        cur_height, priv->h_spacing);
     if (l)
       {
@@ -452,21 +523,44 @@ void hd_launcher_grid_layout (HdLauncherGrid *grid)
         g_signal_connect (blocker, "button-release-event",
                           G_CALLBACK (_hd_launcher_grid_blocker_release_cb),
                           NULL);
-        clutter_actor_set_position(blocker,
-                                   HD_LAUNCHER_LEFT_MARGIN,
-                                   cur_height + HD_LAUNCHER_TILE_HEIGHT);
-        clutter_actor_set_size(blocker,
-            HD_LAUNCHER_GRID_WIDTH - (HD_LAUNCHER_LEFT_MARGIN+HD_LAUNCHER_RIGHT_MARGIN),
-            priv->v_spacing);
 
+        if (hd_launcher_grid_is_portrait (grid))
+          {
+            clutter_actor_set_position(blocker,
+                HD_LAUNCHER_BOTTOM_MARGIN,
+                cur_height + HD_LAUNCHER_TILE_HEIGHT);
+            clutter_actor_set_size(blocker,
+                HD_LAUNCHER_GRID_WIDTH_PORTRAIT -
+                (HD_LAUNCHER_GRID_LEFT_DISMISSAL_AREA_PORTRAIT +
+                 HD_LAUNCHER_GRID_RIGHT_DISMISSAL_AREA_PORTRAIT),
+                priv->v_spacing);
+          }
+        else
+          {
+            clutter_actor_set_position(blocker,
+                HD_LAUNCHER_LEFT_MARGIN,
+                cur_height + HD_LAUNCHER_TILE_HEIGHT);
+            clutter_actor_set_size(blocker,
+                HD_LAUNCHER_GRID_WIDTH_LANDSCAPE -
+                (HD_LAUNCHER_GRID_LEFT_DISMISSAL_AREA_LANDSCAPE +
+                 HD_LAUNCHER_GRID_RIGHT_DISMISSAL_AREA_LANDSCAPE),
+                priv->v_spacing);
+          }
         priv->blockers = g_list_prepend(priv->blockers, blocker);
       }
+
     cur_height += HD_LAUNCHER_TILE_HEIGHT + priv->v_spacing;
   }
 
-  clutter_actor_set_size(CLUTTER_ACTOR(grid),
-                         HD_LAUNCHER_PAGE_WIDTH,
-                         cur_height);
+  if (hd_launcher_grid_is_portrait (grid))
+    clutter_actor_set_size(CLUTTER_ACTOR(grid),
+        HD_LAUNCHER_PAGE_HEIGHT,
+        cur_height);
+  else
+    clutter_actor_set_size(CLUTTER_ACTOR(grid),
+        HD_LAUNCHER_PAGE_WIDTH,
+        cur_height);
+
 
   if (priv->h_adjustment)
     hd_launcher_grid_refresh_h_adjustment (grid);
@@ -576,6 +670,55 @@ hd_launcher_grid_class_init (HdLauncherGridClass *klass)
                                     "vadjustment");
 }
 
+static gboolean
+hd_launcher_grid_is_portrait (HdLauncherGrid *grid)
+{
+  HdLauncherGridPrivate *priv;
+
+  g_return_val_if_fail (HD_IS_LAUNCHER_GRID (grid), FALSE);
+
+  priv = HD_LAUNCHER_GRID_GET_PRIVATE (grid);
+
+  return priv->is_portrait;
+}
+
+/* hd_launcher_grid_set_portrait:
+ * @grid: a launcher's grid
+ * @portraited: new grid's orientation
+ *
+ * Sets the current @grid internal orientation and spacing values.
+ *
+ * The next time @grid is re-layouted, its orientation and tiles' spacing will
+ * be showed according to @portraited.
+ *
+ * See also #hd_launcher_grid_layout().
+ */
+void
+hd_launcher_grid_set_portrait (HdLauncherGrid *grid,
+    gboolean portraited)
+{
+  HdLauncherGridPrivate *priv;
+
+  g_return_if_fail (HD_IS_LAUNCHER_GRID (grid));
+
+  priv = HD_LAUNCHER_GRID_GET_PRIVATE (grid);
+
+  priv->is_portrait = portraited;
+
+  /* update tiles' spacing */
+  if (portraited)
+    {
+      priv->h_spacing = HD_LAUNCHER_GRID_ICON_MARGIN_PORTRAIT;
+      priv->v_spacing = HD_LAUNCHER_GRID_ROW_SPACING_PORTRAIT;
+    }
+  else
+    {
+      priv->h_spacing = HD_LAUNCHER_GRID_ICON_MARGIN_LANDSCAPE;
+      priv->v_spacing = HD_LAUNCHER_GRID_ROW_SPACING_LANDSCAPE;
+    }
+
+}
+
 static void
 hd_launcher_grid_init (HdLauncherGrid *launcher)
 {
@@ -583,8 +726,8 @@ hd_launcher_grid_init (HdLauncherGrid *launcher)
 
   launcher->priv = priv = HD_LAUNCHER_GRID_GET_PRIVATE (launcher);
 
-  priv->h_spacing = HILDON_MARGIN_DEFAULT;
-  priv->v_spacing = HD_LAUNCHER_GRID_ROW_SPACING;
+  /* set grid's orientation and h/v_spacing values to landscape by default */
+  hd_launcher_grid_set_portrait (launcher, FALSE);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (launcher), FALSE);
 
@@ -708,7 +851,6 @@ hd_launcher_grid_transition_end(HdLauncherGrid *grid)
       grid->priv->transition_keyframes_icon = 0;
     }
 }
-
 
 void
 hd_launcher_grid_transition(HdLauncherGrid *grid,

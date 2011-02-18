@@ -1501,7 +1501,7 @@ hd_transition_rotating_fsm(void)
           hd_render_manager_set_loading(NULL);
         /* Super massive extra large hack to remove status area when
          * launching phone app from the launcher */
-        if (hd_render_manager_get_previous_state()==HDRM_STATE_LAUNCHER)
+        if (STATE_IS_LAUNCHER (hd_render_manager_get_previous_state()))
           {
             ClutterActor *hsm = hd_render_manager_get_status_area();
             if (hsm) clutter_actor_hide(hsm);
