@@ -22,6 +22,7 @@
  */
 
 #ifndef __HD_WM_H__
+#define __HD_WM_H__
 
 #include <glib/gmacros.h>
 #include <matchbox/core/mb-wm.h>

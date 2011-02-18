@@ -25,6 +25,7 @@
 #define __HD_TRANSITION_H__
 
 #include "mb/hd-comp-mgr.h"
+#include "mb/hd-wm.h"
 #include "home/hd-render-manager.h"
 #include "util/hd-util.h"
 
@@ -120,5 +121,8 @@ hd_transition_get_keyframes(const gchar *transition, const char *key,
 
 void
 hd_transition_set_file_changed(void);
+
+void
+hd_transition_play_tactile(gboolean is_map, MBWMClientType c_type);
 
 #endif /* __HD_TRANSITION_H__ */
