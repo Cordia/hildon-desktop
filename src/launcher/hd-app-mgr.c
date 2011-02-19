@@ -125,6 +125,7 @@ struct _HdAppMgrPrivate
   gboolean unlocked;
   gboolean slide_closed;
   gboolean disable_callui;
+  gboolean ui_can_rotate;
   gboolean accel_enabled;
 };
 
@@ -204,7 +205,7 @@ G_DEFINE_TYPE (HdAppMgr, hd_app_mgr, G_TYPE_OBJECT);
 #define CALLUI_PORTRAIT_TIMEOUT  1
 #define GCONF_SLIDE_OPEN_DIR     "/system/osso/af"
 #define GCONF_SLIDE_OPEN_KEY     "/system/osso/af/slide-open"
-#define GCONF_DISABLE_CALLUI_DIR "/apps/osso/hildon-desktop"
+#define GCONF_OSSO_HILDON_DESKTOP_DIR "/apps/osso/hildon-desktop"
 #define GCONF_DISABLE_CALLUI_KEY "/apps/osso/hildon-desktop/disable_phone_gesture"
 #define GCONF_KEY_ACTIONS_DIR "/apps/osso/hildon-desktop/key-actions"
 #define GCONF_VIEWS_CURRENT_DIR "/apps/osso/hildon-desktop/views"
@@ -221,6 +222,7 @@ gboolean conf_dbus_shortcuts_use_fn;
 gboolean conf_dbus_ctrl_shortcuts;
 gint conf_ctrl_backspace_in_tasknav; 
 gboolean conf_disable_edit;
+#define GCONF_UI_CAN_ROTATE_KEY "/apps/osso/hildon-desktop/ui_can_rotate"
 
 /* Forward declarations */
 static void hd_app_mgr_dispose (GObject *gobject);
@@ -280,6 +282,7 @@ static void hd_app_mgr_gconf_value_changed (GConfClient *client,
                                             GConfEntry *entry,
                                             gpointer user_data);
 static gboolean hd_app_mgr_show_callui_cb (gpointer data);
+//gboolean hd_app_mgr_check_show_callui (void);
 
 static void     hd_app_mgr_request_app_pid (HdRunningApp *app);
 static gboolean hd_app_mgr_loading_timeout (HdRunningApp *app);
@@ -430,14 +433,13 @@ hd_app_mgr_init (HdAppMgr *self)
                                hd_app_mgr_gconf_value_changed,
                                (gpointer) self,
                                NULL, NULL);
-      priv->disable_callui = gconf_client_get_bool (priv->gconf_client,
-                                                    GCONF_DISABLE_CALLUI_KEY,
-                                                    NULL);
+
       /* We don't call
       hd_app_mgr_mce_activate_accel_if_needed ();
       here because hdrm is not ready yet. */
-      gconf_client_add_dir (priv->gconf_client, GCONF_DISABLE_CALLUI_DIR,
+      gconf_client_add_dir (priv->gconf_client, GCONF_OSSO_HILDON_DESKTOP_DIR,
                             GCONF_CLIENT_PRELOAD_NONE, NULL);
+
       gconf_client_notify_add (priv->gconf_client, GCONF_DISABLE_CALLUI_KEY,
                                hd_app_mgr_gconf_value_changed,
                                (gpointer) self,
@@ -476,6 +478,19 @@ hd_app_mgr_init (HdAppMgr *self)
 	      conf_disable_edit = gconf_client_get_bool(priv->gconf_client, 
 			      GCONF_KEY_ACTIONS_DIR "/disable_edit", NULL);
       }
+      priv->disable_callui = gconf_client_get_bool (priv->gconf_client,
+                                                    GCONF_DISABLE_CALLUI_KEY,
+                                                    NULL);
+
+
+      gconf_client_notify_add (priv->gconf_client, GCONF_UI_CAN_ROTATE_KEY,
+                               hd_app_mgr_gconf_value_changed,
+                               (gpointer) self,
+                               NULL, NULL);
+      priv->ui_can_rotate = gconf_client_get_bool (priv->gconf_client,
+                                                    GCONF_UI_CAN_ROTATE_KEY,
+                                                    NULL);
+
     }
 
   /* Start memory limits. */
@@ -1613,7 +1628,7 @@ hd_app_mgr_hdrm_state_change (gpointer hdrm,
                               GParamSpec *pspec,
                               HdAppMgrPrivate *priv)
 {
-  gboolean launcher = hd_render_manager_get_state () == HDRM_STATE_LAUNCHER;
+  gboolean launcher = STATE_IS_LAUNCHER (hd_render_manager_get_state ());
   if (launcher != priv->prestarting_stopped)
     {
       priv->prestarting_stopped = launcher;
@@ -1880,6 +1895,36 @@ hd_app_mgr_dbus_prestart (HdAppMgr *self, const gboolean enable)
   return TRUE;
 }
 
+/* hd_app_mgr_slide_is_open():
+ *
+ * Check if the Device slide keyboard (also known as hardware keyboard or HKB) is open.
+ *
+ * returns: %TRUE if the slide keyboard is open, %FALSE otherwise
+ */
+gboolean
+hd_app_mgr_slide_is_open (void)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+
+  return !priv->slide_closed;
+}
+
+
+/* hd_app_mgr_ui_can_rotate:
+ *
+ * Check if the Task Launcher is configured to rotate in portrait mode when
+ * the device is rotated.
+ *
+ * returns: %TRUE if the launcher can rotate by configuration %FALSE otherwise
+ */
+gboolean
+hd_app_mgr_ui_can_rotate (void)
+{
+  HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get ());
+
+  return priv->ui_can_rotate;
+}
+
 static gboolean
 _hd_app_mgr_should_show_callui ()
 {
@@ -1919,7 +1964,7 @@ hd_app_mgr_show_callui_cb (gpointer data)
  * - Display on.
  * - Slide closed.
  */
-void
+gboolean
 hd_app_mgr_check_show_callui (void)
 {
   if (_hd_app_mgr_should_show_callui ())
@@ -1927,7 +1972,9 @@ hd_app_mgr_check_show_callui (void)
       g_timeout_add_seconds(CALLUI_PORTRAIT_TIMEOUT,
                             (GSourceFunc) hd_app_mgr_show_callui_cb,
                             NULL);
+      return TRUE;
     }
+  return FALSE;
 }
 
 static gboolean
@@ -2033,10 +2080,23 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
         {
           priv->portrait = _hd_app_mgr_dbus_check_value (msg,
                                            MCE_ORIENTATION_PORTRAIT);
-          if (priv->portrait)
-            hd_app_mgr_check_show_callui ();
 
-          hd_app_mgr_update_portraitness(self);
+          /* CallUI shouldn't appear when in LAUNCHER AND TL can rotate, but
+           * should appear when TL cannot rotate. */
+          if (hd_app_mgr_check_show_callui ())
+            {
+              hd_app_mgr_update_portraitness(self);
+            }
+          else if (hd_app_mgr_ui_can_rotate () &&
+              STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
+            {
+              /* we can go to portrait only if device's portraited and the HKB
+               * slide is closed. */
+              HDRMStateEnum state = (priv->portrait && priv->slide_closed ?
+                  HDRM_STATE_LAUNCHER_PORTRAIT : HDRM_STATE_LAUNCHER);
+
+              hd_render_manager_set_state (state);
+            }
         }
     }
 
@@ -2046,6 +2106,7 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
+
 /* Activate the accelerometer when
  * - The user has activated rotate-to-callui.
  * - HDRM is in a state that shows callui.
@@ -2054,17 +2115,25 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
 void
 hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
 {
-  extern gboolean hd_dbus_tklock_on;
   HdAppMgrPrivate *priv = HD_APP_MGR_GET_PRIVATE (the_app_mgr);
   DBusConnection *conn = NULL;
   DBusMessage *msg = NULL;
-  gboolean activate = !hd_dbus_tklock_on;
+  HDRMStateEnum state = hd_render_manager_get_state();
 
-  if (activate)
-    activate = (!priv->disable_callui
-                && STATE_SHOW_CALLUI (hd_render_manager_get_state ()))
-      || (STATE_IS_APP(hd_render_manager_get_state ())
-          && hd_comp_mgr_can_be_portrait(hd_comp_mgr_get()));
+  /* conditions for which the accellerometer will be activated:
+   * 1) CallUI is fired by the rotation (enabled by configuration) and we are
+   *    in a state which allows this transistion
+   * 2) Launcher rotation is enabled (by conf) and we are in a state allowing
+   *    this transition (HOME or LAUNCHER itself)
+   * 3) an application supporting portraitness with all condition for rotating
+   *    being all right */
+  gboolean activate = ((!priv->disable_callui && STATE_SHOW_CALLUI (state)) ||
+      (hd_app_mgr_ui_can_rotate () &&
+       (STATE_IS_LAUNCHER (state) || STATE_IS_HOME (state) ||
+        (state == HDRM_STATE_TASK_NAV))) ||
+      (STATE_IS_APP(state) &&
+       hd_comp_mgr_can_be_portrait (hd_comp_mgr_get())));
+
   if (priv->accel_enabled == activate)
     return;
 
@@ -2171,7 +2240,28 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
     {
       priv->slide_closed = !value;
 
-      hd_app_mgr_update_portraitness(self);
+      /* If in LAUNCHER_PORTRAIT with the slide/hkb open, turn it into
+       * landscape mode
+       * If in LAUNCHER with closed slide and device's oriented portrait go to
+       * LAUNCHER_PORTRAIT.
+       * Under any other case just update the portraitness */
+      if (!priv->slide_closed &&
+          hd_render_manager_get_state () == HDRM_STATE_LAUNCHER_PORTRAIT)
+        {
+          /* manually setting the HDAppMgr is a bit of kludge, since it's
+           * supposed to reflect the accellerometer status, but it's needed or
+           * the status change won't work since HDRM will rely on the HdAppMgr
+           * declared orientation to actually change state */
+          gboolean portrait = priv->portrait;
+          priv->portrait = FALSE;
+          hd_render_manager_set_state (HDRM_STATE_LAUNCHER);
+          priv->portrait = portrait;
+        }
+      else if (priv->slide_closed && priv->portrait &&
+          hd_render_manager_get_state () == HDRM_STATE_LAUNCHER)
+        hd_render_manager_set_state (HDRM_STATE_LAUNCHER_PORTRAIT);
+      else
+        hd_app_mgr_update_portraitness(self);
     }
       if(gconf_client_dir_exists(priv->gconf_client, GCONF_KEY_ACTIONS_DIR, NULL)) {
 	      conf_enable_ctrl_backspace = gconf_client_get_bool(priv->gconf_client, 
@@ -2206,6 +2296,14 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
       /* Check if h-d needs to track the orientation. */
       hd_app_mgr_mce_activate_accel_if_needed (TRUE);
     }
+  else if (!g_strcmp0 (gconf_entry_get_key (entry),
+                  GCONF_UI_CAN_ROTATE_KEY))
+    {
+      priv->ui_can_rotate = value;
+
+      /* Check if h-d needs to track the orientation. */
+      hd_app_mgr_mce_activate_accel_if_needed (TRUE);
+    }
 
   return;
 }
@@ -2227,6 +2325,12 @@ _hd_app_mgr_request_app_pid_cb (DBusGProxy *proxy, guint pid,
   g_debug ("%s: Got pid %d for %s\n", __FUNCTION__,
            pid, hd_running_app_get_service (app));
   hd_running_app_set_pid (app, pid);
+}
+
+gboolean
+hd_app_mgr_is_portrait(void)
+{
+  return HD_APP_MGR_GET_PRIVATE (hd_app_mgr_get())->portrait;
 }
 
 static void

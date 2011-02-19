@@ -82,8 +82,9 @@ typedef enum
   HDRM_STATE_LOADING_SUBWIN = 1 << 10, /* Loading screen, but displaying
                                          background apps */
   HDRM_STATE_NON_COMP_PORT  = 1 << 11, /* non-composited portrait mode */
-  HDRM_STATE_AFTER_TKLOCK  = 1 << 12 /* bogus mode used in state transition
+  HDRM_STATE_AFTER_TKLOCK   = 1 << 12, /* bogus mode used in state transition
                                          after tklock */
+  HDRM_STATE_LAUNCHER_PORTRAIT = 1 << 13
 } HDRMStateEnum;
 
 /* Does the desktop need to be above apps? */
@@ -95,11 +96,12 @@ typedef enum
 #define STATE_NEED_DESKTOP(s) \
   STATE_ONE_OF((s), HDRM_STATE_HOME  | HDRM_STATE_HOME_PORTRAIT | \
                     HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | \
-                    HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
-                    HDRM_STATE_LOADING)
+                    HDRM_STATE_LAUNCHER | HDRM_STATE_LAUNCHER_PORTRAIT | \
+                    HDRM_STATE_TASK_NAV | HDRM_STATE_LOADING)
 
 #define STATE_NEED_WHOLE_SCREEN_INPUT(s) \
-  STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
+  STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_LAUNCHER_PORTRAIT | \
+                    HDRM_STATE_TASK_NAV | \
                     HDRM_STATE_HOME_EDIT | HDRM_STATE_LOADING_SUBWIN)
 
 #define STATE_NEED_TASK_NAV(s) \
@@ -112,14 +114,20 @@ typedef enum
   STATE_ONE_OF((s), HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT | \
 		    HDRM_STATE_NON_COMPOSITED | HDRM_STATE_NON_COMP_PORT)
 
+#define STATE_IS_LAUNCHER(s) \
+    STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_LAUNCHER_PORTRAIT)
+
+#define STATE_IS_HOME(s) \
+    STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT)
+
 /* Can we switch to portrait mode? */
 #define STATE_IS_PORTRAIT_CAPABLE(s) \
   (STATE_ONE_OF((s), \
-   HDRM_STATE_APP | HDRM_STATE_HOME | HDRM_STATE_NON_COMPOSITED) \
+   HDRM_STATE_LAUNCHER | HDRM_STATE_APP | HDRM_STATE_HOME | HDRM_STATE_NON_COMPOSITED) \
    || STATE_IS_EDIT_MODE (s))
 
 #define STATE_IS_PORTRAIT(s) \
-  STATE_ONE_OF((s), HDRM_STATE_APP_PORTRAIT | HDRM_STATE_HOME_PORTRAIT | \
+  STATE_ONE_OF((s), HDRM_STATE_LAUNCHER_PORTRAIT | HDRM_STATE_APP_PORTRAIT | HDRM_STATE_HOME_PORTRAIT | \
                HDRM_STATE_NON_COMP_PORT)
 
 #define STATE_IS_EDIT_MODE(s) \
@@ -141,14 +149,16 @@ typedef enum
  * the app->task nav transition doesn't show them fading out in
  * the background */
 #define STATE_SHOW_APPLETS(s) \
-  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
+  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_LAUNCHER_PORTRAIT | \
+                      HDRM_STATE_TASK_NAV | \
                       HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT))
 
 /* Are we in a state where we should blur the buttons + status menu?
  * Task Navigator + launcher zoom out, so are a bad idea. for HOME_EDIT
  * We want to blur stuff, but not our buttons/applets... */
 #define STATE_BLUR_BUTTONS(s) \
-  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV | \
+  (!STATE_ONE_OF((s), HDRM_STATE_LAUNCHER | HDRM_STATE_LAUNCHER_PORTRAIT | \
+                      HDRM_STATE_TASK_NAV | \
                       HDRM_STATE_HOME_EDIT | HDRM_STATE_LOADING | \
                       HDRM_STATE_LOADING_SUBWIN ))
 
@@ -157,7 +167,8 @@ typedef enum
  * because blur_front sits behind task_nav and launcher and they will
  * block the clicks to the toolbar if it is there. */
 #define STATE_TOOLBAR_FOREGROUND(s) \
-  (STATE_ONE_OF((s), HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER))
+  (STATE_ONE_OF((s),  HDRM_STATE_TASK_NAV | \
+                      HDRM_STATE_LAUNCHER | HDRM_STATE_LAUNCHER_PORTRAIT ))
 
 /* States to move the home applets out to the front in. We move them
  * out for home_edit so we can drag them, but we also move them for
@@ -165,7 +176,8 @@ typedef enum
  * background */
 #define STATE_HOME_FRONT(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | \
-                     HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
+                     HDRM_STATE_LAUNCHER | HDRM_STATE_LAUNCHER_PORTRAIT | \
+                     HDRM_STATE_TASK_NAV))
 
 #define STATE_IN_EDIT_MODE(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
@@ -183,10 +195,12 @@ typedef enum
 #define STATE_ALLOW_CALL_FROM_HOME(s) \
   (STATE_ONE_OF((s), HDRM_STATE_HOME))
 
-/* The states from which we show CallUI if rotated to portrait. */
+/* The states from which we show CallUI if rotated to portrait.
+ * CallUI cannot be show when the LAUNCHER is shown unless the launcher in
+ * portrait mode is disable by configuration. */
 #define STATE_SHOW_CALLUI(s) \
-  (STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT | \
-                     HDRM_STATE_TASK_NAV | HDRM_STATE_LAUNCHER))
+  ((STATE_ONE_OF((s), HDRM_STATE_HOME | HDRM_STATE_HOME_PORTRAIT | \
+                 HDRM_STATE_TASK_NAV)) || (STATE_IS_LAUNCHER (s)))
 
 GType hd_render_manager_state_get_type (void) G_GNUC_CONST;
 GType hd_render_manager_get_type       (void) G_GNUC_CONST;
