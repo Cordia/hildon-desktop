@@ -2834,6 +2834,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
   /*HdCompMgrPrivate *priv = HD_COMP_MGR (mgr)->priv;*/
   if (event == MBWMCompMgrClientEventUnmap)
     {
+      hd_transition_play_tactile (FALSE, c_type);
       if (c_type == HdWmClientTypeStatusMenu)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventUnmap);
       else if (HD_IS_INCOMING_EVENT_PREVIEW_NOTE(c))
@@ -2922,6 +2923,7 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
     }
   else if (event == MBWMCompMgrClientEventMap)
     {
+      hd_transition_play_tactile (TRUE, c_type);
       if (c_type == HdWmClientTypeStatusMenu)
         hd_transition_popup(hmgr, c, MBWMCompMgrClientEventMap);
       else if ((c_type == MBWMClientTypeDialog) ||

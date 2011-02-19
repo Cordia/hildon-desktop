@@ -2105,3 +2105,30 @@ hd_transition_get_keyframes(const gchar *transition, const char *key,
   g_free(keyframetext);
   return keyframes;
 }
+
+void
+hd_transition_play_tactile(gboolean is_map, MBWMClientType c_type)
+{
+  if (hd_transition_get_int ("thp_tweaks", "tactilepopups", 0))
+    {
+      gchar *pattern = NULL;
+
+      if (c_type == HdWmClientTypeStatusMenu ||
+          c_type == HdWmClientTypeAppMenu)
+        pattern = is_map?"appmenu":"appmenu-out";
+      else if (c_type == MBWMClientTypeDialog)
+        pattern = is_map?"dialog":"dialog-out";
+
+      if (!pattern)
+        return;
+
+      /**
+       * This depends on the "tactile" utility, which is available
+       * from http://gitorious.org/tactile or from Extras-Devel
+       **/
+      gchar *argv[] = {"sudo", "tactile", pattern, NULL};
+      g_spawn_async (NULL, argv, NULL, G_SPAWN_SEARCH_PATH,
+                     NULL, NULL, NULL, NULL);
+    }
+}
+
