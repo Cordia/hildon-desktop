@@ -839,7 +839,7 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
       pretend_fn = priv->fn_state != FN_STATE_NONE ? FN_MODIFIER : 0;
     }
 
-  if (is_russian_cyrillic_keyboard ())
+  if (is_russian_cyrillic_keyboard () && xev->keycode != 37)
     {
       keyval = get_keyval_for_russian_cyrillic_keyboard (keymap,
                                                          xev->keycode,
