@@ -1,3 +1,13 @@
+hildon-desktop (1:2.2.142-8) unstable; urgency=low
+
+  * Applied Z-Axis rotation patch by Thomas Perl.
+  * Applied force rotation patch by Thomas Perl.
+  * Merged kalfa's patches for portrait task launcher.
+  * Applied tactile feedback patch by Thomas Perl.
+  * Fixed bug #10783.
+
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Mon, 21 Feb 2011 22:12:25 +0200
+
 hildon-desktop (1:2.2.142-7) unstable; urgency=low
 
   * Applied thp's patches to configure font in application launcher.
