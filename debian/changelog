@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.142-9) unstable; urgency=low
+
+  * Fixed autorotation.
+
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Tue, 22 Feb 2011 22:20:15 +0200
+
 hildon-desktop (1:2.2.142-8) unstable; urgency=low
 
   * Applied Z-Axis rotation patch by Thomas Perl.
