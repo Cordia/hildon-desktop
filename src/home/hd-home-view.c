@@ -61,7 +61,7 @@
 /* Maximal pixel movement for a tap (before it is a move) */
 #define MAX_TAP_DISTANCE 20
 
-#define HD_HOME_VIEW_PARALLAX_AMOUNT (1.3)
+#define HD_HOME_VIEW_PARALLAX_AMOUNT (hd_transition_get_double("home", "parallax", 1.3))
 
 enum
 {
