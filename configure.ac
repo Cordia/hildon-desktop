@@ -126,7 +126,7 @@ PKG_CHECK_MODULES(HD, [
                ])
 
 HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util -I$(top_srcdir)/src/a11y'
-HD_INCS+=' -I$(top_srcdir)/clutter_0_8 -I$(top_srcdir)/clutter_0_8/clutter -I$(top_srcdir)/libmatchbox2'
+HD_INCS=$HD_INCS' -I$(top_srcdir)/clutter_0_8 -I$(top_srcdir)/clutter_0_8/clutter -I$(top_srcdir)/libmatchbox2'
 AC_DEFINE(MAEMO_CHANGES, 1, [Use Maemo specific features])
 
 # only CFLAGS are needed from MB2 since we are statically linking
