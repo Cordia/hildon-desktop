@@ -23,7 +23,16 @@ CFLAGS += -DG_DISABLE_CHECKS -Winline
 DEB_CONFIGURE_EXTRA_FLAGS += \
 	$(ENABLE_A11Y) \
 	$(ENABLE_LAUNCHER) \
-	--enable-static-mb2=yes
+	--enable-static-mb2=yes \
+        
+ifeq ($(DEB_BUILD_ARCH),armel)
+  DEB_CONFIGURE_EXTRA_FLAGS := --disable-gtk-doc --with-flavour=eglx \
+			     --with-gles=2.0 --enable-debug=no \
+			     --host=i386
+else
+  DEB_CONFIGURE_EXTRA_FLAGS := --disable-gtk-doc --with-flavour=glx \
+			     --with-gles=2.0 --enable-debug=no
+endif
 
 DEB_DH_STRIP_ARGS := --dbg-package=hildon-desktop
 DEB_DH_INSTALLINIT_ARGS := --no-start -- start 51 2 3 4 . stop 20 0 1 5 6 .
