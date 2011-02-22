@@ -2097,6 +2097,10 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
 
               hd_render_manager_set_state (state);
             }
+          else
+            {
+              hd_app_mgr_update_portraitness(self);
+            }
         }
     }
 
