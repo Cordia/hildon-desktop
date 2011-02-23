@@ -3348,14 +3348,17 @@ hd_render_manager_get_home (void)
 void 
 hd_render_manager_press_effect (void)
 {
-  g_return_if_fail (the_render_manager != NULL);
-
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
-
-  if (!priv->press_effect)  
+  if (hd_transition_get_int ("home", "zoom_on_press", 0))
   {
-    clutter_timeline_start (priv->timeline_press);
-    priv->press_effect = TRUE;
+    g_return_if_fail (the_render_manager != NULL);
+
+    HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+    if (!priv->press_effect)  
+    {
+      clutter_timeline_start (priv->timeline_press);
+      priv->press_effect = TRUE;
+    }
   }
 }
 
