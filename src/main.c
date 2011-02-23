@@ -341,10 +341,6 @@ clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
 
   if (xev->type == ButtonPress)
     {
-      XButtonEvent *bev = (XButtonEvent *)cev;
-
-      g_debug ("Do the dew! %p",bev);
-
       hd_render_manager_press_effect ();
     }
 
