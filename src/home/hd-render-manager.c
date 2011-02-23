@@ -214,11 +214,14 @@ struct _HdRenderManagerPrivate {
 
   HDRMBlurEnum  current_blur;
 
+  ClutterTimeline    *timeline_press;
+
   ClutterTimeline    *timeline_blur;
   /* Timeline works by signals, so we get horrible flicker if we ask it if it
    * is playing right after saying _start() - so we have a boolean to figure
    * out for ourselves */
   gboolean            timeline_playing;
+  gboolean	      press_effect;
 
   gboolean            in_set_state;
 
@@ -288,6 +291,52 @@ static inline gboolean range_equal(Range *range)
   return range->a == range->b;
 }
 
+static void
+press_effect_new_frame (ClutterTimeline *timeline,
+			gint n_frame,
+			HdRenderManagerPrivate *priv)
+{
+#define PRESS_SCALE 0.005
+#define PRESS_ANCHOR 0.0025
+   gfloat time = (gfloat)n_frame / (gfloat)clutter_get_default_frame_rate ();
+   gdouble sx, sy;
+   gint ax, ay;
+   ClutterFixed w,h;
+   ClutterActor *stage = CLUTTER_ACTOR (the_render_manager);
+
+   w = clutter_qmulx (CLUTTER_INT_TO_FIXED (hd_comp_mgr_get_current_screen_width()),
+		      CLUTTER_FLOAT_TO_FIXED (PRESS_ANCHOR));
+   h = clutter_qmulx (CLUTTER_INT_TO_FIXED (hd_comp_mgr_get_current_screen_width()),
+		      CLUTTER_FLOAT_TO_FIXED (PRESS_ANCHOR));
+   
+   clutter_actor_get_scale (stage, &sx, &sy);
+   clutter_actor_get_anchor_point (stage, &ax, &ay);
+
+   if (time <= 0.15)
+     {
+       clutter_actor_set_scale (stage, sx - PRESS_SCALE, sy - PRESS_SCALE);
+
+       clutter_actor_set_anchor_point (stage, 
+				       ax - CLUTTER_FIXED_TO_INT (w),
+				       ay - CLUTTER_FIXED_TO_INT (h));
+     }
+   else if (sx < 1)
+     {
+       clutter_actor_set_scale (stage, sx + PRESS_SCALE, sy + PRESS_SCALE);
+
+       clutter_actor_set_anchor_point (stage,
+				       ax + CLUTTER_FIXED_TO_INT (w),
+				       ay + CLUTTER_FIXED_TO_INT (h));
+     }
+
+   if (n_frame == clutter_timeline_get_n_frames (priv->timeline_press))
+     {
+	priv->press_effect = FALSE;
+	clutter_actor_set_anchor_point (stage, 0, 0);
+     }
+
+   clutter_actor_queue_redraw (stage);
+}
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    INIT     */
 /* ------------------------------------------------------------------------- */
@@ -488,6 +537,14 @@ hd_render_manager_init (HdRenderManager *self)
   range_set(&priv->task_nav_zoom, 1);
   range_set(&priv->applets_opacity, 0);
   range_set(&priv->applets_zoom, 1);
+
+  priv->timeline_press = clutter_timeline_new_for_duration (750);
+
+  g_signal_connect (priv->timeline_press,
+		    "new-frame",
+		    G_CALLBACK (press_effect_new_frame),
+		    priv);
+  priv->press_effect = FALSE;
 
   priv->timeline_blur = clutter_timeline_new_for_duration(250);
   g_signal_connect (priv->timeline_blur, "new-frame",
@@ -3286,5 +3343,19 @@ HdHome *
 hd_render_manager_get_home (void)
 {
   return the_render_manager->priv->home;
+}
+
+void 
+hd_render_manager_press_effect (void)
+{
+  g_return_if_fail (the_render_manager != NULL);
+
+  HdRenderManagerPrivate *priv = the_render_manager->priv;
+
+  if (!priv->press_effect)  
+  {
+    clutter_timeline_start (priv->timeline_press);
+    priv->press_effect = TRUE;
+  }
 }
 

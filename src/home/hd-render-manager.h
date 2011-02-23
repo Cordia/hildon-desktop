@@ -291,6 +291,8 @@ void hd_render_manager_pause_blur_animation(void);
 
 HdHome *hd_render_manager_get_home (void);
 
+void hd_render_manager_press_effect (void);
+
 G_END_DECLS
 
 #endif /* __HD_RENDER_MANAGER_H__ */
