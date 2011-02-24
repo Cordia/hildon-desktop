@@ -6,8 +6,8 @@ MY_LIBS =	$(top_builddir)/src/mb/libmb.la			\
 		$(top_builddir)/src/launcher/liblauncher.la 	\
 		$(top_builddir)/src/home/libhome.la		\
 		$(top_builddir)/src/util/libutil.la		\
-		$(wildcard $(top_builddir)/clutter_0_8/clutter/libclutter-*gl*-0.8.la)	\
-		$(top_builddir)/libmatchbox2/matchbox/libmatchbox2-0.1.la
+		$(top_builddir)/libmatchbox2/matchbox/libmatchbox2-0.1.la	\
+		$(wildcard $(top_builddir)/clutter_0_8/clutter/libclutter-*gl*-0.8.la)
 
 bin_PROGRAMS = hildon-desktop
 
