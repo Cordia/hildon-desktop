@@ -64,9 +64,10 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#define OPERATOR_APPLET_ID "_HILDON_OPERATOR_APPLET"
-#define STAMP_DIR          "/tmp/hildon-desktop/"
-#define STAMP_FILE         STAMP_DIR "desktop-started.stamp"
+#define OPERATOR_APPLET_ID         "_HILDON_OPERATOR_APPLET"
+#define STAMP_DIR                  "/tmp/hildon-desktop/"
+#define STAMP_FILE                 STAMP_DIR "desktop-started.stamp"
+#define GCONF_KEY_ORIENTATION_LOCK "/apps/osso/hildon-desktop/orientation_lock"
 
 #if 0
 # define PORTRAIT       g_debug
@@ -117,6 +118,9 @@ struct HdCompMgrPrivate
    * pip_portrait, IF we think it is possible. */
   gboolean pip_enabled;
   gboolean pip_portrait;
+
+  /* GConf client for orientation lock. */
+  GConfClient* gconf_client;
 };
 
 /*
@@ -505,6 +509,9 @@ hd_comp_mgr_init (MBWMObject *obj, va_list vap)
   hd_atoms_init (wm->xdpy, priv->atoms);
 
   priv->dbus_connection = hd_dbus_init (hmgr);
+
+  priv->gconf_client = gconf_client_get_default();
+  g_assert(GCONF_IS_CLIENT(priv->gconf_client));
 
   hd_gtk_style_init ();
 
@@ -958,6 +965,9 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
   gboolean goto_app_state;
   HDRMStateEnum state;
   unsigned l, r;
+  /* GConf client for orientation lock. */
+  GConfClient* gconf_client = gconf_client_get_default();;
+  g_assert(GCONF_IS_CLIENT(gconf_client));
 
   /* Don't bother with anything but application windows, dialogs
    * and confirmation notes.  We simply don't have any other type
@@ -1070,8 +1080,9 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
         continue;
 
       mb_wm_client_update_portrait_flags (c, portrait_freshness_counter);
-      if (!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
+      if ((!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
               && !c->portrait_supported)
+              || gconf_client_get_bool (gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL))
         {
           hd_transition_rotate_screen (wm, FALSE);
           break;
@@ -1086,6 +1097,7 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
     }
 
   g_ptr_array_free (stack, TRUE);
+  g_object_unref(gconf_client);
 }
 
 static void
@@ -3174,6 +3186,7 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
 {
   MBWindowManager *wm;
   MBWindowManagerClient *c;
+  HdCompMgrPrivate *priv = hmgr->priv;
   gboolean any_supports, any_requests;
 
   /* Invalidate all cached, inherited portrait flags at once. */
@@ -3219,15 +3232,17 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
       /* Get @portrait_supported/requested updated. */
       mb_wm_client_update_portrait_flags (c, portrait_freshness_counter);
       PORTRAIT ("SUPPORT IS %d", c->portrait_supported);
-      if (!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
+      if ((!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
               && !c->portrait_supported)
+              || gconf_client_get_bool (priv->gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL))
         return FALSE;
       any_supports  = TRUE;
       any_requests |= c->portrait_requested != 0;
       if (!c->portrait_requested && !c->portrait_requested_inherited)
         { /* Client explicity !REQUESTED portrait, obey. */
           PORTRAIT ("PROHIBITED");
-          if (!hd_transition_get_int("thp_tweaks", "forcerotation", 0))
+          if (!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
+              || gconf_client_get_bool (priv->gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL))
               return FALSE;
         }
 

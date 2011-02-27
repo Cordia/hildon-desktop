@@ -29,6 +29,7 @@
 #include <matchbox/core/mb-window-manager.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr-clutter.h>
+#include <gconf/gconf-client.h>
 
 #include "hd-atoms.h"
 #include "launcher/hd-running-app.h"

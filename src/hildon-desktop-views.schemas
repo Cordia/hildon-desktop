@@ -64,5 +64,15 @@
         <short>Enable rotation from/to portrait mode for Task Launcher and Navigator.</short>
       </locale>
     </schema>
+    <schema>
+      <key>/schemas/apps/osso/hildon-desktop/orientation_lock</key>
+      <applyto>/apps/osso/hildon-desktop/orientation_lock</applyto>
+      <owner>hildon-desktop</owner>
+      <type>bool</type>
+      <default>false</default>
+      <locale name="C">
+        <short>Set to true to lock orientation to landscape mode</short>
+      </locale>
+    </schema>
   </schemalist>
 </gconfschemafile>
