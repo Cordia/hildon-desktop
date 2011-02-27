@@ -340,9 +340,9 @@ clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
   MBWindowManager * wm = data;
 
   if (xev->type == ButtonPress)
-    {
-      hd_render_manager_press_effect ();
-    }
+    hd_render_manager_press_effect ();
+  else if (xev->type == ButtonRelease)
+    hd_render_manager_end_press_effect ();
 
   mb_wm_main_context_handle_x_event (xev, wm->main_ctx);
 
