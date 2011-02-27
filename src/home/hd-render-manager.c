@@ -3373,10 +3373,10 @@ hd_render_manager_end_press_effect (void)
 {
   if (hd_transition_get_int ("home", "zoom_on_press", 0))
   {
-    g_return_if_fail (render_manager != NULL);
+    g_return_if_fail (the_render_manager != NULL);
 
     HdRenderManagerPrivate *priv = 
-      HD_RENDER_MANAGER_GET_PRIVATE (render_manager);
+      HD_RENDER_MANAGER_GET_PRIVATE (the_render_manager);
 
     priv->press_effect_paused = FALSE;
 
