@@ -64,6 +64,8 @@ enum {
   KEY_ACTION_XTERMINAL,
   KEY_ACTION_TOGGLE_PORTRAITABLE,
   KEY_ACTION_ROTATE,
+  KEY_ACTION_ZOOM_IN,
+  KEY_ACTION_ZOOM_OUT,
   KEY_ACTION_SEND_DBUS,
 };
 
@@ -318,6 +320,12 @@ key_binding_func (MBWindowManager   *wm,
     case KEY_ACTION_ROTATE:
         hd_transition_rotate_screen (wm, !hd_comp_mgr_is_portrait());
         break;
+    case KEY_ACTION_ZOOM_IN:
+	hd_render_manager_zoom_in ();
+	break;
+    case KEY_ACTION_ZOOM_OUT:
+	hd_render_manager_zoom_out ();
+	break;
     }
 }
 static void
@@ -686,15 +694,25 @@ main (int argc, char **argv)
 				    NULL,
 				    (void*)KEY_ACTION_TAKE_SCREENSHOT);
   mb_wm_keys_binding_add_with_spec (wm,
-                                      "<shift><ctrl>r",
-                                      key_binding_func,
-                                      NULL,
-                                      (void*)KEY_ACTION_TOGGLE_PORTRAITABLE);
+                                    "<shift><ctrl>r",
+                                    key_binding_func,
+                                    NULL,
+                                    (void*)KEY_ACTION_TOGGLE_PORTRAITABLE);
   mb_wm_keys_binding_add_with_spec (wm, /* mod5 == Fn */
-                                      "<shift><ctrl><mod5>l",
-                                      key_binding_func,
-                                      NULL,
-                                      (void*)KEY_ACTION_ROTATE);
+                                    "<shift><ctrl><mod5>l",
+                                    key_binding_func,
+                                    NULL,
+                                    (void*)KEY_ACTION_ROTATE);
+  mb_wm_keys_binding_add_with_spec (wm,
+				    "<shift><ctrl>s",
+				    key_binding_func,
+				    NULL,
+				    (void*)KEY_ACTION_ZOOM_IN);
+  mb_wm_keys_binding_add_with_spec (wm,
+				    "<shift><ctrl>f",
+				    key_binding_func,
+				    NULL,
+				    (void*)KEY_ACTION_ZOOM_OUT);
   }
 
   if(conf_enable_dbus_shift_ctrl) {

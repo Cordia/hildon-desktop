@@ -52,6 +52,8 @@
 
 #include <sys/time.h>
 
+#define ZOOM_INCREMENT 0.1
+
 /* This is to dump debug information to the console to help see whether the
  * order of clutter actors matches that of matchbox. */
 #define STACKING_DEBUG 0
@@ -112,7 +114,7 @@ G_DEFINE_TYPE (HdRenderManager, hd_render_manager, TIDY_TYPE_CACHED_GROUP);
                 HD_TYPE_RENDER_MANAGER, HdRenderManagerPrivate))
 
 /* The HdRenderManager singleton */
-static HdRenderManager *the_render_manager = NULL;
+static HdRenderManager *render_manager = NULL;
 
 /* HdRenderManager properties */
 enum
@@ -178,6 +180,15 @@ struct _HdRenderManagerPrivate {
   gboolean      disposed;
   HDRMStateEnum state;
   HDRMStateEnum previous_state;
+  
+  /* Zoom support */
+  gboolean zoomed;
+  gboolean zoom_drag_started;
+  gulong zoom_pressed_handler;
+  gulong zoom_released_handler;
+  gulong zoom_motion_handler;
+  guint  zoom_x;
+  guint  zoom_y;
 
   /* The input blocker is added with hd_render_manager_add_input_blocker.
    * It grabs the whole screen's input until either a window appears or
@@ -303,7 +314,7 @@ press_effect_new_frame (ClutterTimeline *timeline,
    gdouble sx, sy;
    gint ax, ay;
    ClutterFixed w,h;
-   ClutterActor *stage = CLUTTER_ACTOR (the_render_manager);
+   ClutterActor *stage = CLUTTER_ACTOR (render_manager);
 
    w = clutter_qmulx (CLUTTER_INT_TO_FIXED (hd_comp_mgr_get_current_screen_width()),
 		      CLUTTER_FLOAT_TO_FIXED (PRESS_ANCHOR));
@@ -341,23 +352,80 @@ press_effect_new_frame (ClutterTimeline *timeline,
 
    clutter_actor_queue_redraw (stage);
 }
+
+static void
+unzoom_reset (void)
+{
+  HdRenderManagerPrivate *priv = render_manager->priv;
+
+  priv->zoomed = FALSE;
+
+  g_signal_handler_disconnect (clutter_stage_get_default (),
+			       priv->zoom_pressed_handler);
+  g_signal_handler_disconnect (clutter_stage_get_default (),
+			       priv->zoom_released_handler);
+  g_signal_handler_disconnect (clutter_stage_get_default (),
+			       priv->zoom_motion_handler);
+
+  priv->zoom_pressed_handler = priv->zoom_released_handler = 0;
+
+  hd_render_manager_remove_input_blocker ();
+}
+
+static void
+unzoom_effect (ClutterTimeline *timeline,
+	       gint n_frame,
+	       ClutterActor *hdrm)
+{
+  gdouble sx, sy;
+  gint ax, ay;
+
+  clutter_actor_get_scale (hdrm, &sx, &sy);
+  clutter_actor_get_anchor_point (hdrm, &ax, &ay);
+
+  if (ax < 0)
+    ax++;
+  else
+  if (ax > 0)
+    ax--;
+
+  if (ay < 0)
+    ay++;
+  else
+    ay--;
+
+  sx = sx - ZOOM_INCREMENT;
+  sy = sy - ZOOM_INCREMENT;
+
+  if (sx > 1)
+    clutter_actor_set_scale (hdrm, sx, sy);
+
+  clutter_actor_set_anchor_point (hdrm, ax, ay);
+
+  clutter_actor_queue_redraw (hdrm);
+
+  if (sx == 1 && ax == 0 && ay == 0)
+      clutter_timeline_stop (timeline);
+}
+
+
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    INIT     */
 /* ------------------------------------------------------------------------- */
 
-HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
-                                           HdLauncher *launcher,
-                                           HdHome *home,
-                                           HdTaskNavigator *task_nav
-                                           )
+HdRenderManager *
+hd_render_manager_create (HdCompMgr *hdcompmgr,
+                          HdLauncher *launcher,
+                          HdHome *home,
+                          HdTaskNavigator *task_nav)
 {
   HdRenderManagerPrivate *priv;
 
-  g_assert(the_render_manager == NULL);
+  g_assert(render_manager == NULL);
 
-  the_render_manager = HD_RENDER_MANAGER(g_object_ref (
+  render_manager = HD_RENDER_MANAGER(g_object_ref (
         g_object_new (HD_TYPE_RENDER_MANAGER, NULL)));
-  priv = the_render_manager->priv;
+  priv = render_manager->priv;
 
   priv->disposed = FALSE;
   priv->comp_mgr = hdcompmgr;
@@ -370,13 +438,13 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   clutter_actor_set_size (CLUTTER_ACTOR(priv->task_nav),
                           HD_COMP_MGR_LANDSCAPE_WIDTH,
                           HD_COMP_MGR_LANDSCAPE_HEIGHT);
-  clutter_container_add_actor(CLUTTER_CONTAINER(the_render_manager),
+  clutter_container_add_actor(CLUTTER_CONTAINER(render_manager),
                               CLUTTER_ACTOR(priv->task_nav));
   clutter_actor_move_anchor_point_from_gravity(CLUTTER_ACTOR(priv->task_nav),
                                                CLUTTER_GRAVITY_CENTER);
 
-  /* Add the launcher widget. */
-  clutter_container_add_actor(CLUTTER_CONTAINER(the_render_manager),
+ /* Add the launcher widget. */
+  clutter_container_add_actor(CLUTTER_CONTAINER(render_manager),
                               CLUTTER_ACTOR(launcher));
 
   /* These must be below tasw and talu. */
@@ -405,13 +473,19 @@ HdRenderManager *hd_render_manager_create (HdCompMgr *hdcompmgr,
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               CLUTTER_ACTOR(priv->title_bar));
 
-  return the_render_manager;
+  g_signal_connect_swapped (priv->title_bar,
+		    	    "clicked-top-left",
+		    	    G_CALLBACK (hd_render_manager_unzoom),
+		    	    NULL);
+
+ 
+  return render_manager;
 }
 
 HdRenderManager *
 hd_render_manager_get (void)
 {
-  return the_render_manager;
+  return render_manager;
 }
 
 static void
@@ -492,6 +566,10 @@ hd_render_manager_init (HdRenderManager *self)
   priv->state = HDRM_STATE_UNDEFINED;
   priv->previous_state = HDRM_STATE_UNDEFINED;
   priv->current_blur = HDRM_BLUR_NONE;
+
+  priv->zoomed = FALSE;
+  priv->zoom_pressed_handler = priv->zoom_released_handler = 0;
+  priv->zoom_drag_started = FALSE;
 
   priv->home_blur = TIDY_BLUR_GROUP(tidy_blur_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->home_blur),
@@ -585,7 +663,7 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
   gint task_opacity, applets_opacity;
   ClutterActor *home_front;
 
-  priv = the_render_manager->priv;
+  priv = render_manager->priv;
 
   amt = frame_num / (float)clutter_timeline_get_n_frames(timeline);
 
@@ -656,12 +734,12 @@ on_timeline_blur_new_frame(ClutterTimeline *timeline,
 static void
 on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   priv->timeline_playing = FALSE;
   hd_comp_mgr_set_effect_running(priv->comp_mgr, FALSE);
 
-  g_signal_emit (the_render_manager, signals[TRANSITION_COMPLETE], 0);
+  g_signal_emit (render_manager, signals[TRANSITION_COMPLETE], 0);
 
   /* to trigger a change after the transition */
   hd_render_manager_sync_clutter_after();
@@ -681,7 +759,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   gboolean blur_home;
   gint zoom_home = 0;
 
-  priv = the_render_manager->priv;
+  priv = render_manager->priv;
 
   if (priv->timeline_playing)
     {
@@ -698,7 +776,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
   if (priv->home_radius.b == 0 &&
       priv->home_radius.current != 0)
     tidy_blur_group_set_blur(
-      CLUTTER_ACTOR(the_render_manager->priv->home_blur), 0);
+      CLUTTER_ACTOR(render_manager->priv->home_blur), 0);
 
   range_next(&priv->home_radius, 0);
   range_next(&priv->home_saturation, 1);
@@ -799,7 +877,7 @@ void hd_render_manager_set_blur (HDRMBlurEnum blur)
 void
 hd_render_manager_unzoom_background()
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   hd_render_manager_set_blur (HDRM_BLUR_HOME | HDRM_SHOW_TASK_NAV);
   /* In this case we want to keep the same level of blur that we had
@@ -829,7 +907,7 @@ gboolean hd_render_manager_actor_is_visible(ClutterActor *actor)
  * as well as by hiding the actor itself. */
 static void hd_render_manager_update_status_area(gboolean has_fullscreen)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
   MBWindowManagerClient *c = priv->status_area_client;
 
   if (has_fullscreen || !STATE_SHOW_STATUS_AREA(priv->state))
@@ -876,7 +954,7 @@ static void hd_render_manager_update_status_area(gboolean has_fullscreen)
 static
 void hd_render_manager_sync_clutter_before ()
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   HdTitleBarVisEnum btn_state = hd_title_bar_get_state(priv->title_bar) &
     ~(HDTB_VIS_BTN_LEFT_MASK |
@@ -982,12 +1060,12 @@ void hd_render_manager_sync_clutter_before ()
 
   if (!STATE_BLUR_BUTTONS(priv->state) &&
       clutter_actor_get_parent(CLUTTER_ACTOR(priv->blur_front)) !=
-              CLUTTER_ACTOR(the_render_manager))
+              CLUTTER_ACTOR(render_manager))
     {
       /* raise the blur_front out of the blur group so we can still
        * see it unblurred */
       clutter_actor_reparent(CLUTTER_ACTOR(priv->blur_front),
-                             CLUTTER_ACTOR(the_render_manager));
+                             CLUTTER_ACTOR(render_manager));
       /* lower this below task_nav (see the ordering comments at the top) */
       clutter_actor_lower(CLUTTER_ACTOR(priv->blur_front),
                           CLUTTER_ACTOR(priv->task_nav));
@@ -1072,7 +1150,7 @@ void hd_render_manager_sync_clutter_before ()
 static
 void hd_render_manager_sync_clutter_after ()
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   /* When transitioning out of a LAUNCHER_PORTRAIT state, we need to show the
    * operator after the rotation to HOME is finished, or it will show up the
@@ -1102,15 +1180,15 @@ void hd_render_manager_sync_clutter_after ()
 
 void hd_render_manager_stop_transition()
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   if (priv->timeline_playing)
     {
       guint frames;
       clutter_timeline_stop(priv->timeline_blur);
       frames = clutter_timeline_get_n_frames(priv->timeline_blur);
-      on_timeline_blur_new_frame(priv->timeline_blur, frames, the_render_manager);
-      on_timeline_blur_completed(priv->timeline_blur, the_render_manager);
+      on_timeline_blur_new_frame(priv->timeline_blur, frames, render_manager);
+      on_timeline_blur_completed(priv->timeline_blur, render_manager);
     }
 
   hd_launcher_transition_stop();
@@ -1118,7 +1196,7 @@ void hd_render_manager_stop_transition()
 
 void hd_render_manager_add_to_front_group (ClutterActor *item)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   clutter_actor_reparent(item, CLUTTER_ACTOR(priv->front));
 }
@@ -1131,7 +1209,7 @@ static gboolean hd_render_manager_status_area_clicked(ClutterActor *actor,
    * we want to do what clicking on the modal blocker would have done ->
    * delete the frontmost dialog/menu if there was one with a blocker */
 
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
   MBWindowManagerClient *c;
 
@@ -1184,7 +1262,7 @@ static gboolean hd_render_manager_status_area_clicked(ClutterActor *actor,
 
 void hd_render_manager_set_status_area (ClutterActor *item)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   if (priv->status_area)
     {
@@ -1226,7 +1304,7 @@ void hd_render_manager_set_status_area (ClutterActor *item)
 
 void hd_render_manager_set_status_menu (ClutterActor *item)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   if (priv->status_menu)
     {
@@ -1245,7 +1323,7 @@ void hd_render_manager_set_status_menu (ClutterActor *item)
 
 void hd_render_manager_set_operator (ClutterActor *item)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   if (priv->operator)
     g_object_unref(priv->operator);
@@ -1254,7 +1332,7 @@ void hd_render_manager_set_operator (ClutterActor *item)
 
 void hd_render_manager_set_loading  (ClutterActor *item)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   if (priv->loading_image == item)
     return;
@@ -1294,23 +1372,23 @@ void hd_render_manager_set_loading  (ClutterActor *item)
 
 ClutterActor *hd_render_manager_get_title_bar(void)
 {
-  return CLUTTER_ACTOR(the_render_manager->priv->title_bar);
+  return CLUTTER_ACTOR(render_manager->priv->title_bar);
 }
 
 ClutterActor *hd_render_manager_get_status_area(void)
 {
-  return CLUTTER_ACTOR(the_render_manager->priv->status_area);
+  return CLUTTER_ACTOR(render_manager->priv->status_area);
 }
 
 MBWindowManagerClient *hd_render_manager_get_status_area_client(void)
 {
-  return the_render_manager->priv->status_area_client;
+  return render_manager->priv->status_area_client;
 }
 
 /* FIXME: this should not be exposed */
 ClutterContainer *hd_render_manager_get_front_group(void)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
   return CLUTTER_CONTAINER(priv->front);
 }
 
@@ -1350,7 +1428,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
   MBWindowManager      *wm;
   MBWindowManagerClient *c;
 
-  priv = the_render_manager->priv;
+  priv = render_manager->priv;
   cmgr = MB_WM_COMP_MGR (priv->comp_mgr);
 
   if (hd_debug_mode_set)
@@ -1775,7 +1853,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         hd_wm_current_app_is (wm,  0);
 
       /* Signal the state has changed. */
-      g_object_notify (G_OBJECT (the_render_manager), "state");
+      g_object_notify (G_OBJECT (render_manager), "state");
 
       if ((state==HDRM_STATE_APP || state==HDRM_STATE_APP_PORTRAIT
 	   || state==HDRM_STATE_HOME || state==HDRM_STATE_HOME_EDIT_DLG)
@@ -1834,16 +1912,16 @@ out:
 /* Upgrade the current state to portrait. */
 void hd_render_manager_set_state_portrait (void)
 {
-  g_assert (STATE_IS_PORTRAIT_CAPABLE (the_render_manager->priv->state));
-  if (the_render_manager->priv->state == HDRM_STATE_APP)
+  g_assert (STATE_IS_PORTRAIT_CAPABLE (render_manager->priv->state));
+  if (render_manager->priv->state == HDRM_STATE_APP)
     hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
-  else if (the_render_manager->priv->state == HDRM_STATE_NON_COMPOSITED)
+  else if (render_manager->priv->state == HDRM_STATE_NON_COMPOSITED)
     {
       /* rotate in composited mode */
       hd_render_manager_set_state (HDRM_STATE_APP);
       hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
     }
-  else if (the_render_manager->priv->state == HDRM_STATE_LAUNCHER)
+  else if (render_manager->priv->state == HDRM_STATE_LAUNCHER)
     hd_render_manager_set_state (HDRM_STATE_LAUNCHER_PORTRAIT);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
@@ -1852,16 +1930,16 @@ void hd_render_manager_set_state_portrait (void)
 /* ...and the opposite. */
 void hd_render_manager_set_state_unportrait (void)
 {
-  g_assert (STATE_IS_PORTRAIT (the_render_manager->priv->state));
-  if (the_render_manager->priv->state == HDRM_STATE_APP_PORTRAIT)
+  g_assert (STATE_IS_PORTRAIT (render_manager->priv->state));
+  if (render_manager->priv->state == HDRM_STATE_APP_PORTRAIT)
     hd_render_manager_set_state (HDRM_STATE_APP);
-  else if (the_render_manager->priv->state == HDRM_STATE_NON_COMP_PORT)
+  else if (render_manager->priv->state == HDRM_STATE_NON_COMP_PORT)
     {
       /* rotate in composited mode */
       hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
       hd_render_manager_set_state (HDRM_STATE_APP);
     }
-  else if (the_render_manager->priv->state == HDRM_STATE_LAUNCHER_PORTRAIT)
+  else if (render_manager->priv->state == HDRM_STATE_LAUNCHER_PORTRAIT)
     hd_render_manager_set_state (HDRM_STATE_LAUNCHER);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME);
@@ -1870,30 +1948,30 @@ void hd_render_manager_set_state_unportrait (void)
 /* Switch from NON_COMPOSITED => APP or NON_COMP_PORT => APP_PORTRAIT. */
 void hd_render_manager_switch_to_composited_state (void)
 {
-  if (the_render_manager->priv->state == HDRM_STATE_NON_COMPOSITED)
+  if (render_manager->priv->state == HDRM_STATE_NON_COMPOSITED)
     hd_render_manager_set_state (HDRM_STATE_APP);
-  else if (the_render_manager->priv->state == HDRM_STATE_NON_COMP_PORT)
+  else if (render_manager->priv->state == HDRM_STATE_NON_COMP_PORT)
     hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
 }
 
 /* Returns whether set_state() is in progress. */
 gboolean hd_render_manager_is_changing_state(void)
 {
-  return the_render_manager->priv->in_set_state;
+  return render_manager->priv->in_set_state;
 }
 
 inline HDRMStateEnum hd_render_manager_get_state()
 {
-  if (!the_render_manager)
+  if (!render_manager)
     return HDRM_STATE_UNDEFINED;
-  return the_render_manager->priv->state;
+  return render_manager->priv->state;
 }
 
 inline HDRMStateEnum hd_render_manager_get_previous_state()
 {
-  if (!the_render_manager)
+  if (!render_manager)
     return HDRM_STATE_UNDEFINED;
-  return the_render_manager->priv->previous_state;
+  return render_manager->priv->previous_state;
 }
 
 static const char *hd_render_manager_state_str(HDRMStateEnum state)
@@ -1912,7 +1990,7 @@ static const char *hd_render_manager_state_str(HDRMStateEnum state)
 
 const char *hd_render_manager_get_state_str()
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
   return hd_render_manager_state_str(priv->state);
 }
 
@@ -1954,7 +2032,7 @@ hd_render_manager_set_property (GObject      *gobject,
 
 gboolean hd_render_manager_in_transition(void)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
   return clutter_timeline_is_playing(priv->timeline_blur);
 }
 
@@ -1962,7 +2040,7 @@ gboolean hd_render_manager_in_transition(void)
 void hd_render_manager_return_app(ClutterActor *actor)
 {
   HdRenderManagerPrivate *priv = HD_RENDER_MANAGER_GET_PRIVATE (
-		  the_render_manager);
+		  render_manager);
   MBWMCompMgrClutterClient *cc;
 
   if (priv->disposed) {
@@ -1984,7 +2062,7 @@ void hd_render_manager_return_app(ClutterActor *actor)
   if (clutter_actor_get_parent(actor))
     {
       clutter_actor_reparent(actor,
-                             CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+                             CLUTTER_ACTOR(render_manager->priv->home_blur));
       clutter_actor_lower_bottom(actor);
       clutter_actor_hide(actor);
     }
@@ -1994,7 +2072,7 @@ void hd_render_manager_return_app(ClutterActor *actor)
 void hd_render_manager_return_dialog(ClutterActor *actor)
 {
   clutter_actor_reparent(actor,
-                         CLUTTER_ACTOR(the_render_manager->priv->app_top));
+                         CLUTTER_ACTOR(render_manager->priv->app_top));
   clutter_actor_hide (actor);
 }
 
@@ -2087,7 +2165,7 @@ hd_render_manager_get_geo_for_current_screen(ClutterActor *actor,
 /* Called to restack the windows in the way we use for rendering... */
 void hd_render_manager_restack()
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
   MBWindowManager *wm;
   MBWindowManagerClient *c;
   gboolean past_desktop = FALSE;
@@ -2409,7 +2487,7 @@ void hd_render_manager_restack()
 
 void hd_render_manager_update_blur_state()
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
   HDRMBlurEnum blur_flags;
   HdTitleBarVisEnum title_flags;
   MBWindowManager *wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
@@ -2511,14 +2589,14 @@ void hd_render_manager_update_blur_state()
 void hd_render_manager_pause_blur_animation()
 {
   tidy_blur_group_stop_progressing(
-                    CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+                    CLUTTER_ACTOR(render_manager->priv->home_blur));
 }
 
 /* This is called when we are in the launcher subview so that we can blur and
  * darken the background even more */
 void hd_render_manager_set_launcher_subview(gboolean subview)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   /*g_debug("%s: %s", __FUNCTION__, subview ? "SUBVIEW":"MAIN");*/
   if (subview)
@@ -2535,7 +2613,7 @@ static gboolean
 hd_render_manager_is_visible(GList *blockers,
                              ClutterGeometry rect)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   if (STATE_IS_NON_COMP (priv->state) || !hd_render_manager_clip_geo(&rect))
     return FALSE;
@@ -2644,7 +2722,7 @@ hd_render_manager_get_wm_client_from_actor(ClutterActor *actor)
     return cc->wm_client;
 
   /*Or search... */
-  wm = MB_WM_COMP_MGR(the_render_manager->priv->comp_mgr)->wm;
+  wm = MB_WM_COMP_MGR(render_manager->priv->comp_mgr)->wm;
   /* Order and choose which window actors will be visible */
   for (c = wm->stack_bottom; c; c = c->stacked_above)
     if (c->cm_client) {
@@ -2690,10 +2768,10 @@ gboolean hd_render_manager_actor_opaque(ClutterActor *actor)
   MBWindowManagerClient *wm_client;
 
   /* this is ugly and slow, but is hopefully just a fallback... */
-  if (!actor || !the_render_manager->priv->comp_mgr)
+  if (!actor || !render_manager->priv->comp_mgr)
     /* this check is most probably unnecessary */
     return FALSE;
-  wm = MB_WM_COMP_MGR(the_render_manager->priv->comp_mgr)->wm;
+  wm = MB_WM_COMP_MGR(render_manager->priv->comp_mgr)->wm;
   wm_client = hd_render_manager_get_wm_client_from_actor(actor);
   return wm &&
          wm_client &&
@@ -2741,7 +2819,7 @@ void hd_render_manager_set_visibilities()
   gboolean has_fullscreen;
   MBWindowManagerClient *c;
 
-  priv = the_render_manager->priv;
+  priv = render_manager->priv;
 
   /* shortcut for non-composited mode */
   if (STATE_IS_NON_COMP (priv->state))
@@ -2873,7 +2951,7 @@ gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c)
 {
   ClutterActor *a;
   MBWMCompMgrClutterClient *cc;
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   if (STATE_IS_NON_COMP (priv->state))
     return FALSE;
@@ -2897,7 +2975,7 @@ gboolean hd_render_manager_is_client_visible(MBWindowManagerClient *c)
  * depending on the visible visual elements. */
 void hd_render_manager_place_titlebar_elements (void)
 {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
   guint x;
 
   x = 0;
@@ -2942,9 +3020,9 @@ void hd_render_manager_blurred_changed()
   gboolean force = FALSE;
   gboolean force_not = FALSE;
 
-  if (!the_render_manager) return;
+  if (!render_manager) return;
 
-  priv = the_render_manager->priv;
+  priv = render_manager->priv;
 
   /* from home_edit to home, applets swap from front to blurred and
    * it makes the transition look a bit strange */
@@ -2964,18 +3042,18 @@ void hd_render_manager_blurred_changed()
    * we blur). */
   if ((force || priv->home_radius.b != 0) && !force_not)
     tidy_blur_group_set_source_changed(
-          CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+          CLUTTER_ACTOR(render_manager->priv->home_blur));
   else
     tidy_blur_group_hint_source_changed(
-          CLUTTER_ACTOR(the_render_manager->priv->home_blur));
+          CLUTTER_ACTOR(render_manager->priv->home_blur));
 }
 
 void
 hd_render_manager_get_title_xy (int *x, int *y)
 {
-  if (!the_render_manager) return;
+  if (!render_manager) return;
 
-  hd_title_bar_get_xy (the_render_manager->priv->title_bar, x, y);
+  hd_title_bar_get_xy (render_manager->priv->title_bar, x, y);
 }
 
 static gboolean
@@ -2983,11 +3061,14 @@ hd_render_manager_captured_event_cb (ClutterActor     *actor,
                                      ClutterEvent     *event,
                                      gpointer *data)
 {
-  /* We could, *maybe* get called before the_render_manager is set up - so do
+  /* We could, *maybe* get called before render_manager is set up - so do
    * a check anyway */
-  if (the_render_manager &&
-      the_render_manager->priv->has_input_blocker)
+  if (render_manager && render_manager->priv->has_input_blocker) 
     {
+
+      if (render_manager->priv->zoomed)
+	return FALSE;
+
       /* Just put a message here - this should only happen when the user
        * clicks really quickly */
       g_debug("%s: Input event blocked by "
@@ -3011,26 +3092,32 @@ _hd_render_manager_remove_input_blocker_cb() {
  * window appears or a timeout expires. We actually do input blocking by
  * grabbing the whole input viewport, and then ignoring any events captured
  * by clutter using hd_render_manager_captured_event_cb  */
-void hd_render_manager_add_input_blocker() {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+void 
+hd_render_manager_add_input_blocker (void) 
+{
+  HdRenderManagerPrivate *priv = render_manager->priv;
   if (!priv->has_input_blocker)
     {
       //g_debug("%s: Input Blocker ADDED", __FUNCTION__);
       priv->has_input_blocker = TRUE;
-      hd_render_manager_set_input_viewport();
+      hd_render_manager_set_input_viewport ();
       /* After this timeout has expired we remove the blocker - this should
        * stop us getting into some broken state if the app does not start. */
-      priv->has_input_blocker_timeout =
-        g_timeout_add(1000,
-                      (GSourceFunc)_hd_render_manager_remove_input_blocker_cb,
-                      0);
+
+      /* When we zoom, we are also adding an input blocker but we don't want it
+	 to go away until the user zooms completely out */
+      if (priv->zoomed == FALSE)
+        priv->has_input_blocker_timeout =
+          g_timeout_add (1000,
+                         (GSourceFunc)_hd_render_manager_remove_input_blocker_cb,
+                         0);
     }
 }
 
 /* See hd_render_manager_add_input_blocker. This should be called when
  * we don't need the input blocked any more. */
 void hd_render_manager_remove_input_blocker() {
-  HdRenderManagerPrivate *priv = the_render_manager->priv;
+  HdRenderManagerPrivate *priv = render_manager->priv;
 
   /* remove the timeout if there was one */
   if (priv->has_input_blocker_timeout)
@@ -3041,14 +3128,14 @@ void hd_render_manager_remove_input_blocker() {
    /* remove the modal blocker */
    if (priv->has_input_blocker)
      {
-       //g_debug("%s: Input Blocker REMOVED", __FUNCTION__);
+       g_debug("%s: Input Blocker REMOVED", __FUNCTION__);
        priv->has_input_blocker = FALSE;
        hd_render_manager_set_input_viewport();
      }
  }
 
  gboolean hd_render_manager_allow_dbus_launch_transition() {
-   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   HdRenderManagerPrivate *priv = render_manager->priv;
    /* We only allow a launch transition from dbus if a window hasn't been
     * mapped within a short time period - otherwise it is most likely
     * that the dbus signal arrived after the window was mapped. This has
@@ -3079,7 +3166,7 @@ void hd_render_manager_remove_input_blocker() {
  static gboolean
  hd_render_manager_set_compositor_input_viewport_idle (gpointer data)
  {
-   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   HdRenderManagerPrivate *priv = render_manager->priv;
    MBWindowManager        *wm   = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
    Window        win = None;
    Window        clwin;
@@ -3146,7 +3233,7 @@ void hd_render_manager_remove_input_blocker() {
  static void
  hd_render_manager_set_compositor_input_viewport (GdkRegion *region)
  {
-   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   HdRenderManagerPrivate *priv = render_manager->priv;
 
    /*  */
    if (priv->new_input_viewport)
@@ -3170,7 +3257,7 @@ void hd_render_manager_remove_input_blocker() {
  hd_render_manager_get_foreground_region(MBWMClientType client_mask)
  {
    MBWindowManagerClient *fg_client;
-   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   HdRenderManagerPrivate *priv = render_manager->priv;
    MBWindowManager *wm = MB_WM_COMP_MGR(priv->comp_mgr)->wm;
    GdkRegion *region = gdk_region_new();
 
@@ -3190,7 +3277,7 @@ void hd_render_manager_remove_input_blocker() {
  void
  hd_render_manager_set_input_viewport()
  {
-   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   HdRenderManagerPrivate *priv = render_manager->priv;
    GdkRegion         *region = gdk_region_new();
    MBWindowManager   *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
    MBWindowManagerClient *c;
@@ -3204,8 +3291,8 @@ void hd_render_manager_remove_input_blocker() {
    if (!hd_wm_has_modal_blockers (wm))
      {
 
-       if (!STATE_NEED_WHOLE_SCREEN_INPUT(priv->state) &&
-           !priv->has_input_blocker)
+       if (!STATE_NEED_WHOLE_SCREEN_INPUT(priv->state) 
+	   && !priv->has_input_blocker)
          {
            /* Now look at what buttons we have showing, and add each visible button X
             * to the X input viewport. */
@@ -3314,7 +3401,7 @@ void hd_render_manager_remove_input_blocker() {
  void
  hd_render_manager_flip_input_viewport()
  {
-   HdRenderManagerPrivate *priv = the_render_manager->priv;
+   HdRenderManagerPrivate *priv = render_manager->priv;
    GdkRectangle *inputshape;
    int i, ninputshapes;
    GdkRegion *region;
@@ -3347,7 +3434,7 @@ void hd_render_manager_remove_input_blocker() {
 HdHome *
 hd_render_manager_get_home (void)
 {
-  return the_render_manager->priv->home;
+  return render_manager->priv->home;
 }
 
 void 
@@ -3355,9 +3442,10 @@ hd_render_manager_press_effect (void)
 {
   if (hd_transition_get_int ("home", "zoom_on_press", 0))
   {
-    g_return_if_fail (the_render_manager != NULL);
+    HdRenderManagerPrivate *priv = render_manager->priv;
 
-    HdRenderManagerPrivate *priv = the_render_manager->priv;
+    g_return_if_fail (render_manager != NULL);
+    g_return_if_fail (!render_manager->priv->zoomed);
 
     if (!priv->press_effect)  
     {
@@ -3373,10 +3461,12 @@ hd_render_manager_end_press_effect (void)
 {
   if (hd_transition_get_int ("home", "zoom_on_press", 0))
   {
-    g_return_if_fail (the_render_manager != NULL);
+    g_return_if_fail (render_manager != NULL);
 
     HdRenderManagerPrivate *priv = 
-      HD_RENDER_MANAGER_GET_PRIVATE (the_render_manager);
+      HD_RENDER_MANAGER_GET_PRIVATE (render_manager);
+
+    g_return_if_fail (!render_manager->priv->zoomed);
 
     priv->press_effect_paused = FALSE;
 
@@ -3384,5 +3474,227 @@ hd_render_manager_end_press_effect (void)
     {
       clutter_timeline_start (priv->timeline_press);
     }
+  }
+}
+
+static gboolean
+zoom_pressed (HdRenderManager *hdrm,
+	      ClutterButtonEvent *event)
+{
+  if (!hdrm->priv->zoomed)
+    return FALSE;
+
+  if (hdrm->priv->zoom_drag_started)
+    {
+      hdrm->priv->zoom_drag_started = FALSE;
+      return FALSE;
+    }
+
+  hdrm->priv->zoom_x = event->x;
+  hdrm->priv->zoom_y = event->y;
+
+  hdrm->priv->zoom_drag_started = TRUE;
+
+  return TRUE;
+}
+
+static gboolean 
+zoom_motion (HdRenderManager *hdrm,
+	     ClutterMotionEvent *event)
+{
+#define ZOOM_DRAG_SPEED 10
+  if (hdrm->priv->zoom_drag_started && hdrm->priv->zoomed)
+    {
+      gint x, y, ax, ay, nx, ny, real_width, real_height;
+      gdouble sx, sy;
+
+      real_width  = hd_comp_mgr_get_current_screen_width  ();
+      real_height = hd_comp_mgr_get_current_screen_height ();
+
+      x = hdrm->priv->zoom_x - event->x;
+      y = hdrm->priv->zoom_y - event->y;
+
+      hdrm->priv->zoom_x = event->x;
+      hdrm->priv->zoom_y = event->y;
+
+      clutter_actor_get_scale (CLUTTER_ACTOR (hdrm), &sx, &sy);
+      clutter_actor_get_anchor_point (CLUTTER_ACTOR (hdrm), &ax, &ay);
+ 
+      if (x < 0) /* going left */
+        {
+	  nx = ax - ZOOM_DRAG_SPEED;
+
+          if (nx < 0)
+	    nx = 0;
+        }
+      else
+      if (x > 0)
+        {
+ 	  nx = ax + ZOOM_DRAG_SPEED;
+
+	  if (nx > (real_width - real_width/sx))
+	    nx = real_width - real_width/sx; /*anchor point limit for right border*/
+        }
+      else
+	nx = ax;
+
+      if (y < 0)
+        {
+	  ny = ay - ZOOM_DRAG_SPEED;
+
+	  if (ny < 0)
+	    ny = 0;
+        }
+      else
+      if (y > 0)
+        {
+ 	  ny = ay + ZOOM_DRAG_SPEED;
+
+	  if (ny > (real_height - real_height/sx))
+	    ny = real_height - real_height/sx;
+        }
+      else
+	ny = ay;
+
+      clutter_actor_set_anchor_point (CLUTTER_ACTOR (hdrm), nx, ny);
+
+      clutter_actor_queue_redraw (CLUTTER_ACTOR (hdrm));
+
+      return TRUE;
+    }
+ 
+  return FALSE;
+}
+
+static gboolean
+zoom_released (HdRenderManager *hdrm,
+	       ClutterButtonEvent *event)
+{
+  hdrm->priv->zoom_drag_started = FALSE;
+
+  g_debug ("RELEASING?");
+
+  return TRUE;
+}
+
+void
+hd_render_manager_zoom_in (void)
+{
+  g_return_if_fail (render_manager != NULL);
+  g_return_if_fail (render_manager->priv->state != HDRM_STATE_TASK_NAV);
+  g_return_if_fail (render_manager->priv->state != HDRM_STATE_LAUNCHER);
+
+  HdRenderManagerPrivate *priv = render_manager->priv;
+  ClutterActor *stage = CLUTTER_ACTOR (render_manager);
+  gdouble sx, sy;
+  gint ax, ay;
+
+  clutter_actor_get_scale (stage, &sx, &sy);
+  clutter_actor_get_anchor_point (stage, &ax, &ay);
+
+  if (sx > 4)
+    return;
+ 
+  clutter_actor_set_scale (stage, sx + ZOOM_INCREMENT, sy + ZOOM_INCREMENT);
+
+  if (!priv->zoomed)
+    {
+	if (priv->zoom_pressed_handler == 0 
+	    && priv->zoom_pressed_handler == 0)
+          {
+	    priv->zoom_pressed_handler =
+	      g_signal_connect_swapped (clutter_stage_get_default (),
+					"button-press-event",
+			  		G_CALLBACK (zoom_pressed),
+			  		render_manager);
+
+      	    priv->zoom_released_handler =
+	      g_signal_connect_swapped (clutter_stage_get_default (),
+			  		"button-release-event",
+			  		G_CALLBACK (zoom_released),
+			  		render_manager);
+
+	    priv->zoom_motion_handler =
+              g_signal_connect_swapped (clutter_stage_get_default (),
+					"motion-event",
+					G_CALLBACK (zoom_motion),
+					render_manager);
+	  }
+      priv->zoomed = TRUE;
+      hd_render_manager_add_input_blocker ();
+    }
+
+  clutter_actor_get_scale (stage, &sx, &sy);
+
+  if (sx == 1.0)
+    unzoom_reset ();
+
+  clutter_actor_queue_redraw (stage);
+}
+
+void 
+hd_render_manager_zoom_out (void)
+{
+  g_return_if_fail (render_manager != NULL);
+
+  HdRenderManagerPrivate *priv = render_manager->priv;
+  ClutterActor *stage = CLUTTER_ACTOR (render_manager);
+  gdouble sx, sy;
+
+  clutter_actor_get_scale (stage, &sx, &sy);
+
+  if (sx <= 1)
+      hd_render_manager_unzoom ();
+  else
+    {
+      gint ax, ay;
+#define LIMIT(size) \
+	hd_comp_mgr_get_current_screen_##size () - hd_comp_mgr_get_current_screen_##size ()/sx
+      priv->zoomed = TRUE;
+      clutter_actor_set_scale (stage, sx - ZOOM_INCREMENT, sy - ZOOM_INCREMENT);  
+      clutter_actor_get_scale (stage, &sx, &sy);
+
+      clutter_actor_get_anchor_point (stage, &ax, &ay);
+
+      if (ax < 0)
+	ax = 0;
+      else 
+      if (ax > LIMIT (width))
+	ax = LIMIT (width);
+
+      if (ay < 0)
+	ay = 0;
+      else
+      if (ay > LIMIT (height))
+	ay = LIMIT (height);
+
+      clutter_actor_set_anchor_point (stage, ax, ay);
+    }
+
+  clutter_actor_queue_redraw (stage);
+}
+
+void
+hd_render_manager_unzoom (void)
+{
+  HdRenderManagerPrivate *priv = render_manager->priv;
+
+  if (priv->zoomed)
+  {
+     static ClutterTimeline *timeline = NULL;
+
+     if (timeline == NULL)
+     {
+	timeline = clutter_timeline_new_for_duration (4000);
+
+ 	g_signal_connect (timeline,
+			  "new-frame",
+			  G_CALLBACK (unzoom_effect),
+			  render_manager);
+     }
+
+     priv->zoomed = FALSE;
+     clutter_timeline_start (timeline);
+     unzoom_reset ();
   }
 }
