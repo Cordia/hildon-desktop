@@ -1,3 +1,11 @@
+hildon-desktop (1:2.2.142-11) unstable; urgency=low
+
+  * Added zoom in/out support in hildon-desktop.
+  * Improved zoom on press effect.
+  * Implemented orientation lock.
+
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Wed,  9 Mar 2011 19:54:05 +0200
+
 hildon-desktop (1:2.2.142-10) unstable; urgency=low
 
   * Added zoom on press effect.
