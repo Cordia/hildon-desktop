@@ -129,6 +129,11 @@ HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$
 HD_INCS=$HD_INCS' -I$(top_srcdir)/clutter_0_8 -I$(top_srcdir)/clutter_0_8/clutter -I$(top_srcdir)/libmatchbox2'
 AC_DEFINE(MAEMO_CHANGES, 1, [Use Maemo specific features])
 
+PKG_CHECK_MODULES(XFIXES, xfixes >= 4.0, have_xfixes=yes, have_xfixes=no)
+if test x$have_xfixes = xyes; then
+  AC_DEFINE(HAVE_XFIXES, [1], [Use XFixes ext to really hide cursor])
+fi
+
 # only CFLAGS are needed from MB2 since we are statically linking
 AC_SUBST(MB2_CFLAGS)
 AC_SUBST(MB2_STATIC_LIB)
