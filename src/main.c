@@ -42,6 +42,7 @@
 #include <clutter/x11/clutter-x11.h>
 #include <clutter/clutter-container.h>
 #include <gdk-pixbuf-xlib/gdk-pixbuf-xlib.h>
+#include <X11/extensions/XInput.h>
 
 #include "hildon-desktop.h"
 #include "hd-wm.h"
@@ -76,6 +77,10 @@ MBWindowManager *hd_mb_wm = NULL;
 static int hd_clutter_mutex_enabled = FALSE;
 static int hd_clutter_mutex_do_unlock_after_disabling = FALSE;
 static GStaticMutex hd_clutter_mutex = G_STATIC_MUTEX_INIT;
+
+static int xinput_motion_eventtype = -1;
+static int xdevice_is_touchscreen[64];
+static int mouse_cursor_visible;
 
 void hd_mutex_enable (int setting)
 {
@@ -335,6 +340,46 @@ key_binding_func_key (MBWindowManager   *wm,
   hd_dbus_send_event (s);
 }
 
+static void
+set_mouse_cursor_visible(int visible)
+{
+  Display *dpy = clutter_x11_get_default_display ();
+  Window root = RootWindow (dpy, clutter_x11_get_default_screen());
+
+  if (visible) {
+#ifdef HAVE_XFIXES
+    XFixesShowCursor (dpy, root);
+#else
+    XUndefineCursor (dpy, root);
+  /* set the cursor * /
+    Cursor xcursor;
+    xcursor = XCreateFontCursor (wm->xdpy, XC_left_ptr);
+    XDefineCursor(wm->xdpy, wm->root_win->xwindow, xcursor);
+  */
+#endif /* HAVE_XFIXES */
+  }
+  else
+  {
+#ifdef HAVE_XFIXES
+    XFixesHideCursor (dpy, root);
+#else
+    XColor col;
+    Pixmap pix;
+    Cursor curs;
+
+    pix = XCreatePixmap (dpy, root, 1, 1, 1);
+    memset (&col, 0, sizeof (col));
+    curs = XCreatePixmapCursor (dpy,
+                                pix, pix,
+                                &col, &col,
+                                1, 1);
+    XFreePixmap (dpy, pix);
+    XDefineCursor (dpy, root, curs);
+#endif /* HAVE_XFIXES */
+  }
+  mouse_cursor_visible = visible;
+}
+
 static ClutterX11FilterReturn
 clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
 {
@@ -342,6 +387,19 @@ clutter_x11_event_filter (XEvent *xev, ClutterEvent *cev, gpointer data)
 
   if (xev->type == ButtonPress)
     hd_render_manager_press_effect ();
+  else
+  if (xev->type == xinput_motion_eventtype)
+  {
+    int devid;
+    XDeviceMotionEvent *mev;
+    mev = (XDeviceMotionEvent *) xev;
+    devid = (int) mev->deviceid - 2; /* skip core pointer and core keyboard */
+    if (devid < sizeof(xdevice_is_touchscreen)) {
+      int need_visible = ! xdevice_is_touchscreen[devid];
+      if (mouse_cursor_visible != need_visible)
+        set_mouse_cursor_visible (need_visible);
+    }
+  }
 
   mb_wm_main_context_handle_x_event (xev, wm->main_ctx);
 
@@ -580,7 +638,11 @@ main (int argc, char **argv)
   Display * dpy = NULL;
   MBWindowManager *wm;
   HdAppMgr *app_mgr;
-  char keys1[32], c; 
+  char keys1[32], c;
+  XDeviceInfo *devinfo;
+  int i, ndev, nclass;
+  XEventClass eclass[64];
+  Atom touchscreen_type;
 
   signal (SIGUSR1, dump_debug_info_sighand);
   signal (SIGHUP,  relaunch);
@@ -766,6 +828,31 @@ main (int argc, char **argv)
 	  }
   }
 
+
+  touchscreen_type = XInternAtom (dpy, "TOUCHSCREEN", True);
+  if (touchscreen_type != None) {
+    /* get XInput DeviceMotion events */
+    devinfo = XListInputDevices (dpy, &ndev);
+    if (ndev > sizeof(eclass)) ndev = sizeof(eclass);
+    if (ndev > sizeof(xdevice_is_touchscreen)) ndev = sizeof(xdevice_is_touchscreen);
+    nclass = 0;
+    for (i = 0; i < ndev; i++) {
+      XDeviceInfo info = devinfo[i];
+      if (info.use == IsXExtensionPointer) {
+        XDevice *dev = XOpenDevice (dpy, info.id);
+        /* bizzaro macro, to SET arg 2 and 3 */
+        DeviceMotionNotify (dev, xinput_motion_eventtype, eclass[nclass]);
+        nclass++;
+        xdevice_is_touchscreen[i] = (info.type == touchscreen_type);
+//        printf ("### %d/%d. %s(%d):%s.%d t:%d c:%d\n", i, nclass, info.name, (int)info.id,
+//                XGetAtomName(dpy, info.type), xdevice_is_touchscreen[i],
+//                xinput_motion_eventtype, (int)eclass[nclass-1]);
+      }
+    }
+    XFreeDeviceList (devinfo);
+    XSelectExtensionEvent (dpy, RootWindow (dpy, clutter_x11_get_default_screen()), eclass, nclass);
+    set_mouse_cursor_visible (FALSE);
+  }
 
   clutter_x11_add_filter (clutter_x11_event_filter, wm);
 

@@ -165,6 +165,11 @@ fi
 
 HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util -I$(top_srcdir)/src/a11y'
 
+PKG_CHECK_MODULES(XFIXES, xfixes >= 4.0, have_xfixes=yes, have_xfixes=no)
+if test x$have_xfixes = xyes; then
+  AC_DEFINE(HAVE_XFIXES, [1], [Use XFixes ext to really hide cursor])
+fi
+
 # only CFLAGS are needed from MB2 since we are statically linking
 AC_SUBST(MB2_CFLAGS)
 AC_SUBST(MB2_STATIC_LIB)
