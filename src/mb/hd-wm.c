@@ -410,7 +410,7 @@ hd_wm_client_activate (MBWindowManager * wm,
                       MB_WM_COMP_MGR_CLUTTER_CLIENT (c->cm_client));
       sw = HD_SWITCHER (hd_comp_mgr_get_switcher (HD_COMP_MGR (wm->comp_mgr)));
       state = hd_render_manager_get_state();
-      if (state == HDRM_STATE_TASK_NAV
+      if (STATE_IS_TASK_NAV(state)
           && hd_task_navigator_has_window (hd_task_navigator, a))
         {
           hd_switcher_item_selected (sw, a);

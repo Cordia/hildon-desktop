@@ -745,7 +745,7 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
                 hd_dbus_send_event(s);
           }
   }
-  if (hd_render_manager_get_state()==HDRM_STATE_TASK_NAV) {
+  if (STATE_IS_TASK_NAV(hd_render_manager_get_state())) {
           int d,y;
           d=0;
           switch(xev->keycode) {
@@ -954,11 +954,11 @@ hd_home_desktop_key_release (XKeyEvent *xev, void *userdata)
 
   /* Ignore keys if not at home or launching an app that wants them. */
   if (!STATE_ALLOW_CALL_FROM_HOME (hd_render_manager_get_state ()) &&
-      (priv->key_sent == KEY_SENT_NONE) && (hd_render_manager_get_state()!=HDRM_STATE_TASK_NAV))
+      (priv->key_sent == KEY_SENT_NONE) && (!STATE_IS_TASK_NAV(hd_render_manager_get_state())))
       return;
 
   if((XkbKeycodeToKeysym(clutter_x11_get_default_display(), xev->keycode, 0, 0) == GDK_Control_L) &&
-  	(hd_render_manager_get_state () == HDRM_STATE_TASK_NAV ) &&
+	(STATE_IS_TASK_NAV(hd_render_manager_get_state())) &&
 	(conf_ctrl_backspace_in_tasknav==5) && in_alt_tab) {
 	  in_alt_tab=FALSE;
 	  hd_task_navigator_activate(0, 0, 0);
@@ -982,7 +982,7 @@ hd_home_desktop_key_release (XKeyEvent *xev, void *userdata)
   else
     priv->fn_state = FN_STATE_NONE;
 	  if(priv->fn_state) {
-		 if (hd_render_manager_get_state()==HDRM_STATE_TASK_NAV) {
+		 if (STATE_IS_TASK_NAV(hd_render_manager_get_state())) {
 		 	hd_home_show_edit_button(home);
 		 	time(&priv->last_fn_time);
 	  	} else {
@@ -1000,7 +1000,7 @@ hd_home_desktop_key_release (XKeyEvent *xev, void *userdata)
 	  else
 	    priv->shift_state = FN_STATE_NONE;
 	  if(priv->shift_state) {
-		 if (hd_render_manager_get_state()==HDRM_STATE_TASK_NAV) {
+		 if (STATE_IS_TASK_NAV(hd_render_manager_get_state())) {
 		 	hd_home_show_edit_button(home);
 		 	time(&priv->last_fn_time);
 	  	} else {

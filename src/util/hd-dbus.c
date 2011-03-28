@@ -50,7 +50,7 @@ hd_dbus_signal_handler (DBusConnection *conn, DBusMessage *msg, void *data)
                                   TASKNAV_SIGNAL_NAME))
     {
       if (STATE_IS_APP (hd_render_manager_get_state ()))
-        hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+	hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
       return DBUS_HANDLER_RESULT_HANDLED;
     }
   else if (dbus_message_is_signal(msg,
@@ -69,8 +69,8 @@ hd_dbus_signal_handler (DBusConnection *conn, DBusMessage *msg, void *data)
           case HDRM_STATE_APP:
           case HDRM_STATE_APP_PORTRAIT:
           case HDRM_STATE_TASK_NAV:
-          case HDRM_STATE_LAUNCHER:
-          case HDRM_STATE_NON_COMPOSITED:
+	  case HDRM_STATE_LAUNCHER:
+	  case HDRM_STATE_NON_COMPOSITED:
           case HDRM_STATE_NON_COMP_PORT:
             hd_render_manager_set_state (sigvalue);
             break;

@@ -96,6 +96,8 @@ hd_render_manager_state_get_type (void)
         { HDRM_STATE_AFTER_TKLOCK, "HDRM_STATE_AFTER_TKLOCK", "After tklock" },
         { HDRM_STATE_LAUNCHER_PORTRAIT,       "HDRM_STATE_LAUNCHER_PORTRAIT",
           "Task launcher in portrait mode" },
+	{ HDRM_STATE_TASK_NAV_PORTRAIT,       "HDRM_STATE_TASK_NAV_PORTRAIT",
+	  "Task switcher in portrait mode" },
         { 0, NULL, NULL }
       };
 
@@ -744,7 +746,7 @@ on_timeline_blur_completed (ClutterTimeline *timeline, gpointer data)
   /* to trigger a change after the transition */
   hd_render_manager_sync_clutter_after();
 
-  if (priv->state == HDRM_STATE_TASK_NAV)
+  if (STATE_IS_TASK_NAV(priv->state))
     hd_task_navigator_transition_done(priv->task_nav);
 }
 
@@ -1008,6 +1010,7 @@ void hd_render_manager_sync_clutter_before ()
         clutter_actor_hide(CLUTTER_ACTOR(priv->home));
         break;
       case HDRM_STATE_TASK_NAV:
+      case HDRM_STATE_TASK_NAV_PORTRAIT:
         btn_state |= HDTB_VIS_BTN_LAUNCHER;
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         blur |=  HDRM_BLUR_HOME |
@@ -1020,7 +1023,7 @@ void hd_render_manager_sync_clutter_before ()
         blur |=
             HDRM_BLUR_HOME |
             HDRM_ZOOM_FOR_LAUNCHER |
-            ((priv->previous_state==HDRM_STATE_TASK_NAV)?
+	    (STATE_IS_TASK_NAV(priv->previous_state)?
                 HDRM_ZOOM_FOR_TASK_NAV : 0);
         break;
       case HDRM_STATE_NON_COMPOSITED:
@@ -1535,11 +1538,16 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       else
         {
           priv->state = state;
-          if (hd_dbus_tklock_on && state == HDRM_STATE_TASK_NAV
-              && hd_dbus_state_before_tklock != HDRM_STATE_UNDEFINED)
-            /* if we go to tasknav during tklock, use that on unlock */
-            hd_dbus_state_before_tklock = HDRM_STATE_TASK_NAV;
-        }
+	  if (hd_dbus_tklock_on && state == HDRM_STATE_TASK_NAV
+	      && hd_dbus_state_before_tklock != HDRM_STATE_UNDEFINED)
+	    /* if we go to tasknav during tklock, use that on unlock */
+	    hd_dbus_state_before_tklock = HDRM_STATE_TASK_NAV;
+
+	  if (hd_dbus_tklock_on && state == HDRM_STATE_TASK_NAV_PORTRAIT
+	      && hd_dbus_state_before_tklock != HDRM_STATE_UNDEFINED)
+	    /* if we go to tasknav during tklock, use that on unlock */
+	    hd_dbus_state_before_tklock = HDRM_STATE_TASK_NAV_PORTRAIT;
+	}
 
       if (state == HDRM_STATE_AFTER_TKLOCK)
         /* this happens if the state before tklock could not be used */
@@ -1581,22 +1589,15 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         }
 
       /* Goto HOME instead if tasw is not appropriate for some reason. */
-      if (state == HDRM_STATE_TASK_NAV)
+      if (STATE_IS_TASK_NAV(state))
         {
           gboolean goto_tasw_now, goto_tasw_later;
 
           goto_tasw_now = goto_tasw_later = FALSE;
           if (!hd_task_navigator_is_empty() && !hd_wm_has_modal_blockers (wm))
             {
-              if (STATE_IS_PORTRAIT (oldstate))
-                goto_tasw_later = TRUE;
-              else
                 goto_tasw_now   = TRUE;
             }
-
-          /* Switch to tasw when we've really exited portrait mode. */
-          hd_transition_rotate_screen_and_change_state (goto_tasw_later
-                          ? HDRM_STATE_TASK_NAV : HDRM_STATE_UNDEFINED);
 
           if (!goto_tasw_now)
             {
@@ -1647,7 +1648,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
               if (state == oldstate)
                 goto out;
             }
-          else
+	  else
             /* unfocus any applet */
             mb_wm_client_focus (cmgr->wm->desktop);
         }
@@ -1669,7 +1670,21 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       /* Enter or leave the task switcher. */
       if (STATE_NEED_TASK_NAV (state))
         {
-          /* Zoom out if possible.  Otherwise if not coming from launcher
+	  if(STATE_IS_TASK_NAV (oldstate))
+	    {
+		hd_task_navigator_rotate(STATE_IS_PORTRAIT(state) && !hd_app_mgr_slide_is_open ());
+	    }
+	  else if(STATE_IS_PORTRAIT(oldstate) && !hd_app_mgr_slide_is_open ())
+	    {
+	      state = priv->state = HDRM_STATE_TASK_NAV_PORTRAIT;
+	      hd_task_navigator_rotate(1);
+	    }
+	  else
+	    {
+	      state = priv->state = HDRM_STATE_TASK_NAV;
+	      hd_task_navigator_rotate(0);
+	    }
+	  /* Zoom out if possible.  Otherwise if not coming from launcher
            * scroll it back to the top. */
           if (STATE_IS_APP(oldstate))
             {
@@ -1716,8 +1731,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             }
           else if (!STATE_IS_LAUNCHER (oldstate))
             hd_task_navigator_scroll_back(priv->task_nav);
+	  if (oldstate != state)
+	    {
+	      hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
+	    }
+
         }
-      if (STATE_ONE_OF(state | oldstate, HDRM_STATE_TASK_NAV))
+      if (STATE_ONE_OF(state | oldstate, HDRM_STATE_TASK_NAV | HDRM_STATE_TASK_NAV_PORTRAIT))
         /* Stop breathing the Tasks button when entering/leaving the switcher. */
         hd_title_bar_set_switcher_pulse(priv->title_bar, FALSE);
 
@@ -1810,12 +1830,26 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if (oldstate == HDRM_STATE_HOME_EDIT_DLG)
         hd_home_remove_dialogs(priv->home);
 
+      if(oldstate == HDRM_STATE_TASK_NAV_PORTRAIT && STATE_ONE_OF(state, HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT))
+      {
+	  priv->state = state = HDRM_STATE_APP_PORTRAIT;
+	  hd_task_navigator_update_orientation(TRUE);
+      }
+      if(oldstate == HDRM_STATE_TASK_NAV && STATE_ONE_OF(state, HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT))
+      {
+	  priv->state = state = HDRM_STATE_APP;
+	  hd_task_navigator_update_orientation(FALSE);
+      }
+
       /* Divert state change if going to some portrait-capable mode.
        * Allow for APP_PORTRAIT <=> HOME_PORTRAIT too. */
       if ((   (oldstate != HDRM_STATE_APP_PORTRAIT  && state == HDRM_STATE_APP)
-           || (oldstate != HDRM_STATE_HOME_PORTRAIT && state == HDRM_STATE_HOME))
-          && hd_comp_mgr_should_be_portrait (priv->comp_mgr))
-        { g_debug("divert");
+	   || (oldstate != HDRM_STATE_HOME_PORTRAIT && state == HDRM_STATE_HOME))
+	  && hd_comp_mgr_should_be_portrait (priv->comp_mgr) )
+	{
+	  if (hd_debug_mode_set)
+	    g_warning("divert");
+
           priv->in_set_state = FALSE;
           hd_render_manager_set_state (state == HDRM_STATE_APP
                                        ? HDRM_STATE_APP_PORTRAIT
@@ -1843,13 +1877,15 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
       /* Switch between portrait <=> landscape modes. */
       if (oldstate != HDRM_STATE_UNDEFINED)
-        hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
+      {
+	  hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
+      }
 
       /* Reset CURRENT_APP_WIN when entering tasw. */
       /* Try not to change it unnecessary. */
-      if (state == HDRM_STATE_TASK_NAV)
+      if (STATE_IS_TASK_NAV(state))
         hd_wm_current_app_is (wm, ~0);
-      else if (oldstate == HDRM_STATE_TASK_NAV && !STATE_IS_APP (state))
+      else if (STATE_IS_TASK_NAV(oldstate ) && !STATE_IS_APP (state))
         hd_wm_current_app_is (wm,  0);
 
       /* Signal the state has changed. */
@@ -1888,8 +1924,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
        * the correct value). Solves 131502
        * Note: we can't do transition_stop here as Martin still wants the
        * zooming. */
-      if (oldstate==HDRM_STATE_APP &&
-          state==HDRM_STATE_TASK_NAV)
+      if ((oldstate==HDRM_STATE_APP || oldstate==HDRM_STATE_APP_PORTRAIT)&&
+	  STATE_IS_TASK_NAV(state))
         {
           range_set(&priv->home_brightness, priv->home_brightness.b);
           range_set(&priv->home_saturation, priv->home_saturation.b);
@@ -1906,6 +1942,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
     }
 
 out:
+  if (hd_debug_mode_set)
+    g_warning("Set state complete %s ",	hd_render_manager_state_str(priv->state));
+
   priv->in_set_state = FALSE;
 }
 
@@ -1923,6 +1962,8 @@ void hd_render_manager_set_state_portrait (void)
     }
   else if (render_manager->priv->state == HDRM_STATE_LAUNCHER)
     hd_render_manager_set_state (HDRM_STATE_LAUNCHER_PORTRAIT);
+  else if (render_manager->priv->state == HDRM_STATE_TASK_NAV)
+    hd_render_manager_set_state (HDRM_STATE_TASK_NAV_PORTRAIT);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
 }
@@ -1941,6 +1982,8 @@ void hd_render_manager_set_state_unportrait (void)
     }
   else if (render_manager->priv->state == HDRM_STATE_LAUNCHER_PORTRAIT)
     hd_render_manager_set_state (HDRM_STATE_LAUNCHER);
+  else if (render_manager->priv->state == HDRM_STATE_TASK_NAV_PORTRAIT)
+    hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
   else
     hd_render_manager_set_state (HDRM_STATE_HOME);
 }
@@ -2569,7 +2612,7 @@ void hd_render_manager_update_blur_state()
     blur_flags = blur_flags & ~HDRM_BLUR_BACKGROUND;
 
   /* Actually if we're in tasw the work was unnecessary but whatever. */
-  if ((blur && !blur_buttons) || priv->state == HDRM_STATE_TASK_NAV)
+  if ((blur && !blur_buttons) || STATE_IS_TASK_NAV(priv->state))
     title_flags |= HDTB_VIS_FOREGROUND;
   else
     title_flags &= ~HDTB_VIS_FOREGROUND;

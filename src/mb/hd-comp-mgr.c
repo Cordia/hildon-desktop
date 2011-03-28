@@ -1046,7 +1046,7 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
     {
       goto_app_state |= HD_IS_CONFIRMATION_NOTE (client);
       goto_app_state |= (ctype & MBWMClientTypeDialog)
-        && state != HDRM_STATE_TASK_NAV;
+	&& !STATE_IS_TASK_NAV(state);
     }
 
   /* Sort @stack by stacking layers and mb_wm_stack_ensure() would do
@@ -2180,7 +2180,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
         || HD_IS_INFO_NOTE (c) || HD_IS_CONFIRMATION_NOTE (c))
       if (STATE_ONE_OF(hd_render_manager_get_state(),
                        HDRM_STATE_LAUNCHER | HDRM_STATE_LAUNCHER_PORTRAIT |
-                       HDRM_STATE_TASK_NAV))
+		       HDRM_STATE_TASK_NAV | HDRM_STATE_TASK_NAV_PORTRAIT))
         {
           hd_render_manager_set_state(HDRM_STATE_HOME);
           if (hd_comp_mgr_client_is_maximized(c->window->geometry))
@@ -2236,7 +2236,7 @@ hd_comp_mgr_map_notify (MBWMCompMgr *mgr, MBWindowManagerClient *c)
     { /* Either status menu OR power menu. */
       if (STATE_ONE_OF(hd_render_manager_get_state(),
                        HDRM_STATE_LAUNCHER | HDRM_STATE_LAUNCHER_PORTRAIT |
-                       HDRM_STATE_TASK_NAV))
+		       HDRM_STATE_TASK_NAV | HDRM_STATE_TASK_NAV_PORTRAIT))
         hd_render_manager_set_state(HDRM_STATE_HOME);
       hd_home_add_status_menu (HD_HOME (priv->home), actor);
       priv->status_menu_client = c;
@@ -2889,11 +2889,10 @@ hd_comp_mgr_effect (MBWMCompMgr                *mgr,
                     || (app->leader == app && !app->followers))
                    && hd_task_navigator_is_crowded ()
                    && c->window->xwindow == hd_wm_current_app_is (NULL, 0)
-                   && hd_render_manager_get_state () != HDRM_STATE_APP_PORTRAIT
                    && !hd_wm_has_modal_blockers (mgr->wm)
                    && !c->transient_for)
 	  {
-            hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+		hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
 	  }
           else
             {
@@ -3018,6 +3017,7 @@ hd_comp_mgr_restack (MBWMCompMgr * mgr)
       if (mgr->wm->desktop)
         priv->current_hclient = HD_COMP_MGR_CLIENT (
                                     mgr->wm->desktop->cm_client);
+
       return FALSE;
     }
 
@@ -3290,6 +3290,13 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
       else
         return FALSE;
     }
+  else if (STATE_IS_TASK_NAV (hd_render_manager_get_state ()))
+    {
+	if(hd_task_navigator_mode())
+	    return TRUE;
+	  else
+	    return FALSE;
+    }
   else
     {
       /* compute it normally if not in LAUNCHER */
@@ -3308,6 +3315,10 @@ hd_comp_mgr_can_be_portrait (HdCompMgr *hmgr)
         return TRUE;
       else
         return FALSE;
+    }
+  else if (STATE_IS_TASK_NAV (hd_render_manager_get_state ()))
+    {
+	return TRUE;
     }
   else
     {

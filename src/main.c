@@ -222,9 +222,7 @@ toggle_portraitable(MBWindowManager   *wm)
   for (c=wm->stack_top;c;c=c->stacked_below)
     {
       MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (c);
-      if (c_type == MBWMClientTypeDesktop)
-        break;
-      if (c_type == MBWMClientTypeApp)
+      if (c_type == MBWMClientTypeApp || c_type == MBWMClientTypeDesktop)
         {
           /* actually set the portrait property to the opposite now */
           gboolean new_supports = !hd_comp_mgr_client_supports_portrait(c);
@@ -699,7 +697,7 @@ main (int argc, char **argv)
                                     NULL,
                                     (void*)KEY_ACTION_TOGGLE_PORTRAITABLE);
   mb_wm_keys_binding_add_with_spec (wm, /* mod5 == Fn */
-                                    "<shift><ctrl><mod5>l",
+				    "<shift><ctrl><mod5>l",
                                     key_binding_func,
                                     NULL,
                                     (void*)KEY_ACTION_ROTATE);

@@ -375,21 +375,20 @@ hd_switcher_clicked (HdSwitcher *switcher)
    *    a. We are in switcher mode: we launch the switcher.
    *    b. We are in launcher mode: we launch the launcher.
    */
-  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV)
+  if (STATE_IS_TASK_NAV(hd_render_manager_get_state()))
     {
       g_debug("hd_switcher_clicked: show launcher, switcher=%p\n", switcher);
-
-      hd_render_manager_set_state(HDRM_STATE_LAUNCHER);
+	hd_render_manager_set_state(HDRM_STATE_LAUNCHER);
     }
   else if (STATE_IS_LAUNCHER (hd_render_manager_get_state()))
     {
       g_debug("hd_switcher_clicked: show switcher, switcher=%p\n", switcher);
-      hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+	hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
     }
   else if (hd_task_navigator_is_empty())
-    hd_render_manager_set_state(HDRM_STATE_LAUNCHER);
+	hd_render_manager_set_state(HDRM_STATE_LAUNCHER);
   else
-    hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
+	hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
 }
 
 static gboolean
@@ -504,7 +503,7 @@ hd_switcher_relaunch_app_callback(HdSwitcherRelaunchAppData *data)
    * the transition and our state is APP now.  Anyway, tana doesn't tolerate
    * (for reasons of pedantry) requests for zooming in inappropriate states.
    */
-  if (hd_render_manager_get_state () == HDRM_STATE_TASK_NAV)
+  if (STATE_IS_TASK_NAV(hd_render_manager_get_state ()))
     {
       hd_task_navigator_zoom_in (priv->task_nav, data->actor,
                   (ClutterEffectCompleteFunc)hd_switcher_relaunched_app_callback,
@@ -551,7 +550,7 @@ hd_switcher_relaunch_app (HdSwitcher *switcher,
 
   /* Go to the task switcher view. After this is done, we'll do
    * our zoom in on the app view the callback above */
-  if (hd_render_manager_get_state () != HDRM_STATE_TASK_NAV)
+  if (!STATE_IS_TASK_NAV(hd_render_manager_get_state ()))
     {
       g_signal_connect_swapped(hd_render_manager_get(), "transition-complete",
             G_CALLBACK(hd_switcher_relaunch_app_callback),
@@ -693,7 +692,7 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
 
   g_debug ("hd_switcher_zoom_in_complete(%p)", actor);
 
-  if (hd_render_manager_get_state () != HDRM_STATE_TASK_NAV)
+  if (!STATE_IS_TASK_NAV(hd_render_manager_get_state () ))
     /* Don't do anything if the user exited the switcher
      * during zooming. */
     return;
@@ -838,7 +837,7 @@ hd_switcher_add_dialog_explicit (HdSwitcher *switcher, MBWindowManagerClient *mb
   /* Zoom in the application @dialog belongs to if this is a confirmation
    * note.  This is to support closing applications that want to show a
    * confirmation before closing. */
-  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV
+  if (STATE_IS_TASK_NAV(hd_render_manager_get_state())
         && HD_IS_CONFIRMATION_NOTE (mbwmc))
       hd_switcher_item_selected (switcher, parent);
 }
@@ -855,7 +854,7 @@ hd_switcher_add_dialog (HdSwitcher *switcher, MBWindowManagerClient *mbwmc,
 static void
 hd_switcher_something_removed (void)
 {
-  if (hd_render_manager_get_state() == HDRM_STATE_TASK_NAV
+  if (STATE_IS_TASK_NAV(hd_render_manager_get_state())
       && hd_task_navigator_is_empty ())
     hd_render_manager_set_state (HDRM_STATE_HOME);
 }

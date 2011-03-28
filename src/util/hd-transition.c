@@ -1092,7 +1092,7 @@ hd_transition_close_app (HdCompMgr                  *mgr,
 
   /* The switcher will do the effect if it's active,
    * don't interfere. */
-  if (hd_render_manager_get_state()==HDRM_STATE_TASK_NAV)
+  if (STATE_IS_TASK_NAV(hd_render_manager_get_state()))
     return;
 
   /* Don't do the unmap transition if it's a secondary. */

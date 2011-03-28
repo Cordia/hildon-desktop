@@ -118,6 +118,7 @@ extern gboolean conf_disable_edit;
 gboolean hd_app_mgr_is_portrait(void);
 gboolean hd_app_mgr_slide_is_open (void);
 gboolean hd_app_mgr_ui_can_rotate (void);
+void hd_app_mgr_update_orientation(void);
 
 G_END_DECLS
 
