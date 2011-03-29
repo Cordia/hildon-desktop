@@ -2141,9 +2141,9 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
    * 3) an application supporting portraitness with all condition for rotating
    *    being all right */
   gboolean activate = (
-      STATE_IS_TASK_NAV (state) ||
       (!priv->disable_callui && STATE_SHOW_CALLUI (state)) ||
-      (hd_app_mgr_ui_can_rotate () && (STATE_IS_LAUNCHER (state) || STATE_IS_HOME (state) )) ||
+      (hd_app_mgr_ui_can_rotate () &&
+       (STATE_IS_TASK_NAV (state) || STATE_IS_LAUNCHER (state) || STATE_IS_HOME (state) )) ||
       (STATE_IS_APP(state) && hd_comp_mgr_can_be_portrait (hd_comp_mgr_get()))
 	      );
 
