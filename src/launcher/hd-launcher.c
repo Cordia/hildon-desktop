@@ -34,6 +34,8 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 
+#include <gconf/gconf-client.h>
+
 #include <clutter/clutter.h>
 #include <tidy/tidy-finger-scroll.h>
 
@@ -65,7 +67,7 @@
 #define GPOINTER_TO_BOOLEAN(i) ((gboolean) ((GPOINTER_TO_INT(i) == 2) ? TRUE : FALSE))
 #endif
 
-
+#define GCONF_KEY_DISABLE_MENU_EDIT "/apps/osso/hildon-desktop/menu_edit_disabled"
 
 typedef struct
 {
@@ -90,6 +92,8 @@ struct _HdLauncherPrivate
   HdLauncherTraverseData *current_traversal;
 
   GtkWidget *editor;
+  /* GConfClient to check whether menu editing is enabled or not */
+  GConfClient *gconf_client;
   gboolean editor_done;
 
   gboolean portraited;
@@ -209,6 +213,7 @@ hd_launcher_init (HdLauncher *self)
   HdLauncherPrivate *priv;
 
   self->priv = priv = HD_LAUNCHER_GET_PRIVATE (self);
+  priv->gconf_client = gconf_client_get_default ();
   g_datalist_init (&priv->pages);
 }
 
@@ -261,6 +266,12 @@ hd_launcher_dispose (GObject *gobject)
     {
       g_object_unref (G_OBJECT (priv->tree));
       priv->tree = NULL;
+    }
+
+  if (priv->gconf_client)
+    {
+      g_object_unref (priv->gconf_client);
+      priv->gconf_client = NULL;
     }
 
   g_datalist_clear (&priv->pages);
@@ -541,10 +552,9 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = launcher->priv;
 
-  /* when portraited do not show the editor */
-  if (priv->portraited)
+  /* Don't show the editor if we're in portrait mode or if the key to disable is true. */
+  if (gconf_client_get_bool (priv->gconf_client, GCONF_KEY_DISABLE_MENU_EDIT, NULL) || priv->portraited)
     return;
-
 
   /* Send a mouse released event, because when we've put the editor window up
    * the release event will go straight to that instead of to the scroller,
