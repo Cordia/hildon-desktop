@@ -98,6 +98,10 @@ hd_render_manager_state_get_type (void)
           "Task launcher in portrait mode" },
 	{ HDRM_STATE_TASK_NAV_PORTRAIT,       "HDRM_STATE_TASK_NAV_PORTRAIT",
 	  "Task switcher in portrait mode" },
+        { HDRM_STATE_LOADING_PORTRAIT,        "HDRM_STATE_LOADING_PORTRAIT",
+          "Loading in portrait mode" },
+        { HDRM_STATE_LOADING_SUBWIN_PORTRAIT, "HDRM_STATE_LOADING_SUBWIN_PORTRAIT",
+          "Loading Subwindow in portrait mode" },
         { 0, NULL, NULL }
       };
 
@@ -993,7 +997,9 @@ void hd_render_manager_sync_clutter_before ()
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_LOADING: /* fall through intentionally */
+      case HDRM_STATE_LOADING_PORTRAIT:
       case HDRM_STATE_LOADING_SUBWIN:
+      case HDRM_STATE_LOADING_SUBWIN_PORTRAIT:
         if (hd_task_navigator_is_empty())
           btn_state |= HDTB_VIS_BTN_LAUNCHER;
         else
@@ -1503,7 +1509,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           if (!(hd_dbus_state_before_tklock & (HDRM_STATE_NON_COMPOSITED|
                                                HDRM_STATE_NON_COMP_PORT|
                                                HDRM_STATE_LOADING|
-                                               HDRM_STATE_LOADING_SUBWIN)))
+                                               HDRM_STATE_LOADING_PORTRAIT|
+                                               HDRM_STATE_LOADING_SUBWIN|
+                                               HDRM_STATE_LOADING_SUBWIN_PORTRAIT)))
             {
               if (STATE_IS_APP(hd_dbus_state_before_tklock)
                   && hd_task_navigator_is_empty ())
