@@ -891,9 +891,14 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
       index(service_name, '/')==NULL &&
       service_name[0]!='.')
     {
-      cached_image = g_strdup_printf("%s/.cache/launch/%s.pvr",
-				     getenv("HOME"),
-				     service_name);
+      if (priv->portraited)
+        cached_image = g_strdup_printf("%s/.cache/launch/%s_portrait.pvr",
+				       getenv("HOME"),
+				       service_name);
+      else
+        cached_image = g_strdup_printf("%s/.cache/launch/%s.pvr",
+				       getenv("HOME"),
+				       service_name);
 
       if (access (cached_image, R_OK)==0)
         loading_image = cached_image;
