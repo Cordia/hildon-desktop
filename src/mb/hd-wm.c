@@ -422,7 +422,10 @@ hd_wm_client_activate (MBWindowManager * wm,
            * APP state, because it makes decisions based on the topmost
            * application on the stack. */
           ret = wm_class->client_activate (wm, c);
-          hd_render_manager_set_state (HDRM_STATE_APP);
+          if (STATE_IS_PORTRAIT (state))
+            hd_render_manager_set_state (HDRM_STATE_APP_PORTRAIT);
+          else
+            hd_render_manager_set_state (HDRM_STATE_APP);
 
           /*
            * Roughly for the same reason as in hd-comp-mgr.c,
