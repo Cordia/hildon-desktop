@@ -891,7 +891,7 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
       index(service_name, '/')==NULL &&
       service_name[0]!='.')
     {
-      if (priv->portraited)
+      if (STATE_IS_PORTRAIT(hd_render_manager_get_state()))
         cached_image = g_strdup_printf("%s/.cache/launch/%s_portrait.pvr",
 				       getenv("HOME"),
 				       service_name);
@@ -1048,14 +1048,14 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
                                    0, launcher);
   if (STATE_IS_APP(hd_render_manager_get_state()))
     {
-      if (priv->portraited)
+      if (STATE_IS_PORTRAIT(hd_render_manager_get_state()))
         hd_render_manager_set_state (HDRM_STATE_LOADING_SUBWIN_PORTRAIT);
       else
         hd_render_manager_set_state (HDRM_STATE_LOADING_SUBWIN);
     }
   else
     {
-      if (priv->portraited)
+      if (STATE_IS_PORTRAIT(hd_render_manager_get_state()))
         hd_render_manager_set_state (HDRM_STATE_LOADING_PORTRAIT);
       else
         hd_render_manager_set_state (HDRM_STATE_LOADING);
