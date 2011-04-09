@@ -891,9 +891,14 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
       index(service_name, '/')==NULL &&
       service_name[0]!='.')
     {
-      cached_image = g_strdup_printf("%s/.cache/launch/%s.pvr",
-				     getenv("HOME"),
-				     service_name);
+      if (STATE_IS_PORTRAIT(hd_render_manager_get_state()))
+        cached_image = g_strdup_printf("%s/.cache/launch/%s_portrait.pvr",
+				       getenv("HOME"),
+				       service_name);
+      else
+        cached_image = g_strdup_printf("%s/.cache/launch/%s.pvr",
+				       getenv("HOME"),
+				       service_name);
 
       if (access (cached_image, R_OK)==0)
         loading_image = cached_image;
@@ -1042,9 +1047,19 @@ hd_launcher_transition_app_start (HdLauncherApp *item)
   hd_launcher_transition_new_frame(priv->launch_transition,
                                    0, launcher);
   if (STATE_IS_APP(hd_render_manager_get_state()))
-    hd_render_manager_set_state (HDRM_STATE_LOADING_SUBWIN);
+    {
+      if (STATE_IS_PORTRAIT(hd_render_manager_get_state()))
+        hd_render_manager_set_state (HDRM_STATE_LOADING_SUBWIN_PORTRAIT);
+      else
+        hd_render_manager_set_state (HDRM_STATE_LOADING_SUBWIN);
+    }
   else
-    hd_render_manager_set_state (HDRM_STATE_LOADING);
+    {
+      if (STATE_IS_PORTRAIT(hd_render_manager_get_state()))
+        hd_render_manager_set_state (HDRM_STATE_LOADING_PORTRAIT);
+      else
+        hd_render_manager_set_state (HDRM_STATE_LOADING);
+    }
 
   HdTitleBar *tbar = HD_TITLE_BAR (hd_render_manager_get_title_bar());
   const gchar *title = "";

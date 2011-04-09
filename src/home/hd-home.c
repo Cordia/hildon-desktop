@@ -1063,8 +1063,14 @@ take_screenshot (MBWindowManager *wm, Window xwin, gboolean take)
   g_free (filename);
 
   isok = FALSE;
-  filename = g_strdup_printf ("%s/.cache/launch/%s.pvr",
-                              getenv("HOME"), service_name);
+
+  if (STATE_IS_PORTRAIT(hd_render_manager_get_state()))
+    filename = g_strdup_printf ("%s/.cache/launch/%s_portrait.pvr",
+                                getenv("HOME"), service_name);
+  else
+    filename = g_strdup_printf ("%s/.cache/launch/%s.pvr",
+                                getenv("HOME"), service_name);
+
   if (take)
   {
     Pixmap                          pixmap;
