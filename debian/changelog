@@ -1,3 +1,12 @@
+hildon-desktop (1:2.2.142-12) unstable; urgency=low
+
+  * Reverted improved zoom on press effect.
+  * Added new portrait task manager (by freemangordon).
+  * Added new gconf key to disable menu editor.
+  * Removed portrait -> landscape rotation when launching an application (by rmoravcik).
+
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Sun, 10 Apr 2011 23:10:43 +0300
+
 hildon-desktop (1:2.2.142-11) unstable; urgency=low
 
   * Added zoom in/out support in hildon-desktop.
