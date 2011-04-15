@@ -467,6 +467,13 @@ typedef struct
    */
   TNote               *tnote;
   time_t last_activated;
+
+  /* -- @portrait_supported: Application supports portrait?
+   *                         TODO: Check if is it possible support
+   *                         to be changed while in task navigator?
+   */
+  gboolean portrait_supported;
+
 } Thumbnail; /* }}} */
 /* Thumbnail data structures }}} */
 
@@ -479,9 +486,11 @@ typedef struct
  */
 typedef struct
 {
-  void (*move)  (ClutterActor *actor, gint x, gint y);
-  void (*resize)(ClutterActor *actor, gint w, gint h);
-  void (*scale) (ClutterActor *actor, gdouble sx, gdouble sy);
+  void (*move)    (ClutterActor *actor, gint x, gint y);
+  void (*resize)  (ClutterActor *actor, gint w, gint h);
+  void (*scale)   (ClutterActor *actor, gdouble sx, gdouble sy);
+  void (*rotate_z)(ClutterActor *actor, gfloat angle, gfloat z);
+  void (*clip)    (ClutterActor *actor, gint appgw, gint appwh);
 } Flyops;
 
 /* For linear_effect(), resize_effect() and turnoff_effect(). */
@@ -611,25 +620,46 @@ static const struct
 	.small  = {  THUMB_SMALL_HEIGHT  * .9  ,THUMB_SMALL_WIDTH * .9},
     }
 };
+static void
+clutter_actor_set_rotation_z(ClutterActor *actor,gfloat angle,gfloat z)
+{
+    clutter_actor_set_rotation(actor,CLUTTER_Z_AXIS,angle,0,0,z);
+}
+static void clutter_actor_get_rotation_z(ClutterActor * actor, gfloat* angle, gfloat * z)
+{
+    gint _z;
+    *angle = clutter_actor_get_rotation (actor, CLUTTER_Z_AXIS, NULL, NULL , &_z);
+    *z=_z;
+}
+
+static void set_clip(ClutterActor * actor, gint appwgw, gint appwgh);
 
 /* Place and size an actor without animation. */
 static const Flyops Fly_at_once =
 {
-  .move   = clutter_actor_set_position,
-  .resize = clutter_actor_set_size,
-  .scale  = clutter_actor_set_scale,
+  .move     = clutter_actor_set_position,
+  .resize   = clutter_actor_set_size,
+  .scale    = clutter_actor_set_scale,
+  .rotate_z = clutter_actor_set_rotation_z,
+  .clip     = set_clip,
 };
 
 /* ...now with animation. */
 static void check_and_move (ClutterActor *, gint, gint);
 static void check_and_resize (ClutterActor *, gint, gint);
 static void check_and_scale (ClutterActor *, gdouble, gdouble);
+static void check_and_rotate_z (ClutterActor *, gfloat , gfloat );
+
+static void check_and_clip (ClutterActor *, gint , gint );
+
 static int g_hd_task_navigator_mode=0;
 static const Flyops Fly_smoothly =
 {
   .move   = check_and_move,
   .resize = check_and_resize,
   .scale  = check_and_scale,
+  .rotate_z = check_and_rotate_z,
+  .clip = check_and_clip,
 };
 
 /* The size and position of non-fullscreen application windows
@@ -640,6 +670,9 @@ static const Flyops Fly_smoothly =
 #define App_window_geometry_height  (SCREEN_HEIGHT - HD_COMP_MGR_TOP_MARGIN)
 
 /* }}} */
+
+static gboolean
+hd_task_navigator_app_portrait_capable(const Thumbnail * thumb);
 
 /* Private variables {{{ */
 /*
@@ -1337,6 +1370,52 @@ check_and_scale (ClutterActor * actor, gdouble sx_new, gdouble sy_new)
   else if ((closure = has_effect (actor, scale_effect_frame)) != NULL)
     free_effect (closure->timeline, closure);
 }
+
+
+DEFINE_RMS_EFFECT(rotate_z, gfloat,
+		  clutter_actor_get_rotation_z, clutter_actor_set_rotation_z);
+static void
+check_and_rotate_z (ClutterActor * actor, gfloat angle_new, gfloat z_new)
+{
+  EffectClosure *closure;
+  gfloat angle_now;
+  gint z_now;
+
+  angle_now = clutter_actor_get_rotation (actor, CLUTTER_Z_AXIS, NULL, NULL,&z_now);
+
+  if (angle_now != angle_new || z_now != z_new)
+    rotate_z (actor, angle_new, z_new);
+  else if ((closure = has_effect (actor, move_effect_frame)) != NULL)
+    free_effect (closure->timeline, closure);
+}
+
+static void set_clip(ClutterActor * actor, gint appwgw, gint appwgh)
+{
+    clutter_actor_set_clip (actor,
+			    App_window_geometry_x, App_window_geometry_y,
+			    appwgw, appwgh);
+}
+static void get_clip(ClutterActor * actor, gint * appwgw, gint * appwgh)
+{
+    clutter_actor_get_clip (actor, NULL, NULL, appwgw,appwgh);
+}
+
+DEFINE_RMS_EFFECT(clip, gint,
+		  get_clip, set_clip);
+static void
+check_and_clip (ClutterActor * actor, gint appwgw, gint appwgh)
+{
+  EffectClosure *closure;
+  gint appwgw_now,appwgh_now;
+
+  clutter_actor_get_clip (actor, NULL, NULL, &appwgw_now,&appwgh_now);
+
+  if (appwgw_now != appwgw || appwgh_now != appwgh)
+    clip (actor, appwgw, appwgh);
+  else if ((closure = has_effect (actor, move_effect_frame)) != NULL)
+    free_effect (closure->timeline, closure);
+}
+
 /* RMS effects }}} */
 
 /* Fading effect {{{ */
@@ -2102,6 +2181,9 @@ layout_thumbs (ClutterActor * newborn)
   Thumbnail *thumb;
   guint xthumb, ythumb, i;
   const GtkRequisition *oldthsize;
+  guint wprison, hprison;
+  guint appwgw,appwgh;
+  //guint apph_portrait_fix;
 
   /* Save the old @Thumbsize to know if it's changed. */
   calc_layout (&lout);
@@ -2114,6 +2196,15 @@ layout_thumbs (ClutterActor * newborn)
 
   /* Place and scale each thumbnail row by row. */
   xthumb = ythumb = 0xB002E;
+
+  /* Whether it's visible or not set the scale so we can just
+   * show the prison later. */
+  wprison = Thumbsize->width  - 2*FRAME_WIDTH;
+  hprison = Thumbsize->height - (FRAME_TOP_HEIGHT+FRAME_BOTTOM_HEIGHT);
+
+  appwgw = IS_PORTRAIT?App_window_geometry_height+HD_COMP_MGR_TOP_MARGIN:App_window_geometry_width;
+  appwgh = IS_PORTRAIT?App_window_geometry_width-HD_COMP_MGR_TOP_MARGIN:App_window_geometry_height;
+
   for (li = Thumbnails, i = 0; li && (thumb = li->data); li = li->next, i++)
     {
       const Flyops *ops;
@@ -2146,7 +2237,7 @@ layout_thumbs (ClutterActor * newborn)
 	goto skip_the_circus;
 
       /* Set thumbnail's reaction area. */
-      clutter_actor_set_size (thumb->thwin, Thumbsize->width, Thumbsize->height);
+      ops->resize (thumb->thwin, Thumbsize->width, Thumbsize->height);
 
       /* @thumb->close */
       ops->move (thumb->close, Thumbsize->width, 0);
@@ -2162,23 +2253,27 @@ layout_thumbs (ClutterActor * newborn)
 
       if (thumb_is_application (thumb))
         {
-          guint wprison, hprison;
-	  guint appwgw,appwgh;
+	  guint appg_fix=0;
 
-          /* Whether it's visible or not set the scale so we can just
-           * show the prison later. */
-          wprison = Thumbsize->width  - 2*FRAME_WIDTH;
-          hprison = Thumbsize->height - (FRAME_TOP_HEIGHT+FRAME_BOTTOM_HEIGHT);
-
-	  appwgw = IS_PORTRAIT?App_window_geometry_height+HD_COMP_MGR_TOP_MARGIN:App_window_geometry_width;
-	  appwgh = IS_PORTRAIT?App_window_geometry_width-HD_COMP_MGR_TOP_MARGIN:App_window_geometry_height;
-
-	  clutter_actor_set_clip (thumb->windows,
+	  /*clutter_actor_set_clip (thumb->windows,
 				  App_window_geometry_x, App_window_geometry_y,
-				  appwgw, appwgh);
+				  appwgw, appwgh);*/
+	  ops->clip(thumb->windows,appwgw, appwgh);
+	  if(IS_PORTRAIT && !hd_task_navigator_app_portrait_capable(thumb))
+	  {
+	      ops->rotate_z(thumb->windows,90.0f,0);
+	      ops->move(thumb->windows,appwgw,HD_COMP_MGR_TOP_MARGIN);
+	      appg_fix=HD_COMP_MGR_TOP_MARGIN;
+	  }
+	  else
+	  {
+	      ops->rotate_z(thumb->windows,0.0f,0);
+	      ops->move(thumb->windows,0,0);
+	  }
+
 	  ops->scale (thumb->prison,
-		      (gdouble)wprison / appwgw,
-		      (gdouble)hprison / appwgh);
+		      (gdouble)wprison / (appwgw-appg_fix),
+		      (gdouble)hprison / (appwgh+appg_fix));
 
 	  layout_thumb_frame (thumb, ops);
         }
@@ -2913,6 +3008,11 @@ appthumb_clicked (Thumbnail * apthumb)
      * delivery of "thumbnail-clicked". */
     return TRUE;
 
+  if(IS_PORTRAIT && !hd_task_navigator_app_portrait_capable(apthumb))
+  {
+    hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
+  }
+
   /* Behave like a notification if we have one. */
   if (thumb_has_notification (apthumb))
     g_signal_emit_by_name (Navigator, "notification-clicked",
@@ -3041,6 +3141,7 @@ create_appthumb (ClutterActor * apwin)
       else
         g_warning ("XGetClassHint(%lx): failed", apthumb->win->xwindow);
     }
+
   mb_wm_util_async_untrap_x_errors ();
 
   /* .video_fname */
@@ -4349,7 +4450,9 @@ void hd_task_navigator_rotate(int mode)
 
     /* no changes, don't waste any time updating */
     if(g_hd_task_navigator_mode == mode )
+    {
 	return;
+    }
 
     g_hd_task_navigator_mode = mode;
 
@@ -4363,4 +4466,17 @@ void hd_task_navigator_update_orientation(gboolean portrait)
     hd_launcher_update_orientation (portrait);
     hd_app_mgr_update_orientation();
 
+}
+
+static gboolean
+hd_task_navigator_app_portrait_capable(const Thumbnail * thumb)
+{
+    guint * value= hd_util_get_win_prop_data_and_validate (
+			thumb->win->wm->xdpy, thumb->win->xwindow,
+			thumb->win->wm->atoms[MBWM_ATOM_HILDON_PORTRAIT_MODE_SUPPORT],
+			XA_CARDINAL,32,1,NULL);
+    if(value && *value)
+	return True;
+    else
+	return False;
 }
