@@ -4466,7 +4466,7 @@ void hd_task_navigator_update_orientation(gboolean portrait)
 static gboolean
 hd_task_navigator_app_portrait_capable(const Thumbnail * thumb)
 {
-    return hd_comp_mgr_client_supports_portrait(
+    return apthumb_has_dialogs(thumb) || hd_comp_mgr_client_supports_portrait(
 		mb_wm_managed_client_from_xwindow(
 		    thumb->win->wm,
 		    thumb->win->xwindow
