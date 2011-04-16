@@ -3008,10 +3008,9 @@ appthumb_clicked (Thumbnail * apthumb)
      * delivery of "thumbnail-clicked". */
     return TRUE;
 
+  /* Rotate to landscape if we are in portrait and app is not portrait capable */
   if(IS_PORTRAIT && !hd_task_navigator_app_portrait_capable(apthumb))
-  {
     hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
-  }
 
   /* Behave like a notification if we have one. */
   if (thumb_has_notification (apthumb))
@@ -4433,8 +4432,6 @@ void hd_task_navigator_activate(int x, int y, int close) {
 		  if (hd_task_navigator_is_active ()) appthumb_clicked((Thumbnail *)t->data);
 	}
 }
-/* vim: set foldmethod=marker: */
-/* End of hd-task-navigator.c */
 
 int hd_task_navigator_mode(void)
 {
@@ -4450,9 +4447,7 @@ void hd_task_navigator_rotate(int mode)
 
     /* no changes, don't waste any time updating */
     if(g_hd_task_navigator_mode == mode )
-    {
 	return;
-    }
 
     g_hd_task_navigator_mode = mode;
 
@@ -4471,12 +4466,13 @@ void hd_task_navigator_update_orientation(gboolean portrait)
 static gboolean
 hd_task_navigator_app_portrait_capable(const Thumbnail * thumb)
 {
-    guint * value= hd_util_get_win_prop_data_and_validate (
-			thumb->win->wm->xdpy, thumb->win->xwindow,
-			thumb->win->wm->atoms[MBWM_ATOM_HILDON_PORTRAIT_MODE_SUPPORT],
-			XA_CARDINAL,32,1,NULL);
-    if(value && *value)
-	return True;
-    else
-	return False;
+    return hd_comp_mgr_client_supports_portrait(
+		mb_wm_managed_client_from_xwindow(
+		    thumb->win->wm,
+		    thumb->win->xwindow
+		    )
+		);
 }
+
+/* vim: set foldmethod=marker: */
+/* End of hd-task-navigator.c */
