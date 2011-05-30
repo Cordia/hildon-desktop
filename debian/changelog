@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.142-13) unstable; urgency=low
+
+  * Portrait task manager fixed for landscape apps (by freemangordon).
+
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Mon, 30 May 2011 01:56:19 +0300
+
 hildon-desktop (1:2.2.142-12) unstable; urgency=low
 
   * Reverted improved zoom on press effect.
