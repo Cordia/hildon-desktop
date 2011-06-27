@@ -1675,9 +1675,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         {
 	  if(STATE_IS_TASK_NAV (oldstate))
 	    {
-		hd_task_navigator_rotate(STATE_IS_PORTRAIT(state) && !hd_app_mgr_slide_is_open ());
+        hd_task_navigator_rotate(STATE_IS_PORTRAIT(state) && !hd_app_mgr_slide_is_open ());
 	    }
-	  else if(STATE_IS_PORTRAIT(oldstate) && !hd_app_mgr_slide_is_open ())
+    else if(STATE_IS_PORTRAIT(oldstate) && hd_app_mgr_slide_is_open ())
 	    {
 	      state = priv->state = HDRM_STATE_TASK_NAV_PORTRAIT;
 	      hd_task_navigator_rotate(1);
