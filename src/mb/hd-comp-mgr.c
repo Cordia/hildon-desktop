@@ -3324,7 +3324,7 @@ hd_comp_mgr_can_be_portrait (HdCompMgr *hmgr)
     }
   else if (STATE_IS_TASK_NAV (hd_render_manager_get_state ()))
     {
-	return TRUE;
+      return hd_app_mgr_slide_is_open();
     }
   else
     {
@@ -3369,7 +3369,6 @@ hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr,
          if we want to be in 'portrait if possible', and it is poissible */
       if (hd_comp_mgr_should_be_portrait(HD_COMP_MGR (mgr)) ||
           (priv->pip_enabled && priv->pip_portrait &&
-           hd_app_mgr_slide_is_open () &&
            hd_comp_mgr_can_be_portrait(HD_COMP_MGR (mgr))))
         hd_render_manager_set_state_portrait ();
     }
