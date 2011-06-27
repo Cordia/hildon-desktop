@@ -4435,25 +4435,25 @@ void hd_task_navigator_activate(int x, int y, int close) {
 
 int hd_task_navigator_mode(void)
 {
-    return g_hd_task_navigator_mode;
+  return g_hd_task_navigator_mode;
 }
 
 void hd_task_navigator_rotate(int mode)
 {
-    if(mode)
-	mode = 1;
+  if(mode)
+    mode = 1;
 
-    hd_launcher_update_orientation (mode);
+  hd_launcher_update_orientation (mode);
 
-    /* no changes, don't waste any time updating */
-    if(g_hd_task_navigator_mode == mode )
-	return;
+  /* no changes, don't waste any time updating */
+  if(g_hd_task_navigator_mode == mode )
+    return;
 
-    g_hd_task_navigator_mode = mode;
+  g_hd_task_navigator_mode = mode;
 
-    clutter_actor_set_size (Navigator, DESKTOP_WIDTH,DESKTOP_HEIGHT);
-    clutter_actor_set_size (Scroller, DESKTOP_WIDTH,DESKTOP_HEIGHT);
-    layout (NULL, FALSE);
+  clutter_actor_set_size (Navigator, DESKTOP_WIDTH,DESKTOP_HEIGHT);
+  clutter_actor_set_size (Scroller, DESKTOP_WIDTH,DESKTOP_HEIGHT);
+  layout (NULL, FALSE);
 }
 
 void hd_task_navigator_update_orientation(gboolean portrait)
@@ -4466,13 +4466,73 @@ void hd_task_navigator_update_orientation(gboolean portrait)
 static gboolean
 hd_task_navigator_app_portrait_capable(const Thumbnail * thumb)
 {
-    return apthumb_has_dialogs(thumb) || hd_comp_mgr_client_supports_portrait(
-		mb_wm_managed_client_from_xwindow(
-		    thumb->win->wm,
-		    thumb->win->xwindow
-		    )
-		);
+  MBWindowManagerClient *c = mb_wm_managed_client_from_xwindow(
+    thumb->win->wm,
+    thumb->win->xwindow
+    );
+
+  return hd_comp_mgr_client_supports_portrait(c) || c->portrait_requested || apthumb_has_dialogs(thumb);
 }
 
+static Thumbnail * find_thumb_from_xwindow(Window xwindow)
+{
+  int i;
+  const GList *li;
+  Thumbnail * thumb;
+
+  for (li = Thumbnails, i = 0; li && (thumb = li->data); li = li->next, i++)
+    if(thumb->win->xwindow == xwindow)
+      return thumb;
+  return NULL;
+}
+
+void hd_task_navigator_update_win_orientation(Window xwindow, gboolean portrait)
+{
+  if (!STATE_IS_TASK_NAV(hd_render_manager_get_state ()) || !IS_PORTRAIT || (portrait == -1))
+    /* We do not care, get out of here */
+    return;
+
+  Thumbnail * thumb = find_thumb_from_xwindow(xwindow);
+
+  if(thumb)
+    {
+      guint appwgw,appwgh;
+      guint wprison, hprison;
+
+      wprison = Thumbsize->width  - 2*FRAME_WIDTH;
+      hprison = Thumbsize->height - (FRAME_TOP_HEIGHT+FRAME_BOTTOM_HEIGHT);
+
+      appwgw = App_window_geometry_height+HD_COMP_MGR_TOP_MARGIN;
+      appwgh = App_window_geometry_width-HD_COMP_MGR_TOP_MARGIN;
+      const Flyops *ops=&Fly_at_once;
+
+      /* Stop the animation, otherwise effects do not work*/
+      if ( animation_in_progress (Fly_effect_timeline) )
+        {
+          stop_animation (Fly_effect_timeline);
+          g_assert (!animation_in_progress (Fly_effect_timeline));
+        }
+
+      if(portrait)
+        {
+          ops->rotate_z(thumb->windows,0.0f,0);
+          ops->move(thumb->windows,0,0);
+          ops->scale (thumb->prison,
+              (gdouble)wprison / appwgw,
+              (gdouble)hprison / appwgh);
+          mb_wm_client_geometry_mark_dirty(mb_wm_managed_client_from_xwindow(thumb->win->wm,thumb->win->xwindow));
+        }
+      else
+        {
+          guint adj=HD_COMP_MGR_TOP_MARGIN;
+          ops->rotate_z(thumb->windows,90.0f,0);
+          ops->move(thumb->windows,appwgw,adj);
+          ops->scale (thumb->prison,
+                (gdouble)wprison / (appwgw-adj),
+                (gdouble)hprison / (appwgh+adj));
+          mb_wm_client_geometry_mark_dirty(mb_wm_managed_client_from_xwindow(thumb->win->wm,thumb->win->xwindow));
+        }
+    }
+}
 /* vim: set foldmethod=marker: */
 /* End of hd-task-navigator.c */

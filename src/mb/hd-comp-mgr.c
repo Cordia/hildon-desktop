@@ -858,9 +858,15 @@ hd_comp_mgr_client_property_changed (XPropertyEvent *event, HdCompMgr *hmgr)
   else
     return True;
 
+  if (event->atom == wm->atoms[MBWM_ATOM_HILDON_PORTRAIT_MODE_REQUEST])
+    hd_task_navigator_update_win_orientation(event->window,TRUE);
+  else if (event->atom == wm->atoms[MBWM_ATOM_HILDON_PORTRAIT_MODE_SUPPORT])
+    hd_task_navigator_update_win_orientation(event->window,value);
+
   /* Switch HDRM state if we need to.  Don't consider changing the state if
    * it is approved by the new value of the property.  We must reconsider
    * if we don't know if the property appoves or not. */
+
   if (STATE_IS_PORTRAIT (hd_render_manager_get_state()))
     { /* Portrait => landscape? */
       hd_app_mgr_mce_activate_accel_if_needed (FALSE);
@@ -3363,6 +3369,7 @@ hd_comp_mgr_portrait_or_not_portrait (MBWMCompMgr *mgr,
          if we want to be in 'portrait if possible', and it is poissible */
       if (hd_comp_mgr_should_be_portrait(HD_COMP_MGR (mgr)) ||
           (priv->pip_enabled && priv->pip_portrait &&
+           hd_app_mgr_slide_is_open () &&
            hd_comp_mgr_can_be_portrait(HD_COMP_MGR (mgr))))
         hd_render_manager_set_state_portrait ();
     }

@@ -85,5 +85,5 @@ void hd_task_navigator_rotate_thumbs(void);
 int hd_task_navigator_mode(void);
 void hd_task_navigator_rotate(int mode);
 void hd_task_navigator_update_orientation(gboolean portrait);
-
+void hd_task_navigator_update_win_orientation(Window xwindow,gboolean portrait);
 #endif /* ! __HD_TASK_NAVIGATOR_H__ */
