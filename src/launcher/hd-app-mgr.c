@@ -2076,7 +2076,8 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
         }
       else if (dbus_message_is_signal (msg,
                                   MCE_SIGNAL_IF,
-                                  MCE_DEVICE_ORIENTATION_SIG))
+                                  MCE_DEVICE_ORIENTATION_SIG) &&
+               !_hd_app_mgr_dbus_check_value (msg,MCE_ORIENTATION_UNKNOWN) )
         {
           priv->portrait = _hd_app_mgr_dbus_check_value (msg,
                                            MCE_ORIENTATION_PORTRAIT);
@@ -2097,16 +2098,16 @@ hd_app_mgr_dbus_signal_handler (DBusConnection *conn,
 
               hd_render_manager_set_state (state);
             }
-	  else if ( STATE_IS_TASK_NAV (hd_render_manager_get_state ()))
-	    {
-	      /* we can go to portrait only if device's portraited and the HKB
-	       * slide is closed. */
-	      HDRMStateEnum state = (priv->portrait && priv->slide_closed ?
-		  HDRM_STATE_TASK_NAV_PORTRAIT : HDRM_STATE_TASK_NAV);
+          else if ( STATE_IS_TASK_NAV (hd_render_manager_get_state ()))
+            {
+              /* we can go to portrait only if device's portraited and the HKB
+               * slide is closed. */
+              HDRMStateEnum state = (priv->portrait && priv->slide_closed ?
+                  HDRM_STATE_TASK_NAV_PORTRAIT : HDRM_STATE_TASK_NAV);
 
-	      hd_render_manager_set_state (state);
-	    }
-	  else
+              hd_render_manager_set_state (state);
+            }
+          else
             {
               hd_app_mgr_update_portraitness(self);
             }
@@ -2136,16 +2137,19 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
   /* conditions for which the accellerometer will be activated:
    * 1) CallUI is fired by the rotation (enabled by configuration) and we are
    *    in a state which allows this transistion
-   * 2) Launcher rotation is enabled (by conf) and we are in a state allowing
-   *    this transition (HOME or LAUNCHER itself)
-   * 3) an application supporting portraitness with all condition for rotating
-   *    being all right */
+   * 2) Rotation is enabled (by conf) and we are in a state allowing
+   *    this transition (HOME , LAUNCHER , TASKNAV )
+   * 3) an application, so task navigator can follow orientation  */
   gboolean activate = (
-      (!priv->disable_callui && STATE_SHOW_CALLUI (state)) ||
-      (hd_app_mgr_ui_can_rotate () &&
-       (STATE_IS_TASK_NAV (state) || STATE_IS_LAUNCHER (state) || STATE_IS_HOME (state) )) ||
-      (STATE_IS_APP(state) && hd_comp_mgr_can_be_portrait (hd_comp_mgr_get()))
-	      );
+                  (!priv->disable_callui && STATE_SHOW_CALLUI (state)) ||
+                   (hd_app_mgr_ui_can_rotate () &&
+                    (
+                      STATE_IS_TASK_NAV (state) ||
+                      STATE_IS_LAUNCHER (state) ||
+                      STATE_IS_HOME (state) ||
+                      STATE_IS_APP(state) )
+                    )
+                    );
 
   if (priv->accel_enabled == activate)
     return;
@@ -2209,7 +2213,6 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
       if (!dbus_connection_send (conn, msg, NULL))
         g_warning ("%s: Couldn't send message.", __FUNCTION__);
       dbus_message_unref (msg);
-      priv->portrait = FALSE;
     }
 
   g_debug ("%s: %s", __FUNCTION__, activate ? "enabled" : "disabled");
@@ -2267,12 +2270,12 @@ hd_app_mgr_gconf_value_changed (GConfClient *client,
            * declared orientation to actually change state */
           gboolean portrait = priv->portrait;
           priv->portrait = FALSE;
-	  hd_render_manager_set_state (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER_PORTRAIT?HDRM_STATE_LAUNCHER:HDRM_STATE_TASK_NAV);
+          hd_render_manager_set_state (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER_PORTRAIT?HDRM_STATE_LAUNCHER:HDRM_STATE_TASK_NAV);
           priv->portrait = portrait;
         }
       else if (priv->slide_closed && priv->portrait &&
-	  STATE_ONE_OF(hd_render_manager_get_state () , HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
-	hd_render_manager_set_state (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER?HDRM_STATE_LAUNCHER_PORTRAIT:HDRM_STATE_TASK_NAV_PORTRAIT);
+        STATE_ONE_OF(hd_render_manager_get_state () , HDRM_STATE_LAUNCHER | HDRM_STATE_TASK_NAV))
+          hd_render_manager_set_state (hd_render_manager_get_state () == HDRM_STATE_LAUNCHER?HDRM_STATE_LAUNCHER_PORTRAIT:HDRM_STATE_TASK_NAV_PORTRAIT);
       else
         hd_app_mgr_update_portraitness(self);
     }

@@ -1677,11 +1677,10 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             {
               state = priv->state = STATE_IS_PORTRAIT(state) &&
                   !hd_app_mgr_slide_is_open()?HDRM_STATE_TASK_NAV_PORTRAIT:HDRM_STATE_TASK_NAV;
-              hd_task_navigator_rotate(STATE_IS_PORTRAIT(state));
             }
           else
             {
-                state = priv->state = STATE_IS_PORTRAIT(oldstate) &&
+                state = priv->state = hd_app_mgr_is_portrait() &&
                     !hd_app_mgr_slide_is_open()?HDRM_STATE_TASK_NAV_PORTRAIT:HDRM_STATE_TASK_NAV;
             }
 
@@ -1691,54 +1690,60 @@ void hd_render_manager_set_state(HDRMStateEnum state)
            * scroll it back to the top. */
           if (STATE_IS_APP(oldstate))
             {
-              ClutterActor *actor = NULL;
-              MBWindowManagerClient *mbwmc;
-              MBWMCompMgrClutterClient *cmgrcc;
-
-              mbwmc = hd_render_manager_get_visible_client_for_tasknav (wm);
-              if (mbwmc && HD_IS_APP (mbwmc))
+              /* Don't zoom when transitioning from landscape app -> portraited tasknav */
+              if(/* damn, feeling stupid , cannot simplify if() condition */
+                 (!STATE_IS_PORTRAIT(oldstate) && state != HDRM_STATE_TASK_NAV_PORTRAIT) ||
+                 (STATE_IS_PORTRAIT(oldstate) && state == HDRM_STATE_TASK_NAV_PORTRAIT)
+                 )
                 {
-                  cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (mbwmc->cm_client);
-                  if (cmgrcc)
-                    actor = mb_wm_comp_mgr_clutter_client_get_actor (cmgrcc);
+                  ClutterActor *actor = NULL;
+                  MBWindowManagerClient *mbwmc;
+                  MBWMCompMgrClutterClient *cmgrcc;
 
-                  if (actor &&
-                      hd_task_navigator_has_window (priv->task_nav, actor))
-                    /* The corner case that requires this: non-comp. window
-                     * minimised to switcher, then touch screen lock, and then
-                     * unlocking with the slider -- sometimes switcher
-                     * background is black. But don't ask why this works... */
-                    clutter_actor_show (actor);
-                  else
-                    actor = NULL;
-              }
+                  mbwmc = hd_render_manager_get_visible_client_for_tasknav (wm);
+                  if (mbwmc && HD_IS_APP (mbwmc))
+                    {
+                      cmgrcc = MB_WM_COMP_MGR_CLUTTER_CLIENT (mbwmc->cm_client);
+                      if (cmgrcc)
+                        actor = mb_wm_comp_mgr_clutter_client_get_actor (cmgrcc);
 
-              if (actor)
-                {
-                  /* Make the tasw fully opaque as it might have been made
-                   * transparent while exiting it. */
-                  clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav), 255);
-                  range_set(&priv->task_nav_opacity, 1);
+                      if (actor &&
+                          hd_task_navigator_has_window (priv->task_nav, actor))
+                        /* The corner case that requires this: non-comp. window
+                         * minimised to switcher, then touch screen lock, and then
+                         * unlocking with the slider -- sometimes switcher
+                         * background is black. But don't ask why this works... */
+                        clutter_actor_show (actor);
+                      else
+                        actor = NULL;
+                    }
 
-                  /* Make sure we stop any active transitions, as these don't
-                   * work well with task_nav (esp. subview transitions where
-                   * task nav takes only the frontmost - NB#120171) */
-                  hd_transition_stop(priv->comp_mgr, mbwmc);
+                  if (actor)
+                    {
+                      /* Make the tasw fully opaque as it might have been made
+                       * transparent while exiting it. */
+                      clutter_actor_set_opacity(CLUTTER_ACTOR(priv->task_nav), 255);
+                      range_set(&priv->task_nav_opacity, 1);
 
-                  /* Make sure @cmgrcc stays around as long as needed. */
-                  mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
-                  hd_task_navigator_zoom_out(priv->task_nav, actor,
-                          (ClutterEffectCompleteFunc)zoom_out_completed,
-                          cmgrcc);
+                      /* Make sure we stop any active transitions, as these don't
+                       * work well with task_nav (esp. subview transitions where
+                       * task nav takes only the frontmost - NB#120171) */
+                      hd_transition_stop(priv->comp_mgr, mbwmc);
+
+                      /* Make sure @cmgrcc stays around as long as needed. */
+                      mb_wm_object_ref (MB_WM_OBJECT (cmgrcc));
+                      hd_task_navigator_zoom_out(priv->task_nav, actor,
+                              (ClutterEffectCompleteFunc)zoom_out_completed,
+                              cmgrcc);
+                    }
                 }
             }
           else if (!STATE_IS_LAUNCHER (oldstate))
             hd_task_navigator_scroll_back(priv->task_nav);
-	  if (oldstate != state)
-	    {
-	      hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
-	    }
-
+          if (oldstate != state)
+            {
+              hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
+            }
         }
       if (STATE_ONE_OF(state | oldstate, HDRM_STATE_TASK_NAV | HDRM_STATE_TASK_NAV_PORTRAIT))
         /* Stop breathing the Tasks button when entering/leaving the switcher. */

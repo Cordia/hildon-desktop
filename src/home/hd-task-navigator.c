@@ -672,7 +672,7 @@ static const Flyops Fly_smoothly =
 /* }}} */
 
 static gboolean
-hd_task_navigator_app_portrait_capable(const Thumbnail * thumb);
+hd_task_navigator_app_portrait_capable(Thumbnail * thumb);
 
 /* Private variables {{{ */
 /*
@@ -2234,7 +2234,7 @@ layout_thumbs (ClutterActor * newborn)
       /* If @Thumbnails are not changing size and this is not a newborn
        * the inners of @thumb are already setup. */
       if (oldthsize == Thumbsize && thumb->thwin != newborn)
-	goto skip_the_circus;
+          goto skip_the_circus;
 
       /* Set thumbnail's reaction area. */
       ops->resize (thumb->thwin, Thumbsize->width, Thumbsize->height);
@@ -2253,29 +2253,29 @@ layout_thumbs (ClutterActor * newborn)
 
       if (thumb_is_application (thumb))
         {
-	  guint appg_fix=0;
+          guint appg_fix=0;
 
-	  /*clutter_actor_set_clip (thumb->windows,
-				  App_window_geometry_x, App_window_geometry_y,
-				  appwgw, appwgh);*/
-	  ops->clip(thumb->windows,appwgw, appwgh);
-	  if(IS_PORTRAIT && !hd_task_navigator_app_portrait_capable(thumb))
-	  {
-	      ops->rotate_z(thumb->windows,90.0f,0);
-	      ops->move(thumb->windows,appwgw,HD_COMP_MGR_TOP_MARGIN);
-	      appg_fix=HD_COMP_MGR_TOP_MARGIN;
-	  }
-	  else
-	  {
-	      ops->rotate_z(thumb->windows,0.0f,0);
-	      ops->move(thumb->windows,0,0);
-	  }
+          ops->clip(thumb->windows,appwgw, appwgh);
+          if(IS_PORTRAIT && !hd_task_navigator_app_portrait_capable(thumb) )
+            {
+              ops->rotate_z(thumb->windows,90.0f,0);
+              ops->move(thumb->windows,appwgw,HD_COMP_MGR_TOP_MARGIN);
+              appg_fix=HD_COMP_MGR_TOP_MARGIN;
+            }
+          else
+            {
+              /* reset flag once in landscape */
+              thumb->portrait_supported = IS_PORTRAIT?TRUE:FALSE;
 
-	  ops->scale (thumb->prison,
-		      (gdouble)wprison / (appwgw-appg_fix),
-		      (gdouble)hprison / (appwgh+appg_fix));
+              ops->rotate_z(thumb->windows,0.0f,0);
+              ops->move(thumb->windows,0,0);
+            }
 
-	  layout_thumb_frame (thumb, ops);
+          ops->scale (thumb->prison,
+                (gdouble)wprison / (appwgw-appg_fix),
+                (gdouble)hprison / (appwgh+appg_fix));
+
+          layout_thumb_frame (thumb, ops);
         }
 
 skip_the_circus:
@@ -4464,14 +4464,17 @@ void hd_task_navigator_update_orientation(gboolean portrait)
 }
 
 static gboolean
-hd_task_navigator_app_portrait_capable(const Thumbnail * thumb)
+hd_task_navigator_app_portrait_capable(Thumbnail * thumb)
 {
   MBWindowManagerClient *c = mb_wm_managed_client_from_xwindow(
     thumb->win->wm,
     thumb->win->xwindow
     );
 
-  return hd_comp_mgr_client_supports_portrait(c) || c->portrait_requested || apthumb_has_dialogs(thumb);
+  return
+      thumb->portrait_supported ||
+      (thumb->portrait_supported = hd_comp_mgr_client_supports_portrait(c) || c->portrait_requested) ||
+      apthumb_has_dialogs(thumb);
 }
 
 static Thumbnail * find_thumb_from_xwindow(Window xwindow)
@@ -4515,23 +4518,24 @@ void hd_task_navigator_update_win_orientation(Window xwindow, gboolean portrait)
 
       if(portrait)
         {
+          thumb->portrait_supported = TRUE;
           ops->rotate_z(thumb->windows,0.0f,0);
           ops->move(thumb->windows,0,0);
           ops->scale (thumb->prison,
               (gdouble)wprison / appwgw,
               (gdouble)hprison / appwgh);
-          mb_wm_client_geometry_mark_dirty(mb_wm_managed_client_from_xwindow(thumb->win->wm,thumb->win->xwindow));
         }
       else
         {
           guint adj=HD_COMP_MGR_TOP_MARGIN;
+          thumb->portrait_supported = FALSE;
           ops->rotate_z(thumb->windows,90.0f,0);
           ops->move(thumb->windows,appwgw,adj);
           ops->scale (thumb->prison,
                 (gdouble)wprison / (appwgw-adj),
                 (gdouble)hprison / (appwgh+adj));
-          mb_wm_client_geometry_mark_dirty(mb_wm_managed_client_from_xwindow(thumb->win->wm,thumb->win->xwindow));
         }
+      mb_wm_client_geometry_mark_dirty(mb_wm_managed_client_from_xwindow(thumb->win->wm,thumb->win->xwindow));
     }
 }
 /* vim: set foldmethod=marker: */
