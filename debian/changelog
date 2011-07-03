@@ -1,3 +1,10 @@
+hildon-desktop (1:2.2.142-14) unstable; urgency=low
+
+  * Add blurless_saturation option for blurless.
+  * include transitions.ini in deb configfile to retain user settings
+
+ -- David Fries <David@Fries.net>  Mon, 03 Jul 2011 12:46:30 -0500
+
 hildon-desktop (1:2.2.142-13) unstable; urgency=low
 
   * Portrait task manager fixed for landscape apps (by freemangordon).
