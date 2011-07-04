@@ -1673,15 +1673,17 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       /* Enter or leave the task switcher. */
       if (STATE_NEED_TASK_NAV (state))
         {
+          gboolean tasknav_ui_can_rotate=hd_app_mgr_ui_can_rotate() && !hd_app_mgr_slide_is_open();
+
           if(STATE_IS_TASK_NAV (oldstate))
             {
               state = priv->state = STATE_IS_PORTRAIT(state) &&
-                  !hd_app_mgr_slide_is_open()?HDRM_STATE_TASK_NAV_PORTRAIT:HDRM_STATE_TASK_NAV;
+                  tasknav_ui_can_rotate ? HDRM_STATE_TASK_NAV_PORTRAIT : HDRM_STATE_TASK_NAV;
             }
           else
             {
-                state = priv->state = hd_app_mgr_is_portrait() &&
-                    !hd_app_mgr_slide_is_open()?HDRM_STATE_TASK_NAV_PORTRAIT:HDRM_STATE_TASK_NAV;
+              state = priv->state = hd_app_mgr_is_portrait() &&
+                  tasknav_ui_can_rotate ? HDRM_STATE_TASK_NAV_PORTRAIT : HDRM_STATE_TASK_NAV;
             }
 
           hd_task_navigator_rotate(STATE_IS_PORTRAIT(state));
