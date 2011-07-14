@@ -170,6 +170,8 @@ struct _TidyBlurGroupPrivate
 
   /* is the 'blurless desaturation' tweak enabled? */
   gboolean tweaks_blurless;
+  /* saturation for blurless (0 no color, 1 full color) */
+  float blurless_saturation;
 };
 
 /**
@@ -687,7 +689,7 @@ skip_progress:
       if (priv->tweaks_blurless)
         {
           clutter_shader_set_uniform_1f (priv->shader_saturate, "saturation",
-                                         0);
+                                         priv->blurless_saturation);
         }
       else
         {
@@ -905,6 +907,7 @@ tidy_blur_group_init (TidyBlurGroup *self)
   priv->use_mirror = FALSE;
   priv->source_changed = TRUE;
   priv->tweaks_blurless = hd_transition_get_int("thp_tweaks", "blurless", 0);
+  priv->blurless_saturation = hd_transition_get_double("thp_tweaks", "blurless_saturation", 0);
 
 #if CLUTTER_COGL_HAS_GLES
   priv->use_shader = cogl_features_available(COGL_FEATURE_SHADERS_GLSL);
