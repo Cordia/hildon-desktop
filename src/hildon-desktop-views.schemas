@@ -75,6 +75,26 @@
       </locale>
     </schema>
     <schema>
+      <key>/schemas/apps/osso/hildon-desktop/scroll_vertical</key>
+      <applyto>/apps/osso/hildon-desktop/scroll_vertical</applyto>
+      <owner>hildon-desktop</owner>
+      <type>bool</type>
+      <default>false</default>
+      <locale name="C">
+        <short>Set to true to enable vertical scrolling</short>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/osso/hildon-desktop/portrait_wallpaper</key>
+      <applyto>/apps/osso/hildon-desktop/portrait_wallpaper</applyto>
+      <owner>hildon-desktop</owner>
+      <type>bool</type>
+      <default>false</default>
+      <locale name="C">
+        <short>Set to true to enable separate wallpapers for portrait mode</short>
+      </locale>
+    </schema>
+    <schema>
       <key>/schemas/apps/osso/hildon-desktop/menu_edit_disabled</key>
       <applyto>/apps/osso/hildon-desktop/menu_edit_disabled</applyto>
       <owner>hildon-desktop</owner>
