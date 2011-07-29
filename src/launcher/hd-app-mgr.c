@@ -2147,6 +2147,7 @@ hd_app_mgr_mce_activate_accel_if_needed (gboolean update_portraitness)
                       STATE_IS_TASK_NAV (state) ||
                       STATE_IS_LAUNCHER (state) ||
                       STATE_IS_HOME (state) ||
+                      STATE_IS_EDIT_MODE (state) ||
                       STATE_IS_APP(state) )
                     )
                     );

@@ -51,10 +51,13 @@
 #define BACKGROUND_COLOR {0, 0, 0, 0xff}
 #define CACHED_BACKGROUND_IMAGE_FILE_PNG "%s/.backgrounds/background-%u.png"
 #define CACHED_BACKGROUND_IMAGE_FILE_PVR "%s/.backgrounds/background-%u.pvr"
+#define CACHED_BACKGROUND_IMAGE_FILE_PNG_PORTRAIT "%s/.backgrounds/background_portrait-%u.png"
+#define CACHED_BACKGROUND_IMAGE_FILE_PVR_PORTRAIT "%s/.backgrounds/background_portrait-%u.pvr"
 
 #define GCONF_KEY_POSITION "/apps/osso/hildon-desktop/applets/%s/position"
 #define GCONF_KEY_MODIFIED "/apps/osso/hildon-desktop/applets/%s/modified"
 #define GCONF_KEY_VIEW     "/apps/osso/hildon-desktop/applets/%s/view"
+#define GCONF_KEY_POSITION_PORTRAIT "/apps/osso/hildon-desktop/applets/%s/position_portrait"
 
 #define MAX_VIEWS 9
 
@@ -82,9 +85,15 @@ struct _HdHomeViewPrivate
 
   ClutterActor             *background;
   TidySubTexture           *background_sub;
+  ClutterActor             *background_temp_portrait;
+  TidySubTexture           *background_sub_temp_portrait;
+  ClutterActor             *background_temp;
+  TidySubTexture           *background_sub_temp;
   MBWindowManagerClient    *live_bg;
 
   GHashTable               *applets;
+
+  gboolean                  is_portrait;
 
   gint                      applet_motion_start_x;
   gint                      applet_motion_start_y;
@@ -127,6 +136,10 @@ static void hd_home_view_constructed (GObject *object);
 
 static void
 hd_home_view_rotate_background(ClutterActor *actor, GParamSpec *unused,
+                               ClutterActor *stage);
+
+static void
+hd_home_view_resize_applets_container(ClutterActor *actor, GParamSpec *unused,
                                ClutterActor *stage);
 
 static void
@@ -259,7 +272,10 @@ is_button_press_in_gesture_start_area (ClutterEvent *event)
            __FUNCTION__,
            event->button.x, event->button.y);
 
-  return event->button.x <= 15 || event->button.x >= HD_COMP_MGR_LANDSCAPE_WIDTH - 15;
+	if(!STATE_IS_PORTRAIT (hd_render_manager_get_state()))
+	  return event->button.x <= 15 || event->button.x >= HD_COMP_MGR_LANDSCAPE_WIDTH - 15;
+	else
+		return event->button.x <= 15 || event->button.x >= HD_COMP_MGR_PORTRAIT_WIDTH - 15;
 }
 
 static gboolean stop_pan_gesture (HdHomeView *view);
@@ -368,6 +384,9 @@ hd_home_view_constructed (GObject *object)
   clutter_actor_set_size (priv->applets_container,
                           HD_COMP_MGR_LANDSCAPE_WIDTH,
                           HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
+                           G_CALLBACK(hd_home_view_resize_applets_container),
+                           priv->applets_container);
   clutter_container_add_actor (CLUTTER_CONTAINER (hd_home_get_front(priv->home)),
                                priv->applets_container);
 
@@ -393,7 +412,6 @@ hd_home_view_constructed (GObject *object)
                     G_CALLBACK (hd_home_view_shown), NULL);
   g_signal_connect (object, "hide",
                     G_CALLBACK (hd_home_view_hidden), NULL);
-
 }
 
 static void
@@ -443,7 +461,7 @@ static void
 set_background_common (HdHomeView *hview, ClutterActor *new_bg)
 {
   HdHomeViewPrivate *priv = hview->priv;
-  ClutterActor *actor = CLUTTER_ACTOR (hview);
+  //ClutterActor *actor = CLUTTER_ACTOR (hview);
   TidySubTexture *new_bg_sub = 0;
   ClutterColor clr = BACKGROUND_COLOR;
 
@@ -459,8 +477,8 @@ set_background_common (HdHomeView *hview, ClutterActor *new_bg)
     {
       guint bg_width, bg_height;
       guint actual_width, actual_height;
-      bg_width = clutter_actor_get_width (actor);
-      bg_height = clutter_actor_get_height (actor);
+      bg_width = HD_COMP_MGR_LANDSCAPE_WIDTH;
+      bg_height = HD_COMP_MGR_LANDSCAPE_HEIGHT;
       actual_width = clutter_actor_get_width (new_bg);
       actual_height = clutter_actor_get_height (new_bg);
       /* It may be that we get a bigger texture than we need
@@ -488,28 +506,52 @@ set_background_common (HdHomeView *hview, ClutterActor *new_bg)
 
   clutter_actor_set_name (new_bg, "HdHomeView::background");
 
-  /* Add new background to the background container */
-  clutter_container_add_actor (
-              CLUTTER_CONTAINER (priv->background_container),
-              new_bg);
-  if (new_bg_sub)
+  if(hd_home_is_portrait_wallpaper_enabled (priv->home))
+    {
+      if(priv->is_portrait)
+        { /* Remember wallpaper for portrait mode */
+          clutter_actor_destroy(priv->background_temp_portrait);
+          clutter_actor_destroy(CLUTTER_ACTOR(priv->background_sub_temp_portrait));
+          priv->background_temp_portrait = new_bg;
+          priv->background_sub_temp_portrait = new_bg_sub;
+        }
+      else
+        { /* Remember wallpaper for landscape mode and show it */
+          clutter_actor_destroy(priv->background_temp);
+          clutter_actor_destroy(CLUTTER_ACTOR(priv->background_sub_temp));
+          priv->background_temp = new_bg;
+          priv->background_sub_temp = new_bg_sub;
+        }
+    }
+
+    if( ((hd_comp_mgr_is_portrait () && !priv->is_portrait) 
+      || (!hd_comp_mgr_is_portrait () && priv->is_portrait)) 
+      && hd_home_is_portrait_wallpaper_enabled (priv->home))
+      return;
+
+    /* Add new background to the background container */
     clutter_container_add_actor (
                 CLUTTER_CONTAINER (priv->background_container),
-                CLUTTER_ACTOR(new_bg_sub));
+                new_bg);
+    if (new_bg_sub)
+      clutter_container_add_actor (
+                  CLUTTER_CONTAINER (priv->background_container),
+                  CLUTTER_ACTOR(new_bg_sub));
 
-  /* Remove the old background (color or image) and the subtexture
-   * that may have been used to make it smaller */
-  if (priv->background_sub)
-      clutter_actor_destroy (CLUTTER_ACTOR(priv->background_sub));
-  if (priv->background)
-    clutter_actor_destroy (priv->background);
+    /* Remove the old background (color or image) and the subtexture
+     * that may have been used to make it smaller */
+    if (priv->background_sub)
+        clutter_actor_destroy (CLUTTER_ACTOR(priv->background_sub));
+    if (priv->background)
+        clutter_actor_destroy (priv->background);
 
-  /* Only update blur if we're currently active */
-  if (hd_home_view_container_get_current_view(priv->view_container) == priv->id)
-    hd_render_manager_blurred_changed();
+    /* Only update blur if we're currently active */
+    if (hd_home_view_container_get_current_view(priv->view_container) == priv->id)
+        hd_render_manager_blurred_changed();
 
-  priv->background = new_bg;
-  priv->background_sub = new_bg_sub;
+    priv->background = new_bg;
+    priv->background_sub = new_bg_sub;
+    
 }
 
 static gboolean
@@ -520,105 +562,133 @@ load_background_idle (gpointer data)
   gchar *cached_background_image_file;
   ClutterActor *new_bg = 0;
   GError *error = NULL;
+  int i;
+  int max_value;
 
   if (g_source_is_destroyed (g_main_current_source ()))
     return FALSE;
 
-  cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PNG,
-                                                  g_get_home_dir (),
-                                                  priv->id + 1);
-  if (!g_file_test (cached_background_image_file,
-                    G_FILE_TEST_EXISTS))
-    {
-      g_free (cached_background_image_file);
-      cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PVR,
-                                                      g_get_home_dir (),
-                                                      priv->id + 1);
-      new_bg = clutter_texture_new_from_file (cached_background_image_file,
-                                                &error);
-    }
+  if(hd_home_is_portrait_wallpaper_enabled (priv->home))
+    max_value = 2;
   else
-    {
-      GdkPixbuf        *pixbuf;
+    max_value = 1;
 
-      /* Load image directly. We actually want to dither it on the fly to
-       * 16 bit, and clutter doesn't do this for us so we implement a very
-       * quick dither here. */
-      pixbuf = gdk_pixbuf_new_from_file (cached_background_image_file, &error);
-      if (pixbuf != NULL)
-        {
-          gboolean          has_alpha;
-          gint              width;
-          gint              height;
-          gint              rowstride;
-          gint              n_channels;
-          guchar           *pixels;
-          gushort          *out_pixels, *out;
-          guint             lfsr = 1;
-          gint x,y;
+  for(i = 0; i < max_value; i++){
+    if(!i)
+      {
+        cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PNG,
+                                                        g_get_home_dir (),
+                                                        priv->id + 1);
+        priv->is_portrait = FALSE;
+      }
+    else
+      {
+        cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PNG_PORTRAIT,
+                                                        g_get_home_dir (),
+                                                        priv->id + 1);
+        priv->is_portrait = TRUE;
+      }
 
-          /* Get pixbuf properties */
-          has_alpha       = gdk_pixbuf_get_has_alpha (pixbuf);
-          width           = gdk_pixbuf_get_width (pixbuf);
-          height          = gdk_pixbuf_get_height (pixbuf);
-          rowstride       = gdk_pixbuf_get_rowstride (pixbuf);
-          n_channels      = gdk_pixbuf_get_n_channels (pixbuf);
-          pixels          = gdk_pixbuf_get_pixels (pixbuf);
+    if (!g_file_test (cached_background_image_file,
+                      G_FILE_TEST_EXISTS))
+      {
+        g_free (cached_background_image_file);
+        if(!i)
+          cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PVR,
+                                                          g_get_home_dir (),
+                                                          priv->id + 1);
+        else
+          cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PVR_PORTRAIT,
+                                                          g_get_home_dir (),
+                                                          priv->id + 1);
 
-          if (gdk_pixbuf_get_bits_per_sample (pixbuf)==8 &&
-              (n_channels==3 || n_channels==4))
-            {
-              out_pixels = g_malloc(width*height*2);
-              out = out_pixels;
-              for (y=0;y<height;y++) {
-                for (x=0;x<width;x++) {
-                  /* http://en.wikipedia.org/wiki/Linear_feedback_shift_register */
-                  lfsr = (lfsr >> 1) ^ (unsigned int)((0 - (lfsr & 1u)) & 0xd0000001u);
+        new_bg = clutter_texture_new_from_file (cached_background_image_file,
+                                                  &error);
+      }
+    else
+      {
+        GdkPixbuf        *pixbuf;
 
-                  /* dither 565 - by adding random noise and then truncating
-                   * (r>>8)*0xFF makes sure our bottom 8 bits are 0xFF if we
-                   * overflow.
-                   */
-                  guint r,g,b;
-                  r = pixels[0] + (lfsr&7);
-                  r |= (r>>8)*0xFF;
-                  g = pixels[1] + ((lfsr>>3)&3);
-                  g |= (g>>8)*0xFF;
-                  b = pixels[2] + ((lfsr>>5)&7);
-                  b |= (b>>8)*0xFF;
-                  *out = ((r<<8)&0xF800) |
-                         ((g<<3)&0x07E0) |
-                         ((b>>3)&0x001F);
+        /* Load image directly. We actually want to dither it on the fly to
+         * 16 bit, and clutter doesn't do this for us so we implement a very
+         * quick dither here. */
+        pixbuf = gdk_pixbuf_new_from_file (cached_background_image_file, &error);
+        if (pixbuf != NULL)
+          {
+            gboolean          has_alpha;
+            gint              width;
+            gint              height;
+            gint              rowstride;
+            gint              n_channels;
+            guchar           *pixels;
+            gushort          *out_pixels, *out;
+            guint             lfsr = 1;
+            gint x,y;
 
-                  pixels += n_channels;
-                  out++;
+            /* Get pixbuf properties */
+            has_alpha       = gdk_pixbuf_get_has_alpha (pixbuf);
+            width           = gdk_pixbuf_get_width (pixbuf);
+            height          = gdk_pixbuf_get_height (pixbuf);
+            rowstride       = gdk_pixbuf_get_rowstride (pixbuf);
+            n_channels      = gdk_pixbuf_get_n_channels (pixbuf);
+            pixels          = gdk_pixbuf_get_pixels (pixbuf);
+
+            if (gdk_pixbuf_get_bits_per_sample (pixbuf)==8 &&
+                (n_channels==3 || n_channels==4))
+              {
+                out_pixels = g_malloc(width*height*2);
+                out = out_pixels;
+                for (y=0;y<height;y++) {
+                  for (x=0;x<width;x++) {
+                    /* http://en.wikipedia.org/wiki/Linear_feedback_shift_register */
+                    lfsr = (lfsr >> 1) ^ (unsigned int)((0 - (lfsr & 1u)) & 0xd0000001u);
+  
+                    /* dither 565 - by adding random noise and then truncating
+                     * (r>>8)*0xFF makes sure our bottom 8 bits are 0xFF if we
+                     * overflow.
+                     */
+                    guint r,g,b;
+                    r = pixels[0] + (lfsr&7);
+                    r |= (r>>8)*0xFF;
+                    g = pixels[1] + ((lfsr>>3)&3);
+                    g |= (g>>8)*0xFF;
+                    b = pixels[2] + ((lfsr>>5)&7);
+                    b |= (b>>8)*0xFF;
+                    *out = ((r<<8)&0xF800) |
+                           ((g<<3)&0x07E0) |
+                           ((b>>3)&0x001F);
+
+                    pixels += n_channels;
+                    out++;
+                  }
+                  pixels += rowstride - width*n_channels;
                 }
-                pixels += rowstride - width*n_channels;
+                new_bg = clutter_texture_new();
+                clutter_texture_set_from_rgb_data(CLUTTER_TEXTURE(new_bg),
+                      (guchar*)out_pixels, FALSE,
+                      width, height, width*2, 2, CLUTTER_TEXTURE_FLAG_16_BIT, &error);
+                g_free(out_pixels);
               }
-              new_bg = clutter_texture_new();
-              clutter_texture_set_from_rgb_data(CLUTTER_TEXTURE(new_bg),
-                    (guchar*)out_pixels, FALSE,
-                    width, height, width*2, 2, CLUTTER_TEXTURE_FLAG_16_BIT, &error);
-              g_free(out_pixels);
-            }
-          g_object_unref (pixbuf);
-        }
-    }
+            g_object_unref (pixbuf);
+          }
+      }
 
-  if (!new_bg)
-    {
-      g_warning ("Error loading cached background image %s. %s",
-                 cached_background_image_file,
-                 error?error->message:"");
-      if (error)
-        g_error_free (error);
-    }
+    if (!new_bg)
+      {
+        g_warning ("Error loading cached background image %s. %s",
+                   cached_background_image_file,
+                   error?error->message:"");
+        if (error)
+          g_error_free (error);
+      }
+  
+    g_free (cached_background_image_file);
 
-  g_free (cached_background_image_file);
+    set_background_common (self, new_bg);  
+    priv->load_background_source = 0;
+  }
 
-  set_background_common (self, new_bg);
-
-  priv->load_background_source = 0;
+  priv->is_portrait = FALSE;
 
   return FALSE;
 }
@@ -692,7 +762,6 @@ hd_home_view_load_background (HdHomeView *view)
 {
   HdHomeViewPrivate *priv;
   gint priority = G_PRIORITY_DEFAULT_IDLE;
-
   g_return_if_fail (HD_IS_HOME_VIEW (view));
 
   priv = view->priv;
@@ -826,12 +895,24 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   /* Restrict new applet actor position to allowed values */
   if (!hd_home_view_container_get_previous_view (HD_HOME_VIEW_CONTAINER (priv->view_container)) ||
       !hd_home_view_container_get_next_view (HD_HOME_VIEW_CONTAINER (priv->view_container)))
-    x = MAX (MIN (x,
-                  (gint) HD_COMP_MGR_LANDSCAPE_WIDTH - ((gint) w)),
-             0);
-  y = MAX (MIN (y,
-                (gint) HD_COMP_MGR_LANDSCAPE_HEIGHT - ((gint) h)),
-           HD_COMP_MGR_TOP_MARGIN);
+	{
+		if(!STATE_IS_PORTRAIT (hd_render_manager_get_state()))
+	    x = MAX (MIN (x,
+  	                (gint) HD_COMP_MGR_LANDSCAPE_WIDTH - ((gint) w)),
+  	           0);
+		else
+	    x = MAX (MIN (x,
+  	                (gint) HD_COMP_MGR_PORTRAIT_WIDTH - ((gint) w)),
+  	           0);
+	}
+	if(!STATE_IS_PORTRAIT (hd_render_manager_get_state()))
+	  y = MAX (MIN (y,
+  	              (gint) HD_COMP_MGR_LANDSCAPE_HEIGHT - ((gint) h)),
+  	         HD_COMP_MGR_TOP_MARGIN);
+	else
+	  y = MAX (MIN (y,
+  	              (gint) HD_COMP_MGR_PORTRAIT_HEIGHT - ((gint) h)),
+  	         HD_COMP_MGR_TOP_MARGIN);
 
   /* Update applet actor position */
   clutter_actor_set_position (applet, x, y);
@@ -851,10 +932,20 @@ hd_home_view_applet_motion (ClutterActor       *applet,
   priv->move_applet_left = FALSE;
   priv->move_applet_right = FALSE;
 
-  if (event->x < HD_EDGE_INDICATION_WIDTH)
-    priv->move_applet_left = TRUE;
-  else if (event->x > HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH)
-    priv->move_applet_right = TRUE;
+	if(!STATE_IS_PORTRAIT (hd_render_manager_get_state()))
+	{
+	  if (event->x < HD_EDGE_INDICATION_WIDTH)
+	    priv->move_applet_left = TRUE;
+	  else if (event->x > HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH)
+	    priv->move_applet_right = TRUE;
+	}
+	else
+	{
+	  if (event->x < HD_EDGE_INDICATION_WIDTH)
+	    priv->move_applet_left = TRUE;
+	  else if (event->x > HD_COMP_MGR_PORTRAIT_WIDTH - HD_EDGE_INDICATION_WIDTH)
+	    priv->move_applet_right = TRUE;
+	}
 
   hd_home_highlight_edge_indication (priv->home, priv->move_applet_left, priv->move_applet_right);
 
@@ -893,7 +984,8 @@ hd_home_view_applet_press (ClutterActor       *applet,
   time (&wm_applet->modified);
 
   modified = g_strdup_printf ("%ld", wm_applet->modified);
-  modified_key = g_strdup_printf (GCONF_KEY_MODIFIED, wm_applet->applet_id);
+
+	modified_key = g_strdup_printf (GCONF_KEY_MODIFIED, wm_applet->applet_id);	
 
   gconf_client_set_string (priv->gconf_client,
                            modified_key,
@@ -988,12 +1080,24 @@ hd_home_view_store_applet_position (HdHomeView   *view,
   clutter_actor_get_geometry (applet, &c_geom);
 
   /* Move into allowed area */
-  c_geom.x = MAX (MIN (c_geom.x,
-                       (gint) HD_COMP_MGR_LANDSCAPE_WIDTH - ((gint) c_geom.width)),
-                  0);
-  c_geom.y = MAX (MIN (c_geom.y,
-                       (gint) HD_COMP_MGR_LANDSCAPE_HEIGHT - ((gint) c_geom.height)),
-                  HD_COMP_MGR_TOP_MARGIN);
+	if(!STATE_IS_PORTRAIT (hd_render_manager_get_state()))
+	{
+ 		c_geom.x = MAX (MIN (c_geom.x,
+  	                    (gint) HD_COMP_MGR_LANDSCAPE_WIDTH - ((gint) c_geom.width)),
+                  	0);
+  	c_geom.y = MAX (MIN (c_geom.y,
+                       	(gint) HD_COMP_MGR_LANDSCAPE_HEIGHT - ((gint) c_geom.height)),
+                  	HD_COMP_MGR_TOP_MARGIN);
+	}
+	else
+	{
+  	c_geom.x = MAX (MIN (c_geom.x,
+                       	(gint) HD_COMP_MGR_PORTRAIT_WIDTH - ((gint) c_geom.width)),
+                  	0);
+  	c_geom.y = MAX (MIN (c_geom.y,
+                       	(gint) HD_COMP_MGR_PORTRAIT_HEIGHT - ((gint) c_geom.height)),
+                  	HD_COMP_MGR_TOP_MARGIN);
+	}
 
   clutter_actor_set_position (applet, c_geom.x, c_geom.y);
 
@@ -1017,7 +1121,15 @@ hd_home_view_store_applet_position (HdHomeView   *view,
 
       applet_id = HD_HOME_APPLET (data->cc->wm_client)->applet_id;
 
-      position_key = g_strdup_printf (GCONF_KEY_POSITION, applet_id);
+			if(!STATE_IS_PORTRAIT (hd_render_manager_get_state()))
+			{
+	      position_key = g_strdup_printf (GCONF_KEY_POSITION, applet_id);
+			}
+			else
+			{
+				position_key = g_strdup_printf (GCONF_KEY_POSITION_PORTRAIT, applet_id);
+			}
+
       position_value = g_slist_prepend (g_slist_prepend (NULL,
                                                          GINT_TO_POINTER (c_geom.y)),
                                         GINT_TO_POINTER (c_geom.x));
@@ -1185,8 +1297,15 @@ hd_home_view_load_applet_position (HdHomeView           *view,
   GSList *position;
 
   applet_id = HD_HOME_APPLET (data->cc->wm_client)->applet_id;
+	
+	if(!STATE_IS_PORTRAIT (hd_render_manager_get_state())){
+	  position_key = g_strdup_printf (GCONF_KEY_POSITION, applet_id);
+	}
+	else
+	{
+		position_key = g_strdup_printf (GCONF_KEY_POSITION_PORTRAIT, applet_id);
+	}
 
-  position_key = g_strdup_printf (GCONF_KEY_POSITION, applet_id);
   position = gconf_client_get_list (priv->gconf_client,
                                     position_key,
                                     GCONF_VALUE_INT,
@@ -1403,6 +1522,39 @@ hd_home_view_add_applet (HdHomeView   *view,
 }
 
 void
+hd_home_view_change_applets_position (HdHomeView *view)
+{
+  HdHomeViewPrivate *priv;
+  GHashTableIter iter;
+  gpointer value, key;
+	gint x, y;
+
+  g_return_if_fail (HD_IS_HOME_VIEW (view));
+
+  priv = view->priv;
+
+  /* Iterate over all applets */
+  g_hash_table_iter_init (&iter, priv->applets);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+			x = -1;
+			y = -1;
+ 		  hd_home_view_load_applet_position (view,
+		                                     (ClutterActor *) key,
+		                                     (HdHomeViewAppletData *) value,
+		                                     FALSE,
+		                                     &x,
+		                                     &y);
+
+		  hd_home_view_store_applet_position (view,
+		                                      (ClutterActor *) key,
+		                                      x,
+		                                      y);			
+    }
+ }
+
+void
 hd_home_view_unregister_applet (HdHomeView *view, ClutterActor *applet)
 {
   HdHomeViewPrivate *priv = view->priv;
@@ -1431,7 +1583,11 @@ hd_home_view_move_applet (HdHomeView   *view,
   wm_applet->view_id = hd_home_view_get_view_id (new_view);
 
   /* Reset position in GConf*/
-  position_key = g_strdup_printf (GCONF_KEY_POSITION, wm_applet->applet_id);
+	if(!STATE_IS_PORTRAIT (hd_render_manager_get_state()))
+	  position_key = g_strdup_printf (GCONF_KEY_POSITION, wm_applet->applet_id);
+	else
+		position_key = g_strdup_printf (GCONF_KEY_POSITION_PORTRAIT, wm_applet->applet_id);
+
   gconf_client_unset (priv->gconf_client, position_key, &error);
   if (G_UNLIKELY (error))
     {
@@ -1441,7 +1597,8 @@ hd_home_view_move_applet (HdHomeView   *view,
   g_free (position_key);
 
   /* Update view in GConf */
-  view_key = g_strdup_printf (GCONF_KEY_VIEW, wm_applet->applet_id);
+	view_key = g_strdup_printf (GCONF_KEY_VIEW, wm_applet->applet_id);
+
   gconf_client_set_int (priv->gconf_client,
                         view_key,
                         wm_applet->view_id + 1,
@@ -1603,17 +1760,36 @@ hd_home_view_allocation_changed (HdHomeView    *view,
 
   /* For scrolling either way from the home position, make the applets
    * move faster than the background to produce the parallax effect. */
-  if (geom.x > -HD_COMP_MGR_LANDSCAPE_WIDTH && geom.x < 0)
+  if( STATE_IS_PORTRAIT(hd_render_manager_get_state ())
+      && hd_home_get_vertical_scrolling(priv->home))
     {
-      geom.x = (int)(geom.x * HD_HOME_VIEW_PARALLAX_AMOUNT);
-      if (geom.x < -HD_COMP_MGR_LANDSCAPE_WIDTH)
-        geom.x = -HD_COMP_MGR_LANDSCAPE_WIDTH;
+      if (geom.y > -HD_COMP_MGR_LANDSCAPE_WIDTH && geom.y < 0)
+        {
+          geom.y = (int)(geom.y * HD_HOME_VIEW_PARALLAX_AMOUNT);
+          if (geom.y < -HD_COMP_MGR_LANDSCAPE_WIDTH)
+            geom.y = -HD_COMP_MGR_LANDSCAPE_WIDTH;
+        }
+      if (geom.y < HD_COMP_MGR_LANDSCAPE_WIDTH && geom.y > 0)
+        {
+          geom.y = (int)(geom.y * HD_HOME_VIEW_PARALLAX_AMOUNT);
+          if (geom.y > HD_COMP_MGR_LANDSCAPE_WIDTH)
+            geom.y = HD_COMP_MGR_LANDSCAPE_WIDTH;
+        }
     }
-  if (geom.x < HD_COMP_MGR_LANDSCAPE_WIDTH && geom.x > 0)
+  else
     {
-      geom.x = (int)(geom.x * HD_HOME_VIEW_PARALLAX_AMOUNT);
-      if (geom.x > HD_COMP_MGR_LANDSCAPE_WIDTH)
-        geom.x = HD_COMP_MGR_LANDSCAPE_WIDTH;
+      if (geom.x > -HD_COMP_MGR_LANDSCAPE_WIDTH && geom.x < 0)
+        {
+          geom.x = (int)(geom.x * HD_HOME_VIEW_PARALLAX_AMOUNT);
+          if (geom.x < -HD_COMP_MGR_LANDSCAPE_WIDTH)
+            geom.x = -HD_COMP_MGR_LANDSCAPE_WIDTH;
+        }
+      if (geom.x < HD_COMP_MGR_LANDSCAPE_WIDTH && geom.x > 0)
+        {
+          geom.x = (int)(geom.x * HD_HOME_VIEW_PARALLAX_AMOUNT);
+          if (geom.x > HD_COMP_MGR_LANDSCAPE_WIDTH)
+            geom.x = HD_COMP_MGR_LANDSCAPE_WIDTH;
+        }
     }
 
   clutter_actor_set_position(priv->applets_container, geom.x, geom.y);
@@ -1636,9 +1812,72 @@ hd_home_view_rotate_background(ClutterActor *actor, GParamSpec *unused,
     }
   else
     { /* -> landscape */
-      clutter_actor_set_anchor_point_from_gravity (actor,
+     clutter_actor_set_anchor_point_from_gravity (actor,
                                                    CLUTTER_GRAVITY_NORTH_WEST);
       clutter_actor_set_rotation (actor, CLUTTER_Z_AXIS, 0, 0, 0, 0);
     }
   clutter_actor_set_size(actor, w, h);
+}
+
+static void
+hd_home_view_resize_applets_container(ClutterActor *actor, GParamSpec *unused,
+                               ClutterActor *stage)
+{
+
+  clutter_actor_set_size(actor,
+                         hd_comp_mgr_get_current_screen_width (),
+                         hd_comp_mgr_get_current_screen_height ());
+}
+
+void
+hd_home_view_change_wallpaper(HdHomeView *view)
+{
+  HdHomeViewPrivate *priv = view->priv;
+  TidySubTexture *new_bg_sub = 0;
+  ClutterActor *new_bg;
+
+  if(priv->background_temp_portrait == NULL ||
+      priv->background_temp == NULL)
+      return;
+
+
+  if(STATE_IS_PORTRAIT(hd_render_manager_get_state ()))
+    {
+      new_bg = priv->background_temp_portrait;
+      new_bg_sub = priv->background_sub_temp_portrait;
+    }
+  else
+    {
+      new_bg = priv->background_temp;
+      new_bg_sub = priv->background_sub_temp;
+    }
+
+  clutter_actor_set_name (new_bg, "HdHomeView::background");
+
+  g_object_ref(priv->background);
+  g_object_ref(priv->background_sub);
+
+  /* Remove old background and add new to the background container */
+  clutter_container_remove_actor (
+              CLUTTER_CONTAINER (priv->background_container),
+              priv->background);
+  if (priv->background_sub)
+    clutter_container_remove_actor (
+                CLUTTER_CONTAINER (priv->background_container),
+                CLUTTER_ACTOR(priv->background_sub));
+
+  clutter_container_add_actor (
+              CLUTTER_CONTAINER (priv->background_container),
+              new_bg);
+  if (new_bg_sub)
+    clutter_container_add_actor (
+                CLUTTER_CONTAINER (priv->background_container),
+                CLUTTER_ACTOR(new_bg_sub));
+
+  /* Only update blur if we're currently active */
+  if (hd_home_view_container_get_current_view(priv->view_container) == priv->id)
+    hd_render_manager_blurred_changed();
+
+  priv->background = new_bg;
+  priv->background_sub = new_bg_sub;
 }

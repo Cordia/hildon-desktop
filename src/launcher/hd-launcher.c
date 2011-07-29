@@ -618,7 +618,10 @@ hd_launcher_populate_tree_starting (HdLauncherTree *tree, gpointer data)
   HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (launcher);
   if (STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
     {
-      hd_render_manager_set_state (HDRM_STATE_HOME);
+      if(priv->portraited)
+	      hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+			else
+				hd_render_manager_set_state (HDRM_STATE_HOME);
     }
   priv->active_page = NULL;
 
@@ -798,7 +801,10 @@ hd_launcher_populate_tree_finished (HdLauncherTree *tree, gpointer data)
    * the screen until the user opens the power menu */
   if (STATE_IS_LAUNCHER (hd_render_manager_get_state ()))
     {
-      hd_render_manager_set_state (HDRM_STATE_HOME);
+      if(priv->portraited)
+	      hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+			else
+				hd_render_manager_set_state (HDRM_STATE_HOME);
     }
 
   /* First we traverse the list and create all the categories,
@@ -836,13 +842,19 @@ _hd_launcher_transition_clicked(ClutterActor *actor,
 static gboolean
 hd_launcher_transition_loading_timeout()
 {
+	HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+
   hd_launcher_stop_loading_transition();
   /* Change state back to switcher (if other apps exist) or home if the app
    * starting failed */
   if (hd_task_navigator_has_apps())
     hd_render_manager_set_state(HDRM_STATE_TASK_NAV);
-  else
-    hd_render_manager_set_state(HDRM_STATE_HOME);
+  else {
+		if(priv->portraited)
+	    hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+		else
+			hd_render_manager_set_state (HDRM_STATE_HOME);
+	}
   return FALSE; // don't call again
 }
 

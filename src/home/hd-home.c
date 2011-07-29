@@ -80,6 +80,10 @@
 #define HD_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home"
 #define HD_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
 
+#define GCONF_KEY_SCROLL_VERTICAL    "/apps/osso/hildon-desktop/scroll_vertical"
+#define GCONF_KEY_EDIT_MODE_PORTRAIT "/apps/osso/hildon-desktop/edit_mode_portrait"
+#define GCONF_KEY_PORTRAIT_WALLPAPER "/apps/osso/hildon-desktop/portrait_wallpaper"
+
 #define CALL_UI_GCONF_KEY "/apps/osso/hildon-desktop/callui_dbus_interface"
 #define ADDRESSBOOK_GCONF_KEY \
            "/apps/osso/hildon-desktop/addressbook_dbus_interface"
@@ -147,12 +151,18 @@ struct _HdHomePrivate
 
   guint                  edit_button_cb;
 
+  gboolean               vertical_scrolling;
+  gboolean               portrait_wallpaper;
+
   /* Pan variables */
   gint                   last_x;
+  gint                   last_y;
   gint                   initial_x;
   gint                   initial_y;
   gint                   cumulative_x;
+  gint                   cumulative_y;
   gint                   velocity_x; /* movement in pixels per sec */
+  gint                   velocity_y; /* movement in pixels per sec */
   GTimer                 *last_move_time; /* time of last movement event */
   GList                  *drag_list;
   /* List of HdHomeDrag - history of mouse events used to work out an
@@ -199,6 +209,7 @@ struct _HdHomePrivate
 
 typedef struct {
   gint    x;
+  gint    y;
   gdouble period;
 } HdHomeDrag;
 
@@ -270,7 +281,29 @@ hd_home_edit_button_clicked (ClutterActor *button,
 			     ClutterEvent *event,
 			     HdHome       *home)
 {
-  hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
+  GError *error = NULL;
+  GConfClient *gconf_client = gconf_client_get_default ();
+
+	if(STATE_IS_PORTRAIT (hd_render_manager_get_state()))
+    {
+      gconf_client_set_bool(gconf_client, GCONF_KEY_EDIT_MODE_PORTRAIT, TRUE, &error);
+	    hd_render_manager_set_state(HDRM_STATE_HOME_EDIT_PORTRAIT);
+    }
+	else
+    {
+      gconf_client_set_bool(gconf_client, GCONF_KEY_EDIT_MODE_PORTRAIT, FALSE, &error);
+	    hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
+    }
+
+  if (G_UNLIKELY (error))
+    {
+      g_warning ("%s. Could not sync GConf. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_clear_error (&error);
+    }
+
+  g_object_unref (gconf_client);
 
   return TRUE;
 }
@@ -348,69 +381,139 @@ hd_home_desktop_do_motion (HdHome *home,
   drag_item->period = g_timer_elapsed(priv->last_move_time, NULL);
   g_timer_reset(priv->last_move_time);
 
-  drag_item->x = x - priv->last_x;
-  priv->cumulative_x += drag_item->x;
+  if(!STATE_IS_PORTRAIT(hd_render_manager_get_state ())
+        || !priv->vertical_scrolling )
+    { /* Scrolling in landscape mode */
+      drag_item->x = x - priv->last_x;
+      priv->cumulative_x += drag_item->x;
 
-  DRAG_DEBUG("drag motion %dms, %dx%d -> %d", (int)(drag_item->period*1000),
-             x, y, drag_item->x);
+      DRAG_DEBUG("drag motion %dms, %dx%d -> %d", (int)(drag_item->period*1000),
+                 x, y, drag_item->x);
 
-  /* Remove any items older than a certain age */
-  time = 0;
-  drag_distance = 0;
-  list = priv->drag_list;
-  while (list)
-    {
-      GList *next = list->next;
-      /* '&& next' ensures that we always average at least one previous
-       * movement event to get our velocity, even if it is too old. */
-      if (time > HDH_PAN_VELOCITY_HISTORY && next) {
-        g_free (list->data);
-        priv->drag_list = g_list_delete_link(priv->drag_list, list);
-      }
-      else
+      /* Remove any items older than a certain age */
+      time = 0;
+      drag_distance = 0;
+      list = priv->drag_list;
+      while (list)
         {
-          HdHomeDrag *drag = (HdHomeDrag*)list->data;
-          time += drag->period;
-          drag_distance += ABS(drag->x);
+          GList *next = list->next;
+          /* '&& next' ensures that we always average at least one previous
+           * movement event to get our velocity, even if it is too old. */
+          if (time > HDH_PAN_VELOCITY_HISTORY && next) {
+            g_free (list->data);
+            priv->drag_list = g_list_delete_link(priv->drag_list, list);
+          }
+          else
+            {
+              HdHomeDrag *drag = (HdHomeDrag*)list->data;
+              time += drag->period;
+              drag_distance += ABS(drag->x);
+            }
+          list = next;
         }
-      list = next;
-    }
-  /* Add new item to drag list */
-  priv->drag_list = g_list_prepend(priv->drag_list, drag_item);
-  /* Set velocity */
-  time += drag_item->period;
-  drag_distance += ABS(drag_item->x);
-  if (time > 0)
-    priv->velocity_x = drag_distance / time;
-  else
-    priv->velocity_x = 0;
-  if (priv->cumulative_x < 0)
-    priv->velocity_x = -priv->velocity_x;
-
-  if (!priv->moved_over_threshold &&
-      ABS (priv->cumulative_x) > HDH_PAN_THRESHOLD)
-    {
-      priv->moved_over_threshold = TRUE;
-      if (priv->press_timeout)
-        priv->press_timeout = (g_source_remove (priv->press_timeout), 0);
-
-      /* Remove initial jump caused by the threshold */
-      if (priv->cumulative_x > 0)
-        priv->cumulative_x -= HDH_PAN_THRESHOLD;
+      /* Add new item to drag list */
+      priv->drag_list = g_list_prepend(priv->drag_list, drag_item);
+      /* Set velocity */
+      time += drag_item->period;
+      drag_distance += ABS(drag_item->x);
+      if (time > 0)
+        priv->velocity_x = drag_distance / time;
       else
-        priv->cumulative_x += HDH_PAN_THRESHOLD;
-    }
+        priv->velocity_x = 0;
+      if (priv->cumulative_x < 0)
+        priv->velocity_x = -priv->velocity_x;
 
-  if (priv->moved_over_threshold)
-    {
-      /* unfocus any applet in case we start panning */
-      mb_wm_client_focus (MB_WM_COMP_MGR (priv->comp_mgr)->wm->desktop);
-      hd_home_view_container_set_offset (
-                      HD_HOME_VIEW_CONTAINER (priv->view_container),
-                      CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_x));
-    }
+      if (!priv->moved_over_threshold &&
+          ABS (priv->cumulative_x) > HDH_PAN_THRESHOLD)
+        {
+          priv->moved_over_threshold = TRUE;
+          if (priv->press_timeout)
+            priv->press_timeout = (g_source_remove (priv->press_timeout), 0);
+  
+          /* Remove initial jump caused by the threshold */
+          if (priv->cumulative_x > 0)
+            priv->cumulative_x -= HDH_PAN_THRESHOLD;
+          else
+            priv->cumulative_x += HDH_PAN_THRESHOLD;
+        }
 
-  priv->last_x = x;
+      if (priv->moved_over_threshold)
+        {
+          /* unfocus any applet in case we start panning */
+          mb_wm_client_focus (MB_WM_COMP_MGR (priv->comp_mgr)->wm->desktop);
+          hd_home_view_container_set_offset (
+                          HD_HOME_VIEW_CONTAINER (priv->view_container),
+                          CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_x));
+        }
+ 
+      priv->last_x = x;
+    }
+  else
+    { /* Scrolling in portrait mode */
+      drag_item->y = y - priv->last_y;
+      priv->cumulative_y += drag_item->y;
+  
+      DRAG_DEBUG("drag motion %dms, %dx%d -> %d", (int)(drag_item->period*1000),
+                 x, y, drag_item->x);
+
+      /* Remove any items older than a certain age */
+      time = 0;
+      drag_distance = 0;
+      list = priv->drag_list;
+      while (list)
+        {
+          GList *next = list->next;
+          /* '&& next' ensures that we always average at least one previous
+           * movement event to get our velocity, even if it is too old. */
+          if (time > HDH_PAN_VELOCITY_HISTORY && next) {
+            g_free (list->data);
+            priv->drag_list = g_list_delete_link(priv->drag_list, list);
+          }
+          else
+            {
+              HdHomeDrag *drag = (HdHomeDrag*)list->data;
+              time += drag->period;
+              drag_distance += ABS(drag->y);
+            }
+          list = next;
+        }
+      /* Add new item to drag list */
+      priv->drag_list = g_list_prepend(priv->drag_list, drag_item);
+      /* Set velocity */
+      time += drag_item->period;
+      drag_distance += ABS(drag_item->y);
+      if (time > 0)
+        priv->velocity_y = drag_distance / time;
+      else
+        priv->velocity_y = 0;
+      if (priv->cumulative_y < 0)
+        priv->velocity_y = -priv->velocity_y;
+ 
+      if (!priv->moved_over_threshold &&
+          ABS (priv->cumulative_y) > HDH_PAN_THRESHOLD)
+        {
+          priv->moved_over_threshold = TRUE;
+          if (priv->press_timeout)
+            priv->press_timeout = (g_source_remove (priv->press_timeout), 0);
+  
+          /* Remove initial jump caused by the threshold */
+          if (priv->cumulative_y > 0)
+            priv->cumulative_y -= HDH_PAN_THRESHOLD;
+          else
+            priv->cumulative_y += HDH_PAN_THRESHOLD;
+        }
+
+      if (priv->moved_over_threshold)
+        {
+          /* unfocus any applet in case we start panning */
+          mb_wm_client_focus (MB_WM_COMP_MGR (priv->comp_mgr)->wm->desktop);
+          hd_home_view_container_set_offset (
+                          HD_HOME_VIEW_CONTAINER (priv->view_container),
+                          CLUTTER_UNITS_FROM_DEVICE (priv->cumulative_y));
+        }
+
+      priv->last_y = y;
+    }
 }
 
 static void
@@ -428,6 +531,8 @@ hd_home_desktop_do_release (HdHome *home)
 {
   HdHomePrivate *priv = home->priv;
   MBWindowManager *wm = MB_WM_COMP_MGR (priv->comp_mgr)->wm;
+  int cumulative_value;
+  int velocity_value;
 
   /*g_debug("%s:", __FUNCTION__);*/
   DRAG_DEBUG("drag release");
@@ -446,28 +551,40 @@ hd_home_desktop_do_release (HdHome *home)
   g_list_free(priv->drag_list);
   priv->drag_list = 0;
 
+  if(STATE_IS_PORTRAIT(hd_render_manager_get_state ())
+      && priv->vertical_scrolling)
+    {
+      cumulative_value = priv->cumulative_y;
+      velocity_value = priv->velocity_y;
+    }
+  else
+    {
+      cumulative_value = priv->cumulative_x;
+      velocity_value = priv->velocity_x;
+    }
+
   if (!priv->long_press && priv->moved_over_threshold)
     {
-      if (ABS (priv->cumulative_x) >= PAN_NEXT_PREVIOUS_PERCENTAGE * HD_COMP_MGR_LANDSCAPE_WIDTH) /* */
+      if (ABS (cumulative_value) >= PAN_NEXT_PREVIOUS_PERCENTAGE * HD_COMP_MGR_LANDSCAPE_WIDTH) /* */
         {
-          if (priv->cumulative_x > 0)
+          if (cumulative_value > 0)
             {
-              hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
-              DRAG_DEBUG("drag to_previous, vel=%d", priv->velocity_x);
+              hd_home_view_container_scroll_to_previous (HD_HOME_VIEW_CONTAINER (priv->view_container), velocity_value);
+              DRAG_DEBUG("drag to_previous, vel=%d", velocity_value);
             }
           else
             {
-              hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
-              DRAG_DEBUG("drag to_next, vel=%d", priv->velocity_x);
+              hd_home_view_container_scroll_to_next (HD_HOME_VIEW_CONTAINER (priv->view_container), velocity_value);
+              DRAG_DEBUG("drag to_next, vel=%d", velocity_value);
             }
         }
       else
         {
-          hd_home_view_container_scroll_back (HD_HOME_VIEW_CONTAINER (priv->view_container), priv->velocity_x);
-          DRAG_DEBUG("drag scroll_back, vel=%d", priv->velocity_x);
+          hd_home_view_container_scroll_back (HD_HOME_VIEW_CONTAINER (priv->view_container), velocity_value);
+          DRAG_DEBUG("drag scroll_back, vel=%d", velocity_value);
         }
     }
-  else if (!priv->long_press && hd_render_manager_get_state() == HDRM_STATE_HOME &&
+  else if (!priv->long_press && STATE_IS_HOME(hd_render_manager_get_state()) &&
            priv->initial_x == -1 &&
            priv->initial_y == -1)
     {
@@ -479,6 +596,7 @@ hd_home_desktop_do_release (HdHome *home)
     }
 
   priv->cumulative_x = 0;
+  priv->cumulative_y = 0;
   priv->moved_over_threshold = FALSE;
   priv->long_press = FALSE;
 }
@@ -494,7 +612,10 @@ press_timeout_cb (gpointer data)
 
   priv->long_press = TRUE;
 
-  hd_render_manager_set_state (HDRM_STATE_HOME_EDIT);
+	if(STATE_IS_PORTRAIT (hd_render_manager_get_state()))
+	  hd_render_manager_set_state(HDRM_STATE_HOME_EDIT_PORTRAIT);
+	else
+	  hd_render_manager_set_state(HDRM_STATE_HOME_EDIT);
 
   if (priv->pressed_applet)
     do_applet_release (home,
@@ -579,6 +700,9 @@ hd_home_desktop_do_press (HdHome *home,
   priv->last_x = x;
   priv->cumulative_x = 0;
   priv->velocity_x = 0;
+  priv->last_y = y;
+  priv->cumulative_y = 0;
+  priv->velocity_y = 0;
   g_timer_reset(priv->last_move_time);
   /* Make sure drag history is clear */
   g_list_foreach(priv->drag_list, (GFunc)g_free, 0);
@@ -795,7 +919,7 @@ hd_home_desktop_key_press (XKeyEvent *xev, void *userdata)
                 hd_dbus_send_event(s);
           }
   }
-  if (hd_render_manager_get_state()==HDRM_STATE_HOME) {
+  if (STATE_IS_HOME(hd_render_manager_get_state())) {
 	  gdk_keymap_translate_keyboard_state (keymap,
                                        xev->keycode,
                                        xev->state,
@@ -1244,6 +1368,11 @@ hd_home_constructed (GObject *object)
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->front), edit_group);
   clutter_actor_hide (edit_group);
 
+  GConfClient *client = gconf_client_get_default ();
+  priv->vertical_scrolling = gconf_client_get_bool (client, GCONF_KEY_SCROLL_VERTICAL, NULL);
+  priv->portrait_wallpaper = gconf_client_get_bool (client, GCONF_KEY_PORTRAIT_WALLPAPER, NULL);
+  g_object_unref (client);
+
   priv->view_container = hd_home_view_container_new (
                                                 HD_COMP_MGR (priv->comp_mgr),
                                                 CLUTTER_ACTOR (object));
@@ -1252,6 +1381,13 @@ hd_home_constructed (GObject *object)
   clutter_actor_set_size (CLUTTER_ACTOR (priv->view_container),
                           HD_COMP_MGR_LANDSCAPE_WIDTH,
                           HD_COMP_MGR_LANDSCAPE_HEIGHT);
+  /* Eliminates black rectangles between views in portrait mode. */
+  /* Visible with horizontal scrolling. */
+  /* It should be disabled when vertical scrolling is in use. */
+  if (!priv->vertical_scrolling)
+    g_signal_connect_swapped(clutter_stage_get_default(), "notify::allocation",
+                            G_CALLBACK(hd_home_resize_view_container),
+                            priv->view_container);
   clutter_actor_show (priv->view_container);
 
   priv->edit_button = hd_home_create_edit_button ();
@@ -1647,7 +1783,9 @@ hd_home_update_layout (HdHome * home)
       _hd_home_do_normal_layout(home);
       break;
     case HDRM_STATE_HOME_EDIT:
+		case HDRM_STATE_HOME_EDIT_PORTRAIT:
     case HDRM_STATE_HOME_EDIT_DLG:
+    case HDRM_STATE_HOME_EDIT_DLG_PORTRAIT:
       _hd_home_do_edit_layout(home);
       break;
     default:
@@ -2096,6 +2234,7 @@ do_home_applet_motion (HdHome       *home,
   /*
    * If we are in edit mode the HdHomeView will have to deal with this event.
    */
+
   if (STATE_IN_EDIT_MODE (hd_render_manager_get_state ()))
     return FALSE;
 
@@ -2244,6 +2383,7 @@ hd_home_add_applet (HdHome *home, ClutterActor *applet)
 
       view = hd_home_view_container_get_view (
                       HD_HOME_VIEW_CONTAINER (priv->view_container), view_id);
+
       hd_home_view_add_applet (HD_HOME_VIEW (view), applet, FALSE);
     }
   else
@@ -2277,7 +2417,10 @@ hd_home_show_edit_button (HdHome *home)
 
   clutter_actor_get_size (priv->edit_button, &button_width, &button_height);
 
-  x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
+	if(STATE_IS_PORTRAIT(hd_render_manager_get_state()))
+	  x = HD_COMP_MGR_PORTRAIT_WIDTH - button_width - HD_COMP_MGR_OPERATOR_PADDING;
+	else
+		x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
 
   clutter_actor_set_position (priv->edit_button,
                               x,
@@ -2338,7 +2481,10 @@ hd_home_hide_edit_button (HdHome *home)
 
   clutter_actor_get_size (priv->edit_button, &button_width, &button_height);
 
-  x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
+	if(STATE_IS_PORTRAIT(hd_render_manager_get_state()))
+	  x = HD_COMP_MGR_PORTRAIT_WIDTH - button_width - HD_COMP_MGR_OPERATOR_PADDING;
+	else
+		x = HD_COMP_MGR_LANDSCAPE_WIDTH - button_width - HD_COMP_MGR_TOP_RIGHT_BTN_WIDTH;
 
   timeline = clutter_effect_move (priv->hide_edit_button_template,
                                   CLUTTER_ACTOR (priv->edit_button),
@@ -2465,6 +2611,27 @@ update_edge_indication_visibility (HdHome *home,
 void
 hd_home_show_edge_indication (HdHome *home)
 {
+	HdHomePrivate *priv = home->priv;
+
+	if(STATE_IS_PORTRAIT (hd_render_manager_get_state()))
+		{
+			clutter_actor_set_size(priv->edge_indication_left, 
+															HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_PORTRAIT_HEIGHT);
+			clutter_actor_set_position (priv->edge_indication_left, 0, 0);
+			clutter_actor_set_size(priv->edge_indication_right, 
+															HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_PORTRAIT_HEIGHT);
+			clutter_actor_set_position (priv->edge_indication_right, HD_COMP_MGR_PORTRAIT_WIDTH - HD_EDGE_INDICATION_WIDTH, 0);
+		}
+	else
+		{
+			clutter_actor_set_size(priv->edge_indication_left, 
+															HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
+			clutter_actor_set_position (priv->edge_indication_left, 0, 0);
+			clutter_actor_set_size(priv->edge_indication_right, 
+															HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_LANDSCAPE_HEIGHT);
+			clutter_actor_set_position (priv->edge_indication_right, HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH, 0);
+		}
+
   update_edge_indication_visibility (home,
                                      EDGE_INDICATION_OPACITY_WIDGET_MOVING,
                                      EDGE_INDICATION_OPACITY_WIDGET_MOVING);
@@ -2601,4 +2768,67 @@ hd_home_unregister_applet (HdHome       *home,
 
 HdHomeViewContainer *hd_home_get_view_container(HdHome *home) {
 	return HD_HOME_VIEW_CONTAINER (home->priv->view_container);
+}
+
+void
+hd_home_update_applets_position (HdHome *home)
+{
+	HdHomePrivate *priv = home->priv;
+	int i;
+
+  for (i = 0; i < MAX_VIEWS; i++)
+    {
+      ClutterActor *view;
+
+      view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                              i);
+			hd_home_view_change_applets_position(HD_HOME_VIEW (view));
+    }
+}
+
+void
+hd_home_update_wallpaper(HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+  int i;
+
+  for (i = 0; i < MAX_VIEWS; i++)
+    {
+      ClutterActor *view;
+
+      view = hd_home_view_container_get_view (HD_HOME_VIEW_CONTAINER (priv->view_container),
+                                              i);
+      hd_home_view_change_wallpaper(HD_HOME_VIEW (view));
+    }
+}
+
+gboolean
+hd_home_is_portrait_capable (void)
+{
+	return hd_app_mgr_is_portrait () && !hd_app_mgr_slide_is_open ();
+}
+
+void
+hd_home_resize_view_container (ClutterActor *actor, GParamSpec *unused,
+                               ClutterActor *stage)
+{
+  clutter_actor_set_size(actor,
+                         hd_comp_mgr_get_current_screen_width (),
+                         hd_comp_mgr_get_current_screen_height ());
+}
+
+gboolean
+hd_home_get_vertical_scrolling (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+
+  return priv->vertical_scrolling;
+}
+
+gboolean
+hd_home_is_portrait_wallpaper_enabled (HdHome *home)
+{
+  HdHomePrivate *priv = home->priv;
+
+  return priv->portrait_wallpaper;
 }

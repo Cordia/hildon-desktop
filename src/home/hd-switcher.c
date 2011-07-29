@@ -403,7 +403,12 @@ press_timeout_cb (gpointer data)
   priv->long_press = TRUE;
 
   if (STATE_IS_APP (hd_render_manager_get_state ()))
-    hd_render_manager_set_state (HDRM_STATE_HOME);
+	{
+		if(STATE_IS_PORTRAIT (hd_render_manager_get_state () ))
+      hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+		else
+			hd_render_manager_set_state (HDRM_STATE_HOME);
+	}
 
   return FALSE;
 }
@@ -426,7 +431,8 @@ hd_switcher_press (HdSwitcher *switcher)
                                                    press_timeout_cb,
                                                    switcher);
     }
-  else if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
+  else if ( (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT) 
+						|| (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT_PORTRAIT))
     {
       HdHome *home = HD_HOME (hd_comp_mgr_get_home (HD_COMP_MGR (priv->comp_mgr)));
 
@@ -577,7 +583,12 @@ hd_switcher_loading_fail (HdSwitcher *switcher,
       if (hd_task_navigator_has_apps ())
         hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
       else
-        hd_render_manager_set_state (HDRM_STATE_HOME);
+			{
+				if(STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
+	        hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+				else
+	        hd_render_manager_set_state (HDRM_STATE_HOME);
+			}
     }
 
 #if 0 /* removed as of NB#140674 */
@@ -616,7 +627,12 @@ hd_switcher_insufficient_memory(HdSwitcher *switcher,
   if (hd_task_navigator_has_apps ())
     hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
   else
-    hd_render_manager_set_state (HDRM_STATE_HOME);
+	{
+		if(STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
+	  	hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+		else
+	    hd_render_manager_set_state (HDRM_STATE_HOME);
+	}
 
   GtkWidget* banner = hildon_banner_show_information (NULL, NULL,
                         dgettext("ke-recv", (waking_up ?
@@ -707,7 +723,11 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
                 "HD-MBWMCompMgrClutterClient", __FUNCTION__);
       /* this is a real problem - not a normal use case, so just return
        * to home, as everything should be ok there */
-      hd_render_manager_set_state(HDRM_STATE_HOME);
+			if(STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
+	      hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+			else
+	      hd_render_manager_set_state (HDRM_STATE_HOME);
+
       return;
     }
 
@@ -724,7 +744,10 @@ hd_switcher_zoom_in_complete (ClutterActor *actor, HdSwitcher *switcher)
            * Treat it as if cmgrcc was NULL.
            */
           g_warning("%s: cclient->wm_client == NULL", __FUNCTION__);
-          hd_render_manager_set_state(HDRM_STATE_HOME);
+					if(STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
+	      	  hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+					else
+	      	  hd_render_manager_set_state (HDRM_STATE_HOME);
         }
       else
         hd_wm_activate_zoomed_client (c->wmref, c);
@@ -856,7 +879,12 @@ hd_switcher_something_removed (void)
 {
   if (STATE_IS_TASK_NAV(hd_render_manager_get_state())
       && hd_task_navigator_is_empty ())
-    hd_render_manager_set_state (HDRM_STATE_HOME);
+	{
+		if(STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
+	  	hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+		else
+	    hd_render_manager_set_state (HDRM_STATE_HOME);
+	}
 }
 
 void
@@ -918,6 +946,9 @@ static void
 hd_switcher_group_background_clicked (HdSwitcher   *switcher,
 				      ClutterActor *actor)
 {
-  hd_render_manager_set_state(HDRM_STATE_HOME);
+	if(STATE_IS_PORTRAIT (hd_render_manager_get_state ()))
+	  hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+	else
+	  hd_render_manager_set_state (HDRM_STATE_HOME);
 }
 

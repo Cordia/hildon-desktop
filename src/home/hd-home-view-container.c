@@ -151,6 +151,21 @@ backgrounds_dir_changed (GnomeVFSMonitorHandle    *handler,
               hd_home_view_load_background (HD_HOME_VIEW (priv->views[id]));
             }
         }
+      else if (g_str_has_prefix (basename, "background_portrait-") &&
+          (g_str_has_suffix (basename, ".pvr") ||
+           g_str_has_suffix (basename, ".png")))
+        {
+          guint id;
+
+          id = atoi (basename + 20) - 1; /* id is from 0..MAX_HOME_VIEWS - 1 */
+
+          if (id < MAX_HOME_VIEWS && priv->active_views[id])
+            {
+              g_debug ("%s. Reload background %s for view %u.", __FUNCTION__,
+                       info_uri, id + 1);
+              hd_home_view_load_background (HD_HOME_VIEW (priv->views[id]));
+            }
+        }
 
       g_free (filename);
       g_free (basename);
@@ -625,51 +640,103 @@ hd_home_view_container_allocate (ClutterActor          *self,
     offset = CLUTTER_UNITS_FROM_INT(priv->offset) +
              CLUTTER_UNITS_FROM_INT(priv->offset_anim);
 
-  for (i = 0; i < MAX_HOME_VIEWS; i++)
-    {
-      if (!priv->active_views[i])
-        continue;
+  if( hd_comp_mgr_is_portrait()
+      && hd_home_get_vertical_scrolling(priv->home))
+  { /* Vertical scrolling for portrait mode */
+    for (i = 0; i < MAX_HOME_VIEWS; i++)
+      {
+        if (!priv->active_views[i])
+          continue;
 
-      child_box.x1 = width;
-      child_box.y1 = 0;
-      child_box.x2 = width + width;
-      child_box.y2 = height;
+        child_box.y1 = width;
+        child_box.x1 = 0;
+        child_box.y2 = width + width;
+        child_box.x2 = height;
 
-      if (i == priv->current_view)
-        {
-          child_box.x1 = offset;
-          child_box.x2 = offset + width;
-        }
-      else if (i == priv->previous_view && offset > 0)
-        {
-          child_box.x1 = offset - width;
-          child_box.x2 = offset;
-        }
-      else if (i == priv->next_view && offset < 0)
-        {
-          child_box.x1 += offset;
-          child_box.x2 += offset;
-        }
+        if (i == priv->current_view)
+          {
+            child_box.y1 = offset;
+            child_box.y2 = offset + width;
+          }
+        else if (i == priv->previous_view && offset > 0)
+          {
+            child_box.y1 = offset - width;
+            child_box.y2 = offset;
+          }
+        else if (i == priv->next_view && offset < 0)
+          {
+            child_box.y1 += offset;
+            child_box.y2 += offset;
+          }
 
-      clutter_actor_allocate (priv->views[i], &child_box, absolute_origin_changed);
+        clutter_actor_allocate (priv->views[i], &child_box, absolute_origin_changed);
 
-      /* Make sure offscreen views are hidden. Views positioned offscreen
-       * wouldn't be seen anyway, but they introduce extra overheads in
-       * Clutter/GLES if they are CLUTTER_ACTOR_IS_VISIBLE. We use < rather
-       * than <= here because given the positioning above, the clause would
-       * always be true otherwise */
-      if ((child_box.x1 < width) &&
-          (child_box.x2 > 0))
-        {
-          if (!CLUTTER_ACTOR_IS_VISIBLE(priv->views[i]))
-            clutter_actor_show(priv->views[i]);
-        }
-      else
-        {
-          if (CLUTTER_ACTOR_IS_VISIBLE(priv->views[i]))
-            clutter_actor_hide(priv->views[i]);
-        }
-    }
+        /* Make sure offscreen views are hidden. Views positioned offscreen
+         * wouldn't be seen anyway, but they introduce extra overheads in
+         * Clutter/GLES if they are CLUTTER_ACTOR_IS_VISIBLE. We use < rather
+         * than <= here because given the positioning above, the clause would
+         * always be true otherwise */
+        if ((child_box.y1 < width) &&
+            (child_box.y2 > 0))
+          {
+            if (!CLUTTER_ACTOR_IS_VISIBLE(priv->views[i]))
+              clutter_actor_show(priv->views[i]);
+          }
+        else
+          {
+            if (CLUTTER_ACTOR_IS_VISIBLE(priv->views[i]))
+              clutter_actor_hide(priv->views[i]);
+          }
+      }
+  }
+  else
+  { /* Scrolling animation for landscape mode (horizontal in portrait mode)*/
+    for (i = 0; i < MAX_HOME_VIEWS; i++)
+      {
+        if (!priv->active_views[i])
+          continue;
+
+        child_box.x1 = width;
+        child_box.y1 = 0;
+        child_box.x2 = width + width;
+        child_box.y2 = height;
+
+        if (i == priv->current_view)
+          {
+            child_box.x1 = offset;
+            child_box.x2 = offset + width;
+          }
+        else if (i == priv->previous_view && offset > 0)
+          {
+            child_box.x1 = offset - width;
+            child_box.x2 = offset;
+          }
+        else if (i == priv->next_view && offset < 0)
+          {
+            child_box.x1 += offset;
+            child_box.x2 += offset;
+          }
+
+        clutter_actor_allocate (priv->views[i], &child_box, absolute_origin_changed);
+
+        /* Make sure offscreen views are hidden. Views positioned offscreen
+         * wouldn't be seen anyway, but they introduce extra overheads in
+         * Clutter/GLES if they are CLUTTER_ACTOR_IS_VISIBLE. We use < rather
+         * than <= here because given the positioning above, the clause would
+         * always be true otherwise */
+        if ((child_box.x1 < width) &&
+            (child_box.x2 > 0))
+          {
+            if (!CLUTTER_ACTOR_IS_VISIBLE(priv->views[i]))
+              clutter_actor_show(priv->views[i]);
+          }
+        else
+          {
+            if (CLUTTER_ACTOR_IS_VISIBLE(priv->views[i]))
+              clutter_actor_hide(priv->views[i]);
+          }
+      }
+  }
 }
 
 static void

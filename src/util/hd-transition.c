@@ -1750,10 +1750,23 @@ hd_transition_rotate_screen (MBWindowManager *wm, gboolean goto_portrait)
           return FALSE;
         }
 
+			/* Some landscape only windows, like the code lock, 
+			 * rotate without setting hdrm state */
+			if ((hd_render_manager_get_state () == HDRM_STATE_HOME_PORTRAIT) 
+					&& !goto_portrait && hd_app_mgr_is_portrait ())
+				return FALSE;
+
       hd_transition_rotating_fsm();
     }
   else
     g_debug("divert");
+
+	/*Update applets position after transition, it's different
+	* for both desktop orientations. It's here for the performance
+	* reasons. */
+	hd_render_manager_update_applets_position ();
+        if(hd_render_manager_is_portrait_wallpaper_enabled ())
+	  hd_render_manager_update_wallpapers ();
 
   return TRUE;
 }

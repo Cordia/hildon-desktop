@@ -4472,9 +4472,9 @@ hd_task_navigator_app_portrait_capable(Thumbnail * thumb)
     );
 
   return
-      thumb->portrait_supported ||
+      (thumb->portrait_supported ||
       (thumb->portrait_supported = hd_comp_mgr_client_supports_portrait(c) || c->portrait_requested) ||
-      apthumb_has_dialogs(thumb);
+      apthumb_has_dialogs(thumb)) && !hd_comp_mgr_is_blacklisted (thumb->win->wm, c);
 }
 
 static Thumbnail * find_thumb_from_xwindow(Window xwindow)

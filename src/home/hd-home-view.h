@@ -89,6 +89,9 @@ void hd_home_view_set_live_bg (HdHomeView *view,
 void hd_home_view_load_background (HdHomeView *view);
 void hd_home_view_update_state (HdHomeView *view);
 
+void hd_home_view_change_applets_position (HdHomeView *view);
+void hd_home_view_change_wallpaper(HdHomeView *view);
+
 G_END_DECLS
 
 #endif

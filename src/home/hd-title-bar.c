@@ -898,6 +898,9 @@ hd_title_bar_set_for_edit_mode(HdTitleBar *bar)
   state |= HDTB_VIS_BTN_DONE;
   state |= HDTB_VIS_FULL_WIDTH;
 
+	if(priv->state & HDTB_VIS_SMALL_BUTTONS)
+		state |= HDTB_VIS_SMALL_BUTTONS;
+
   hd_title_bar_set_state_real(bar, state);
 
   title = dgettext ("maemo-af-desktop", "home_ti_desktop_menu");
@@ -972,7 +975,8 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
       /* we have nothing, make sure we're back to normal */
       hd_title_bar_set_title (bar, NULL, FALSE, FALSE);
       if (hd_render_manager_get_state() &
-	  (HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG))
+	  (HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | 
+		HDRM_STATE_HOME_EDIT_PORTRAIT | HDRM_STATE_HOME_EDIT_DLG_PORTRAIT))
         /* in Home edit mode we can have back button */
 	state = hd_title_bar_get_state(bar) & ~HDTB_VIS_FULL_WIDTH;
       else
@@ -1063,9 +1067,15 @@ static void hd_title_bar_set_title (HdTitleBar *bar,
       int x_end = hd_comp_mgr_get_current_screen_width ()
                   - hd_title_bar_get_button_width(bar)
                   - (waiting ? HD_THEME_IMG_PROGRESS_SIZE : 0);
-      int title_margin = (priv->state & HDTB_VIS_SMALL_BUTTONS) ?
-                         HD_TITLE_BAR_TITLE_MARGIN_SMALL :
-                         HD_TITLE_BAR_TITLE_MARGIN;
+
+      int title_margin;
+      /* Fixes title graphics glitch in portrait edit mode */
+      if(hd_render_manager_get_state () == HDRM_STATE_HOME_EDIT_PORTRAIT)
+        title_margin = HD_TITLE_BAR_TITLE_MARGIN + 2 * HD_TITLE_BAR_TITLE_MARGIN_SMALL;
+      else
+        title_margin = (priv->state & HDTB_VIS_SMALL_BUTTONS) ?
+                        (HD_TITLE_BAR_TITLE_MARGIN_SMALL) :
+                        HD_TITLE_BAR_TITLE_MARGIN;
 
       if (priv->state & HDTB_VIS_BTN_LEFT_MASK)
         x_start += hd_title_bar_get_button_width(bar);
@@ -1318,6 +1328,14 @@ static void hd_title_bar_set_button_positions(HdTitleBar *bar)
       clutter_actor_set_x(priv->buttons[i],
           button_offset + wscr - clutter_actor_get_width(priv->buttons[i]));
   }
+
+	/* Fixes menu button graphics glitch in portrait mode */
+  clutter_actor_set_x(priv->buttons[BTN_BG_LEFT_ATTACHED_PRESSED],
+    -offset);
+  clutter_actor_set_x(priv->buttons[BTN_BG_ATTACHED],
+    0);
+  clutter_actor_set_x(priv->buttons[BTN_DONE],
+    hd_comp_mgr_get_current_screen_width () - clutter_actor_get_width(priv->buttons[BTN_DONE]));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1406,8 +1424,14 @@ hd_title_bar_top_right_press (HdTitleBar *bar)
 {
   hd_title_bar_right_pressed(bar, TRUE);
 
-  if (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT)
-    hd_render_manager_set_state(HDRM_STATE_HOME);
+  if ( (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT) 
+			|| (hd_render_manager_get_state() == HDRM_STATE_HOME_EDIT_PORTRAIT)) 
+	{
+		if(hd_comp_mgr_is_portrait ())
+      hd_render_manager_set_state (HDRM_STATE_HOME_PORTRAIT);
+		else
+			hd_render_manager_set_state (HDRM_STATE_HOME);
+	}
 
   g_signal_emit (bar, signals[PRESS_TOP_RIGHT], 0);
 }

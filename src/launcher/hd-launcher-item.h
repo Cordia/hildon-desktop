@@ -90,6 +90,7 @@ const gchar *      hd_launcher_item_get_icon_name    (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_comment      (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_text_domain  (HdLauncherItem *item);
 const gchar *      hd_launcher_item_get_category     (HdLauncherItem *item);
+gboolean           hd_launcher_item_get_cssu_force_landscape (HdLauncherItem *item);
 
 G_END_DECLS
 

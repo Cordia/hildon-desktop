@@ -69,6 +69,7 @@ struct _HdLauncherItemPrivate
   gchar *comment;
   gchar *text_domain;
   gboolean nodisplay;
+  gboolean cssu_force_landscape;
 
   gchar *category;
 };
@@ -86,12 +87,13 @@ enum
 G_DEFINE_ABSTRACT_TYPE (HdLauncherItem, hd_launcher_item, G_TYPE_OBJECT);
 
 /* Desktop file entries */
-#define HD_DESKTOP_ENTRY_TYPE          "Type"
-#define HD_DESKTOP_ENTRY_NAME          "Name"
-#define HD_DESKTOP_ENTRY_ICON          "Icon"
-#define HD_DESKTOP_ENTRY_COMMENT       "Comment"
-#define HD_DESKTOP_ENTRY_TEXT_DOMAIN   "X-Text-Domain"
-#define HD_DESKTOP_ENTRY_NO_DISPLAY    "NoDisplay"
+#define HD_DESKTOP_ENTRY_TYPE               "Type"
+#define HD_DESKTOP_ENTRY_NAME               "Name"
+#define HD_DESKTOP_ENTRY_ICON               "Icon"
+#define HD_DESKTOP_ENTRY_COMMENT            "Comment"
+#define HD_DESKTOP_ENTRY_TEXT_DOMAIN        "X-Text-Domain"
+#define HD_DESKTOP_ENTRY_NO_DISPLAY         "NoDisplay"
+#define HD_DESKTOP_ENTRY_FORCE_LANDSCAPE    "X-CSSU-Force-Landscape"
 
 /* Forward declarations */
 gboolean hd_launcher_item_parse_keyfile (HdLauncherItem *item,
@@ -268,6 +270,14 @@ hd_launcher_item_get_icon_name (HdLauncherItem *item)
   return item->priv->icon_name;
 }
 
+gboolean
+hd_launcher_item_get_cssu_force_landscape (HdLauncherItem *item)
+{
+  g_return_val_if_fail (HD_IS_LAUNCHER_ITEM (item), 0);
+
+  return item->priv->cssu_force_landscape;
+}
+
 const gchar *
 hd_launcher_item_get_comment (HdLauncherItem *item)
 {
@@ -320,6 +330,10 @@ hd_launcher_item_parse_keyfile (HdLauncherItem *item,
   priv->text_domain = g_key_file_get_string (key_file,
                                              HD_DESKTOP_ENTRY_GROUP,
                                              HD_DESKTOP_ENTRY_TEXT_DOMAIN,
+                                             NULL);
+  priv->cssu_force_landscape = g_key_file_get_boolean (key_file,
+                                             HD_DESKTOP_ENTRY_GROUP,
+                                             HD_DESKTOP_ENTRY_FORCE_LANDSCAPE,
                                              NULL);
   return TRUE;
 }

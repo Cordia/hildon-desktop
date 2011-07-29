@@ -102,6 +102,8 @@ hd_render_manager_state_get_type (void)
           "Loading in portrait mode" },
         { HDRM_STATE_LOADING_SUBWIN_PORTRAIT, "HDRM_STATE_LOADING_SUBWIN_PORTRAIT",
           "Loading Subwindow in portrait mode" },
+	{ HDRM_STATE_HOME_EDIT_PORTRAIT, "HDRM_STATE_HOME_EDIT_PORTRAIT", "Home edit in portrait mode" },
+	{ HDRM_STATE_HOME_EDIT_DLG_PORTRAIT, "HDRM_STATE_HOME_EDIT_DLG_PORTRAIT", "Home edit dialog in portrait mode" },	
         { 0, NULL, NULL }
       };
 
@@ -975,9 +977,9 @@ void hd_render_manager_sync_clutter_before ()
         g_error("%s: NEVER supposed to be in HDRM_STATE_UNDEFINED"
                 "or HDRM_STATE_AFTER_TKLOCK", __func__);
 	return;
+      case HDRM_STATE_HOME_PORTRAIT: /* Fallen truth */
       case HDRM_STATE_HOME:
         blur |=  HDRM_ZOOM_FOR_HOME;
-      case HDRM_STATE_HOME_PORTRAIT: /* Fallen truth */
         if (hd_task_navigator_is_empty())
           btn_state |= HDTB_VIS_BTN_LAUNCHER;
         else
@@ -986,8 +988,10 @@ void hd_render_manager_sync_clutter_before ()
         hd_home_update_layout (priv->home);
         break;
       case HDRM_STATE_HOME_EDIT:
+			case HDRM_STATE_HOME_EDIT_PORTRAIT:
         blur |= HDRM_BLUR_HOME; /* fall through intentionally */
       case HDRM_STATE_HOME_EDIT_DLG:
+      case HDRM_STATE_HOME_EDIT_DLG_PORTRAIT:
         clutter_actor_show(CLUTTER_ACTOR(priv->home));
         hd_home_update_layout (priv->home);
         break;
@@ -1114,7 +1118,7 @@ void hd_render_manager_sync_clutter_before ()
   hd_render_manager_place_titlebar_elements();
 
   /* Make sure we hide the edit button if it's not required */
-  if (priv->state != HDRM_STATE_HOME)
+  if ( (priv->state != HDRM_STATE_HOME) && (priv->state != HDRM_STATE_HOME_PORTRAIT))
     hd_home_hide_edit_button(priv->home);
 
   /* We need to check visibilities after we change between app state and not,
@@ -1444,7 +1448,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
             hd_render_manager_state_str(state));
 
   if(conf_disable_edit) {
-	  if ((state==HDRM_STATE_HOME_EDIT)||(state==HDRM_STATE_HOME_EDIT)) {
+	  if ((state==HDRM_STATE_HOME_EDIT)||(state==HDRM_STATE_HOME_EDIT_PORTRAIT)) {
 		  state=priv->state;
 	  }
   }
@@ -1472,7 +1476,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       if (hd_dbus_state_before_tklock != HDRM_STATE_UNDEFINED
           && state != hd_dbus_state_before_tklock && !hd_dbus_tklock_on)
         {
-          if (STATE_IS_NON_COMP (hd_dbus_state_before_tklock))
+         if (STATE_IS_NON_COMP (hd_dbus_state_before_tklock))
             {
               /* non-composited mode was the state before tklock: make a new
                * policy check to ensure that we can still use that */
@@ -1513,7 +1517,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                 {
                   /* We can't switch to application if there's none
                    * in the switcher. */
-                  hd_dbus_state_before_tklock = HDRM_STATE_HOME;
+		  hd_dbus_state_before_tklock = HDRM_STATE_HOME;
                 }
               else if (hd_comp_mgr_should_be_portrait (priv->comp_mgr))
                 {
@@ -1526,8 +1530,8 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                   /* If we got a call and then locked right after,
                    * we can be in HDRM_STATE_HOME_PORTRAIT state,
                    * which is *meant* to be transitional.  NB#158934 */
-                  if (hd_dbus_state_before_tklock == HDRM_STATE_HOME_PORTRAIT)
-                    hd_dbus_state_before_tklock = HDRM_STATE_HOME;
+                   if (hd_dbus_state_before_tklock == HDRM_STATE_HOME_PORTRAIT)
+                    hd_dbus_state_before_tklock = HDRM_STATE_HOME;										
                 }
 
               g_debug("%s: return to state %s before tklock\n", __func__,
@@ -1553,8 +1557,13 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         }
 
       if (state == HDRM_STATE_AFTER_TKLOCK)
+			{
         /* this happens if the state before tklock could not be used */
-        priv->state = state = HDRM_STATE_HOME;
+				if(STATE_IS_PORTRAIT (priv->state))
+	        priv->state = state = HDRM_STATE_HOME_PORTRAIT;
+				else
+					priv->state = state = HDRM_STATE_HOME;
+			}
 
       if (!hd_dbus_tklock_on)
         hd_dbus_state_before_tklock = HDRM_STATE_UNDEFINED;
@@ -1635,12 +1644,14 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                    * where HOME was showed in portrait mode when actually it
                    * does not support it (ie very ugly result), forcing HOME
                    * in landscape */
-                  if (oldstate != HDRM_STATE_LAUNCHER_PORTRAIT)
-                    next_home_state = HDRM_STATE_HOME;
 
-                  next_home_state =
-                    (HDRM_STATE_LAUNCHER_PORTRAIT == oldstate ?
-                      HDRM_STATE_HOME : next_home_state);
+									//TODO: remove this part of code
+                 // if (oldstate != HDRM_STATE_LAUNCHER_PORTRAIT)
+                //    next_home_state = HDRM_STATE_HOME;
+
+                //  next_home_state =
+                //    (HDRM_STATE_LAUNCHER_PORTRAIT == oldstate ?
+                //      HDRM_STATE_HOME : next_home_state);		
 
                   state = priv->state = next_home_state;
                 }
@@ -1805,7 +1816,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
           hd_launcher_hide();
         }
 
-      if (state == HDRM_STATE_HOME_EDIT)
+      if ( (state == HDRM_STATE_HOME_EDIT) || (state == HDRM_STATE_HOME_EDIT_PORTRAIT))
         /* unfocus any applet */
         mb_wm_client_focus (cmgr->wm->desktop);
 
@@ -1832,12 +1843,14 @@ void hd_render_manager_set_state(HDRMStateEnum state)
         mb_wm_handle_show_desktop(wm, STATE_NEED_DESKTOP(state));
 
       if (STATE_SHOW_APPLETS(state) != STATE_SHOW_APPLETS(oldstate))
+				{
         hd_comp_mgr_update_applets_on_current_desktop_property (
                                                        HD_COMP_MGR (cmgr));
+				}
 
       /* if we have moved away from the home edit dialog mode, then
        * we must make sure there are no home edit dialogs left around */
-      if (oldstate == HDRM_STATE_HOME_EDIT_DLG)
+      if ( (oldstate == HDRM_STATE_HOME_EDIT_DLG) || (oldstate == HDRM_STATE_HOME_EDIT_DLG_PORTRAIT))
         hd_home_remove_dialogs(priv->home);
 
       if(oldstate == HDRM_STATE_TASK_NAV_PORTRAIT && STATE_ONE_OF(state, HDRM_STATE_APP | HDRM_STATE_APP_PORTRAIT))
@@ -1902,7 +1915,9 @@ void hd_render_manager_set_state(HDRMStateEnum state)
       g_object_notify (G_OBJECT (render_manager), "state");
 
       if ((   state==HDRM_STATE_APP || state==HDRM_STATE_APP_PORTRAIT
-           || state==HDRM_STATE_HOME || state==HDRM_STATE_HOME_EDIT_DLG)
+           || state==HDRM_STATE_HOME || state==HDRM_STATE_HOME_PORTRAIT
+						|| state==HDRM_STATE_HOME_EDIT_DLG 
+						|| state==HDRM_STATE_HOME_EDIT_DLG_PORTRAIT)
            && !hd_transition_rotation_will_change_state ())
         {
 
@@ -2390,7 +2405,8 @@ void hd_render_manager_restack()
              * (or we would have left the state) - so we want it brought
              * to app_top where it is NOT blurred. This applies in the
              * screen lock case where we want to unlock the dialog (125674) */
-            if ((move_to_front && !maximized) || (priv->state == HDRM_STATE_HOME_EDIT_DLG))
+            if ((move_to_front && !maximized) || (priv->state == HDRM_STATE_HOME_EDIT_DLG)
+								 || (priv->state == HDRM_STATE_HOME_EDIT_DLG_PORTRAIT))
               {
                 clutter_actor_reparent(child, CLUTTER_ACTOR(priv->app_top));
                 clutter_actor_lower_bottom(child);
@@ -3078,8 +3094,8 @@ void hd_render_manager_blurred_changed()
 
   /* from home_edit to home, applets swap from front to blurred and
    * it makes the transition look a bit strange */
-  if (priv->previous_state == HDRM_STATE_HOME_EDIT &&
-      priv->state          == HDRM_STATE_HOME)
+  if ( ((priv->previous_state == HDRM_STATE_HOME_EDIT) || (priv->previous_state == HDRM_STATE_HOME_EDIT_PORTRAIT)) &&
+      ( (priv->state == HDRM_STATE_HOME) || (priv->state == HDRM_STATE_HOME_PORTRAIT) ))
     force = TRUE;
 
   /* If we're in the loading screen, we don't want to update blur
@@ -3727,4 +3743,25 @@ hd_render_manager_unzoom (void)
      clutter_timeline_start (timeline);
      unzoom_reset ();
   }
+}
+
+void hd_render_manager_update_applets_position (void)
+{
+  HdRenderManagerPrivate *priv = render_manager->priv;
+	
+  hd_home_update_applets_position (priv->home);
+}
+
+void hd_render_manager_update_wallpapers (void)
+{
+  HdRenderManagerPrivate *priv = render_manager->priv;
+	
+  hd_home_update_wallpaper (priv->home);
+}
+
+gboolean hd_render_manager_is_portrait_wallpaper_enabled (void)
+{
+  HdRenderManagerPrivate *priv = render_manager->priv;
+
+  return hd_home_is_portrait_wallpaper_enabled (priv->home);
 }
