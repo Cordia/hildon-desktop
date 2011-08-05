@@ -934,17 +934,27 @@ hd_home_view_applet_motion (ClutterActor       *applet,
 
 	if(!STATE_IS_PORTRAIT (hd_render_manager_get_state()))
 	{
-	  if (event->x < HD_EDGE_INDICATION_WIDTH)
-	    priv->move_applet_left = TRUE;
-	  else if (event->x > HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH)
-	    priv->move_applet_right = TRUE;
+    if (event->x < HD_EDGE_INDICATION_WIDTH)
+    	priv->move_applet_left = TRUE;
+   	else if (event->x > HD_COMP_MGR_LANDSCAPE_WIDTH - HD_EDGE_INDICATION_WIDTH)
+    	priv->move_applet_right = TRUE;
 	}
 	else
 	{
-	  if (event->x < HD_EDGE_INDICATION_WIDTH)
-	    priv->move_applet_left = TRUE;
-	  else if (event->x > HD_COMP_MGR_PORTRAIT_WIDTH - HD_EDGE_INDICATION_WIDTH)
-	    priv->move_applet_right = TRUE;
+    if(hd_home_get_vertical_scrolling (priv->home))
+      {
+    	  if (event->y < HD_EDGE_INDICATION_WIDTH + HD_COMP_MGR_TOP_MARGIN)
+    	    priv->move_applet_left = TRUE;
+    	  else if (event->y > HD_COMP_MGR_PORTRAIT_HEIGHT - HD_EDGE_INDICATION_WIDTH)
+    	    priv->move_applet_right = TRUE;
+      }
+    else
+      {
+    	  if (event->x < HD_EDGE_INDICATION_WIDTH)
+    	    priv->move_applet_left = TRUE;
+    	  else if (event->x > HD_COMP_MGR_PORTRAIT_WIDTH - HD_EDGE_INDICATION_WIDTH)
+    	    priv->move_applet_right = TRUE;
+      }
 	}
 
   hd_home_highlight_edge_indication (priv->home, priv->move_applet_left, priv->move_applet_right);

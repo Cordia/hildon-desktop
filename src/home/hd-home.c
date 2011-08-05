@@ -2615,12 +2615,24 @@ hd_home_show_edge_indication (HdHome *home)
 
 	if(STATE_IS_PORTRAIT (hd_render_manager_get_state()))
 		{
-			clutter_actor_set_size(priv->edge_indication_left, 
-															HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_PORTRAIT_HEIGHT);
-			clutter_actor_set_position (priv->edge_indication_left, 0, 0);
-			clutter_actor_set_size(priv->edge_indication_right, 
-															HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_PORTRAIT_HEIGHT);
-			clutter_actor_set_position (priv->edge_indication_right, HD_COMP_MGR_PORTRAIT_WIDTH - HD_EDGE_INDICATION_WIDTH, 0);
+      if(priv->vertical_scrolling)
+        {
+    			clutter_actor_set_size(priv->edge_indication_left, 
+	    														HD_COMP_MGR_PORTRAIT_HEIGHT, HD_EDGE_INDICATION_WIDTH);
+	    		clutter_actor_set_position (priv->edge_indication_left, 0, HD_COMP_MGR_TOP_MARGIN);
+	    		clutter_actor_set_size(priv->edge_indication_right, 
+	    														HD_COMP_MGR_PORTRAIT_HEIGHT, HD_EDGE_INDICATION_WIDTH);
+	    		clutter_actor_set_position (priv->edge_indication_right, 0, HD_COMP_MGR_PORTRAIT_HEIGHT - HD_EDGE_INDICATION_WIDTH);
+        }
+      else
+        {
+    			clutter_actor_set_size(priv->edge_indication_left, 
+	    														HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_PORTRAIT_HEIGHT);
+	    		clutter_actor_set_position (priv->edge_indication_left, 0, 0);
+	    		clutter_actor_set_size(priv->edge_indication_right, 
+	    														HD_EDGE_INDICATION_WIDTH, HD_COMP_MGR_PORTRAIT_HEIGHT);
+	    		clutter_actor_set_position (priv->edge_indication_right, HD_COMP_MGR_PORTRAIT_WIDTH - HD_EDGE_INDICATION_WIDTH, 0);    
+        }
 		}
 	else
 		{
