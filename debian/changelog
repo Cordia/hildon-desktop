@@ -1,9 +1,11 @@
 hildon-desktop (1:2.2.142-14) unstable; urgency=low
 
-  * Add blurless_saturation option for blurless.
+  * Add blurless_saturation option for blurless (by David Fries)
   * include transitions.ini in deb configfile to retain user settings
+  * Added full portrait mode (by arcean)
+  * Implemented a blacklist for rotation.
 
- -- David Fries <David@Fries.net>  Mon, 03 Jul 2011 12:46:30 -0500
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Sun, 07 Aug 2011 15:25:58 +0300
 
 hildon-desktop (1:2.2.142-13) unstable; urgency=low
 
