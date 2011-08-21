@@ -3270,8 +3270,8 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
               || gconf_client_get_bool (priv->gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL))
         return FALSE;
 
-    /* Check if an app is blacklisted. If it's then prevent it from portrait. */
-    if(hd_comp_mgr_is_blacklisted(wm, c))
+    /* Check if current app is blacklisted. If it's then prevent it from portrait. */
+    if((c == hd_comp_mgr_determine_current_app()) && hd_comp_mgr_is_blacklisted(wm, c))
       return FALSE;
 
       any_supports  = TRUE;
@@ -3761,8 +3761,8 @@ hd_comp_mgr_is_blacklisted(MBWindowManager *wm, MBWindowManagerClient *c)
     wname = g_strdup(class_hint.res_name);
 
   /* Check, if X-CSSU-Force-Landscape=true. */
-  if(hd_comp_mgr_is_blacklisted_parse_desktop_file(wname, class_hint.res_class, c->window->pid))
-    return TRUE;
+  gboolean blacklisted = hd_comp_mgr_is_blacklisted_parse_desktop_file(wname, class_hint.res_class, c->window->pid);
+
 
   if (class_hint.res_class)
     XFree(class_hint.res_class);
@@ -3770,17 +3770,14 @@ hd_comp_mgr_is_blacklisted(MBWindowManager *wm, MBWindowManagerClient *c)
   if (class_hint.res_name)
     XFree(class_hint.res_name);
 
-  gboolean blacklisted = FALSE;  
 
-  if (g_strrstr(appname, wname) && !c->portrait_supported)
+  if (g_strrstr(appname, wname) && !(c->portrait_supported || c->portrait_requested))
     blacklisted = TRUE;
 
   g_free(appname);
   g_free(wname);
 
-  if(blacklisted)
-    return TRUE;
-  return FALSE;
+  return blacklisted;
 }
 
 gboolean

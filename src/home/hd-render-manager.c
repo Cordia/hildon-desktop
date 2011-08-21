@@ -1517,7 +1517,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
                 {
                   /* We can't switch to application if there's none
                    * in the switcher. */
-		  hd_dbus_state_before_tklock = HDRM_STATE_HOME;
+                  hd_dbus_state_before_tklock = HDRM_STATE_HOME;
                 }
               else if (hd_comp_mgr_should_be_portrait (priv->comp_mgr))
                 {
@@ -1900,12 +1900,7 @@ void hd_render_manager_set_state(HDRMStateEnum state)
 
       /* Switch between portrait <=> landscape modes. */
       if (oldstate != HDRM_STATE_UNDEFINED)
-        {
-          if(hd_comp_mgr_is_blacklisted (wm, wm->stack_top))
-            hd_transition_rotate_screen (wm, FALSE);
-          else
-            hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state));
-        }
+        hd_transition_rotate_screen (wm, STATE_IS_PORTRAIT (state) && !hd_comp_mgr_is_blacklisted (wm, wm->stack_top));
 
       /* Reset CURRENT_APP_WIN when entering tasw. */
       /* Try not to change it unnecessary. */

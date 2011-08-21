@@ -673,6 +673,7 @@ static const Flyops Fly_smoothly =
 
 static gboolean
 hd_task_navigator_app_portrait_capable(Thumbnail * thumb);
+static void hd_task_navigator_set_disable_portrait(Thumbnail * thumb,gboolean disable);
 
 /* Private variables {{{ */
 /*
@@ -2258,13 +2259,18 @@ layout_thumbs (ClutterActor * newborn)
           ops->clip(thumb->windows,appwgw, appwgh);
           if(IS_PORTRAIT && !hd_task_navigator_app_portrait_capable(thumb) )
             {
+            /* Phone in portrait and showing not-portrait capable app thumb */
+              hd_task_navigator_set_disable_portrait(thumb,True);
               ops->rotate_z(thumb->windows,90.0f,0);
               ops->move(thumb->windows,appwgw,HD_COMP_MGR_TOP_MARGIN);
               appg_fix=HD_COMP_MGR_TOP_MARGIN;
             }
           else
             {
-              /* reset flag once in landscape */
+              /* reset flag once in landscape and thumb supports portrait*/
+              if(hd_task_navigator_app_portrait_capable(thumb))
+                hd_task_navigator_set_disable_portrait(thumb,False);
+
               thumb->portrait_supported = IS_PORTRAIT?TRUE:FALSE;
 
               ops->rotate_z(thumb->windows,0.0f,0);
@@ -4473,8 +4479,8 @@ hd_task_navigator_app_portrait_capable(Thumbnail * thumb)
 
   return
       ((thumb->portrait_supported ||
-      (thumb->portrait_supported = hd_comp_mgr_client_supports_portrait(c) || c->portrait_requested))&& !hd_comp_mgr_is_blacklisted (thumb->win->wm, c)) ||
-      apthumb_has_dialogs(thumb) ;
+      (thumb->portrait_supported = hd_comp_mgr_client_supports_portrait(c) || c->portrait_requested))) &&
+      !hd_comp_mgr_is_blacklisted (thumb->win->wm, c);
 }
 
 static Thumbnail * find_thumb_from_xwindow(Window xwindow)
@@ -4518,6 +4524,7 @@ void hd_task_navigator_update_win_orientation(Window xwindow, gboolean portrait)
 
       if(portrait)
         {
+          hd_task_navigator_set_disable_portrait(thumb,False);
           thumb->portrait_supported = TRUE;
           ops->rotate_z(thumb->windows,0.0f,0);
           ops->move(thumb->windows,0,0);
@@ -4527,6 +4534,7 @@ void hd_task_navigator_update_win_orientation(Window xwindow, gboolean portrait)
         }
       else
         {
+          hd_task_navigator_set_disable_portrait(thumb,True);
           guint adj=HD_COMP_MGR_TOP_MARGIN;
           thumb->portrait_supported = FALSE;
           ops->rotate_z(thumb->windows,90.0f,0);
@@ -4538,5 +4546,108 @@ void hd_task_navigator_update_win_orientation(Window xwindow, gboolean portrait)
       mb_wm_client_geometry_mark_dirty(mb_wm_managed_client_from_xwindow(thumb->win->wm,thumb->win->xwindow));
     }
 }
+
+gboolean
+hd_task_navigator_get_disable_portrait(MBWindowManagerClient *c)
+{
+  Atom actual_type;
+  int actual_format;
+  unsigned long num_items, bytes_left;
+  unsigned char *ret_data_ptr = 0,*leader_data_ptr;
+  Display * dpy = c->wmref->xdpy;
+  int result;
+  gboolean disable_portrait=False;
+
+  mb_wm_util_async_trap_x_errors (dpy);
+
+  result = XGetWindowProperty (
+        dpy,
+        c->window->xwindow,
+        XInternAtom(dpy,"WM_CLIENT_LEADER",False),
+        0L, (~0L), False,
+        XA_WINDOW, &actual_type, &actual_format, &num_items,
+        &bytes_left, &leader_data_ptr);
+
+  mb_wm_util_async_untrap_x_errors ();
+
+  if ((result != Success) || !leader_data_ptr)
+  {
+    g_warning("hd_task_navigator_get_disable_portrait - unable to get window leader.");
+    return disable_portrait;
+  }
+
+  mb_wm_util_async_trap_x_errors (dpy);
+
+  result = XGetWindowProperty(
+        dpy,
+        *(Window*)leader_data_ptr,
+        XInternAtom(dpy, "_HILDON_PORTRAIT_MODE_TASKNAV_DISABLE", False),
+        0,1/*= one 32 bits item */ ,False,
+        XA_CARDINAL, &actual_type, &actual_format, &num_items,
+        &bytes_left, &ret_data_ptr);
+
+  mb_wm_util_async_untrap_x_errors ();
+
+  XFree(leader_data_ptr);
+
+  if (ret_data_ptr && (result == Success))
+  {
+    disable_portrait = *((int*)ret_data_ptr);
+    XFree(ret_data_ptr);
+    return disable_portrait;
+  }
+
+
+  return disable_portrait;
+}
+static void hd_task_navigator_set_disable_portrait(Thumbnail * thumb,gboolean disable)
+{
+  Display * dpy=thumb->win->wm->xdpy;
+
+  unsigned long nitems = 0;
+
+  Atom actual_type;
+  int actual_format;
+  unsigned long bytes;
+  unsigned char * leader_data_ptr = 0;
+
+  mb_wm_util_async_trap_x_errors (dpy);
+
+  int status = XGetWindowProperty (dpy, thumb->win->xwindow,
+                                   XInternAtom(dpy,"WM_CLIENT_LEADER",False), 0L, (~0L), False,
+                                   AnyPropertyType, &actual_type, &actual_format, &nitems, &bytes, &leader_data_ptr);
+  mb_wm_util_async_untrap_x_errors ();
+
+  if (status != Success || !leader_data_ptr)
+  {
+    g_warning("hd_task_navigator_set_disable_portrait - unable to get window leader.");
+    return;
+  }
+
+  mb_wm_util_async_trap_x_errors (dpy);
+  if(disable)
+  {
+    gboolean value=True;
+    XChangeProperty(
+          dpy,
+          *(Window*)leader_data_ptr,
+          XInternAtom(dpy, "_HILDON_PORTRAIT_MODE_TASKNAV_DISABLE", False),
+          XA_CARDINAL, 32, PropModeReplace,
+          (unsigned char *)&value, 1);
+  }
+  else
+  {
+    XDeleteProperty(
+          dpy,
+          *(Window*)leader_data_ptr,
+          XInternAtom(dpy, "_HILDON_PORTRAIT_MODE_TASKNAV_DISABLE", False));
+    XSync(dpy, False);
+  }
+
+  mb_wm_util_async_untrap_x_errors ();
+  XFree(leader_data_ptr);
+}
+
+
 /* vim: set foldmethod=marker: */
 /* End of hd-task-navigator.c */

@@ -242,47 +242,55 @@ key_binding_func (MBWindowManager   *wm,
 		  MBWMKeyBinding    *binding,
 		  void              *userdata)
 {
-  int action;
+	int action;
 
   action = (int)(userdata);
 
   switch (action)
     {
     case KEY_ACTION_TOGGLE_SWITCHER:
-      /* don't go to the switcher if we are showing a system-modal */
-      if (hd_render_manager_get_state () == HDRM_STATE_TASK_NAV ) {
-          switch(conf_ctrl_backspace_in_tasknav) {
-              case 1:
-                  hd_render_manager_set_state (HDRM_STATE_HOME);
+      {
+        int state = hd_render_manager_get_state ();
+        int portrait=STATE_IS_PORTRAIT(state);
+        /* don't go to the switcher if we are showing a system-modal */
+        if (STATE_IS_TASK_NAV(state) )
+          {
+            switch(conf_ctrl_backspace_in_tasknav)
+              {
+                case 1:
+                  hd_render_manager_set_state (portrait?HDRM_STATE_HOME_PORTRAIT:HDRM_STATE_HOME);
                   break;
-              case 2:
-                  hd_render_manager_set_state (HDRM_STATE_LAUNCHER);
+                case 2:
+                  hd_render_manager_set_state (portrait?HDRM_STATE_LAUNCHER_PORTRAIT:HDRM_STATE_LAUNCHER);
                   break;
-              case 3:
+                case 3:
                   hd_task_navigator_activate(-2, -2, 0);
                   break;
-              case 4:
+                case 4:
                   hd_task_navigator_activate(-1, -2, 0);
                   break;
-              case 5:
+                case 5:
                   in_alt_tab = TRUE;
                   hd_task_navigator_rotate_thumbs();
                   break;
-  
-              case 0:
-              default:
+                case 0:
+                default:
                   break;
+              }
           }
-      } else { 
-      if (!hd_wm_has_modal_blockers (hd_mb_wm))
-        hd_render_manager_set_state (HDRM_STATE_TASK_NAV);
-            if(conf_ctrl_backspace_in_tasknav==5) { 
+        else
+          {
+            if (!hd_wm_has_modal_blockers (hd_mb_wm))
+              hd_render_manager_set_state (portrait?HDRM_STATE_TASK_NAV_PORTRAIT:HDRM_STATE_TASK_NAV);
+            if(conf_ctrl_backspace_in_tasknav==5)
+              {
                 in_alt_tab = TRUE;
-                    hd_task_navigator_sort_thumbs();
+                hd_task_navigator_sort_thumbs();
                 hd_task_navigator_rotate_thumbs();
-            }
+              }
+          }
       }
-      break;
+    break;
     case KEY_ACTION_TOGGLE_NON_COMP_MODE:
       /* printf(" ### KEY_ACTION_TOGGLE_NON_COMP_MODE ###\n"); */
       if (hd_render_manager_get_state () == HDRM_STATE_NON_COMPOSITED)

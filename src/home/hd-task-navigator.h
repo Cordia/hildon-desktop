@@ -86,4 +86,5 @@ int hd_task_navigator_mode(void);
 void hd_task_navigator_rotate(int mode);
 void hd_task_navigator_update_orientation(gboolean portrait);
 void hd_task_navigator_update_win_orientation(Window xwindow,gboolean portrait);
+gboolean hd_task_navigator_get_disable_portrait(MBWindowManagerClient *c);
 #endif /* ! __HD_TASK_NAVIGATOR_H__ */

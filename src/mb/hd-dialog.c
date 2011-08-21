@@ -26,6 +26,7 @@
 #include "hd-comp-mgr.h"
 #include "hd-wm.h"
 #include "hd-transition.h"
+#include "hd-task-navigator.h"
 #include <matchbox/theme-engines/mb-wm-theme.h>
 
 static Bool
@@ -181,6 +182,14 @@ hd_dialog_request_geometry (MBWindowManagerClient *client,
       &&  mb_wm_client_is_map_confirmed (client)
       && !hd_comp_mgr_client_supports_portrait (client))
     return False;*/
+
+  if(
+     (STATE_IS_PORTRAIT(hd_render_manager_get_state())
+      || hd_comp_mgr_is_portrait()
+      || hd_transition_is_rotating_to_portrait())
+     && hd_task_navigator_get_disable_portrait(client)
+  )
+      return False;
 
   /*
    * When we get an internal geometry request, like from the layout manager,
