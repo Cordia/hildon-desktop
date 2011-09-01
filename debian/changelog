@@ -4,8 +4,9 @@ hildon-desktop (1:2.2.142-14) unstable; urgency=low
   * include transitions.ini in deb configfile to retain user settings
   * Added full portrait mode (by arcean)
   * Implemented a blacklist for rotation.
+  * Fixed some memory/resource leaks.
 
- -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Sun, 07 Aug 2011 15:25:58 +0300
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Thu, 01 Sep 2011 22:22:34 +0300
 
 hildon-desktop (1:2.2.142-13) unstable; urgency=low
 
