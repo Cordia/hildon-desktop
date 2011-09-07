@@ -1,3 +1,10 @@
+hildon-desktop (1:2.2.142-15) unstable; urgency=low
+
+  * Add GConf key to lock desktop in landscape mode.
+  * Implemented a whitelist for rotation.
+
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Wed,  7 Sep 2011 17:10:43 +0200
+
 hildon-desktop (1:2.2.142-14) unstable; urgency=low
 
   * Add blurless_saturation option for blurless (by David Fries)

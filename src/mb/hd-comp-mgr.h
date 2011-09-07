@@ -219,6 +219,7 @@ void hd_comp_mgr_unredirect_topmost_client (MBWindowManager *wm,
 gboolean hd_comp_mgr_reconsider_compositing (MBWMCompMgr *mgr);
 HdCompMgrClient * hd_comp_mgr_get_current_client (HdCompMgr *hmgr);
 
+gboolean hd_comp_mgr_is_whitelisted(MBWindowManager *wm, MBWindowManagerClient *c);
 gboolean hd_comp_mgr_is_blacklisted(MBWindowManager *wm, MBWindowManagerClient *c);
 gboolean hd_comp_mgr_is_blacklisted_parse_desktop_file(char *res_name, char *res_class, GPid pid);
 

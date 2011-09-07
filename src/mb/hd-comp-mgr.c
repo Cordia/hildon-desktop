@@ -68,6 +68,7 @@
 #define STAMP_DIR                  "/tmp/hildon-desktop/"
 #define STAMP_FILE                 STAMP_DIR "desktop-started.stamp"
 #define GCONF_KEY_ORIENTATION_LOCK "/apps/osso/hildon-desktop/orientation_lock"
+#define GCONF_KEY_DESKTOP_ORIENTATION_LOCK "/apps/osso/hildon-desktop/desktop_orientation_lock"
 
 #if 0
 # define PORTRAIT       g_debug
@@ -1089,7 +1090,7 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
         continue;
 
       mb_wm_client_update_portrait_flags (c, portrait_freshness_counter);
-      if ((!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
+      if ((!hd_transition_get_int("thp_tweaks", "forcerotation", 0) 
               && !c->portrait_supported)
               || gconf_client_get_bool (gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL))
         {
@@ -3228,6 +3229,7 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
   PORTRAIT ("SHOULD BE PORTRAIT?");
   any_supports = any_requests = FALSE;
   wm = MB_WM_COMP_MGR (hmgr)->wm;
+
   for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
     {
       PORTRAIT ("CLIENT %p", c);
@@ -3265,14 +3267,21 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
       /* Get @portrait_supported/requested updated. */
       mb_wm_client_update_portrait_flags (c, portrait_freshness_counter);
       PORTRAIT ("SUPPORT IS %d", c->portrait_supported);
-      if ((!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
+
+      /* Check if current app is blacklisted. If it's then prevent it from portrait. */
+      if((c == hd_comp_mgr_determine_current_app()) && hd_comp_mgr_is_blacklisted(wm, c))
+        return FALSE;
+
+      gboolean is_whitelisted = FALSE;
+
+      if(c == hd_comp_mgr_determine_current_app() && hd_comp_mgr_is_whitelisted(wm, c))
+        is_whitelisted = TRUE;
+
+      if (((!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
+              && !is_whitelisted)
               && !c->portrait_supported)
               || gconf_client_get_bool (priv->gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL))
         return FALSE;
-
-    /* Check if current app is blacklisted. If it's then prevent it from portrait. */
-    if((c == hd_comp_mgr_determine_current_app()) && hd_comp_mgr_is_blacklisted(wm, c))
-      return FALSE;
 
       any_supports  = TRUE;
       any_requests |= c->portrait_requested != 0;
@@ -3280,6 +3289,7 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
         { /* Client explicity !REQUESTED portrait, obey. */
           PORTRAIT ("PROHIBITED");
           if (!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
+              || !is_whitelisted
               || gconf_client_get_bool (priv->gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL))
               return FALSE;
         }
@@ -3339,6 +3349,10 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
     }
 	else if (STATE_IS_HOME (hd_render_manager_get_state ()))
 	{
+    /* Check if desktop is not prevented from switching to portrait mode */
+    if (gconf_client_get_bool (priv->gconf_client, GCONF_KEY_DESKTOP_ORIENTATION_LOCK, NULL))
+      return FALSE;
+
 		/* Let's honour orientation lock, prevents freezing desktop in portrait
 		 * mode */
 		gboolean orientation_lock = gconf_client_get_bool (priv->gconf_client, 
@@ -3353,6 +3367,10 @@ hd_comp_mgr_should_be_portrait (HdCompMgr *hmgr)
 	}
 	else if (STATE_IS_EDIT_MODE (hd_render_manager_get_state ()))
 	{
+    /* Check if desktop is not prevented from switching to portrait mode */
+    if (gconf_client_get_bool (priv->gconf_client, GCONF_KEY_DESKTOP_ORIENTATION_LOCK, NULL))
+      return FALSE;
+
 		/* Check if we are in portrait desktop edit mode and block screen orientation 
 		 * if it's true */
 		gboolean is_edit_portrait = (hd_render_manager_get_state () == HDRM_STATE_HOME_EDIT_PORTRAIT 
@@ -3459,7 +3477,10 @@ gboolean
 hd_comp_mgr_client_supports_portrait (MBWindowManagerClient *mbwmc)
 {
   /* Don't mess with hd_comp_mgr_should_be_portrait()'s @counter. */
-  mb_wm_client_update_portrait_flags (mbwmc, G_MAXUINT);
+  mb_wm_client_update_portrait_flags (mbwmc, G_MAXUINT); 
+
+  if(hd_comp_mgr_is_whitelisted(mbwmc->wmref, mbwmc))
+    return TRUE;
 
   if(hd_comp_mgr_is_blacklisted(mbwmc->wmref, mbwmc))
     return FALSE;
@@ -3741,17 +3762,62 @@ hd_comp_mgr_update_applets_on_current_desktop_property (HdCompMgr *hmgr)
 }
 
 gboolean
+hd_comp_mgr_is_whitelisted(MBWindowManager *wm, MBWindowManagerClient *c)
+{
+  gchar *whitelist;
+  XClassHint class_hint;
+  Status ret;
+  gchar *wname = NULL;
+  gboolean is_on_whitelist = FALSE;
+
+  if (!HD_IS_APP (c) || !MB_WINDOW_MANAGER(wm) || c == wm->desktop)
+    return FALSE;
+
+  whitelist = g_strdup(hd_transition_get_string("thp_tweaks", "whitelist", ""));
+  memset(&class_hint, 0, sizeof(XClassHint));
+  mb_wm_util_async_trap_x_errors (wm->xdpy);
+  ret = XGetClassHint (wm->xdpy, c->window->xwindow, &class_hint);
+	mb_wm_util_async_untrap_x_errors ();	
+
+  if (ret && class_hint.res_class)
+    wname = g_strdup(class_hint.res_name);
+
+  if (class_hint.res_class)
+    XFree(class_hint.res_class);
+
+  if (class_hint.res_name)
+    XFree(class_hint.res_name);
+
+
+  if (g_strrstr(whitelist, wname))
+    is_on_whitelist = TRUE;
+
+  g_free(whitelist);
+  g_free(wname);
+
+  return is_on_whitelist;
+}
+
+gboolean
 hd_comp_mgr_is_blacklisted(MBWindowManager *wm, MBWindowManagerClient *c)
 {
-  gchar *appname;
+  gchar *blacklist;
   XClassHint class_hint;
   Status ret;
   gchar *wname = NULL;
 
-  if (!HD_IS_APP (c) || !MB_WINDOW_MANAGER(wm))
+  if (!HD_IS_APP (c) || !MB_WINDOW_MANAGER(wm) || c == wm->desktop)
     return FALSE;
 
-  appname = g_strdup(hd_transition_get_string("thp_tweaks", "blacklist", ""));
+  /* We don't want blacklisted windows when forcerotation == 0. */
+  if(!hd_transition_get_int("thp_tweaks", "forcerotation", 0))
+    return FALSE;
+
+  /* Let's check if the window is on the whitelist. */
+  if(hd_comp_mgr_is_whitelisted(wm, c))
+    return FALSE;
+
+  blacklist = g_strdup(hd_transition_get_string("thp_tweaks", "blacklist", ""));
   memset(&class_hint, 0, sizeof(XClassHint));
   mb_wm_util_async_trap_x_errors (wm->xdpy);
   ret = XGetClassHint (wm->xdpy, c->window->xwindow, &class_hint);
@@ -3771,10 +3837,10 @@ hd_comp_mgr_is_blacklisted(MBWindowManager *wm, MBWindowManagerClient *c)
     XFree(class_hint.res_name);
 
 
-  if (g_strrstr(appname, wname) && !(c->portrait_supported || c->portrait_requested))
+  if (g_strrstr(blacklist, wname) && !(c->portrait_supported || c->portrait_requested))
     blacklisted = TRUE;
 
-  g_free(appname);
+  g_free(blacklist);
   g_free(wname);
 
   return blacklisted;
