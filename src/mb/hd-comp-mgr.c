@@ -3840,6 +3840,10 @@ hd_comp_mgr_is_blacklisted(MBWindowManager *wm, MBWindowManagerClient *c)
   if (g_strrstr(blacklist, wname) && !(c->portrait_supported || c->portrait_requested))
     blacklisted = TRUE;
 
+  if(c->stacked_below && (wname == NULL))
+    if(hd_comp_mgr_is_blacklisted(wm, c->stacked_below))
+      blacklisted = TRUE;
+
   g_free(blacklist);
   g_free(wname);
 

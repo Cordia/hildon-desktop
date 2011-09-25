@@ -562,6 +562,7 @@ load_background_idle (gpointer data)
   gchar *cached_background_image_file;
   ClutterActor *new_bg = 0;
   GError *error = NULL;
+  GError *error_portrait = NULL;
   int i;
   int max_value;
 
@@ -593,17 +594,24 @@ load_background_idle (gpointer data)
                       G_FILE_TEST_EXISTS))
       {
         g_free (cached_background_image_file);
-        if(!i)
-          cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PVR,
-                                                          g_get_home_dir (),
-                                                          priv->id + 1);
-        else
-          cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PVR_PORTRAIT,
-                                                          g_get_home_dir (),
-                                                          priv->id + 1);
+        if(!i) 
+          {
+            cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PVR,
+                                                            g_get_home_dir (),
+                                                            priv->id + 1);
 
-        new_bg = clutter_texture_new_from_file (cached_background_image_file,
-                                                  &error);
+            new_bg = clutter_texture_new_from_file (cached_background_image_file,
+                                                      &error);
+          }
+        else 
+          {
+            cached_background_image_file = g_strdup_printf (CACHED_BACKGROUND_IMAGE_FILE_PVR_PORTRAIT,
+                                                            g_get_home_dir (),
+                                                            priv->id + 1);
+
+            new_bg = clutter_texture_new_from_file (cached_background_image_file,
+                                                    &error_portrait);
+          }
       }
     else
       {
@@ -612,7 +620,11 @@ load_background_idle (gpointer data)
         /* Load image directly. We actually want to dither it on the fly to
          * 16 bit, and clutter doesn't do this for us so we implement a very
          * quick dither here. */
-        pixbuf = gdk_pixbuf_new_from_file (cached_background_image_file, &error);
+        if(!i) 
+          pixbuf = gdk_pixbuf_new_from_file (cached_background_image_file, &error);
+        else
+          pixbuf = gdk_pixbuf_new_from_file (cached_background_image_file, &error_portrait);
+          
         if (pixbuf != NULL)
           {
             gboolean          has_alpha;
@@ -664,22 +676,47 @@ load_background_idle (gpointer data)
                   pixels += rowstride - width*n_channels;
                 }
                 new_bg = clutter_texture_new();
-                clutter_texture_set_from_rgb_data(CLUTTER_TEXTURE(new_bg),
-                      (guchar*)out_pixels, FALSE,
-                      width, height, width*2, 2, CLUTTER_TEXTURE_FLAG_16_BIT, &error);
+
+                if(!i) 
+                  {
+                    clutter_texture_set_from_rgb_data(CLUTTER_TEXTURE(new_bg),
+                          (guchar*)out_pixels, FALSE,
+                          width, height, width*2, 2, CLUTTER_TEXTURE_FLAG_16_BIT, &error);
+                  }
+                else 
+                  {
+                    clutter_texture_set_from_rgb_data(CLUTTER_TEXTURE(new_bg),
+                          (guchar*)out_pixels, FALSE,
+                          width, height, width*2, 2, CLUTTER_TEXTURE_FLAG_16_BIT, &error_portrait);
+                  }
+
                 g_free(out_pixels);
               }
             g_object_unref (pixbuf);
           }
       }
 
-    if (!new_bg)
+    if(!i) 
       {
-        g_warning ("Error loading cached background image %s. %s",
-                   cached_background_image_file,
-                   error?error->message:"");
-        if (error)
-          g_error_free (error);
+        if (!new_bg)
+          {
+            g_warning ("Error loading cached background image %s. %s",
+                       cached_background_image_file,
+                       error?error->message:"");
+            if (error)
+              g_error_free (error);
+          }
+      }
+    else
+      {
+        if (!new_bg)
+          {
+            g_warning ("Error loading cached portrait background image %s. %s",
+                       cached_background_image_file,
+                       error_portrait?error_portrait->message:"");
+            if (error_portrait)
+              g_error_free (error_portrait);
+          }
       }
   
     g_free (cached_background_image_file);
@@ -1049,6 +1086,11 @@ snap_coordinate_to_grid (gint coordinate)
   snap_grid_size  = hd_transition_get_int ("edit_mode",
                                            "snap_grid_size",
                                            SNAP_GRID_SIZE_DEFAULT);
+
+  /* Avoid hildon-desktop crash, when snap_grid_size == 0 */
+  if(snap_grid_size < 1)
+    snap_grid_size = SNAP_GRID_SIZE_DEFAULT;
+
   offset = coordinate % snap_grid_size;
 
   if (offset > snap_grid_size / 2)
