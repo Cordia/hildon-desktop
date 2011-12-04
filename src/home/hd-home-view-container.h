@@ -88,6 +88,8 @@ hd_home_view_container_get_live_bg (HdHomeViewContainer *container);
 
 HdHomeViewContainer *hd_home_get_view_container(HdHome *home);
 
+gboolean hd_home_view_container_is_scrolling (HdHomeViewContainer *container);
+
 G_END_DECLS
 
 #endif

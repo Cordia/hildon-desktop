@@ -74,6 +74,8 @@ struct _HdHomeViewContainerPrivate
   guint frames;
   gboolean animation_overshoot;
 
+  gboolean in_move;
+
   /* GConf */
   GConfClient *gconf_client;
 
@@ -959,6 +961,8 @@ scroll_back_completed_cb (ClutterTimeline     *timeline,
       mb_wm_client_stacking_mark_dirty (desktop);
       mb_wm_sync (MB_WM_COMP_MGR (hmgr)->wm);
     }
+
+  priv->in_move = FALSE;
 }
 
 /* Velocity is the speed in pixels/second, and we attempt to set the scroll
@@ -1025,6 +1029,7 @@ hd_home_view_container_scroll_back (HdHomeViewContainer *container, gint velocit
   /* Update first frame to stop flicker */
   scroll_back_new_frame_cb(priv->timeline, 0, container);
 
+  priv->in_move = TRUE;
   clutter_timeline_start (priv->timeline);
 }
 
@@ -1114,3 +1119,10 @@ hd_home_view_container_get_next_view (HdHomeViewContainer *container)
   return NULL;
 }
 
+gboolean
+hd_home_view_container_is_scrolling (HdHomeViewContainer *container)
+{
+  HdHomeViewContainerPrivate *priv = container->priv;
+
+  return priv->in_move;
+}
