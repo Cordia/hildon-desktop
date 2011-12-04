@@ -44,6 +44,8 @@
 #include "hd-launcher-item.h"
 #include "hd-launcher-tile.h"
 
+#include "home/hd-render-manager.h"
+
 enum
 {
   COL_ICON,
@@ -433,7 +435,16 @@ hd_launcher_editor_init (HdLauncherEditor *editor)
                                  renderer,
                                  "text", COL_LABEL);
 
-  gtk_icon_view_set_columns (GTK_ICON_VIEW (priv->icon_view), 5);
+  if(STATE_IS_PORTRAIT (hd_render_manager_get_state ())) {
+    gtk_icon_view_set_columns (GTK_ICON_VIEW (priv->icon_view), 3);
+
+    /* Force portrait mode */
+    hildon_gtk_window_set_portrait_flags(GTK_WINDOW(editor), 
+      HILDON_PORTRAIT_MODE_REQUEST);
+  }
+  else
+    gtk_icon_view_set_columns (GTK_ICON_VIEW (priv->icon_view), 5);
+
   gtk_icon_view_set_item_width (GTK_ICON_VIEW (priv->icon_view), 142);
   gtk_icon_view_set_column_spacing (GTK_ICON_VIEW (priv->icon_view),
                                     HILDON_MARGIN_DEFAULT);

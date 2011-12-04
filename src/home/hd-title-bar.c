@@ -975,13 +975,13 @@ hd_title_bar_set_window(HdTitleBar *bar, MBWindowManagerClient *client)
       /* we have nothing, make sure we're back to normal */
       hd_title_bar_set_title (bar, NULL, FALSE, FALSE);
       if (hd_render_manager_get_state() &
-	  (HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | 
-		HDRM_STATE_HOME_EDIT_PORTRAIT | HDRM_STATE_HOME_EDIT_DLG_PORTRAIT))
+	      (HDRM_STATE_HOME_EDIT | HDRM_STATE_HOME_EDIT_DLG | 
+		    HDRM_STATE_HOME_EDIT_PORTRAIT | HDRM_STATE_HOME_EDIT_DLG_PORTRAIT))
         /* in Home edit mode we can have back button */
-	state = hd_title_bar_get_state(bar) & ~HDTB_VIS_FULL_WIDTH;
+	      state = hd_title_bar_get_state(bar) & ~HDTB_VIS_FULL_WIDTH;
       else
-	state = hd_title_bar_get_state(bar) & ~(HDTB_VIS_FULL_WIDTH |
-			         HDTB_VIS_BTN_CLOSE | HDTB_VIS_BTN_BACK);
+	      state = hd_title_bar_get_state(bar) & ~(HDTB_VIS_FULL_WIDTH |
+			            HDTB_VIS_BTN_CLOSE | HDTB_VIS_BTN_BACK);
       hd_title_bar_set_state_real(bar, state);
       return;
     }

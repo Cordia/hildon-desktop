@@ -552,8 +552,8 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
   HdLauncher *launcher = hd_launcher_get();
   HdLauncherPrivate *priv = launcher->priv;
 
-  /* Don't show the editor if we're in portrait mode or if the key to disable is true. */
-  if (gconf_client_get_bool (priv->gconf_client, GCONF_KEY_DISABLE_MENU_EDIT, NULL) || priv->portraited)
+  /* Don't show the editor if the key to disable is true. */
+  if (gconf_client_get_bool (priv->gconf_client, GCONF_KEY_DISABLE_MENU_EDIT, NULL))
     return;
 
   /* Send a mouse released event, because when we've put the editor window up

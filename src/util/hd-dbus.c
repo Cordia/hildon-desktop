@@ -394,7 +394,7 @@ void hd_dbus_send_desktop_orientation_changed (gboolean to_portrait)
   }
 
   dbus_message_iter_init_append(msg, &args);
-  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_BOOLEAN, &toPortrait)) { 
+  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_BOOLEAN, &to_portrait)) { 
     g_warning("Out Of Memory!"); 
     return;
   }
