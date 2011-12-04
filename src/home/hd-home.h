@@ -106,11 +106,12 @@ void hd_home_set_live_background (HdHome *home, MBWindowManagerClient *client);
 void hd_home_update_applets_position (HdHome *home);
 
 gboolean hd_home_is_portrait_capable (void);
-void hd_home_update_wallpaper(HdHome *home);
-void hd_home_resize_view_container(ClutterActor *actor, GParamSpec *unused, ClutterActor *stage);
-
-gboolean hd_home_get_vertical_scrolling(HdHome *home);
+void hd_home_update_wallpaper (HdHome *home);
+void hd_home_resize_view_container (ClutterActor *actor, GParamSpec *unused, ClutterActor *stage);
+gboolean hd_home_get_vertical_scrolling (HdHome *home);
 gboolean hd_home_is_portrait_wallpaper_enabled (HdHome *home);
+
+gboolean hd_home_is_desktop_in_portrait_mode (void);
 
 extern gboolean in_alt_tab;
 

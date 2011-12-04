@@ -17,4 +17,5 @@ gboolean hd_dbus_launch_service (DBusConnection *connection,
 				 const gchar    *method,
 				 const gchar    *launch_param);
 void hd_dbus_send_event (char *value);
+void hd_dbus_send_desktop_orientation_changed (gboolean to_portrait);
 #endif

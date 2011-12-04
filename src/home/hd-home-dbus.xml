@@ -13,5 +13,12 @@
         <annotation name="org.freedesktop.DBus.GLib.ReturnVal" value=""/>
       </arg>
     </method>
+    <method name="GetCurrentDesktopOrientation">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_home_is_desktop_in_portrait_mode"/>
+
+      <arg type="b" direction="out">
+        <annotation name="org.freedesktop.DBus.GLib.ReturnVal" value=""/>
+      </arg>
+    </method>
   </interface>
 </node>

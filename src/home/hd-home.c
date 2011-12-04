@@ -2844,3 +2844,10 @@ hd_home_is_portrait_wallpaper_enabled (HdHome *home)
 
   return priv->portrait_wallpaper;
 }
+
+gboolean
+hd_home_is_desktop_in_portrait_mode (void)
+{
+	return STATE_IS_PORTRAIT (hd_render_manager_get_state ());
+}
+

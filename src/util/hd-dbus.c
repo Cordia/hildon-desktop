@@ -377,6 +377,37 @@ void hd_dbus_send_event (char *value)
   dbus_message_unref(msg);
 }
 
+void hd_dbus_send_desktop_orientation_changed (gboolean to_portrait)
+{
+  DBusMessage *msg;
+  dbus_bool_t b;
+  DBusMessageIter args;
+
+  if (sysbus_conn == NULL) {
+    g_warning ("%s: no D-Bus system bus connection", __func__);
+    return;
+  }
+  msg = dbus_message_new_signal("/com/nokia/hildon_desktop", "com.nokia.hildon_desktop", "DesktopOrientationChanged");
+  if (msg == NULL) {
+    g_warning ("%s: could not create message", __func__);
+    return;
+  }
+
+  dbus_message_iter_init_append(msg, &args);
+  if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_BOOLEAN, &toPortrait)) { 
+    g_warning("Out Of Memory!"); 
+    return;
+  }
+
+  b = dbus_connection_send(sysbus_conn, msg, NULL);
+  if (!b) {
+    g_warning ("%s: dbus_connection_send() failed", __func__);
+  } else {
+    dbus_connection_flush(sysbus_conn);
+  }
+  dbus_message_unref(msg);
+}
+
 DBusConnection *
 hd_dbus_init (HdCompMgr * hmgr)
 {

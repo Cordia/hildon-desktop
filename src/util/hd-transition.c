@@ -47,6 +47,7 @@
 #include "hd-app.h"
 #include "hd-volume-profile.h"
 #include "hd-util.h"
+#include "hd-dbus.h"
 
 /* The master of puppets */
 #define TRANSITIONS_INI             "/usr/share/hildon-desktop/transitions.ini"
@@ -1765,8 +1766,10 @@ hd_transition_rotate_screen (MBWindowManager *wm, gboolean goto_portrait)
 	* for both desktop orientations. It's here for the performance
 	* reasons. */
 	hd_render_manager_update_applets_position ();
-        if(hd_render_manager_is_portrait_wallpaper_enabled ())
+  if(hd_render_manager_is_portrait_wallpaper_enabled ())
 	  hd_render_manager_update_wallpapers ();
+
+	hd_dbus_send_desktop_orientation_changed (STATE_IS_PORTRAIT (hd_render_manager_get_state ()));
 
   return TRUE;
 }
