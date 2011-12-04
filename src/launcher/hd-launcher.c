@@ -576,10 +576,19 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
   gfloat x_align, y_align;
 
   clutter_actor_get_transformed_position (CLUTTER_ACTOR (tile), &x, &y);
-  x_align = (gfloat)(x + (HD_LAUNCHER_TILE_WIDTH / 2))
-                    / HD_LAUNCHER_PAGE_WIDTH;
-  y_align = (gfloat)(y + (HD_LAUNCHER_TILE_WIDTH / 2))
-                    / HD_LAUNCHER_PAGE_HEIGHT;
+
+  if (STATE_IS_PORTRAIT (hd_render_manager_get_state ())) {
+    x_align = (gfloat)(x + (HD_LAUNCHER_TILE_WIDTH / 2))
+                      / HD_LAUNCHER_PAGE_HEIGHT;
+    y_align = (gfloat)(y + (HD_LAUNCHER_TILE_WIDTH / 2))
+                      / HD_LAUNCHER_PAGE_WIDTH;
+  }
+  else {
+    x_align = (gfloat)(x + (HD_LAUNCHER_TILE_WIDTH / 2))
+                      / HD_LAUNCHER_PAGE_WIDTH;
+    y_align = (gfloat)(y + (HD_LAUNCHER_TILE_WIDTH / 2))
+                      / HD_LAUNCHER_PAGE_HEIGHT;
+  }
 
   g_signal_connect (priv->editor, "destroy",
                     G_CALLBACK (_hd_launcher_editor_destroyed),
