@@ -97,6 +97,7 @@ struct _HdLauncherPrivate
   gboolean editor_done;
 
   gboolean portraited;
+  gboolean is_editor_in_landscape;
 };
 
 #define HD_LAUNCHER_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -537,6 +538,8 @@ _hd_launcher_editor_destroyed (GtkWidget  *widget,
   g_debug ("%s", __FUNCTION__);
 
   priv->editor_done = FALSE;
+  priv->is_editor_in_landscape = FALSE;
+
   if (priv->editor)
     {
       priv->editor = NULL;
@@ -599,6 +602,8 @@ hd_launcher_application_tile_long_clicked (HdLauncherTile *tile,
   g_signal_connect (priv->editor, "done",
                     G_CALLBACK (_hd_launcher_editor_done),
                     launcher);
+
+  priv->is_editor_in_landscape = !STATE_IS_PORTRAIT (hd_render_manager_get_state ());
 
   hd_launcher_editor_show (priv->editor);
   hd_launcher_editor_select (HD_LAUNCHER_EDITOR (priv->editor),
@@ -1244,3 +1249,10 @@ hd_launcher_activate(int p) {
 	hd_launcher_page_activate(priv->active_page, p);
 }
 
+gboolean
+hd_launcher_is_editor_in_landscape (void)
+{
+  HdLauncherPrivate *priv = HD_LAUNCHER_GET_PRIVATE (hd_launcher_get ());
+
+  return priv->is_editor_in_landscape;
+}

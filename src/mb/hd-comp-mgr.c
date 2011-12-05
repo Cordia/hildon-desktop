@@ -1092,7 +1092,8 @@ lp_forecast (MBWindowManager *wm, MBWindowManagerClient *client)
       mb_wm_client_update_portrait_flags (c, portrait_freshness_counter);
       if ((!hd_transition_get_int("thp_tweaks", "forcerotation", 0) 
               && !c->portrait_supported)
-              || gconf_client_get_bool (gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL))
+              || gconf_client_get_bool (gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL)
+              || hd_launcher_is_editor_in_landscape ())
         {
           hd_transition_rotate_screen (wm, FALSE);
           break;
@@ -3280,7 +3281,8 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
       if (((!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
               && !is_whitelisted)
               && !c->portrait_supported)
-              || gconf_client_get_bool (priv->gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL))
+              || gconf_client_get_bool (priv->gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL)
+              || hd_launcher_is_editor_in_landscape ())
         return FALSE;
 
       any_supports  = TRUE;
@@ -3290,7 +3292,8 @@ hd_comp_mgr_may_be_portrait (HdCompMgr *hmgr, gboolean assume_requested)
           PORTRAIT ("PROHIBITED");
           if (!hd_transition_get_int("thp_tweaks", "forcerotation", 0)
               || !is_whitelisted
-              || gconf_client_get_bool (priv->gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL))
+              || gconf_client_get_bool (priv->gconf_client, GCONF_KEY_ORIENTATION_LOCK, NULL)
+              || hd_launcher_is_editor_in_landscape ())
               return FALSE;
         }
 
