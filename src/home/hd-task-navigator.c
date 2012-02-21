@@ -113,9 +113,9 @@
  * TWOCOL = Bigger task switcher (see thp_tweaks), two-column layout
  */
 #define THUMB_SINGLE_WIDTH        600
-#define THUMB_SINGLE_HEIGHT       373
-#define THUMB_TWOCOL_WIDTH        344
-#define THUMB_TWOCOL_HEIGHT       214
+#define THUMB_SINGLE_HEIGHT       350
+#define THUMB_TWOCOL_WIDTH        324
+#define THUMB_TWOCOL_HEIGHT       204
 #define THUMB_LARGE_WIDTH         344
 #define THUMB_LARGE_HEIGHT        214
 #define THUMB_MEDIUM_WIDTH        224
@@ -397,11 +397,11 @@ typedef struct
           struct
           { /* north: west, middle, east; middle; south */
             ClutterActor *nw, *nm, *ne;
-            ClutterActor *mw,      *me;
+            ClutterActor *mw, *mep,*me;
             ClutterActor *sw, *sm, *se;
           };
 
-          ClutterActor *pieces[8];
+          ClutterActor *pieces[9];
         };
       } frame;
 
@@ -613,11 +613,11 @@ static const struct
 	.small  = { THUMB_SMALL_WIDTH ,  THUMB_SMALL_HEIGHT  },
     },
   [1]={
-	.single = {  THUMB_SINGLE_HEIGHT ,THUMB_SINGLE_WIDTH},
-	.twocol = {  THUMB_TWOCOL_HEIGHT ,THUMB_TWOCOL_WIDTH},
-	.large  = {  THUMB_LARGE_HEIGHT  ,THUMB_LARGE_WIDTH},
-	.medium = {  THUMB_MEDIUM_HEIGHT * .9  ,THUMB_MEDIUM_WIDTH* .9},
-	.small  = {  THUMB_SMALL_HEIGHT  * .9  ,THUMB_SMALL_WIDTH * .9},
+	.single = {  THUMB_SINGLE_HEIGHT ,THUMB_SINGLE_WIDTH+FRAME_TOP_HEIGHT},
+	.twocol = {  THUMB_TWOCOL_HEIGHT ,THUMB_TWOCOL_WIDTH+FRAME_TOP_HEIGHT},
+	.large  = {  THUMB_LARGE_HEIGHT  ,THUMB_LARGE_WIDTH+FRAME_TOP_HEIGHT},
+	.medium = {  THUMB_MEDIUM_HEIGHT * .9  ,(THUMB_MEDIUM_WIDTH+FRAME_TOP_HEIGHT)*.9},
+	.small  = {  THUMB_SMALL_HEIGHT  * .9  ,(THUMB_SMALL_WIDTH+FRAME_TOP_HEIGHT)*.9 },
     }
 };
 static void
@@ -668,7 +668,7 @@ static const Flyops Fly_smoothly =
 #define App_window_geometry_y (HD_COMP_MGR_TOP_MARGIN)
 #define App_window_geometry_width  (SCREEN_WIDTH)
 #define App_window_geometry_height  (SCREEN_HEIGHT - HD_COMP_MGR_TOP_MARGIN)
-
+#define HD_COMP_MGR_RIGHT_MARGIN_PORTRAIT ((HD_COMP_MGR_TOP_MARGIN*(SCREEN_HEIGHT-HD_COMP_MGR_TOP_MARGIN))/SCREEN_WIDTH)
 /* }}} */
 
 static gboolean
@@ -1943,18 +1943,19 @@ calc_layout (Layout * lout)
 /* Depending on the current @Thumbsize places the frame graphics
  * elements of @thumb where they should be. */
 static void
-layout_thumb_frame (const Thumbnail * thumb, const Flyops * ops)
+layout_thumb_frame (const Thumbnail * thumb, const Flyops * ops, gboolean landscape)
 {
   guint wt, ht, wb, hb;
 
   /* This is quite boring. */
   clutter_actor_get_size(thumb->frame.nw, &wt, &ht);
   clutter_actor_get_size(thumb->frame.sw, &wb, &hb);
-
+  
   ops->move (thumb->frame.nm, wt, 0);
   ops->move (thumb->frame.ne, Thumbsize->width, 0);
   ops->move (thumb->frame.mw, 0, ht);
   ops->move (thumb->frame.me, Thumbsize->width, ht);
+  ops->move (thumb->frame.mep, Thumbsize->width, Thumbsize->height);
   ops->move (thumb->frame.sw, 0, Thumbsize->height);
   ops->move (thumb->frame.sm, wb, Thumbsize->height);
   ops->move (thumb->frame.se, Thumbsize->width, Thumbsize->height);
@@ -1971,6 +1972,18 @@ layout_thumb_frame (const Thumbnail * thumb, const Flyops * ops)
   ops->scale (thumb->frame.me, 1,
               (gdouble)(Thumbsize->height - (ht+hb))
                 / clutter_actor_get_height (thumb->frame.me));
+  if(landscape)
+  {
+    ops->scale (thumb->frame.mep, 
+                (gdouble)
+                (FRAME_TOP_HEIGHT)/clutter_actor_get_height (thumb->frame.mep)
+                ,
+                (gdouble)(Thumbsize->height - (ht))
+                  / clutter_actor_get_width (thumb->frame.mep));
+  }
+  else
+    /* Scale to something not zero to prewent clutter warning */
+    ops->scale (thumb->frame.mep, 0.00001,0.00001);
 }
 
 /* Lays out the inners of a notwin belonging to @thumb.
@@ -2251,22 +2264,34 @@ layout_thumbs (ClutterActor * newborn)
         /* nothumb or apthumb with a notification,
          * show it as a notification */
         layout_notwin (thumb, oldthsize, ops);
+      
+      
 
       if (thumb_is_application (thumb))
         {
-          guint appg_fix=0;
+          guint app_geom_fix = 0;
+          guint wprison_fix = 0;
+          gboolean landscape = FALSE;
 
-          ops->clip(thumb->windows,appwgw, appwgh);
           if(IS_PORTRAIT && !hd_task_navigator_app_portrait_capable(thumb) )
             {
-            /* Phone in portrait and showing not-portrait capable app thumb */
+              app_geom_fix = HD_COMP_MGR_TOP_MARGIN;
+              wprison_fix = FRAME_TOP_HEIGHT-FRAME_WIDTH;
+
+              ops->clip(thumb->prison, appwgw-app_geom_fix, appwgh+app_geom_fix);
+
+              /* Phone in portrait and showing not-portrait capable app thumb */
               hd_task_navigator_set_disable_portrait(thumb,True);
+
               ops->rotate_z(thumb->windows,90.0f,0);
               ops->move(thumb->windows,appwgw,HD_COMP_MGR_TOP_MARGIN);
-              appg_fix=HD_COMP_MGR_TOP_MARGIN;
+              /* Keep aspect ratio */
+              landscape = TRUE;
             }
           else
             {
+              ops->clip(thumb->prison, appwgw, appwgh);
+
               /* reset flag once in landscape and thumb supports portrait*/
               if(hd_task_navigator_app_portrait_capable(thumb))
                 hd_task_navigator_set_disable_portrait(thumb,False);
@@ -2278,10 +2303,10 @@ layout_thumbs (ClutterActor * newborn)
             }
 
           ops->scale (thumb->prison,
-                (gdouble)wprison / (appwgw-appg_fix),
-                (gdouble)hprison / (appwgh+appg_fix));
+                (gdouble)(wprison-wprison_fix) / (appwgw-app_geom_fix),
+                (gdouble)hprison / (appwgh+app_geom_fix));
 
-          layout_thumb_frame (thumb, ops);
+          layout_thumb_frame (thumb, ops, landscape);
         }
 
 skip_the_circus:
@@ -3080,6 +3105,7 @@ create_apthumb_frame (Thumbnail * apthumb)
     { "TaskSwitcherThumbnailTitleCenter.png",  CLUTTER_GRAVITY_NORTH_WEST },
     { "TaskSwitcherThumbnailTitleRight.png",   CLUTTER_GRAVITY_NORTH_EAST },
     { "TaskSwitcherThumbnailBorderLeft.png",   CLUTTER_GRAVITY_NORTH_WEST },
+    { "TaskSwitcherThumbnailTitleCenter.png",  CLUTTER_GRAVITY_NORTH_EAST },
     { "TaskSwitcherThumbnailBorderRight.png",  CLUTTER_GRAVITY_NORTH_EAST },
     { "TaskSwitcherThumbnailBottomLeft.png",   CLUTTER_GRAVITY_SOUTH_WEST },
     { "TaskSwitcherThumbnailBottomCenter.png", CLUTTER_GRAVITY_SOUTH_WEST },
@@ -3100,6 +3126,8 @@ create_apthumb_frame (Thumbnail * apthumb)
       clutter_container_add_actor (CLUTTER_CONTAINER (apthumb->frame.all),
                                    apthumb->frame.pieces[i]);
     }
+  clutter_actor_set_rotation(apthumb->frame.mep,CLUTTER_Z_AXIS,90.0,0,0,0);
+  clutter_actor_set_scale(apthumb->frame.mep,0.00001,0.00001);
 }
 
 /* Returns a %Thumbnail for @apwin, a window manager client actor.
@@ -3158,9 +3186,6 @@ create_appthumb (ClutterActor * apwin)
   apthumb->titlebar = hd_title_bar_create_fake(SCREEN_WIDTH);
   apthumb->windows = clutter_group_new ();
   clutter_actor_set_name (apthumb->windows, "windows");
-  clutter_actor_set_clip (apthumb->windows,
-			  App_window_geometry_x, App_window_geometry_y,
-			  App_window_geometry_width, App_window_geometry_height);
   /* See mb_wm_comp_mgr_clutter_client_actor_reparent_cb - we check this to
    * see if we should linear filter the actor or not */
   g_object_set_data(G_OBJECT(apthumb->windows), "FILTER_LINEAR", (void*)1);
