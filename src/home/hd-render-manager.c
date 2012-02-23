@@ -189,15 +189,6 @@ struct _HdRenderManagerPrivate {
   HDRMStateEnum state;
   HDRMStateEnum previous_state;
   
-  /* Zoom support */
-  gboolean zoomed;
-  gboolean zoom_drag_started;
-  gulong zoom_pressed_handler;
-  gulong zoom_released_handler;
-  gulong zoom_motion_handler;
-  guint  zoom_x;
-  guint  zoom_y;
-
   /* The input blocker is added with hd_render_manager_add_input_blocker.
    * It grabs the whole screen's input until either a window appears or
    * a timeout expires. */
@@ -357,62 +348,6 @@ press_effect_new_frame (ClutterTimeline *timeline,
    clutter_actor_queue_redraw (stage);
 }
 
-static void
-unzoom_reset (void)
-{
-  HdRenderManagerPrivate *priv = render_manager->priv;
-
-  priv->zoomed = FALSE;
-
-  g_signal_handler_disconnect (clutter_stage_get_default (),
-			       priv->zoom_pressed_handler);
-  g_signal_handler_disconnect (clutter_stage_get_default (),
-			       priv->zoom_released_handler);
-  g_signal_handler_disconnect (clutter_stage_get_default (),
-			       priv->zoom_motion_handler);
-
-  priv->zoom_pressed_handler = priv->zoom_released_handler = 0;
-
-  hd_render_manager_remove_input_blocker ();
-}
-
-static void
-unzoom_effect (ClutterTimeline *timeline,
-	       gint n_frame,
-	       ClutterActor *hdrm)
-{
-  gdouble sx, sy;
-  gint ax, ay;
-
-  clutter_actor_get_scale (hdrm, &sx, &sy);
-  clutter_actor_get_anchor_point (hdrm, &ax, &ay);
-
-  if (ax < 0)
-    ax++;
-  else
-  if (ax > 0)
-    ax--;
-
-  if (ay < 0)
-    ay++;
-  else
-    ay--;
-
-  sx = sx - ZOOM_INCREMENT;
-  sy = sy - ZOOM_INCREMENT;
-
-  if (sx > 1)
-    clutter_actor_set_scale (hdrm, sx, sy);
-
-  clutter_actor_set_anchor_point (hdrm, ax, ay);
-
-  clutter_actor_queue_redraw (hdrm);
-
-  if (sx == 1 && ax == 0 && ay == 0)
-      clutter_timeline_stop (timeline);
-}
-
-
 /* ------------------------------------------------------------------------- */
 /* -------------------------------------------------------------    INIT     */
 /* ------------------------------------------------------------------------- */
@@ -477,12 +412,6 @@ hd_render_manager_create (HdCompMgr *hdcompmgr,
   clutter_container_add_actor(CLUTTER_CONTAINER(priv->blur_front),
                               CLUTTER_ACTOR(priv->title_bar));
 
-  g_signal_connect_swapped (priv->title_bar,
-		    	    "clicked-top-left",
-		    	    G_CALLBACK (hd_render_manager_unzoom),
-		    	    NULL);
-
- 
   return render_manager;
 }
 
@@ -570,10 +499,6 @@ hd_render_manager_init (HdRenderManager *self)
   priv->state = HDRM_STATE_UNDEFINED;
   priv->previous_state = HDRM_STATE_UNDEFINED;
   priv->current_blur = HDRM_BLUR_NONE;
-
-  priv->zoomed = FALSE;
-  priv->zoom_pressed_handler = priv->zoom_released_handler = 0;
-  priv->zoom_drag_started = FALSE;
 
   priv->home_blur = TIDY_BLUR_GROUP(tidy_blur_group_new());
   clutter_actor_set_name(CLUTTER_ACTOR(priv->home_blur),
@@ -3132,9 +3057,6 @@ hd_render_manager_captured_event_cb (ClutterActor     *actor,
   if (render_manager && render_manager->priv->has_input_blocker) 
     {
 
-      if (render_manager->priv->zoomed)
-	return FALSE;
-
       /* Just put a message here - this should only happen when the user
        * clicks really quickly */
       g_debug("%s: Input event blocked by "
@@ -3169,10 +3091,6 @@ hd_render_manager_add_input_blocker (void)
       hd_render_manager_set_input_viewport ();
       /* After this timeout has expired we remove the blocker - this should
        * stop us getting into some broken state if the app does not start. */
-
-      /* When we zoom, we are also adding an input blocker but we don't want it
-	 to go away until the user zooms completely out */
-      if (priv->zoomed == FALSE)
         priv->has_input_blocker_timeout =
           g_timeout_add (1000,
                          (GSourceFunc)_hd_render_manager_remove_input_blocker_cb,
@@ -3519,106 +3437,6 @@ hd_render_manager_press_effect (void)
       priv->press_effect = TRUE;
     }
   }
-}
-
-static gboolean
-zoom_pressed (HdRenderManager *hdrm,
-	      ClutterButtonEvent *event)
-{
-  if (!hdrm->priv->zoomed)
-    return FALSE;
-
-  if (hdrm->priv->zoom_drag_started)
-    {
-      hdrm->priv->zoom_drag_started = FALSE;
-      return FALSE;
-    }
-
-  hdrm->priv->zoom_x = event->x;
-  hdrm->priv->zoom_y = event->y;
-
-  hdrm->priv->zoom_drag_started = TRUE;
-
-  return TRUE;
-}
-
-static gboolean 
-zoom_motion (HdRenderManager *hdrm,
-	     ClutterMotionEvent *event)
-{
-#define ZOOM_DRAG_SPEED 10
-  if (hdrm->priv->zoom_drag_started && hdrm->priv->zoomed)
-    {
-      gint x, y, ax, ay, nx, ny, real_width, real_height;
-      gdouble sx, sy;
-
-      real_width  = hd_comp_mgr_get_current_screen_width  ();
-      real_height = hd_comp_mgr_get_current_screen_height ();
-
-      x = hdrm->priv->zoom_x - event->x;
-      y = hdrm->priv->zoom_y - event->y;
-
-      hdrm->priv->zoom_x = event->x;
-      hdrm->priv->zoom_y = event->y;
-
-      clutter_actor_get_scale (CLUTTER_ACTOR (hdrm), &sx, &sy);
-      clutter_actor_get_anchor_point (CLUTTER_ACTOR (hdrm), &ax, &ay);
- 
-      if (x < 0) /* going left */
-        {
-	  nx = ax - ZOOM_DRAG_SPEED;
-
-          if (nx < 0)
-	    nx = 0;
-        }
-      else
-      if (x > 0)
-        {
- 	  nx = ax + ZOOM_DRAG_SPEED;
-
-	  if (nx > (real_width - real_width/sx))
-	    nx = real_width - real_width/sx; /*anchor point limit for right border*/
-        }
-      else
-	nx = ax;
-
-      if (y < 0)
-        {
-	  ny = ay - ZOOM_DRAG_SPEED;
-
-	  if (ny < 0)
-	    ny = 0;
-        }
-      else
-      if (y > 0)
-        {
- 	  ny = ay + ZOOM_DRAG_SPEED;
-
-	  if (ny > (real_height - real_height/sx))
-	    ny = real_height - real_height/sx;
-        }
-      else
-	ny = ay;
-
-      clutter_actor_set_anchor_point (CLUTTER_ACTOR (hdrm), nx, ny);
-
-      clutter_actor_queue_redraw (CLUTTER_ACTOR (hdrm));
-
-      return TRUE;
-    }
- 
-  return FALSE;
-}
-
-static gboolean
-zoom_released (HdRenderManager *hdrm,
-	       ClutterButtonEvent *event)
-{
-  hdrm->priv->zoom_drag_started = FALSE;
-
-  g_debug ("RELEASING?");
-
-  return TRUE;
 }
 
 void hd_render_manager_update_applets_position (void)
