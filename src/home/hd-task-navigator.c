@@ -652,7 +652,7 @@ static void check_and_rotate_z (ClutterActor *, gfloat , gfloat );
 
 static void check_and_clip (ClutterActor *, gint , gint );
 
-static int g_hd_task_navigator_mode=0;
+static gint g_hd_task_navigator_mode=0;
 static const Flyops Fly_smoothly =
 {
   .move   = check_and_move,
@@ -1393,7 +1393,7 @@ check_and_rotate_z (ClutterActor * actor, gfloat angle_new, gfloat z_new)
 static void set_clip(ClutterActor * actor, gint appwgw, gint appwgh)
 {
     clutter_actor_set_clip (actor,
-			    App_window_geometry_x, App_window_geometry_y,
+			    App_window_geometry_x, IS_PORTRAIT?0:App_window_geometry_y,
 			    appwgw, appwgh);
 }
 static void get_clip(ClutterActor * actor, gint * appwgw, gint * appwgh)
@@ -2264,8 +2264,6 @@ layout_thumbs (ClutterActor * newborn)
         /* nothumb or apthumb with a notification,
          * show it as a notification */
         layout_notwin (thumb, oldthsize, ops);
-      
-      
 
       if (thumb_is_application (thumb))
         {
@@ -2277,8 +2275,8 @@ layout_thumbs (ClutterActor * newborn)
             {
               app_geom_fix = HD_COMP_MGR_TOP_MARGIN;
               wprison_fix = FRAME_TOP_HEIGHT-FRAME_WIDTH;
-
-              ops->clip(thumb->prison, appwgw-app_geom_fix, appwgh+app_geom_fix);
+              
+              ops->clip(thumb->windows, appwgw, appwgh+app_geom_fix);
 
               /* Phone in portrait and showing not-portrait capable app thumb */
               hd_task_navigator_set_disable_portrait(thumb,True);
@@ -2290,8 +2288,7 @@ layout_thumbs (ClutterActor * newborn)
             }
           else
             {
-              ops->clip(thumb->prison, appwgw, appwgh);
-
+              ops->clip(thumb->windows, appwgw, appwgh+(IS_PORTRAIT?HD_COMP_MGR_TOP_MARGIN:0));
               /* reset flag once in landscape and thumb supports portrait*/
               if(hd_task_navigator_app_portrait_capable(thumb))
                 hd_task_navigator_set_disable_portrait(thumb,False);
