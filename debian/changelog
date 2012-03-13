@@ -1,3 +1,11 @@
+hildon-desktop (1:2.2.142-19) unstable; urgency=low
+
+  * Tasknav: keep aspect ratio and fix clipping for portrait thumbnails.
+  * Remove zoom functionality
+  * transition: don't repaint until the screen is black
+
+ -- Christian Ratzenhofer <christian_ratzenhofer@yahoo.de>  Tue, 13 Mar 2012 16:10:00 +0100
+
 hildon-desktop (1:2.2.142-18) unstable; urgency=low
 
   * Enable launcher icon editor in both orientations.
