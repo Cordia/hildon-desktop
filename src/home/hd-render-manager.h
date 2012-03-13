@@ -310,12 +310,6 @@ HdHome *hd_render_manager_get_home (void);
 
 void hd_render_manager_press_effect (void);
 
-void hd_render_manager_zoom_in (void);
-
-void hd_render_manager_zoom_out (void);
-
-void hd_render_manager_unzoom (void);
-
 void hd_render_manager_update_applets_position (void);
 void hd_render_manager_update_wallpapers (void);
 gboolean hd_render_manager_is_portrait_wallpaper_enabled (void);

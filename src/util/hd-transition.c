@@ -1526,7 +1526,6 @@ hd_transition_rotating_fsm(void)
         hd_util_set_screen_size_property(Orientation_change.wm,
                          Orientation_change.direction == GOTO_PORTRAIT);
         Orientation_change.wm->flags |= MBWindowManagerFlagLayoutRotated;
-        mb_wm_layout_update(Orientation_change.wm->layout);
         /* We now call ourselves back on idle. The idea is that the sudden
          * influx of X events from resizing kills our animation as we don't
          * get to idle for a while. So only start the transition once we
@@ -1555,6 +1554,8 @@ hd_transition_rotating_fsm(void)
          * to states which don't support the orientation we're
          * going to.
          */
+        if(!STATE_IS_TASK_NAV(hd_render_manager_get_state()))
+          mb_wm_layout_update(Orientation_change.wm->layout);
         /* remove our flag to bodge layout - because we'll rotate properly
          * soon anyway */
         Orientation_change.wm->flags &= ~MBWindowManagerFlagLayoutRotated;
