@@ -1,3 +1,9 @@
+hildon-desktop (1:2.2.142-20) unstable; urgency=low
+
+  * Don't do extra transistion when launching an application that does not support portrait.
+
+ -- Christian Ratzenhofer <christian_ratzenhofer@yahoo.de>  Tue,  3 Apr 2012 18:38:06 +0200
+
 hildon-desktop (1:2.2.142-19) unstable; urgency=low
 
   * Tasknav: keep aspect ratio and fix clipping for portrait thumbnails.
