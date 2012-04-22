@@ -119,46 +119,46 @@ if test "$ac_cv_enable_static_mb2" = yes; then
         PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
-		       dbus-1 dnl
-		       x11 dnl
-		       xcomposite dnl
-		       xfixes dnl
-		       xrandr dnl
-		       gtk+-2.0 dnl
-		       gconf-2.0 dnl
-		       hildon-1 dnl
-		       libhildondesktop-1 dnl
-		       libcanberra dnl
-		       gnome-vfs-2.0 dnl
-		       libgnome-menu dnl
-		       gdk-pixbuf-xlib-2.0 dnl
+                       dbus-1 dnl
+                       x11 dnl
+                       xcomposite dnl
+                       xfixes dnl
+                       xrandr dnl
+                       gtk+-2.0 dnl
+                       gconf-2.0 dnl
+                       hildon-1 dnl
+                       libhildondesktop-1 dnl
+                       libcanberra dnl
+                       gnome-vfs-2.0 dnl
+                       libgnome-menu dnl
+                       gdk-pixbuf-xlib-2.0 dnl
                        pangoxft dnl
                        xft dnl
-                       profile dnl
-                       mce])
+                       dnl MAEGO_DISABLED dsme
+                       ])
 else
         MB2_CFLAGS=''
         MB2_STATIC_LIB=''
         PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
                        glib-2.0 >= 2.12 dnl
                        gthread-2.0 dnl
-		       dbus-1 dnl
-		       x11 dnl
-		       xcomposite dnl
-		       xfixes dnl
-		       xrandr dnl
-		       gtk+-2.0 dnl
-		       gconf-2.0 dnl
-		       hildon-1 dnl
-		       libhildondesktop-1 dnl
-		       libcanberra dnl
-		       gnome-vfs-2.0 dnl
-		       libgnome-menu dnl
-		       gdk-pixbuf-xlib-2.0 dnl
+                       dbus-1 dnl
+                       x11 dnl
+                       xcomposite dnl
+                       xfixes dnl
+                       xrandr dnl
+                       gtk+-2.0 dnl
+                       gconf-2.0 dnl
+                       hildon-1 dnl
+                       libhildondesktop-1 dnl
+                       libcanberra dnl
+                       gnome-vfs-2.0 dnl
+                       libgnome-menu dnl
+                       gdk-pixbuf-xlib-2.0 dnl
                        xft dnl
                        libmatchbox2-0.1 dnl
-                       profile dnl
-                       mce])
+                       dnl MAEGO_DISABLED dsme
+                       ])
 fi
 
 HD_INCS='-I$(top_srcdir)/src -I$(top_srcdir)/src/home -I$(top_srcdir)/src/mb -I$(top_srcdir)/src/util -I$(top_srcdir)/src/a11y'
