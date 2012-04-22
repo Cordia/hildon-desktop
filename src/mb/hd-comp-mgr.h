@@ -24,7 +24,7 @@
 #ifndef __HD_COMP_MGR_H__
 #define __HD_COMP_MGR_H__
 
-#include <glib/gmacros.h>
+#include <glib.h>
 #include <matchbox/core/mb-wm-object.h>
 #include <matchbox/core/mb-window-manager.h>
 #include <matchbox/comp-mgr/mb-wm-comp-mgr.h>

@@ -211,7 +211,7 @@ hd_clutter_cache_get_sub_texture(const char *filename,
   texture = hd_clutter_cache_get_real_texture(filename, from_theme);
   if (!texture)
     {
-      texture = hd_clutter_cache_get_broken_texture(filename);
+      texture = hd_clutter_cache_get_broken_texture();
       clutter_actor_set_name(texture, filename);
       clutter_actor_set_size(texture, geo->width, geo->height);
       return texture;

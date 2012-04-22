@@ -289,7 +289,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
 	  MBWMXmlButton * b = l->data;
 
 	  /* Back button only for group followers */
-	  if (b->type == HdHomeThemeButtonBack && stack_i > 0
+	  if (b->type == (MBWMDecorButtonType) HdHomeThemeButtonBack && stack_i > 0
 	      && app && app->leader != app)
 	    {
 	      BackButtonData *bd;
@@ -319,7 +319,7 @@ construct_buttons (MBWMTheme *theme, HdDecor *decor, MBWMXmlDecor *d)
                                            0,0,
                                            0);
 	    }
-	  else if (b->type != HdHomeThemeButtonBack &&
+	  else if (b->type != (MBWMDecorButtonType) HdHomeThemeButtonBack &&
 	           b->type != MBWMDecorButtonClose)
 	    {
               /* do not install press/release handler */
@@ -603,7 +603,7 @@ hd_theme_simple_get_button_size (MBWMTheme             *theme,
   if (!theme)
     return;
 
-  if (type >= HdHomeThemeButtonBack)
+  if (type >= (MBWMDecorButtonType) HdHomeThemeButtonBack)
     {
       if ((c = mb_wm_xml_client_find_by_type (theme->xml_clients, c_type)) &&
 	  (d = mb_wm_xml_decor_find_by_type (c->decors, decor->type)))

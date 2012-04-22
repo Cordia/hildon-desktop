@@ -238,9 +238,9 @@ key_binding_func (MBWindowManager   *wm,
 		  MBWMKeyBinding    *binding,
 		  void              *userdata)
 {
-	int action;
+  gint action;
 
-  action = (int)(userdata);
+  action = GPOINTER_TO_INT(userdata);
 
   switch (action)
     {

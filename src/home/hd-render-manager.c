@@ -2272,7 +2272,7 @@ void hd_render_manager_restack()
                      clutter_actor_raise_top(actor);
                      if (live_bg_actor && c->desktop == curr_view
                          && MB_WM_CLIENT_CLIENT_TYPE (c)
-                                             == HdWmClientTypeHomeApplet)
+                                             == (MBWMClientType) HdWmClientTypeHomeApplet)
                        clutter_actor_raise_top (live_bg_actor);
                     }
 #if STACKING_DEBUG
@@ -3431,7 +3431,6 @@ hd_render_manager_press_effect (void)
     HdRenderManagerPrivate *priv = render_manager->priv;
 
     g_return_if_fail (render_manager != NULL);
-    g_return_if_fail (!render_manager->priv->zoomed);
 
     if (!priv->press_effect)  
     {

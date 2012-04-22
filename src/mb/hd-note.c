@@ -43,7 +43,7 @@ static Bool hd_note_request_geometry (MBWindowManagerClient *client,
 				      MBGeometry            *new_geometry,
 				      MBWMClientReqGeomType  flags);
 static MBWMStackLayerType hd_note_stacking_layer(MBWindowManagerClient *client);
-static void hd_note_stack (MBWindowManagerClient *client, int flags);
+static void hd_note_stack (MBWindowManagerClient *client, intptr_t flags);
 
 /* Properties of an IncomingEvent that can be queried, we cache
  * and notice if change. */
@@ -504,7 +504,7 @@ hd_note_stacking_layer(MBWindowManagerClient *client)
       for (c = wm->stack_top; c && c != wm->desktop; c = c->stacked_below)
         {
           if (mb_wm_client_is_map_confirmed (c) &&
-              MB_WM_CLIENT_CLIENT_TYPE (c) == HdWmClientTypeAppMenu)
+              MB_WM_CLIENT_CLIENT_TYPE (c) == (MBWMClientType) HdWmClientTypeAppMenu)
             return c->stacking_layer;
         }
     }
@@ -548,7 +548,7 @@ hd_note_clicked (HdNote *self, void *unused, void *actor)
 
 static void
 hd_note_stack (MBWindowManagerClient *client,
-	       int                    flags)
+	       intptr_t                    flags)
 {
   if ((HD_NOTE (client)->note_type == HdNoteTypeBanner ||
        HD_NOTE (client)->note_type == HdNoteTypeInfo) &&

@@ -394,6 +394,7 @@ hd_app_mgr_dbus_add_signal_match (DBusConnection *conn,
   g_free (arg);
 }
 
+#ifdef HAVE_DSME
 static void
 hd_app_mgr_dbus_remove_signal_match (DBusConnection *conn,
                                      const gchar *interface,
@@ -403,6 +404,7 @@ hd_app_mgr_dbus_remove_signal_match (DBusConnection *conn,
   dbus_bus_remove_match (conn, arg, NULL);
   g_free (arg);
 }
+#endif
 
 static void
 hd_app_mgr_init (HdAppMgr *self)
@@ -1996,6 +1998,7 @@ hd_app_mgr_init_done_timeout (HdAppMgr *self)
   return FALSE;
 }
 
+#ifdef HAVE_DSME
 static gboolean
 _hd_app_mgr_dbus_check_value (DBusMessage *msg,
                               const gchar *value)
@@ -2021,6 +2024,7 @@ _hd_app_mgr_dbus_check_value (DBusMessage *msg,
 
   return FALSE;
 }
+#endif
 
 static void
 hd_app_mgr_update_portraitness(HdAppMgr *self)

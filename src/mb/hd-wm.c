@@ -533,8 +533,8 @@ hd_wm_close_modal_blockers (const MBWindowManager *wm)
         {
 	  MBWMClientType c_type = MB_WM_CLIENT_CLIENT_TYPE (client);
           if (!(c_type == MBWMClientTypeMenu ||
-                c_type == HdWmClientTypeAppMenu ||
-                c_type == HdWmClientTypeStatusMenu)
+                c_type == (MBWMClientType) HdWmClientTypeAppMenu ||
+                c_type == (MBWMClientType) HdWmClientTypeStatusMenu)
               && !hd_wm_is_fkb (client)) 
             /* a real blocker that cannot be deleted */
 	    return FALSE;
