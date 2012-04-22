@@ -47,10 +47,10 @@ static void
 hda_launcher_tile_initialize                    (AtkObject *obj,
                                                  gpointer data);
 
-static G_CONST_RETURN gchar *
+static const gchar *
 hda_launcher_tile_get_name                      (AtkObject *obj);
 
-static G_CONST_RETURN gchar *
+static const gchar *
 hda_launcher_tile_get_description               (AtkObject *obj);
 
 G_DEFINE_TYPE (HdaLauncherTile, hda_launcher_tile,  CAIL_TYPE_ACTOR)
@@ -99,10 +99,10 @@ hda_launcher_tile_initialize                    (AtkObject   *obj,
   obj->role = ATK_ROLE_PUSH_BUTTON;
 }
 
-static G_CONST_RETURN gchar *
+static const gchar *
 hda_launcher_tile_get_name                      (AtkObject *obj)
 {
-  G_CONST_RETURN gchar *name = NULL;
+  const gchar *name = NULL;
 
   g_return_val_if_fail (HDA_IS_LAUNCHER_TILE (obj), NULL);
 
@@ -118,10 +118,10 @@ hda_launcher_tile_get_name                      (AtkObject *obj)
   return name;
 }
 
-static G_CONST_RETURN gchar *
+static const gchar *
 hda_launcher_tile_get_description               (AtkObject *obj)
 {
-  G_CONST_RETURN gchar *description = NULL;
+  const gchar *description = NULL;
 
   g_return_val_if_fail (HDA_IS_LAUNCHER_TILE (obj), NULL);
 

@@ -205,7 +205,7 @@ hd_launcher_app_parse_keyfile (HdLauncherItem *item,
   return TRUE;
 }
 
-G_CONST_RETURN gchar *
+const gchar *
 hd_launcher_app_get_exec (HdLauncherApp *item)
 {
   g_return_val_if_fail (HD_IS_LAUNCHER_APP (item), NULL);
@@ -213,7 +213,7 @@ hd_launcher_app_get_exec (HdLauncherApp *item)
   return item->priv->exec;
 }
 
-G_CONST_RETURN gchar *
+const gchar *
 hd_launcher_app_get_service (HdLauncherApp *item)
 {
   g_return_val_if_fail (HD_IS_LAUNCHER_APP (item), NULL);
@@ -221,7 +221,7 @@ hd_launcher_app_get_service (HdLauncherApp *item)
   return item->priv->service;
 }
 
-G_CONST_RETURN gchar *
+const gchar *
 hd_launcher_app_get_loading_image (HdLauncherApp *item)
 {
   g_return_val_if_fail (HD_IS_LAUNCHER_APP (item), NULL);
@@ -229,7 +229,7 @@ hd_launcher_app_get_loading_image (HdLauncherApp *item)
   return item->priv->loading_image;
 }
 
-G_CONST_RETURN gchar *
+const gchar *
 hd_launcher_app_get_switcher_icon (HdLauncherApp *item)
 {
   g_return_val_if_fail (HD_IS_LAUNCHER_APP (item), NULL);
@@ -237,7 +237,7 @@ hd_launcher_app_get_switcher_icon (HdLauncherApp *item)
   return item->priv->switcher_icon;
 }
 
-G_CONST_RETURN gchar *
+const gchar *
 hd_launcher_app_get_wm_class (HdLauncherApp *item)
 {
   g_return_val_if_fail (HD_IS_LAUNCHER_APP (item), NULL);

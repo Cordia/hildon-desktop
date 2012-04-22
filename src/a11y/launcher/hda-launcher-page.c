@@ -56,7 +56,7 @@ static AtkObject*
 hda_launcher_page_ref_child                     (AtkObject *obj,
                                                  gint i);
 
-static G_CONST_RETURN gchar *
+static const gchar *
 hda_launcher_page_get_name                      (AtkObject *obj);
 
 G_DEFINE_TYPE (HdaLauncherPage, hda_launcher_page,  CAIL_TYPE_ACTOR)
@@ -140,10 +140,10 @@ hda_launcher_page_ref_child                     (AtkObject *obj,
   return result;
 }
 
-static G_CONST_RETURN gchar *
+static const gchar *
 hda_launcher_page_get_name                      (AtkObject *obj)
 {
-  G_CONST_RETURN gchar *name = NULL;
+  const gchar *name = NULL;
 
   g_return_val_if_fail (HDA_IS_LAUNCHER_PAGE (obj), NULL);
 

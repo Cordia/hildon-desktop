@@ -50,7 +50,7 @@ static void
 tail_sub_texture_initialize                     (AtkObject *obj,
                                                  gpointer data);
 
-static G_CONST_RETURN gchar *
+static const gchar *
 tail_sub_texture_get_description                (AtkObject *obj);
 
 G_DEFINE_TYPE (TailSubTexture, tail_sub_texture,  CAIL_TYPE_ACTOR)
@@ -128,10 +128,10 @@ tail_sub_texture_initialize                     (AtkObject   *obj,
     }
 }
 
-static G_CONST_RETURN gchar *
+static const gchar *
 tail_sub_texture_get_description                (AtkObject *obj)
 {
-  G_CONST_RETURN gchar *description = NULL;
+  const gchar *description = NULL;
 
   g_return_val_if_fail (CAIL_IS_TEXTURE (obj), NULL);
 

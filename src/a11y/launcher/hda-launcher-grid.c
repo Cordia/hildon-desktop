@@ -49,7 +49,7 @@ hda_launcher_grid_init                          (HdaLauncherGrid *root);
 static void
 hda_launcher_grid_initialize                    (AtkObject *obj,
                                                  gpointer data);
-static G_CONST_RETURN gchar *
+static const gchar *
 hda_launcher_grid_get_name                      (AtkObject *obj);
 
 
@@ -98,10 +98,10 @@ hda_launcher_grid_initialize                    (AtkObject   *obj,
   obj->role = ATK_ROLE_FILLER;
 }
 
-static G_CONST_RETURN gchar *
+static const gchar *
 hda_launcher_grid_get_name                      (AtkObject *obj)
 {
-  G_CONST_RETURN gchar *name = NULL;
+  const gchar *name = NULL;
 
   g_return_val_if_fail (HDA_IS_LAUNCHER_GRID (obj), NULL);
 

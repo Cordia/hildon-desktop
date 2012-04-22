@@ -59,11 +59,11 @@ struct _HdLauncherAppClass
 
 GType           hd_launcher_app_get_type          (void) G_GNUC_CONST;
 
-G_CONST_RETURN gchar *hd_launcher_app_get_exec          (HdLauncherApp *item);
-G_CONST_RETURN gchar *hd_launcher_app_get_service       (HdLauncherApp *item);
-G_CONST_RETURN gchar *hd_launcher_app_get_loading_image (HdLauncherApp *item);
-G_CONST_RETURN gchar *hd_launcher_app_get_switcher_icon (HdLauncherApp *item);
-G_CONST_RETURN gchar *hd_launcher_app_get_wm_class (HdLauncherApp *item);
+const gchar *hd_launcher_app_get_exec          (HdLauncherApp *item);
+const gchar *hd_launcher_app_get_service       (HdLauncherApp *item);
+const gchar *hd_launcher_app_get_loading_image (HdLauncherApp *item);
+const gchar *hd_launcher_app_get_switcher_icon (HdLauncherApp *item);
+const gchar *hd_launcher_app_get_wm_class (HdLauncherApp *item);
 
 #define HD_APP_PRESTART_NONE_STRING     "none"
 #define HD_APP_PRESTART_USAGE_STRING    "usage"
