@@ -39,7 +39,7 @@ AC_PATH_PROG(DBUS_BINDING_TOOL, dbus-binding-tool)
 # Misc build flags
 #++++++++++++++++++
 
-CFLAGS="$CFLAGS -Wall -Wno-format-extra-args -ansi -Wmissing-prototypes -Wmissing-declarations -Werror -std=gnu99 -DG_DISABLE_CAST_CHECKS -fgnu89-inline"
+CFLAGS="$CFLAGS -Wall -Wno-format-extra-args -ansi -Wmissing-prototypes -Wmissing-declarations -Wno-error -std=gnu99 -DG_DISABLE_CAST_CHECKS -fgnu89-inline"
 
 AC_SUBST(CFLAGS)
 
@@ -113,17 +113,19 @@ fi
 #+++++++++++++++++++++
 
 if test "$ac_cv_enable_static_mb2" = yes; then
-        PKG_CHECK_MODULES([MB2], [libmatchbox2-0.1])
-        MB2_STATIC_LIB=/usr/lib/libmatchbox2-0.1.a
+        PKG_CHECK_MODULES([MB2], [libmatchbox2-0.1 xext xrender libpng])
+        MB2_STATIC_LIB='/usr/lib/libmatchbox2-0.1.a -lexpat'
 
         PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
                        glib-2.0 >= 2.12 dnl
+                       dbus-glib-1 dnl
                        gthread-2.0 dnl
                        dbus-1 dnl
                        x11 dnl
                        xcomposite dnl
                        xfixes dnl
                        xrandr dnl
+                       xi dnl
                        gtk+-2.0 dnl
                        gconf-2.0 dnl
                        hildon-1 dnl
@@ -140,12 +142,14 @@ else
         MB2_STATIC_LIB=''
         PKG_CHECK_MODULES(HD, [clutter-0.8 dnl
                        glib-2.0 >= 2.12 dnl
+                       dbus-glib-1 dnl
                        gthread-2.0 dnl
                        dbus-1 dnl
                        x11 dnl
                        xcomposite dnl
                        xfixes dnl
                        xrandr dnl
+                       xi dnl
                        gtk+-2.0 dnl
                        gconf-2.0 dnl
                        hildon-1 dnl
